@@ -63,6 +63,9 @@ struct MovementData {
 	Vec3  lastGroundNormal = Vec3::up;
 	float lastGroundDistM  = 0.0f;
 
+	float groundEnterSlopeThreshold = 0.707f;
+	float groundLeaveSlopeThreshold = 0.7f;
+
 	// Stuck detection
 	Vec3  lastPosition = Vec3::zero;
 	float stuckTime    = 0.0f;
@@ -127,6 +130,7 @@ private:
 	void Air(float wishspeed, float dt);
 	void Slide(float wishspeed, float dt);
 
+	// forces
 	void ApplyHalfGravity(float dt);
 	void Friction(float dt);
 	void Accelerate(Vec3 dir, float speed, float accel, float dt);
@@ -135,15 +139,33 @@ private:
 	void UpdateHullDimensions();
 	void CheckForNaNAndClamp();
 
+	// Collision & response (Source-style)
+	void MoveWithCollisions(float dt);
+
 	// params
+	static constexpr float kStepHeightHU   = 18.0f; // 72HUハルに対して既定
 	static constexpr float kCastSkinHU     = 0.25f;
 	static constexpr float kSkinHU         = 0.25f;
+	static constexpr float kRestOffsetHU   = 0.75f;
+	static constexpr float kMaxAdhesionHU  = 2.0f; // 接地維持の最大距離
+	static constexpr float kSnapVyMax      = 1.0f; // m/s
+	static constexpr int   kMaxBumps       = 8;    // 最大衝突回数（Source準拠）
+	static constexpr int   kMaxClipPlanes  = 5;
+	static constexpr float kFracEps        = 1e-4f;
 	static constexpr float kAirSpeedCap    = 30.0f;
 	static constexpr float kJumpVelocityHu = 400.0f; // HU/s
-	static constexpr float kStepHeightHu   = 18.0f;  // HU
 
+	float StepHeightM() const { return Math::HtoM(kStepHeightHU); }
 	float CastSkinM() const { return Math::HtoM(kCastSkinHU); }
 	float SkinM() const { return Math::HtoM(kSkinHU); }
+	float RestOffsetM() const { return Math::HtoM(kRestOffsetHU); }
+	float MaxAdhesionM() const { return Math::HtoM(kMaxAdhesionHU); }
+
+	// Stuck detection
+	void                   DetectAndResolveStuck(float dt);
+	static constexpr float kStuckThreshold     = 0.01f; // m/s
+	static constexpr float kStuckTimeThreshold = 0.5f;  // seconds
+	static constexpr float kStuckEscapeForce   = 5.0f;  // m/s upward
 
 	// Wallrun
 	void                   Wallrun(float wishspeed, float dt);
@@ -159,8 +181,6 @@ private:
 	static constexpr float kWallrunSameWallCooldown  = 1.0f; // seconds
 	static constexpr bool  kWallrunDetachOnSideInput = true; // 左右入力で離脱するか
 	static constexpr float kWallrunVerticalDamping   = 0.3f; // 地上ジャンプからの垂直速度減衰
-	static constexpr float kWallrunCameraDetachAngle = 0.5f;
-	// カメラが壁から離れる角度閾値（cos60°）
 
 	// Double jump
 	static constexpr float kDoubleJumpVelocityHu = 300.0f;

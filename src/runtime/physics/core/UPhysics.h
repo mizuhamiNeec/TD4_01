@@ -104,15 +104,15 @@ namespace UPhysics {
 					const auto&    node  = bvh->nodes[index];
 
 #ifdef _DEBUG
-					Vec3 center = (node.bounds.min + node.bounds.max) *
-						0.5f;
-					const Vec3 size = node.bounds.max - node.bounds.min;
-					Debug::DrawBox(
-						center,
-						Quaternion::identity,
-						size,
-						Vec4::orange
-					);
+					// Vec3 center = (node.bounds.min + node.bounds.max) *
+					// 	0.5f;
+					// const Vec3 size = node.bounds.max - node.bounds.min;
+					// Debug::DrawBox(
+					// 	center,
+					// 	Quaternion::identity,
+					// 	size,
+					// 	Vec4::orange
+					// );
 #endif
 
 					// 現在の最良TOIを使った早期終了

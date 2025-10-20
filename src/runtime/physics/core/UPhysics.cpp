@@ -21,46 +21,46 @@ namespace UPhysics {
 	}
 
 	void Engine::Update(float) const {
-#ifdef _DEBUG
-		const auto camera = CameraManager::GetActiveCamera();
-		if (camera) {
-			Mat4 invView = camera->GetViewMat().Inverse();
-			Vec3 start = invView.GetTranslate();
-			Vec3 dir = invView.GetForward();
-
-			dir.Normalize();
-			const Unnamed::Ray ray = {
-				.origin = start,
-				.dir = dir,
-				.invDir = 1.0f / dir,
-				.tMin = 0.0f,
-				.tMax = 1e30f
-			};
-
-			Debug::DrawAxis(
-				start,
-				Quaternion::identity
-			);
-
-			Hit hit;
-			if (RayCast(ray, &hit)) {
-				Debug::DrawRay(
-					start,
-					dir * hit.t,
-					Vec4::blue
-				);
-				Debug::DrawAxis(
-					hit.pos,
-					Quaternion::identity
-				);
-				Debug::DrawRay(
-					hit.pos,
-					hit.normal,
-					Vec4::magenta
-				);
-			}
-		}
-#endif
+		// #ifdef _DEBUG
+		// 		const auto camera = CameraManager::GetActiveCamera();
+		// 		if (camera) {
+		// 			Mat4 invView = camera->GetViewMat().Inverse();
+		// 			Vec3 start = invView.GetTranslate();
+		// 			Vec3 dir = invView.GetForward();
+		//
+		// 			dir.Normalize();
+		// 			const Unnamed::Ray ray = {
+		// 				.origin = start,
+		// 				.dir = dir,
+		// 				.invDir = 1.0f / dir,
+		// 				.tMin = 0.0f,
+		// 				.tMax = 1e30f
+		// 			};
+		//
+		// 			Debug::DrawAxis(
+		// 				start,
+		// 				Quaternion::identity
+		// 			);
+		//
+		// 			Hit hit;
+		// 			if (RayCast(ray, &hit)) {
+		// 				Debug::DrawRay(
+		// 					start,
+		// 					dir * hit.t,
+		// 					Vec4::blue
+		// 				);
+		// 				Debug::DrawAxis(
+		// 					hit.pos,
+		// 					Quaternion::identity
+		// 				);
+		// 				Debug::DrawRay(
+		// 					hit.pos,
+		// 					hit.normal,
+		// 					Vec4::magenta
+		// 				);
+		// 			}
+		// 		}
+		// #endif
 	}
 
 	/// @brief エンティティを登録する関数

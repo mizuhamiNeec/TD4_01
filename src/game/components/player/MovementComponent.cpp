@@ -2,16 +2,15 @@
 
 #include <algorithm>
 #include <cmath>
-
+#include <tuple>
+#include <array>
 #include <engine/Camera/CameraManager.h>
 #include <engine/Components/Camera/CameraComponent.h>
 #include <engine/Components/Transform/SceneComponent.h>
-#include <engine/Entity/Entity.h>
 #include <engine/ImGui/ImGuiWidgets.h>
-#include <engine/Input/InputSystem.h>
 #include <engine/OldConsole/ConVarManager.h>
 
-static constexpr std::string_view kChannel = "MovementComponent";
+#include "engine/Input/InputSystem.h"
 
 void MovementComponent::OnAttach(Entity& owner) { Component::OnAttach(owner); }
 
@@ -53,8 +52,7 @@ void MovementComponent::Update(const float dt) {
 	ProcessMovement(dt);
 }
 
-void MovementComponent::PostPhysics(float dt) {
-	(void)dt;
+void MovementComponent::PostPhysics(float) {
 }
 
 /// @brief インスペクタ内のImGui描画
@@ -63,19 +61,15 @@ void MovementComponent::DrawInspectorImGui() {
 	if (ImGui::CollapsingHeader("MovementComponent",
 	                            ImGuiTreeNodeFlags_DefaultOpen)) {
 		ImGui::Text("State: %s", ToString(mData.state));
-		ImGuiWidgets::DragVec3(
-			"Velocity",
-			mData.velocity,
-			Vec3::zero,
-			0.1f,
-			"%.3f"
-		);
+		ImGuiWidgets::DragVec3("Velocity", mData.velocity, Vec3::zero, 0.1f,
+		                       "%.3f");
 		ImGui::Checkbox("Grounded", &mData.isGrounded);
 		ImGui::Text("HeightHU: %.2f  WidthHU: %.2f", mData.currentHeightHu,
 		            mData.currentWidthHu);
 
+		// Wallrun info
 		if (mData.isWallRunning) {
-			ImGui::TextColored({0.0f, 1.0f, 1.0f, 1.0f}, "ウォールラン! (%.2fs)",
+			ImGui::TextColored({0.0f, 1.0f, 1.0f, 1.0f}, "WALLRUNNING! (%.2fs)",
 			                   mData.wallRunTime);
 			ImGuiWidgets::DragVec3("WallNormal", mData.wallRunNormal,
 			                       Vec3::zero, 0.1f, "%.3f");
@@ -90,6 +84,23 @@ void MovementComponent::DrawInspectorImGui() {
 		} else {
 			ImGui::Text("Stuck Timer: %.2fs", mData.stuckTime);
 		}
+
+		// Ground slope thresholds
+		if (ImGui::TreeNode("Ground Slope Settings")) {
+			ImGui::SliderFloat("Enter Threshold",
+			                   &mData.groundEnterSlopeThreshold, 0.0f, 1.0f,
+			                   "%.3f");
+			ImGui::Text("  (接地開始: cos(45°) = 0.707)");
+			ImGui::SliderFloat("Leave Threshold",
+			                   &mData.groundLeaveSlopeThreshold, 0.0f, 1.0f,
+			                   "%.3f");
+			ImGui::Text("  (接地解除: cos(60°) = 0.5)");
+			if (ImGui::Button("Reset to Default")) {
+				mData.groundEnterSlopeThreshold = 0.707f;
+				mData.groundLeaveSlopeThreshold = 0.5f;
+			}
+			ImGui::TreePop();
+		}
 	}
 #endif
 }
@@ -97,7 +108,7 @@ void MovementComponent::DrawInspectorImGui() {
 Vec3& MovementComponent::GetVelocity() { return mData.velocity; }
 
 Vec3 MovementComponent::GetHeadPos() const {
-	// カメラの座標は頭から少し下げた位置
+	// 足元原点前提：頭は currentHeightHU から少し下げる
 	return mScene->GetWorldPos() + Vec3::up * Math::HtoM(
 		mData.currentHeightHu - 8.0f);
 }
@@ -131,7 +142,6 @@ void MovementComponent::ProcessInput() {
 	if (InputSystem::IsPressed("moveleft")) mData.vecMoveInput.x -= 1.0f;
 	if (mData.vecMoveInput.SqrLength() > 1.0f) mData.vecMoveInput.Normalize();
 
-	// 入力方向をカメラ基準にする
 	Vec3 wish = Vec3::zero;
 	if (auto cam = CameraManager::GetActiveCamera()) {
 		Vec3 f = cam->GetViewMat().Inverse().GetForward();
@@ -148,17 +158,17 @@ void MovementComponent::ProcessInput() {
 }
 
 void MovementComponent::ProcessMovement(const float dt) {
-	// 前フレームの接地状態
+	// --- 前フレームの接地状態を記録 -------------------------------------------
 	mData.wasGroundedLastFrame = mData.isGrounded;
 
-	// しゃがんでいるかで身長を設定
+	// --- しゃがんでいるかで高さを決定 -------------------------------------------
 	float targetHU = mData.wishCrouch ?
 		                 mData.crouchHeightHu :
 		                 mData.defaultHeightHu;
 	if (targetHU > mData.currentHeightHu) {
-		// 頭上に障害物がないかチェック
-		const Vec3         posFeet = mScene->GetWorldPos();
-		const Unnamed::Box test    = {
+		// 立てるかチェック
+		Vec3         posFeet = mScene->GetWorldPos();
+		Unnamed::Box test    = {
 			.center = posFeet + Vec3::up * Math::HtoM(targetHU * 0.5f),
 			.halfSize = Math::HtoM({
 				mData.currentWidthHu * 0.5f, targetHU * 0.5f,
@@ -178,15 +188,15 @@ void MovementComponent::ProcessMovement(const float dt) {
 			std::lerp(mData.currentHeightHu, targetHU, 15.0f * dt);
 	}
 
-	// 高さを再計算
+	// --- 高さを再計算 ---------------------------------------------------------
 	UpdateHullDimensions();
 
-	// しゃがみ、走り状態で速度を変更
+	// --- Speed setup ---------------------------------------------------------
 	mData.currentSpeed = mData.wishCrouch ?
 		                     mData.crouchSpeed :
 		                     mData.sprintSpeed;
 
-	// スライディング
+	// --- Slide attempt (地上で速度が十分にあり、しゃがみが押された) ----------
 	if (mData.isGrounded && !mData.isSliding && CanSlide()) {
 		TryStartSlide();
 	}
@@ -196,11 +206,12 @@ void MovementComponent::ProcessMovement(const float dt) {
 		UpdateSlide(dt);
 	}
 
-	// ジャンプ
+	// --- Jump ---------------------------------------------------------------
 	if (mData.wishJump && mData.isGrounded) {
-		mData.velocity.y = Math::HtoM(kJumpVelocityHu);
-		mData.isGrounded = false;
-		mData.state      = MOVEMENT_STATE::AIR;
+		mData.velocity.y    = Math::HtoM(kJumpVelocityHu);
+		mData.isGrounded    = false;
+		mData.state         = MOVEMENT_STATE::AIR;
+		mData.hasDoubleJump = true;
 
 		// スライディング中のジャンプでスライディング終了
 		if (mData.isSliding) {
@@ -221,12 +232,14 @@ void MovementComponent::ProcessMovement(const float dt) {
 		                        0.0f :
 		                        mData.currentSpeed;
 
-	// ウォールラン
+	// --- Wallrun attempt (if in air and conditions met) --------------------
 	mData.timeSinceLastWallRun += dt;
 	if (!mData.isGrounded && !mData.isWallRunning && CanWallrun()) {
 		TryStartWallrun();
 	}
 
+	// --- Jump (ground, wallrun, or double jump) -----------------------------
+	// ジャンプキーが離されてから押された検出（バニーホップ対策）
 	const bool jumpPressed = mData.wishJump && !mData.lastFrameWishJump;
 
 	if (mData.wishJump) {
@@ -237,15 +250,19 @@ void MovementComponent::ProcessMovement(const float dt) {
 			mData.state         = MOVEMENT_STATE::AIR;
 			mData.hasDoubleJump = true; // 地上ジャンプでダブルジャンプリセット
 		} else if (mData.isWallRunning && !mData.wallRunJumpWasPressed) {
-			// 現在の進行方向の速度
+			// Wallrun jump: キーを一度離してから再度押した場合のみ
+			// (バニーホップでの誤発動防止)
+			// 壁方向入力は完全に無視（常にジャンプ可能）
+
+			// 現在の進行方向の速度を取得
 			Vec3 forwardVel = mData.wallRunDirection * mData.velocity.Dot(
 				mData.wallRunDirection);
 
-			// 壁から離れる方向 ( 壁に対して右上に発射 )
+			// 壁から離れる方向（横と上）
 			Vec3 awayDir = mData.wallRunNormal * 0.7f + Vec3::up * 1.0f;
 			awayDir.Normalize();
 
-			// 進行方向の速度 + 壁から離れるジャンプ
+			// 進行方向の速度 + 壁から離れるブースト
 			mData.velocity = forwardVel + awayDir * Math::HtoM(
 				kWallrunJumpForce);
 
@@ -253,7 +270,7 @@ void MovementComponent::ProcessMovement(const float dt) {
 			EndWallrun();
 		} else if (!mData.isGrounded && !mData.isWallRunning && mData.
 			hasDoubleJump && jumpPressed) {
-			// ダブルジャンプ
+			// ダブルジャンプ（空中で、キーを離してから押した場合）
 			mData.velocity.y    = Math::HtoM(kDoubleJumpVelocityHu);
 			mData.hasDoubleJump = false; // 使用済み
 		}
@@ -287,13 +304,19 @@ void MovementComponent::ProcessMovement(const float dt) {
 		if (!mData.isGrounded) ApplyHalfGravity(dt);
 	}
 
-	mData.state = mData.isWallRunning ?
-		              MOVEMENT_STATE::WALL_RUN :
-		              mData.isSliding ?
-		              MOVEMENT_STATE::SLIDE :
-		              MOVEMENT_STATE::AIR;
+	// --- Movement & collision response (Source-style) ------------------------
+	MoveWithCollisions(dt);
 
-	// 着地検出
+	// --- Landing detection (着地直前の速度を保存) ---------------------------
+	// 空中で下方向に移動している場合、着地時の速度として保存
+	if (!mData.isGrounded && mData.velocity.y < 0.0f) {
+		mData.lastLandingVelocityY = mData.velocity.y;
+	}
+
+	// --- Stuck detection & resolution ----------------------------------------
+	DetectAndResolveStuck(dt);
+
+	// --- Landing detection (着地検出) ----------------------------------------
 	// 前フレームで空中、今フレームで地上 = 着地
 	if (!mData.wasGroundedLastFrame && mData.isGrounded && !mData.isWallRunning
 		&& !mData.isSliding) {
@@ -302,7 +325,7 @@ void MovementComponent::ProcessMovement(const float dt) {
 		mData.justLanded = false;
 	}
 
-	// NaNチェック & 速度クランプ
+	// --- Safety --------------------------------------------------------------
 	CheckForNaNAndClamp();
 }
 
@@ -386,14 +409,13 @@ void MovementComponent::AirAccelerate(
 	const float accel, const float dt
 ) {
 	if (dir.IsZero() || speed <= 0.0f || accel <= 0.0f) return;
-	float       wishspd = std::min(speed, kAirSpeedCap);
+	const float wishspd = std::min(speed, kAirSpeedCap);
 	const float cur     = Math::MtoH(mData.velocity).Dot(dir);
 	const float add     = wishspd - cur;
 	if (add <= 0.f) return;
-	float acc = std::min(accel * speed * dt, add);
+	const float acc = std::min(accel * speed * dt, add);
 	mData.velocity += Math::HtoM(acc) * dir;
 }
-
 
 /// @brief ハル(当たり判定)の寸法を更新
 void MovementComponent::UpdateHullDimensions() {
@@ -409,57 +431,317 @@ void MovementComponent::UpdateHullDimensions() {
 	};
 }
 
-/// @brief NaNチェック & 速度クランプ
-/// 速度は cvar sv_maxvelocity クランプされる
-/// NaNがあれば0にリセット
 void MovementComponent::CheckForNaNAndClamp() {
 	const float maxVel = ConVarManager::GetConVar("sv_maxvelocity")->
 		GetValueAsFloat();
 	for (int i = 0; i < 3; ++i) {
-		if (std::isnan(mData.velocity[i])) {
-			DevMsg(
-				kChannel,
-				"{}  Got a NaN velocity {}",
-				mOwner->GetName(),
-				StrUtil::DescribeAxis(i)
-			);
-			mData.velocity[i] = 0.0f;
-		}
+		if (std::isnan(mData.velocity[i])) mData.velocity[i] = 0.0f;
 		if (std::isnan(mScene->GetWorldPos()[i])) {
-			DevMsg(
-				kChannel,
-				"{}  Got a NaN origin on {}",
-				mOwner->GetName(),
-				StrUtil::DescribeAxis(i)
-			);
 			Vec3 pos = mScene->GetWorldPos();
 			pos[i]   = 0.0f;
 			mScene->SetWorldPos(pos);
 		}
-		if (mData.velocity[i] > maxVel) {
-			DevMsg(
-				kChannel,
-				"{}  Got a velocity too high on {}",
-				mOwner->GetName(),
-				StrUtil::DescribeAxis(i)
-			);
-			mData.velocity[i] = maxVel;
+		mData.velocity[i] = std::min(mData.velocity[i], Math::HtoM(maxVel));
+		mData.velocity[i] = std::max(mData.velocity[i], -Math::HtoM(maxVel));
+	}
+}
+
+namespace {
+	inline Vec3 ClipVelocity(const Vec3& vel, const Vec3& normal,
+	                         float       overbounce) {
+		// Source/Quake PM_ClipVelocity
+		const float backoff = vel.Dot(normal) * overbounce;
+		Vec3        out     = vel - normal * backoff;
+		// Numerical cleanup to avoid jitter at tiny scales
+		if (std::fabs(out.x) < 1e-7f) out.x = 0.0f;
+		if (std::fabs(out.y) < 1e-7f) out.y = 0.0f;
+		if (std::fabs(out.z) < 1e-7f) out.z = 0.0f;
+		return out;
+	}
+}
+
+// ----------------------------------------------------------------------------
+// Collision & response (Source-style slide/step and ground snap)
+// ----------------------------------------------------------------------------
+void MovementComponent::MoveWithCollisions(const float dt) {
+	// If no physics engine, move freely
+	if (!mUPhysicsEngine) {
+		mScene->SetWorldPos(mScene->GetWorldPos() + mData.velocity * dt);
+		mData.isGrounded = false;
+		UpdateHullDimensions();
+		return;
+	}
+
+	const auto buildHullAtFeet = [&](const Vec3& feetPos) -> Unnamed::Box {
+		return Unnamed::Box{
+			.center = feetPos + Vec3::up * Math::HtoM(
+				mData.currentHeightHu * 0.5f),
+			.halfSize = Math::HtoM({
+				mData.currentWidthHu * 0.5f,
+				mData.currentHeightHu * 0.5f,
+				mData.currentWidthHu * 0.5f,
+			})
+		};
+	};
+
+	auto slideMove = [&](const Vec3& startFeet,
+	                     const Vec3& vIn,
+	                     const float timeTotal) -> std::tuple<
+		Vec3, Vec3, bool> {
+		Vec3  posFeet  = startFeet;
+		Vec3  vel      = vIn;
+		float timeLeft = std::max(0.0f, timeTotal);
+		bool  anyHit   = false;
+
+		std::array<Vec3, kMaxClipPlanes> planes{};
+		int                              planeCount = 0;
+
+		for (int bump = 0; bump < kMaxBumps && timeLeft > 0.0f; ++bump) {
+			Unnamed::Box box = buildHullAtFeet(posFeet);
+
+			Vec3  move    = vel * timeLeft;
+			float moveLen = move.Length();
+			if (moveLen <= 1e-7f) break;
+
+			Vec3  dir     = move / moveLen;
+			float castLen = moveLen + CastSkinM();
+
+			UPhysics::Hit hit{};
+			if (!mUPhysicsEngine->BoxCast(box, dir, castLen, &hit)) {
+				// Free flight
+				posFeet += move;
+				timeLeft = 0.0f;
+				break;
+			}
+
+			anyHit = true;
+
+			// Move up to contact (leave a tiny skin)
+			const float travel  = std::clamp(hit.t, 0.0f, castLen);
+			const float allowed = std::min(moveLen,
+			                               std::max(0.0f, travel - SkinM()));
+			float usedFrac = (moveLen > 1e-7f) ? (allowed / moveLen) : 1.0f;
+			// Ensure forward progress to avoid infinite loops
+			usedFrac = std::clamp(usedFrac, kFracEps, 1.0f);
+
+			posFeet += dir * (allowed);
+			timeLeft *= (1.0f - usedFrac);
+
+			// Record collision plane
+			Vec3 n = hit.normal;
+			if (!n.IsZero()) n.Normalize();
+			if (planeCount < kMaxClipPlanes) {
+				planes[planeCount++] = n;
+			}
+
+			// Resolve velocity against accumulated planes (crease support)
+			// Start from the original intent for this bump step
+			Vec3 primalVel = vel;
+			// First, clip against each plane
+			for (int i = 0; i < planeCount; ++i) {
+				if (primalVel.Dot(planes[i]) < 0.0f) {
+					primalVel = ClipVelocity(primalVel, planes[i], 1.001f);
+				}
+			}
+			vel = primalVel;
+
+			// If still pushing into any plane, try sliding along crease of two planes
+			for (int i = 0; i < planeCount; ++i) {
+				if (vel.Dot(planes[i]) >= 0.0f) continue;
+				bool resolved = false;
+				for (int j = 0; j < planeCount; ++j) {
+					if (i == j) continue;
+					Vec3        dirCrease = planes[i].Cross(planes[j]);
+					const float lenSq     = dirCrease.SqrLength();
+					if (lenSq < 1e-8f) continue;
+					dirCrease /= std::sqrt(lenSq);
+					float speedAlong = vel.Dot(dirCrease);
+					vel              = dirCrease * speedAlong;
+					// Ensure not into any plane now
+					bool ok = true;
+					for (int k = 0; k < planeCount; ++k) {
+						if (vel.Dot(planes[k]) < -1e-6f) {
+							ok = false;
+							break;
+						}
+					}
+					if (ok) {
+						resolved = true;
+						break;
+					}
+				}
+				if (!resolved) {
+					// Trapped by >2 planes: stop
+					vel = Vec3::zero;
+				}
+				break;
+			}
 		}
-		if (mData.velocity[i] < -maxVel) {
-			DevMsg(
-				kChannel,
-				"{}  Got a velocity too low on {}",
-				mOwner->GetName(),
-				StrUtil::DescribeAxis(i)
-			);
-			mData.velocity[i] = -maxVel;
+
+		return {posFeet, vel, anyHit};
+	};
+
+	Vec3 startFeet = mScene->GetWorldPos();
+
+	// Path A: no step
+	auto [posA, velA, hitA] = slideMove(startFeet, mData.velocity, dt);
+
+	// Optional step attempt when previously grounded and moving horizontally
+	Vec3 posFinal = posA;
+	Vec3 velFinal = velA;
+
+	Vec3 horizVel       = mData.velocity;
+	horizVel.y          = 0.0f;
+	const bool wantStep = mData.wasGroundedLastFrame && (horizVel.SqrLength() >
+		1e-8f);
+	if (wantStep) {
+		// Step up
+		Vec3          posUp = startFeet + Vec3::up * StepHeightM();
+		Unnamed::Box  boxUp = buildHullAtFeet(posUp);
+		UPhysics::Hit ov{};
+		const bool    blockedUp = mUPhysicsEngine->BoxOverlap(boxUp, &ov);
+		if (!blockedUp) {
+			// Move while raised
+			auto [posB, velB, hitB] = slideMove(posUp, mData.velocity, dt);
+
+			// Step down
+			Unnamed::Box  boxAt = buildHullAtFeet(posB);
+			UPhysics::Hit downHit{};
+			if (mUPhysicsEngine->BoxCast(boxAt, -Vec3::up,
+			                             StepHeightM() + RestOffsetM(),
+			                             &downHit)) {
+				// Only step down onto walkable slopes (use BoxCast normal)
+				// ヒステリシス: 既に接地していれば緩い閾値、空中からなら厳しい閾値
+				const float threshold = mData.isGrounded ?
+					                        mData.groundLeaveSlopeThreshold :
+					                        mData.groundEnterSlopeThreshold;
+				if (downHit.normal.y >= threshold) {
+					float drop = std::max(0.0f, downHit.t - RestOffsetM());
+					posB += -Vec3::up * drop;
+				}
+			}
+
+			const float progA = (Vec3(posA.x - startFeet.x, 0.0f,
+			                          posA.z - startFeet.z)).Length();
+			const float progB = (Vec3(posB.x - startFeet.x, 0.0f,
+			                          posB.z - startFeet.z)).Length();
+			if (progB > progA + 1e-4f) {
+				posFinal = posB;
+				velFinal = velB;
+			}
 		}
 	}
+
+	// Ground detection and snapping (relaxed for down-slopes)
+	bool isGrounded = false;
+	Vec3 posFeet    = posFinal;
+
+	{
+		Unnamed::Box  box = buildHullAtFeet(posFeet);
+		UPhysics::Hit gHit{};
+		// Use a more permissive snap range to stay attached on down-slopes
+		const float snapRange = RestOffsetM() + std::max(
+			MaxAdhesionM(), StepHeightM());
+		if (mUPhysicsEngine->BoxCast(box, -Vec3::up, snapRange, &gHit)) {
+			// Do not snap if actively jumping upward this frame
+			if (!(mData.wishJump && mData.velocity.y > 0.0f)) {
+				float drop = std::max(0.0f, gHit.t - RestOffsetM());
+				posFeet += -Vec3::up * drop;
+				// ヒステリシス: 接地中なら緩い閾値で判定、空中からなら厳しい閾値で判定
+				const float threshold = mData.isGrounded ?
+					                        mData.groundLeaveSlopeThreshold :
+					                        mData.groundEnterSlopeThreshold;
+				isGrounded             = (gHit.normal.y >= threshold);
+				mData.lastGroundNormal = gHit.normal;
+				mData.lastGroundDistM  = gHit.t;
+			}
+		}
+	}
+
+	// Apply back to scene and state
+	mScene->SetWorldPos(posFeet);
+	mData.velocity   = velFinal;
+	mData.isGrounded = isGrounded;
+	if (mData.isGrounded && mData.velocity.y < 0.0f) {
+		mData.velocity.y = 0.0f;
+	}
+	if (!mData.isWallRunning && !mData.isSliding) {
+		mData.state = mData.isGrounded ?
+			              MOVEMENT_STATE::GROUND :
+			              MOVEMENT_STATE::AIR;
+	}
+
+	UpdateHullDimensions();
 }
 
 // ----------------------------------------------------------------------------
 // Stuck detection & resolution
 // ----------------------------------------------------------------------------
+void MovementComponent::DetectAndResolveStuck(float dt) {
+	Vec3 currentPos = mScene->GetWorldPos();
+
+	// 移動距離を計算
+	float distMoved = (currentPos - mData.lastPosition).Length();
+
+	// 入力があるかチェック
+	bool hasInput = !mData.vecMoveInput.IsZero() || mData.wishJump;
+
+	// スタック判定：入力があるのにほとんど動いていない
+	if (hasInput && distMoved < kStuckThreshold * dt) {
+		mData.stuckTime += dt;
+
+		// 一定時間スタックしたら脱出を試みる
+		if (mData.stuckTime >= kStuckTimeThreshold) {
+			mData.isStuck = true;
+
+			// 上方向に押し出す（複数の方向を試す）
+			Vec3 escapeAttempts[] = {
+				Vec3::up * kStuckEscapeForce,
+				Vec3(1, 2, 0).Normalized() * kStuckEscapeForce,
+				Vec3(-1, 2, 0).Normalized() * kStuckEscapeForce,
+				Vec3(0, 2, 1).Normalized() * kStuckEscapeForce,
+				Vec3(0, 2, -1).Normalized() * kStuckEscapeForce,
+			};
+
+			bool escaped = false;
+			for (const Vec3& escapeVel : escapeAttempts) {
+				// 脱出方向に少し移動を試みる
+				Vec3 testPos = currentPos + escapeVel * dt * 2.0f;
+				mScene->SetWorldPos(testPos);
+				UpdateHullDimensions();
+
+				// オーバーラップチェック
+				if (mUPhysicsEngine) {
+					UPhysics::Hit ov{};
+					if (!mUPhysicsEngine->BoxOverlap(mData.hull, &ov)) {
+						// 脱出成功
+						mData.velocity += escapeVel;
+						escaped = true;
+						break;
+					}
+				}
+			}
+
+			if (!escaped) {
+				// すべての方向で失敗した場合、元の位置に戻す
+				mScene->SetWorldPos(currentPos);
+				UpdateHullDimensions();
+			}
+
+			// タイマーをリセット
+			mData.stuckTime = 0.0f;
+		}
+	} else {
+		// 正常に移動している
+		mData.stuckTime = std::max(0.0f, mData.stuckTime - dt * 2.0f);
+		if (mData.stuckTime == 0.0f) {
+			mData.isStuck = false;
+		}
+	}
+
+	// 現在位置を記録
+	mData.lastPosition = mScene->GetWorldPos();
+}
 
 // ----------------------------------------------------------------------------
 // Wallrun
@@ -520,53 +802,57 @@ bool MovementComponent::TryStartWallrun() {
 				continue;
 			}
 
-			// ウォールラン開始
+			// Wallrun開始
 			mData.isWallRunning = true;
 			mData.wallRunNormal = wallNormal;
 			mData.wallRunTime   = 0.0f;
 			mData.state         = MOVEMENT_STATE::WALL_RUN;
 
-			// ウォールラン開始時のジャンプ状態を記録
+			// ウォールラン開始時のジャンプ状態を記録（バニーホップ対策）
 			mData.wallRunJumpWasPressed = mData.wishJump;
 
 			// ウォールラン開始でダブルジャンプリセット
 			mData.hasDoubleJump = true;
 
-			// 速度を壁に沿った方向に調整
+			// 速度を壁に沿った方向に調整（Titanfall 2スタイル）
+			// 本家：カメラの向き（前進方向）に進む
 			Vec3 vel_horz      = mData.velocity;
 			vel_horz.y         = 0;
 			float currentSpeed = vel_horz.Length();
 
-			// 壁に沿った方向を計算
+			// 壁に沿った方向を計算（上ベクトルと壁法線の外積）
 			Vec3 along = Vec3::up.Cross(wallNormal).Normalized();
 
 			// カメラ方向と同じ向きに揃える
+			// これにより、±X方向の壁でも正しく動作する
 			if (along.Dot(camForward) < 0) {
 				along = -along;
 			}
 			mData.wallRunDirection = along;
 
 			// 現在の速度を壁に沿った方向に投影
+			// これにより、元の速度を可能な限り保持
 			float alongSpeed = vel_horz.Dot(mData.wallRunDirection);
 			if (std::abs(alongSpeed) > 1e-3f) {
 				// 壁に沿った方向の速度を使用
 				mData.velocity = mData.wallRunDirection * std::abs(alongSpeed);
 			} else {
-				// 速度がほぼ0の場合、現在の速度のまま
+				// 速度がほぼ0の場合、現在の速度をそのまま使用
 				mData.velocity = mData.wallRunDirection * currentSpeed;
 			}
 
-			// 垂直速度の処理
+			// 垂直速度の処理（地上ジャンプからの跳ね防止）
 			float originalY = mData.velocity.y;
 			if (originalY > 0) {
+				// 上昇中（地上ジャンプからの場合）は大幅に減衰
 				mData.velocity.y = originalY * kWallrunVerticalDamping;
 			} else if (originalY < 0) {
 				// 落下中は軽めに減衰
 				mData.velocity.y = originalY * 0.3f;
 			}
 
-			// ウォールラン開始時にちょっと加速
-			float boostAmount = Math::HtoM(50.0f); // 50 HU/s!
+			// ウォールラン開始時に小さなブースト（本家の感覚）
+			float boostAmount = Math::HtoM(50.0f); // 50 HU/sのブースト
 			mData.velocity += mData.wallRunDirection * boostAmount;
 
 			return true;
@@ -638,24 +924,35 @@ void MovementComponent::UpdateWallrun(float dt) {
 	// 速度が遅すぎたら終了
 	Vec3 vel_horz = mData.velocity;
 	vel_horz.y    = 0;
-	if (Math::MtoH(vel_horz.SqrLength()) < kWallrunMinSpeed) {
+	if (Math::MtoH(vel_horz.Length()) < kWallrunMinSpeed * 0.5f) {
 		EndWallrun();
 		return;
 	}
 
-	// カメラ+入力方向を考慮した判定
-	// wishDirectionはすでにカメラ方向を考慮した入力方向
-	if (!mData.wishDirection.IsZero()) {
-		// プレイヤーの入力方向が壁から離れる方向かチェック
-		// 壁の法線と入力方向の内積で判定
-		float inputToWallDot = mData.wishDirection.Dot(-mData.wallRunNormal);
+	// Titanfall 2本家と同じ：前進入力なしでも続行
+	// 左右入力での離脱（オプション）
+	if (kWallrunDetachOnSideInput && std::abs(mData.vecMoveInput.x) > 0.5f) {
+		// 壁が左右どちらにあるか判定
+		Vec3 camForward = Vec3::zero;
+		if (auto cam = CameraManager::GetActiveCamera()) {
+			Vec3 f = cam->GetViewMat().Inverse().GetForward();
+			f.y    = 0;
+			if (!f.IsZero()) f.Normalize();
+			camForward = f;
+		}
 
-		// 入力が壁の方向の場合は負の値になる
-		// 0より大きい = 壁から離れる方向への入力
-		// kWallrunCameraDetachAngle以上壁から離れた方向への入力があれば離脱
-		if (inputToWallDot > kWallrunCameraDetachAngle) {
-			EndWallrun();
-			return;
+		if (!camForward.IsZero()) {
+			Vec3  camRight = Vec3::up.Cross(camForward).Normalized();
+			float wallSide = camRight.Dot(mData.wallRunNormal);
+
+			// 壁から離れる方向への入力で離脱
+			// wallSide > 0 なら壁は右側 -> 右入力(x>0)で離脱
+			// wallSide < 0 なら壁は左側 -> 左入力(x<0)で離脱
+			if ((wallSide > 0 && mData.vecMoveInput.x > 0.5f) ||
+				(wallSide < 0 && mData.vecMoveInput.x < -0.5f)) {
+				EndWallrun();
+				return;
+			}
 		}
 	}
 }
@@ -689,7 +986,7 @@ void MovementComponent::Wallrun(const float wishspeed, const float dt) {
 		if (speed > 0.1f) {
 			const float fric = ConVarManager::GetConVar("sv_friction")->
 				GetValueAsFloat();
-			const float drop = speed * fric * dt * 0.25f; // 壁では摩擦が弱め
+			const float drop = speed * fric * dt * 0.5f; // 壁では摩擦が弱め
 			const float news = std::max(0.0f, speed - drop);
 			if (news != speed && speed > 0) {
 				mData.velocity *= (news / speed);
@@ -703,8 +1000,8 @@ void MovementComponent::Wallrun(const float wishspeed, const float dt) {
 		mData.velocity += mData.wallRunNormal * intoWall;
 	}
 
-	// 壁に吸い付く
-	const float pullForce = Math::HtoM(40.0f);
+	// 壁に軽く吸い付く力を追加（本家の感覚）
+	const float pullForce = Math::HtoM(80.0f); // 80 HU/s
 	mData.velocity += -mData.wallRunNormal * pullForce * dt;
 }
 
@@ -795,9 +1092,9 @@ void MovementComponent::EndSlide() {
 
 void MovementComponent::Slide([[maybe_unused]] float wishspeed, float dt) {
 	// スライディング中の摩擦（通常より低い）
-	Vec3 vel_horz = mData.velocity;
-	vel_horz.y    = 0;
-	float speed   = Math::MtoH(vel_horz.Length());
+	Vec3 velHorz = mData.velocity;
+	velHorz.y    = 0;
+	float speed  = Math::MtoH(velHorz.Length());
 
 	if (speed > 0.1f) {
 		// スライディング専用の低摩擦
@@ -810,18 +1107,18 @@ void MovementComponent::Slide([[maybe_unused]] float wishspeed, float dt) {
 		}
 	}
 
-	// スライディング方向への入力で少し方向転換可能（Titanfall 2スタイル）
+	// スライディング方向への入力で少し方向転換可能
 	if (!mData.wishDirection.IsZero()) {
 		Vec3 wishDir = mData.wishDirection;
 		wishDir.y    = 0;
 		if (!wishDir.IsZero()) {
 			wishDir.Normalize();
 
-			// 現在の方向とwishDirを少しずつブレンド（10%）
-			Vec3 currentDir = vel_horz.Normalized();
+			// 現在の方向とwishDirを少しずつブレンド
+			Vec3 currentDir = velHorz.Normalized();
 			Vec3 newDir = (currentDir * 0.95f + wishDir * 0.05f).Normalized();
 
-			float currentSpeed = vel_horz.Length();
+			float currentSpeed = velHorz.Length();
 			mData.velocity.x   = newDir.x * currentSpeed;
 			mData.velocity.z   = newDir.z * currentSpeed;
 		}

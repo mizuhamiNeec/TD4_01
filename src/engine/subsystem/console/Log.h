@@ -7,131 +7,77 @@
 #include <engine/subsystem/interface/ServiceLocator.h>
 #include <core/UnnamedMacro.h>
 
-void Print(
-	Unnamed::LogLevel level,
-	std::string_view  channel,
-	std::string_view  message
-);
+namespace
+{
+	void Print(
+		const Unnamed::LogLevel level,
+		const std::string_view  channel,
+		const std::string_view  message
+	) {
+		std::string out;
 
-inline void Print(
-	const Unnamed::LogLevel level,
-	const std::string_view  channel,
-	const std::string_view  message
-) {
-	std::string out;
+		// レベル・チャンネルが空の場合はチャンネル名を出力しない
+		if (level != Unnamed::LogLevel::None && !Unnamed::kChannelNone.empty()) {
+			out =
+				"[" +
+				std::string(channel) +
+				"] " +
+				std::string(message);
+		} else {
+			out = std::string(message);
+		}
 
-	// レベル・チャンネルがNoneの場合はチャンネル名を出力しない
-	if (level != Unnamed::LogLevel::None && channel != "None") {
-		out =
-			"[" +
-			std::string(channel) +
-			"] " +
-			std::string(message);
-	} else {
-		out =
-			std::string(message);
+		// コンソールの出力
+		std::cout << out << "\n";
+
+		// VSの出力
+		OutputDebugStringA(out.data());
+		OutputDebugStringA("\n");
 	}
 
-	// コンソールの出力
-	std::cout << out << "\n";
-
-	// VSの出力
-	OutputDebugStringA(out.data());
-	OutputDebugStringA("\n");
-}
-
-template <typename... Args>
-void Msg(
-	const std::string_view&           channel,
-	const std::format_string<Args...> format, Args&&... args
-) {
-	auto*             console = ServiceLocator::Get<Unnamed::ConsoleSystem>();
-	const std::string s = std::format(format, std::forward<Args>(args)...);
-	if (!console) {
-		// ServiceLocator無効時のフォールバック
-		Print(Unnamed::LogLevel::Info, channel, s);
-		return;
+	constexpr std::string_view BaseName(std::string_view path) {
+		const size_t pos1 = path.find_last_of('/');
+		const size_t pos2 = path.find_last_of('\\');
+		const size_t pos = (pos1 == std::string_view::npos) ? pos2
+			: (pos2 == std::string_view::npos) ? pos1
+			: std::max(pos1, pos2);
+		return (pos == std::string_view::npos) ? path : path.substr(pos + 1);
 	}
 
-	console->Print(Unnamed::LogLevel::Info, channel, s);
-}
+	template <typename... Args>
+	void LogCore(
+		const Unnamed::LogLevel level,
+		const std::string_view& channel,
+		const std::source_location location,
+		const std::format_string<Args...> fmt, Args&&... args
+	) {
+		auto* console = ServiceLocator::Get<Unnamed::ConsoleSystem>();
 
-template <typename... Args>
-void DevMsg(
-	const std::string_view&           channel,
-	const std::format_string<Args...> format, Args&&... args
-) {
-	auto*             console = ServiceLocator::Get<Unnamed::ConsoleSystem>();
-	const std::string s = std::format(format, std::forward<Args>(args)...);
-	if (!console) {
-		// ServiceLocator無効時のフォールバック
-		Print(Unnamed::LogLevel::Dev, channel, s);
-		return;
+		const std::string body = std::format(fmt, std::forward<Args>(args)...);
+
+		if (!console) {
+			// ServiceLocator無効時のフォールバック
+			Print(level, channel, body);
+			return;
+		}
+		console->Print(level, channel, body, location);
 	}
-
-	console->Print(Unnamed::LogLevel::Dev, channel, s);
 }
 
-template <typename... Args>
-void Warning(
-	const std::string_view&           channel,
-	const std::format_string<Args...> format, Args&&... args
-) {
-	auto*             console = ServiceLocator::Get<Unnamed::ConsoleSystem>();
-	const std::string s = std::format(format, std::forward<Args>(args)...);
-	if (!console) {
-		// ServiceLocator無効時のフォールバック
-		Print(Unnamed::LogLevel::Warning, channel, s);
-		return;
-	}
+#define Msg(channel, format, ...) \
+	LogCore(Unnamed::LogLevel::Info, channel, std::source_location::current(), format, ##__VA_ARGS__)
 
-	console->Print(Unnamed::LogLevel::Warning, channel, s);
-}
+#define DevMsg(channel, format, ...) \
+	LogCore(Unnamed::LogLevel::Dev, channel, std::source_location::current(), format, ##__VA_ARGS__)
 
-template <typename... Args>
-void Error(
-	const std::string_view&           channel,
-	const std::format_string<Args...> format, Args&&... args
-) {
-	auto*             console = ServiceLocator::Get<Unnamed::ConsoleSystem>();
-	const std::string s = std::format(format, std::forward<Args>(args)...);
-	if (!console) {
-		// ServiceLocator無効時のフォールバック
-		Print(Unnamed::LogLevel::Error, channel, s);
-		return;
-	}
+#define Warning(channel, format, ...) \
+	LogCore(Unnamed::LogLevel::Warning, channel, std::source_location::current(), format, ##__VA_ARGS__)
 
-	console->Print(Unnamed::LogLevel::Error, channel, s);
-}
+#define Error(channel, format, ...) \
+	LogCore(Unnamed::LogLevel::Error, channel, std::source_location::current(), format, ##__VA_ARGS__)
 
-template <typename... Args>
-void Fatal(
-	const std::string_view&           channel,
-	const std::format_string<Args...> format, Args&&... args
-) {
-	auto*             console = ServiceLocator::Get<Unnamed::ConsoleSystem>();
-	const std::string s = std::format(format, std::forward<Args>(args)...);
-	if (!console) {
-		// ServiceLocator無効時のフォールバック
-		Print(Unnamed::LogLevel::Fatal, channel, s);
-		return;
-	}
+#define Fatal(channel, format, ...) \
+	LogCore(Unnamed::LogLevel::Fatal, channel, std::source_location::current(), format, ##__VA_ARGS__)
 
-	console->Print(Unnamed::LogLevel::Fatal, channel, s);
-}
-
-template <typename... Args>
-void SpecialMsg(
-	const Unnamed::LogLevel           logLevel, const std::string_view& channel,
-	const std::format_string<Args...> format, Args&&...                 args
-) {
-	auto*             console = ServiceLocator::Get<Unnamed::ConsoleSystem>();
-	const std::string s = std::format(format, std::forward<Args>(args)...);
-	if (!console) {
-		// ServiceLocator無効時のフォールバック
-		Print(logLevel, channel, s);
-		return;
-	}
-
-	console->Print(logLevel, channel, s);
-}
+#define SpecialMsg(logLevel, channel, format, ...) \
+	LogCore(logLevel, channel, std::source_location::current(), format, ##__VA_ARGS__)

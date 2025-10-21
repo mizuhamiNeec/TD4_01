@@ -26,9 +26,10 @@ namespace Unnamed {
 	public:
 		virtual      ~IConsole() = default;
 		virtual void Print(
-			LogLevel         level,
+			LogLevel level,
 			std::string_view channel,
-			std::string_view message
+			std::string_view message,
+			std::source_location location
 		) = 0;
 	};
 }

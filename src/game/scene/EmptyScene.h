@@ -19,9 +19,4 @@ public:
 
 private:
 	D3D12*                   mRenderer = nullptr;
-	std::unique_ptr<CubeMap> mCubeMap;
-
-	std::unique_ptr<UPhysics::Engine> mPhysicsEngine;
-
-	std::unique_ptr<Entity> mMeshEntity;
 };

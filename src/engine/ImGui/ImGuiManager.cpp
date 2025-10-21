@@ -187,7 +187,7 @@ void ImGuiManager::StyleColorsDark() {
 	colors[ImGuiCol_TabDimmedSelected]     = ImVec4(0.25f, 0.25f, 0.25f, 1.00f);
 	colors[ImGuiCol_DockingPreview]        = ImVec4(0.89f, 0.49f, 0.02f, 0.70f);
 	colors[ImGuiCol_TextLink]              = ImVec4(0.89f, 0.49f, 0.02f, 1.00f);
-	colors[ImGuiCol_TextSelectedBg]        = ImVec4(0.17f, 0.17f, 0.17f, 0.86f);
+	colors[ImGuiCol_TextSelectedBg]        = ImVec4(0.89f, 0.49f, 0.02f, 0.70f);
 	colors[ImGuiCol_NavCursor]             = ImVec4(0.89f, 0.49f, 0.02f, 1.00f);
 	colors[ImGuiCol_NavWindowingHighlight] = ImVec4(0.89f, 0.49f, 0.02f, 0.70f);
 	colors[ImGuiCol_NavWindowingDimBg]     = ImVec4(0.17f, 0.17f, 0.17f, 0.86f);
@@ -210,7 +210,7 @@ void ImGuiManager::StyleColorsDark() {
 
 	// パディング
 	style.FramePadding  = ImVec2(6, 6);
-	style.WindowPadding = ImVec2(8, 8);
+	style.WindowPadding = ImVec2(4, 4);
 
 	// アイテムの間隔
 	style.ItemSpacing = ImVec2(8, 8);

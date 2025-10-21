@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <source_location>
 #include <unordered_map>
 
 #include <engine/time/DateTime.h>
@@ -19,6 +20,7 @@ namespace Unnamed {
 		std::string channel;
 		std::string message;
 		DateTime    timeStamp;
+		std::source_location location;
 	};
 
 	enum class EXEC_FLAG {
@@ -49,8 +51,8 @@ namespace Unnamed {
 			return mLogBuffer;
 		}
 
-		void Print(LogLevel         level, std::string_view channel,
-		           std::string_view message) override;
+		void Print(LogLevel level, std::string_view channel,
+		           std::string_view message, std::source_location location) override;
 
 		void RegisterConCommand(UnnamedConCommandBase* conCommand);
 

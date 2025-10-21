@@ -52,20 +52,23 @@ namespace Unnamed {
 	void ConsoleSystem::Print(
 		const LogLevel         level,
 		const std::string_view channel,
-		const std::string_view message
+		const std::string_view message,
+		const std::source_location location
 	) {
 		// ログメッセージをバッファに追加
 		ConsoleLogText logText;
-		logText.level     = level;
-		logText.channel   = channel;
-		logText.message   = message;
+		logText.level = level;
+		logText.channel = channel;
+		logText.message = message;
 		logText.timeStamp = SystemClock::GetDateTime(SystemClock::Now());
+		logText.location = location;
 		mLogBuffer.Push(logText);
 
 		std::string out;
 		if (!logText.channel.empty()) {
 			out = "[" + logText.channel + "] " + logText.message;
-		} else {
+		}
+		else {
 			out = logText.message;
 		}
 
@@ -120,7 +123,8 @@ namespace Unnamed {
 
 		if (flag & EXEC_FLAG::SILENT) {
 			// TODO 
-		} else {
+		}
+		else {
 			// 送信内容をコンソールに表示
 			SpecialMsg(
 				LogLevel::Execute,
@@ -139,13 +143,13 @@ namespace Unnamed {
 			const std::vector        args(tokens.begin() + 1, tokens.end());
 
 			const bool foundCommand = mConCommands.contains(tokens[0]);
-			const bool foundVar     = mConVars.contains(tokens[0]);
+			const bool foundVar = mConVars.contains(tokens[0]);
 
 			// コマンドの場合
 			if (foundCommand) {
 				const auto* cmd = reinterpret_cast<UnnamedConCommand*>(
 					mConCommands[tokens[0]]
-				);
+					);
 
 				// コールバックを実行
 				if (cmd->onExecute(args)) {
@@ -153,7 +157,8 @@ namespace Unnamed {
 					if (cmd->onComplete) {
 						cmd->onComplete();
 					}
-				} else {
+				}
+				else {
 					// 失敗したらとりあえず説明を出しておく
 					SpecialMsg(
 						LogLevel::None,
@@ -188,29 +193,29 @@ namespace Unnamed {
 					case CONVAR_TYPE::INT:
 						if (
 							auto* ci = dynamic_cast<UnnamedConVar<int>*>(var)
-						) {
+							) {
 							ci->SetValue(std::stoi(args[0]));
 						}
 						break;
 					case CONVAR_TYPE::FLOAT:
 						if (
 							auto* cf = dynamic_cast<UnnamedConVar<float>*>(var)
-						) {
+							) {
 							cf->SetValue(std::stof(args[0]));
 						}
 						break;
 					case CONVAR_TYPE::DOUBLE:
 						if (
 							auto* cd = dynamic_cast<UnnamedConVar<double>*>(var)
-						) {
+							) {
 							cd->SetValue(std::stod(args[0]));
 						}
 						break;
 					case CONVAR_TYPE::STRING:
 						if (
 							auto* cs = dynamic_cast<UnnamedConVar<std::string>*>
-								(var)
-						) {
+							(var)
+							) {
 							cs->SetValue(args[0]);
 						}
 						break;
@@ -220,7 +225,7 @@ namespace Unnamed {
 							if (
 								auto* cv3 = dynamic_cast<UnnamedConVar<Vec3>*>(
 									var)
-							) {
+								) {
 								bool ok = false;
 								// 各引数が数字に変換できるか確認
 								for (const auto& arg : args) {
@@ -255,20 +260,24 @@ namespace Unnamed {
 			if (auto* cbool = dynamic_cast<UnnamedConVar<bool>*>(conVar.
 				second)) {
 				DevMsg(kChannel, "Value: {}", static_cast<bool>(*cbool));
-			} else if (auto* cint = dynamic_cast<UnnamedConVar<int>*>(
+			}
+			else if (auto* cint = dynamic_cast<UnnamedConVar<int>*>(
 				conVar.second)) {
 				DevMsg(kChannel, "Value: {}", static_cast<int>(*cint));
-			} else if (auto* cfloat = dynamic_cast<UnnamedConVar<float>*>(conVar
+			}
+			else if (auto* cfloat = dynamic_cast<UnnamedConVar<float>*>(conVar
 				.second)) {
 				DevMsg(kChannel, "Value: {}", static_cast<float>(*cfloat));
-			} else if (auto* convarDouble = dynamic_cast<UnnamedConVar<double>*>
+			}
+			else if (auto* convarDouble = dynamic_cast<UnnamedConVar<double>*>
 				(conVar.second)) {
 				DevMsg(kChannel, "Value: {}",
-				       static_cast<double>(*convarDouble));
-			} else if (auto* convarString = dynamic_cast<UnnamedConVar<
+					static_cast<double>(*convarDouble));
+			}
+			else if (auto* convarString = dynamic_cast<UnnamedConVar<
 				std::string>*>(conVar.second)) {
 				DevMsg(kChannel, "Value: {}",
-				       static_cast<std::string>(*convarString));
+					static_cast<std::string>(*convarString));
 			}
 		}
 	}
@@ -283,10 +292,12 @@ namespace Unnamed {
 			if (ch == '"') {
 				inQuotes = !inQuotes;
 				current += ch;
-			} else if (ch == ';' && !inQuotes) {
+			}
+			else if (ch == ';' && !inQuotes) {
 				result.emplace_back(current);
 				current.clear();
-			} else {
+			}
+			else {
 				current += ch;
 			}
 		}
@@ -301,7 +312,7 @@ namespace Unnamed {
 	std::vector<std::string> ConsoleSystem::Tokenize(
 		const std::string_view& command
 	) {
-		std::istringstream       stream{std::string(command)};
+		std::istringstream       stream{ std::string(command) };
 		std::vector<std::string> tokens;
 		std::string              token;
 
@@ -314,7 +325,7 @@ namespace Unnamed {
 
 	std::string ConsoleSystem::TrimSpaces(const std::string& string) {
 		const size_t start = string.find_first_not_of(" \t\n\r");
-		const size_t end   = string.find_last_not_of(" \t\n\r");
+		const size_t end = string.find_last_not_of(" \t\n\r");
 
 		if (start == std::string::npos || end == std::string::npos) {
 			return "";

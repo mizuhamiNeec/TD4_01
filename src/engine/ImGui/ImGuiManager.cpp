@@ -70,7 +70,7 @@ ImGuiManager::ImGuiManager(D3D12*      renderer,
 	ImGui_ImplDX12_InitInfo init_info = {};
 	init_info.Device                  = mRenderer->GetDevice();
 	init_info.NumFramesInFlight       = kFrameBufferCount;
-	init_info.RTVFormat               = DXGI_FORMAT_R8G8B8A8_UNORM;
+	init_info.RTVFormat               = kBufferFormat;
 	init_info.CommandQueue            = mRenderer->GetCommandQueue();
 	init_info.SrvDescriptorHeap       = mSrvManager->GetDescriptorHeap();
 	init_info.UserData                = this;
@@ -238,7 +238,7 @@ void ImGuiManager::Recreate() const {
 	ImGui_ImplDX12_InitInfo init_info = {};
 	init_info.Device                  = mRenderer->GetDevice();
 	init_info.NumFramesInFlight       = kFrameBufferCount;
-	init_info.RTVFormat               = DXGI_FORMAT_R8G8B8A8_UNORM;
+	init_info.RTVFormat               = kBufferFormat; // スワップチェーン用には非SRGBフォーマットを使用
 	init_info.SrvDescriptorHeap       = mSrvManager->GetDescriptorHeap();
 	init_info.CommandQueue            = mRenderer->GetCommandQueue();
 

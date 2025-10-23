@@ -176,6 +176,9 @@ void Entity::Render(ID3D12GraphicsCommandList* commandList) const {
 	}
 
 	for (const auto& component : mComponents) {
+		if (!component) {
+			return;
+		}
 		if (component->IsEditorOnly() /* && !bIsInEditor*/) {
 			continue; // エディター専用のコンポーネントはゲーム中には描画しない
 		}

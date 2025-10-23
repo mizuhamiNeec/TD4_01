@@ -4,16 +4,24 @@
 #include <engine/Input/InputSystem.h>
 #include <engine/OldConsole/ConVarManager.h>
 
+/**
+ * @brief デストラクタ
+ */
 CameraRotator::~CameraRotator() {
 }
 
+/**
+ * @brief エンティティにアタッチされた際の初期化処理
+ * @param owner 所有者エンティティ
+ * @details トランスフォームを取得し、初期回転値とコンソール変数を設定します
+ */
 void CameraRotator::OnAttach(Entity& owner) {
 	Component::OnAttach(owner);
 	mScene = mOwner->GetTransform();
 
 	// 初期回転を取得
 	mPitch = mScene->GetLocalRot().ToEulerAngles().x;
-	mYaw = mScene->GetLocalRot().ToEulerAngles().y;
+	mYaw   = mScene->GetLocalRot().ToEulerAngles().y;
 
 	ConVarManager::RegisterConVar("m_pitch", 0.022f, "Mouse pitch factor.");
 	ConVarManager::RegisterConVar("m_yaw", 0.022f, "Mouse yaw factor.");
@@ -21,6 +29,11 @@ void CameraRotator::OnAttach(Entity& owner) {
 	ConVarManager::RegisterConVar("cl_pitchdown", 89.0f);
 }
 
+/**
+ * @brief 毎フレームのカメラ回転更新処理
+ * @param deltaTime 前フレームからの経過時間（未使用）
+ * @details マウス入力に基づいてカメラの向きを更新し、アニメーションオフセットを適用します
+ */
 void CameraRotator::Update([[maybe_unused]] float deltaTime) {
 	Vec2 delta = InputSystem::GetMouseDelta();
 
@@ -54,10 +67,14 @@ void CameraRotator::Update([[maybe_unused]] float deltaTime) {
 	mScene->SetLocalRot(finalRotation);
 }
 
+/**
+ * @brief ImGuiインスペクタでの表示処理
+ * @details デバッグモードで現在のピッチとヨーの値を表示します
+ */
 void CameraRotator::DrawInspectorImGui() {
 #ifdef _DEBUG
 	if (ImGui::CollapsingHeader("Camera Rotator",
-		ImGuiTreeNodeFlags_DefaultOpen)) {
+	                            ImGuiTreeNodeFlags_DefaultOpen)) {
 		ImGui::Text("Pitch: %.2f", mPitch);
 		ImGui::Text("Yaw: %.2f", mYaw);
 	}

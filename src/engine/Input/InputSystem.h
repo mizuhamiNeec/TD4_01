@@ -5,28 +5,24 @@
 
 #include <runtime/core/math/Math.h>
 
+/**
+ * @brief 入力システムクラス
+ * @details キーボードとマウスの入力を管理し、コマンドバインディング機能を提供します
+ */
 class InputSystem {
 public:
 	static void Init();
 	static void Update();
-
 	static void ProcessInput(long lParam);
-
 	static Vec2 GetMouseDelta();
-
 	static bool IsTriggered(const std::string& command);
 	static bool IsPressed(const std::string& command);
 	static bool IsReleased(const std::string& command);
-
 	static void BindKey(const std::string& key, const std::string& command);
-	// キーにコマンドをバインド
-	static void UnbindKey(const std::string& key); // キーのバインドを解除
-	static void UnbindAll();                       // すべてのバインドを解除
+	static void UnbindKey(const std::string& key);
+	static void UnbindAll();
 	static void ExecuteCommand(const std::string& command, bool isDown);
-	// コマンドを実行
-
 	static void ResetAllKeys();
-
 	static void CheckMouseCursorLock();
 
 private:

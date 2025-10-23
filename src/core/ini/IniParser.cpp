@@ -1,8 +1,11 @@
 #include <fstream>
 
+#include <core/ini/IniParser.h>
 #include <engine/OldConsole/Console.h>
-#include "IniParser.h"
 
+/// @brief INIファイルをパースする
+/// @param filePath INIファイルのパス
+/// @return セクション名とキー・値のペアのマップ
 std::unordered_map<std::string, std::unordered_map<std::string, std::string>>
 IniParser::ParseIniFile(
 	const std::string& filePath
@@ -42,6 +45,9 @@ IniParser::ParseIniFile(
 	return iniData;
 }
 
+/// @brief 文字列の前後の空白を削除する
+/// @param str 対象文字列
+/// @return トリムされた文字列
 std::string IniParser::Trim(const std::string& str) {
 	size_t first = str.find_first_not_of(" \t\r\n");
 	size_t last  = str.find_last_not_of(" \t\r\n");

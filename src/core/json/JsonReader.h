@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <json.hpp>
 #include <optional>
 #include <string_view>
@@ -7,16 +7,23 @@
 #include <memory>
 #include <fstream>
 
-/// @class JsonReader
+/// @brief JSON読み込みクラス
+/// @details JSON形式のデータを読み込み、型安全にアクセスするためのラッパークラスです
 class JsonReader final {
 public:
+	/// @brief デフォルトコンストラクタ
 	JsonReader() = default;
 
+
+	/// @brief JSONオブジェクトから初期化するコンストラクタ
+	/// @param root JSONルートオブジェクト
 	explicit JsonReader(const nlohmann::json& root)
 		: mStorage(std::make_shared<nlohmann::json>(root)),
 		  mNode(mStorage.get()), mValid(true) {
 	}
 
+	/// @brief ファイルパスから読み込むコンストラクタ
+	/// @param path JSONファイルのパス
 	explicit JsonReader(const std::string& path) {
 		std::ifstream ifs(path);
 		if (!ifs) {
@@ -40,7 +47,7 @@ public:
 	[[nodiscard]] bool Has(const std::string_view& key) const {
 		return mNode && mNode->is_object() && mNode->contains(key);
 	}
-	
+
 	// operator[] (オブジェクトキー)
 	JsonReader operator[](const std::string_view& key) const {
 		if (!Has(key)) { return {}; }
@@ -60,7 +67,7 @@ public:
 		if (!mNode || !mNode->is_array()) { return 0; }
 		return mNode->size();
 	}
-	
+
 	std::string GetString() const {
 		if (!mNode) { return {}; }
 		if (mNode->is_string()) { return mNode->get<std::string>(); }
@@ -68,7 +75,7 @@ public:
 		if (mNode->is_number()) { return mNode->dump(); }
 		return {};
 	}
-	
+
 	float GetFloat() const {
 		if (!mNode) { return 0.f; }
 		if (mNode->is_number_float() || mNode->is_number_integer() || mNode->
@@ -91,7 +98,7 @@ public:
 
 	// 配列ラッパを返す (UWorld::LoadFromJson では GetArray() の戻りに対し [i] / GetFloat を呼ぶ)
 	JsonReader GetArray() const { return *this; }
-	
+
 	template <typename T>
 	std::optional<T> Read(const std::string_view& key) const {
 		if (!Has(key)) { return std::nullopt; }
@@ -99,7 +106,7 @@ public:
 			return std::nullopt;
 		}
 	}
-	
+
 	template <typename T>
 	std::vector<T> ReadArray(const std::string_view& key) const {
 		std::vector<T> out;

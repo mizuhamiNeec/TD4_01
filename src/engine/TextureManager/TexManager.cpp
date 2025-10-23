@@ -236,7 +236,7 @@ void TexManager::LoadTexture(const std::string& filePath, bool forceCubeMap) {
 			isCubeMap = isCubeMap || (metadata.miscFlags &
 				DirectX::TEX_MISC_TEXTURECUBE);
 
-			// メタデータを取得したら改めて読み込み
+			// メタデータを取得したら改めて読み込み（DDSはフラグなしで読み込み、後でSRGB変換）
 			hr = DirectX::LoadFromDDSFile(filePathW.c_str(),
 			                              DirectX::DDS_FLAGS_NONE, nullptr,
 			                              image);
@@ -268,6 +268,34 @@ void TexManager::LoadTexture(const std::string& filePath, bool forceCubeMap) {
 	}
 
 	DirectX::ScratchImage mipImages = {};
+
+	// フォーマットをSRGBに変換（必要な場合）
+	DirectX::ScratchImage convertedImage = {};
+	const DirectX::TexMetadata& srcMetadata = image.GetMetadata();
+	DXGI_FORMAT targetFormat = DirectX::MakeSRGB(srcMetadata.format);
+	
+	// フォーマットが変換可能で、かつSRGBでない場合は変換
+	if (targetFormat != srcMetadata.format && targetFormat != DXGI_FORMAT_UNKNOWN) {
+		hr = DirectX::Convert(
+			image.GetImages(),
+			image.GetImageCount(),
+			srcMetadata,
+			targetFormat,
+			DirectX::TEX_FILTER_DEFAULT,
+			DirectX::TEX_THRESHOLD_DEFAULT,
+			convertedImage
+		);
+		
+		if (SUCCEEDED(hr)) {
+			image = std::move(convertedImage);
+		} else {
+			DevMsg(
+				GetName(),
+				"SRGB変換に失敗したため、元のフォーマットを使用します: {} (元: {}, 変換先: {})",
+				filePath, static_cast<int>(srcMetadata.format), static_cast<int>(targetFormat)
+			);
+		}
+	}
 
 	// DDSファイルで既にミップマップがある場合は生成しない
 	if (extension == "dds" && image.GetMetadata().mipLevels > 1) {

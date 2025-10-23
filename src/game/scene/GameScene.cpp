@@ -122,12 +122,12 @@ void GameScene::Render() {
 	}
 
 	auto* commandList = mRenderer->GetCommandList();
-
+	
 	if (mClearConVar && mClearConVar->GetValueAsBool() && mCubeMap) {
 		mCubeMap->Render(commandList);
 	}
 
-	for (auto entity : mEntities) {
+	for (const auto* entity : mEntities) {
 		if (entity) {
 			entity->Render(commandList);
 		}
@@ -637,13 +637,13 @@ void GameScene::UpdateParticlesAndEffects(float deltaTime) {
 }
 
 void GameScene::UpdateEntities(float deltaTime) {
-	for (auto entity : mEntities) {
+	for (auto* entity : mEntities) {
 		if (entity && !entity->GetParent()) {
 			entity->PrePhysics(deltaTime);
 		}
 	}
 
-	for (auto entity : mEntities) {
+	for (auto* entity : mEntities) {
 		if (entity && !entity->GetParent()) {
 			entity->Update(deltaTime);
 		}
@@ -653,7 +653,7 @@ void GameScene::UpdateEntities(float deltaTime) {
 		mUPhysicsEngine->Update(deltaTime);
 	}
 
-	for (auto entity : mEntities) {
+	for (auto* entity : mEntities) {
 		if (entity && !entity->GetParent()) {
 			entity->PostPhysics(deltaTime);
 		}

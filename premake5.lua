@@ -32,7 +32,8 @@ function WarningSettings()
     filter "system:windows"
         warnings "Extra"
         -- 警告をエラーとして扱う
-        buildoptions { "/W4", "/WX" }
+        buildoptions { "/W4" }
+        fatalwarnings { "All" }
     filter {}
 end
 

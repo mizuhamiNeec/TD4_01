@@ -285,8 +285,8 @@ namespace Unnamed {
 			mAssetManager->AddRef(meshAsset);
 
 			// グリッドでエンティティをスポーン
-			constexpr int   rows    = 32;
-			constexpr int   cols    = 32;
+			constexpr int   rows    = 4;
+			constexpr int   cols    = 4;
 			constexpr float spacing = 4.0f;
 			constexpr float offsetX = (cols - 1) * spacing * 0.5f;
 			constexpr float offsetZ = (rows - 1) * spacing * 0.5f;
@@ -384,7 +384,7 @@ namespace Unnamed {
 			Vec2 delta = mInputSystem->Axis2D("mouse");
 
 			// 感度と回転値を計算
-			constexpr float sensitivity  = 1.25f;
+			constexpr float sensitivity  = 0.75f;
 			constexpr float m_pitch      = 0.022f;
 			constexpr float m_yaw        = 0.022f;
 			constexpr float cl_pitchdown = 89.0f;

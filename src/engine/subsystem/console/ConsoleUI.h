@@ -29,7 +29,7 @@ namespace Unnamed {
 		static void PushLogTextColor(const struct ConsoleLogText& buffer);
 
 #ifdef _DEBUG
-		static int InputTextCallback(ImGuiInputTextCallbackData* data);
+		static int InputTextCallback(const ImGuiInputTextCallbackData* data);
 #endif
 
 		ConsoleSystem* mConsoleSystem;

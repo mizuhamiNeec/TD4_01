@@ -25,7 +25,14 @@ namespace Unnamed {
 	ConsoleUI::ConsoleUI(
 		ConsoleSystem* consoleSystem
 	) : mConsoleSystem(consoleSystem) {
-		bIsImGuiInitialized = true;
+		int     argc = 0;
+		LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+		for (int i = 0; i < argc; ++i) {
+			bIsImGuiInitialized &= wcsstr(argv[i], L"-new") == nullptr;
+		}
+		if (argv) {
+			LocalFree(argv);
+		}
 	}
 
 	/// @brief コンソールUIを表示します。
@@ -50,7 +57,6 @@ namespace Unnamed {
 
 			for (const auto& buffer : mConsoleSystem->GetLogBuffer()) {
 				PushLogTextColor(buffer);
-
 				std::string text;
 				if (!buffer.channel.empty()) {
 					text = "[" + buffer.channel + "] " + buffer.message;
@@ -103,7 +109,7 @@ namespace Unnamed {
 
 		auto submitTextWidth = ImGui::CalcTextSize(kSubmitButtonText);
 
-		ImVec2 size = {
+		const ImVec2 size = {
 			std::max(
 				ImGui::GetWindowContentRegionMax().x - spacing.x -
 				submitTextWidth.x - framePadding.x * 2.0f - itemSpacing.x,
@@ -118,7 +124,7 @@ namespace Unnamed {
 			IM_ARRAYSIZE(mInputBuffer),
 			size,
 			kInputTextFlags,
-			InputTextCallback
+			reinterpret_cast<ImGuiInputTextCallback>(InputTextCallback)
 		);
 	}
 
@@ -175,7 +181,7 @@ namespace Unnamed {
 	}
 
 	/// @brief インプットテキストからのコールバック
-	int ConsoleUI::InputTextCallback(ImGuiInputTextCallbackData* data) {
+	int ConsoleUI::InputTextCallback(const ImGuiInputTextCallbackData* data) {
 		switch (data->EventFlag) {
 		case ImGuiInputTextFlags_CallbackCompletion: {
 			Msg("callback", "completion");

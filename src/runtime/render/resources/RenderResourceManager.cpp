@@ -679,12 +679,6 @@ namespace Unnamed {
 			if (h.id < mMeshes.size() && mMeshes[h.id].alive &&
 				mMeshes[h.id].gen == h.gen) {
 				mMeshes[h.id].refs++;
-				Msg(
-					kChannel,
-					"Mesh cache hit: AssetID={}, refs={}",
-					meshAsset,
-					mMeshes[h.id].refs
-				);
 				return h;
 			}
 			// 古い/壊れている場合は作り直す
@@ -763,7 +757,7 @@ namespace Unnamed {
 		gpuMesh.mesh.baseVertex = 0;
 		gpuMesh.vramBytes       = vbSize + ibSize;
 
-		MeshHandle handle       = {index, gpuMesh.gen};
+		MeshHandle handle       = {.id = index, .gen = gpuMesh.gen};
 		mAssetToMesh[meshAsset] = handle;
 
 		Msg(

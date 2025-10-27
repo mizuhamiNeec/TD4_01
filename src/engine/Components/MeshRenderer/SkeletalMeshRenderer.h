@@ -40,12 +40,14 @@ public:
 	void                        SetSkeletalMesh(SkeletalMesh* skeletalMesh);
 
 	// アニメーション制御
-	void PlayAnimation(const std::string& animationName, bool loop = true);
+	void PlayAnimation(const std::string& animationName, bool loop = true, bool forceRestart = false);
+	void TransitionToAnimation(const std::string& animationName, float transitionTime = 0.3f, bool loop = true);
 	void StopAnimation();
 	void PauseAnimation();
 	void ResumeAnimation();
 	void SetAnimationSpeed(float speed);
 	[[nodiscard]] bool IsAnimationPlaying() const;
+	[[nodiscard]] const std::string& GetCurrentAnimationName() const;
 
 	void                SetAnimationTime(float t);
 	[[nodiscard]] float GetAnimationTime() const;
@@ -60,6 +62,10 @@ protected:
 	void CalculateNodeTransform(const Node& node, const Mat4& parentTransform,
 	                            const Animation* animation,
 	                            float animationTime);
+	void CalculateNodeTransformBlended(const Node& node, const Mat4& parentTransform,
+	                                   const Animation* currentAnim, float currentTime,
+	                                   const Animation* nextAnim, float nextTime,
+	                                   float blendFactor);
 
 	void DrawBoneHierarchy(const Node& node, const Mat4& parentTransform);
 	void DrawBoneDebug();
@@ -86,6 +92,14 @@ private:
 	float            mAnimationSpeed = 1.0f;
 	bool             mIsPlaying      = false;
 	bool             mIsLooping      = true;
+
+	// アニメーション遷移用
+	const Animation* mNextAnimation = nullptr;
+	std::string      mNextAnimationName;
+	float            mTransitionTime     = 0.0f;
+	float            mTransitionDuration = 0.3f;
+	bool             mIsTransitioning    = false;
+	bool             mNextAnimationLoop  = true;
 
 #ifdef _DEBUG
 	bool mShowBoneDebug = false;

@@ -127,21 +127,40 @@ void SkeletalMeshRenderer::OnAttach(Entity& owner) {
 /// @brief 毎フレームの更新処理
 /// @param deltaTime 前フレームからの経過時間（秒）
 void SkeletalMeshRenderer::Update(float deltaTime) {
-	if (mIsPlaying && mCurrentAnimation) {
-		mAnimationTime += deltaTime * mAnimationSpeed;
+	if (mIsPlaying) {
+		// アニメーション遷移中の処理
+		if (mIsTransitioning) {
+			mTransitionTime += deltaTime;
 
-		if (mIsLooping) {
-			// 最後まで行ったらリピート再生
-			mAnimationTime = std::fmod(mAnimationTime,
-			                           mCurrentAnimation->duration);
-		} else if (mAnimationTime >= mCurrentAnimation->duration) {
-			// ループしない場合は停止
-			mAnimationTime = mCurrentAnimation->duration;
-			mIsPlaying     = false;
+			// 遷移が完了したら次のアニメーションに切り替え
+			if (mTransitionTime >= mTransitionDuration) {
+				mCurrentAnimation     = mNextAnimation;
+				mCurrentAnimationName = mNextAnimationName;
+				mIsLooping            = mNextAnimationLoop;
+				mAnimationTime        = 0.0f;
+				mIsTransitioning      = false;
+				mNextAnimation        = nullptr;
+				mNextAnimationName.clear();
+			}
 		}
 
-		// ボーン変換行列を更新
-		UpdateBoneMatrices();
+		// 現在のアニメーションを更新
+		if (mCurrentAnimation) {
+			mAnimationTime += deltaTime * mAnimationSpeed;
+
+			if (mIsLooping) {
+				// 最後まで行ったらリピート再生
+				mAnimationTime = std::fmod(mAnimationTime,
+				                           mCurrentAnimation->duration);
+			} else if (mAnimationTime >= mCurrentAnimation->duration) {
+				// ループしない場合は停止
+				mAnimationTime = mCurrentAnimation->duration;
+				mIsPlaying     = false;
+			}
+
+			// ボーン変換行列を更新
+			UpdateBoneMatrices();
+		}
 	}
 	if (mShowBoneDebug) {
 		DrawBoneDebug();
@@ -510,9 +529,16 @@ void SkeletalMeshRenderer::SetSkeletalMesh(SkeletalMesh* skeletalMesh) {
 /// @brief アニメーションを再生
 /// @param animationName 再生するアニメーションの名前
 /// @param loop ループ再生するかどうか
+/// @param forceRestart 既に同じアニメーションが再生中でも強制的に再開するか
 void SkeletalMeshRenderer::PlayAnimation(const std::string& animationName,
-                                         bool               loop) {
+                                         bool               loop,
+                                         bool               forceRestart) {
 	if (!mSkeletalMesh) return;
+
+	// 既に同じアニメーションが再生中の場合、forceRestartがfalseならスキップ
+	if (!forceRestart && mCurrentAnimationName == animationName && mIsPlaying) {
+		return;
+	}
 
 	const Animation* animation = mSkeletalMesh->GetAnimation(animationName);
 	if (animation) {
@@ -522,10 +548,56 @@ void SkeletalMeshRenderer::PlayAnimation(const std::string& animationName,
 		mIsPlaying            = true;
 		mAnimationTime        = 0.0f;
 
+		// 遷移をキャンセル
+		mIsTransitioning = false;
+		mNextAnimation   = nullptr;
+		mNextAnimationName.clear();
+
 		Msg(
 			"SkeletalMeshRenderer",
 			"アニメーション再生開始: {}",
 			animationName
+		);
+	} else {
+		Error("SkeletalMeshRenderer",
+		      "アニメーションが見つかりません: {}",
+		      animationName
+		);
+	}
+}
+
+/// @brief アニメーションを滑らかに遷移
+/// @param animationName 遷移先のアニメーション名
+/// @param transitionTime 遷移にかける時間（秒）
+/// @param loop ループ再生するかどうか
+void SkeletalMeshRenderer::TransitionToAnimation(
+	const std::string& animationName,
+	float              transitionTime,
+	bool               loop) {
+	if (!mSkeletalMesh) return;
+
+	// 既に同じアニメーションが再生中または遷移先に設定されている場合はスキップ
+	if (mCurrentAnimationName == animationName || mNextAnimationName ==
+		animationName) {
+		return;
+	}
+
+	const Animation* animation = mSkeletalMesh->GetAnimation(animationName);
+	if (animation) {
+		mNextAnimation      = animation;
+		mNextAnimationName  = animationName;
+		mNextAnimationLoop  = loop;
+		mTransitionDuration = transitionTime;
+		mTransitionTime     = 0.0f;
+		mIsTransitioning    = true;
+		mIsPlaying          = true;
+
+		Msg(
+			"SkeletalMeshRenderer",
+			"アニメーション遷移開始: {} -> {} ({}秒)",
+			mCurrentAnimationName,
+			animationName,
+			transitionTime
 		);
 	} else {
 		Error("SkeletalMeshRenderer",
@@ -565,6 +637,12 @@ bool SkeletalMeshRenderer::IsAnimationPlaying() const {
 	return mIsPlaying;
 }
 
+/// @brief 現在再生中のアニメーション名を取得
+/// @return アニメーション名
+const std::string& SkeletalMeshRenderer::GetCurrentAnimationName() const {
+	return mCurrentAnimationName;
+}
+
 /// @brief アニメーションの現在の再生時間を設定
 /// @param t 再生時間（秒）
 void SkeletalMeshRenderer::SetAnimationTime(const float t) {
@@ -595,9 +673,32 @@ void SkeletalMeshRenderer::UpdateBoneMatrices() {
 		mBoneMatrices->bones[i] = Mat4::identity;
 	}
 
-	// ルートノードから開始して変換行列を計算
-	CalculateNodeTransform(skeleton.rootNode, Mat4::identity, mCurrentAnimation,
-	                       mAnimationTime);
+	// 遷移中の場合は2つのアニメーションをブレンド
+	if (mIsTransitioning && mNextAnimation) {
+		// ブレンド係数を計算（0.0 = 現在のアニメーション、1.0 = 次のアニメーション）
+		float blendFactor = mTransitionDuration > 0.0f ?
+			                    mTransitionTime / mTransitionDuration :
+			                    1.0f;
+		blendFactor = std::clamp(blendFactor, 0.0f, 1.0f);
+
+		// 次のアニメーションの時間（遷移開始時は0から始める）
+		float nextAnimTime = 0.0f;
+
+		CalculateNodeTransformBlended(
+			skeleton.rootNode,
+			Mat4::identity,
+			mCurrentAnimation,
+			mAnimationTime,
+			mNextAnimation,
+			nextAnimTime,
+			blendFactor
+		);
+	} else {
+		// 通常の再生
+		CalculateNodeTransform(skeleton.rootNode, Mat4::identity,
+		                       mCurrentAnimation,
+		                       mAnimationTime);
+	}
 }
 
 /// @brief ノードの変換行列を計算し、ボーン行列を更新
@@ -648,6 +749,96 @@ void SkeletalMeshRenderer::CalculateNodeTransform(
 	for (const Node& child : node.children) {
 		CalculateNodeTransform(child, globalTransform, animation,
 		                       animationTime);
+	}
+}
+
+/// @brief ブレンドされたノードの変換行列を計算
+/// @param node 現在のノード
+/// @param parentTransform 親ノードの変換行列
+/// @param currentAnim 現在のアニメーションデータ
+/// @param currentTime 現在のアニメーション時間
+/// @param nextAnim 次のアニメーションデータ
+/// @param nextTime 次のアニメーション時間
+/// @param blendFactor ブレンド係数（0.0〜1.0）
+void SkeletalMeshRenderer::CalculateNodeTransformBlended(
+	const Node&      node,
+	const Mat4&      parentTransform,
+	const Animation* currentAnim,
+	const float      currentTime,
+	const Animation* nextAnim,
+	const float      nextTime,
+	const float      blendFactor
+) {
+	Mat4 nodeTransformCurrent = node.localMat;
+	Mat4 nodeTransformNext    = node.localMat;
+
+	// 現在のアニメーションのトランスフォームを取得
+	Vec3       translationCurrent = Vec3::zero;
+	Quaternion rotationCurrent    = Quaternion::identity;
+	Vec3       scaleCurrent       = Vec3::one;
+
+	if (currentAnim && currentAnim->nodeAnimations.contains(node.name)) {
+		const NodeAnimation& nodeAnim = currentAnim->nodeAnimations.at(
+			node.name);
+		translationCurrent = CalculateValue(nodeAnim.translate.keyFrames,
+		                                    currentTime);
+		rotationCurrent =
+			CalculateValue(nodeAnim.rotate.keyFrames, currentTime);
+		scaleCurrent = CalculateValue(nodeAnim.scale.keyFrames, currentTime);
+	}
+
+	// 次のアニメーションのトランスフォームを取得
+	Vec3       translationNext = Vec3::zero;
+	Quaternion rotationNext    = Quaternion::identity;
+	Vec3       scaleNext       = Vec3::one;
+
+	if (nextAnim && nextAnim->nodeAnimations.contains(node.name)) {
+		const NodeAnimation& nodeAnim = nextAnim->nodeAnimations.at(node.name);
+		translationNext               =
+			CalculateValue(nodeAnim.translate.keyFrames, nextTime);
+		rotationNext = CalculateValue(nodeAnim.rotate.keyFrames, nextTime);
+		scaleNext    = CalculateValue(nodeAnim.scale.keyFrames, nextTime);
+	}
+
+	// 線形補間でブレンド
+	Vec3 translation = Math::Lerp(translationCurrent, translationNext,
+	                              blendFactor);
+	Vec3 scale = Math::Lerp(scaleCurrent, scaleNext, blendFactor);
+
+	// 回転は球面線形補間（Slerp）を使用
+	Quaternion rotation = Quaternion::Slerp(rotationCurrent, rotationNext,
+	                                        blendFactor);
+
+	// ブレンドされた変換行列を作成
+	Mat4 nodeTransform = Mat4::Affine(scale, rotation, translation);
+
+	// グローバル変換を計算
+	Mat4 globalTransform = nodeTransform * parentTransform;
+
+	// このノードがボーンの場合、変換行列を設定
+	if (mSkeletalMesh) {
+		const Skeleton& skeleton = mSkeletalMesh->GetSkeleton();
+		auto            it       = skeleton.boneMap.find(node.name);
+		if (it != skeleton.boneMap.end()) {
+			int boneIndex = it->second;
+			if (boneIndex < BoneMatrices::MAX_BONES) {
+				mBoneMatrices->bones[boneIndex] =
+					skeleton.bones[boneIndex].offsetMatrix * globalTransform;
+			}
+		}
+	}
+
+	// 子ノードを再帰的に処理
+	for (const Node& child : node.children) {
+		CalculateNodeTransformBlended(
+			child,
+			globalTransform,
+			currentAnim,
+			currentTime,
+			nextAnim,
+			nextTime,
+			blendFactor
+		);
 	}
 }
 

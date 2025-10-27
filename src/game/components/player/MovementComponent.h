@@ -30,7 +30,6 @@ namespace {
  * @details プレイヤーの速度、状態、入力などの移動に関する全ての情報を保持します
  */
 struct MovementData {
-
 	MovementData(float width, float height);
 	MovementData();
 
@@ -118,6 +117,7 @@ public:
 	[[nodiscard]] Vec3  GetWallRunNormal() const;
 	[[nodiscard]] bool  JustLanded() const;
 	[[nodiscard]] float GetLastLandingVelocityY() const;
+	[[nodiscard]] bool  IsDucking() const;
 
 private:
 	// 高レベル

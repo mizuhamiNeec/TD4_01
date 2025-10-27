@@ -182,6 +182,10 @@ float MovementComponent::GetLastLandingVelocityY() const {
 	return mData.lastLandingVelocityY;
 }
 
+bool MovementComponent::IsDucking() const {
+	return mData.wishCrouch;
+}
+
 /// @brief 入力処理
 void MovementComponent::ProcessInput() {
 	mData.vecMoveInput = Vec2::zero;

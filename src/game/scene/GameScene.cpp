@@ -110,6 +110,7 @@ void GameScene::Update(const float deltaTime) {
 	const auto camera = CameraManager::GetActiveCamera();
 	HandleWeaponFire(camera);
 	UpdateSkeletalAnimation();
+	UpdatePlayer(deltaTime);
 	UpdatePostProcessing(deltaTime);
 	UpdateTeleport();
 	UpdateParticlesAndEffects(deltaTime);
@@ -379,6 +380,9 @@ void GameScene::InitializeSkeletalMesh() {
 	auto* renderer = mEntSkeletalMesh->AddComponent<SkeletalMeshRenderer>();
 	mSkeletalMeshRenderer = AdoptComponent(renderer);
 
+	mEntSkeletalMeshRoot = std::make_unique<Entity>("SkeletalMeshRoot");
+	mEntSkeletalMeshRoot->AddComponent<WeaponSway>();
+
 	if (mSkeletalMeshRenderer && meshManager) {
 		if (auto* mesh = meshManager->GetSkeletalMesh(kSkeletalMeshPath)) {
 			mSkeletalMeshRenderer->SetSkeletalMesh(mesh);
@@ -386,6 +390,7 @@ void GameScene::InitializeSkeletalMesh() {
 	}
 	mSkeletalMeshRenderer->PlayAnimation("Sprint", true);
 
+	AddEntity(mEntSkeletalMeshRoot.get());
 	AddEntity(mEntSkeletalMesh.get());
 }
 
@@ -399,7 +404,8 @@ void GameScene::ConfigureEntityHierarchy() {
 
 	if (mCamera && mEntShakeRoot) {
 		mCamera->SetParent(mEntShakeRoot.get());
-		mCamera->GetTransform()->SetLocalPos(Vec3::zero);
+		mCamera->GetTransform()->SetLocalPos(Vec3::forward *
+			Math::HtoM(kPlayerCameraForwardOffsetHU));
 	}
 
 	if (mEntWeapon && mCamera) {
@@ -409,10 +415,10 @@ void GameScene::ConfigureEntityHierarchy() {
 
 	if (mEntSkeletalMesh && mEntCameraRoot) {
 		auto* transform = mEntSkeletalMesh->GetTransform();
-		transform->SetLocalPos(
-			Vec3(0.0f, transform->GetLocalPos().y - 0.05f, -0.08f));
+		transform->SetLocalPos(Vec3::zero);
 		transform->SetLocalRot(Quaternion::EulerDegrees(0.0f, 180.0f, 0.0f));
-		mEntSkeletalMesh->SetParent(mEntCameraRoot.get());
+		mEntSkeletalMeshRoot->SetParent(mEntCameraRoot.get());
+		mEntSkeletalMesh->SetParent(mEntSkeletalMeshRoot.get());
 	}
 }
 
@@ -573,7 +579,6 @@ void GameScene::UpdateSkeletalAnimation() {
 	if (
 		!mMovementComponent->IsGrounded() ||
 		mMovementComponent->WishJump() ||
-		mMovementComponent->IsSliding() ||
 		mMovementComponent->IsWallRunning() ||
 		!movingForward
 	) {
@@ -581,12 +586,45 @@ void GameScene::UpdateSkeletalAnimation() {
 		mSkeletalMeshRenderer->SetAnimationTime(0.67f * 0.25f);
 	} else {
 		mEntSkeletalMesh->SetVisible(true);
+		// forceRestart=falseで、既に再生中の場合は切り替えない
+		mSkeletalMeshRenderer->TransitionToAnimation("Sprint", 0.125f, true);
+	}
+
+	if (mMovementComponent->IsDucking() || mMovementComponent->IsSliding()) {
+		mEntSkeletalMesh->SetVisible(true);
+		// しゃがみアニメーションに滑らかに遷移
+		if (mSkeletalMeshRenderer->GetCurrentAnimationName() != "Crouch") {
+			mSkeletalMeshRenderer->
+				TransitionToAnimation("Crouch", 0.125f, true);
+		}
 	}
 
 	const Vec3 velocity = mMovementComponent->GetVelocity();
 	const Vec3 horizontalVelocity(velocity.x, 0.0f, velocity.z);
 	mSkeletalMeshRenderer->
 		SetAnimationSpeed(horizontalVelocity.Length() * 0.15f);
+}
+
+/// @brief プレイヤーの更新
+/// @param deltaTime 経過時間
+void GameScene::UpdatePlayer(const float deltaTime) {
+	// スライディング中はFOVを広げる
+	bool isSliding = mMovementComponent->IsSliding();
+
+	constexpr float defaultFov = 90.0f;
+	float targetFov;
+	float currentFov = CameraManager::GetActiveCamera()->GetFovVertical() *
+		Math::rad2Deg;
+
+	if (isSliding) {
+		targetFov = defaultFov + 8.0f;
+	} else {
+		targetFov = defaultFov;
+	}
+
+	targetFov = std::lerp(currentFov, targetFov, deltaTime * 10.0f);
+
+	CameraManager::GetActiveCamera()->SetFovVertical(targetFov * Math::deg2Rad);
 }
 
 /// @brief ポストプロセッシングの更新

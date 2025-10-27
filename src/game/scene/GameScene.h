@@ -31,7 +31,7 @@ class IConVar;
 class GameScene : public BaseScene {
 public:
 	~GameScene() override;
-	
+
 	void Init() override;
 	void Update(float deltaTime) override;
 	void Render() override;
@@ -65,6 +65,7 @@ private:
 	void HandleWeaponInput();
 	void HandleWeaponFire(const std::shared_ptr<CameraComponent>& camera);
 	void UpdateSkeletalAnimation();
+	void UpdatePlayer(float deltaTime);
 	void UpdatePostProcessing(float deltaTime);
 	void UpdateTeleport();
 	void UpdateParticlesAndEffects(float deltaTime);
@@ -95,6 +96,8 @@ private:
 
 	std::unique_ptr<Entity>         mEntShakeRoot;
 	std::shared_ptr<CameraAnimator> mCameraAnimator;
+
+	std::unique_ptr<Entity> mEntSkeletalMeshRoot;
 
 	std::unique_ptr<Entity>               mEntSkeletalMesh;
 	std::shared_ptr<SkeletalMeshRenderer> mSkeletalMeshRenderer;

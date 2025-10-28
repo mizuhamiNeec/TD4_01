@@ -11,11 +11,11 @@
 #include <engine/particle/WindEffect.h>
 #include <runtime/physics/core/UPhysics.h>
 
-#include <game/components/weapon/WeaponSway.h>
+#include <game/components/CameraAnimator.h>
+#include <game/components/ViewmodelSway.h>
+#include <game/components/player/MovementComponent.h>
 #include <game/components/weapon/base/WeaponComponent.h>
 #include <game/scene/base/BaseScene.h>
-#include <game/components/player/MovementComponent.h>
-#include <game/components/CameraAnimator.h>
 
 class D3D12;
 class EnemyMovement;
@@ -92,7 +92,7 @@ private:
 	std::unique_ptr<Entity>             mEntWeapon;
 	std::shared_ptr<WeaponComponent>    mWeaponComponent;
 	std::shared_ptr<StaticMeshRenderer> mWeaponMeshRenderer;
-	std::shared_ptr<WeaponSway>         mWeaponSway;
+	std::shared_ptr<ViewmodelSway>         mWeaponSway;
 
 	std::unique_ptr<Entity>         mEntShakeRoot;
 	std::shared_ptr<CameraAnimator> mCameraAnimator;

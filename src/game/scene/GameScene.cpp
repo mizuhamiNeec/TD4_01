@@ -314,7 +314,7 @@ void GameScene::InitializeWeapon() {
 
 	mEntWeapon->AddComponent<BoxColliderComponent>();
 
-	auto* weaponSway = mEntWeapon->AddComponent<WeaponSway>();
+	auto* weaponSway = mEntWeapon->AddComponent<ViewmodelSway>();
 	mWeaponSway      = AdoptComponent(weaponSway);
 
 	AddEntity(mEntWeapon.get());
@@ -381,7 +381,7 @@ void GameScene::InitializeSkeletalMesh() {
 	mSkeletalMeshRenderer = AdoptComponent(renderer);
 
 	mEntSkeletalMeshRoot = std::make_unique<Entity>("SkeletalMeshRoot");
-	mEntSkeletalMeshRoot->AddComponent<WeaponSway>();
+	mEntSkeletalMeshRoot->AddComponent<ViewmodelSway>();
 
 	if (mSkeletalMeshRenderer && meshManager) {
 		if (auto* mesh = meshManager->GetSkeletalMesh(kSkeletalMeshPath)) {
@@ -575,34 +575,50 @@ void GameScene::UpdateSkeletalAnimation() {
 	constexpr float kMovingForwardThreshold = 0.125f;
 	const bool      movingForward           = dot > kMovingForwardThreshold;
 
-	// 設置していない || ジャンプしたい || しゃがみ中 || ウォールラン中 || 前に進んでいない場合は非表示
-	if (
-		!mMovementComponent->IsGrounded() ||
-		mMovementComponent->WishJump() ||
-		mMovementComponent->IsWallRunning() ||
-		!movingForward
-	) {
-		mEntSkeletalMesh->SetVisible(false);
-		mSkeletalMeshRenderer->SetAnimationTime(0.67f * 0.25f);
-	} else {
-		mEntSkeletalMesh->SetVisible(true);
-		// forceRestart=falseで、既に再生中の場合は切り替えない
-		mSkeletalMeshRenderer->TransitionToAnimation("Sprint", 0.125f, true);
-	}
+	constexpr float kTransitionDuration = 0.125f;
 
-	if (mMovementComponent->IsDucking() || mMovementComponent->IsSliding()) {
+	// アニメーションの遷移
+
+	// スライディング中 || しゃがみ中はしゃがみアニメーションに遷移
+	if (mMovementComponent->IsSliding() || mMovementComponent->IsDucking()) {
 		mEntSkeletalMesh->SetVisible(true);
-		// しゃがみアニメーションに滑らかに遷移
 		if (mSkeletalMeshRenderer->GetCurrentAnimationName() != "Crouch") {
-			mSkeletalMeshRenderer->
-				TransitionToAnimation("Crouch", 0.125f, true);
+			mSkeletalMeshRenderer->TransitionToAnimation(
+				"Crouch", kTransitionDuration, true
+			);
+			mSkeletalMeshRenderer->SetAnimationSpeed(1.0f);
 		}
+	} else if (mMovementComponent->IsGrounded() && movingForward) {
+		mEntSkeletalMesh->SetVisible(true);
+		if (mSkeletalMeshRenderer->GetCurrentAnimationName() != "Sprint") {
+			mSkeletalMeshRenderer->TransitionToAnimation(
+				"Sprint", kTransitionDuration, true
+			);
+		}
+		const Vec3 velocity = mMovementComponent->GetVelocity();
+		const Vec3 horizontalVelocity(velocity.x, 0.0f, velocity.z);
+		mSkeletalMeshRenderer->SetAnimationSpeed(
+			horizontalVelocity.Length() * 0.15f
+		);
+	} else if (mMovementComponent->IsWallRunning()) {
+		// とりあえず走るアニメーションに遷移M
+		mEntSkeletalMesh->SetVisible(true);
+		if (mSkeletalMeshRenderer->GetCurrentAnimationName() != "Sprint") {
+			mSkeletalMeshRenderer->TransitionToAnimation(
+				"Sprint", kTransitionDuration, true
+			);
+			mSkeletalMeshRenderer->SetAnimationSpeed(1.0f);
+		}
+	} else {
+		// 何もしていない場合はバインドポーズに戻す
+		//mEntSkeletalMesh->SetVisible(false);
+		if (mSkeletalMeshRenderer->GetCurrentAnimationName() != "BindPose") {
+			mSkeletalMeshRenderer->TransitionToAnimation(
+				"BindPose", kTransitionDuration, true
+			);
+		}
+		//mSkeletalMeshRenderer->SetAnimationTime(0.67f * 0.25f);
 	}
-
-	const Vec3 velocity = mMovementComponent->GetVelocity();
-	const Vec3 horizontalVelocity(velocity.x, 0.0f, velocity.z);
-	mSkeletalMeshRenderer->
-		SetAnimationSpeed(horizontalVelocity.Length() * 0.15f);
 }
 
 /// @brief プレイヤーの更新

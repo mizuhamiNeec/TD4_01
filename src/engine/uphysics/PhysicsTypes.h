@@ -2,6 +2,7 @@
 
 #include <runtime/core/math/Math.h>
 #include <engine/uprimitive/UPrimitives.h>
+#include <engine/Entity/Entity.h>
 
 namespace UPhysics {
 	// ヒット情報
@@ -13,6 +14,8 @@ namespace UPhysics {
 		uint32_t triIndex   = UINT_FAST32_MAX;
 		bool     startSolid = false; // 開始時に形状が重なっていたか
 		bool     allsolid   = false; // トレース全域で固体内だったか
+
+		Entity* hitEntity = nullptr; // ヒットしたエンティティ
 	};
 
 	// 形状情報

@@ -60,9 +60,7 @@ struct MovementData {
 	// 接地検知
 	Vec3  lastGroundNormal = Vec3::up;
 	float lastGroundDistM  = 0.0f;
-
-	float groundEnterSlopeThreshold = 0.707f;
-	float groundLeaveSlopeThreshold = 0.7f;
+	float groundNormalY    = 0.7f;
 
 	// スタック検知
 	Vec3  lastPosition = Vec3::zero;
@@ -131,7 +129,7 @@ private:
 
 	// forces
 	void ApplyHalfGravity(float dt);
-	void Friction(float dt);
+	void Friction(float amount, float dt);
 	void Accelerate(Vec3 dir, float speed, float accel, float dt);
 	void AirAccelerate(Vec3 dir, float speed, float accel, float dt);
 
@@ -140,9 +138,15 @@ private:
 
 	// 衝突応答
 	void MoveWithCollisions(float dt);
+	
+	static Vec3        ClipVelocity(const Vec3& vel, const Vec3& normal, float overbounce);
+	int                SlideMove(Vec3& position, Vec3& velocity, float timeTotal);
+	void               StepMove(Vec3& position, Vec3& velocity, float timeTotal);
+	bool               GroundCheck(Vec3& position);
+	[[nodiscard]] Unnamed::Box BuildHullAtFeet(const Vec3& feetPos) const;
 
 	// params
-	static constexpr float kStepHeightHu   = 18.0f; // HL2 Def
+	static constexpr float kStepHeightHu   = 18.0f; // HL2 Default
 	static constexpr float kCastSkinHu     = 0.25f;
 	static constexpr float kSkinHu         = 0.25f;
 	static constexpr float kRestOffsetHu   = 0.75f;

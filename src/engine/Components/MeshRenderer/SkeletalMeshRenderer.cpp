@@ -137,10 +137,25 @@ void SkeletalMeshRenderer::Update(float deltaTime) {
 				mCurrentAnimation     = mNextAnimation;
 				mCurrentAnimationName = mNextAnimationName;
 				mIsLooping            = mNextAnimationLoop;
-				mAnimationTime        = 0.0f;
+				mAnimationTime        = mNextAnimationTime;
 				mIsTransitioning      = false;
 				mNextAnimation        = nullptr;
 				mNextAnimationName.clear();
+				mNextAnimationTime    = 0.0f;
+			} else {
+				// 遷移中は次のアニメーションの時間も進める
+				if (mNextAnimation) {
+					mNextAnimationTime += deltaTime * mAnimationSpeed;
+					
+					if (mNextAnimationLoop) {
+						// ループする場合は巻き戻す
+						mNextAnimationTime = std::fmod(mNextAnimationTime,
+						                               mNextAnimation->duration);
+					} else if (mNextAnimationTime >= mNextAnimation->duration) {
+						// ループしない場合は最大値でクランプ
+						mNextAnimationTime = mNextAnimation->duration;
+					}
+				}
 			}
 		}
 
@@ -584,11 +599,31 @@ void SkeletalMeshRenderer::TransitionToAnimation(
 
 	const Animation* animation = mSkeletalMesh->GetAnimation(animationName);
 	if (animation) {
+		// 遷移中の場合は、現在のブレンド状態を次のアニメーションの開始状態として使用
+		if (mIsTransitioning) {
+			// 現在のブレンド係数を計算
+			float currentBlendFactor = mTransitionDuration > 0.0f ?
+				                           mTransitionTime / mTransitionDuration :
+				                           1.0f;
+			currentBlendFactor = std::clamp(currentBlendFactor, 0.0f, 1.0f);
+			
+			// 現在のアニメーションと次のアニメーションをブレンドした状態を
+			// 新しい「現在のアニメーション」として扱う
+			// ここでは簡略化のため、より進行している方を現在のアニメーションとする
+			if (currentBlendFactor > 0.5f && mNextAnimation) {
+				mCurrentAnimation = mNextAnimation;
+				mCurrentAnimationName = mNextAnimationName;
+				mAnimationTime = mNextAnimationTime; // 進行中の時間を引き継ぐ
+			}
+			// else: currentBlendFactor <= 0.5f の場合は現在のアニメーションをそのまま使用
+		}
+		
 		mNextAnimation      = animation;
 		mNextAnimationName  = animationName;
 		mNextAnimationLoop  = loop;
 		mTransitionDuration = transitionTime;
 		mTransitionTime     = 0.0f;
+		mNextAnimationTime  = 0.0f; // 新しい遷移先は0から開始
 		mIsTransitioning    = true;
 		mIsPlaying          = true;
 
@@ -681,16 +716,14 @@ void SkeletalMeshRenderer::UpdateBoneMatrices() {
 			                    1.0f;
 		blendFactor = std::clamp(blendFactor, 0.0f, 1.0f);
 
-		// 次のアニメーションの時間（遷移開始時は0から始める）
-		float nextAnimTime = 0.0f;
-
+		// 両方のアニメーションの現在の時間を使用してブレンド
 		CalculateNodeTransformBlended(
 			skeleton.rootNode,
 			Mat4::identity,
 			mCurrentAnimation,
 			mAnimationTime,
 			mNextAnimation,
-			nextAnimTime,
+			mNextAnimationTime, // 進行中の次のアニメーション時間を使用
 			blendFactor
 		);
 	} else {
@@ -801,13 +834,15 @@ void SkeletalMeshRenderer::CalculateNodeTransformBlended(
 	}
 
 	// 線形補間でブレンド
-	Vec3 translation = Math::Lerp(translationCurrent, translationNext,
-	                              blendFactor);
-	Vec3 scale = Math::Lerp(scaleCurrent, scaleNext, blendFactor);
+	Vec3 translation = Math::Lerp(
+		translationCurrent, translationNext, Math::EaseOutBack(blendFactor)
+	);
+	Vec3 scale = Math::Lerp(scaleCurrent, scaleNext, Math::EaseOutBack(blendFactor));
 
-	// 回転は球面線形補間（Slerp）を使用
-	Quaternion rotation = Quaternion::Slerp(rotationCurrent, rotationNext,
-	                                        blendFactor);
+	// 回転
+	Quaternion rotation = Quaternion::Slerp(
+		rotationCurrent, rotationNext, Math::EaseOutBack(blendFactor)
+	);
 
 	// ブレンドされた変換行列を作成
 	Mat4 nodeTransform = Mat4::Affine(scale, rotation, translation);

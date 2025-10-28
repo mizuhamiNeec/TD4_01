@@ -97,9 +97,10 @@ private:
 	const Animation* mNextAnimation = nullptr;
 	std::string      mNextAnimationName;
 	float            mTransitionTime     = 0.0f;
-	float            mTransitionDuration = 0.3f;
+	float            mTransitionDuration = 0.99f;
 	bool             mIsTransitioning    = false;
 	bool             mNextAnimationLoop  = true;
+	float            mNextAnimationTime  = 0.0f; // 遷移先アニメーションの再生時間
 
 #ifdef _DEBUG
 	bool mShowBoneDebug = false;

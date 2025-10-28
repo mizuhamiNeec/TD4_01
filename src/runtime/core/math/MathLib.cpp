@@ -237,6 +237,15 @@ namespace Math {
 		return CubicBezier(t, Vec2(p1, p2), Vec2(p3, p4));
 	}
 
+	/// @brief EaseOutBack関数
+	/// @param t 補間係数 (0.0 ~ 1.0)
+	/// @return 補間結果
+	float EaseOutBack(const float t) {
+		constexpr float c1 = 1.70158f;
+		constexpr float c3 = c1 + 1;
+		return 1.0f + c3 * std::pow(t - 1.0f, 3.0f) + c1 * std::pow(t - 1.0f, 2.0f);
+	}
+
 	/// @brief インチをメートルに変換します
 	/// @param vec 変換するベクトル
 	/// @return 変換後のベクトル

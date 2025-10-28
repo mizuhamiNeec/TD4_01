@@ -6,19 +6,19 @@
  * @brief 武器（ViewModel）を揺らすコンポーネント
  * @details カメラの動きに応じて武器モデルに揺れの演出を加えます
  */
-class WeaponSway final : public Component {
+class ViewmodelSway final : public Component {
 public:
 	/**
 	 * @brief コンストラクタ
-	 * @param swayAmount 揺れの量（デフォルト: 0.025f）
+	 * @param swayAmount 揺れの量
 	 */
-	WeaponSway(const float& swayAmount = 0.025f) : mSwayAmount(swayAmount) {
+	ViewmodelSway(const float& swayAmount = -0.025f) : mSwayAmount(swayAmount) {
 	}
 
 	/**
 	 * @brief デストラクタ
 	 */
-	~WeaponSway() override;
+	~ViewmodelSway() override;
 
 	/**
 	 * @brief エンティティにアタッチされた際に呼ばれる
@@ -53,5 +53,5 @@ private:
 	float mSwayAmount  = 0.0f; // 揺らす量
 	float mPitch       = 0.0f;
 	float mYaw         = 0.0f;
-	float mAttenuation = 8.0f;
+	float mAttenuation = 16.0f;
 };

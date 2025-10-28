@@ -1,4 +1,4 @@
-#include "WeaponSway.h"
+#include "ViewmodelSway.h"
 
 #ifdef _DEBUG
 #include <imgui.h>
@@ -7,13 +7,13 @@
 #include <engine/Components/Transform/SceneComponent.h>
 #include <engine/Input/InputSystem.h>
 
-WeaponSway::~WeaponSway() = default;
+ViewmodelSway::~ViewmodelSway() = default;
 
-void WeaponSway::OnAttach(Entity& owner) {
+void ViewmodelSway::OnAttach(Entity& owner) {
 	Component::OnAttach(owner);
 }
 
-void WeaponSway::Update([[maybe_unused]] const float deltaTime) {
+void ViewmodelSway::Update([[maybe_unused]] const float deltaTime) {
 	// マウスの移動量を取得
 	Vec2 delta = InputSystem::GetMouseDelta();
 
@@ -38,14 +38,14 @@ void WeaponSway::Update([[maybe_unused]] const float deltaTime) {
 		           (mAttenuation * 0.5f) * deltaTime)); // 武器の位置調整
 }
 
-void WeaponSway::Render(ID3D12GraphicsCommandList* commandList) {
+void ViewmodelSway::Render(ID3D12GraphicsCommandList* commandList) {
 	Component::Render(commandList);
 }
 
-void WeaponSway::DrawInspectorImGui() {
+void ViewmodelSway::DrawInspectorImGui() {
 #ifdef _DEBUG
 	if (ImGui::CollapsingHeader(
-		"Weapon Sway", ImGuiTreeNodeFlags_DefaultOpen)) {
+		"Viewmodel Sway", ImGuiTreeNodeFlags_DefaultOpen)) {
 		ImGui::Text("Pitch: %.2f, Yaw: %.2f", mPitch, mYaw);
 
 		ImGui::DragFloat("SwayAmount", &mSwayAmount, 0.01f);
@@ -54,6 +54,6 @@ void WeaponSway::DrawInspectorImGui() {
 #endif
 }
 
-Entity* WeaponSway::GetOwner() const {
+Entity* ViewmodelSway::GetOwner() const {
 	return Component::GetOwner();
 }

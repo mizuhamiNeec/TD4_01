@@ -176,7 +176,9 @@ namespace UPhysics {
 					bestTOI,
 					finalNormal
 				);
-				outHit->triIndex = hitTri;
+				outHit->triIndex  = hitTri;
+				outHit->hitEntity = bvhSet[0].owner;
+				
 			}
 			return true;
 		}

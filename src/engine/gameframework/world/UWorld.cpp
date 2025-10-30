@@ -12,31 +12,6 @@ namespace Unnamed {
 	/// @brief コンストラクタ
 	/// @param name ワールドの名前
 	UWorld::UWorld(std::string name) : mName(std::move(name)) {
-		// JsonWriter writer("./test.json");
-		//
-		// for (int i = 0; i < 16384; ++i) {
-		// 	SpawnEmpty();
-		// }
-		//
-		// writer.BeginObject();
-		//
-		// writer.Key("name");
-		// writer.Write(mName);
-		// writer.Key("entities");
-		// writer.BeginArray();
-		// for (const auto& e : mEntities) {
-		// 	writer.BeginObject();
-		// 	writer.Key("name");
-		// 	writer.Write(e->GetName().data());
-		// 	writer.Key("id");
-		// 	writer.Write(e->GetId());
-		// 	writer.EndObject();
-		// }
-		// writer.EndArray();
-		//
-		// writer.EndObject();
-		//
-		// writer.Save();
 	}
 
 	/// @brief デストラクタ
@@ -78,7 +53,7 @@ namespace Unnamed {
 
 	/// @brief ワールド内のすべてのエンティティを更新します。
 	/// @param deltaTime 前のフレームからの経過時間（秒）
-	void UWorld::Tick(const float deltaTime) {
+	void UWorld::Tick(const float deltaTime) const {
 		for (const auto& e : mEntities) {
 			if (!e) { continue; }
 			e->Tick(deltaTime);
@@ -89,8 +64,6 @@ namespace Unnamed {
 				child.world->Tick(deltaTime);
 			}
 		}
-
-		mCurrentDeltaTime = deltaTime;
 	}
 
 	void UWorld::PostPhysicsTick(const float deltaTime) const {

@@ -8,6 +8,7 @@
 #include <engine/Engine.h>
 #include <engine/Camera/CameraManager.h>
 #include <engine/Components/Camera/CameraComponent.h>
+#include <engine/Components/ColliderComponent/AABBCollider.h>
 #include <engine/Components/ColliderComponent/MeshColliderComponent.h>
 #include <engine/Debug/Debug.h>
 #include <engine/Debug/DebugHud.h>
@@ -18,8 +19,6 @@
 #include <engine/TextureManager/TexManager.h>
 
 #include <game/components/CameraRotator.h>
-
-#include "engine/Components/ColliderComponent/BoxColliderComponent.h"
 
 namespace {
 	constexpr char kDevMeasureTexturePath[] =
@@ -79,9 +78,10 @@ GameScene::~GameScene() {
 
 /// @brief 初期化
 void GameScene::Init() {
-	mRenderer        = Unnamed::Engine::GetRenderer();
+	mRenderer = Unnamed::Engine::GetRenderer();
 	mResourceManager = Unnamed::Engine::GetResourceManager();
-	mSrvManager      = Unnamed::Engine::GetSrvManager();
+	mSrvManager = Unnamed::Engine::GetSrvManager();
+	mTimer = ServiceLocator::Get<Unnamed::TimeSystem>()->GetGameTime();
 
 	LoadCoreTextures();
 	InitializeCubeMap();
@@ -89,15 +89,17 @@ void GameScene::Init() {
 	InitializePhysics();
 	InitializeCamera();
 	InitializePlayer();
-	InitializeWeapon();
 	InitializeWorldMesh();
 	InitializeCameraRoot();
 	InitializeShakeRoot();
 	InitializeSkeletalMesh();
+	InitializeWeapon();
 	ConfigureEntityHierarchy();
 	InitializeEffects();
 	ConfigureConsole();
 	InitializeTeleportTrigger();
+
+	mTimer->StartGame();
 }
 
 /// @brief 更新
@@ -276,6 +278,16 @@ void GameScene::InitializePlayer() {
 	mEntPlayer = std::make_unique<Entity>("player");
 	mEntPlayer->GetTransform()->SetLocalPos(Vec3::up * kPlayerSpawnHeight);
 
+	const float widthHU     = 32.0f;
+	const float heightHU    = 72.0f;
+	const auto  halfExtents = Vec3(
+		Math::HtoM(widthHU) * 0.5f,
+		Math::HtoM(heightHU) * 0.5f,
+		Math::HtoM(widthHU) * 0.5f
+	);
+	Unnamed::AABB playerAABB(-halfExtents, halfExtents);
+	mEntPlayer->AddComponent<AABBCollider>(playerAABB);
+
 	auto* movement     = mEntPlayer->AddComponent<MovementComponent>();
 	mMovementComponent = AdoptComponent(movement);
 
@@ -311,11 +323,6 @@ void GameScene::InitializeWeapon() {
 	auto* weaponComponent = mEntWeapon->AddComponent<WeaponComponent>(
 		kWeaponScriptPath);
 	mWeaponComponent = AdoptComponent(weaponComponent);
-
-	mEntWeapon->AddComponent<BoxColliderComponent>();
-
-	auto* weaponSway = mEntWeapon->AddComponent<ViewmodelSway>();
-	mWeaponSway      = AdoptComponent(weaponSway);
 
 	AddEntity(mEntWeapon.get());
 }
@@ -380,8 +387,8 @@ void GameScene::InitializeSkeletalMesh() {
 	auto* renderer = mEntSkeletalMesh->AddComponent<SkeletalMeshRenderer>();
 	mSkeletalMeshRenderer = AdoptComponent(renderer);
 
-	mEntSkeletalMeshRoot = std::make_unique<Entity>("SkeletalMeshRoot");
-	mEntSkeletalMeshRoot->AddComponent<ViewmodelSway>();
+	mEntViewmodelRoot = std::make_unique<Entity>("ViewmodelRoot");
+	mEntViewmodelRoot->AddComponent<ViewmodelSway>();
 
 	if (mSkeletalMeshRenderer && meshManager) {
 		if (auto* mesh = meshManager->GetSkeletalMesh(kSkeletalMeshPath)) {
@@ -390,7 +397,7 @@ void GameScene::InitializeSkeletalMesh() {
 	}
 	mSkeletalMeshRenderer->PlayAnimation("Sprint", true);
 
-	AddEntity(mEntSkeletalMeshRoot.get());
+	AddEntity(mEntViewmodelRoot.get());
 	AddEntity(mEntSkeletalMesh.get());
 }
 
@@ -408,17 +415,15 @@ void GameScene::ConfigureEntityHierarchy() {
 			Math::HtoM(kPlayerCameraForwardOffsetHU));
 	}
 
-	if (mEntWeapon && mCamera) {
-		mEntWeapon->SetParent(mCamera.get());
-		mEntWeapon->GetTransform()->SetLocalPos(kShakeRootOffset);
-	}
-
 	if (mEntSkeletalMesh && mEntCameraRoot) {
 		auto* transform = mEntSkeletalMesh->GetTransform();
 		transform->SetLocalPos(Vec3::zero);
 		transform->SetLocalRot(Quaternion::EulerDegrees(0.0f, 180.0f, 0.0f));
-		mEntSkeletalMeshRoot->SetParent(mEntCameraRoot.get());
-		mEntSkeletalMesh->SetParent(mEntSkeletalMeshRoot.get());
+		mEntViewmodelRoot->SetParent(mEntCameraRoot.get());
+		mEntSkeletalMesh->SetParent(mEntViewmodelRoot.get());
+
+		mEntWeapon->SetParent(mEntViewmodelRoot.get());
+		mEntWeapon->GetTransform()->SetLocalPos(kShakeRootOffset);
 	}
 }
 
@@ -877,6 +882,13 @@ void GameScene::DrawDebugHud(
 		1.0f,
 		ImGui::ColorConvertFloat4ToU32(reticleColor)
 	);
+
+	if (ImGui::Begin("Time")) {
+		auto time = mTimer->TotalTime();
+
+		ImGui::Text(std::format("TotalTime: {:.2f}s", time).c_str());
+	}
+	ImGui::End();
 }
 #endif
 

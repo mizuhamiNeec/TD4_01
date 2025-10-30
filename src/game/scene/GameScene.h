@@ -17,6 +17,7 @@
 #include <game/components/weapon/base/WeaponComponent.h>
 #include <game/scene/base/BaseScene.h>
 
+class GameTime;
 class D3D12;
 class EnemyMovement;
 class CameraRotator;
@@ -74,7 +75,8 @@ private:
 	void DrawDebugHud(const std::shared_ptr<CameraComponent>& camera) const;
 #endif
 
-	D3D12* mRenderer = nullptr;
+	D3D12*    mRenderer = nullptr;
+	GameTime* mTimer    = nullptr;
 
 	std::unique_ptr<CubeMap> mCubeMap;
 
@@ -92,12 +94,11 @@ private:
 	std::unique_ptr<Entity>             mEntWeapon;
 	std::shared_ptr<WeaponComponent>    mWeaponComponent;
 	std::shared_ptr<StaticMeshRenderer> mWeaponMeshRenderer;
-	std::shared_ptr<ViewmodelSway>         mWeaponSway;
 
 	std::unique_ptr<Entity>         mEntShakeRoot;
 	std::shared_ptr<CameraAnimator> mCameraAnimator;
 
-	std::unique_ptr<Entity> mEntSkeletalMeshRoot;
+	std::unique_ptr<Entity> mEntViewmodelRoot;
 
 	std::unique_ptr<Entity>               mEntSkeletalMesh;
 	std::shared_ptr<SkeletalMeshRenderer> mSkeletalMeshRenderer;

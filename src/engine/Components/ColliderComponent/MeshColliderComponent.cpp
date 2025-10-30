@@ -49,16 +49,10 @@ void MeshColliderComponent::DrawInspectorImGui() {
 /// @brief 他のコライダーとの衝突判定
 /// @param other 他のコライダーコンポーネント
 /// @return 衝突しているかどうか
-bool MeshColliderComponent::CheckCollision(
-	const ColliderComponent* other) const {
-	other;
-	return false;
-}
-
-/// @brief 動的コライダーかどうかを返す
-/// @return 動的コライダーであればtrue、静的コライダーであればfalse
-bool MeshColliderComponent::IsDynamic() {
-	return false;
+void MeshColliderComponent::CheckCollision(
+	const ColliderComponent* other
+) const {
+	(void)other;
 }
 
 /// @brief 三角形リストを取得する

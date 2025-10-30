@@ -27,9 +27,12 @@ namespace Unnamed {
 		UEntity* SpawnEmpty(const std::string& name = "Entity");
 		void     DestroyEntity(uint64_t entityID);
 
+		void PrePhysicsTick(float deltaTime) const;
 		void Tick(float deltaTime);
-		void PreRender();
-		void PostRender();
+		void PostPhysicsTick(float deltaTime) const;
+
+		void PreRender() const;
+		void PostRender() const;
 
 		bool SaveToJson(const std::string& path);
 		bool LoadFromJson(
@@ -66,11 +69,18 @@ namespace Unnamed {
 		[[nodiscard]] const std::string& Name() const { return mName; }
 		void SetName(std::string& name) { mName = std::move(name); }
 
+		// TODO HACK: 一時的にDeltaTimeを取得できるようにする
+		[[nodiscard]] float CurrentDeltaTime() const {
+			return mCurrentDeltaTime;
+		}
+
 	private:
 		std::string   mName;
 		WorldSettings mSettings;
 
 		std::vector<std::unique_ptr<UEntity>> mEntities;
 		std::vector<ChildWorld>               mChildren;
+
+		float mCurrentDeltaTime = 0.0f;
 	};
 }

@@ -61,32 +61,59 @@ namespace Unnamed {
 		);
 	}
 
+	/// @brief ワールド内のすべてのエンティティの物理演算前の更新を行います。
+	/// @param deltaTime 前のフレームからの経過時間（秒）
+	void UWorld::PrePhysicsTick(const float deltaTime) const {
+		for (const auto& e : mEntities) {
+			if (!e) { continue; }
+			e->PrePhysicsTick(deltaTime);
+		}
+
+		for (auto& child : mChildren) {
+			if (child.world) {
+				child.world->PrePhysicsTick(deltaTime);
+			}
+		}
+	}
+
 	/// @brief ワールド内のすべてのエンティティを更新します。
 	/// @param deltaTime 前のフレームからの経過時間（秒）
 	void UWorld::Tick(const float deltaTime) {
 		for (const auto& e : mEntities) {
 			if (!e) { continue; }
-
-			e->PrePhysicsTick(deltaTime);
 			e->Tick(deltaTime);
-			e->PostPhysicsTick(deltaTime);
+		}
 
-			for (auto& [world, parentTransform] : mChildren) {
-				if (world) {
-					world->Tick(deltaTime);
-				}
+		for (auto& child : mChildren) {
+			if (child.world) {
+				child.world->Tick(deltaTime);
+			}
+		}
+
+		mCurrentDeltaTime = deltaTime;
+	}
+
+	void UWorld::PostPhysicsTick(const float deltaTime) const {
+		for (const auto& e : mEntities) {
+			if (!e) { continue; }
+			e->PostPhysicsTick(deltaTime);
+		}
+
+		for (auto& child : mChildren) {
+			if (child.world) {
+				child.world->PostPhysicsTick(deltaTime);
 			}
 		}
 	}
 
 	/// @brief ワールド内のすべてのエンティティのレンダリング前処理を行います。
-	void UWorld::PreRender() {
+	void UWorld::PreRender() const {
 		for (auto& e : mEntities) { if (e) { e->OnPreRender(); } }
 		for (auto& cw : mChildren) if (cw.world) { cw.world->PreRender(); }
 	}
 
 	/// @brief ワールド内のすべてのエンティティのレンダリング後処理を行います。
-	void UWorld::PostRender() {
+	void UWorld::PostRender() const {
 		for (auto& e : mEntities) { if (e) { e->OnPostRender(); } }
 		for (auto& cw : mChildren) if (cw.world) { cw.world->PostRender(); }
 	}

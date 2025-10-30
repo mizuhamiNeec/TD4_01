@@ -11,19 +11,19 @@
 namespace Unnamed {
 	/// @brief 位置を取得します。
 	/// @return 位置
-	const Vec3& TransformComponent::Position() const noexcept {
+	Vec3 TransformComponent::Position() const noexcept {
 		return mLocalPos;
 	}
 
 	/// @brief 回転を取得します。
 	/// @return 回転
-	const Quaternion& TransformComponent::Rotation() const noexcept {
+	Quaternion TransformComponent::Rotation() const noexcept {
 		return mLocalRot;
 	}
 
 	/// @brief スケールを取得します。
 	/// @return スケール
-	const Vec3& TransformComponent::Scale() const noexcept {
+	Vec3 TransformComponent::Scale() const noexcept {
 		return mLocalScale;
 	}
 
@@ -66,7 +66,7 @@ namespace Unnamed {
 		if (mParent == newParent) {
 			Warning(
 				GetComponentName(),
-				"SetParent: 新しい親は現在の親と同じです。ロジックの確認をしてください。"
+				"SetParent: 新しい親は現在の親と同じです。"
 			);
 			return;
 		}
@@ -88,12 +88,10 @@ namespace Unnamed {
 
 	/// @brief コンポーネントがエンティティに取り付けられたときに呼び出されます。
 	void TransformComponent::OnAttached() {
-		Msg(GetComponentName(), "OnAttached: コンポーネントが取り付けられました。");
 	}
 
 	/// @brief コンポーネントがエンティティから取り外されたときに呼び出されます。
 	void TransformComponent::OnDetached() {
-		Msg(GetComponentName(), "OnDetached: コンポーネントが取り外されました。");
 	}
 
 	/// @brief 物理演算の前に呼び出されます。
@@ -106,11 +104,10 @@ namespace Unnamed {
 			return; // ・・・・・・なにも!!! な゛かった・・・!!!!(ドンッ!!)
 		}
 
-		Mat4 S = Mat4::Scale(mLocalScale);
-		Mat4 R = Mat4::FromQuaternion(mLocalRot);
-		Mat4 T = Mat4::Translate(mLocalPos);
-
-		const Mat4 localMat = S * R * T;
+		const Mat4 localMat =
+			Mat4::Scale(mLocalScale) *
+			Mat4::FromQuaternion(mLocalRot) *
+			Mat4::Translate(mLocalPos);
 
 		if (mParent) {
 			mWorldMat = localMat * mParent->WorldMat();

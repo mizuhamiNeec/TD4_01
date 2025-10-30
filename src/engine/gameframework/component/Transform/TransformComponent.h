@@ -13,9 +13,9 @@ namespace Unnamed {
 		//---------------------------------------------------------------------
 		// TransformComponent
 		//---------------------------------------------------------------------
-		[[nodiscard]] const Vec3&         Position() const noexcept;
-		[[nodiscard]] const Quaternion&   Rotation() const noexcept;
-		[[nodiscard]] const Vec3&         Scale() const noexcept;
+		[[nodiscard]] Vec3                Position() const noexcept;
+		[[nodiscard]] Quaternion Rotation() const noexcept;
+		[[nodiscard]] Vec3 Scale() const noexcept;
 		[[nodiscard]] TransformComponent* Parent() const;
 		[[nodiscard]] const Mat4&         WorldMat() const noexcept;
 

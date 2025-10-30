@@ -35,7 +35,7 @@ public:
 private:
 	float mFov         = 90.0f * Math::deg2Rad;
 	float mAspectRatio = 0.0f;
-	float mZNear       = 0x.1p1f;
+	float mZNear       = 0.01f;
 	float mZFar        = 0x61A8p0f;
 
 	Mat4 mWorldMat;

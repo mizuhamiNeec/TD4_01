@@ -2,8 +2,18 @@
 
 #include <engine/OldConsole/Console.h>
 
-/// @brief 物理エンジンを取得します
-/// @return 物理エンジンのポインタ
-PhysicsEngine* ColliderComponent::GetPhysicsEngine() const {
-	return mPhysicsEngine;
+/// @brief オーバーラップ開始コールバックを登録します。
+/// @param callback コールバック関数
+void ColliderComponent::RegisterOnOverlapBeginCallback(
+	const OnOverlapBegin& callback
+) {
+	mOnOverlapBeginCallbacks.emplace_back(callback);
+}
+
+/// @brief オーバーラップ終了コールバックを登録します。
+/// @param callback コールバック関数
+void ColliderComponent::RegisterOnOverlapEndCallback(
+	const OnOverlapEnd& callback
+) {
+	mOnOverlapEndCallbacks.emplace_back(callback);
 }

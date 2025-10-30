@@ -119,67 +119,78 @@ namespace Unnamed {
 		// 適当にキーボードとマウスを割り当て
 		{
 			auto w = KeyNameTable::FromString("w");
-			mInputSystem->BindAxis2D(
-				"move",
-				{
-					.device = w->device,
-					.code = w->code,
-				},
-				INPUT_AXIS::Y,
-				1.0f
-			);
-
+			if (w.has_value()) {
+				mInputSystem->BindAxis2D(
+					"move",
+					{
+						.device = w->device,
+						.code = w->code,
+					},
+					INPUT_AXIS::Y,
+					1.0f
+				);
+			}
 			auto s = KeyNameTable::FromString("s");
-			mInputSystem->BindAxis2D(
-				"move",
-				{
-					.device = s->device,
-					.code = s->code,
-				},
-				INPUT_AXIS::Y,
-				-1.0f
-			);
-
+			if (s.has_value()) {
+				mInputSystem->BindAxis2D(
+					"move",
+					{
+						.device = s->device,
+						.code = s->code,
+					},
+					INPUT_AXIS::Y,
+					-1.0f
+				);
+			}
 			auto d = KeyNameTable::FromString("d");
-			mInputSystem->BindAxis2D(
-				"move",
-				{
-					.device = d->device,
-					.code = d->code,
-				},
-				INPUT_AXIS::X,
-				1.0f
-			);
-
+			if (d.has_value()) {
+				if (d.has_value()) {
+					mInputSystem->BindAxis2D(
+						"move",
+						{
+							.device = d->device,
+							.code = d->code,
+						},
+						INPUT_AXIS::X,
+						1.0f
+					);
+				}
+			}
 			auto a = KeyNameTable::FromString("a");
-			mInputSystem->BindAxis2D(
-				"move",
-				{
-					.device = a->device,
-					.code = a->code,
-				},
-				INPUT_AXIS::X,
-				-1.0f
-			);
+			if (a.has_value()) {
+				mInputSystem->BindAxis2D(
+					"move",
+					{
+						.device = a->device,
+						.code = a->code,
+					},
+					INPUT_AXIS::X,
+					-1.0f
+				);
+			}
 
 			auto q = KeyNameTable::FromString("q");
-			mInputSystem->BindAxis1D(
-				"vertical",
-				{
-					.device = q->device,
-					.code = q->code
-				},
-				-1.0f
-			);
+			if (q.has_value()) {
+				mInputSystem->BindAxis1D(
+					"vertical",
+					{
+						.device = q->device,
+						.code = q->code
+					},
+					-1.0f
+				);
+			}
 			auto e = KeyNameTable::FromString("e");
-			mInputSystem->BindAxis1D(
-				"vertical",
-				{
-					.device = e->device,
-					.code = e->code
-				},
-				1.0f
-			);
+			if (e.has_value()) {
+				mInputSystem->BindAxis1D(
+					"vertical",
+					{
+						.device = e->device,
+						.code = e->code
+					},
+					1.0f
+				);
+			}
 
 			mInputSystem->BindAxis2D(
 				"mouse",
@@ -280,13 +291,13 @@ namespace Unnamed {
 			UASSERT(ok && "Failed to build material.");
 
 			const auto meshAsset = mAssetManager->LoadFromFile(
-				"./content/core/models/ShaderBall.obj", UASSET_TYPE::MESH
+				"./content/core/models/Error.obj", UASSET_TYPE::MESH
 			);
 			mAssetManager->AddRef(meshAsset);
 
 			// グリッドでエンティティをスポーン
-			constexpr int   rows    = 4;
-			constexpr int   cols    = 4;
+			constexpr int   rows    = 16;
+			constexpr int   cols    = 16;
 			constexpr float spacing = 4.0f;
 			constexpr float offsetX = (cols - 1) * spacing * 0.5f;
 			constexpr float offsetZ = (rows - 1) * spacing * 0.5f;
@@ -428,7 +439,9 @@ namespace Unnamed {
 
 			mCameraTransform->SetPosition(prevPos);
 
+			mWorld->PrePhysicsTick(deltaTime);
 			mWorld->Tick(deltaTime);
+			mWorld->PostPhysicsTick(deltaTime);
 
 			//-----------------------------------------------------------------
 
@@ -526,6 +539,8 @@ namespace Unnamed {
 
 	/// @brief シャットダウン
 	void UEngine::Shutdown() const {
+		mGraphicsDevice->Shutdown();
+
 		mPlatformEvents->RemoveListener(mInputSystem);
 
 		Msg(

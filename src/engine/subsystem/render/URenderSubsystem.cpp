@@ -205,14 +205,14 @@ namespace Unnamed {
 				lastRs  = it.rsPtr;
 				// ルートシグネチャが変わったら同じマテリアルでもう一度適用
 				it.material->Apply(cmd, mRenderResourceManager,
-				                   mContext.backIndex, 0.0f);
+				                   mContext.backIndex);
 				lastMat = it.materialKey;
 			}
 
 			// マテリアル変更時に適用
 			else if (it.materialKey != lastMat) {
 				it.material->Apply(
-					cmd, mRenderResourceManager, mContext.backIndex, 0.0f
+					cmd, mRenderResourceManager, mContext.backIndex
 				);
 				lastMat = it.materialKey;
 			}

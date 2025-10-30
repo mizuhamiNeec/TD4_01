@@ -78,28 +78,10 @@ namespace Unnamed {
 		void Apply(
 			ID3D12GraphicsCommandList*   commandList,
 			const RenderResourceManager* renderResourceManager,
-			uint32_t                     backIndex,
-			float                        timeSec
+			uint32_t                     backIndex
 		) const;
 		void Release(RenderResourceManager* renderResourceManager,
 		             ID3D12Fence*           fence, uint64_t value);
-
-		// デバッグ用
-		void EnableMipOscillation(bool enable, float speedHz = 1.0f) {
-			dbgForceMip  = enable;
-			dbgOscillate = enable;
-			dbgSpeedHz   = speedHz;
-		}
-
-		void SetFixedMip(int mip) {
-			dbgForceMip  = true;
-			dbgOscillate = false;
-			dbgFixedMip  = mip;
-		}
-
-		void DisableForcedMip() {
-			dbgForceMip = false;
-		}
 
 	private:
 		std::vector<WatchedFile> mWatchedFiles;
@@ -138,14 +120,5 @@ namespace Unnamed {
 		GraphicsDevice* mGraphicsDevice = nullptr;
 
 		bool mGPUReady = false;
-
-		bool  dbgForceMip  = true;
-		bool  dbgOscillate = true;
-		float dbgSpeedHz   = 1.5f;
-		int   dbgFixedMip  = -1;
-
-		mutable int mPrevLoggedMip = -999;
-
-		uint32_t mMainTexMipCount = 1;
 	};
 }

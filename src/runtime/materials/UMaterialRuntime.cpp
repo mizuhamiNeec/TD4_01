@@ -32,10 +32,10 @@ namespace Unnamed {
 
 	/// @brief マテリアル定数バッファデータ構造体
 	struct MaterialCBData {
-		Vec4     BaseColor; // 16
-		float    Metallic;  // 4
-		float    ForceMipNorm;
-		uint32_t UseForcedMip;
+		Vec4     BaseColor;    // 16
+		float    Metallic;     // 4
+		float    ForceMipNorm; // OBSOLETE! Unused
+		uint32_t UseForcedMip; // OBSOLETE! Unused
 		float    _pad0;
 		Vec4     Extra[14];
 	};
@@ -215,15 +215,6 @@ namespace Unnamed {
 		s0.space             = 0;
 		rs.staticSamplers.emplace_back(s0);
 
-		// for (auto param : rs.params) {
-		// 	Msg(
-		// 		kChannel,
-		// 		"Params: Kind({}), {}",
-		// 		static_cast<int>(param.kind),
-		// 		param.cbvRegister
-		// 	);
-		// }
-
 		root = rootSignatureCache->GetOrCreate(rs);
 		if (root.id == UINT32_MAX) {
 			return false;
@@ -322,20 +313,6 @@ namespace Unnamed {
 			hr = mCB->Map(0, &noRead, reinterpret_cast<void**>(&mCBMapped));
 			if (FAILED(hr)) {
 				return false;
-			}
-		}
-
-		mMainTexMipCount = 1;
-		for (auto& s : mTextureSlots) {
-			if (s.name == "MainTex" && s.asset != kInvalidAssetID) {
-				if (auto* ta = assetManager->Get<
-					TextureAssetData>(s.asset)) {
-					mMainTexMipCount = ta->mips.empty() ?
-						                   1u :
-						                   static_cast<uint32_t>(ta->mips.
-							                   size());
-				}
-				break;
 			}
 		}
 
@@ -475,12 +452,10 @@ namespace Unnamed {
 	/// @param commandList コマンドリスト
 	/// @param renderResourceManager レンダーリソースマネージャー
 	/// @param backIndex バックバッファインデックス
-	/// @param timeSec 経過時間（秒）
 	void UMaterialRuntime::Apply(
 		ID3D12GraphicsCommandList*   commandList,
 		const RenderResourceManager* renderResourceManager,
-		const uint32_t               backIndex,
-		float                        timeSec
+		const uint32_t               backIndex
 	) const {
 		for (auto& slot : mTextureSlots) {
 			if (slot.name == "MainTex" && slot.handle.IsValid()) {
@@ -494,40 +469,6 @@ namespace Unnamed {
 		MaterialCBData cb = {};
 		cb.BaseColor      = mBaseColor;
 		cb.Metallic       = mMetallic;
-
-		cb.UseForcedMip = dbgForceMip ? 1u : 0u;
-		cb.ForceMipNorm = 0.0f;
-
-		if (dbgForceMip) {
-			int mipIdx;
-			if (dbgOscillate) {
-				const float phase = 0.5f + 0.5f * sin(
-					timeSec * Math::pi * 2.0f * dbgSpeedHz);
-				cb.ForceMipNorm = phase;
-			} else if (dbgFixedMip >= 0 && mMainTexMipCount > 1) {
-				cb.ForceMipNorm = static_cast<float>(dbgFixedMip) /
-					static_cast<float>(mMainTexMipCount - 1);
-			}
-
-			if (mMainTexMipCount > 1) {
-				mipIdx = std::clamp(
-					static_cast<int>(std::lround(
-						cb.ForceMipNorm * static_cast<float>(mMainTexMipCount -
-							1))),
-					0, static_cast<int>(mMainTexMipCount) - 1);
-			} else {
-				mipIdx = 0;
-			}
-
-			if (mipIdx != mPrevLoggedMip) {
-				mPrevLoggedMip = mipIdx;
-				DevMsg(
-					kChannel,
-					"Forced MIP = {} / {} (norm={:.3f})",
-					mipIdx, mMainTexMipCount, cb.ForceMipNorm
-				);
-			}
-		}
 
 		for (int i = 0; i < 14; ++i) {
 			cb.Extra[i] = mExtraCache[i];

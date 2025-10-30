@@ -427,6 +427,8 @@ namespace Unnamed {
 
 	/// @brief シャットダウン
 	void GraphicsDevice::Shutdown() {
+		const uint32_t waitIndex = (mBackBufferIndex + 1) % kFrameBufferCount;
+		WaitGPU(waitIndex);
 		for (const auto& frameContext : mFrameContexts) {
 			if (frameContext.event) {
 				CloseHandle(frameContext.event);
@@ -819,8 +821,9 @@ namespace Unnamed {
 	/// @brief 深度バッファの作成
 	/// @param width 横幅
 	/// @param height 縦幅
-	void GraphicsDevice::CreateDepthBuffers(const UINT width,
-	                                        const UINT height) {
+	void GraphicsDevice::CreateDepthBuffers(
+		const UINT width, const UINT height
+	) {
 		DestroyDepthBuffers();
 
 		// DSV ディスクリプタ生成

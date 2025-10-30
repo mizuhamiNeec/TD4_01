@@ -7,7 +7,8 @@ class GameTime {
 public:
 	GameTime();
 
-	//void StartFrame();
+	void StartGame();
+	
 	void EndFrame();
 
 	// Getter

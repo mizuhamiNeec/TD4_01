@@ -19,6 +19,14 @@ GameTime::GameTime() :
 	);
 }
 
+/// @brief ゲーム開始時の処理を行います。
+void GameTime::StartGame() {
+	mTotalTime      = 0.0;
+	mFrameCount     = 0;
+	mStartTime      = Clock::now();
+	mFrameStartTime = mStartTime;
+}
+
 /// @brief フレーム開始時の処理を行います。
 void GameTime::EndFrame() {
 	// フレーム終了時刻を記録
@@ -35,8 +43,8 @@ void GameTime::EndFrame() {
 	)->GetValueAsFloat();
 
 	// 各値を更新
-	mTotalTime += mDeltaTime;
 	mScaledDeltaTime = mDeltaTime * mTimeScale;
+	mTotalTime += mScaledDeltaTime;
 	++mFrameCount;
 
 	// 次の開始時刻として記録

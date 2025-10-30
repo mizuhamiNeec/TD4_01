@@ -9,9 +9,25 @@
 #include <engine/ImGui/ImGuiWidgets.h>
 #include <engine/OldConsole/ConVarManager.h>
 
+#include "engine/Components/ColliderComponent/AABBCollider.h"
+#include "engine/Entity/Entity.h"
+#include "engine/Input/InputSystem.h"
+#include "MovementComponent.h"
+
+#include <algorithm>
+#include <cmath>
+#include <array>
+#include <engine/Camera/CameraManager.h>
+#include <engine/Components/Camera/CameraComponent.h>
+#include <engine/Components/Transform/SceneComponent.h>
+#include <engine/ImGui/ImGuiWidgets.h>
+#include <engine/OldConsole/ConVarManager.h>
+
+#include "engine/Components/ColliderComponent/AABBCollider.h"
 #include "engine/Entity/Entity.h"
 #include "engine/Input/InputSystem.h"
 
+static constexpr std::string_view kChannel = "MovementComponent";
 
 /// @brief コンストラクタ
 /// @param width プレイヤーの幅
@@ -30,7 +46,15 @@ MovementData::MovementData() : currentWidthHu(32.0f), currentHeightHu(72.0f) {
 
 /// @brief コンポーネントがエンティティにアタッチされたときの処理
 /// @param owner 所有エンティティ
-void MovementComponent::OnAttach(Entity& owner) { Component::OnAttach(owner); }
+void MovementComponent::OnAttach(Entity& owner) {
+	Component::OnAttach(owner);
+	// AABBコライダーを取得
+	mCollider = owner.GetComponent<AABBCollider>();
+
+	if (!mCollider) {
+		Error(kChannel, "AABBColliderを取得できませんでした。");
+	}
+}
 
 /// @brief 初期化
 /// @param uphysics UPhysicsエンジンポインタ
@@ -58,13 +82,13 @@ void MovementComponent::PrePhysics(float) {
 	ProcessInput();
 
 	Debug::DrawBox(
-		mData.hull.center,
+		mHull.center,
 		Quaternion::identity,
-		mData.hull.halfSize * 2.0f,
+		mHull.halfSize * 2.0f,
 		{0.34f, 0.66f, 0.95f, 1.0f}
 	);
 	Debug::DrawArrow(
-		mData.hull.center,
+		mHull.center,
 		mData.velocity * 0.25f,
 		Vec4::yellow,
 		0.05f
@@ -471,8 +495,8 @@ void MovementComponent::AirAccelerate(
 
 /// @brief ハル(当たり判定)の寸法を更新
 void MovementComponent::UpdateHullDimensions() {
-	// 足元原点を前提に、中心を高さの半分だけ上げる
-	mData.hull = {
+	// 足元原点
+	mHull = {
 		.center = mScene->GetWorldPos() + Vec3::up * Math::HtoM(
 			mData.currentHeightHu * 0.5f),
 		.halfSize = Math::HtoM({
@@ -481,6 +505,16 @@ void MovementComponent::UpdateHullDimensions() {
 			mData.currentWidthHu * 0.5f
 		})
 	};
+
+	// ハルをもとにコライダーを更新
+	if (mCollider) {
+		auto& [min, max] = mCollider->AABB();
+		min              = mHull.center - mHull.halfSize;
+		max              = mHull.center + mHull.halfSize;
+		auto& offset     = mCollider->Offset();
+		// 足元原点なので上にずらす
+		offset = Vec3::up * mHull.halfSize.y;
+	}
 }
 
 /// @brief 速度と位置にNaNが含まれていないかチェックし、速度をクランプする
@@ -545,7 +579,8 @@ int MovementComponent::SlideMove(
 	std::array<Vec3, kMaxClipPlanes> planes{};
 	int                              numplanes = 0;
 
-	for (int bumpcount = 0; bumpcount < kMaxBumps && timeLeft > 0.0f; ++bumpcount) {
+	for (int bumpcount = 0; bumpcount < kMaxBumps && timeLeft > 0.0f; ++
+	     bumpcount) {
 		Unnamed::Box box = BuildHullAtFeet(position);
 
 		Vec3  move    = velocity * timeLeft;
@@ -568,8 +603,9 @@ int MovementComponent::SlideMove(
 
 		// 接触点まで移動（わずかな隙間を残す）
 		const float travel  = std::clamp(hit.t, 0.0f, castLen);
-		const float allowed = std::min(moveLen, std::max(0.0f, travel - SkinM()));
-		float       usedFrac = (moveLen > 1e-7f) ? (allowed / moveLen) : 1.0f;
+		const float allowed = std::min(moveLen,
+		                               std::max(0.0f, travel - SkinM()));
+		float usedFrac = (moveLen > 1e-7f) ? (allowed / moveLen) : 1.0f;
 		// 無限ループを回避するために前進を保証
 		usedFrac = std::clamp(usedFrac, kFracEps, 1.0f);
 
@@ -647,7 +683,7 @@ void MovementComponent::StepMove(
 	SlideMove(position, velocity, timeTotal);
 
 	// 水平移動距離を計算
-	Vec3 down     = position;
+	Vec3  down    = position;
 	float downVel = velocity.y;
 
 	// 元の位置からステップアップを試す
@@ -662,7 +698,7 @@ void MovementComponent::StepMove(
 	UPhysics::Hit ov{};
 	if (mUPhysicsEngine->BoxOverlap(boxUp, &ov)) {
 		// ステップアップできない（上に障害物）
-		position = down;
+		position   = down;
 		velocity.y = downVel;
 		return;
 	}
@@ -673,7 +709,8 @@ void MovementComponent::StepMove(
 	// ステップダウン
 	Unnamed::Box  boxAt = BuildHullAtFeet(position);
 	UPhysics::Hit downHit{};
-	if (mUPhysicsEngine->BoxCast(boxAt, -Vec3::up, StepHeightM() + RestOffsetM(), &downHit)) {
+	if (mUPhysicsEngine->BoxCast(boxAt, -Vec3::up,
+	                             StepHeightM() + RestOffsetM(), &downHit)) {
 		// 立てる地面か?
 		const float threshold = mData.groundNormalY;
 		if (downHit.normal.y >= threshold) {
@@ -683,12 +720,14 @@ void MovementComponent::StepMove(
 	}
 
 	// 水平移動距離を比較
-	const float downDist = (Vec3(down.x - startPos.x, 0.0f, down.z - startPos.z)).Length();
-	const float upDist   = (Vec3(position.x - startPos.x, 0.0f, position.z - startPos.z)).Length();
+	const float downDist = (
+		Vec3(down.x - startPos.x, 0.0f, down.z - startPos.z)).Length();
+	const float upDist = (Vec3(position.x - startPos.x, 0.0f,
+	                           position.z - startPos.z)).Length();
 
 	// ステップアップの方が進んでいない場合は元に戻す
 	if (downDist >= upDist) {
-		position = down;
+		position   = down;
 		velocity.y = downVel;
 	}
 }
@@ -699,7 +738,8 @@ void MovementComponent::StepMove(
 bool MovementComponent::GroundCheck(Vec3& position) {
 	Unnamed::Box  box = BuildHullAtFeet(position);
 	UPhysics::Hit gHit{};
-	const float   snapRange = RestOffsetM() + std::max(MaxAdhesionM(), StepHeightM());
+	const float   snapRange = RestOffsetM() + std::max(
+		MaxAdhesionM(), StepHeightM());
 
 	if (!mUPhysicsEngine->BoxCast(box, -Vec3::up, snapRange, &gHit)) {
 		return false;
@@ -740,8 +780,9 @@ void MovementComponent::MoveWithCollisions(const float dt) {
 	Vec3 velocity = mData.velocity;
 
 	// オプション: 前フレームで接地しており、水平に移動している場合のステップ試行
-	Vec3 horizVel = velocity;
-	const bool wantStep = mData.wasGroundedLastFrame && (horizVel.SqrLength() > 1e-8f);
+	Vec3       horizVel = velocity;
+	const bool wantStep = mData.wasGroundedLastFrame && (horizVel.SqrLength() >
+		1e-8f);
 
 	if (wantStep) {
 		StepMove(position, velocity, dt);
@@ -762,7 +803,9 @@ void MovementComponent::MoveWithCollisions(const float dt) {
 	}
 
 	if (!mData.isWallRunning && !mData.isSliding) {
-		mData.state = mData.isGrounded ? MOVEMENT_STATE::GROUND : MOVEMENT_STATE::AIR;
+		mData.state = mData.isGrounded ?
+			              MOVEMENT_STATE::GROUND :
+			              MOVEMENT_STATE::AIR;
 	}
 
 	UpdateHullDimensions();
@@ -806,7 +849,7 @@ void MovementComponent::DetectAndResolveStuck(float dt) {
 				// オーバーラップチェック
 				if (mUPhysicsEngine) {
 					UPhysics::Hit ov{};
-					if (!mUPhysicsEngine->BoxOverlap(mData.hull, &ov)) {
+					if (!mUPhysicsEngine->BoxOverlap(mHull, &ov)) {
 						// 脱出成功
 						mData.velocity += escapeVel;
 						escaped = true;
@@ -879,9 +922,9 @@ bool MovementComponent::TryStartWallrun() {
 
 	for (const Vec3& dir : checkDirections) {
 		UPhysics::Hit hit{};
-		Vec3          startPos = mData.hull.center;
+		Vec3          startPos = mHull.center;
 
-		if (mUPhysicsEngine->BoxCast(mData.hull, dir, checkDistance, &hit)) {
+		if (mUPhysicsEngine->BoxCast(mHull, dir, checkDistance, &hit)) {
 			Vec3 wallNormal = hit.normal.Normalized();
 
 			// 壁が十分垂直か（y成分が小さい）
@@ -972,7 +1015,7 @@ void MovementComponent::UpdateWallrun(float dt) {
 		// 壁に向かって（法線の逆方向）キャスト
 		Vec3 toWall = -mData.wallRunNormal;
 		if (!mUPhysicsEngine->
-			BoxCast(mData.hull, toWall, checkDistance, &hit)) {
+			BoxCast(mHull, toWall, checkDistance, &hit)) {
 			// 壁から離れた
 			EndWallrun();
 			return;

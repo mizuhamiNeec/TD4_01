@@ -3,6 +3,8 @@
 #include <runtime/core/math/Math.h>
 #include <runtime/physics/core/UPhysics.h>
 
+class AABBCollider;
+
 /**
  * @brief プレイヤーの移動状態
  */
@@ -45,11 +47,10 @@ struct MovementData {
 	bool           isGrounded = false;
 
 	// ハル
-	Unnamed::Box hull{};
-	float        currentWidthHu{};
-	float        currentHeightHu{};
-	float        defaultHeightHu{};
-	float        crouchHeightHu{};
+	float currentWidthHu{};
+	float currentHeightHu{};
+	float defaultHeightHu{};
+	float crouchHeightHu{};
 
 	// 地上での速度
 	float crouchSpeed  = 63.3f;
@@ -138,11 +139,13 @@ private:
 
 	// 衝突応答
 	void MoveWithCollisions(float dt);
-	
-	static Vec3        ClipVelocity(const Vec3& vel, const Vec3& normal, float overbounce);
-	int                SlideMove(Vec3& position, Vec3& velocity, float timeTotal);
-	void               StepMove(Vec3& position, Vec3& velocity, float timeTotal);
-	bool               GroundCheck(Vec3& position);
+
+	static Vec3 ClipVelocity(
+		const Vec3& vel, const Vec3& normal, float overbounce
+	);
+	int SlideMove(Vec3& position, Vec3& velocity, float timeTotal);
+	void StepMove(Vec3& position, Vec3& velocity, float timeTotal);
+	bool GroundCheck(Vec3& position);
 	[[nodiscard]] Unnamed::Box BuildHullAtFeet(const Vec3& feetPos) const;
 
 	// params
@@ -210,5 +213,7 @@ private:
 	static constexpr float kSlideHopSpeedCap = 2000.0f; // HU/s - スライドホップの速度上限
 
 	UPhysics::Engine* mUPhysicsEngine = nullptr;
+	AABBCollider*     mCollider       = nullptr;
+	Unnamed::Box      mHull;
 	MovementData      mData;
 };

@@ -23,7 +23,7 @@ namespace Math {
 	/// @param outAngle 画面中心からの角度 [rad]
 	/// @return スクリーン座標
 	Vec2 WorldToScreen(
-		const Vec3& worldPos, Vec2       screenSize,
+		const Vec3& worldPos, const Vec2       screenSize,
 		const bool& bClamp, const float& margin,
 		bool&       outIsOffscreen,
 		float&      outAngle

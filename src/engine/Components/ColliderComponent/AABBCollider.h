@@ -13,6 +13,9 @@ public:
 	Vec3&          Offset();
 
 	[[nodiscard]] Unnamed::AABB GetOffsetAABB() const;
+	
+	/// @brief ワールド座標でのAABBを取得
+	[[nodiscard]] Unnamed::AABB GetWorldAABB() const;
 
 private:
 	Unnamed::AABB mAABB;

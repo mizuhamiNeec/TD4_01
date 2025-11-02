@@ -8,12 +8,12 @@ AABBCollider::AABBCollider(const Unnamed::AABB& aabb, const Vec3 offset)
 }
 
 void AABBCollider::Update(float) {
-	Debug::DrawBox(
-		mOwner->GetTransform()->GetWorldPos() + mOffset,
-		Quaternion::identity,
-		mAABB.Size(),
-		Vec4::red
-	);
+	// Debug::DrawBox(
+	// 	mOwner->GetTransform()->GetWorldPos() + mOffset,
+	// 	Quaternion::identity,
+	// 	mAABB.Size(),
+	// 	Vec4::red
+	// );
 }
 
 void AABBCollider::DrawInspectorImGui() {
@@ -46,5 +46,17 @@ Unnamed::AABB AABBCollider::GetOffsetAABB() const {
 	return Unnamed::AABB(
 		mAABB.min + mOffset,
 		mAABB.max + mOffset
+	);
+}
+
+Unnamed::AABB AABBCollider::GetWorldAABB() const {
+	if (!mOwner) {
+		return mAABB;
+	}
+	
+	const Vec3 worldPos = mOwner->GetTransform()->GetWorldPos();
+	return Unnamed::AABB(
+		worldPos + mOffset + mAABB.min,
+		worldPos + mOffset + mAABB.max
 	);
 }

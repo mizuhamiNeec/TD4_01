@@ -19,6 +19,9 @@
 #include <engine/TextureManager/TexManager.h>
 
 #include <game/components/CameraRotator.h>
+#include <game/components/checkpoint/CheckpointComponent.h>
+#include <game/components/checkpoint/CheckpointManager.h>
+#include <game/components/checkpoint/GoalComponent.h>
 
 namespace {
 	constexpr char kDevMeasureTexturePath[] =
@@ -29,6 +32,8 @@ namespace {
 		"./content/core/textures/wave.dds";
 	constexpr char kSmokeTexturePath[] =
 		"./content/core/textures/smoke.png";
+	constexpr char kNextCheckpointArrowTexturePath[] =
+		"./content/parkour/textures/arrow.png";
 	constexpr char kWindParticleTexturePath[] =
 		"./content/core/textures/circle.png";
 	constexpr char kWeaponMeshPath[]   = "./content/core/models/weapon.obj";
@@ -37,9 +42,9 @@ namespace {
 	constexpr char kSkeletalMeshPath[] =
 		"./content/parkour/models/hand/hand.gltf";
 	constexpr char kWorldMeshInitialPath[] =
-		"./content/core/models/reflectionTest.obj";
+		"./content/parkour/models/map/sp_city.obj";
 	constexpr char kWorldMeshReloadPath[] =
-		"./content/core/models/reflectionTest.obj";
+		"./content/parkour/models/map/sp_city.obj";
 	constexpr char kAirAccelerateCommand[] =
 		"sv_airaccelerate 100000000000000000";
 	constexpr char  kMeshReloadBindCommand[] = "bind f5 +f5";
@@ -82,6 +87,10 @@ void GameScene::Init() {
 	mResourceManager = Unnamed::Engine::GetResourceManager();
 	mSrvManager = Unnamed::Engine::GetSrvManager();
 	mTimer = ServiceLocator::Get<Unnamed::TimeSystem>()->GetGameTime();
+	mSpriteCommon = Unnamed::Engine::GetSpriteCommon();
+
+	// CheckpointManagerを初期化
+	CheckpointManager::Initialize();
 
 	LoadCoreTextures();
 	InitializeCubeMap();
@@ -98,6 +107,15 @@ void GameScene::Init() {
 	InitializeEffects();
 	ConfigureConsole();
 	InitializeTeleportTrigger();
+	InitializeCheckpoints();
+	InitializeGoal();
+
+	mNextCheckpointSprite = std::make_unique<Sprite>();
+	mNextCheckpointSprite->Init(
+		mSpriteCommon,
+		kNextCheckpointArrowTexturePath
+	);
+	mNextCheckpointSprite->SetAnchorPoint({0.5f, 0.5f});
 
 	mTimer->StartGame();
 }
@@ -117,6 +135,45 @@ void GameScene::Update(const float deltaTime) {
 	UpdateTeleport();
 	UpdateParticlesAndEffects(deltaTime);
 	UpdateEntities(deltaTime);
+
+	auto* nextCheckpoint = CheckpointManager::GetNextCheckpoint();
+	auto* goal           = mGoalEntity->GetComponent<GoalComponent>();
+
+	if (!goal->IsReached()) {
+		bool  isOutOfScreen = false;
+		float angle         = 0.0f;
+		Vec2  screenPos;
+
+		if (nextCheckpoint) {
+			screenPos = Math::WorldToScreen(
+				nextCheckpoint->GetOwner()->GetTransform()->GetWorldPos(),
+				Unnamed::Engine::GetViewportSize(),
+				true,
+				64.0f,
+				isOutOfScreen,
+				angle
+			);
+		} else {
+			// 次のチェックポイントがない場合はゴールに向かう
+			screenPos = Math::WorldToScreen(
+				goal->GetOwner()->GetTransform()->GetWorldPos(),
+				Unnamed::Engine::GetViewportSize(),
+				true,
+				64.0f,
+				isOutOfScreen,
+				angle
+			);
+		}
+
+		mNextCheckpointSprite->SetPos(Vec3(
+			Unnamed::Engine::GetViewportLT() +
+			Unnamed::Engine::GetViewportSize() * 0.5f));
+		mNextCheckpointSprite->SetRot({0.0f, 0.0f, angle});
+	} else {
+		CheckpointManager::ResetAllCheckpoints();
+	}
+
+	mNextCheckpointSprite->Update();
 
 #ifdef _DEBUG
 	DrawDebugHud(camera);
@@ -156,6 +213,20 @@ void GameScene::Render() {
 	if (mExplosionEffect) {
 		mExplosionEffect->Draw();
 	}
+
+	if (mSpriteCommon) {
+		mSpriteCommon->Render();
+	}
+
+	if (mNextCheckpointSprite) {
+		if (mGoalEntity) {
+			auto* goal = mGoalEntity->GetComponent<GoalComponent>();
+			if (goal && goal->IsReached()) {
+				return;
+			}
+		}
+		mNextCheckpointSprite->Draw();
+	}
 }
 
 /// @brief コンソール変数の登録
@@ -181,12 +252,13 @@ void GameScene::LoadCoreTextures() const {
 		bool        useSrgb = false;
 	};
 
-	constexpr std::array<TextureRequest, 4> requests{
+	constexpr std::array<TextureRequest, 5> requests{
 		{
 			{kDevMeasureTexturePath, false},
 			{kUvCheckerTexturePath, false},
 			{kWaveTexturePath, true},
 			{kSmokeTexturePath, false},
+			{kNextCheckpointArrowTexturePath, false},
 		}
 	};
 
@@ -285,8 +357,13 @@ void GameScene::InitializePlayer() {
 		Math::HtoM(heightHU) * 0.5f,
 		Math::HtoM(widthHU) * 0.5f
 	);
-	Unnamed::AABB playerAABB(-halfExtents, halfExtents);
-	mEntPlayer->AddComponent<AABBCollider>(playerAABB);
+	// プレイヤーの位置は足元基準なので、AABBも足元基準にする
+	// min: 足元から下方向、max: 足元から上方向（頭の位置）
+	Unnamed::AABB playerAABB(
+		Vec3(-halfExtents.x, 0.0f, -halfExtents.z), // 足元が原点
+		Vec3(halfExtents.x, Math::HtoM(heightHU), halfExtents.z)
+	);
+	mEntPlayer->AddComponent<AABBCollider>(playerAABB, Vec3::zero);
 
 	auto* movement     = mEntPlayer->AddComponent<MovementComponent>();
 	mMovementComponent = AdoptComponent(movement);
@@ -300,6 +377,9 @@ void GameScene::InitializePlayer() {
 	}
 
 	AddEntity(mEntPlayer.get());
+
+	// CheckpointManagerにプレイヤーを登録
+	CheckpointManager::SetPlayer(mEntPlayer.get());
 }
 
 /// @brief 武器の初期化
@@ -325,6 +405,7 @@ void GameScene::InitializeWeapon() {
 	mWeaponComponent = AdoptComponent(weaponComponent);
 
 	AddEntity(mEntWeapon.get());
+	mEntWeapon->SetVisible(false);
 }
 
 /// @brief ワールドメッシュの初期化
@@ -445,6 +526,113 @@ void GameScene::InitializeTeleportTrigger() {
 	mTeleportActive        = true;
 }
 
+/// @brief チェックポイントの初期化
+void GameScene::InitializeCheckpoints() {
+	// チェックポイント1
+	{
+		auto checkpoint = std::make_unique<Entity>("Checkpoint1");
+		// エンティティ位置は地面（Y=0）の中心点とする
+		checkpoint->GetTransform()->SetWorldPos(Vec3(26.010f, 1.626f, -4.865f));
+
+		const float   width  = Math::HtoM(16.0f);
+		const float   height = Math::HtoM(192.0f);
+		const float   depth  = Math::HtoM(128.0f);
+		Unnamed::AABB aabb(
+			Vec3(-width * 0.5f, 0.0f, -depth * 0.5f),
+			Vec3(width * 0.5f, height, depth * 0.5f)
+		);
+		checkpoint->AddComponent<AABBCollider>(aabb, Vec3::zero);
+
+		// 0番目、リスポーン位置
+		checkpoint->AddComponent<CheckpointComponent>(
+			0, Vec3(26.01f, 1.63f, -4.86f)
+		);
+
+		AddEntity(checkpoint.get());
+		mCheckpointEntities.push_back(std::move(checkpoint));
+	}
+
+	// チェックポイント2
+	{
+		auto checkpoint = std::make_unique<Entity>("Checkpoint2");
+		checkpoint->GetTransform()->
+		            SetWorldPos(Vec3(149.555f, 8.128f, 40.640f));
+
+		const float   width  = Math::HtoM(16.0f);
+		const float   height = Math::HtoM(128.0f);
+		const float   depth  = Math::HtoM(128.0f);
+		Unnamed::AABB aabb(
+			Vec3(-width * 0.5f, 0.0f, -depth * 0.5f),
+			Vec3(width * 0.5f, height, depth * 0.5f)
+		);
+		checkpoint->AddComponent<AABBCollider>(aabb, Vec3::zero);
+
+		checkpoint->AddComponent<CheckpointComponent>(
+			1, Vec3(149.555f, 8.128f, 40.640f) // リスポーン位置も地面基準に
+		);
+
+		AddEntity(checkpoint.get());
+		mCheckpointEntities.push_back(std::move(checkpoint));
+	}
+
+	// チェックポイント3
+	{
+		auto checkpoint = std::make_unique<Entity>("Checkpoint3");
+		checkpoint->GetTransform()->SetWorldPos(
+			Vec3(162.560f, 1.626f, 177.190f));
+
+		const float   width  = Math::HtoM(1024.0f);
+		const float   height = Math::HtoM(1280.0f);
+		const float   depth  = Math::HtoM(16.0f);
+		Unnamed::AABB aabb(
+			Vec3(-width * 0.5f, 0.0f, -depth * 0.5f),
+			Vec3(width * 0.5f, height, depth * 0.5f)
+		);
+		checkpoint->AddComponent<AABBCollider>(aabb, Vec3::zero);
+
+		checkpoint->AddComponent<CheckpointComponent>(
+			2, Vec3(162.560f, 1.626f, 177.190f) // リスポーン位置も地面基準に
+		);
+
+		AddEntity(checkpoint.get());
+		mCheckpointEntities.push_back(std::move(checkpoint));
+	}
+
+	Console::Print(
+		std::format("Initialized {} checkpoints", mCheckpointEntities.size()),
+		Vec4(0.0f, 1.0f, 1.0f, 1.0f)
+	);
+}
+
+/// @brief ゴールの初期化e
+void GameScene::InitializeGoal() {
+	mGoalEntity = std::make_unique<Entity>("Goal");
+	// エンティティ位置は地面（Y=0）の中心点とする
+	mGoalEntity->GetTransform()->SetWorldPos(
+		Vec3(-216.205f, -183.693f, 152.806f));
+
+	// AABBコライダーを追加（幅10m、高さ5mのトリガー）
+	// 地面から上方向に伸びるAABBにする
+	const float   width  = Math::HtoM(64.0f);
+	const float   height = Math::HtoM(1920.0f);
+	const float   depth  = Math::HtoM(896.0f);
+	Unnamed::AABB aabb(
+		Vec3(-width * 0.5f, 0.0f, -depth * 0.5f),
+		Vec3(width * 0.5f, height, depth * 0.5f)
+	);
+	mGoalEntity->AddComponent<AABBCollider>(aabb, Vec3::zero);
+
+	// ゴールコンポーネントを追加
+	mGoalEntity->AddComponent<GoalComponent>();
+
+	AddEntity(mGoalEntity.get());
+
+	Console::Print(
+		"Goal initialized",
+		Vec4(1.0f, 0.0f, 1.0f, 1.0f)
+	);
+}
+
 /// @brief メッシュリロードの処理
 void GameScene::HandleMeshReload() {
 	if (InputSystem::IsTriggered("+f5")) {
@@ -489,7 +677,8 @@ void GameScene::HandleWeaponInput() {
 		mWeaponComponent->ReleaseTrigger();
 	}
 	if (InputSystem::IsPressed("+reload") && mEntPlayer) {
-		mEntPlayer->GetTransform()->SetWorldPos(Vec3::up * 2.0f);
+		// 最後のチェックポイントにリスポーン
+		CheckpointManager::RespawnAtLastCheckpoint();
 	}
 }
 
@@ -580,12 +769,13 @@ void GameScene::UpdateSkeletalAnimation() {
 	constexpr float kMovingForwardThreshold = 0.125f;
 	const bool      movingForward           = dot > kMovingForwardThreshold;
 
-	constexpr float kTransitionDuration = 0.125f;
+	constexpr float kTransitionDuration = 0.25f;
 
 	// アニメーションの遷移
 
 	// スライディング中 || しゃがみ中はしゃがみアニメーションに遷移
-	if (mMovementComponent->IsSliding() || mMovementComponent->IsDucking()) {
+	if (mMovementComponent->IsSliding()
+		/*|| mMovementComponent->IsDucking()*/) {
 		mEntSkeletalMesh->SetVisible(true);
 		if (mSkeletalMeshRenderer->GetCurrentAnimationName() != "Crouch") {
 			mSkeletalMeshRenderer->TransitionToAnimation(
@@ -894,6 +1084,8 @@ void GameScene::DrawDebugHud(
 
 /// @brief シャットダウン
 void GameScene::Shutdown() {
+	// CheckpointManagerをシャットダウン
+	CheckpointManager::Shutdown();
 }
 
 /// @brief ワールドメッシュのリロード

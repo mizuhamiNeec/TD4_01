@@ -17,6 +17,8 @@
 #include <game/components/weapon/base/WeaponComponent.h>
 #include <game/scene/base/BaseScene.h>
 
+#include "engine/Sprite/Sprite.h"
+
 class GameTime;
 class D3D12;
 class EnemyMovement;
@@ -60,6 +62,8 @@ private:
 	void ConfigureEntityHierarchy();
 	void ConfigureConsole();
 	void InitializeTeleportTrigger();
+	void InitializeCheckpoints();
+	void InitializeGoal();
 
 	void HandleMeshReload();
 	void SyncCameraRoot() const;
@@ -116,6 +120,11 @@ private:
 
 	std::unique_ptr<WindEffect>      mWindEffect;
 	std::unique_ptr<ExplosionEffect> mExplosionEffect;
+
+	std::vector<std::unique_ptr<Entity>> mCheckpointEntities;
+	std::unique_ptr<Entity>              mGoalEntity;
+
+	std::unique_ptr<Sprite> mNextCheckpointSprite;
 
 	// 遅延読み込み用フラグ
 	bool mPendingMeshReload = false;

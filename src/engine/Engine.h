@@ -23,6 +23,8 @@
 #include <engine/subsystem/time/TimeSystem.h>
 #include <engine/Window/WindowManager.h>
 
+#include "game/scene/GameScene.h"
+
 namespace Unnamed {
 	class ConsoleSystem;
 
@@ -41,8 +43,8 @@ namespace Unnamed {
 		//---------------------------------------------------------------------
 	private:
 		std::vector<std::unique_ptr<ISubsystem>> mSubsystems;
-		ConsoleSystem*                           mConsoleSystem = nullptr;
-		TimeSystem*                              mTimeSystem    = nullptr;
+		ConsoleSystem* mConsoleSystem = nullptr;
+		TimeSystem* mTimeSystem = nullptr;
 
 	public:
 		//---------------------------------------------------------------------
@@ -62,6 +64,11 @@ namespace Unnamed {
 		// DEPRECATED: 旧エンジンクラス
 		static ResourceManager* GetResourceManager() {
 			return mResourceManager.get();
+		}
+
+		// DEPRECATED: 旧エンジンクラス
+		static SpriteCommon* GetSpriteCommon() {
+			return mSpriteCommon.get();
 		}
 
 		// DEPRECATED: 旧エンジンクラス
@@ -116,7 +123,7 @@ namespace Unnamed {
 
 		std::unique_ptr<CopyImagePass> mCopyImagePass;
 
-		std::unique_ptr<SpriteCommon>   mSpriteCommon;
+		static std::unique_ptr<SpriteCommon>   mSpriteCommon;
 		std::unique_ptr<Object3DCommon> mObject3DCommon;
 		std::unique_ptr<ModelCommon>    mModelCommon;
 		std::unique_ptr<LineCommon>     mLineCommon;

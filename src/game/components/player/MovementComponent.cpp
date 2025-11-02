@@ -274,15 +274,15 @@ void MovementComponent::ProcessMovement(const float dt) {
 
 		// スライディング中のジャンプでスライディング終了
 		if (mData.isSliding) {
-			// スライドホップ時の速度キャップを適用
-			Vec3 velHorz          = mData.velocity;
-			velHorz.y             = 0;
-			const float horzSpeed = velHorz.Length();
-			const float speedCapM = Math::HtoM(kSlideHopSpeedCap);
-			if (horzSpeed > speedCapM) {
-				mData.velocity.x *= (speedCapM / horzSpeed);
-				mData.velocity.z *= (speedCapM / horzSpeed);
-			}
+			// // スライドホップ時の速度キャップを適用
+			// Vec3 velHorz          = mData.velocity;
+			// velHorz.y             = 0;
+			// const float horzSpeed = velHorz.Length();
+			// const float speedCapM = Math::HtoM(kSlideHopSpeedCap);
+			// if (horzSpeed > speedCapM) {
+			// 	mData.velocity.x *= (speedCapM / horzSpeed);
+			// 	mData.velocity.z *= (speedCapM / horzSpeed);
+			// }
 			EndSlide();
 		}
 	}
@@ -507,13 +507,15 @@ void MovementComponent::UpdateHullDimensions() {
 	};
 
 	// ハルをもとにコライダーを更新
+	// AABBはローカル座標で保持し、オフセットで調整する
 	if (mCollider) {
 		auto& [min, max] = mCollider->AABB();
-		min              = mHull.center - mHull.halfSize;
-		max              = mHull.center + mHull.halfSize;
+		// ローカル座標でのAABB（足元を原点とする）
+		min              = Vec3(-mHull.halfSize.x, 0.0f, -mHull.halfSize.z);
+		max              = Vec3(mHull.halfSize.x, mHull.halfSize.y * 2.0f, mHull.halfSize.z);
 		auto& offset     = mCollider->Offset();
-		// 足元原点なので上にずらす
-		offset = Vec3::up * mHull.halfSize.y;
+		// オフセットは不要（足元基準なので）
+		offset = Vec3::zero;
 	}
 }
 
@@ -1173,7 +1175,7 @@ void MovementComponent::TryStartSlide() {
 	const float currentSpeed = velHorz.Length();
 	float       boostedSpeed = currentSpeed + Math::HtoM(kSlideBoostSpeed);
 
-	// 速度キャップを適用（スライドホップの無限加速を防ぐ）
+	// 速度キャップを適用 (スライドホップでケツワープもどきを防止)
 	const float speedCapM = Math::HtoM(kSlideHopSpeedCap);
 	boostedSpeed          = std::min(boostedSpeed, speedCapM);
 
@@ -1234,10 +1236,10 @@ void MovementComponent::EndSlide() {
 /// @param wishspeed 目標速度
 /// @param dt 経過時間
 void MovementComponent::Slide(
-	[[maybe_unused]] const float wishspeed, const float dt
+	const float wishspeed, const float dt
 ) {
 	// 通常時より低い摩擦を適用
-	Friction(0.75f, dt);
+	Friction(kSlideFriction, dt);
 
 	// ちょっとだけ方向転換できる
 	if (!mData.wishDirection.IsZero()) {
@@ -1245,7 +1247,7 @@ void MovementComponent::Slide(
 		wishDir.y    = 0;
 		if (!wishDir.IsZero()) {
 			wishDir.Normalize();
-			Accelerate(wishDir, wishspeed, 4.0f, dt);
+			Accelerate(wishDir, wishspeed, kSlideAcceleration, dt);
 		}
 	}
 }

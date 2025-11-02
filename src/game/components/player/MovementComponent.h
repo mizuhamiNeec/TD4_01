@@ -205,12 +205,13 @@ private:
 	void                   UpdateSlide(float dt);
 	void                   EndSlide();
 	bool                   CanSlide() const;
-	static constexpr float kSlideMinSpeed    = 200.0f;  // HU/s - スライディング開始最低速度
-	static constexpr float kSlideMaxTime     = 20.0f;   // seconds - 最大スライディング時間
-	static constexpr float kSlideFriction    = 100.0f;  // HU/s^2 - スライディング摩擦
-	static constexpr float kSlideBoostSpeed  = 4.0f;    // HU/s - 開始ブースト
-	static constexpr float kSlideStopSpeed   = 50.0f;   // HU/s - この速度以下で自動終了
-	static constexpr float kSlideHopSpeedCap = 2000.0f; // HU/s - スライドホップの速度上限
+	static constexpr float kSlideMinSpeed     = 200.0f; // HU/s - スライディング開始最低速度
+	static constexpr float kSlideMaxTime      = 20.0f; // seconds - 最大スライディング時間
+	static constexpr float kSlideAcceleration = 4.0f; // HU/s^2 - スライド加速度
+	static constexpr float kSlideFriction     = 0.75f; // HU/s^2 - スライディング摩擦
+	static constexpr float kSlideBoostSpeed   = 50.0f; // HU/s - 開始ブースト
+	static constexpr float kSlideStopSpeed    = 50.0f; // HU/s - この速度以下で自動終了
+	static constexpr float kSlideHopSpeedCap  = 2000.0f; // HU/s - スライドホップの速度上限
 
 	UPhysics::Engine* mUPhysicsEngine = nullptr;
 	AABBCollider*     mCollider       = nullptr;

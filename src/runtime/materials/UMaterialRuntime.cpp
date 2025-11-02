@@ -249,7 +249,7 @@ namespace Unnamed {
 
 		pd.inputLayout.reserve(std::size(kStdMeshLayout));
 		for (const auto& e : kStdMeshLayout) {
-			pd.inputLayout.push_back(
+			pd.inputLayout.emplace_back(
 				InputElement{
 					e.SemanticName,
 					e.SemanticIndex,

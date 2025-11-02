@@ -7,7 +7,7 @@ class SrvManager;
 
 /// @brief クロマティックアバレーションのパラメータ構造体
 struct CAParams {
-	float strength = 0.02f; // ずらし幅
+	float strength = 0.005f; // ずらし幅
 	float blend    = 0.5f;
 	float padding[2]; // パディング
 };

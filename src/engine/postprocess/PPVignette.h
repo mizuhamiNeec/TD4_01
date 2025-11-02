@@ -7,7 +7,7 @@ class SrvManager;
 
 /// @brief ヴィネットエフェクトのパラメータ構造体
 struct VignetteParams {
-	float vignetteStrength = 0.9f;
+	float vignetteStrength = 0.6f;
 	float vignetteRadius   = 0.0f;
 	float padding[2]; // 16‑byte align
 };

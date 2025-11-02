@@ -8,7 +8,7 @@ class SrvManager;
 
 /// @brief ブルームエフェクトのパラメータ構造体
 struct BloomParams {
-	float bloomStrength  = 2.0f;
+	float bloomStrength  = 1.0f;
 	float bloomThreshold = 0.0f;
 	float padding[2]; // パディング
 };

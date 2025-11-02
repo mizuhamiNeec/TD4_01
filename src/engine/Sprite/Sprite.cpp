@@ -4,6 +4,7 @@
 #include "engine/OldConsole/Console.h"
 
 #include "engine/renderer/D3D12.h"
+#include "engine/TextureManager/TexManager.h"
 #include "engine/Window/WindowManager.h"
 
 /// @brief スプライトのインデックスデータ
@@ -179,6 +180,13 @@ void Sprite::Draw() const {
 	spriteCommon_->GetD3D12()->GetCommandList()->
 	               SetGraphicsRootConstantBufferView(
 		               1, transformation_->GetAddress());
+
+	// テクスチャのSRVを設定
+	spriteCommon_->GetD3D12()->GetCommandList()->
+	               SetGraphicsRootDescriptorTable(
+		               2, TexManager::GetInstance()->GetSrvHandleGPU(
+			               textureFilePath_)
+	               );
 
 	// インデックスバッファの設定
 	const D3D12_INDEX_BUFFER_VIEW indexBufferView = indexBuffer_->View();

@@ -255,7 +255,7 @@ namespace Unnamed {
 		);
 	}
 
-	enum class CONVAR_TYPE {
+	enum class CVAR_TYPE {
 		NONE,
 		BOOL,
 		INT,
@@ -267,34 +267,34 @@ namespace Unnamed {
 
 	namespace {
 		/// @brief CONVAR_TYPEを文字列に変換します
-		const char* ToString(const CONVAR_TYPE e) {
+		const char* ToString(const CVAR_TYPE e) {
 			switch (e) {
-			case CONVAR_TYPE::NONE: return "NONE";
-			case CONVAR_TYPE::BOOL: return "BOOL";
-			case CONVAR_TYPE::INT: return "INT";
-			case CONVAR_TYPE::FLOAT: return "FLOAT";
-			case CONVAR_TYPE::STRING: return "STRING";
-			case CONVAR_TYPE::VEC3: return "VEC3";
+			case CVAR_TYPE::NONE: return "NONE";
+			case CVAR_TYPE::BOOL: return "BOOL";
+			case CVAR_TYPE::INT: return "INT";
+			case CVAR_TYPE::FLOAT: return "FLOAT";
+			case CVAR_TYPE::STRING: return "STRING";
+			case CVAR_TYPE::VEC3: return "VEC3";
 			default: return "unknown";
 			}
 		}
 
 		/// @brief UnnamedConVarBaseからCONVAR_TYPEを取得します
-		CONVAR_TYPE GetConVarType(UnnamedConVarBase* var) {
-			auto type = CONVAR_TYPE::NONE;
+		CVAR_TYPE GetConVarType(UnnamedConVarBase* var) {
+			auto type = CVAR_TYPE::NONE;
 
 			if (dynamic_cast<UnnamedConVar<bool>*>(var)) {
-				type = CONVAR_TYPE::BOOL;
+				type = CVAR_TYPE::BOOL;
 			} else if (dynamic_cast<UnnamedConVar<int>*>(var)) {
-				type = CONVAR_TYPE::INT;
+				type = CVAR_TYPE::INT;
 			} else if (dynamic_cast<UnnamedConVar<float>*>(var)) {
-				type = CONVAR_TYPE::FLOAT;
+				type = CVAR_TYPE::FLOAT;
 			} else if (dynamic_cast<UnnamedConVar<double>*>(var)) {
-				type = CONVAR_TYPE::DOUBLE;
+				type = CVAR_TYPE::DOUBLE;
 			} else if (dynamic_cast<UnnamedConVar<std::string>*>(var)) {
-				type = CONVAR_TYPE::STRING;
+				type = CVAR_TYPE::STRING;
 			} else if (dynamic_cast<UnnamedConVar<Vec3>*>(var)) {
-				type = CONVAR_TYPE::VEC3;
+				type = CVAR_TYPE::VEC3;
 			}
 
 			return type;

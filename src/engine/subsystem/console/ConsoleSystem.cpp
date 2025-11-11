@@ -10,8 +10,8 @@
 #include <engine/subsystem/interface/ServiceLocator.h>
 #include <engine/subsystem/time/SystemClock.h>
 
-#include "engine/subsystem/console/concommand/UnnamedConCommand.h"
-#include "engine/subsystem/console/concommand/UnnamedConVar.h"
+#include <engine/subsystem/console/concommand/UnnamedConCommand.h>
+#include <engine/subsystem/console/concommand/UnnamedConVar.h>
 
 namespace Unnamed {
 	static constexpr std::string_view kChannel = "Console";
@@ -44,6 +44,9 @@ namespace Unnamed {
 #ifdef _DEBUG
 		mConsoleUI = std::make_unique<ConsoleUI>(this);
 #endif
+
+		//RegisterBuiltInCommands();
+		
 		return true;
 	}
 
@@ -202,7 +205,7 @@ namespace Unnamed {
 				// 引数がある場合は値を設定
 				if (!args.empty()) {
 					switch (cvarType) {
-					case CONVAR_TYPE::BOOL:
+					case CVAR_TYPE::BOOL:
 						if (auto* cBool = dynamic_cast<UnnamedConVar<bool>*>(
 							var)) {
 							cBool->SetValue(
@@ -212,28 +215,28 @@ namespace Unnamed {
 							);
 						}
 						break;
-					case CONVAR_TYPE::INT:
+					case CVAR_TYPE::INT:
 						if (
 							auto* ci = dynamic_cast<UnnamedConVar<int>*>(var)
 						) {
 							ci->SetValue(std::stoi(args[0]));
 						}
 						break;
-					case CONVAR_TYPE::FLOAT:
+					case CVAR_TYPE::FLOAT:
 						if (
 							auto* cf = dynamic_cast<UnnamedConVar<float>*>(var)
 						) {
 							cf->SetValue(std::stof(args[0]));
 						}
 						break;
-					case CONVAR_TYPE::DOUBLE:
+					case CVAR_TYPE::DOUBLE:
 						if (
 							auto* cd = dynamic_cast<UnnamedConVar<double>*>(var)
 						) {
 							cd->SetValue(std::stod(args[0]));
 						}
 						break;
-					case CONVAR_TYPE::STRING:
+					case CVAR_TYPE::STRING:
 						if (
 							auto* cs = dynamic_cast<UnnamedConVar<std::string>*>
 								(var)
@@ -241,7 +244,7 @@ namespace Unnamed {
 							cs->SetValue(args[0]);
 						}
 						break;
-					case CONVAR_TYPE::VEC3:
+					case CVAR_TYPE::VEC3:
 						// Vec3の場合は3つの引数が必要
 						if (args.size() >= 3) {
 							if (
@@ -275,8 +278,33 @@ namespace Unnamed {
 		}
 	}
 
+	UnnamedConVarBase* ConsoleSystem::GetConVar(std::string_view name) {
+		return mConVars.contains(name.data()) ?
+			       mConVars[std::string(name)] :
+			       nullptr;
+	}
+
+	CVAR_TYPE ConsoleSystem::GetConVarType(UnnamedConVarBase* var) {
+		auto type = CVAR_TYPE::NONE;
+
+		if (dynamic_cast<UnnamedConVar<bool>*>(var)) {
+			type = CVAR_TYPE::BOOL;
+		} else if (dynamic_cast<UnnamedConVar<int>*>(var)) {
+			type = CVAR_TYPE::INT;
+		} else if (dynamic_cast<UnnamedConVar<float>*>(var)) {
+			type = CVAR_TYPE::FLOAT;
+		} else if (dynamic_cast<UnnamedConVar<double>*>(var)) {
+			type = CVAR_TYPE::DOUBLE;
+		} else if (dynamic_cast<UnnamedConVar<std::string>*>(var)) {
+			type = CVAR_TYPE::STRING;
+		} else if (dynamic_cast<UnnamedConVar<Vec3>*>(var)) {
+			type = CVAR_TYPE::VEC3;
+		}
+
+		return type;
+	}
+
 	/// @brief コンソール変数の型を取得します
-	/// @param conVar 変数へのポインタ
 	/// @return 変数の型
 	void ConsoleSystem::Test() {
 		for (auto conVar : mConVars) {

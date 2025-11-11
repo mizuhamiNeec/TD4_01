@@ -10,6 +10,8 @@
 #include <engine/subsystem/interface/ISubsystem.h>
 #include <core/containers/RingBuffer.h>
 
+#include "concommand/base/UnnamedConVarBase.h"
+
 namespace Unnamed {
 	class UnnamedConCommandBase;
 	class UnnamedConVarBase;
@@ -64,6 +66,10 @@ namespace Unnamed {
 			const std::string& command,
 			EXEC_FLAG          flag = EXEC_FLAG::FROM_ENGINE
 		);
+
+		UnnamedConVarBase* GetConVar(std::string_view name);
+
+		static enum class CVAR_TYPE GetConVarType(UnnamedConVarBase* var);
 
 		void Test();
 

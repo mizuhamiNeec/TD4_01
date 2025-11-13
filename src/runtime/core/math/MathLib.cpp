@@ -23,7 +23,7 @@ namespace Math {
 	/// @param outAngle 画面中心からの角度 [rad]
 	/// @return スクリーン座標
 	Vec2 WorldToScreen(
-		const Vec3& worldPos, const Vec2       screenSize,
+		const Vec3& worldPos, const Vec2 screenSize,
 		const bool& bClamp, const float& margin,
 		bool&       outIsOffscreen,
 		float&      outAngle
@@ -107,9 +107,11 @@ namespace Math {
 				}
 			}
 
-			screenPos   = screenCenter + clampDirection * minT;
-			screenPos.x = std::clamp(screenPos.x, margin, screenRight);
-			screenPos.y = std::clamp(screenPos.y, margin, screenBottom);
+			screenPos = screenCenter + clampDirection * minT;
+			screenPos.Clamp(
+				{margin, margin},
+				{std::max(screenRight, margin), std::max(screenBottom, margin)}
+			);
 		}
 
 		return screenPos;
@@ -243,7 +245,8 @@ namespace Math {
 	float EaseOutBack(const float t) {
 		constexpr float c1 = 1.70158f;
 		constexpr float c3 = c1 + 1;
-		return 1.0f + c3 * std::pow(t - 1.0f, 3.0f) + c1 * std::pow(t - 1.0f, 2.0f);
+		return 1.0f + c3 * std::pow(t - 1.0f, 3.0f) + c1 * std::pow(
+			t - 1.0f, 2.0f);
 	}
 
 	/// @brief インチをメートルに変換します

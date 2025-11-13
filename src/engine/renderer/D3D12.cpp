@@ -69,6 +69,14 @@ void D3D12::Init() {
 	                                    ConVarFlags::ConVarFlags_Notify);
 	ConVarManager::RegisterConVar<int>("r_vsync", 1, "Enable VSync",
 	                                   ConVarFlags::ConVarFlags_Notify);
+
+	HRESULT hr = GetCommandAllocator()->Reset();
+	assert(SUCCEEDED(hr));
+	hr = GetCommandList()->Reset(
+		GetCommandAllocator(),
+		nullptr
+	);
+	assert(SUCCEEDED(hr));
 }
 
 /// @brief シャットダウン

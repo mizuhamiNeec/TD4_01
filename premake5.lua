@@ -34,6 +34,7 @@ function WarningSettings()
         -- 警告をエラーとして扱う
         buildoptions { "/W4" }
         fatalwarnings { "All" }
+        linkoptions {"/IGNORE:4099"} -- PDBに関する警告を無視
     filter {}
 end
 

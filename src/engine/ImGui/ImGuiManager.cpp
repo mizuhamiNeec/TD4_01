@@ -219,6 +219,9 @@ void ImGuiManager::StyleColorsDark() {
 	style.FramePadding  = ImVec2(6, 6);
 	style.WindowPadding = ImVec2(4, 4);
 
+	// セル
+	style.CellPadding = ImVec2(2, 2);
+
 	// アイテムの間隔
 	style.ItemSpacing = ImVec2(8, 8);
 
@@ -229,8 +232,6 @@ void ImGuiManager::StyleColorsDark() {
 
 	// アクティブなタブのオーバーラインA
 	style.TabBarOverlineSize = 1.5f;
-
-	style.CellPadding = ImVec2(4, 4);
 }
 
 /// @brief ImGuiのバックエンドを再作成します。

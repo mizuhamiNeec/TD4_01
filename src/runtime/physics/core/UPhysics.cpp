@@ -98,14 +98,24 @@ namespace UPhysics {
 
 			std::vector<Unnamed::Triangle> triangles;
 
-			// UPhysics::Triangleに変換 TODO: すべてのTriangleをUPhysics::Triangleに変更する
+			// UPhysics::Triangleに変換
 			for (auto tri : tris) {
-				tri.v0 += transform->GetLocalPos();
-				tri.v1 += transform->GetLocalPos();
-				tri.v2 += transform->GetLocalPos();
+				// ローカル座標をワールド座標に変換
+
+				Mat4 tri0Mat = Mat4::Translate(tri.v0);
+				Mat4 tri1Mat = Mat4::Translate(tri.v1);
+				Mat4 tri2Mat = Mat4::Translate(tri.v2);
+
+				tri0Mat = transform->GetWorldMat() * tri0Mat;
+				tri1Mat = transform->GetWorldMat() * tri1Mat;
+				tri2Mat = transform->GetWorldMat() * tri2Mat;
+
+				Vec3 t0 = tri0Mat.GetTranslate();
+				Vec3 t1 = tri1Mat.GetTranslate();
+				Vec3 t2 = tri2Mat.GetTranslate();
 
 				triangles.emplace_back(
-					tri.v0, tri.v1, tri.v2
+					t0, t1, t2
 				);
 			}
 

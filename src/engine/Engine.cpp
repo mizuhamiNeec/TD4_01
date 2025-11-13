@@ -284,9 +284,8 @@ namespace Unnamed {
 		// エディターの初期化
 		//-----------------------------------------------------------------------------
 		CheckEditorMode();
-
-		HRESULT hr = mRenderer->GetCommandList()->Close();
-		assert(SUCCEEDED(hr));
+		
+		assert(SUCCEEDED(mRenderer->GetCommandList()->Close()));
 
 		ConsoleScriptParser scriptParser(
 			"./content/core/cfg/config_default.cfg"

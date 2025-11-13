@@ -46,7 +46,7 @@ namespace Unnamed {
 #endif
 
 		//RegisterBuiltInCommands();
-		
+
 		return true;
 	}
 
@@ -143,10 +143,10 @@ namespace Unnamed {
 			return;
 		}
 
-		std::string trimmed = TrimSpaces(std::string(command));
+		std::string trimmed = StrUtil::TrimSpaces(std::string(command));
 
 		// コマンドを区切る
-		auto commands = SplitCommands(trimmed);
+		auto commands = StrUtil::SplitCommands(trimmed);
 
 		if (flag & EXEC_FLAG::SILENT) {
 			// TODO 
@@ -165,7 +165,7 @@ namespace Unnamed {
 				continue;
 			}
 
-			std::vector<std::string> tokens = Tokenize(singleCommand);
+			std::vector<std::string> tokens = StrUtil::Tokenize(singleCommand);
 			const std::vector        args(tokens.begin() + 1, tokens.end());
 
 			const bool foundCommand = mConCommands.contains(tokens[0]);
@@ -329,64 +329,5 @@ namespace Unnamed {
 				       static_cast<std::string>(*convarString));
 			}
 		}
-	}
-
-	/// @brief コマンド文字列を分割します
-	/// @param command コマンド文字列
-	/// @return 分割されたコマンドのベクター
-	std::vector<std::string> ConsoleSystem::SplitCommands(
-		const std::string_view& command
-	) {
-		std::vector<std::string> result;
-		std::string              current;
-		bool                     inQuotes = false;
-		for (const char ch : command) {
-			if (ch == '"') {
-				inQuotes = !inQuotes;
-				current += ch;
-			} else if (ch == ';' && !inQuotes) {
-				result.emplace_back(current);
-				current.clear();
-			} else {
-				current += ch;
-			}
-		}
-
-		if (!current.empty()) {
-			result.emplace_back(current);
-		}
-
-		return result;
-	}
-
-	/// @brief コマンド文字列をトークンに分割します
-	/// @param command コマンド文字列
-	/// @return トークンのベクター
-	std::vector<std::string> ConsoleSystem::Tokenize(
-		const std::string_view& command
-	) {
-		std::istringstream       stream{std::string(command)};
-		std::vector<std::string> tokens;
-		std::string              token;
-
-		while (stream >> token) {
-			tokens.emplace_back(token);
-		}
-
-		return tokens;
-	}
-
-	/// @brief 文字列の前後の空白をトリムします
-	/// @param string 対象の文字列
-	/// @return トリムされた文字列
-	std::string ConsoleSystem::TrimSpaces(const std::string& string) {
-		const size_t start = string.find_first_not_of(" \t\n\r");
-		const size_t end   = string.find_last_not_of(" \t\n\r");
-
-		if (start == std::string::npos || end == std::string::npos) {
-			return "";
-		}
-
-		return string.substr(start, end - start + 1);
 	}
 }

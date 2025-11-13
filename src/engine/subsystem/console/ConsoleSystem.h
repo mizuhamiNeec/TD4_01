@@ -74,14 +74,6 @@ namespace Unnamed {
 		void Test();
 
 	private:
-		static std::vector<std::string> SplitCommands(
-			const std::string_view& command
-		);
-		static std::vector<std::string> Tokenize(
-			const std::string_view& command
-		);
-		static std::string TrimSpaces(const std::string& string);
-
 		RingBuffer<ConsoleLogText, kConsoleBufferSize> mLogBuffer;
 
 		std::unordered_map<std::string, UnnamedConCommandBase*> mConCommands;

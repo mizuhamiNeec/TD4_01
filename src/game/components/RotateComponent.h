@@ -7,6 +7,7 @@ class RotateComponent : public Component {
 public:
 	void OnAttach(Entity& owner) override;
 
+	void PrePhysics(float deltaTime) override;
 	void Update(float deltaTime) override;
 	void DrawInspectorImGui() override;
 

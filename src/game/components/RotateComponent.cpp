@@ -12,7 +12,7 @@ void RotateComponent::OnAttach(Entity& owner) {
 	mTransform = mOwner->GetTransform();
 }
 
-void RotateComponent::Update(float deltaTime) {
+void RotateComponent::PrePhysics(float deltaTime) {
 	if (!mRotationEnabled || !mTransform) {
 		return;
 	}
@@ -40,6 +40,10 @@ void RotateComponent::Update(float deltaTime) {
 
 		mTransform->SetLocalRot(newRotation);
 	}
+}
+
+void RotateComponent::Update(float deltaTime) {
+	deltaTime;
 }
 
 void RotateComponent::DrawInspectorImGui() {

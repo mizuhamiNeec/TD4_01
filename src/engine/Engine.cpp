@@ -32,6 +32,8 @@
 
 #include <engine/subsystem/console/concommand/UnnamedConVar.h>
 
+#include "subsystem/console/ConsoleScriptParser.h"
+
 constexpr auto offscreenClearColor = Vec4(0.025f, 0.025f, 0.025f, 1.0f);
 
 namespace Unnamed {
@@ -300,6 +302,10 @@ namespace Unnamed {
 
 		hr = mRenderer->GetCommandList()->Close();
 		assert(SUCCEEDED(hr));
+
+		ConsoleScriptParser scriptParser(
+			"./content/core/cfg/config_default.cfg"
+		);
 
 		return true;
 	}

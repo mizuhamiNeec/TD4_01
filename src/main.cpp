@@ -20,11 +20,12 @@ int WINAPI wWinMain(
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	[[maybe_unused]] HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 
-	// デフォルトは旧エンジン. 引数があったら新しい方を起動する
-	const bool startNewEngine =
-		lpCmdLine != nullptr && std::wcsstr(lpCmdLine, L"-new") != nullptr;
+	// デフォルトは旧エンジン。引数があったら新しい方を起動する
+	const bool bNewEngine =
+		lpCmdLine != nullptr &&
+		std::wcsstr(lpCmdLine, L"-new") != nullptr;
 
-	if (startNewEngine) {
+	if (bNewEngine) {
 		const auto uEngine = std::make_unique<Unnamed::UEngine>();
 		uEngine->Run();
 	} else {

@@ -23,7 +23,7 @@
 #include <engine/subsystem/time/TimeSystem.h>
 #include <engine/Window/WindowManager.h>
 
-#include "game/scene/GameScene.h"
+#include <game/scene/GameScene.h>
 
 namespace Unnamed {
 	class ConsoleSystem;
@@ -43,8 +43,8 @@ namespace Unnamed {
 		//---------------------------------------------------------------------
 	private:
 		std::vector<std::unique_ptr<ISubsystem>> mSubsystems;
-		ConsoleSystem* mConsoleSystem = nullptr;
-		TimeSystem* mTimeSystem = nullptr;
+		ConsoleSystem*                           mConsoleSystem = nullptr;
+		TimeSystem*                              mTimeSystem    = nullptr;
 
 	public:
 		//---------------------------------------------------------------------
@@ -123,10 +123,10 @@ namespace Unnamed {
 
 		std::unique_ptr<CopyImagePass> mCopyImagePass;
 
-		static std::unique_ptr<SpriteCommon>   mSpriteCommon;
-		std::unique_ptr<Object3DCommon> mObject3DCommon;
-		std::unique_ptr<ModelCommon>    mModelCommon;
-		std::unique_ptr<LineCommon>     mLineCommon;
+		static std::unique_ptr<SpriteCommon> mSpriteCommon;
+		std::unique_ptr<Object3DCommon>      mObject3DCommon;
+		std::unique_ptr<ModelCommon>         mModelCommon;
+		std::unique_ptr<LineCommon>          mLineCommon;
 
 		std::unique_ptr<SceneFactory> mSceneFactory;
 

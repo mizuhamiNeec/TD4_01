@@ -63,15 +63,16 @@ namespace Unnamed {
 					"Subsystem initialized: {}",
 					subsystem->GetName()
 				);
-			} else {
+			}
+			else {
 				UASSERT(false && "Failed to initialize subsystem");
 			}
 		}
 
 		// サブシステムをメンバに持っておく
-		mTime         = ServiceLocator::Get<TimeSystem>();
+		mTime = ServiceLocator::Get<TimeSystem>();
 		mWindowSystem = ServiceLocator::Get<Win32WindowSystem>();
-		mInputSystem  = ServiceLocator::Get<UInputSystem>();
+		mInputSystem = ServiceLocator::Get<UInputSystem>();
 
 		// ウィンドウの作成
 		const IWindow::WindowInfo info = {
@@ -87,7 +88,7 @@ namespace Unnamed {
 		const auto* mainWindow = mWindowSystem->GetWindows().front().get();
 
 		// 作成したウィンドウに合わせてグラフィックスデバイスを初期化
-		mGraphicsDevice                 = std::make_unique<GraphicsDevice>();
+		mGraphicsDevice = std::make_unique<GraphicsDevice>();
 		const GraphicsDeviceInfo gdInfo = {
 			.hWnd = mainWindow->GetNativeHandle(),
 			.width = mainWindow->GetInfo().clWidth,
@@ -109,148 +110,148 @@ namespace Unnamed {
 
 #pragma region コンソールコマンド・変数の登録
 		{
-			UnnamedConVar cl_showfps(
+			static	UnnamedConVar cl_showfps(
 				"cl_showfps", 0,
 				FCVAR::NONE,
 				"Draw fps meter (1 = fps, 2 = smooth)"
 			);
 
-			UnnamedConVar cl_showpos(
+			static UnnamedConVar cl_showpos(
 				"cl_showpos", 0,
 				FCVAR::NONE,
 				"Draw current position at top of screen (1 = meter, 2 = hammer)"
 			);
 
-			UnnamedConVar sv_sensitivity(
+			static UnnamedConVar sv_sensitivity(
 				"sv_sensitivity", 0.75f,
 				FCVAR::ARCHIVE, "sensitivity"
 			);
 
-			UnnamedConVar sv_gravity(
+			static UnnamedConVar sv_gravity(
 				"sv_gravity", 800.0f,
 				FCVAR::NONE, "world gravity"
 			);
 
 
-			// UnnamedConCommand toggle(
-			// 	"toggle",
-			// 	[](std::vector<std::string> args) {
-			// 		if (args.empty()) {
-			// 			// 引数がなければ何もせず終了。
-			// 			return false;
-			// 		}
-			//
-			// 		auto* console = ServiceLocator::Get<
-			// 			ConsoleSystem>();
-			//
-			// 		std::vector argValues(args.begin() + 1, args.end());
-			// 		auto        argSize = argValues.size();
-			//
-			// 		auto var  = console->GetConVar(args[0]);
-			// 		auto type = GetConVarType(
-			// 			var
-			// 		);
-			//
-			// 		switch (type) {
-			// 		case CVAR_TYPE::NONE:
-			// 			break;
-			// 		case CVAR_TYPE::BOOL: {
-			// 			auto bVar = dynamic_cast<UnnamedConVar<bool>*>(
-			// 				var);
-			// 			bool bValue = static_cast<bool>(*bVar);
-			// 			bValue      = !bValue;
-			// 			bVar->SetValue(bValue);
-			// 			Msg(
-			// 				kChannelNone,
-			// 				"Toggle: {}",
-			// 				bVar->GetValue()
-			// 			);
-			// 		}
-			// 		break;
-			// 		case CVAR_TYPE::INT: {
-			// 			auto* iVar = dynamic_cast<UnnamedConVar<int>*>(
-			// 				var);
-			// 			int iValue = static_cast<int>(*iVar);
-			//
-			// 			// 配列に同じ値があるか探して、次の値に切り替え
-			// 			for (int i = 0; i < argSize; ++i) {
-			// 				if (iValue == std::stoi(argValues[i])) {
-			// 					int nextIndex = (i + 1) % argSize;
-			// 					iVar->SetValue(
-			// 						std::stoi(argValues[nextIndex]));
-			// 					Msg(kChannelNone, "Toggle: {}",
-			// 					    iVar->GetValue());
-			// 					break;
-			// 				}
-			// 			}
-			//
-			// 			// 見つからなかったら最初の値に切り替え
-			// 			if (static_cast<int>(*iVar) == iValue) {
-			// 				iVar->SetValue(std::stoi(argValues[0]));
-			// 				Msg(kChannelNone, "Toggle: {}",
-			// 				    iVar->GetValue());
-			// 			}
-			// 		}
-			// 		break;
-			// 		case CVAR_TYPE::FLOAT: {
-			// 			auto fVar = dynamic_cast<UnnamedConVar<float>*>(
-			// 				var);
-			// 			float fValue = static_cast<float>(*fVar);
-			//
-			// 			// 配列に同じ値があるか探して、次の値に切り替え
-			// 			for (int i = 0; i < argSize; ++i) {
-			// 				if (fValue == std::stof(argValues[i])) {
-			// 					int nextIndex = (i + 1) % argSize;
-			// 					fVar->SetValue(
-			// 						std::stof(argValues[nextIndex]));
-			// 					Msg(kChannelNone, "Toggle: {}",
-			// 					    fVar->GetValue());
-			// 					break;
-			// 				}
-			// 			}
-			//
-			// 			// 見つからなかったら最初の値に切り替え
-			// 			if (static_cast<float>(*fVar) == fValue) {
-			// 				fVar->SetValue(std::stof(argValues[0]));
-			// 				Msg(kChannelNone, "Toggle: {}",
-			// 				    fVar->GetValue());
-			// 			}
-			// 		}
-			// 		break;
-			// 		case CVAR_TYPE::DOUBLE: {
-			// 			auto dVar = dynamic_cast<UnnamedConVar<double>*>
-			// 				(var);
-			// 			double dValue = static_cast<double>(*dVar);
-			//
-			// 			// 配列に同じ値があるか探して、次の値に切り替え
-			// 			for (int i = 0; i < argSize; ++i) {
-			// 				if (dValue == std::stod(argValues[i])) {
-			// 					int nextIndex = (i + 1) % argSize;
-			// 					dVar->SetValue(
-			// 						std::stod(argValues[nextIndex]));
-			// 					Msg(kChannelNone, "Toggle: {}",
-			// 					    dVar->GetValue());
-			// 					break;
-			// 				}
-			// 			}
-			//
-			// 			// 見つからなかったら最初の値に切り替え
-			// 			if (static_cast<double>(*dVar) == dValue) {
-			// 				dVar->SetValue(std::stod(argValues[0]));
-			// 				Msg(kChannelNone, "Toggle: {}",
-			// 				    dVar->GetValue());
-			// 			}
-			// 		}
-			// 		break;
-			// 		case CVAR_TYPE::STRING:
-			// 			break;
-			// 		case CVAR_TYPE::VEC3:
-			// 			break;
-			// 		}
-			// 		return true;
-			// 	},
-			// 	"Usage: toggle <cvar> <value 1> <value 2> <value 3> ..."
-			// );
+			static UnnamedConCommand toggle(
+				"toggle",
+				[](std::vector<std::string> args) {
+					if (args.empty()) {
+						// 引数がなければ何もせず終了。
+						return false;
+					}
+
+					auto* console = ServiceLocator::Get<
+						ConsoleSystem>();
+
+					std::vector argValues(args.begin() + 1, args.end());
+					auto        argSize = argValues.size();
+
+					auto var = console->GetConVar(args[0]);
+					auto type = GetConVarType(
+						var
+					);
+
+					switch (type) {
+					case CVAR_TYPE::NONE:
+						break;
+					case CVAR_TYPE::BOOL: {
+						auto bVar = dynamic_cast<UnnamedConVar<bool>*>(
+							var);
+						bool bValue = static_cast<bool>(*bVar);
+						bValue = !bValue;
+						bVar->SetValue(bValue);
+						Msg(
+							kChannelNone,
+							"Toggle: {}",
+							bVar->GetValue()
+						);
+					}
+										break;
+					case CVAR_TYPE::INT: {
+						auto* iVar = dynamic_cast<UnnamedConVar<int>*>(
+							var);
+						int iValue = static_cast<int>(*iVar);
+
+						// 配列に同じ値があるか探して、次の値に切り替え
+						for (int i = 0; i < argSize; ++i) {
+							if (iValue == std::stoi(argValues[i])) {
+								int nextIndex = (i + 1) % argSize;
+								iVar->SetValue(
+									std::stoi(argValues[nextIndex]));
+								Msg(kChannelNone, "Toggle: {}",
+									iVar->GetValue());
+								break;
+							}
+						}
+
+						// 見つからなかったら最初の値に切り替え
+						if (static_cast<int>(*iVar) == iValue) {
+							iVar->SetValue(std::stoi(argValues[0]));
+							Msg(kChannelNone, "Toggle: {}",
+								iVar->GetValue());
+						}
+					}
+									   break;
+					case CVAR_TYPE::FLOAT: {
+						auto fVar = dynamic_cast<UnnamedConVar<float>*>(
+							var);
+						float fValue = static_cast<float>(*fVar);
+
+						// 配列に同じ値があるか探して、次の値に切り替え
+						for (int i = 0; i < argSize; ++i) {
+							if (fValue == std::stof(argValues[i])) {
+								int nextIndex = (i + 1) % argSize;
+								fVar->SetValue(
+									std::stof(argValues[nextIndex]));
+								Msg(kChannelNone, "Toggle: {}",
+									fVar->GetValue());
+								break;
+							}
+						}
+
+						// 見つからなかったら最初の値に切り替え
+						if (static_cast<float>(*fVar) == fValue) {
+							fVar->SetValue(std::stof(argValues[0]));
+							Msg(kChannelNone, "Toggle: {}",
+								fVar->GetValue());
+						}
+					}
+										 break;
+					case CVAR_TYPE::DOUBLE: {
+						auto dVar = dynamic_cast<UnnamedConVar<double>*>
+							(var);
+						double dValue = static_cast<double>(*dVar);
+
+						// 配列に同じ値があるか探して、次の値に切り替え
+						for (int i = 0; i < argSize; ++i) {
+							if (dValue == std::stod(argValues[i])) {
+								int nextIndex = (i + 1) % argSize;
+								dVar->SetValue(
+									std::stod(argValues[nextIndex]));
+								Msg(kChannelNone, "Toggle: {}",
+									dVar->GetValue());
+								break;
+							}
+						}
+
+						// 見つからなかったら最初の値に切り替え
+						if (static_cast<double>(*dVar) == dValue) {
+							dVar->SetValue(std::stod(argValues[0]));
+							Msg(kChannelNone, "Toggle: {}",
+								dVar->GetValue());
+						}
+					}
+										  break;
+					case CVAR_TYPE::STRING:
+						break;
+					case CVAR_TYPE::VEC3:
+						break;
+					}
+					return true;
+				},
+				"Usage: toggle <cvar> <value 1> <value 2> <value 3> ..."
+			);
 
 			auto* console = ServiceLocator::Get<ConsoleSystem>();
 			(void)console;
@@ -282,7 +283,7 @@ namespace Unnamed {
 					},
 					INPUT_AXIS::Y,
 					1.0f
-				);
+					);
 			}
 			auto s = KeyNameTable::FromString("s");
 			if (s.has_value()) {
@@ -294,7 +295,7 @@ namespace Unnamed {
 					},
 					INPUT_AXIS::Y,
 					-1.0f
-				);
+					);
 			}
 			auto d = KeyNameTable::FromString("d");
 			if (d.has_value()) {
@@ -307,7 +308,7 @@ namespace Unnamed {
 						},
 						INPUT_AXIS::X,
 						1.0f
-					);
+						);
 				}
 			}
 			auto a = KeyNameTable::FromString("a");
@@ -320,7 +321,7 @@ namespace Unnamed {
 					},
 					INPUT_AXIS::X,
 					-1.0f
-				);
+					);
 			}
 
 			auto q = KeyNameTable::FromString("q");
@@ -377,14 +378,14 @@ namespace Unnamed {
 #pragma endregion
 
 		// AMの作成と初期化
-		mAssetManager  = std::make_unique<UAssetManager>();
+		mAssetManager = std::make_unique<UAssetManager>();
 		auto matLoader = std::make_unique<MaterialLoader>(
 			mAssetManager.get());
-		auto texLoader    = std::make_unique<DirectXTexTextureLoader>();
+		auto texLoader = std::make_unique<DirectXTexTextureLoader>();
 		auto shaderLoader = std::make_unique<ShaderLoader>(
 			mAssetManager.get());
 		auto rawFileLoader = std::make_unique<RawLoader>();
-		auto meshLoader    = std::make_unique<MeshLoader>();
+		auto meshLoader = std::make_unique<MeshLoader>();
 		mAssetManager->RegisterLoader(std::move(matLoader));
 		mAssetManager->RegisterLoader(std::move(texLoader));
 		mAssetManager->RegisterLoader(std::move(shaderLoader));
@@ -453,8 +454,8 @@ namespace Unnamed {
 			mAssetManager->AddRef(meshAsset);
 
 			// グリッドでエンティティをスポーン
-			constexpr int   rows    = 0;
-			constexpr int   cols    = 0;
+			constexpr int   rows = 0;
+			constexpr int   cols = 0;
 			constexpr float spacing = 4.0f;
 			constexpr float offsetX = (cols - 1) * spacing * 0.5f;
 			constexpr float offsetZ = (rows - 1) * spacing * 0.5f;
@@ -464,7 +465,7 @@ namespace Unnamed {
 					std::string name = "Entity_" + std::to_string(i) + "_" +
 						std::to_string(j);
 					auto* entity = mWorld->SpawnEmpty(name);
-					auto* tr     = entity->GetOrAddComponent<
+					auto* tr = entity->GetOrAddComponent<
 						TransformComponent>();
 					auto* meshRenderer = entity->GetOrAddComponent<
 						MeshRendererComponent>();
@@ -472,8 +473,8 @@ namespace Unnamed {
 						RotatorComponent>();
 					rotator->SetRotationRate(Vec3::up * 15.0f);
 
-					meshRenderer->meshAsset     = meshAsset;
-					meshRenderer->material      = mr;
+					meshRenderer->meshAsset = meshAsset;
+					meshRenderer->material = mr;
 					meshRenderer->materialAsset = mr.materialAsset;
 
 					const float x = static_cast<float>(j) * spacing -
@@ -486,7 +487,7 @@ namespace Unnamed {
 		}
 
 		{
-			auto* eCam       = mWorld->SpawnEmpty("Camera");
+			auto* eCam = mWorld->SpawnEmpty("Camera");
 			mCameraTransform = eCam->GetOrAddComponent<
 				TransformComponent>();
 			mCamera = eCam->GetOrAddComponent<UCameraComponent>();
@@ -529,9 +530,9 @@ namespace Unnamed {
 			);
 
 			RECT clip;
-			clip.left   = center.x;
-			clip.top    = center.y;
-			clip.right  = center.x + 1;
+			clip.left = center.x;
+			clip.top = center.y;
+			clip.right = center.x + 1;
 			clip.bottom = center.y + 1;
 
 			ClipCursor(&clip);
@@ -557,14 +558,14 @@ namespace Unnamed {
 			Vec2 delta = mInputSystem->Axis2D("mouse");
 
 			// 感度と回転値を計算
-			constexpr float sensitivity  = 0.75f;
-			constexpr float m_pitch      = 0.022f;
-			constexpr float m_yaw        = 0.022f;
+			constexpr float sensitivity = 0.75f;
+			constexpr float m_pitch = 0.022f;
+			constexpr float m_yaw = 0.022f;
 			constexpr float cl_pitchdown = 89.0f;
-			constexpr float cl_pitchup   = 89.0f;
+			constexpr float cl_pitchup = 89.0f;
 
 			static float pitch = 0.0f;
-			static float yaw   = 0.0f;
+			static float yaw = 0.0f;
 			static float speed = 1.0f;
 
 			speed += mInputSystem->Axis1D("wheel");
@@ -586,10 +587,10 @@ namespace Unnamed {
 			mCameraTransform->SetRotation(finalRotation);
 
 			auto prevPos = mCameraTransform->Position();
-			auto mat     = mCameraTransform->WorldMat();
+			auto mat = mCameraTransform->WorldMat();
 			auto forward = mat.GetForward();
-			auto right   = mat.GetRight();
-			auto up      = mat.GetUp();
+			auto right = mat.GetRight();
+			auto up = mat.GetUp();
 
 			prevPos += forward * mInputSystem->Axis2D("move").y * speed *
 				deltaTime;
@@ -666,7 +667,7 @@ namespace Unnamed {
 			//
 			// mGraphicsDevice->DrawTriangleTest(context.cmd);
 
-			const auto* cam  = mWorld->MainCamera();
+			const auto* cam = mWorld->MainCamera();
 			RenderView  view = {
 				.view = UCameraComponent::View(mCameraTransform),
 				.proj = cam->Proj(

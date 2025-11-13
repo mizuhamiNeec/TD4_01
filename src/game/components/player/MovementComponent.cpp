@@ -214,7 +214,7 @@ void MovementComponent::ProcessInput() {
 	}
 	mData.wishDirection = wish;
 	mData.wishJump      = InputSystem::IsPressed("jump");
-	mData.wishCrouch    = InputSystem::IsPressed("crouch");
+	mData.wishCrouch    = InputSystem::IsPressed("duck");
 }
 
 /// @brief 移動処理
@@ -511,9 +511,9 @@ void MovementComponent::UpdateHullDimensions() {
 	if (mCollider) {
 		auto& [min, max] = mCollider->AABB();
 		// ローカル座標でのAABB（足元を原点とする）
-		min              = Vec3(-mHull.halfSize.x, 0.0f, -mHull.halfSize.z);
-		max              = Vec3(mHull.halfSize.x, mHull.halfSize.y * 2.0f, mHull.halfSize.z);
-		auto& offset     = mCollider->Offset();
+		min = Vec3(-mHull.halfSize.x, 0.0f, -mHull.halfSize.z);
+		max = Vec3(mHull.halfSize.x, mHull.halfSize.y * 2.0f, mHull.halfSize.z);
+		auto& offset = mCollider->Offset();
 		// オフセットは不要（足元基準なので）
 		offset = Vec3::zero;
 	}

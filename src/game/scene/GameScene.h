@@ -56,6 +56,7 @@ private:
 	void InitializePlayer();
 	void InitializeWeapon();
 	void InitializeWorldMesh();
+	void InitializeFanMesh();
 	void InitializeCameraRoot();
 	void InitializeShakeRoot();
 	void InitializeSkeletalMesh();
@@ -106,6 +107,9 @@ private:
 
 	std::unique_ptr<Entity>               mEntSkeletalMesh;
 	std::shared_ptr<SkeletalMeshRenderer> mSkeletalMeshRenderer;
+
+	std::unique_ptr<Entity>             mFanEntity;
+	std::shared_ptr<StaticMeshRenderer> mFanMeshRenderer;
 
 	// テレポート用AABB
 	Vec3 mTeleportTriggerMin;    // ボックスの最小点

@@ -23,6 +23,8 @@
 #include <game/components/checkpoint/CheckpointManager.h>
 #include <game/components/checkpoint/GoalComponent.h>
 
+#include "game/components/RotateComponent.h"
+
 namespace {
 	constexpr char kDevMeasureTexturePath[] =
 		"./content/core/textures/dev_measure.png";
@@ -41,6 +43,8 @@ namespace {
 		"./content/parkour/scripts/weapon_handgun.json";
 	constexpr char kSkeletalMeshPath[] =
 		"./content/parkour/models/hand/hand.gltf";
+	constexpr char kFanMeshPath[] =
+		"./content/core/models/fan.obj";
 	constexpr char kWorldMeshInitialPath[] =
 		"./content/parkour/models/map/sp_city.obj";
 	constexpr char kWorldMeshReloadPath[] =
@@ -98,11 +102,13 @@ void GameScene::Init() {
 	InitializePhysics();
 	InitializeCamera();
 	InitializePlayer();
-	InitializeWorldMesh();
+	//InitializeWorldMesh();
+	InitializeFanMesh();
 	InitializeCameraRoot();
 	InitializeShakeRoot();
 	InitializeSkeletalMesh();
 	InitializeWeapon();
+
 	ConfigureEntityHierarchy();
 	InitializeEffects();
 	ConfigureConsole();
@@ -174,6 +180,20 @@ void GameScene::Update(const float deltaTime) {
 	}
 
 	mNextCheckpointSprite->Update();
+
+	// ファンを物理エンジンから登録解除
+	if (mUPhysicsEngine) {
+		mUPhysicsEngine->UnregisterEntity(mFanEntity.get());
+	}
+	if (mFanEntity->HasComponent<MeshColliderComponent>()) {
+		mFanEntity->RemoveComponent<MeshColliderComponent>();
+	}
+
+	// 再登録
+	mFanEntity->AddComponent<MeshColliderComponent>();
+	if (mUPhysicsEngine) {
+		mUPhysicsEngine->RegisterEntity(mFanEntity.get());
+	}
 
 #ifdef _DEBUG
 	DrawDebugHud(camera);
@@ -432,6 +452,28 @@ void GameScene::InitializeWorldMesh() {
 	if (mUPhysicsEngine) {
 		mUPhysicsEngine->RegisterEntity(mEntWorldMesh.get());
 	}
+}
+
+void GameScene::InitializeFanMesh() {
+	auto* meshManager = mResourceManager ?
+		                    mResourceManager->GetMeshManager() :
+		                    nullptr;
+	if (meshManager) {
+		meshManager->LoadMeshFromFile(kFanMeshPath);
+	}
+
+	mFanEntity        = std::make_unique<Entity>("fan");
+	auto* fanRenderer = mFanEntity->AddComponent<StaticMeshRenderer>();
+	mFanMeshRenderer  = AdoptComponent(fanRenderer);
+	if (mFanMeshRenderer && meshManager) {
+		if (auto* mesh = meshManager->GetStaticMesh(kFanMeshPath)) {
+			mFanMeshRenderer->SetStaticMesh(mesh);
+		}
+	}
+
+	mFanEntity->AddComponent<RotateComponent>();
+
+	AddEntity(mFanEntity.get());
 }
 
 /// @brief カメラルートの初期化

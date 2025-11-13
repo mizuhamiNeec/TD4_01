@@ -154,11 +154,9 @@ Vec2 Vec2::Normalized() const {
 	return zero;
 }
 
-Vec2 Vec2::Clamp(const Vec2 min, const Vec2 max) const {
-	return {
-		std::clamp(x, min.x, max.x),
-		std::clamp(y, min.y, max.y)
-	};
+void Vec2::Clamp(const Vec2 min, const Vec2 max) {
+	x = std::clamp(x, min.x, max.x);
+	y = std::clamp(y, min.y, max.y);
 }
 
 Vec2 Vec2::ClampLength(const float min, const float max) {

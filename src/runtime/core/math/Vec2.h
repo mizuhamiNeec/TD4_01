@@ -69,7 +69,7 @@ struct Vec2 final {
 	///  @param min 最小値
 	///  @param max 最大値
 	///  @return クランプされたベクトル
-	[[nodiscard]] Vec2 Clamp(Vec2 min, Vec2 max) const;
+	[[nodiscard]] void Clamp(Vec2 min, Vec2 max);
 
 
 	///  @brief ベクトルの長さを範囲内にクランプする

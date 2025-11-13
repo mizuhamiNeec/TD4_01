@@ -11,7 +11,6 @@
 #include <engine/Debug/Debug.h>
 #include <engine/Debug/DebugHud.h>
 #include <engine/ImGui/Icons.h>
-#include <engine/ImGui/ImGuiWidgets.h>
 #include <engine/Input/InputSystem.h>
 #include <engine/OldConsole/ConCommand.h>
 #include <engine/OldConsole/ConVarManager.h>
@@ -20,7 +19,9 @@
 #include <engine/postprocess/PPRadialBlur.h>
 #include <engine/postprocess/PPVignette.h>
 #include <engine/renderer/SrvManager.h>
+#include <engine/subsystem/console/ConsoleScriptParser.h>
 #include <engine/subsystem/console/ConsoleSystem.h>
+#include <engine/subsystem/console/concommand/UnnamedConVar.h>
 #include <engine/subsystem/interface/ServiceLocator.h>
 #include <engine/subsystem/time/TimeSystem.h>
 #include <engine/TextureManager/TexManager.h>
@@ -30,11 +31,7 @@
 #include <game/scene/EmptyScene.h>
 #include <game/scene/GameScene.h>
 
-#include <engine/subsystem/console/concommand/UnnamedConVar.h>
-
-#include "subsystem/console/ConsoleScriptParser.h"
-
-constexpr auto offscreenClearColor = Vec4(0.025f, 0.025f, 0.025f, 1.0f);
+#include "ImGui/ImGuiWidgets.h"
 
 namespace Unnamed {
 	/// @brief コンストラクタ
@@ -159,7 +156,7 @@ namespace Unnamed {
 
 		// オフスクリーンレンダリングターゲットの作成
 		mOffscreenRtv = mRenderer->CreateRenderTargetTexture(
-			kClWidth, kClHeight, offscreenClearColor, kBufferFormat
+			kClWidth, kClHeight, kOffscreenClearColor, kBufferFormat
 		);
 
 		// オフスクリーン用の深度テクスチャの作成
@@ -170,13 +167,13 @@ namespace Unnamed {
 		// ピンポン用レンダーターゲットの作成
 		for (auto& i : mPingRtv) {
 			i = mRenderer->CreateRenderTargetTexture(
-				kClWidth, kClHeight, offscreenClearColor, kBufferFormat
+				kClWidth, kClHeight, kOffscreenClearColor, kBufferFormat
 			);
 		}
 
 		// ポストプロセス後のレンダーターゲットの作成
 		mPostProcessedRtv = mRenderer->CreateRenderTargetTexture(
-			kClWidth, kClHeight, offscreenClearColor, kBufferFormat
+			kClWidth, kClHeight, kOffscreenClearColor, kBufferFormat
 		);
 
 		// ポストプロセス後の深度テクスチャの作成
@@ -188,7 +185,7 @@ namespace Unnamed {
 			.pRTVs = &mOffscreenRtv.rtvHandle,
 			.numRTVs = 1,
 			.pDSV = &mOffscreenDsv.dsvHandle,
-			.clearColor = offscreenClearColor,
+			.clearColor = kOffscreenClearColor,
 			.clearDepth = 1.0f,
 			.clearStencil = 0,
 			.bClearColor = true,
@@ -199,7 +196,7 @@ namespace Unnamed {
 			.pRTVs = &mPostProcessedRtv.rtvHandle,
 			.numRTVs = 1,
 			.pDSV = &mPostProcessedDsv.dsvHandle,
-			.clearColor = offscreenClearColor,
+			.clearColor = kOffscreenClearColor,
 			.clearDepth = 1.0f,
 			.clearStencil = 0,
 			.bClearColor = true,
@@ -262,9 +259,9 @@ namespace Unnamed {
 
 		Debug::Init(mLineCommon.get());
 
-		//-------------------------------------------------------------------------
+		//---------------------------------------------------------------------
 		// すべての初期化が完了
-		//-------------------------------------------------------------------------
+		//---------------------------------------------------------------------
 
 		Console::SubmitCommand("neofetch");
 
@@ -280,9 +277,9 @@ namespace Unnamed {
 		// シーンの初期化
 		mSceneManager->ChangeScene("GameScene");
 
-		//-----------------------------------------------------------------------------
+		//---------------------------------------------------------------------
 		// エディターの初期化
-		//-----------------------------------------------------------------------------
+		//---------------------------------------------------------------------
 		CheckEditorMode();
 		
 		assert(SUCCEEDED(mRenderer->GetCommandList()->Close()));
@@ -636,10 +633,10 @@ namespace Unnamed {
 
 		mOffscreenRenderPassTargets.bClearColor =
 			ConVarManager::GetConVar("r_clear")->GetValueAsBool();
-		//-------------------------------------------------------------------------
+		//---------------------------------------------------------------------
 		// --- PreRender↓ ---
 		mRenderer->PreRender();
-		//-------------------------------------------------------------------------
+		//---------------------------------------------------------------------
 
 		mRenderer->SetViewportAndScissor(
 			static_cast<uint32_t>(mOffscreenRtv.rtv->GetDesc().Width),
@@ -721,7 +718,7 @@ namespace Unnamed {
 						&dest.rtvHandle,
 						1,
 						&mPostProcessedDsv.dsvHandle,
-						offscreenClearColor,
+						kOffscreenClearColor,
 						1.0f,
 						0,
 						true,
@@ -778,15 +775,15 @@ namespace Unnamed {
 			mPingIndex        = next;
 		}
 
-		//------------------------------------------------------------------------
+		//---------------------------------------------------------------------
 		// --- PostRender↓ ---
 		if (IsEditorMode()) {
 			mRenderer->BeginSwapChainRenderPass();
 		}
 
-		//-----------------------------------------------------------------------------
+		//---------------------------------------------------------------------
 		// Purpose: 新エンジン
-		//-----------------------------------------------------------------------------
+		//---------------------------------------------------------------------
 
 		for (auto& subsystem : mSubsystems) {
 			subsystem->Update(mTimeSystem->GetGameTime()->DeltaTime<float>());
@@ -846,9 +843,9 @@ namespace Unnamed {
 
 	/// @brief シャットダウン
 	void Engine::Shutdown() const {
-		//-----------------------------------------------------------------------------
+		//---------------------------------------------------------------------
 		// Purpose: 旧エンジン
-		//-----------------------------------------------------------------------------
+		//---------------------------------------------------------------------
 		mRenderer->WaitPreviousFrame();
 
 		Debug::Shutdown();
@@ -876,9 +873,9 @@ namespace Unnamed {
 			"アリーヴェ帰ルチ! (さよナランチャ"
 		);
 
-		//-----------------------------------------------------------------------------
+		//---------------------------------------------------------------------
 		// Purpose: 新エンジン
-		//-----------------------------------------------------------------------------
+		//---------------------------------------------------------------------
 		// 登録されたサブシステムをシャットダウン
 		for (auto& subsystem : mSubsystems) {
 			if (subsystem) {
@@ -905,7 +902,7 @@ namespace Unnamed {
 
 		mOffscreenRtv = mRenderer->CreateRenderTargetTexture(
 			width, height,
-			offscreenClearColor,
+			kOffscreenClearColor,
 			mOffscreenRtv.srvIndex,
 			kBufferFormat
 		);
@@ -917,21 +914,21 @@ namespace Unnamed {
 
 		mPingRtv[0] = mRenderer->CreateRenderTargetTexture(
 			width, height,
-			offscreenClearColor,
+			kOffscreenClearColor,
 			mPingRtv[0].srvIndex,
 			kBufferFormat
 		);
 
 		mPingRtv[1] = mRenderer->CreateRenderTargetTexture(
 			width, height,
-			offscreenClearColor,
+			kOffscreenClearColor,
 			mPingRtv[1].srvIndex,
 			kBufferFormat
 		);
 
 		mPostProcessedRtv = mRenderer->CreateRenderTargetTexture(
 			width, height,
-			offscreenClearColor,
+			kOffscreenClearColor,
 			mPostProcessedRtv.srvIndex,
 			kBufferFormat
 		);
@@ -981,7 +978,7 @@ namespace Unnamed {
 
 		mOffscreenRtv = mRenderer->CreateRenderTargetTexture(
 			width, height,
-			offscreenClearColor,
+			kOffscreenClearColor,
 			kBufferFormat
 		);
 		mOffscreenDsv = mRenderer->CreateDepthStencilTexture(
@@ -991,19 +988,19 @@ namespace Unnamed {
 
 		mPingRtv[0] = mRenderer->CreateRenderTargetTexture(
 			width, height,
-			offscreenClearColor,
+			kOffscreenClearColor,
 			kBufferFormat
 		);
 
 		mPingRtv[1] = mRenderer->CreateRenderTargetTexture(
 			width, height,
-			offscreenClearColor,
+			kOffscreenClearColor,
 			kBufferFormat
 		);
 
 		mPostProcessedRtv = mRenderer->CreateRenderTargetTexture(
 			width, height,
-			offscreenClearColor,
+			kOffscreenClearColor,
 			kBufferFormat
 		);
 
@@ -1089,28 +1086,28 @@ namespace Unnamed {
 		// デバッグ用にエンティティのaxisを表示するかのコンソール変数
 		ConVarManager::RegisterConVar("ent_axis", 0, "Show entity axis");
 
-		// デフォルトのバインド
-		Console::SubmitCommand("bind esc togglelockcursor", true);
-		Console::SubmitCommand("bind w +forward", true);
-		Console::SubmitCommand("bind s +back", true);
-		Console::SubmitCommand("bind a +moveleft", true);
-		Console::SubmitCommand("bind d +moveright", true);
-		Console::SubmitCommand("bind e +moveup", true);
-		Console::SubmitCommand("bind q +movedown", true);
-		Console::SubmitCommand("bind c +crouch", true);
-		Console::SubmitCommand("bind space +jump", true);
-		Console::SubmitCommand("bind mouse1 +attack1", true);
-		Console::SubmitCommand("bind mouse2 +attack2", true);
-		Console::SubmitCommand("bind r +reload", true);
-		Console::SubmitCommand("bind mousewheelup +invprev", true);
-		Console::SubmitCommand("bind mousewheeldown +invnext", true);
-		Console::SubmitCommand("bind f1 toggleeditor", true);
-
-		Console::SubmitCommand("bind 4 +bounds", true);
-		Console::SubmitCommand("bind 1 +translate", true);
-		Console::SubmitCommand("bind 2 +rotate", true);
-		Console::SubmitCommand("bind 3 +scale", true);
-		Console::SubmitCommand("bind tab +toggleGizmo", true);
+		// // デフォルトのバインド
+		// Console::SubmitCommand("bind esc togglelockcursor", true);
+		// Console::SubmitCommand("bind w +forward", true);
+		// Console::SubmitCommand("bind s +back", true);
+		// Console::SubmitCommand("bind a +moveleft", true);
+		// Console::SubmitCommand("bind d +moveright", true);
+		// Console::SubmitCommand("bind e +moveup", true);
+		// Console::SubmitCommand("bind q +movedown", true);
+		// Console::SubmitCommand("bind c +crouch", true);
+		// Console::SubmitCommand("bind space +jump", true);
+		// Console::SubmitCommand("bind mouse1 +attack1", true);
+		// Console::SubmitCommand("bind mouse2 +attack2", true);
+		// Console::SubmitCommand("bind r +reload", true);
+		// Console::SubmitCommand("bind mousewheelup +invprev", true);
+		// Console::SubmitCommand("bind mousewheeldown +invnext", true);
+		// Console::SubmitCommand("bind f1 toggleeditor", true);
+		//
+		// Console::SubmitCommand("bind 4 +bounds", true);
+		// Console::SubmitCommand("bind 1 +translate", true);
+		// Console::SubmitCommand("bind 2 +rotate", true);
+		// Console::SubmitCommand("bind 3 +scale", true);
+		// Console::SubmitCommand("bind tab +toggleGizmo", true);
 	}
 
 	/// @brief エンジン終了コマンド

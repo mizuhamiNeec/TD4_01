@@ -625,7 +625,7 @@ void Editor::Update([[maybe_unused]] const float deltaTime) {
 		static ImGuizmo::OPERATION operation = ImGuizmo::OPERATION::TRANSLATE;
 
 		static bool bIsWorldMode = true;
-		if (InputSystem::IsTriggered("toggleGizmo")) {
+		if (InputSystem::IsTriggered("togglegizmo")) {
 			bIsWorldMode = !bIsWorldMode;
 		}
 

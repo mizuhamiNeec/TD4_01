@@ -87,6 +87,7 @@ GameScene::~GameScene() {
 
 /// @brief 初期化
 void GameScene::Init() {
+	// 各種マネージャーの取得
 	mRenderer = Unnamed::Engine::GetRenderer();
 	mResourceManager = Unnamed::Engine::GetResourceManager();
 	mSrvManager = Unnamed::Engine::GetSrvManager();
@@ -96,19 +97,19 @@ void GameScene::Init() {
 	// CheckpointManagerを初期化
 	CheckpointManager::Initialize();
 
+	// 各種初期化処理
 	LoadCoreTextures();
 	InitializeCubeMap();
 	InitializeParticles();
 	InitializePhysics();
 	InitializeCamera();
 	InitializePlayer();
-	//InitializeWorldMesh();
+	InitializeWorldMesh();
 	InitializeFanMesh();
 	InitializeCameraRoot();
 	InitializeShakeRoot();
 	InitializeSkeletalMesh();
 	InitializeWeapon();
-
 	ConfigureEntityHierarchy();
 	InitializeEffects();
 	ConfigureConsole();
@@ -116,6 +117,7 @@ void GameScene::Init() {
 	InitializeCheckpoints();
 	InitializeGoal();
 
+	// 次のチェックポイント矢印スプライトの初期化
 	mNextCheckpointSprite = std::make_unique<Sprite>();
 	mNextCheckpointSprite->Init(
 		mSpriteCommon,
@@ -123,6 +125,7 @@ void GameScene::Init() {
 	);
 	mNextCheckpointSprite->SetAnchorPoint({0.5f, 0.5f});
 
+	// ゲームタイマー開始
 	mTimer->StartGame();
 }
 
@@ -130,6 +133,15 @@ void GameScene::Init() {
 /// @param deltaTime 経過時間
 void GameScene::Update(const float deltaTime) {
 	HandleMeshReload();
+
+	// ファンを物理エンジンから登録解除
+	if (mUPhysicsEngine) {
+		mUPhysicsEngine->UnregisterEntity(mFanEntity.get());
+	}
+	if (mFanEntity->HasComponent<MeshColliderComponent>()) {
+		mFanEntity->RemoveComponent<MeshColliderComponent>();
+	}
+
 	SyncCameraRoot();
 	HandleWeaponInput();
 
@@ -180,20 +192,6 @@ void GameScene::Update(const float deltaTime) {
 	}
 
 	mNextCheckpointSprite->Update();
-
-	// ファンを物理エンジンから登録解除
-	if (mUPhysicsEngine) {
-		mUPhysicsEngine->UnregisterEntity(mFanEntity.get());
-	}
-	if (mFanEntity->HasComponent<MeshColliderComponent>()) {
-		mFanEntity->RemoveComponent<MeshColliderComponent>();
-	}
-
-	// 再登録
-	mFanEntity->AddComponent<MeshColliderComponent>();
-	if (mUPhysicsEngine) {
-		mUPhysicsEngine->RegisterEntity(mFanEntity.get());
-	}
 
 #ifdef _DEBUG
 	DrawDebugHud(camera);
@@ -868,6 +866,8 @@ void GameScene::UpdatePlayer(const float deltaTime) {
 	float targetFov;
 	float currentFov = CameraManager::GetActiveCamera()->GetFovVertical() *
 		Math::rad2Deg;
+	
+	(void)currentFov;
 
 	if (isSliding) {
 		targetFov = defaultFov + 8.0f;
@@ -960,22 +960,32 @@ void GameScene::UpdateParticlesAndEffects(float deltaTime) {
 /// @brief エンティティの更新
 /// @param deltaTime 経過時間
 void GameScene::UpdateEntities(float deltaTime) {
+	// 物理更新前の処理
 	for (auto* entity : mEntities) {
 		if (entity && !entity->GetParent()) {
 			entity->PrePhysics(deltaTime);
 		}
 	}
 
+	// 回転が適用された後に再登録
+	mFanEntity->AddComponent<MeshColliderComponent>();
+	if (mUPhysicsEngine) {
+		mUPhysicsEngine->RegisterEntity(mFanEntity.get());
+	}
+
+	// 物理更新
 	for (auto* entity : mEntities) {
 		if (entity && !entity->GetParent()) {
 			entity->Update(deltaTime);
 		}
 	}
 
+	// 物理エンジンの更新
 	if (mUPhysicsEngine) {
 		mUPhysicsEngine->Update(deltaTime);
 	}
 
+	// 物理更新後の処理
 	for (auto* entity : mEntities) {
 		if (entity && !entity->GetParent()) {
 			entity->PostPhysics(deltaTime);
@@ -1142,7 +1152,7 @@ void GameScene::ReloadWorldMesh() {
 	}
 
 	try {
-		// まず安全な方法を試す
+		// とりあえず安全な方法を試す
 		SafeReloadWorldMesh();
 	} catch (const std::exception& e) {
 		Console::Print(std::string("Safe reload failed: ") + e.what(),

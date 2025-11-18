@@ -25,14 +25,7 @@ namespace Unnamed {
 	ConsoleUI::ConsoleUI(
 		ConsoleSystem* consoleSystem
 	) : mConsoleSystem(consoleSystem) {
-		int     argc = 0;
-		LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
-		for (int i = 0; i < argc; ++i) {
-			bIsImGuiInitialized &= wcsstr(argv[i], L"-new") == nullptr;
-		}
-		if (argv) {
-			LocalFree(argv);
-		}
+		bIsImGuiInitialized = true;
 	}
 
 	/// @brief コンソールUIを表示します。
@@ -59,9 +52,11 @@ namespace Unnamed {
 				PushLogTextColor(buffer);
 				std::string text;
 				if (!buffer.channel.empty()) {
-					text = "[" + buffer.channel + "] " + buffer.message;
+					text = "[" + buffer.channel + "] " + buffer.message + "##" +
+						std::to_string(buffer.timeStamp.millisecond);
 				} else {
-					text = buffer.message;
+					text = buffer.message + "##" +
+						std::to_string(buffer.timeStamp.millisecond);;
 				}
 
 				if (ImGui::Selectable(text.c_str())) {

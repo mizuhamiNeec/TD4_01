@@ -44,6 +44,7 @@ namespace Unnamed {
 
 		std::unique_ptr<UWorld> mWorld;
 
+		ConsoleSystem*     mConsole;
 		TimeSystem*        mTime;
 		Win32WindowSystem* mWindowSystem;
 		UInputSystem*      mInputSystem;

@@ -460,7 +460,8 @@ void GameScene::InitializeFanMesh() {
 		meshManager->LoadMeshFromFile(kFanMeshPath);
 	}
 
-	mFanEntity        = std::make_unique<Entity>("fan");
+	mFanEntity = std::make_unique<Entity>("fan");
+	mFanEntity->GetTransform()->SetWorldPos(Vec3::down * 8.0f);
 	auto* fanRenderer = mFanEntity->AddComponent<StaticMeshRenderer>();
 	mFanMeshRenderer  = AdoptComponent(fanRenderer);
 	if (mFanMeshRenderer && meshManager) {
@@ -866,7 +867,7 @@ void GameScene::UpdatePlayer(const float deltaTime) {
 	float targetFov;
 	float currentFov = CameraManager::GetActiveCamera()->GetFovVertical() *
 		Math::rad2Deg;
-	
+
 	(void)currentFov;
 
 	if (isSliding) {
@@ -966,6 +967,13 @@ void GameScene::UpdateEntities(float deltaTime) {
 			entity->PrePhysics(deltaTime);
 		}
 	}
+
+	// auto* transform = mFanEntity->GetTransform();
+	// Vec3  newPos    = Vec3::right * std::sin(mTimer->FrameCount() * 0.01f) +
+	// 	Vec3::forward * std::cos(mTimer->FrameCount() * 0.01f);
+	// newPos   *= 8.0f;
+	// newPos.y = -10.0f;
+	// transform->SetWorldPos(newPos); // 位置を維持
 
 	// 回転が適用された後に再登録
 	mFanEntity->AddComponent<MeshColliderComponent>();

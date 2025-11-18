@@ -5,13 +5,14 @@
 #include <engine/OldConsole/Console.h>
 #include <engine/subsystem/console/ConsoleSystem.h>
 #include <engine/subsystem/console/Log.h>
+#include <engine/subsystem/console/builtin/BuiltInCommands.h>
+#include <engine/subsystem/console/builtin/BuiltInConVars.h>
+#include <engine/subsystem/console/concommand/UnnamedConCommand.h>
+#include <engine/subsystem/console/concommand/UnnamedConVar.h>
 #include <engine/subsystem/console/concommand/base/UnnamedConCommandBase.h>
 #include <engine/subsystem/console/concommand/base/UnnamedConVarBase.h>
 #include <engine/subsystem/interface/ServiceLocator.h>
 #include <engine/subsystem/time/SystemClock.h>
-
-#include <engine/subsystem/console/concommand/UnnamedConCommand.h>
-#include <engine/subsystem/console/concommand/UnnamedConVar.h>
 
 namespace Unnamed {
 	static constexpr std::string_view kChannel = "Console";
@@ -45,7 +46,8 @@ namespace Unnamed {
 		mConsoleUI = std::make_unique<ConsoleUI>(this);
 #endif
 
-		//RegisterBuiltInCommands();
+		RegisterBuiltInCommands();
+		RegisterBuiltInConVars();
 
 		return true;
 	}
@@ -66,6 +68,11 @@ namespace Unnamed {
 	/// @return コンソールシステムの名前
 	const std::string_view ConsoleSystem::GetName() const {
 		return "Console";
+	}
+
+	RingBuffer<ConsoleLogText, kConsoleBufferSize>& ConsoleSystem::
+	GetLogBuffer() {
+		return mLogBuffer;
 	}
 
 	/// @brief コンソールにログを出力します

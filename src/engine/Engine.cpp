@@ -27,11 +27,10 @@
 #include <engine/TextureManager/TexManager.h>
 #include <engine/Window/MainWindow.h>
 #include <engine/Window/WindowsUtils.h>
+#include <engine/ImGui/ImGuiWidgets.h>
 
 #include <game/scene/EmptyScene.h>
 #include <game/scene/GameScene.h>
-
-#include "ImGui/ImGuiWidgets.h"
 
 namespace Unnamed {
 	/// @brief コンストラクタ
@@ -281,7 +280,7 @@ namespace Unnamed {
 		// エディターの初期化
 		//---------------------------------------------------------------------
 		CheckEditorMode();
-		
+
 		assert(SUCCEEDED(mRenderer->GetCommandList()->Close()));
 
 		ConsoleScriptParser scriptParser(
@@ -1080,8 +1079,6 @@ namespace Unnamed {
 		ConVarManager::RegisterConVar("sv_friction", 4.0f, "World friction.");
 		ConVarManager::RegisterConVar("sv_stepsize", 18.0f,
 		                              "Maximum step height.");
-		ConVarManager::RegisterConVar("sv_overbounce", 1.05f,
-		                              "Overbounce factor.");
 
 		// デバッグ用にエンティティのaxisを表示するかのコンソール変数
 		ConVarManager::RegisterConVar("ent_axis", 0, "Show entity axis");

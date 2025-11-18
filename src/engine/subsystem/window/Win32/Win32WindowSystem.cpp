@@ -103,6 +103,12 @@ bool Win32WindowSystem::AllClosed() const {
 	return true;
 }
 
+void Win32WindowSystem::WishShutdown() {
+	for (const auto& w : mWindows) {
+		w->RequestClose();
+	}
+}
+
 /// @brief ウィンドウが非アクティブかどうかを取得します
 /// @return ウィンドウが非アクティブならtrue
 bool Win32WindowSystem::IsInactiveWindow() {

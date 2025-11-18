@@ -31,6 +31,8 @@ public:
 	GetWindows() const override;
 	[[nodiscard]] bool AllClosed() const override;
 
+	static void WishShutdown();
+
 	[[nodiscard]] static bool IsInactiveWindow();
 
 	static LRESULT CALLBACK WndProc(

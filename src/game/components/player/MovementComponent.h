@@ -213,6 +213,10 @@ private:
 	static constexpr float kSlideStopSpeed    = 50.0f; // HU/s - この速度以下で自動終了
 	static constexpr float kSlideHopSpeedCap  = 2000.0f; // HU/s - スライドホップの速度上限
 
+	// 動的地形
+	Vec3                   mSurfaceVelocity    = Vec3::zero; // 接触した地形の速度
+	static constexpr float kDynamicCheckSkinHu = 2.0f;       // 
+
 	UPhysics::Engine* mUPhysicsEngine = nullptr;
 	AABBCollider*     mCollider       = nullptr;
 	Unnamed::Box      mHull;

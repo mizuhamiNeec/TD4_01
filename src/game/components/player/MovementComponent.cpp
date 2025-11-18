@@ -220,6 +220,50 @@ void MovementComponent::ProcessInput() {
 /// @brief 移動処理
 /// @param dt 経過時間
 void MovementComponent::ProcessMovement(const float dt) {
+	static Vec3       oldPos; // 触れたオブジェクトの前フレーム位置
+	static Quaternion prevRot = Quaternion::identity;
+	mSurfaceVelocity          = Vec3::zero;
+
+	Unnamed::Box extendedHull = {
+		.center = mHull.center,
+		.halfSize = mHull.halfSize + Vec3::one * Math::HtoM(
+			kDynamicCheckSkinHu)
+	};
+
+	UPhysics::Hit surfaceHit;
+
+	if (mUPhysicsEngine->BoxOverlap(extendedHull, &surfaceHit, 1)) {
+		Debug::DrawBox(
+			extendedHull.center,
+			Quaternion::identity,
+			extendedHull.halfSize * 2.0f,
+			Vec4::purple
+		);
+
+		// 接触したオブジェクトの速度を計算
+		if (surfaceHit.hitEntity) {
+			Vec3 currentPos = surfaceHit.hitEntity->GetTransform()->
+			                             GetWorldPos();
+			Quaternion currentRot = surfaceHit.hitEntity->GetTransform()->
+			                                   GetWorldRot();
+			mSurfaceVelocity = (currentPos - oldPos) / dt;
+			// 回転による速度も加算
+			Vec3 rotVel = (currentRot * prevRot.Inverse()).ToEulerAngles();
+			Vec3 toPlayer = mScene->GetWorldPos() - currentPos;
+			Vec3 tangentialVel = rotVel.Cross(toPlayer);
+			mSurfaceVelocity += tangentialVel;
+			oldPos = currentPos;
+			prevRot = currentRot;
+		}
+
+		Msg(
+			kChannel,
+			"Hit {}",
+			surfaceHit.hitEntity ? surfaceHit.hitEntity->GetName() : "None"
+		);
+	} else {
+	}
+
 	// 前フレームの接地状態を記録
 	mData.wasGroundedLastFrame = mData.isGrounded;
 
@@ -360,6 +404,9 @@ void MovementComponent::ProcessMovement(const float dt) {
 		if (!mData.isGrounded) ApplyHalfGravity(dt);
 	}
 
+	mData.velocity += mSurfaceVelocity;
+
+
 	// 衝突付き移動
 	MoveWithCollisions(dt);
 
@@ -453,7 +500,7 @@ void MovementComponent::Friction(const float amount, const float dt) {
 	float newspeed = std::max(0.0f, speed - drop);
 
 	if (newspeed != speed) {
-		newspeed /= speed;
+		newspeed       /= speed;
 		mData.velocity *= newspeed;
 	}
 }
@@ -471,7 +518,7 @@ void MovementComponent::Accelerate(
 	const float cur = Math::MtoH(mData.velocity).Dot(dir);
 	const float add = speed - cur;
 	if (add <= 0.f) return;
-	float acc = std::min(accel * speed * dt, add);
+	float acc      = std::min(accel * speed * dt, add);
 	mData.velocity += Math::HtoM(acc) * dir;
 }
 
@@ -490,7 +537,7 @@ void MovementComponent::AirAccelerate(
 	const float add     = wishspd - cur;
 	if (add <= 0.f) return;
 	const float acc = std::min(accel * speed * dt, add);
-	mData.velocity += Math::HtoM(acc) * dir;
+	mData.velocity  += Math::HtoM(acc) * dir;
 }
 
 /// @brief ハル(当たり判定)の寸法を更新
@@ -717,7 +764,7 @@ void MovementComponent::StepMove(
 		const float threshold = mData.groundNormalY;
 		if (downHit.normal.y >= threshold) {
 			float drop = std::max(0.0f, downHit.t - RestOffsetM());
-			position += -Vec3::up * drop;
+			position   += -Vec3::up * drop;
 		}
 	}
 
@@ -754,7 +801,7 @@ bool MovementComponent::GroundCheck(Vec3& position) {
 
 	// スナップ
 	float drop = std::max(0.0f, gHit.t - RestOffsetM());
-	position += -Vec3::up * drop;
+	position   += -Vec3::up * drop;
 
 	// ヒステリシス: 接地中なら緩い閾値で判定、空中からなら厳しい閾値で判定
 	const float threshold  = mData.groundNormalY;
@@ -854,7 +901,7 @@ void MovementComponent::DetectAndResolveStuck(float dt) {
 					if (!mUPhysicsEngine->BoxOverlap(mHull, &ov)) {
 						// 脱出成功
 						mData.velocity += escapeVel;
-						escaped = true;
+						escaped        = true;
 						break;
 					}
 				}
@@ -988,7 +1035,7 @@ bool MovementComponent::TryStartWallrun() {
 
 			// ウォールラン開始時に小さなブースト
 			float boostAmount = Math::HtoM(50.0f); // 50 HU/sのブースト
-			mData.velocity += mData.wallRunDirection * boostAmount;
+			mData.velocity    += mData.wallRunDirection * boostAmount;
 
 			return true;
 		}
@@ -1115,7 +1162,7 @@ void MovementComponent::Wallrun(const float wishspeed, const float dt) {
 			float accel = ConVarManager::GetConVar("sv_airaccelerate")->
 				GetValueAsFloat() * 1.5f;
 			float accelspeed = std::min(accel * wishspeed * dt, addSpeed);
-			mData.velocity += Math::HtoM(accelspeed) * wishdir;
+			mData.velocity   += Math::HtoM(accelspeed) * wishdir;
 		}
 	} else {
 		// 前進入力がない場合は摩擦で減速
@@ -1139,7 +1186,7 @@ void MovementComponent::Wallrun(const float wishspeed, const float dt) {
 
 	// 壁に軽く吸い付く力を追加
 	const float pullForce = Math::HtoM(80.0f); // 80 HU/s
-	mData.velocity += -mData.wallRunNormal * pullForce * dt;
+	mData.velocity        += -mData.wallRunNormal * pullForce * dt;
 }
 
 /// @brief スライド可能かを判定する

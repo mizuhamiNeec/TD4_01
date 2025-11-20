@@ -13,7 +13,6 @@ public:
 	RingBuffer() : mHead(0), mTail(0), mSize(0) {
 	}
 
-
 	/// @brief バッファに要素を追加する
 	/// @param value 追加する要素
 	/// @return 常にtrueを返す
@@ -30,7 +29,6 @@ public:
 		return true;
 	}
 
-
 	/// @brief バッファから要素を取り出す
 	/// @param out 取り出した要素を格納する参照
 	/// @return 成功した場合true、バッファが空の場合false
@@ -45,21 +43,17 @@ public:
 		return true;
 	}
 
-
 	/// @brief 現在のバッファサイズを取得する
 	/// @return バッファ内の要素数
 	[[nodiscard]] size_t Size() const { return mSize; }
-
 
 	/// @brief バッファが空かどうかを判定する
 	/// @return 空の場合true
 	[[nodiscard]] bool Empty() const { return mSize == 0; }
 
-
 	/// @brief バッファが満杯かどうかを判定する
 	/// @return 満杯の場合true
 	[[nodiscard]] bool Full() const { return mSize == Capacity; }
-
 
 	/// @brief 最後に書き込まれた要素のインデックスを取得する
 	/// @return 最後に書き込まれたインデックス
@@ -99,14 +93,12 @@ public:
 		size_t            mCount;
 	};
 
-
 	/// @brief 範囲forループ用の開始イテレータを取得する
 	/// @return 開始イテレータ
 	[[nodiscard]] Iterator begin() const {
 		std::lock_guard lock(mMutex);
 		return Iterator(this, mTail, mSize);
 	}
-
 
 	///@brief 範囲forループ用の終了イテレータを取得する
 	///@return 終了イテレータ

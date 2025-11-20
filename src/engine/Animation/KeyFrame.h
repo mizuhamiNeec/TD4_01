@@ -16,5 +16,6 @@ Vec3 CalculateValue(
 	float                            time
 );
 
-Quaternion CalculateValue(const std::vector<KeyframeQuaternion>& keyframes,
-                          float                                  time);
+Quaternion CalculateValue(
+	const std::vector<KeyframeQuaternion>& keyframes, float time
+);

@@ -38,6 +38,7 @@ namespace Unnamed {
 	bool      operator&(EXEC_FLAG lhs, EXEC_FLAG rhs);
 
 	/// @brief コンソールシステムクラス
+	/// @details Source風コンソールシステム
 	class ConsoleSystem final : public ISubsystem, public IConsole {
 	public:
 		~ConsoleSystem() override;
@@ -50,13 +51,12 @@ namespace Unnamed {
 		[[nodiscard]] const std::string_view GetName() const override;
 
 		// IConsole
-		RingBuffer<ConsoleLogText, kConsoleBufferSize>& GetLogBuffer() {
-			return mLogBuffer;
-		}
+		RingBuffer<ConsoleLogText, kConsoleBufferSize>& GetLogBuffer();
 
-		void Print(LogLevel             level, std::string_view channel,
-		           std::string_view     message,
-		           std::source_location location) override;
+		void Print(
+			LogLevel         level, std::string_view       channel,
+			std::string_view message, std::source_location location
+		) override;
 
 		void RegisterConCommand(UnnamedConCommandBase* conCommand);
 
@@ -66,6 +66,9 @@ namespace Unnamed {
 			const std::string& command,
 			EXEC_FLAG          flag = EXEC_FLAG::FROM_ENGINE
 		);
+
+		[[nodiscard]]
+		std::unordered_map<std::string, UnnamedConVarBase*> GetConVars();
 
 		UnnamedConVarBase* GetConVar(std::string_view name);
 
@@ -79,7 +82,7 @@ namespace Unnamed {
 		std::unordered_map<std::string, UnnamedConCommandBase*> mConCommands;
 		std::unordered_map<std::string, UnnamedConVarBase*>     mConVars;
 
-#ifdef _DEBUG
+#ifdef _DEBUG // デバッグ時にはコンソールUIを有効化
 		std::unique_ptr<ConsoleUI> mConsoleUI;
 #endif
 	};

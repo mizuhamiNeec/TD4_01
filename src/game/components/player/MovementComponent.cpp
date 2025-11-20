@@ -1,31 +1,17 @@
 #include "MovementComponent.h"
 
 #include <algorithm>
-#include <cmath>
 #include <array>
+#include <cmath>
+
 #include <engine/Camera/CameraManager.h>
 #include <engine/Components/Camera/CameraComponent.h>
+#include <engine/Components/ColliderComponent/AABBCollider.h>
 #include <engine/Components/Transform/SceneComponent.h>
+#include <engine/Entity/Entity.h>
 #include <engine/ImGui/ImGuiWidgets.h>
+#include <engine/Input/InputSystem.h>
 #include <engine/OldConsole/ConVarManager.h>
-
-#include "engine/Components/ColliderComponent/AABBCollider.h"
-#include "engine/Entity/Entity.h"
-#include "engine/Input/InputSystem.h"
-#include "MovementComponent.h"
-
-#include <algorithm>
-#include <cmath>
-#include <array>
-#include <engine/Camera/CameraManager.h>
-#include <engine/Components/Camera/CameraComponent.h>
-#include <engine/Components/Transform/SceneComponent.h>
-#include <engine/ImGui/ImGuiWidgets.h>
-#include <engine/OldConsole/ConVarManager.h>
-
-#include "engine/Components/ColliderComponent/AABBCollider.h"
-#include "engine/Entity/Entity.h"
-#include "engine/Input/InputSystem.h"
 
 static constexpr std::string_view kChannel = "MovementComponent";
 
@@ -57,11 +43,12 @@ void MovementComponent::OnAttach(Entity& owner) {
 }
 
 /// @brief 初期化
-/// @param uphysics UPhysicsエンジンポインタ
+/// @param uPhysics UPhysicsエンジンポインタ
 /// @param md 移動データ
-void MovementComponent::Init(UPhysics::Engine*   uphysics,
-                             const MovementData& md) {
-	mUPhysicsEngine             = uphysics;
+void MovementComponent::Init(
+	UPhysics::Engine* uPhysics, const MovementData& md
+) {
+	mUPhysicsEngine             = uPhysics;
 	mData                       = md;
 	mData.velocity              = Vec3::zero;
 	mData.state                 = MOVEMENT_STATE::AIR;
@@ -220,6 +207,49 @@ void MovementComponent::ProcessInput() {
 /// @brief 移動処理
 /// @param dt 経過時間
 void MovementComponent::ProcessMovement(const float dt) {
+	static Vec3       oldPos; // 触れたオブジェクトの前フレーム位置
+	static Quaternion prevRot = Quaternion::identity;
+	mSurfaceVelocity          = Vec3::zero;
+
+	Unnamed::Box extendedHull = {
+		.center = mHull.center,
+		.halfSize = mHull.halfSize + Vec3::one * Math::HtoM(
+			kDynamicCheckSkinHu)
+	};
+
+	UPhysics::Hit surfaceHit;
+
+	if (mUPhysicsEngine->BoxOverlap(extendedHull, &surfaceHit, 1)) {
+		Debug::DrawBox(
+			extendedHull.center,
+			Quaternion::identity,
+			extendedHull.halfSize * 2.0f,
+			Vec4::purple
+		);
+
+		// 接触したオブジェクトの速度を計算
+		if (surfaceHit.hitEntity) {
+			Vec3 currentPos = surfaceHit.hitEntity->GetTransform()->
+			                             GetWorldPos();
+			Quaternion currentRot = surfaceHit.hitEntity->GetTransform()->
+			                                   GetWorldRot();
+			mSurfaceVelocity = (currentPos - oldPos) / dt;
+			// 回転による速度も加算
+			Vec3 rotVel = (currentRot * prevRot.Inverse()).ToEulerAngles();
+			Vec3 toPlayer = mScene->GetWorldPos() - currentPos;
+			Vec3 tangentialVel = rotVel.Cross(toPlayer);
+			mSurfaceVelocity += tangentialVel;
+			oldPos = currentPos;
+			prevRot = currentRot;
+		}
+
+		Msg(
+			kChannel, "Hit {}",
+			surfaceHit.hitEntity ? surfaceHit.hitEntity->GetName() : "None"
+		);
+	} else {
+	}
+
 	// 前フレームの接地状態を記録
 	mData.wasGroundedLastFrame = mData.isGrounded;
 
@@ -233,7 +263,8 @@ void MovementComponent::ProcessMovement(const float dt) {
 		Unnamed::Box test    = {
 			.center = posFeet + Vec3::up * Math::HtoM(targetHU * 0.5f),
 			.halfSize = Math::HtoM({
-				mData.currentWidthHu * 0.5f, targetHU * 0.5f,
+				mData.currentWidthHu * 0.5f,
+				targetHU * 0.5f,
 				mData.currentWidthHu * 0.5f
 			})
 		};
@@ -274,15 +305,6 @@ void MovementComponent::ProcessMovement(const float dt) {
 
 		// スライディング中のジャンプでスライディング終了
 		if (mData.isSliding) {
-			// // スライドホップ時の速度キャップを適用
-			// Vec3 velHorz          = mData.velocity;
-			// velHorz.y             = 0;
-			// const float horzSpeed = velHorz.Length();
-			// const float speedCapM = Math::HtoM(kSlideHopSpeedCap);
-			// if (horzSpeed > speedCapM) {
-			// 	mData.velocity.x *= (speedCapM / horzSpeed);
-			// 	mData.velocity.z *= (speedCapM / horzSpeed);
-			// }
 			EndSlide();
 		}
 	}
@@ -359,6 +381,9 @@ void MovementComponent::ProcessMovement(const float dt) {
 		else Air(wishspeed, dt);
 		if (!mData.isGrounded) ApplyHalfGravity(dt);
 	}
+
+	mData.velocity += mSurfaceVelocity;
+
 
 	// 衝突付き移動
 	MoveWithCollisions(dt);
@@ -453,7 +478,7 @@ void MovementComponent::Friction(const float amount, const float dt) {
 	float newspeed = std::max(0.0f, speed - drop);
 
 	if (newspeed != speed) {
-		newspeed /= speed;
+		newspeed       /= speed;
 		mData.velocity *= newspeed;
 	}
 }
@@ -471,7 +496,7 @@ void MovementComponent::Accelerate(
 	const float cur = Math::MtoH(mData.velocity).Dot(dir);
 	const float add = speed - cur;
 	if (add <= 0.f) return;
-	float acc = std::min(accel * speed * dt, add);
+	float acc      = std::min(accel * speed * dt, add);
 	mData.velocity += Math::HtoM(acc) * dir;
 }
 
@@ -490,7 +515,7 @@ void MovementComponent::AirAccelerate(
 	const float add     = wishspd - cur;
 	if (add <= 0.f) return;
 	const float acc = std::min(accel * speed * dt, add);
-	mData.velocity += Math::HtoM(acc) * dir;
+	mData.velocity  += Math::HtoM(acc) * dir;
 }
 
 /// @brief ハル(当たり判定)の寸法を更新
@@ -717,7 +742,7 @@ void MovementComponent::StepMove(
 		const float threshold = mData.groundNormalY;
 		if (downHit.normal.y >= threshold) {
 			float drop = std::max(0.0f, downHit.t - RestOffsetM());
-			position += -Vec3::up * drop;
+			position   += -Vec3::up * drop;
 		}
 	}
 
@@ -754,7 +779,7 @@ bool MovementComponent::GroundCheck(Vec3& position) {
 
 	// スナップ
 	float drop = std::max(0.0f, gHit.t - RestOffsetM());
-	position += -Vec3::up * drop;
+	position   += -Vec3::up * drop;
 
 	// ヒステリシス: 接地中なら緩い閾値で判定、空中からなら厳しい閾値で判定
 	const float threshold  = mData.groundNormalY;
@@ -854,7 +879,7 @@ void MovementComponent::DetectAndResolveStuck(float dt) {
 					if (!mUPhysicsEngine->BoxOverlap(mHull, &ov)) {
 						// 脱出成功
 						mData.velocity += escapeVel;
-						escaped = true;
+						escaped        = true;
 						break;
 					}
 				}
@@ -988,7 +1013,7 @@ bool MovementComponent::TryStartWallrun() {
 
 			// ウォールラン開始時に小さなブースト
 			float boostAmount = Math::HtoM(50.0f); // 50 HU/sのブースト
-			mData.velocity += mData.wallRunDirection * boostAmount;
+			mData.velocity    += mData.wallRunDirection * boostAmount;
 
 			return true;
 		}
@@ -1115,7 +1140,7 @@ void MovementComponent::Wallrun(const float wishspeed, const float dt) {
 			float accel = ConVarManager::GetConVar("sv_airaccelerate")->
 				GetValueAsFloat() * 1.5f;
 			float accelspeed = std::min(accel * wishspeed * dt, addSpeed);
-			mData.velocity += Math::HtoM(accelspeed) * wishdir;
+			mData.velocity   += Math::HtoM(accelspeed) * wishdir;
 		}
 	} else {
 		// 前進入力がない場合は摩擦で減速
@@ -1139,7 +1164,7 @@ void MovementComponent::Wallrun(const float wishspeed, const float dt) {
 
 	// 壁に軽く吸い付く力を追加
 	const float pullForce = Math::HtoM(80.0f); // 80 HU/s
-	mData.velocity += -mData.wallRunNormal * pullForce * dt;
+	mData.velocity        += -mData.wallRunNormal * pullForce * dt;
 }
 
 /// @brief スライド可能かを判定する
@@ -1241,7 +1266,7 @@ void MovementComponent::Slide(
 	// 通常時より低い摩擦を適用
 	Friction(kSlideFriction, dt);
 
-	// ちょっとだけ方向転換できる
+	// accel値は低めに
 	if (!mData.wishDirection.IsZero()) {
 		Vec3 wishDir = mData.wishDirection;
 		wishDir.y    = 0;

@@ -99,14 +99,6 @@ namespace Unnamed {
 		w.BeginObject();
 		w.Key("name");
 		w.Write(mName);
-		w.Key("settings");
-		{
-			w.BeginObject();
-			w.Key("worldbounds");
-			const auto bounds = Settings().worldBounds;
-			w.Write(std::vector{bounds.x, bounds.y, bounds.z});
-			w.EndObject();
-		}
 		w.Key("entities");
 		{
 			w.BeginArray();
@@ -163,16 +155,6 @@ namespace Unnamed {
 		const JsonReader r(path);
 		if (!r.Valid()) { return false; }
 		if (r.Has("name")) { mName = r["name"].GetString(); }
-
-		if (r.Has("settings")) {
-			const auto s = r["settings"];
-			if (s.Has("worldbounds")) {
-				const auto v          = s["worldbounds"].GetArray();
-				mSettings.worldBounds = {
-					v[0].GetFloat(), v[1].GetFloat(), v[2].GetFloat()
-				};
-			}
-		}
 
 		mEntities.clear();
 		if (r.Has("entities")) {

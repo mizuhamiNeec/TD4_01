@@ -12,8 +12,6 @@
 #include <runtime/core/math/Math.h>
 #include <runtime/render/types/RenderTypes.h>
 
-#include <wrl/client.h>
-
 namespace Unnamed {
 	/// @brief ディスクリプタハンドル
 	struct DescriptorHandle {

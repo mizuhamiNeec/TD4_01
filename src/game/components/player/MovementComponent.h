@@ -95,7 +95,7 @@ struct MovementData {
 class MovementComponent : public Component {
 public:
 	void OnAttach(Entity& owner) override;
-	void Init(UPhysics::Engine* uphysics, const MovementData& md);
+	void Init(UPhysics::Engine* uPhysics, const MovementData& md);
 
 	void PrePhysics(float dt) override;
 	void Update(float dt) override;
@@ -212,6 +212,10 @@ private:
 	static constexpr float kSlideBoostSpeed   = 50.0f; // HU/s - 開始ブースト
 	static constexpr float kSlideStopSpeed    = 50.0f; // HU/s - この速度以下で自動終了
 	static constexpr float kSlideHopSpeedCap  = 2000.0f; // HU/s - スライドホップの速度上限
+
+	// 動的地形
+	Vec3                   mSurfaceVelocity    = Vec3::zero; // 接触した地形の速度
+	static constexpr float kDynamicCheckSkinHu = 2.0f;       // 
 
 	UPhysics::Engine* mUPhysicsEngine = nullptr;
 	AABBCollider*     mCollider       = nullptr;

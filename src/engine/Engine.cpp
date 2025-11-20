@@ -27,11 +27,10 @@
 #include <engine/TextureManager/TexManager.h>
 #include <engine/Window/MainWindow.h>
 #include <engine/Window/WindowsUtils.h>
+#include <engine/ImGui/ImGuiWidgets.h>
 
 #include <game/scene/EmptyScene.h>
 #include <game/scene/GameScene.h>
-
-#include "ImGui/ImGuiWidgets.h"
 
 namespace Unnamed {
 	/// @brief コンストラクタ
@@ -43,6 +42,19 @@ namespace Unnamed {
 	/// @brief 初期化
 	/// @return 成功したらtrueを返す
 	bool Engine::Init() {
+		//---------------------------------------------------------------------
+		// Purpose: 旧エンジン
+		//---------------------------------------------------------------------
+#ifdef _DEBUG
+		ConVarManager::RegisterConVar<bool>(
+			"verbose", true, "Enable verbose logging"
+		);
+#else
+		ConVarManager::RegisterConVar<bool>(
+			"verbose", false, "Enable verbose logging"
+		);
+#endif
+
 		//---------------------------------------------------------------------
 		// Purpose: 新エンジン
 		//---------------------------------------------------------------------
@@ -66,22 +78,14 @@ namespace Unnamed {
 		mConsoleSystem = ServiceLocator::Get<ConsoleSystem>();
 		mTimeSystem    = ServiceLocator::Get<TimeSystem>();
 
-		//---------------------------------------------------------------------
-		// Purpose: 旧エンジン
-		//---------------------------------------------------------------------
-#ifdef _DEBUG
-		ConVarManager::RegisterConVar<bool>(
-			"verbose", true, "Enable verbose logging"
-		);
-#else
-		ConVarManager::RegisterConVar<bool>(
-			"verbose", false, "Enable verbose logging"
-		);
-#endif
 		Msg(
 			"CommandLine", "command line arguments:\n{}",
 			StrUtil::ToString(GetCommandLineW())
 		);
+
+		//---------------------------------------------------------------------
+		// Purpose: 旧エンジン
+		//---------------------------------------------------------------------
 		ConVarManager::RegisterConVar<std::string>(
 			"launchargs", StrUtil::ToString(GetCommandLineW()),
 			"Command line arguments"
@@ -281,7 +285,7 @@ namespace Unnamed {
 		// エディターの初期化
 		//---------------------------------------------------------------------
 		CheckEditorMode();
-		
+
 		assert(SUCCEEDED(mRenderer->GetCommandList()->Close()));
 
 		ConsoleScriptParser scriptParser(
@@ -1080,8 +1084,6 @@ namespace Unnamed {
 		ConVarManager::RegisterConVar("sv_friction", 4.0f, "World friction.");
 		ConVarManager::RegisterConVar("sv_stepsize", 18.0f,
 		                              "Maximum step height.");
-		ConVarManager::RegisterConVar("sv_overbounce", 1.05f,
-		                              "Overbounce factor.");
 
 		// デバッグ用にエンティティのaxisを表示するかのコンソール変数
 		ConVarManager::RegisterConVar("ent_axis", 0, "Show entity axis");

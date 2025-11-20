@@ -177,7 +177,7 @@ namespace StrUtil {
 		for (const char ch : command) {
 			if (ch == '"') {
 				inQuotes = !inQuotes;
-				current += ch;
+				current  += ch;
 			} else if (ch == ';' && !inQuotes) {
 				result.emplace_back(current);
 				current.clear();
@@ -212,5 +212,11 @@ namespace StrUtil {
 			return "";
 		}
 		return string.substr(start, end - start + 1);
+	}
+
+	bool CheckBoolString(std::string str) {
+		str      = ToLowerCase(str);
+		bool ret = (str == "1" || str == "true" || str == "yes" || str == "on");
+		return ret;
 	}
 }

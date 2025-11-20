@@ -5,7 +5,7 @@
 
 /// @brief コンストラクタ
 /// @param device D3D12デバイスへのポインタ
-RootSignatureManager::RootSignatureManager(ID3D12Device* device): device_(device) {
+RootSignatureManager::RootSignatureManager(ID3D12Device* device): mDevice(device) {
 }
 
 /// @brief ルートシグネチャを作成します
@@ -20,7 +20,7 @@ bool RootSignatureManager::CreateRootSignature(
 	const D3D12_STATIC_SAMPLER_DESC*         staticSamplers,
 	UINT                                     numStaticSamplers
 ) {
-	if (rootSignatures_.contains(name)) {
+	if (mRootSignatures.contains(name)) {
 		return false; // すでに存在する場合は作る必要なし
 	}
 
@@ -46,7 +46,7 @@ bool RootSignatureManager::CreateRootSignature(
 	}
 
 	ComPtr<ID3D12RootSignature> rootSignature;
-	hr = device_->CreateRootSignature(
+	hr = mDevice->CreateRootSignature(
 		0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(),
 		IID_PPV_ARGS(&rootSignature)
 	);
@@ -54,7 +54,7 @@ bool RootSignatureManager::CreateRootSignature(
 		return false;
 	}
 
-	rootSignatures_[name] = rootSignature;
+	mRootSignatures[name] = rootSignature;
 
 	Console::Print(std::format("Complete Create RootSignature : {}\n", name),
 	               kConTextColorCompleted, Channel::Engine);
@@ -64,5 +64,5 @@ bool RootSignatureManager::CreateRootSignature(
 
 /// @brief 終了処理を行います
 void RootSignatureManager::Shutdown() {
-	rootSignatures_.clear();
+	mRootSignatures.clear();
 }

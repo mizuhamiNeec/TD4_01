@@ -43,10 +43,16 @@ namespace Unnamed {
 		ServiceLocator::Register<URenderSubsystem>(this);
 	}
 
+	FrameContext URenderSubsystem::GetContext() const { return mContext; }
+
 	/// @brief 初期化
 	/// @return 初期化成功ならtrue
 	bool URenderSubsystem::Init() {
 		return true;
+	}
+
+	const std::string_view URenderSubsystem::GetName() const {
+		return "RenderSubsystem";
 	}
 
 	/// @brief フレーム開始処理

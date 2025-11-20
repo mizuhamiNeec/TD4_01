@@ -11,7 +11,7 @@
 /// @brief Object3DCommonを初期化します
 /// @param d3d12 D3D12レンダラーへのポインタ
 void Object3DCommon::Init(D3D12* d3d12) {
-	this->d3d12_ = d3d12;
+	this->mD3d12 = d3d12;
 	CreateGraphicsPipeline();
 	Console::Print("Object3DCommon : Object3dの初期化が完了しました。\n",
 	               kConTextColorCompleted);
@@ -19,14 +19,14 @@ void Object3DCommon::Init(D3D12* d3d12) {
 
 /// @brief Object3DCommonをシャットダウンします
 void Object3DCommon::Shutdown() const {
-	rootSignatureManager_->Shutdown();
+	mRootSignatureManager->Shutdown();
 }
 
 /// @brief ルートシグネチャを作成します
 void Object3DCommon::CreateRootSignature() {
 	// RootSignatureManagerのインスタンスを作成
-	rootSignatureManager_ = std::make_unique<RootSignatureManager>(
-		d3d12_->GetDevice());
+	mRootSignatureManager = std::make_unique<RootSignatureManager>(
+		mD3d12->GetDevice());
 
 	D3D12_DESCRIPTOR_RANGE descriptorRange[1];
 	descriptorRange[0] = {
@@ -103,7 +103,7 @@ void Object3DCommon::CreateRootSignature() {
 	};
 
 	// ルートシグネチャを作成
-	rootSignatureManager_->CreateRootSignature("Object3d", rootParameters,
+	mRootSignatureManager->CreateRootSignature("Object3d", rootParameters,
 	                                           staticSamplers,
 	                                           _countof(staticSamplers));
 }
@@ -113,32 +113,32 @@ void Object3DCommon::CreateGraphicsPipeline() {
 	CreateRootSignature();
 
 	// パイプラインステートを作成
-	pipelineState_ = PipelineState(D3D12_CULL_MODE_BACK, D3D12_FILL_MODE_SOLID,
+	mPipelineState = PipelineState(D3D12_CULL_MODE_BACK, D3D12_FILL_MODE_SOLID,
 	                               D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
-	pipelineState_.SetInputLayout(Vertex::inputLayout);
-	pipelineState_.SetRootSignature(rootSignatureManager_->Get("Object3d"));
+	mPipelineState.SetInputLayout(Vertex::inputLayout);
+	mPipelineState.SetRootSignature(mRootSignatureManager->Get("Object3d"));
 
-	pipelineState_.SetDepthWriteMask(D3D12_DEPTH_WRITE_MASK_ALL);
-	pipelineState_.SetBlendMode(kBlendModeNormal);
+	mPipelineState.SetDepthWriteMask(D3D12_DEPTH_WRITE_MASK_ALL);
+	mPipelineState.SetBlendMode(kBlendModeNormal);
 
 	// シェーダーのファイルパスを設定
-	pipelineState_.SetVertexShader(L"./content/core/shaders/Object3d.VS.hlsl");
-	pipelineState_.SetPixelShader(L"./content/core/shaders/Object3d.PS.hlsl");
-	pipelineState_.Create(d3d12_->GetDevice());
+	mPipelineState.SetVertexShader(L"./content/core/shaders/Object3d.VS.hlsl");
+	mPipelineState.SetPixelShader(L"./content/core/shaders/Object3d.PS.hlsl");
+	mPipelineState.Create(mD3d12->GetDevice());
 }
 
 /// @brief Object3Dの描画を行います
 void Object3DCommon::Render() const {
-	d3d12_->GetCommandList()->SetPipelineState(pipelineState_.Get());
-	d3d12_->GetCommandList()->SetGraphicsRootSignature(
-		rootSignatureManager_->Get("Object3d"));
-	d3d12_->GetCommandList()->IASetPrimitiveTopology(
+	mD3d12->GetCommandList()->SetPipelineState(mPipelineState.Get());
+	mD3d12->GetCommandList()->SetGraphicsRootSignature(
+		mRootSignatureManager->Get("Object3d"));
+	mD3d12->GetCommandList()->IASetPrimitiveTopology(
 		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
 /// @brief D3D12レンダラーへのポインタを取得します
 D3D12* Object3DCommon::GetD3D12() const {
-	return d3d12_;
+	return mD3d12;
 }
 
 /// @brief デフォルトカメラを取得します

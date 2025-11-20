@@ -25,14 +25,7 @@ namespace Unnamed {
 	ConsoleUI::ConsoleUI(
 		ConsoleSystem* consoleSystem
 	) : mConsoleSystem(consoleSystem) {
-		int     argc = 0;
-		LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
-		for (int i = 0; i < argc; ++i) {
-			bIsImGuiInitialized &= wcsstr(argv[i], L"-new") == nullptr;
-		}
-		if (argv) {
-			LocalFree(argv);
-		}
+		bIsImGuiInitialized = false;
 	}
 
 	/// @brief コンソールUIを表示します。
@@ -41,13 +34,15 @@ namespace Unnamed {
 		if (bIsImGuiInitialized) {
 			ImGui::Begin("Console##ConsoleUI", nullptr, kWindowFlags);
 
-			ImGuiChildFlags childFlags = ImGuiChildFlags_ResizeX |
+			constexpr ImGuiChildFlags childFlags =
+				ImGuiChildFlags_ResizeX |
 				ImGuiChildFlags_FrameStyle;
 
 			// このウィンドウで使えるサイズを取得
-			auto region = ImGui::GetWindowContentRegionMax();
+			const auto region = ImGui::GetWindowContentRegionMax();
 
-			float childHeight = region.y - ImGui::GetFrameHeightWithSpacing() *
+			const float childHeight = region.y -
+				ImGui::GetFrameHeightWithSpacing() *
 				2.0f;
 
 			ImGui::BeginChild("Output##ConsoleUI",
@@ -59,9 +54,11 @@ namespace Unnamed {
 				PushLogTextColor(buffer);
 				std::string text;
 				if (!buffer.channel.empty()) {
-					text = "[" + buffer.channel + "] " + buffer.message;
+					text = "[" + buffer.channel + "] " + buffer.message + "##" +
+						std::to_string(buffer.timeStamp.millisecond);
 				} else {
-					text = buffer.message;
+					text = buffer.message + "##" +
+						std::to_string(buffer.timeStamp.millisecond);;
 				}
 
 				if (ImGui::Selectable(text.c_str())) {

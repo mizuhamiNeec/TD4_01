@@ -51,8 +51,8 @@ public:
 	void ReleaseResource();
 
 private:
-	std::string                           name_;
-	std::vector<std::unique_ptr<SubMesh>> subMeshes_;
-	Skeleton                              skeleton_;
-	std::map<std::string, Animation>      animations_;
+	std::string                           mName;
+	std::vector<std::unique_ptr<SubMesh>> mSubMeshes;
+	Skeleton                              mSkeleton;
+	std::map<std::string, Animation>      mAnimations;
 };

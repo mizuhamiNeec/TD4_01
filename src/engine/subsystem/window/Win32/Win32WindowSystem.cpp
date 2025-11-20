@@ -50,7 +50,7 @@ void Win32WindowSystem::RegisterPlatformEvent(
 /// @param windowInfo ウィンドウ情報
 /// @return 作成されたウィンドウのポインタ
 IWindow* Win32WindowSystem::CreateNewWindow(
-	const IWindow::WindowInfo& windowInfo
+	const IWindow::WindowCreateInfo& windowInfo
 ) {
 	auto win = std::make_unique<Win32Window>(windowInfo);
 	if (
@@ -101,6 +101,12 @@ bool Win32WindowSystem::AllClosed() const {
 		return false;
 	}
 	return true;
+}
+
+void Win32WindowSystem::WishShutdown() {
+	for (const auto& w : mWindows) {
+		w->RequestClose();
+	}
 }
 
 /// @brief ウィンドウが非アクティブかどうかを取得します

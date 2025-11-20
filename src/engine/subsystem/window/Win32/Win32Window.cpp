@@ -13,7 +13,7 @@ bool Win32Window::ShouldClose() const {
 
 /// @brief ウィンドウ情報を取得します
 /// @return ウィンドウ情報構造体
-IWindow::WindowInfo Win32Window::GetInfo() const {
+IWindow::WindowCreateInfo Win32Window::GetInfo() const {
 	return mWindowInfo;
 }
 

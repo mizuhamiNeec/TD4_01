@@ -22,7 +22,7 @@ Entity::~Entity() {
 }
 
 void Entity::PrePhysics(float deltaTime) const {
-	if (!bIsActive_) {
+	if (!mIsActive) {
 		return;
 	}
 
@@ -44,7 +44,7 @@ void Entity::PrePhysics(float deltaTime) const {
 }
 
 void Entity::Update(const float deltaTime) {
-	if (!bIsActive_) {
+	if (!mIsActive) {
 		return;
 	}
 
@@ -149,7 +149,7 @@ void Entity::Update(const float deltaTime) {
 }
 
 void Entity::PostPhysics(float deltaTime) const {
-	if (!bIsActive_) {
+	if (!mIsActive) {
 		return;
 	}
 
@@ -171,7 +171,7 @@ void Entity::PostPhysics(float deltaTime) const {
 }
 
 void Entity::Render(ID3D12GraphicsCommandList* commandList) const {
-	if (!bIsVisible_) {
+	if (!mIsVisible) {
 		return;
 	}
 
@@ -203,19 +203,19 @@ SceneComponent* Entity::GetTransform() const {
 }
 
 bool Entity::IsActive() const {
-	return bIsActive_;
+	return mIsActive;
 }
 
 void Entity::SetActive(const bool active) {
-	bIsActive_ = active;
+	mIsActive = active;
 }
 
 bool Entity::IsVisible() const {
-	return bIsVisible_;
+	return mIsVisible;
 }
 
 void Entity::SetVisible(const bool visible) {
-	bIsVisible_ = visible;
+	mIsVisible = visible;
 }
 
 void Entity::SetParent(Entity* newParent) {

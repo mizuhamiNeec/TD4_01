@@ -11,7 +11,7 @@ struct AABB;
 /// @brief 静的メッシュクラス
 class StaticMesh {
 public:
-	StaticMesh(std::string name) : name_(std::move(name)) {
+	StaticMesh(std::string name) : mName(std::move(name)) {
 	}
 
 	~StaticMesh() = default;
@@ -26,6 +26,6 @@ public:
 	void ReleaseResource();
 
 private:
-	std::string                           name_;
-	std::vector<std::unique_ptr<SubMesh>> subMeshes_;
+	std::string                           mName;
+	std::vector<std::unique_ptr<SubMesh>> mSubMeshes;
 };

@@ -15,16 +15,16 @@ void AnimationManager::Init() {
 /// @brief シャットダウン
 void AnimationManager::Shutdown() {
 	// アニメーションのキャッシュをクリア
-	animations_.clear();
-	fileAnimationNames_.clear();
+	mAnimations.clear();
+	mFileAnimationNames.clear();
 }
 
 /// @brief 名前でアニメーションを取得
 /// @param name アニメーション名
 /// @return アニメーション
 Animation AnimationManager::GetAnimation(const std::string& name) const {
-	auto it = animations_.find(name);
-	if (it != animations_.end()) {
+	auto it = mAnimations.find(name);
+	if (it != mAnimations.end()) {
 		return it->second;
 	}
 	Console::Print(
@@ -38,8 +38,8 @@ Animation AnimationManager::GetAnimation(const std::string& name) const {
 /// @return アニメーション	
 Animation AnimationManager::LoadAnimationFile(const std::string& filePath) {
 	// キャッシュしているものがあったらそれを返す
-	auto it = animations_.find(filePath);
-	if (it != animations_.end()) {
+	auto it = mAnimations.find(filePath);
+	if (it != mAnimations.end()) {
 		return it->second;
 	}
 
@@ -53,7 +53,7 @@ Animation AnimationManager::LoadAnimationFile(const std::string& filePath) {
 	animation = LoadSingleAnimation(animationAssimp);
 
 	// キャッシュに詰め込む
-	animations_[filePath] = animation;
+	mAnimations[filePath] = animation;
 
 	return animation;
 }
@@ -84,12 +84,12 @@ std::vector<Animation> AnimationManager::LoadAllAnimationsFromFile(
 		animationNames.emplace_back(animationAssimp->mName.C_Str());
 
 		// キャッシュに保存
-		animations_[animationKey] = animation;
+		mAnimations[animationKey] = animation;
 		animations.emplace_back(animation);
 	}
 
 	// ファイルのアニメーション名リストをキャッシュ
-	fileAnimationNames_[filePath] = animationNames;
+	mFileAnimationNames[filePath] = animationNames;
 
 	return animations;
 }
@@ -103,8 +103,8 @@ Animation AnimationManager::LoadAnimationByName(const std::string& filePath,
                                                 animationName) {
 	// キャッシュを確認
 	const std::string animationKey = filePath + "::" + animationName;
-	auto              it           = animations_.find(animationKey);
-	if (it != animations_.end()) {
+	auto              it           = mAnimations.find(animationKey);
+	if (it != mAnimations.end()) {
 		return it->second;
 	}
 
@@ -121,7 +121,7 @@ Animation AnimationManager::LoadAnimationByName(const std::string& filePath,
 			Animation animation = LoadSingleAnimation(animationAssimp);
 
 			// キャッシュに保存
-			animations_[animationKey] = animation;
+			mAnimations[animationKey] = animation;
 			return animation;
 		}
 	}
@@ -139,8 +139,8 @@ Animation AnimationManager::LoadAnimationByName(const std::string& filePath,
 std::vector<std::string> AnimationManager::GetAnimationNamesFromFile(
 	const std::string& filePath) {
 	// キャッシュを確認
-	auto it = fileAnimationNames_.find(filePath);
-	if (it != fileAnimationNames_.end()) {
+	auto it = mFileAnimationNames.find(filePath);
+	if (it != mFileAnimationNames.end()) {
 		return it->second;
 	}
 
@@ -160,7 +160,7 @@ std::vector<std::string> AnimationManager::GetAnimationNamesFromFile(
 	}
 
 	// キャッシュに保存
-	fileAnimationNames_[filePath] = animationNames;
+	mFileAnimationNames[filePath] = animationNames;
 
 	return animationNames;
 }

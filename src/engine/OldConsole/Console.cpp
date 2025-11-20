@@ -26,12 +26,12 @@ using SetThreadDescriptionFunc = HRESULT(WINAPI*)(HANDLE, PCWSTR);
 
 /// @brief コンソールクラスのコンストラクタ
 Console::Console() {
-	bStopThread_ = false;
+	mStopThread = false;
 
 #ifdef _DEBUG
 	// ログファイルの初期化
 	{
-		std::lock_guard lock(mutex_);
+		std::lock_guard lock(mMutex);
 
 		// 既存のログファイルを削除
 		if (std::filesystem::exists("console.log")) {
@@ -39,8 +39,8 @@ Console::Console() {
 		}
 
 		// 新規ファイルを作成
-		logFile_.open("console.log", std::ios::out | std::ios::binary);
-		if (logFile_.is_open()) {
+		mLogFile.open("console.log", std::ios::out | std::ios::binary);
+		if (mLogFile.is_open()) {
 			// ヘッダーを書き込む
 			const auto now = SystemClock::GetDateTime(SystemClock::StartTime());
 			std::string header = std::format(
@@ -53,8 +53,8 @@ Console::Console() {
 				ENGINE_NAME, ENGINE_VERSION,
 				now.year, now.month, now.day, now.hour, now.minute, now.second
 			);
-			logFile_.write(header.c_str(), header.size());
-			logFile_.flush();
+			mLogFile.write(header.c_str(), header.size());
+			mLogFile.flush();
 		}
 	}
 #endif
@@ -83,7 +83,7 @@ Console::~Console() {
 void Console::Update() {
 #ifdef _DEBUG
 	mFrameCount++;
-	if (!bShowConsole_) {
+	if (!mShowConsole) {
 		return;
 	}
 
@@ -94,7 +94,7 @@ void Console::Update() {
 		ImGuiWindowFlags_NoCollapse |        // ウィンドウの折り畳みを無効
 		ImGuiWindowFlags_MenuBar;            // メニューバーを表示
 
-	if (bShowSuggestPopup_) {
+	if (mShowSuggestPopup) {
 		// フォーカス時に前面に持ってこない
 		consoleWindowFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
 	}
@@ -107,17 +107,17 @@ void Console::Update() {
 
 	bool bWindowOpen = ImGui::Begin(
 		(StrUtil::ConvertToUtf8(kIconTerminal) + " コンソール").c_str(),
-		&bShowConsole_, consoleWindowFlags
+		&mShowConsole, consoleWindowFlags
 	);
 
 	if (bWindowOpen) {
 		ShowMenuBar();
 
-		bFocusedConsoleWindow_ = ImGui::IsWindowFocused(
+		mFocusedConsoleWindow = ImGui::IsWindowFocused(
 			ImGuiFocusedFlags_RootAndChildWindows);
 
 		if (!WindowsUtils::IsAppDarkTheme()) {
-			if (bFocusedConsoleWindow_) {
+			if (mFocusedConsoleWindow) {
 				ImGui::PushStyleColor(ImGuiCol_ChildBg,
 				                      ImGuiUtil::ToImVec4(kConBgColorLight));
 			} else {
@@ -129,7 +129,7 @@ void Console::Update() {
 				                      ImGuiUtil::ToImVec4(color));
 			}
 		} else {
-			if (bFocusedConsoleWindow_) {
+			if (mFocusedConsoleWindow) {
 				ImGui::PushStyleColor(ImGuiCol_ChildBg,
 				                      ImGuiUtil::ToImVec4(kConBgColorDark));
 			} else {
@@ -145,20 +145,20 @@ void Console::Update() {
 		if (ImGuiWidgets::IconButton(
 			StrUtil::ConvertToUtf8(kIconTerminal).c_str(), "ConVar",
 			{48.0f, 48.0f})) {
-			bShowConVarHelper_ = !bShowConVarHelper_;
+			mShowConVarHelper = !mShowConVarHelper;
 		}
 
 		ImGui::Spacing();
 		ImGui::Spacing();
 
 		ShowConsoleBody();
-		if (bFocusedConsoleWindow_) {
+		if (mFocusedConsoleWindow) {
 			ImGui::PopStyleColor();
 		} else {
 			ImGui::PopStyleColor(2);
 		}
 
-		if (bShowAbout_) {
+		if (mShowAbout) {
 			ShowAbout();
 		}
 	}
@@ -171,28 +171,28 @@ void Console::Update() {
 /// @brief コンソールをシャットダウンします
 void Console::Shutdown() {
 	{
-		std::lock_guard lock(mutex_);
-		bStopThread_ = true;
+		std::lock_guard lock(mMutex);
+		mStopThread = true;
 	}
 
 	// スレッドを再開
-	cv_.notify_all();
+	mCv.notify_all();
 
 	// スレッドが終了するまで待機
-	if (consoleThread_.joinable()) {
-		consoleThread_.join();
+	if (mConsoleThread.joinable()) {
+		mConsoleThread.join();
 	}
 
 #ifdef _DEBUG
 	// 残りのメッセージをファイルに書き込む
-	if (!messageBuffer_.empty()) {
-		FlushLogBuffer(messageBuffer_);
-		messageBuffer_.clear();
+	if (!mMessageBuffer.empty()) {
+		FlushLogBuffer(mMessageBuffer);
+		mMessageBuffer.clear();
 	}
 
 	// ログファイルを閉じる
-	if (logFile_.is_open()) {
-		logFile_.close();
+	if (mLogFile.is_open()) {
+		mLogFile.close();
 	}
 #endif
 }
@@ -363,7 +363,7 @@ void Console::SubmitCommand([[maybe_unused]] const std::string& command,
 	}
 
 #ifdef _DEBUG
-	bWishScrollToBottom_ = true;
+	mWishScrollToBottom = true;
 #endif
 }
 
@@ -391,8 +391,8 @@ void Console::Print(
 
 	// タスクキューに追加
 	{
-		std::lock_guard lock(mutex_);
-		taskQueue_.emplace([message, color, channel] {
+		std::lock_guard lock(mMutex);
+		mTaskQueue.emplace([message, color, channel] {
 			std::string       msg        = message;
 			const bool        hasNewLine = !msg.empty() && msg.back() == '\n';
 			const std::string baseMsg    = hasNewLine ?
@@ -400,8 +400,8 @@ void Console::Print(
 				                            msg;
 
 #ifdef _DEBUG
-			if (!consoleTexts_.empty()) {
-				const std::string lastMsg = consoleTexts_.back().text;
+			if (!mConsoleTexts.empty()) {
+				const std::string lastMsg = mConsoleTexts.back().text;
 				const bool lastHasNewLine = !lastMsg.empty() && lastMsg.back()
 					== '\n';
 				const std::string lastBaseMsg = lastHasNewLine ?
@@ -421,13 +421,13 @@ void Console::Print(
 				}
 			}
 
-			consoleTexts_.emplace_back(Text(msg, color, channel));
-			repeatCounts_.emplace_back(1);
-			bWishScrollToBottom_ = true;
+			mConsoleTexts.emplace_back(Text(msg, color, channel));
+			mRepeatCounts.emplace_back(1);
+			mWishScrollToBottom = true;
 #endif
 		});
 	}
-	cv_.notify_one();
+	mCv.notify_one();
 }
 
 /// @brief 開発者を叱ります
@@ -470,7 +470,7 @@ std::string Console::ToString(const Channel channel) {
 void Console::ToggleConsole(
 	[[maybe_unused]] const std::vector<std::string>& args) {
 #ifdef _DEBUG
-	bShowConsole_ = !bShowConsole_;
+	mShowConsole = !mShowConsole;
 #endif
 }
 
@@ -478,16 +478,16 @@ void Console::ToggleConsole(
 /// @param args コマンド引数
 void Console::Clear([[maybe_unused]] const std::vector<std::string>& args) {
 #ifdef _DEBUG
-	consoleTexts_.clear();         // コンソールのテキストをクリア
-	consoleTexts_.shrink_to_fit(); // 開放
-	history_.clear();              // コマンド履歴をクリア
-	history_.shrink_to_fit();
-	suggestions_.clear(); // サジェストをクリア
-	suggestions_.shrink_to_fit();
-	repeatCounts_.clear(); // 繰り返しカウントをクリア
-	repeatCounts_.shrink_to_fit();
-	historyIndex_        = -1;   // 履歴インデックスを初期化
-	bWishScrollToBottom_ = true; // 再描画の際にスクロールをリセット
+	mConsoleTexts.clear();         // コンソールのテキストをクリア
+	mConsoleTexts.shrink_to_fit(); // 開放
+	mHistory.clear();              // コマンド履歴をクリア
+	mHistory.shrink_to_fit();
+	mSuggestions.clear(); // サジェストをクリア
+	mSuggestions.shrink_to_fit();
+	mRepeatCounts.clear(); // 繰り返しカウントをクリア
+	mRepeatCounts.shrink_to_fit();
+	mHistoryIndex        = -1;   // 履歴インデックスを初期化
+	mWishScrollToBottom = true; // 再描画の際にスクロールをリセット
 #endif
 }
 
@@ -603,7 +603,7 @@ void Console::Echo(const std::vector<std::string>& args) {
 /// @return コンソールのバッファ
 std::vector<std::string> Console::GetBuffer() {
 #ifdef _DEBUG
-	return messageBuffer_;
+	return mMessageBuffer;
 #else
 	return {};
 #endif
@@ -613,28 +613,28 @@ std::vector<std::string> Console::GetBuffer() {
 /// @brief 入力に基づいてサジェストを更新します
 /// @param input 現在の入力文字列
 void Console::UpdateSuggestions(const std::string& input) {
-	suggestions_.clear();
+	mSuggestions.clear();
 
 	// 入力が空の場合はサジェストしない
 	if (input.empty()) {
 		for (const auto& command : ConCommand::GetCommands()) {
-			suggestions_.emplace_back(command.first);
+			mSuggestions.emplace_back(command.first);
 		}
 		for (const auto& conVar : ConVarManager::GetAllConVars()) {
-			suggestions_.emplace_back(conVar->GetName());
+			mSuggestions.emplace_back(conVar->GetName());
 		}
 		return;
 	}
 
 	for (const auto& command : ConCommand::GetCommands()) {
 		if (command.first.starts_with(input)) {
-			suggestions_.emplace_back(command.first);
+			mSuggestions.emplace_back(command.first);
 		}
 	}
 
 	for (const auto& conVar : ConVarManager::GetAllConVars()) {
 		if (conVar->GetName().starts_with(input)) {
-			suggestions_.emplace_back(conVar->GetName());
+			mSuggestions.emplace_back(conVar->GetName());
 		}
 	}
 }
@@ -643,7 +643,7 @@ void Console::UpdateSuggestions(const std::string& input) {
 #ifdef _DEBUG
 /// @brief サジェストポップアップを表示します
 void Console::ShowSuggestPopup() {
-	if (suggestions_.empty()) {
+	if (mSuggestions.empty()) {
 		return;
 	}
 
@@ -654,7 +654,7 @@ void Console::ShowSuggestPopup() {
 	                       cursorScreenPos.y + inputTextSize.y);
 	auto popupSize = ImVec2(
 		inputTextSize.x,
-		ImGui::GetTextLineHeight() * (std::min)(suggestions_.size(),
+		ImGui::GetTextLineHeight() * (std::min)(mSuggestions.size(),
 		                                        static_cast<size_t>(10)) +
 		ImGui::GetStyle().WindowPadding.y * 2
 	);
@@ -670,12 +670,12 @@ void Console::ShowSuggestPopup() {
 		ImGuiWindowFlags_NoResize |
 		ImGuiWindowFlags_Tooltip
 	)) {
-		for (size_t i = 0; i < suggestions_.size(); i++) {
-			if (ImGui::Selectable(suggestions_[i].c_str())) {
+		for (size_t i = 0; i < mSuggestions.size(); i++) {
+			if (ImGui::Selectable(mSuggestions[i].c_str())) {
 				// 選択されたサジェストで入力を置き換え
-				strncpy_s(inputText_, suggestions_[i].c_str(),
-				          sizeof(inputText_));
-				bShowSuggestPopup_ = false;
+				strncpy_s(mInputText, mSuggestions[i].c_str(),
+				          sizeof(mInputText));
+				mShowSuggestPopup = false;
 			}
 		}
 	}
@@ -745,30 +745,30 @@ int Console::InputTextCallback(ImGuiInputTextCallbackData* data) {
 	switch (data->EventFlag) {
 	case ImGuiInputTextFlags_CallbackCompletion: {
 		// bShowSuggestPopup_ = !bShowSuggestPopup_;
-		if (bShowSuggestPopup_) {
+		if (mShowSuggestPopup) {
 			UpdateSuggestions(data->Buf);
 		}
 	}
 	break;
 
 	case ImGuiInputTextFlags_CallbackHistory: {
-		const int prev_history_index = historyIndex_;
+		const int prev_history_index = mHistoryIndex;
 		if (data->EventKey == ImGuiKey_UpArrow) {
-			if (historyIndex_ > 0) {
-				historyIndex_--;
+			if (mHistoryIndex > 0) {
+				mHistoryIndex--;
 			}
 		} else if (data->EventKey == ImGuiKey_DownArrow) {
-			if (historyIndex_ < static_cast<int>(history_.size()) - 1) {
-				historyIndex_++;
+			if (mHistoryIndex < static_cast<int>(mHistory.size()) - 1) {
+				mHistoryIndex++;
 			} else {
-				historyIndex_ = static_cast<int>(history_.size());
+				mHistoryIndex = static_cast<int>(mHistory.size());
 				// 履歴が空の場合はサイズと一致させる
 			}
 		}
-		if (prev_history_index != historyIndex_) {
+		if (prev_history_index != mHistoryIndex) {
 			data->DeleteChars(0, data->BufTextLen);
-			if (historyIndex_ < static_cast<int>(history_.size())) {
-				data->InsertChars(0, history_[historyIndex_].c_str());
+			if (mHistoryIndex < static_cast<int>(mHistory.size())) {
+				data->InsertChars(0, mHistory[mHistoryIndex].c_str());
 			} else {
 				data->InsertChars(0, ""); // 履歴が空の場合は空白を挿入
 			}
@@ -797,7 +797,7 @@ void Console::ShowMenuBar() {
 				Clear({});
 			}
 			if (ImGui::MenuItem("Close", "Ctrl+W")) {
-				bShowConsole_ = false;
+				mShowConsole = false;
 			}
 			ImGui::EndMenu();
 		}
@@ -807,7 +807,7 @@ void Console::ShowMenuBar() {
 			}
 			if (ImGui::MenuItem(
 				(StrUtil::ConvertToUtf8(0xeb8e) + " About Console").c_str())) {
-				bShowAbout_ = true;
+				mShowAbout = true;
 			}
 			ImGui::EndMenu();
 		}
@@ -819,35 +819,35 @@ void Console::ShowMenuBar() {
 /// @brief コンソールのテキスト部分を表示します
 void Console::ShowConsoleText() {
 #ifdef _DEBUG
-	std::lock_guard lock(mutex_);
+	std::lock_guard lock(mMutex);
 
 	constexpr size_t kMaxConsoleLines = 100000;
 	// まずconsoleTexts_のサイズ上限をチェックし、超えていたらクリア
-	if (consoleTexts_.size() > kMaxConsoleLines) {
+	if (mConsoleTexts.size() > kMaxConsoleLines) {
 		Print("Console buffer overflow, clearing buffer.\n", kConTextColorError,
 		      Channel::Console);
-		consoleTexts_.clear();
+		mConsoleTexts.clear();
 	}
 
 	// 60FPSを超えない頻度でバッファを更新
 	const size_t currentFrame = mFrameCount;
-	if (currentFrame - displayState_.lastUpdateFrame > 1) {
-		displayState_.buffer = consoleTexts_;
-		displayState_.selected.resize(displayState_.buffer.size(), false);
-		displayState_.lastUpdateFrame = currentFrame;
+	if (currentFrame - mDisplayState.lastUpdateFrame > 1) {
+		mDisplayState.buffer = mConsoleTexts;
+		mDisplayState.selected.resize(mDisplayState.buffer.size(), false);
+		mDisplayState.lastUpdateFrame = currentFrame;
 	}
 
 	// displayState_.bufferのサイズ上限もチェック
-	if (displayState_.buffer.size() > kMaxConsoleLines) {
+	if (mDisplayState.buffer.size() > kMaxConsoleLines) {
 		Print("Console buffer overflow, clearing buffer.\n", kConTextColorError,
 		      Channel::Console);
-		displayState_.buffer.clear();
+		mDisplayState.buffer.clear();
 	}
-	if (displayState_.buffer.size() > kMaxConsoleLines) {
+	if (mDisplayState.buffer.size() > kMaxConsoleLines) {
 		Print("Console buffer still too large after clear.\n",
 		      kConTextColorError, Channel::Console);
 	} else {
-		displayState_.selected.resize(displayState_.buffer.size(), false);
+		mDisplayState.selected.resize(mDisplayState.buffer.size(), false);
 	}
 
 	// 入力フィールドとボタンの高さを取得
@@ -872,30 +872,30 @@ void Console::ShowConsoleText() {
 		int visibleIndex = 0;
 
 		// データ行
-		for (size_t i = 0; i < displayState_.buffer.size(); ++i) {
+		for (size_t i = 0; i < mDisplayState.buffer.size(); ++i) {
 			// チャンネルによるフィルター処理
-			if (currentFilterChannel_ != Channel::None && displayState_.buffer[
-				i].channel != currentFilterChannel_) {
+			if (mCurrentFilterChannel != Channel::None && mDisplayState.buffer[
+				i].channel != mCurrentFilterChannel) {
 				continue; // フィルターに一致しない場合はスキップ
 			}
 
 			ImGui::TableNextRow();
 
 			// チャンネル列
-			if (displayState_.buffer[i].channel != Channel::None) {
+			if (mDisplayState.buffer[i].channel != Channel::None) {
 				if (ImGui::TableSetColumnIndex(0)) {
 					std::string channelName = ToString(
-						displayState_.buffer[i].channel);
+						mDisplayState.buffer[i].channel);
 					if (!channelName.empty()) {
 						if (ImGui::TextLink(
 							(channelName + "##" + std::to_string(i)).c_str())) {
 							// チャンネルをクリックした時のフィルター設定
-							if (currentFilterChannel_ == displayState_.buffer[i]
+							if (mCurrentFilterChannel == mDisplayState.buffer[i]
 								.channel) {
-								currentFilterChannel_ = Channel::None;
+								mCurrentFilterChannel = Channel::None;
 								// 同じチャンネルをクリックするとフィルター解除
 							} else {
-								currentFilterChannel_ = displayState_.buffer[i].
+								mCurrentFilterChannel = mDisplayState.buffer[i].
 									channel;
 							}
 						}
@@ -908,50 +908,50 @@ void Console::ShowConsoleText() {
 			// ログ列
 			if (ImGui::TableSetColumnIndex(1)) {
 				if (WindowsUtils::IsAppDarkTheme()) {
-					if (bFocusedConsoleWindow_) {
+					if (mFocusedConsoleWindow) {
 						ImGui::PushStyleColor(ImGuiCol_Text,
 						                      ImGuiUtil::ToImVec4(
-							                      displayState_.buffer[i].
+							                      mDisplayState.buffer[i].
 							                      color));
 					} else {
-						Vec4 color = displayState_.buffer[i].color;
+						Vec4 color = mDisplayState.buffer[i].color;
 						color.w    = 0.5f;
 						ImGui::PushStyleColor(ImGuiCol_Text,
 						                      ImGuiUtil::ToImVec4(color));
 					}
 				} else {
-					Vec4 color = displayState_.buffer[i].color;
+					Vec4 color = mDisplayState.buffer[i].color;
 					Vec3 col   = {color.x, color.y, color.z};
 					col *= 0.5f;
 					ImGui::PushStyleColor(ImGuiCol_Text,
 					                      ImGuiUtil::ToImVec4(Vec4(col, 1.0f)));
 				}
-				bool isSelected = displayState_.selected[i];
+				bool isSelected = mDisplayState.selected[i];
 				if (ImGui::Selectable(
-					(displayState_.buffer[i].text + "##" + std::to_string(i)).
+					(mDisplayState.buffer[i].text + "##" + std::to_string(i)).
 					c_str(), isSelected)) {
 					if (ImGui::GetIO().KeyCtrl) {
 						// 選択状態のトグル
-						displayState_.selected[i] = !displayState_.selected[i];
-					} else if (ImGui::GetIO().KeyShift && lastSelectedIndex_ !=
+						mDisplayState.selected[i] = !mDisplayState.selected[i];
+					} else if (ImGui::GetIO().KeyShift && mLastSelectedIndex !=
 						-1) {
 						// フィルタリング後の範囲選択
 						const int start = std::min(
-							lastSelectedIndex_, visibleIndex);
+							mLastSelectedIndex, visibleIndex);
 						const int end = std::max(
-							lastSelectedIndex_, visibleIndex);
+							mLastSelectedIndex, visibleIndex);
 						for (int j = start; j <= end; ++j) {
 							size_t actualIndex = FilteredToActualIndex(j);
 							if (actualIndex != SIZE_MAX) {
-								displayState_.selected[actualIndex] = true;
+								mDisplayState.selected[actualIndex] = true;
 							}
 						}
 					} else {
 						// 単一選択（フィルタリング後の要素に限定）
-						std::ranges::fill(displayState_.selected, false);
-						displayState_.selected[i] = true;
+						std::ranges::fill(mDisplayState.selected, false);
+						mDisplayState.selected[i] = true;
 					}
-					lastSelectedIndex_ = visibleIndex; // フィルタリング後のインデックス
+					mLastSelectedIndex = visibleIndex; // フィルタリング後のインデックス
 				}
 				ImGui::PopStyleColor();
 			}
@@ -964,14 +964,14 @@ void Console::ShowConsoleText() {
 		if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_C)) {
 			std::string      copiedText;
 			constexpr size_t kMaxCopyLength = 1024 * 1024; // 1MBまで
-			for (size_t i = 0; i < displayState_.buffer.size(); ++i) {
-				if (displayState_.selected[i]) {
-					if (copiedText.size() + displayState_.buffer[i].text.size()
+			for (size_t i = 0; i < mDisplayState.buffer.size(); ++i) {
+				if (mDisplayState.selected[i]) {
+					if (copiedText.size() + mDisplayState.buffer[i].text.size()
 						> kMaxCopyLength) {
 						copiedText += "\n... (copy truncated) ...";
 						break;
 					}
-					copiedText += displayState_.buffer[i].text;
+					copiedText += mDisplayState.buffer[i].text;
 				}
 			}
 			ImGui::SetClipboardText(copiedText.c_str());
@@ -1013,15 +1013,15 @@ void Console::ShowConsoleBody() {
 		ImGuiInputTextFlags_CallbackEdit |
 		ImGuiInputTextFlags_CallbackHistory;
 
-	if (ImGui::InputText("##input", inputText_, IM_ARRAYSIZE(inputText_),
+	if (ImGui::InputText("##input", mInputText, IM_ARRAYSIZE(mInputText),
 	                     inputTextFlags, InputTextCallback)) {
 		ImGui::SetKeyboardFocusHere(-1);
-		SubmitCommand(inputText_);
-		if (!std::string(inputText_).empty()) {
-			history_.emplace_back(inputText_);
-			historyIndex_ = static_cast<int>(history_.size());
+		SubmitCommand(mInputText);
+		if (!std::string(mInputText).empty()) {
+			mHistory.emplace_back(mInputText);
+			mHistoryIndex = static_cast<int>(mHistory.size());
 		}
-		memset(inputText_, 0, sizeof inputText_);
+		memset(mInputText, 0, sizeof mInputText);
 	}
 
 	ShowSuggestPopup();
@@ -1029,12 +1029,12 @@ void Console::ShowConsoleBody() {
 	ImGui::SameLine();
 
 	if (ImGui::Button(" Submit ")) {
-		SubmitCommand(inputText_);
-		if (!std::string(inputText_).empty()) {
-			history_.emplace_back(inputText_);
-			historyIndex_ = static_cast<int>(history_.size());
+		SubmitCommand(mInputText);
+		if (!std::string(mInputText).empty()) {
+			mHistory.emplace_back(mInputText);
+			mHistoryIndex = static_cast<int>(mHistory.size());
 		}
-		memset(inputText_, 0, sizeof inputText_);
+		memset(mInputText, 0, sizeof mInputText);
 	}
 
 	ImGui::PopStyleVar(3);
@@ -1056,14 +1056,14 @@ void Console::ShowContextMenu() {
 			(StrUtil::ConvertToUtf8(kIconCopy) + " Copy Selected").c_str())) {
 			std::string      copiedText;
 			constexpr size_t kMaxCopyLength = 1024 * 1024; // 1MBまで
-			for (size_t i = 0; i < displayState_.buffer.size(); ++i) {
-				if (displayState_.selected[i]) {
-					if (copiedText.size() + displayState_.buffer[i].text.size()
+			for (size_t i = 0; i < mDisplayState.buffer.size(); ++i) {
+				if (mDisplayState.selected[i]) {
+					if (copiedText.size() + mDisplayState.buffer[i].text.size()
 						> kMaxCopyLength) {
 						copiedText += "\n... (copy truncated) ...";
 						break;
 					}
-					copiedText += displayState_.buffer[i].text;
+					copiedText += mDisplayState.buffer[i].text;
 				}
 			}
 			ImGui::SetClipboardText(copiedText.c_str());
@@ -1074,7 +1074,7 @@ void Console::ShowContextMenu() {
 		if (ImGui::MenuItem(
 			(StrUtil::ConvertToUtf8(kIconVisibility) + " Show All Channels").
 			c_str())) {
-			currentFilterChannel_ = Channel::None;
+			mCurrentFilterChannel = Channel::None;
 		}
 
 		ImGui::Spacing();
@@ -1098,7 +1098,7 @@ void Console::ShowAbout() {
 
 	const bool bOpen = ImGui::BeginPopupModal(
 		("About " + std::string(ENGINE_NAME) + " Console").c_str(),
-		&bShowAbout_,
+		&mShowAbout,
 		ImGuiWindowFlags_NoResize |
 		ImGuiWindowFlags_NoMove |
 		ImGuiWindowFlags_NoCollapse |
@@ -1133,7 +1133,7 @@ void Console::ShowAbout() {
 		ImGui::SetCursorPos(ImVec2(buttonPosX, buttonPosY));
 
 		if (ImGui::Button("OK", buttonSize)) {
-			bShowAbout_ = false;
+			mShowAbout = false;
 			ImGui::CloseCurrentPopup();
 		}
 
@@ -1145,7 +1145,7 @@ void Console::ShowAbout() {
 /// @brief ConVarヘルパーウィンドウを表示します
 void Console::ShowConVarHelper() {
 #ifdef _DEBUG
-	if (!bShowConVarHelper_) {
+	if (!mShowConVarHelper) {
 		return;
 	}
 
@@ -1154,7 +1154,7 @@ void Console::ShowConVarHelper() {
 		{0xFFFF, 0xFFFF}
 	);
 
-	if (ImGui::Begin("ConVar Helper", &bShowConVarHelper_,
+	if (ImGui::Begin("ConVar Helper", &mShowConVarHelper,
 	                 ImGuiWindowFlags_MenuBar)) {
 		// メニューバー
 		{
@@ -1184,13 +1184,13 @@ void Console::ShowConVarHelper() {
 			ImGui::Text("Page");
 			ImGui::SameLine();
 			if (ImGui::BeginCombo("##Page",
-			                      pages_[selectedPageIndex_].name.c_str(),
+			                      mPages[mSelectedPageIndex].name.c_str(),
 			                      ImGuiComboFlags_WidthFitPreview)) {
-				for (uint32_t n = 0; n < pages_.size(); n++) {
+				for (uint32_t n = 0; n < mPages.size(); n++) {
 					const bool isSelected = (static_cast<int>(
-						selectedPageIndex_) == n);
-					if (ImGui::Selectable(pages_[n].name.c_str(), isSelected)) {
-						selectedPageIndex_ = n;
+						mSelectedPageIndex) == n);
+					if (ImGui::Selectable(mPages[n].name.c_str(), isSelected)) {
+						mSelectedPageIndex = n;
 					}
 					if (isSelected) {
 						ImGui::SetItemDefaultFocus();
@@ -1203,10 +1203,10 @@ void Console::ShowConVarHelper() {
 
 			if (ImGui::Button("+", {24, 0})) {
 				Page newPage = {
-					.name = "User Page " + std::to_string(pages_.size()),
+					.name = "User Page " + std::to_string(mPages.size()),
 					.grid = {3, 10},
 				};
-				pages_.emplace_back(newPage);
+				mPages.emplace_back(newPage);
 			}
 
 			if (ImGui::IsItemHovered()) {
@@ -1219,11 +1219,11 @@ void Console::ShowConVarHelper() {
 		// ページ名の編集
 		{
 			char pageNameBuffer[256];
-			strncpy_s(pageNameBuffer, pages_[selectedPageIndex_].name.c_str(),
+			strncpy_s(pageNameBuffer, mPages[mSelectedPageIndex].name.c_str(),
 			          sizeof(pageNameBuffer));
 			if (ImGui::InputText("PageName", pageNameBuffer,
 			                     sizeof(pageNameBuffer))) {
-				pages_[selectedPageIndex_].name = pageNameBuffer;
+				mPages[mSelectedPageIndex].name = pageNameBuffer;
 			}
 		}
 
@@ -1243,15 +1243,15 @@ void Console::ShowConVarHelper() {
 			ImGui::SameLine();
 
 			ImGui::SetNextItemWidth(inputWidth);
-			int tmpWidth = static_cast<int>(pages_[selectedPageIndex_].grid.
+			int tmpWidth = static_cast<int>(mPages[mSelectedPageIndex].grid.
 				width);
 			if (ImGui::InputInt("##Width", &tmpWidth, 1)) {
-				if (tmpWidth > 0 && tmpWidth != static_cast<int>(pages_[
-					selectedPageIndex_].grid.width)) {
+				if (tmpWidth > 0 && tmpWidth != static_cast<int>(mPages[
+					mSelectedPageIndex].grid.width)) {
 					RearrangeGridElements(tmpWidth,
-					                      pages_[selectedPageIndex_].grid.
+					                      mPages[mSelectedPageIndex].grid.
 					                      height);
-					pages_[selectedPageIndex_].grid.width = tmpWidth;
+					mPages[mSelectedPageIndex].grid.width = tmpWidth;
 				}
 			}
 
@@ -1260,20 +1260,20 @@ void Console::ShowConVarHelper() {
 			ImGui::SameLine();
 
 			ImGui::SetNextItemWidth(inputWidth);
-			int tmpHeight = static_cast<int>(pages_[selectedPageIndex_].grid.
+			int tmpHeight = static_cast<int>(mPages[mSelectedPageIndex].grid.
 				height);
 			if (ImGui::InputInt("##Height", &tmpHeight, 1)) {
-				pages_[selectedPageIndex_].grid.height = std::max(1, tmpHeight);
+				mPages[mSelectedPageIndex].grid.height = std::max(1, tmpHeight);
 			}
 		}
 
 		// グリッドサイズのテーブルを作成
 		{
-			const auto& grid = pages_[selectedPageIndex_].grid;
+			const auto& grid = mPages[mSelectedPageIndex].grid;
 
 			// グリッド要素の数を正しく保つ
 			size_t expectedSize = static_cast<size_t>(grid.width) * grid.height;
-			auto&  elements     = pages_[selectedPageIndex_].elements;
+			auto&  elements     = mPages[mSelectedPageIndex].elements;
 			if (elements.size() != expectedSize) {
 				elements.resize(expectedSize);
 			}
@@ -1321,13 +1321,13 @@ void Console::ShowConVarHelper() {
 							// 右クリックでコンテキストメニューを表示
 							if (ImGui::BeginPopupContextItem(cellId.c_str())) {
 								if (ImGui::MenuItem("Add Label")) {
-									bShowElementPopup_ = true;
-									editingElementIndex_ = cellIndex;
+									mShowElementPopup = true;
+									mEditingElementIndex = cellIndex;
 									element.type = GridElement::Type::Label;
 								}
 								if (ImGui::MenuItem("Add Button")) {
-									bShowElementPopup_ = true;
-									editingElementIndex_ = cellIndex;
+									mShowElementPopup = true;
+									mEditingElementIndex = cellIndex;
 									element.type = GridElement::Type::Button;
 								}
 								ImGui::EndPopup();
@@ -1362,8 +1362,8 @@ void Console::ShowConVarHelper() {
 							// 右クリックでコンテキストメニューを表示
 							if (ImGui::BeginPopupContextItem(cellId.c_str())) {
 								if (ImGui::MenuItem("Edit Label")) {
-									bShowElementPopup_   = true;
-									editingElementIndex_ = cellIndex;
+									mShowElementPopup   = true;
+									mEditingElementIndex = cellIndex;
 								}
 								if (ImGui::MenuItem("Delete Label")) {
 									element = GridElement(); // 要素を削除
@@ -1403,8 +1403,8 @@ void Console::ShowConVarHelper() {
 							// 右クリックでコンテキストメニューを表示
 							if (ImGui::BeginPopupContextItem(cellId.c_str())) {
 								if (ImGui::MenuItem("Edit Button")) {
-									bShowElementPopup_   = true;
-									editingElementIndex_ = cellIndex;
+									mShowElementPopup   = true;
+									mEditingElementIndex = cellIndex;
 								}
 								if (element.type == GridElement::Type::Label) {
 									if (ImGui::MenuItem("Delete Button")) {
@@ -1450,14 +1450,14 @@ void Console::ShowConVarHelper() {
 void Console::RearrangeGridElements([[maybe_unused]] const uint32_t newWidth,
                                     [[maybe_unused]] const uint32_t newHeight) {
 #ifdef _DEBUG
-	auto&                    elements = pages_[selectedPageIndex_].elements;
+	auto&                    elements = mPages[mSelectedPageIndex].elements;
 	std::vector<GridElement> newElements(newWidth * newHeight);
 
-	for (uint32_t row = 0; row < pages_[selectedPageIndex_].grid.height; ++
+	for (uint32_t row = 0; row < mPages[mSelectedPageIndex].grid.height; ++
 	     row) {
-		for (uint32_t col = 0; col < pages_[selectedPageIndex_].grid.width; ++
+		for (uint32_t col = 0; col < mPages[mSelectedPageIndex].grid.width; ++
 		     col) {
-			uint32_t oldIndex = row * pages_[selectedPageIndex_].grid.width +
+			uint32_t oldIndex = row * mPages[mSelectedPageIndex].grid.width +
 				col;
 			uint32_t newIndex = row * newWidth + col;
 
@@ -1476,8 +1476,8 @@ void Console::RearrangeGridElements([[maybe_unused]] const uint32_t newWidth,
 /// @param row 挿入する行のインデックス
 void Console::InsertRow([[maybe_unused]] const uint32_t row) {
 #ifdef _DEBUG
-	auto& grid     = pages_[selectedPageIndex_].grid;
-	auto& elements = pages_[selectedPageIndex_].elements;
+	auto& grid     = mPages[mSelectedPageIndex].grid;
+	auto& elements = mPages[mSelectedPageIndex].elements;
 
 	// 新しい行を挿入
 	elements.insert(elements.begin() + row * grid.width, grid.width,
@@ -1492,8 +1492,8 @@ void Console::InsertRow([[maybe_unused]] const uint32_t row) {
 /// @param row 削除する行のインデックス
 void Console::DeleteRow([[maybe_unused]] const uint32_t row) {
 #ifdef _DEBUG
-	auto& grid     = pages_[selectedPageIndex_].grid;
-	auto& elements = pages_[selectedPageIndex_].elements;
+	auto& grid     = mPages[mSelectedPageIndex].grid;
+	auto& elements = mPages[mSelectedPageIndex].elements;
 
 	// 行を削除
 	elements.erase(elements.begin() + row * grid.width,
@@ -1539,22 +1539,22 @@ void Console::ImportPage() {
 				// GridWidth
 				auto gridWidth = general->second.find("GridWidth");
 				if (gridWidth != general->second.end()) {
-					pages_[selectedPageIndex_].grid.width = std::stoi(
+					mPages[mSelectedPageIndex].grid.width = std::stoi(
 						gridWidth->second);
 				}
 				// GridHeight
 				auto gridHeight = general->second.find("GridHeight");
 				if (gridHeight != general->second.end()) {
-					pages_[selectedPageIndex_].grid.height = std::stoi(
+					mPages[mSelectedPageIndex].grid.height = std::stoi(
 						gridHeight->second);
 				}
 			}
 
 			// 要素を初期化
-			pages_[selectedPageIndex_].elements.clear();
-			size_t totalElements = pages_[selectedPageIndex_].grid.width *
-				pages_[selectedPageIndex_].grid.height;
-			pages_[selectedPageIndex_].elements.resize(totalElements);
+			mPages[mSelectedPageIndex].elements.clear();
+			size_t totalElements = mPages[mSelectedPageIndex].grid.width *
+				mPages[mSelectedPageIndex].grid.height;
+			mPages[mSelectedPageIndex].elements.resize(totalElements);
 
 			// 各セクションを処理
 			for (const auto& [key, value] : iniData.at("General")) {
@@ -1568,15 +1568,15 @@ void Console::ImportPage() {
 				const std::string& property = tokens[3];
 
 				// インデックス計算
-				uint32_t index = row * pages_[selectedPageIndex_].grid.width +
+				uint32_t index = row * mPages[mSelectedPageIndex].grid.width +
 					col;
-				if (index >= pages_[selectedPageIndex_].elements.size()) {
+				if (index >= mPages[mSelectedPageIndex].elements.size()) {
 					Print("インデックスが範囲外です: " + key + "\n", kConTextColorError,
 					      Channel::Console);
 					continue;
 				}
 
-				GridElement& element = pages_[selectedPageIndex_].elements[
+				GridElement& element = mPages[mSelectedPageIndex].elements[
 					index];
 
 				// プロパティに基づいて値を設定
@@ -1599,7 +1599,7 @@ void Console::ImportPage() {
 					//Print("不明なプロパティ: " + key + "\n", kConTextColorError, Channel::Console);
 				}
 
-				pages_[selectedPageIndex_].elements[index] = element;
+				mPages[mSelectedPageIndex].elements[index] = element;
 			}
 
 			file.close();
@@ -1641,7 +1641,7 @@ void Console::ExportPage() {
 		std::ofstream file(ofn.lpstrFile);
 		if (file.is_open()) {
 			// 現在のページを取得
-			const auto& page = pages_[selectedPageIndex_];
+			const auto& page = mPages[mSelectedPageIndex];
 
 			// ヘッダーを書き込む
 			file << "[General]" << std::endl;
@@ -1854,7 +1854,7 @@ Vec4 Console::ParseColor(const std::string& color) {
 ///	@brief グリッド要素の編集ポップアップを表示します
 void Console::ShowElementEditPopup() {
 #ifdef _DEBUG
-	if (!bShowElementPopup_) {
+	if (!mShowElementPopup) {
 		return;
 	}
 
@@ -1868,13 +1868,13 @@ void Console::ShowElementEditPopup() {
 	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 	ImGui::SetNextWindowSize(size);
 
-	auto& element = pages_[selectedPageIndex_].elements[editingElementIndex_];
+	auto& element = mPages[mSelectedPageIndex].elements[mEditingElementIndex];
 
 	if (element.type == GridElement::Type::Label) {
 		ImGui::OpenPopup("Edit Label");
 
 		// ポップアップ名を "Edit Element" に統一
-		if (ImGui::BeginPopupModal("Edit Label", &bShowElementPopup_, flags)) {
+		if (ImGui::BeginPopupModal("Edit Label", &mShowElementPopup, flags)) {
 			char labelBuffer[256];
 			strncpy_s(labelBuffer, element.label.c_str(), sizeof(labelBuffer));
 			if (ImGui::InputText("Label", labelBuffer, sizeof(labelBuffer))) {
@@ -1886,12 +1886,12 @@ void Console::ShowElementEditPopup() {
 
 			// OK と Cancel ボタン
 			if (ImGui::Button("OK")) {
-				bShowElementPopup_ = false;
+				mShowElementPopup = false;
 				ImGui::CloseCurrentPopup();
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Cancel")) {
-				bShowElementPopup_ = false;
+				mShowElementPopup = false;
 				ImGui::CloseCurrentPopup();
 			}
 			ImGui::EndPopup();
@@ -1899,7 +1899,7 @@ void Console::ShowElementEditPopup() {
 	} else if (element.type == GridElement::Type::Button) {
 		ImGui::OpenPopup("Edit ConVar");
 
-		if (ImGui::BeginPopupModal("Edit ConVar", &bShowElementPopup_, flags)) {
+		if (ImGui::BeginPopupModal("Edit ConVar", &mShowElementPopup, flags)) {
 			char commandBuffer[256];
 			strncpy_s(commandBuffer, element.command.c_str(),
 			          sizeof(commandBuffer));
@@ -1919,12 +1919,12 @@ void Console::ShowElementEditPopup() {
 
 			// OK と Cancel ボタン
 			if (ImGui::Button("OK")) {
-				bShowElementPopup_ = false;
+				mShowElementPopup = false;
 				ImGui::CloseCurrentPopup();
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Cancel")) {
-				bShowElementPopup_ = false;
+				mShowElementPopup = false;
 				ImGui::CloseCurrentPopup();
 			}
 			ImGui::EndPopup();
@@ -1976,7 +1976,7 @@ void Console::PrintTypeError(const std::string& type) {
 /// @param command 追加するコマンド文字列
 void Console::AddCommandHistory([[maybe_unused]] const std::string& command) {
 #ifdef _DEBUG
-	consoleTexts_.emplace_back(
+	mConsoleTexts.emplace_back(
 		Text(
 			"> " + command + "\n",
 			kConTextColorExecute,
@@ -1998,9 +1998,9 @@ void Console::UpdateRepeatCount(
 	[[maybe_unused]] const Vec4&        color
 ) {
 #ifdef _DEBUG
-	repeatCounts_.back()++;
+	mRepeatCounts.back()++;
 
-	const auto repeatCount = repeatCounts_.back();
+	const auto repeatCount = mRepeatCounts.back();
 	// 改行を含めない形式でメッセージを作成し、必要な場合のみ最後に追加
 	auto formattedMessage = std::format(
 		"{} [x{}]{}", message, repeatCount,
@@ -2008,17 +2008,17 @@ void Console::UpdateRepeatCount(
 	);
 
 	if (repeatCount >= static_cast<int>(kConsoleRepeatError)) {
-		consoleTexts_.back() = {
+		mConsoleTexts.back() = {
 			.text = formattedMessage, .color = kConTextColorError,
 			.channel = channel
 		};
 	} else if (repeatCount >= static_cast<int>(kConsoleRepeatWarning)) {
-		consoleTexts_.back() = {
+		mConsoleTexts.back() = {
 			.text = formattedMessage, .color = kConTextColorWarning,
 			.channel = channel
 		};
 	} else {
-		consoleTexts_.back() = {
+		mConsoleTexts.back() = {
 			.text = formattedMessage, .color = color, .channel = channel
 		};
 	}
@@ -2028,21 +2028,21 @@ void Console::UpdateRepeatCount(
 /// @brief 最下部までスクロールされている場合は自動スクロールします
 void Console::CheckScroll() {
 #ifdef _DEBUG
-	if (bWishScrollToBottom_ && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
+	if (mWishScrollToBottom && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
 		ImGui::SetScrollHereY(1.0f);
 	}
 
 	if (ImGui::GetScrollY() < ImGui::GetScrollMaxY()) {
-		bWishScrollToBottom_ = false;
+		mWishScrollToBottom = false;
 	} else {
-		bWishScrollToBottom_ = true;
+		mWishScrollToBottom = true;
 	}
 #endif
 }
 
 /// @brief 行数をチェックし、必要に応じて削除やキャパシティ調整を行います
 void Console::CheckLineCountAsync() {
-	std::lock_guard lock(mutex_);
+	std::lock_guard lock(mMutex);
 #ifdef _DEBUG
 	// コンソールテキスト用の初期キャパシティを設定
 	constexpr size_t kInitialCapacity            = 1024;
@@ -2051,39 +2051,39 @@ void Console::CheckLineCountAsync() {
 	constexpr size_t kSuggestionsInitialCapacity = 32;
 
 	// コンソールテキストのキャパシティ管理
-	if (consoleTexts_.capacity() < kInitialCapacity) {
-		consoleTexts_.reserve(kInitialCapacity);
-		repeatCounts_.reserve(kInitialCapacity);
+	if (mConsoleTexts.capacity() < kInitialCapacity) {
+		mConsoleTexts.reserve(kInitialCapacity);
+		mRepeatCounts.reserve(kInitialCapacity);
 	}
 
 	// 履歴のキャパシティ管理
-	if (history_.capacity() < kHistoryCapacity) {
-		history_.reserve(kHistoryCapacity);
+	if (mHistory.capacity() < kHistoryCapacity) {
+		mHistory.reserve(kHistoryCapacity);
 	}
 
 	// サジェストのキャパシティ管理
-	if (suggestions_.capacity() < kSuggestionsInitialCapacity) {
-		suggestions_.reserve(kSuggestionsInitialCapacity);
+	if (mSuggestions.capacity() < kSuggestionsInitialCapacity) {
+		mSuggestions.reserve(kSuggestionsInitialCapacity);
 	}
 
 	// 最大行数を超えた場合は前方から削除
-	while (consoleTexts_.size() > kConsoleMaxLineCount) {
-		consoleTexts_.erase(consoleTexts_.begin());
-		repeatCounts_.erase(repeatCounts_.begin());
+	while (mConsoleTexts.size() > kConsoleMaxLineCount) {
+		mConsoleTexts.erase(mConsoleTexts.begin());
+		mRepeatCounts.erase(mRepeatCounts.begin());
 	}
 
 	// 履歴が最大数を超えた場合、古いものを削除
-	if (history_.size() >= kHistoryCapacity) {
-		history_.erase(history_.begin());
-		historyIndex_ = static_cast<int>(history_.size()) - 1;
+	if (mHistory.size() >= kHistoryCapacity) {
+		mHistory.erase(mHistory.begin());
+		mHistoryIndex = static_cast<int>(mHistory.size()) - 1;
 	}
 
 	// コンソールテキストのキャパシティが大きすぎる場合は再確保
-	if (consoleTexts_.capacity() > consoleTexts_.size() + kGrowthFactor * 2) {
-		std::vector newTexts(consoleTexts_.begin(), consoleTexts_.end());
-		std::vector newCounts(repeatCounts_.begin(), repeatCounts_.end());
-		consoleTexts_ = std::move(newTexts);
-		repeatCounts_ = std::move(newCounts);
+	if (mConsoleTexts.capacity() > mConsoleTexts.size() + kGrowthFactor * 2) {
+		std::vector newTexts(mConsoleTexts.begin(), mConsoleTexts.end());
+		std::vector newCounts(mRepeatCounts.begin(), mRepeatCounts.end());
+		mConsoleTexts = std::move(newTexts);
+		mRepeatCounts = std::move(newCounts);
 	}
 #endif
 }
@@ -2172,9 +2172,9 @@ size_t Console::FilteredToActualIndex(
 	[[maybe_unused]] const int filteredIndex) {
 #ifdef _DEBUG
 	int visibleIndex = 0;
-	for (size_t i = 0; i < displayState_.buffer.size(); ++i) {
-		if (currentFilterChannel_ == Channel::None || displayState_.buffer[i].
-			channel == currentFilterChannel_) {
+	for (size_t i = 0; i < mDisplayState.buffer.size(); ++i) {
+		if (mCurrentFilterChannel == Channel::None || mDisplayState.buffer[i].
+			channel == mCurrentFilterChannel) {
 			if (visibleIndex == filteredIndex) {
 				return i;
 			}
@@ -2192,15 +2192,15 @@ size_t Console::FilteredToActualIndex(
 void Console::FlushLogBuffer(
 	[[maybe_unused]] const std::vector<std::string>& buffer) {
 #ifdef _DEBUG
-	if (!logFile_.is_open()) {
-		logFile_.open("console.log", std::ios::app | std::ios::binary);
+	if (!mLogFile.is_open()) {
+		mLogFile.open("console.log", std::ios::app | std::ios::binary);
 	}
 
-	if (logFile_.is_open()) {
+	if (mLogFile.is_open()) {
 		for (const auto& msg : buffer) {
-			logFile_ << msg;
+			mLogFile << msg;
 		}
-		logFile_.flush();
+		mLogFile.flush();
 	}
 #endif
 }
@@ -2208,22 +2208,22 @@ void Console::FlushLogBuffer(
 /// @brief コンソールの非同期更新を行います
 void Console::ConsoleUpdateAsync() const {
 	try {
-		while (!bStopThread_) {
+		while (!mStopThread) {
 			std::vector<std::function<void()>> currentTasks;
 
 			{
-				std::unique_lock lock(mutex_);
-				cv_.wait(lock, [this] {
-					return !taskQueue_.empty() || bStopThread_;
+				std::unique_lock lock(mMutex);
+				mCv.wait(lock, [this] {
+					return !mTaskQueue.empty() || mStopThread;
 				});
 
-				if (bStopThread_) {
+				if (mStopThread) {
 					break;
 				}
 
-				while (!taskQueue_.empty()) {
-					currentTasks.emplace_back(std::move(taskQueue_.front()));
-					taskQueue_.pop();
+				while (!mTaskQueue.empty()) {
+					currentTasks.emplace_back(std::move(mTaskQueue.front()));
+					mTaskQueue.pop();
 				}
 			}
 
@@ -2256,10 +2256,10 @@ void Console::ConsoleUpdateAsync() const {
 
 /// @brief コンソールスレッドを開始します
 void Console::StartConsoleThread() {
-	consoleThread_ = std::thread(&Console::ConsoleUpdateAsync, this);
+	mConsoleThread = std::thread(&Console::ConsoleUpdateAsync, this);
 
 	// スレッドのハンドルを取得
-	HANDLE hThread = consoleThread_.native_handle();
+	HANDLE hThread = mConsoleThread.native_handle();
 
 	HMODULE hKernel32            = GetModuleHandleW(L"kernel32.dll");
 	auto    setThreadDescription = reinterpret_cast<SetThreadDescriptionFunc>(
@@ -2280,56 +2280,56 @@ void Console::StartConsoleThread() {
 void Console::LogToFileAsync([[maybe_unused]] const std::string& message) {
 #ifdef _DEBUG
 	{
-		std::lock_guard lock(mutex_);
-		messageBuffer_.emplace_back(message);
+		std::lock_guard lock(mMutex);
+		mMessageBuffer.emplace_back(message);
 
 		// バッファが一定数を超えた場合はフラッシュ
-		if (messageBuffer_.size() >= kBatchSize) {
-			std::vector<std::string> currentBatch = std::move(messageBuffer_);
-			messageBuffer_                        = std::vector<std::string>();
+		if (mMessageBuffer.size() >= kBatchSize) {
+			std::vector<std::string> currentBatch = std::move(mMessageBuffer);
+			mMessageBuffer                        = std::vector<std::string>();
 
-			taskQueue_.emplace([currentBatch] {
+			mTaskQueue.emplace([currentBatch] {
 				FlushLogBuffer(currentBatch);
 			});
-			cv_.notify_one();
+			mCv.notify_one();
 		}
 	}
 #endif
 }
 
 uint64_t                          Console::mFrameCount = 0;
-std::mutex                        Console::mutex_;
-std::queue<std::function<void()>> Console::taskQueue_;
-std::condition_variable           Console::cv_;
+std::mutex                        Console::mMutex;
+std::queue<std::function<void()>> Console::mTaskQueue;
+std::condition_variable           Console::mCv;
 
-std::thread Console::consoleThread_;
-bool        Console::bStopThread_ = false;
+std::thread Console::mConsoleThread;
+bool        Console::mStopThread = false;
 
 #ifdef _DEBUG
-bool                       Console::bShowConsole_          = true;
-bool                       Console::bWishScrollToBottom_   = false;
-bool                       Console::bShowSuggestPopup_     = false;
-bool                       Console::bShowAbout_            = false;
-bool                       Console::bFocusedConsoleWindow_ = false;
-std::vector<Console::Text> Console::consoleTexts_;
-char                       Console::inputText_[kInputBufferSize] = {};
-int                        Console::historyIndex_                = -1;
-std::vector<std::string>   Console::history_;
-std::vector<std::string>   Console::suggestions_;
-std::vector<uint64_t>      Console::repeatCounts_;
-int                        Console::lastSelectedIndex_    = -1;
-Channel                    Console::currentFilterChannel_ = Channel::None;
+bool                       Console::mShowConsole          = true;
+bool                       Console::mWishScrollToBottom   = false;
+bool                       Console::mShowSuggestPopup     = false;
+bool                       Console::mShowAbout            = false;
+bool                       Console::mFocusedConsoleWindow = false;
+std::vector<Console::Text> Console::mConsoleTexts;
+char                       Console::mInputText[kInputBufferSize] = {};
+int                        Console::mHistoryIndex                = -1;
+std::vector<std::string>   Console::mHistory;
+std::vector<std::string>   Console::mSuggestions;
+std::vector<uint64_t>      Console::mRepeatCounts;
+int                        Console::mLastSelectedIndex    = -1;
+Channel                    Console::mCurrentFilterChannel = Channel::None;
 
-std::vector<std::string> Console::messageBuffer_;
-std::ofstream            Console::logFile_;
+std::vector<std::string> Console::mMessageBuffer;
+std::ofstream            Console::mLogFile;
 
-Console::DisplayState Console::displayState_;
+Console::DisplayState Console::mDisplayState;
 
 // ConVarヘルパー
-bool                       Console::bShowConVarHelper_   = false;
-bool                       Console::bShowElementPopup_   = false;
-size_t                     Console::editingElementIndex_ = 0;
-std::vector<Console::Page> Console::pages_               = {
+bool                       Console::mShowConVarHelper   = false;
+bool                       Console::mShowElementPopup   = false;
+size_t                     Console::mEditingElementIndex = 0;
+std::vector<Console::Page> Console::mPages               = {
 	{
 		.name = "User Page 0",
 		.grid = {.width = 1, .height = 10},
@@ -2404,5 +2404,5 @@ std::vector<Console::Page> Console::pages_               = {
 		}
 	},
 };
-size_t Console::selectedPageIndex_ = 0;
+size_t Console::mSelectedPageIndex = 0;
 #endif

@@ -82,40 +82,40 @@ public:
 	bool CanAllocate() const;
 
 private:
-	D3D12* d3d12_ = nullptr;
+	D3D12* mD3d12 = nullptr;
 
 	// 次に使用するSRVインデックス（従来の共通使用）
-	uint32_t useIndex_ = kSrvIndexTop;
+	uint32_t mUseIndex = kSrvIndexTop;
 
 	// 2Dテクスチャ用SRVの次のインデックス
-	uint32_t texture2DIndex_ = kTexture2DStartIndex;
+	uint32_t mTexture2DIndex = kTexture2DStartIndex;
 
 	// キューブマップテクスチャ用SRVの次のインデックス
-	uint32_t textureCubeIndex_ = kTextureCubeStartIndex;
+	uint32_t mTextureCubeIndex = kTextureCubeStartIndex;
 
 	// テクスチャ配列用SRVの次のインデックス（将来用）
-	uint32_t textureArrayIndex_ = kTextureArrayStartIndex;
+	uint32_t mTextureArrayIndex = kTextureArrayStartIndex;
 
 	// ストラクチャードバッファ用SRVの次のインデックス
-	uint32_t structuredBufferIndex_ = kStructuredBufferStartIndex;
+	uint32_t mStructuredBufferIndex = kStructuredBufferStartIndex;
 
 	// 互換性のため残す
-	uint32_t textureIndex_ = kTexture2DStartIndex;
+	uint32_t mTextureIndex = kTexture2DStartIndex;
 
 	// SRV用のディスクリプタサイズ
-	uint32_t descriptorSize_ = 0;
+	uint32_t mDescriptorSize = 0;
 	// SRV用ディスクリプタヒープ
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap_;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mDescriptorHeap;
 
 	// フリーリスト（返却されたインデックスの再利用用）
-	std::queue<uint32_t> freeTexture2DIndices_;
-	std::queue<uint32_t> freeTextureCubeIndices_;
-	std::queue<uint32_t> freeTextureArrayIndices_;
-	std::queue<uint32_t> freeStructuredBufferIndices_;
+	std::queue<uint32_t> mFreeTexture2DIndices;
+	std::queue<uint32_t> mFreeTextureCubeIndices;
+	std::queue<uint32_t> mFreeTextureArrayIndices;
+	std::queue<uint32_t> mFreeStructuredBufferIndices;
 
 	// 使用中のインデックス管理（デバッグ用）
-	std::vector<bool> usedTexture2DIndices_;
-	std::vector<bool> usedTextureCubeIndices_;
-	std::vector<bool> usedTextureArrayIndices_;
-	std::vector<bool> usedStructuredBufferIndices_;
+	std::vector<bool> mUsedTexture2DIndices;
+	std::vector<bool> mUsedTextureCubeIndices;
+	std::vector<bool> mUsedTextureArrayIndices;
+	std::vector<bool> mUsedStructuredBufferIndices;
 };

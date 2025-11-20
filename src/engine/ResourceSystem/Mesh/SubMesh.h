@@ -30,11 +30,11 @@ public:
 	std::vector<Unnamed::Triangle> GetPolygons() const;
 
 private:
-	std::string                                  name_;
-	Microsoft::WRL::ComPtr<ID3D12Device>         device_;
-	std::unique_ptr<VertexBuffer<Vertex>>        vertexBuffer_;
-	std::unique_ptr<VertexBuffer<SkinnedVertex>> skinnedVertexBuffer_;
-	std::unique_ptr<IndexBuffer>                 indexBuffer_;
-	Material*                                    material_      = nullptr;
-	bool                                         isSkinnedMesh_ = false;
+	std::string                                  mName;
+	Microsoft::WRL::ComPtr<ID3D12Device>         mDevice;
+	std::unique_ptr<VertexBuffer<Vertex>>        mVertexBuffer;
+	std::unique_ptr<VertexBuffer<SkinnedVertex>> mSkinnedVertexBuffer;
+	std::unique_ptr<IndexBuffer>                 mIndexBuffer;
+	Material*                                    mMaterial      = nullptr;
+	bool                                         mIsSkinnedMesh = false;
 };

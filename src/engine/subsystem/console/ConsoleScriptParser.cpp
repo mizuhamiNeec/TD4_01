@@ -16,6 +16,26 @@ namespace Unnamed {
 	ConsoleScriptParser::ConsoleScriptParser(const std::string_view& path) {
 		std::ifstream inputFile(path.data());
 
+		// 存在しない場合は作る
+		if (!inputFile) {
+			Msg(
+				kChannel,
+				"Script file not found. Creating a new one: {}",
+				std::string(path)
+			);
+			std::ofstream outputFile(path.data());
+			if (!outputFile) {
+				Error(
+					kChannel,
+					"Failed to create script file: {}",
+					std::string(path)
+				);
+				throw std::runtime_error("Failed to create script file");
+			}
+			outputFile.close();
+			inputFile.open(path.data());
+		}
+		
 		if (!inputFile.is_open()) {
 			Error(
 				kChannel, "Failed to open script file: {}", std::string(path)
@@ -37,8 +57,9 @@ namespace Unnamed {
 				continue;
 			}
 
-			// TODO: UnnamedConsoleに移行
-			Console::SubmitCommand(line);
+			// TODO: とりあえず新旧両方で実行
+			// Console::SubmitCommand(line);
+			ServiceLocator::Get<ConsoleSystem>()->ExecuteCommand(line);
 		}
 	}
 }

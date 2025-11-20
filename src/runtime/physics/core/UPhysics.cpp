@@ -96,38 +96,47 @@ namespace UPhysics {
 			auto tris = subMesh->GetPolygons();
 
 
-		std::vector<Unnamed::Triangle> triangles;
+			std::vector<Unnamed::Triangle> triangles;
 
-		// UPhysics::Triangleに変換
-		for (auto tri : tris) {
-			// ローカル座標をワールド座標に変換
-			// ワールド変換行列を取得
-			const Mat4& worldMat = transform->GetWorldMat();
+			// UPhysics::Triangleに変換
+			for (auto tri : tris) {
+				// ローカル座標をワールド座標に変換
+				// ワールド変換行列を取得
+				const Mat4& worldMat = transform->GetWorldMat();
 
-			// 頂点をワールド座標に変換（スケール、回転、位置をすべて適用）
-			// 同次座標系を使用して変換
-			Vec3 t0 = Vec3(
-				tri.v0.x * worldMat.m[0][0] + tri.v0.y * worldMat.m[1][0] + tri.v0.z * worldMat.m[2][0] + worldMat.m[3][0],
-				tri.v0.x * worldMat.m[0][1] + tri.v0.y * worldMat.m[1][1] + tri.v0.z * worldMat.m[2][1] + worldMat.m[3][1],
-				tri.v0.x * worldMat.m[0][2] + tri.v0.y * worldMat.m[1][2] + tri.v0.z * worldMat.m[2][2] + worldMat.m[3][2]
-			);
-			
-			Vec3 t1 = Vec3(
-				tri.v1.x * worldMat.m[0][0] + tri.v1.y * worldMat.m[1][0] + tri.v1.z * worldMat.m[2][0] + worldMat.m[3][0],
-				tri.v1.x * worldMat.m[0][1] + tri.v1.y * worldMat.m[1][1] + tri.v1.z * worldMat.m[2][1] + worldMat.m[3][1],
-				tri.v1.x * worldMat.m[0][2] + tri.v1.y * worldMat.m[1][2] + tri.v1.z * worldMat.m[2][2] + worldMat.m[3][2]
-			);
-			
-			Vec3 t2 = Vec3(
-				tri.v2.x * worldMat.m[0][0] + tri.v2.y * worldMat.m[1][0] + tri.v2.z * worldMat.m[2][0] + worldMat.m[3][0],
-				tri.v2.x * worldMat.m[0][1] + tri.v2.y * worldMat.m[1][1] + tri.v2.z * worldMat.m[2][1] + worldMat.m[3][1],
-				tri.v2.x * worldMat.m[0][2] + tri.v2.y * worldMat.m[1][2] + tri.v2.z * worldMat.m[2][2] + worldMat.m[3][2]
-			);
+				// 頂点をワールド座標に変換（スケール、回転、位置をすべて適用）
+				// 同次座標系を使用して変換
+				Vec3 t0 = Vec3(
+					tri.v0.x * worldMat.m[0][0] + tri.v0.y * worldMat.m[1][0] +
+					tri.v0.z * worldMat.m[2][0] + worldMat.m[3][0],
+					tri.v0.x * worldMat.m[0][1] + tri.v0.y * worldMat.m[1][1] +
+					tri.v0.z * worldMat.m[2][1] + worldMat.m[3][1],
+					tri.v0.x * worldMat.m[0][2] + tri.v0.y * worldMat.m[1][2] +
+					tri.v0.z * worldMat.m[2][2] + worldMat.m[3][2]
+				);
 
-			triangles.emplace_back(
-				t0, t1, t2
-			);
-		}			// BVHを構築
+				Vec3 t1 = Vec3(
+					tri.v1.x * worldMat.m[0][0] + tri.v1.y * worldMat.m[1][0] +
+					tri.v1.z * worldMat.m[2][0] + worldMat.m[3][0],
+					tri.v1.x * worldMat.m[0][1] + tri.v1.y * worldMat.m[1][1] +
+					tri.v1.z * worldMat.m[2][1] + worldMat.m[3][1],
+					tri.v1.x * worldMat.m[0][2] + tri.v1.y * worldMat.m[1][2] +
+					tri.v1.z * worldMat.m[2][2] + worldMat.m[3][2]
+				);
+
+				Vec3 t2 = Vec3(
+					tri.v2.x * worldMat.m[0][0] + tri.v2.y * worldMat.m[1][0] +
+					tri.v2.z * worldMat.m[2][0] + worldMat.m[3][0],
+					tri.v2.x * worldMat.m[0][1] + tri.v2.y * worldMat.m[1][1] +
+					tri.v2.z * worldMat.m[2][1] + worldMat.m[3][1],
+					tri.v2.x * worldMat.m[0][2] + tri.v2.y * worldMat.m[1][2] +
+					tri.v2.z * worldMat.m[2][2] + worldMat.m[3][2]
+				);
+
+				triangles.emplace_back(
+					t0, t1, t2
+				);
+			} // BVHを構築
 			BVHBuilder            bvhBuilder;
 			std::vector<FlatNode> nodes;
 			std::vector<uint32_t> triIndices;
@@ -331,6 +340,7 @@ namespace UPhysics {
 		Vec3     hitNormal;
 		Vec3     hitPos;
 		uint32_t stack[64];
+		Entity*  hitEntity = nullptr;
 
 		for (auto* bvh : filtered) {
 			int sp      = 0;
@@ -374,6 +384,7 @@ namespace UPhysics {
 										box.halfSize.x, box.halfSize.y,
 										box.halfSize.z
 									}) - penetrationDepth * 0.5f);
+								hitEntity = bvh->owner;
 							}
 						}
 					}
@@ -386,11 +397,12 @@ namespace UPhysics {
 		}
 
 		if (outHit) {
-			outHit->t        = 1.0f;           // sweep 用でないので 1
-			outHit->depth    = minPenetration; // ← depth をセット
-			outHit->pos      = hitPos;
-			outHit->normal   = hitNormal;
-			outHit->triIndex = hitTri;
+			outHit->t         = 1.0f;           // sweep 用でないので 1
+			outHit->depth     = minPenetration; // ← depth をセット
+			outHit->pos       = hitPos;
+			outHit->normal    = hitNormal;
+			outHit->triIndex  = hitTri;
+			outHit->hitEntity = hitEntity;
 		}
 		return true;
 	}
@@ -480,6 +492,7 @@ namespace UPhysics {
 								}) - penetrationDepth * 0.5f);
 							tmpHit.normal   = separationAxis;
 							tmpHit.triIndex = triIdx;
+							tmpHit.hitEntity = bvh->owner;
 
 							outHits[hitCount] = tmpHit;
 							hitCount++;

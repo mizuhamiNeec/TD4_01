@@ -4,8 +4,6 @@
 #include <DirectXTex.h>
 #include <string>
 
-#include <wrl/client.h>
-
 class SrvManager;
 class D3D12;
 

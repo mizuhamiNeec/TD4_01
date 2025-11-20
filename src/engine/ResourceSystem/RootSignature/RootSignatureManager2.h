@@ -23,6 +23,6 @@ public:
 
 private:
 	static std::unordered_map<std::string, std::unique_ptr<RootSignature2>>
-	rootSignatures_;
-	static ID3D12Device* device_;
+	mRootSignatures;
+	static ID3D12Device* mDevice;
 };

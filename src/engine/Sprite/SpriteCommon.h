@@ -18,11 +18,11 @@ public:
 	void Render() const;
 
 	D3D12* GetD3D12() const {
-		return d3d12_;
+		return mD3d12;
 	}
 
 private:
-	D3D12*                                d3d12_                = nullptr;
-	std::unique_ptr<RootSignatureManager> rootSignatureManager_ = nullptr;
-	PipelineState                         pipelineState_;
+	D3D12*                                mD3d12                = nullptr;
+	std::unique_ptr<RootSignatureManager> mRootSignatureManager = nullptr;
+	PipelineState                         mPipelineState;
 };

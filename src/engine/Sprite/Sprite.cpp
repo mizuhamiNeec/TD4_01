@@ -15,79 +15,79 @@ Sprite::~Sprite() = default;
 /// @param textureFilePath テクスチャファイルパス
 void Sprite::Init(SpriteCommon*      spriteCommon,
                   const std::string& textureFilePath) {
-	this->spriteCommon_    = spriteCommon;
-	this->textureFilePath_ = textureFilePath;
+	this->mSpriteCommon    = spriteCommon;
+	this->mTextureFilePath = textureFilePath;
 
 	// 各トランスフォームに初期値を設定
-	transform_ = {
+	mTransform = {
 		.scale = {1.0f, 1.0f, 1.0f},
 		.rotate = {0.0f, 0.0f, 0.0f},
 		.translate = {0.0f, 0.0f, 0.0f}
 	};
-	uvTransform_ = {
+	mUvTransform = {
 		.scale = {1.0f, 1.0f, 1.0f},
 		.rotate = {0.0f, 0.0f, 0.0f},
 		.translate = {0.0f, 0.0f, 0.0f}
 	};
 
 	// 頂点リソースにデータを書き込む	
-	vertices_.emplace_back(
+	mVertices.emplace_back(
 		Vec4(0.0f, 1.0f, 0.0f, 1.0f),
 		Vec2(0.0f, 1.0f),
 		Vec3(0.0f, 0.0f, -1.0f)
 	); // 左下
-	vertices_.emplace_back(
+	mVertices.emplace_back(
 		Vec4(0.0f, 0.0f, 0.0f, 1.0f),
 		Vec2(0.0f, 0.0f),
 		Vec3(0.0f, 0.0f, -1.0f)
 	); // 左上
-	vertices_.emplace_back(
+	mVertices.emplace_back(
 		Vec4(1.0f, 1.0f, 0.0f, 1.0f),
 		Vec2(1.0f, 1.0f),
 		Vec3(0.0f, 0.0f, -1.0f)
 	); // 右下
-	vertices_.emplace_back(
+	mVertices.emplace_back(
 		Vec4(0.0f, 0.0f, 0.0f, 1.0f),
 		Vec2(0.0f, 0.0f),
 		Vec3(0.0f, 0.0f, -1.0f)
 	); // 左上
-	vertices_.emplace_back(
+	mVertices.emplace_back(
 		Vec4(1.0f, 0.0f, 0.0f, 1.0f),
 		Vec2(1.0f, 0.0f),
 		Vec3(0.0f, 0.0f, -1.0f)
 	); // 右上
-	vertices_.emplace_back(
+	mVertices.emplace_back(
 		Vec4(1.0f, 1.0f, 0.0f, 1.0f),
 		Vec2(1.0f, 1.0f),
 		Vec3(0.0f, 0.0f, -1.0f)
 	); // 右下
 
 	// インデックスバッファの作成
-	indexBuffer_ = std::make_unique<IndexBuffer>(
-		spriteCommon_->GetD3D12()->GetDevice(), sizeof(indices), indices);
+	mIndexBuffer = std::make_unique<IndexBuffer>(
+		mSpriteCommon->GetD3D12()->GetDevice(), sizeof(mIndices), mIndices);
 
 	// 頂点バッファの作成
-	vertexBuffer_ = std::make_unique<VertexBuffer<Vertex>>(
-		spriteCommon_->GetD3D12()->GetDevice(),
-		sizeof(Vertex) * kSpriteVertexCount, vertices_.data()
+	mVertexBuffer = std::make_unique<VertexBuffer<Vertex>>(
+		mSpriteCommon->GetD3D12()->GetDevice(),
+		sizeof(Vertex) * kSpriteVertexCount, mVertices.data()
 	);
 
 	// 定数バッファ
-	materialResource_ = std::make_unique<ConstantBuffer>(
-		spriteCommon_->GetD3D12()->GetDevice(), sizeof(Material),
+	mMaterialResource = std::make_unique<ConstantBuffer>(
+		mSpriteCommon->GetD3D12()->GetDevice(), sizeof(Material),
 		"SpriteMaterial");
-	materialData_                 = materialResource_->GetPtr<Material>();
-	materialData_->color          = {1.0f, 1.0f, 1.0f, 1.0f};
-	materialData_->enableLighting = false;
-	materialData_->uvTransform    = Mat4::identity;
+	mMaterialData                 = mMaterialResource->GetPtr<Material>();
+	mMaterialData->color          = {1.0f, 1.0f, 1.0f, 1.0f};
+	mMaterialData->enableLighting = false;
+	mMaterialData->uvTransform    = Mat4::identity;
 
-	transformation_ = std::make_unique<ConstantBuffer>(
-		spriteCommon_->GetD3D12()->GetDevice(), sizeof(TransformationMatrix),
+	mTransformation = std::make_unique<ConstantBuffer>(
+		mSpriteCommon->GetD3D12()->GetDevice(), sizeof(TransformationMatrix),
 		"SpriteTransformation"
 	);
-	transformationMatrixData_ = transformation_->GetPtr<TransformationMatrix>();
-	transformationMatrixData_->wvp = Mat4::identity;
-	transformationMatrixData_->world = Mat4::identity;
+	mTransformationMatrixData = mTransformation->GetPtr<TransformationMatrix>();
+	mTransformationMatrixData->wvp = Mat4::identity;
+	mTransformationMatrixData->world = Mat4::identity;
 
 	AdjustTextureSize();
 
@@ -97,29 +97,29 @@ void Sprite::Init(SpriteCommon*      spriteCommon,
 
 /// @brief スプライトの頂点情報を更新
 void Sprite::Update() {
-	float left   = -anchorPoint_.x;
-	float right  = 1.0f - anchorPoint_.x;
-	float top    = -anchorPoint_.y;
-	float bottom = 1.0f - anchorPoint_.y;
+	float left   = -mAnchorPoint.x;
+	float right  = 1.0f - mAnchorPoint.x;
+	float top    = -mAnchorPoint.y;
+	float bottom = 1.0f - mAnchorPoint.y;
 
 	// 左右反転
-	if (isFlipX_) {
+	if (mIsFlipX) {
 		left  = -left;
 		right = -right;
 	}
 	// 上下反転
-	if (isFlipY_) {
+	if (mIsFlipY) {
 		top    = -top;
 		bottom = -bottom;
 	}
 
 	// すべての頂点を更新
-	vertices_[0].position = Vec4(left, bottom, 0.0f, 1.0f);  // 左下
-	vertices_[1].position = Vec4(left, top, 0.0f, 1.0f);     // 左上
-	vertices_[2].position = Vec4(right, bottom, 0.0f, 1.0f); // 右下
-	vertices_[3].position = Vec4(left, top, 0.0f, 1.0f);     // 左上
-	vertices_[4].position = Vec4(right, top, 0.0f, 1.0f);    // 右上
-	vertices_[5].position = Vec4(right, bottom, 0.0f, 1.0f); // 右下 (追加)
+	mVertices[0].position = Vec4(left, bottom, 0.0f, 1.0f);  // 左下
+	mVertices[1].position = Vec4(left, top, 0.0f, 1.0f);     // 左上
+	mVertices[2].position = Vec4(right, bottom, 0.0f, 1.0f); // 右下
+	mVertices[3].position = Vec4(left, top, 0.0f, 1.0f);     // 左上
+	mVertices[4].position = Vec4(right, top, 0.0f, 1.0f);    // 右上
+	mVertices[5].position = Vec4(right, bottom, 0.0f, 1.0f); // 右下 (追加)
 
 	//// すべてのUV座標を更新
 	//vertices_[0].uv = { texLeft, texBottom };   // 左下
@@ -133,21 +133,21 @@ void Sprite::Update() {
 /// @brief スプライトの描画
 void Sprite::Draw() const {
 	{
-		vertexBuffer_->Update(vertices_.data(),
-		                      sizeof(Vertex) * vertices_.size());
-		indexBuffer_->Update(indices, sizeof(uint16_t) * kSpriteVertexCount);
+		mVertexBuffer->Update(mVertices.data(),
+		                      sizeof(Vertex) * mVertices.size());
+		mIndexBuffer->Update(mIndices, sizeof(uint16_t) * kSpriteVertexCount);
 
 		// uvTransformから行列を作成
-		Mat4 uvTransformMat = Mat4::Scale(uvTransform_.scale);
-		uvTransformMat = uvTransformMat * Mat4::RotateZ(uvTransform_.rotate.z);
+		Mat4 uvTransformMat = Mat4::Scale(mUvTransform.scale);
+		uvTransformMat = uvTransformMat * Mat4::RotateZ(mUvTransform.rotate.z);
 		uvTransformMat = uvTransformMat * Mat4::Translate(
-			uvTransform_.translate);
+			mUvTransform.translate);
 		// 設定
-		materialData_->uvTransform = uvTransformMat;
+		mMaterialData->uvTransform = uvTransformMat;
 
 		// 各種行列を作成
-		const Mat4 worldMat = Mat4::Affine(transform_.scale, transform_.rotate,
-		                                   transform_.translate);
+		const Mat4 worldMat = Mat4::Affine(mTransform.scale, mTransform.rotate,
+		                                   mTransform.translate);
 		const Mat4 viewMat = Mat4::identity;
 		const Mat4 projMat = Mat4::MakeOrthographicMat(
 			0.0f,
@@ -165,36 +165,36 @@ void Sprite::Draw() const {
 			worldMat,
 		};
 
-		*transformationMatrixData_ = worldViewProjectionMatrixSprite;
+		*mTransformationMatrixData = worldViewProjectionMatrixSprite;
 	}
 
 	// 頂点バッファの設定
-	const D3D12_VERTEX_BUFFER_VIEW vbView = vertexBuffer_->View();
-	spriteCommon_->GetD3D12()->GetCommandList()->IASetVertexBuffers(
+	const D3D12_VERTEX_BUFFER_VIEW vbView = mVertexBuffer->View();
+	mSpriteCommon->GetD3D12()->GetCommandList()->IASetVertexBuffers(
 		0, 1, &vbView);
 
 	// 定数バッファの設定
-	spriteCommon_->GetD3D12()->GetCommandList()->
+	mSpriteCommon->GetD3D12()->GetCommandList()->
 	               SetGraphicsRootConstantBufferView(
-		               0, materialResource_->GetAddress());
-	spriteCommon_->GetD3D12()->GetCommandList()->
+		               0, mMaterialResource->GetAddress());
+	mSpriteCommon->GetD3D12()->GetCommandList()->
 	               SetGraphicsRootConstantBufferView(
-		               1, transformation_->GetAddress());
+		               1, mTransformation->GetAddress());
 
 	// テクスチャのSRVを設定
-	spriteCommon_->GetD3D12()->GetCommandList()->
+	mSpriteCommon->GetD3D12()->GetCommandList()->
 	               SetGraphicsRootDescriptorTable(
 		               2, TexManager::GetInstance()->GetSrvHandleGPU(
-			               textureFilePath_)
+			               mTextureFilePath)
 	               );
 
 	// インデックスバッファの設定
-	const D3D12_INDEX_BUFFER_VIEW indexBufferView = indexBuffer_->View();
-	spriteCommon_->GetD3D12()->GetCommandList()->IASetIndexBuffer(
+	const D3D12_INDEX_BUFFER_VIEW indexBufferView = mIndexBuffer->View();
+	mSpriteCommon->GetD3D12()->GetCommandList()->IASetIndexBuffer(
 		&indexBufferView);
 
 	// 描画
-	spriteCommon_->GetD3D12()->GetCommandList()->DrawIndexedInstanced(
+	mSpriteCommon->GetD3D12()->GetCommandList()->DrawIndexedInstanced(
 		6, 1, 0, 0, 0);
 }
 
@@ -202,128 +202,128 @@ void Sprite::Draw() const {
 /// @param textureFilePath テクスチャファイルパス
 void Sprite::ChangeTexture(const std::string& textureFilePath) {
 	// テクスチャのパスを変更
-	this->textureFilePath_ = textureFilePath;
+	this->mTextureFilePath = textureFilePath;
 }
 
 /// @brief 座標の取得
 Vec3 Sprite::GetPos() const {
-	return transform_.translate;
+	return mTransform.translate;
 }
 
 /// @brief 回転の取得
 Vec3 Sprite::GetRot() const {
-	return transform_.rotate;
+	return mTransform.rotate;
 }
 
 /// @brief サイズの取得
 Vec3 Sprite::GetSize() const {
-	return transform_.scale;
+	return mTransform.scale;
 }
 
 /// @brief アンカーポイントの取得
 Vec2 Sprite::GetAnchorPoint() const {
-	return anchorPoint_;
+	return mAnchorPoint;
 }
 
 /// @brief 色の取得
 Vec4 Sprite::GetColor() const {
-	return materialData_->color;
+	return mMaterialData->color;
 }
 
 /// @brief テクスチャの左上座標の取得
 Vec2 Sprite::GetTextureLeftTop() const {
-	return textureLeftTop;
+	return mTextureLeftTop;
 }
 
 /// @brief テクスチャサイズの取得
 Vec2 Sprite::GetTextureSize() const {
-	return textureSize;
+	return mTextureSize;
 }
 
 /// @brief X反転しているか取得
 bool Sprite::GetIsFlipX() const {
-	return isFlipX_;
+	return mIsFlipX;
 }
 
 /// @brief Y反転しているか取得
 bool Sprite::GetIsFlipY() const {
-	return isFlipY_;
+	return mIsFlipY;
 }
 
 /// @brief UV座標の取得
 Vec2 Sprite::GetUvPos() {
-	return {uvTransform_.translate.x, uvTransform_.translate.y};
+	return {mUvTransform.translate.x, mUvTransform.translate.y};
 }
 
 /// @brief UVサイズの取得
 Vec2 Sprite::GetUvSize() {
-	return {uvTransform_.scale.x, uvTransform_.scale.y};
+	return {mUvTransform.scale.x, mUvTransform.scale.y};
 }
 
 /// @brief UV回転の取得
 float Sprite::GetUvRot() const {
-	return uvTransform_.rotate.z;
+	return mUvTransform.rotate.z;
 }
 
 /// @brief 座標の設定
 /// @param newPos 新しい座標
 void Sprite::SetPos(const Vec3& newPos) {
-	transform_.translate = newPos;
+	mTransform.translate = newPos;
 }
 
 /// @brief 回転の設定
 /// @param newRot 新しい回転
 void Sprite::SetRot(const Vec3& newRot) {
-	transform_.rotate = newRot;
+	mTransform.rotate = newRot;
 }
 
 /// @brief サイズの設定
 /// @param newSize 新しいサイズ
 void Sprite::SetSize(const Vec3& newSize) {
-	transform_.scale = newSize;
+	mTransform.scale = newSize;
 }
 
 /// @brief アンカーポイントの設定
 /// @param anchorPoint 新しいアンカーポイント
 void Sprite::SetAnchorPoint(const Vec2& anchorPoint) {
-	this->anchorPoint_ = anchorPoint;
+	this->mAnchorPoint = anchorPoint;
 }
 
 /// @brief 色の設定
 /// @param color 新しい色
 void Sprite::SetColor(const Vec4 color) const {
-	materialData_->color = color;
+	mMaterialData->color = color;
 }
 
 /// @brief X反転の設定
 /// @param isFlipX X反転フラグ
 void Sprite::SetIsFlipX(const bool isFlipX) {
-	isFlipX_ = isFlipX;
+	mIsFlipX = isFlipX;
 }
 
 /// @brief Y反転の設定
 /// @param isFlipY Y反転フラグ
 void Sprite::SetIsFlipY(const bool isFlipY) {
-	isFlipY_ = isFlipY;
+	mIsFlipY = isFlipY;
 }
 
 /// @brief テクスチャの左上座標の設定
 /// @param newTextureLeftTop 新しいテクスチャ左上座標
 void Sprite::SetTextureLeftTop(const Vec2& newTextureLeftTop) {
-	this->textureLeftTop = newTextureLeftTop;
+	this->mTextureLeftTop = newTextureLeftTop;
 }
 
 /// @brief テクスチャサイズの設定
 /// @param newTextureSize 新しいテクスチャサイズ
 void Sprite::SetTextureSize(const Vec2& newTextureSize) {
-	this->textureSize = newTextureSize;
+	this->mTextureSize = newTextureSize;
 }
 
 /// @brief UV座標の設定
 /// @param newPos 新しいUV座標
 void Sprite::SetUvPos(const Vec2& newPos) {
 	for (uint32_t i = 0; i < 2; ++i) {
-		uvTransform_.translate[i] = newPos[i];
+		mUvTransform.translate[i] = newPos[i];
 	}
 }
 
@@ -331,18 +331,18 @@ void Sprite::SetUvPos(const Vec2& newPos) {
 /// @param newSize 新しいUVサイズ
 void Sprite::SetUvSize(const Vec2& newSize) {
 	for (uint32_t i = 0; i < 2; ++i) {
-		uvTransform_.scale[i] = newSize[i];
+		mUvTransform.scale[i] = newSize[i];
 	}
 }
 
 /// @brief UV回転の設定
 /// @param newRot 新しいUV回転
 void Sprite::SetUvRot(const float& newRot) {
-	uvTransform_.rotate.z = newRot;
+	mUvTransform.rotate.z = newRot;
 }
 
 /// @brief テクスチャサイズに合わせてスプライトのサイズを調整
 void Sprite::AdjustTextureSize() {
-	transform_.scale.x = textureSize.x;
-	transform_.scale.y = textureSize.y;
+	mTransform.scale.x = mTextureSize.x;
+	mTransform.scale.y = mTextureSize.y;
 }

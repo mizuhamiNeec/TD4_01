@@ -44,8 +44,8 @@ private:
 
 	static bool LoadWavFile(const std::string& filename, SoundData& outData);
 
-	IXAudio2SourceVoice* sourceVoice_ = nullptr;
-	XAUDIO2_BUFFER       audioBuffer_ = {};
-	SoundData            audioData_;
-	bool                 isPlaying_ = false;
+	IXAudio2SourceVoice* mSourceVoice = nullptr;
+	XAUDIO2_BUFFER       mAudioBuffer = {};
+	SoundData            mAudioData;
+	bool                 mIsPlaying = false;
 };

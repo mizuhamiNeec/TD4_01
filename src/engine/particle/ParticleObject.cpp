@@ -33,15 +33,15 @@ void ParticleObject::Init(ParticleManager*   particleCommon,
 	);
 
 	// 定数バッファ
-	mAterialResource = std::make_unique<ConstantBuffer>(
+	mMaterialResource = std::make_unique<ConstantBuffer>(
 		mParticleCommon->GetD3D12()->GetDevice(),
 		sizeof(Material),
 		"ParticleMaterial"
 	);
-	mAterialData                 = mAterialResource->GetPtr<Material>();
-	mAterialData->color          = {1.0f, 1.0f, 1.0f, 1.0f};
-	mAterialData->enableLighting = false;
-	mAterialData->uvTransform    = Mat4::identity;
+	mMaterialData                 = mMaterialResource->GetPtr<Material>();
+	mMaterialData->color          = {1.0f, 1.0f, 1.0f, 1.0f};
+	mMaterialData->enableLighting = false;
+	mMaterialData->uvTransform    = Mat4::identity;
 
 	// Instancing用のTransformationMatrixリソースを作る
 	mInstancingResource = std::make_unique<ConstantBuffer>(
@@ -304,7 +304,7 @@ void ParticleObject::Draw() const {
 	// 定数バッファの設定
 	mParticleCommon->GetD3D12()->GetCommandList()->
 	                 SetGraphicsRootConstantBufferView(
-		                 0, mAterialResource->GetAddress()
+		                 0, mMaterialResource->GetAddress()
 	                 );
 
 	// SRVを設定
@@ -333,8 +333,8 @@ void ParticleObject::Draw() const {
 
 /// @brief パーティクルオブジェクトをシャットダウンします
 void ParticleObject::Shutdown() {
-	if (mAterialResource) {
-		mAterialResource.reset();
+	if (mMaterialResource) {
+		mMaterialResource.reset();
 	}
 	if (mInstancingResource) {
 		mInstancingResource.reset();

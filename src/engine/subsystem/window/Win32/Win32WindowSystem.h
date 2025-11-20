@@ -3,6 +3,7 @@
 
 #include <engine/subsystem/window/interface/IWindow.h>
 #include <engine/subsystem/window/interface/IWindowSystem.h>
+#include <engine/subsystem/window/Win32/Win32Window.h>
 
 namespace Unnamed {
 	struct IPlatformEvents;
@@ -25,7 +26,8 @@ public:
 	}
 
 	// Win32WindowSystem
-	IWindow* CreateNewWindow(const IWindow::WindowCreateInfo& windowInfo) override;
+	IWindow*
+	CreateNewWindow(const IWindow::WindowCreateInfo& windowInfo) override;
 	[[nodiscard]] const std::vector<std::unique_ptr<IWindow>>&
 	GetWindows() const override;
 	[[nodiscard]] bool AllClosed() const override;

@@ -25,7 +25,7 @@ public:
 private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> mBuffer;
 	D3D12_CONSTANT_BUFFER_VIEW_DESC        mDesc;
-	void*                                  mAppedPtr = nullptr;
+	void*                                  mMappedPtr = nullptr;
 	std::string                            mName;
 
 	ConstantBuffer(const ConstantBuffer&) = delete;

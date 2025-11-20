@@ -11,7 +11,7 @@ OldWindowManager::~OldWindowManager() {
 /// @brief ウィンドウを追加する
 /// @param window ウィンドウポインタ
 void OldWindowManager::AddWindow(std::unique_ptr<BaseWindow> window) {
-	windows_.emplace_back(std::move(window));
+	mWindows.emplace_back(std::move(window));
 }
 
 /// @brief メッセージを処理する
@@ -21,7 +21,7 @@ bool OldWindowManager::ProcessMessage() {
 	bool quit = false;
 
 	// 全体のメッセージループ
-	while (PeekMessage(&msg, windows_[0]->GetWindowHandle(), 0, 0, PM_REMOVE)) {
+	while (PeekMessage(&msg, mWindows[0]->GetWindowHandle(), 0, 0, PM_REMOVE)) {
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 		if (msg.message == WM_QUIT) {
@@ -30,7 +30,7 @@ bool OldWindowManager::ProcessMessage() {
 		}
 	}
 	// 各ウィンドウごとの処理
-	for (const auto& win : windows_) {
+	for (const auto& win : mWindows) {
 		if (win->ProcessMessage()) {
 			quit = true;
 			break;
@@ -43,18 +43,18 @@ bool OldWindowManager::ProcessMessage() {
 /// @brief メインウィンドウを取得する
 /// @return メインウィンドウポインタ
 BaseWindow* OldWindowManager::GetMainWindow() {
-	return windows_.empty() ? nullptr : windows_[0].get();
+	return mWindows.empty() ? nullptr : mWindows[0].get();
 }
 
 /// @brief ウィンドウをすべてクリアする
 void OldWindowManager::ClearWindows() {
-	windows_.clear();
+	mWindows.clear();
 }
 
 /// @brief ウィンドウリストを取得する
 /// @return ウィンドウリスト
 const std::vector<std::unique_ptr<BaseWindow>>& OldWindowManager::GetWindows() {
-	return windows_;
+	return mWindows;
 }
 
-std::vector<std::unique_ptr<BaseWindow>> OldWindowManager::windows_ = {};
+std::vector<std::unique_ptr<BaseWindow>> OldWindowManager::mWindows = {};

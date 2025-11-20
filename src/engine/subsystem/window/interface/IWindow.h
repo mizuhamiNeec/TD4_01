@@ -4,7 +4,7 @@
 class IWindow {
 public:
 	/// @brief ウィンドウ情報構造体
-	struct WindowInfo {
+	struct WindowCreateInfo {
 		std::string title           = "Unnamed Window";
 		uint32_t    clWidth         = 1280;
 		uint32_t    clHeight        = 720;
@@ -16,7 +16,7 @@ public:
 	virtual ~IWindow() = default;
 
 	[[nodiscard]] virtual bool       ShouldClose() const = 0; // 閉じて良いか?
-	[[nodiscard]] virtual WindowInfo GetInfo() const = 0; // ウィンドウ情報を取得
+	[[nodiscard]] virtual WindowCreateInfo GetInfo() const = 0; // ウィンドウ情報を取得
 	[[nodiscard]] virtual void*      GetNativeHandle() const = 0; // ハンドル
 	virtual void                     RequestClose() = 0; // 閉じなさい!シ○ジ君!!
 

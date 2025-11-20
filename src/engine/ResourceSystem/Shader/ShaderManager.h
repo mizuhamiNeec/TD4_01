@@ -14,5 +14,5 @@ public:
 	void    Shutdown();
 
 private:
-	std::unordered_map<std::string, std::unique_ptr<Shader>> shaders_;
+	std::unordered_map<std::string, std::unique_ptr<Shader>> mShaders;
 };

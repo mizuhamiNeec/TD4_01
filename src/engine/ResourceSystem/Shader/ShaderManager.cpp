@@ -16,15 +16,15 @@ Shader* ShaderManager::LoadShader(const std::string& name,
 	std::string filePath = vsPath + ";" + psPath + ";" + gsPath;
 
 	// 既に読み込まれているシェーダがあればそれを返す
-	if (shaders_.contains(filePath)) {
-		return shaders_[filePath].get();
+	if (mShaders.contains(filePath)) {
+		return mShaders[filePath].get();
 	}
 
 	// 新しいシェーダを作成
 	if (auto shader = std::make_unique<Shader>(name, vsPath, psPath, gsPath)) {
 		// シェーダの読み込みに成功したので登録
-		shaders_[filePath] = std::move(shader);
-		return shaders_[filePath].get();
+		mShaders[filePath] = std::move(shader);
+		return mShaders[filePath].get();
 	}
 
 	Console::Print(
@@ -40,8 +40,8 @@ Shader* ShaderManager::LoadShader(const std::string& name,
 /// @param name シェーダ名
 /// @return シェーダへのポインタ（存在しない場合はnullptr）
 Shader* ShaderManager::GetShader(const std::string& name) {
-	auto it = shaders_.find(name);
-	return it != shaders_.end() ? it->second.get() : nullptr;
+	auto it = mShaders.find(name);
+	return it != mShaders.end() ? it->second.get() : nullptr;
 }
 
 /// @brief 初期化
@@ -51,7 +51,7 @@ void ShaderManager::Init() {
 		kConTextColorGray,
 		Channel::ResourceSystem
 	);
-	shaders_.clear();
+	mShaders.clear();
 }
 
 /// @brief 終了処理
@@ -60,13 +60,13 @@ void ShaderManager::Shutdown() {
 	               Channel::ResourceSystem);
 
 	// 個々のシェーダーインスタンスをクリーンアップ
-	for (auto& [path, shader] : shaders_) {
+	for (auto& [path, shader] : mShaders) {
 		if (shader) {
 			shader->Release();
 			shader.reset();
 		}
 	}
-	shaders_.clear();
+	mShaders.clear();
 
 	// 静的DXCリソースの解放
 	Shader::ReleaseStaticResources();

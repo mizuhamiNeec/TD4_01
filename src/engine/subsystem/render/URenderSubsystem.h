@@ -2,13 +2,12 @@
 
 #include <d3d12.h>
 
+#include <engine/subsystem/interface/ISubsystem.h>
 #include <engine/urenderer/GraphicsDevice.h>
 
 #include <runtime/assets/core/UAssetID.h>
 #include <runtime/core/math/Math.h>
 #include <runtime/render/types/RenderTypes.h>
-
-#include "engine/subsystem/interface/ISubsystem.h"
 
 namespace Unnamed {
 	struct UMaterialRuntime;
@@ -45,14 +44,12 @@ namespace Unnamed {
 			mView = view;
 		}
 
-		[[nodiscard]] FrameContext GetContext() const { return mContext; }
+		[[nodiscard]] FrameContext GetContext() const;
 
 		// ISubsystem
 		bool Init() override;
 
-		[[nodiscard]] const std::string_view GetName() const override {
-			return "RenderSubsystem";
-		}
+		[[nodiscard]] const std::string_view GetName() const override;
 
 	private:
 		void Collect(const UWorld& world, const Mat4& parent);

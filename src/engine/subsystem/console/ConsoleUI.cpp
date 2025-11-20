@@ -25,7 +25,7 @@ namespace Unnamed {
 	ConsoleUI::ConsoleUI(
 		ConsoleSystem* consoleSystem
 	) : mConsoleSystem(consoleSystem) {
-		bIsImGuiInitialized = true;
+		bIsImGuiInitialized = false;
 	}
 
 	/// @brief コンソールUIを表示します。
@@ -34,13 +34,15 @@ namespace Unnamed {
 		if (bIsImGuiInitialized) {
 			ImGui::Begin("Console##ConsoleUI", nullptr, kWindowFlags);
 
-			ImGuiChildFlags childFlags = ImGuiChildFlags_ResizeX |
+			constexpr ImGuiChildFlags childFlags =
+				ImGuiChildFlags_ResizeX |
 				ImGuiChildFlags_FrameStyle;
 
 			// このウィンドウで使えるサイズを取得
-			auto region = ImGui::GetWindowContentRegionMax();
+			const auto region = ImGui::GetWindowContentRegionMax();
 
-			float childHeight = region.y - ImGui::GetFrameHeightWithSpacing() *
+			const float childHeight = region.y -
+				ImGui::GetFrameHeightWithSpacing() *
 				2.0f;
 
 			ImGui::BeginChild("Output##ConsoleUI",

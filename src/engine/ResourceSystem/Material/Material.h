@@ -49,15 +49,17 @@ private:
 	std::string mEshName; // 関連付けられたメッシュの名前
 	Shader*     mShader;  // シェーダ
 
-	Microsoft::WRL::ComPtr<ID3D12PipelineState> mPipelineState;
 	// キャッシュされたパイプラインステート
-	Microsoft::WRL::ComPtr<ID3D12RootSignature> mRootSignature;
-	// キャッシュされたルートシグネチャ
-	std::unordered_map<std::string, std::string> mTextures;
-	// テクスチャ 名前とファイルパスのペア
+	Microsoft::WRL::ComPtr<ID3D12PipelineState> mPipelineState;
 
-	std::unordered_map<std::string, ID3D12Resource*> mConstantBuffers;
+	// キャッシュされたルートシグネチャ
+	Microsoft::WRL::ComPtr<ID3D12RootSignature> mRootSignature;
+
+	// テクスチャ 名前とファイルパスのペア
+	std::unordered_map<std::string, std::string> mTextures;
+
 	// 定数バッファ キーはシェーダーステージ_レジスタ番号
+	std::unordered_map<std::string, ID3D12Resource*> mConstantBuffers;
 
 	RootSignature2 mRootSignatureBuilder;
 };

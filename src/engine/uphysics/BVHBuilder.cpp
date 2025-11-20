@@ -10,10 +10,10 @@ namespace UPhysics {
 		const std::vector<Unnamed::Triangle>& triangles,
 		std::vector<FlatNode>&                outNodes,
 		std::vector<uint32_t>&                outTriIndices,
-		const uint32_t&                        leafSize
+		const uint32_t&                       leafSize
 	) {
-		mLeafSize = leafSize;
-		const size_t n  = triangles.size();
+		mLeafSize      = leafSize;
+		const size_t n = triangles.size();
 		mTriInfos.resize(n);
 		mTriIndices.resize(n);
 
@@ -109,7 +109,7 @@ namespace UPhysics {
 			                    (kBucket / (maxC - minC)) :
 			                    0.0f;
 
-		// バケットに三角形を振り分け
+		// バケツに三角形を振り分け
 		for (uint32_t i = start; i < end; ++i) {
 			const float c = (&mTriInfos[mTriIndices[i]].center.x)[axis];
 			const int   b = std::min(kBucket - 1,
@@ -118,7 +118,7 @@ namespace UPhysics {
 			buckets[b].count++;
 		}
 
-		// 前方後方累積でコストを計算a
+		// 前方後方累積でコストを計算
 		float         cost[kBucket - 1];
 		Unnamed::AABB left[kBucket - 1];
 		Unnamed::AABB right[kBucket - 1];
@@ -129,7 +129,7 @@ namespace UPhysics {
 		uint32_t      c = 0;
 		for (int i = 0; i < kBucket - 1; ++i) {
 			t.Expand(buckets[i].bounds);
-			c += buckets[i].count;
+			c            += buckets[i].count;
 			left[i]      = t;
 			leftCount[i] = c;
 		}
@@ -137,7 +137,7 @@ namespace UPhysics {
 		c = 0;
 		for (int i = kBucket - 1; i > 0; --i) {
 			t.Expand(buckets[i].bounds);
-			c += buckets[i].count;
+			c                 += buckets[i].count;
 			right[i - 1]      = t;
 			rightCount[i - 1] = c;
 		}
@@ -152,7 +152,7 @@ namespace UPhysics {
 					 0.0f);
 		}
 
-		// 最小コストのバケットをMidにする
+		// 最小コストのバケツを選択
 		const int best = static_cast<int>(std::min_element(
 				cost, cost + kBucket - 1) -
 			cost);
@@ -165,6 +165,6 @@ namespace UPhysics {
 				return (&mTriInfos[index].center.x)[axis] < splitPos;
 			}
 		) - mTriIndices.begin();
-		outMid = static_cast<uint32_t>(midRaw); // 明示的キャストで警告回避
+		outMid = static_cast<uint32_t>(midRaw);
 	}
 }

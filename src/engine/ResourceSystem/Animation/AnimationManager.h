@@ -32,10 +32,10 @@ public:
 		const std::string& filePath);
 
 private:
-	std::unordered_map<std::string, Animation> animations_;
+	std::unordered_map<std::string, Animation> mAnimations;
 	// ファイルパス/アニメーション名
 	std::unordered_map<std::string, std::vector<std::string>>
-	fileAnimationNames_;
+	mFileAnimationNames;
 	// アニメーション名/アニメーション
 
 	// アニメーション読み込みのヘルパー関数

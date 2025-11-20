@@ -18,5 +18,5 @@ public:
 	static const std::vector<std::unique_ptr<BaseWindow>>& GetWindows();
 
 private:
-	static std::vector<std::unique_ptr<BaseWindow>> windows_;
+	static std::vector<std::unique_ptr<BaseWindow>> mWindows;
 };

@@ -73,7 +73,7 @@ namespace Unnamed {
 		mInputSystem  = ServiceLocator::Get<UInputSystem>();
 
 		// ウィンドウの作成
-		const IWindow::WindowInfo info = {
+		const IWindow::WindowCreateInfo info = {
 			.title =
 			"Main Window  -  " + kEngineBuildDate + " " + kEngineBuildTime,
 			.clWidth = 1280,

@@ -29,8 +29,8 @@ public:
 
 private:
 	ConVarManager() = default;
-	static std::unordered_map<std::string, std::unique_ptr<IConVar>> conVars_;
-	static std::mutex                                                mutex_;
+	static std::unordered_map<std::string, std::unique_ptr<IConVar>> mConVars;
+	static std::mutex                                                mMutex;
 };
 
 template <typename T>
@@ -44,19 +44,19 @@ void ConVarManager::RegisterConVar(
 	bool               bMax,
 	float              fMax
 ) {
-	std::lock_guard lock(mutex_);
+	std::lock_guard lock(mMutex);
 	auto conVar = std::make_unique<ConVar<T>>(name, defaultValue, helpString,
 	                                          flags, bMin, fMin, bMax, fMax);
 
 	ConVarCache::GetInstance().CacheConVar(name, conVar.get());
-	conVars_[name] = std::move(conVar);
+	mConVars[name] = std::move(conVar);
 }
 
 template <typename T>
 T ConVarManager::GetConVarValue(const std::string& name) {
-	std::lock_guard lock(mutex_);
-	auto            it = conVars_.find(name);
-	if (it != conVars_.end()) {
+	std::lock_guard lock(mMutex);
+	auto            it = mConVars.find(name);
+	if (it != mConVars.end()) {
 		auto* var = dynamic_cast<ConVar<T>*>(it->second.get());
 		if (var != nullptr) {
 			return var->GetValue();

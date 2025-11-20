@@ -187,32 +187,32 @@ private:
 	static void LogToFileAsync(const std::string& message);
 
 	static uint64_t                          mFrameCount;
-	static std::mutex                        mutex_;
-	static std::queue<std::function<void()>> taskQueue_;
-	static std::condition_variable           cv_;
-	static std::thread                       consoleThread_;
-	static bool                              bStopThread_;
-	bool                                     bConsoleUpdate_ = false;
+	static std::mutex                        mMutex;
+	static std::queue<std::function<void()>> mTaskQueue;
+	static std::condition_variable           mCv;
+	static std::thread                       mConsoleThread;
+	static bool                              mStopThread;
+	bool                                     mConsoleUpdate = false;
 
 #ifdef _DEBUG
 	// コンソール
-	static bool bShowConsole_; // コンソールを表示するか?
-	static bool bWishScrollToBottom_; // 一番下にスクロールしたい
-	static bool bShowSuggestPopup_; // サジェストポップアップを表示
-	static bool bShowAbout_; // Aboutを表示
-	static bool bFocusedConsoleWindow_; // ウィンドウがフォーカスされているか?
-	static std::vector<Text> consoleTexts_; // コンソールに出力されているテキスト
-	static char inputText_[kInputBufferSize]; // 入力中のテキスト
-	static int historyIndex_;
-	static std::vector<std::string> history_; // 入力の履歴
-	static std::vector<std::string> suggestions_; // サジェスト
-	static std::vector<uint64_t> repeatCounts_;
-	static int lastSelectedIndex_;
-	static Channel currentFilterChannel_;
+	static bool                     mShowConsole; // コンソールを表示するか?
+	static bool                     mWishScrollToBottom; // 一番下にスクロールしたい
+	static bool                     mShowSuggestPopup; // サジェストポップアップを表示
+	static bool                     mShowAbout; // Aboutを表示
+	static bool                     mFocusedConsoleWindow; // ウィンドウがフォーカスされているか?
+	static std::vector<Text>        mConsoleTexts; // コンソールに出力されているテキスト
+	static char                     mInputText[kInputBufferSize]; // 入力中のテキスト
+	static int                      mHistoryIndex;
+	static std::vector<std::string> mHistory;     // 入力の履歴
+	static std::vector<std::string> mSuggestions; // サジェスト
+	static std::vector<uint64_t>    mRepeatCounts;
+	static int                      mLastSelectedIndex;
+	static Channel                  mCurrentFilterChannel;
 
 	// ログ
-	static std::vector<std::string> messageBuffer_;
-	static std::ofstream            logFile_;
+	static std::vector<std::string> mMessageBuffer;
+	static std::ofstream            mLogFile;
 	static constexpr size_t         kBatchSize = 4;
 
 	struct DisplayState {
@@ -221,13 +221,13 @@ private:
 		size_t            lastUpdateFrame = 0; // 最終更新フレーム
 	};
 
-	static DisplayState displayState_;
+	static DisplayState mDisplayState;
 
 	// ConVarヘルパー
-	static bool   bShowConVarHelper_;   // ConVarヘルパーを表示するか?
-	static bool   bShowElementPopup_;   // 要素編集ポップアップを表示するか?
-	static size_t editingElementIndex_; // 編集中の要素
-	static size_t selectedPageIndex_;   // 選択されているページ
+	static bool   mShowConVarHelper;    // ConVarヘルパーを表示するか?
+	static bool   mShowElementPopup;    // 要素編集ポップアップを表示するか?
+	static size_t mEditingElementIndex; // 編集中の要素
+	static size_t mSelectedPageIndex;   // 選択されているページ
 
 	/// @brief グリッド要素の構造体
 	struct GridElement {
@@ -254,6 +254,6 @@ private:
 		std::vector<GridElement> elements; // 要素
 	};
 
-	static std::vector<Page> pages_; // ページ
+	static std::vector<Page> mPages; // ページ
 #endif
 };

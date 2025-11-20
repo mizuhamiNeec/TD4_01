@@ -3,11 +3,9 @@
 #include <string>
 #include <vector>
 
-#include <runtime/core/math/Math.h>
-
 #include <engine/gameframework/entity/UEntity/UEntity.h>
 
-#include "WorldSettings.h"
+#include <runtime/core/math/Math.h>
 
 namespace Unnamed {
 	/// @brief ゲーム内のすべてのエンティティとその状態を管理するクラスです。
@@ -60,18 +58,11 @@ namespace Unnamed {
 			return mEntities;
 		}
 
-		WorldSettings& Settings() { return mSettings; }
-
-		[[nodiscard]] const WorldSettings& Settings() const {
-			return mSettings;
-		}
-
 		[[nodiscard]] const std::string& Name() const { return mName; }
 		void SetName(std::string& name) { mName = std::move(name); }
 
 	private:
-		std::string   mName;
-		WorldSettings mSettings;
+		std::string mName;
 
 		std::vector<std::unique_ptr<UEntity>> mEntities;
 		std::vector<ChildWorld>               mChildren;

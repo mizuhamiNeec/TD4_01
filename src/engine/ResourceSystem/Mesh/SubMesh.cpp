@@ -7,8 +7,8 @@
 /// @param name サブメッシュ名
 SubMesh::SubMesh(const Microsoft::WRL::ComPtr<ID3D12Device>& device,
                  std::string                                 name) :
-	name_(std::move(name)),
-	device_(device) {
+	mName(std::move(name)),
+	mDevice(device) {
 }
 
 /// @brief デストラクタ
@@ -19,9 +19,9 @@ SubMesh::~SubMesh() {
 /// @param vertices 頂点データのベクター
 void SubMesh::SetVertexBuffer(const std::vector<Vertex>& vertices) {
 	size_t size   = vertices.size() * sizeof(Vertex);
-	vertexBuffer_ = std::make_unique<VertexBuffer<Vertex>>(
-		device_, size, vertices.data());
-	isSkinnedMesh_ = false;
+	mVertexBuffer = std::make_unique<VertexBuffer<Vertex>>(
+		mDevice, size, vertices.data());
+	mIsSkinnedMesh = false;
 }
 
 /// @brief スキニング頂点バッファを設定します
@@ -29,97 +29,97 @@ void SubMesh::SetVertexBuffer(const std::vector<Vertex>& vertices) {
 void SubMesh::SetSkinnedVertexBuffer(
 	const std::vector<SkinnedVertex>& vertices) {
 	size_t size          = vertices.size() * sizeof(SkinnedVertex);
-	skinnedVertexBuffer_ = std::make_unique<VertexBuffer<SkinnedVertex>>(
-		device_, size, vertices.data());
-	isSkinnedMesh_ = true;
+	mSkinnedVertexBuffer = std::make_unique<VertexBuffer<SkinnedVertex>>(
+		mDevice, size, vertices.data());
+	mIsSkinnedMesh = true;
 }
 
 /// @brief インデックスバッファを設定します
 /// @param indices インデックスデータのベクター
 void SubMesh::SetIndexBuffer(const std::vector<uint32_t>& indices) {
 	size_t size  = indices.size() * sizeof(uint32_t);
-	indexBuffer_ = std::make_unique<IndexBuffer>(device_, size, indices.data());
+	mIndexBuffer = std::make_unique<IndexBuffer>(mDevice, size, indices.data());
 }
 
 /// @brief マテリアルを取得します
 /// @return マテリアルへのポインタ
-Material* SubMesh::GetMaterial() const { return material_; }
+Material* SubMesh::GetMaterial() const { return mMaterial; }
 
 /// @brief マテリアルを設定します
 /// @param material マテリアルへのポインタ
-void SubMesh::SetMaterial(Material* material) { material_ = material; }
+void SubMesh::SetMaterial(Material* material) { mMaterial = material; }
 
 /// @brief サブメッシュ名を取得します
 /// @return サブメッシュ名への参照
 std::string& SubMesh::GetName() {
-	return name_;
+	return mName;
 }
 
 /// @brief サブメッシュ名を取得します
 /// @return サブメッシュ名
 void SubMesh::Render(ID3D12GraphicsCommandList* commandList) const {
 	// 頂点バッファとインデックスバッファを設定
-	if (isSkinnedMesh_) {
-		if (!skinnedVertexBuffer_ || !indexBuffer_) {
+	if (mIsSkinnedMesh) {
+		if (!mSkinnedVertexBuffer || !mIndexBuffer) {
 			Console::Print("スキニング頂点バッファまたはインデックスバッファが設定されていません",
 			               kConTextColorError, Channel::RenderSystem);
 			return;
 		}
-		const D3D12_VERTEX_BUFFER_VIEW vbView = skinnedVertexBuffer_->View();
+		const D3D12_VERTEX_BUFFER_VIEW vbView = mSkinnedVertexBuffer->View();
 		commandList->IASetVertexBuffers(0, 1, &vbView);
 	} else {
-		if (!vertexBuffer_ || !indexBuffer_) {
+		if (!mVertexBuffer || !mIndexBuffer) {
 			Console::Print("頂点バッファまたはインデックスバッファが設定されていません", kConTextColorError,
 			               Channel::RenderSystem);
 			return;
 		}
-		const D3D12_VERTEX_BUFFER_VIEW vbView = vertexBuffer_->View();
+		const D3D12_VERTEX_BUFFER_VIEW vbView = mVertexBuffer->View();
 		commandList->IASetVertexBuffers(0, 1, &vbView);
 	}
 
-	const D3D12_INDEX_BUFFER_VIEW ibView = indexBuffer_->View();
+	const D3D12_INDEX_BUFFER_VIEW ibView = mIndexBuffer->View();
 	commandList->IASetIndexBuffer(&ibView);
 
 	// トポロジ設定と描画
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	commandList->DrawIndexedInstanced(
-		static_cast<UINT>(indexBuffer_->GetSize() / sizeof(uint32_t)), 1, 0, 0,
+		static_cast<UINT>(mIndexBuffer->GetSize() / sizeof(uint32_t)), 1, 0, 0,
 		0);
 }
 
 /// @brief リソースを解放します
 void SubMesh::ReleaseResource() {
-	if (vertexBuffer_) {
-		vertexBuffer_.reset();
+	if (mVertexBuffer) {
+		mVertexBuffer.reset();
 	}
-	if (skinnedVertexBuffer_) {
-		skinnedVertexBuffer_.reset();
+	if (mSkinnedVertexBuffer) {
+		mSkinnedVertexBuffer.reset();
 	}
-	if (indexBuffer_) {
+	if (mIndexBuffer) {
 		//	indexBuffer_->Release();
-		indexBuffer_.reset();
+		mIndexBuffer.reset();
 	}
-	material_ = nullptr;
+	mMaterial = nullptr;
 }
 
 /// @brief ポリゴン情報を取得します
 std::vector<Unnamed::Triangle> SubMesh::GetPolygons() const {
 	std::vector<Unnamed::Triangle> polygons;
-	if (!indexBuffer_) {
+	if (!mIndexBuffer) {
 		Console::Print("インデックスバッファが設定されていません", kConTextColorError,
 		               Channel::RenderSystem);
 		return polygons;
 	}
 
-	const std::vector<uint32_t>& indices = indexBuffer_->GetIndices();
+	const std::vector<uint32_t>& indices = mIndexBuffer->GetIndices();
 
-	if (isSkinnedMesh_) {
-		if (!skinnedVertexBuffer_) {
+	if (mIsSkinnedMesh) {
+		if (!mSkinnedVertexBuffer) {
 			Console::Print("スキニング頂点バッファが設定されていません", kConTextColorError,
 			               Channel::RenderSystem);
 			return polygons;
 		}
-		const std::vector<SkinnedVertex>& vertices = skinnedVertexBuffer_->
+		const std::vector<SkinnedVertex>& vertices = mSkinnedVertexBuffer->
 			GetVertices();
 		for (size_t i = 0; i < indices.size(); i += 3) {
 			const SkinnedVertex& v0 = vertices[indices[i]];
@@ -132,12 +132,12 @@ std::vector<Unnamed::Triangle> SubMesh::GetPolygons() const {
 			polygons.emplace_back(v30, v31, v32);
 		}
 	} else {
-		if (!vertexBuffer_) {
+		if (!mVertexBuffer) {
 			Console::Print("頂点バッファが設定されていません", kConTextColorError,
 			               Channel::RenderSystem);
 			return polygons;
 		}
-		const std::vector<Vertex>& vertices = vertexBuffer_->GetVertices();
+		const std::vector<Vertex>& vertices = mVertexBuffer->GetVertices();
 		for (size_t i = 0; i < indices.size(); i += 3) {
 			const Vertex& v0  = vertices[indices[i]];
 			const Vertex& v1  = vertices[indices[i + 1]];

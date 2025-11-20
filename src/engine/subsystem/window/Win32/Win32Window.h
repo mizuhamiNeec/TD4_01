@@ -16,7 +16,7 @@ class Win32Window : public IWindow {
 public:
 	// IWindow
 	[[nodiscard]] bool       ShouldClose() const override;
-	[[nodiscard]] WindowInfo GetInfo() const override;
+	[[nodiscard]] WindowCreateInfo GetInfo() const override;
 	[[nodiscard]] void*      GetNativeHandle() const override;
 	void                     RequestClose() override;
 	void                     SetTitle(std::string_view title) override;
@@ -26,7 +26,7 @@ public:
 	// Win32Window
 
 
-	explicit Win32Window(WindowInfo windowInfo)
+	explicit Win32Window(WindowCreateInfo windowInfo)
 		: mWindowInfo(std::move(windowInfo)) {
 	}
 
@@ -40,7 +40,7 @@ public:
 	void SetImmersiveDarkMode(bool darkMode) const;
 
 private:
-	WindowInfo mWindowInfo;
+	WindowCreateInfo mWindowInfo;
 	HWND       mHWnd        = nullptr;
 	bool       mShouldClose = false;
 };

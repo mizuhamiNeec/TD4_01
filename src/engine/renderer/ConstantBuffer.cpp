@@ -41,7 +41,7 @@ ConstantBuffer::ConstantBuffer(
 
 	assert(SUCCEEDED(hr));
 
-	hr = mBuffer->Map(0, nullptr, &mAppedPtr);
+	hr = mBuffer->Map(0, nullptr, &mMappedPtr);
 	assert(SUCCEEDED(hr));
 
 	mBuffer->SetName(std::wstring(name.begin(), name.end()).c_str());
@@ -72,7 +72,7 @@ D3D12_CONSTANT_BUFFER_VIEW_DESC ConstantBuffer::ViewDesc() const {
 /// @brief バッファのCPU仮想アドレスを取得します
 /// @return CPU仮想アドレス
 void* ConstantBuffer::GetPtr() const {
-	return mAppedPtr;
+	return mMappedPtr;
 }
 
 /// @brief バッファリソースを取得します

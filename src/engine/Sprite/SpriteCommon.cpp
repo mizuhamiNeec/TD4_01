@@ -10,7 +10,7 @@
 /// @brief SpriteCommonを初期化します
 /// @param d3d12 D3D12クラスへのポインタ
 void SpriteCommon::Init(D3D12* d3d12) {
-	d3d12_ = d3d12;
+	mD3d12 = d3d12;
 	Console::Print("SpriteCommon : SpriteCommonを初期化します。\n", kConTextColorWait,
 	               Channel::Engine);
 	CreateGraphicsPipeline();
@@ -20,14 +20,14 @@ void SpriteCommon::Init(D3D12* d3d12) {
 
 /// @brief SpriteCommonをシャットダウンします
 void SpriteCommon::Shutdown() const {
-	rootSignatureManager_->Shutdown();
+	mRootSignatureManager->Shutdown();
 }
 
 /// @brief ルートシグネチャを作成します
 void SpriteCommon::CreateRootSignature() {
 	//  RootSignatureManagerのインスタンスを作成
-	rootSignatureManager_ = std::make_unique<RootSignatureManager>(
-		d3d12_->GetDevice());
+	mRootSignatureManager = std::make_unique<RootSignatureManager>(
+		mD3d12->GetDevice());
 
 	D3D12_DESCRIPTOR_RANGE descriptorRange[1];
 	descriptorRange[0] = {
@@ -81,12 +81,12 @@ void SpriteCommon::CreateRootSignature() {
 	};
 
 	// ルートシグネチャを作成
-	rootSignatureManager_->CreateRootSignature(
+	mRootSignatureManager->CreateRootSignature(
 		"SpriteCommon", rootParameters, staticSamplers,
 		_countof(staticSamplers)
 	);
 
-	if (rootSignatureManager_->Get("SpriteCommon")) {
+	if (mRootSignatureManager->Get("SpriteCommon")) {
 		Console::Print("SpriteCommon : ルートシグネチャの生成に成功.\n",
 		               kConTextColorCompleted, Channel::Engine);
 	}
@@ -97,24 +97,24 @@ void SpriteCommon::CreateGraphicsPipeline() {
 	CreateRootSignature();
 
 	// パイプラインステートを作成
-	pipelineState_ = PipelineState(
+	mPipelineState = PipelineState(
 		D3D12_CULL_MODE_NONE,
 		D3D12_FILL_MODE_SOLID,
 		D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE
 	);
-	pipelineState_.SetInputLayout(Vertex::inputLayout);
-	pipelineState_.SetRootSignature(
-		rootSignatureManager_->Get("SpriteCommon"));
+	mPipelineState.SetInputLayout(Vertex::inputLayout);
+	mPipelineState.SetRootSignature(
+		mRootSignatureManager->Get("SpriteCommon"));
 
 	// シェーダーのファイルパスを設定
-	pipelineState_.SetVertexShader(
+	mPipelineState.SetVertexShader(
 		L"./content/core/shaders/SpriteCommon.VS.hlsl");
-	pipelineState_.SetPixelShader(
+	mPipelineState.SetPixelShader(
 		L"./content/core/shaders/SpriteCommon.PS.hlsl");
-	pipelineState_.SetBlendMode(kBlendModeNormal);
-	pipelineState_.Create(d3d12_->GetDevice());
+	mPipelineState.SetBlendMode(kBlendModeNormal);
+	mPipelineState.Create(mD3d12->GetDevice());
 
-	if (pipelineState_.Get()) {
+	if (mPipelineState.Get()) {
 		Console::Print("SpriteCommon : パイプラインステートの作成に成功.\n",
 		               kConTextColorCompleted, Channel::Engine);
 	}
@@ -122,9 +122,9 @@ void SpriteCommon::CreateGraphicsPipeline() {
 
 /// @brief グラフィックスパイプラインをレンダリングに適用します
 void SpriteCommon::Render() const {
-	d3d12_->GetCommandList()->SetPipelineState(pipelineState_.Get());
-	d3d12_->GetCommandList()->SetGraphicsRootSignature(
-		rootSignatureManager_->Get("SpriteCommon"));
-	d3d12_->GetCommandList()->IASetPrimitiveTopology(
+	mD3d12->GetCommandList()->SetPipelineState(mPipelineState.Get());
+	mD3d12->GetCommandList()->SetGraphicsRootSignature(
+		mRootSignatureManager->Get("SpriteCommon"));
+	mD3d12->GetCommandList()->IASetPrimitiveTopology(
 		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }

@@ -10,14 +10,14 @@ class SceneFactory {
 public:
 	template <typename T>
 	void RegisterScene(const std::string& name) {
-		sceneCreators_[name] = []() -> std::shared_ptr<BaseScene> {
+		mSceneCreators[name] = []() -> std::shared_ptr<BaseScene> {
 			return std::make_shared<T>();
 		};
 	}
 
 	std::shared_ptr<BaseScene> CreateScene(const std::string& name) {
-		auto it = sceneCreators_.find(name);
-		if (it != sceneCreators_.end()) {
+		auto it = mSceneCreators.find(name);
+		if (it != mSceneCreators.end()) {
 			return it->second();
 		}
 		return nullptr;
@@ -25,5 +25,5 @@ public:
 
 private:
 	std::unordered_map<std::string, std::function<std::shared_ptr<BaseScene>()>>
-	sceneCreators_;
+	mSceneCreators;
 };

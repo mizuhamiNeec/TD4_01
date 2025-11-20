@@ -25,8 +25,8 @@ public:
 	static CameraComponent* GetDefaultCamera();
 
 private:
-	CameraComponent*                      defaultCamera_        = nullptr;
-	D3D12*                                d3d12_                = nullptr;
-	std::unique_ptr<RootSignatureManager> rootSignatureManager_ = nullptr;
-	PipelineState                         pipelineState_;
+	CameraComponent*                      mDefaultCamera        = nullptr;
+	D3D12*                                mD3d12                = nullptr;
+	std::unique_ptr<RootSignatureManager> mRootSignatureManager = nullptr;
+	PipelineState                         mPipelineState;
 };

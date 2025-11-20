@@ -81,8 +81,8 @@ private:
 	CameraComponent* mCamera         = nullptr;
 	std::string      mTextureFilePath;
 
-	uint32_t kNumMaxInstance = 16385; // 最大インスタンス数
-	uint32_t mNumInstance    = 0;     // 描画すべきインスタンス数
+	static constexpr uint32_t kNumMaxInstance = 16385; // 最大インスタンス数
+	uint32_t                  mNumInstance    = 0;     // 描画すべきインスタンス数
 
 	uint32_t mSrvIndex = 0;
 
@@ -92,13 +92,13 @@ private:
 	Emitter           mEmitter           = {};
 	AccelerationField mAccelerationField = {};
 
-	std::unique_ptr<ConstantBuffer> mAterialResource    = nullptr;
+	std::unique_ptr<ConstantBuffer> mMaterialResource   = nullptr;
 	std::unique_ptr<ConstantBuffer> mInstancingResource = nullptr;
 	std::unique_ptr<IndexBuffer>    mIndexBuffer        = nullptr;
 	// バッファリソース内のデータを指すポインタ
 	Vertex*         mVertexData     = nullptr;
 	uint32_t*       mIndexData      = nullptr;
-	Material*       mAterialData    = nullptr;
+	Material*       mMaterialData   = nullptr;
 	ParticleForGPU* mInstancingData = nullptr;
 
 	bool mEnableGravity           = true;

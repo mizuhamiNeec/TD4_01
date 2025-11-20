@@ -38,7 +38,7 @@ namespace Unnamed {
 			}
 
 			// TODO: とりあえず新旧両方で実行
-			Console::SubmitCommand(line);
+			// Console::SubmitCommand(line);
 			ServiceLocator::Get<ConsoleSystem>()->ExecuteCommand(line);
 		}
 	}

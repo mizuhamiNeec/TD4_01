@@ -22,7 +22,7 @@ void ConCommand::Init() {
 void ConCommand::RegisterCommand(const std::string&     name,
                                  const CommandCallback& callback,
                                  const std::string&     help) {
-	commands_[name] = {callback, help};
+	mCommands[name] = {callback, help};
 }
 
 /// @brief コンソールコマンドを実行します
@@ -35,8 +35,8 @@ bool ConCommand::ExecuteCommand(const std::string& command) {
 	}
 
 	const auto& cmdName = tokens[0];
-	auto        it      = commands_.find(cmdName);
-	if (it != commands_.end()) {
+	auto        it      = mCommands.find(cmdName);
+	if (it != mCommands.end()) {
 		const auto&       callback = it->second.first;
 		const std::vector args(tokens.begin() + 1, tokens.end());
 		callback(args);
@@ -50,12 +50,12 @@ bool ConCommand::ExecuteCommand(const std::string& command) {
 /// @return コマンド名とコールバック関数、ヘルプテキストのペアのマップ
 std::unordered_map<std::string, std::pair<CommandCallback, std::string>>
 ConCommand::GetCommands() {
-	return commands_;
+	return mCommands;
 }
 
 /// @brief ヘルプを表示します
 void ConCommand::Help() {
-	for (const auto& [commandName, commandData] : commands_) {
+	for (const auto& [commandName, commandData] : mCommands) {
 		Console::Print(" - " + commandName + " : " + commandData.second + "\n",
 		               kConFgColorDark, Channel::None);
 	}
@@ -77,4 +77,4 @@ ConCommand::TokenizeCommand(const std::string& command) {
 
 std::unordered_map<std::string, std::pair<
 	                   ConCommand::CommandCallback, std::string>>
-ConCommand::commands_;
+ConCommand::mCommands;

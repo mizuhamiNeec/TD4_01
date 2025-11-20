@@ -28,8 +28,8 @@ void MaterialInstance::Apply(
 
 		// スロット名に対応するテクスチャパスを取得
 		std::string texturePath;
-		auto        it = textureSlots_.find(slotName);
-		if (it != textureSlots_.end() && !it->second.empty()) {
+		auto        it = mTextureSlots.find(slotName);
+		if (it != mTextureSlots.end() && !it->second.empty()) {
 			texturePath = it->second;
 			Console::Print(std::format(
 				               "MaterialInstance::Apply: スロット {} のテクスチャパス: {}\n",

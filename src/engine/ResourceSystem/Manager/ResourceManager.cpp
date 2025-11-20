@@ -10,15 +10,15 @@
 /// @param d3d12 D3D12クラスへのポインタ
 ResourceManager::ResourceManager(D3D12* d3d12) :
 	d3d12_(d3d12),
-	srvManager_(nullptr),
-	shaderManager_(nullptr),
-	materialManager_(nullptr),
-	meshManager_(nullptr) {
-	srvManager_       = std::make_unique<SrvManager>();
-	shaderManager_    = std::make_unique<ShaderManager>();
-	materialManager_  = std::make_unique<MaterialManager>();
-	meshManager_      = std::make_unique<MeshManager>();
-	animationManager_ = std::make_unique<AnimationManager>();
+	mSrvManager(nullptr),
+	mShaderManager(nullptr),
+	mMaterialManager(nullptr),
+	mMeshManager(nullptr) {
+	mSrvManager       = std::make_unique<SrvManager>();
+	mShaderManager    = std::make_unique<ShaderManager>();
+	mMaterialManager  = std::make_unique<MaterialManager>();
+	mMeshManager      = std::make_unique<MeshManager>();
+	mAnimationManager = std::make_unique<AnimationManager>();
 }
 
 /// @brief 初期化
@@ -26,15 +26,15 @@ void ResourceManager::Init() const {
 	Console::Print("ResourceManager を初期化しています...\n", kConTextColorWait,
 	               Channel::ResourceSystem);
 	// マネージャーを初期化
-	srvManager_->Init(d3d12_);
-	TexManager::GetInstance()->Init(d3d12_, srvManager_.get());
+	mSrvManager->Init(d3d12_);
+	TexManager::GetInstance()->Init(d3d12_, mSrvManager.get());
 	RootSignatureManager2::Init(d3d12_->GetDevice());
-	shaderManager_->Init();
-	materialManager_->Init();
-	meshManager_->Init(d3d12_->GetDevice(),
-	                   shaderManager_.get(), materialManager_.get());
+	mShaderManager->Init();
+	mMaterialManager->Init();
+	mMeshManager->Init(d3d12_->GetDevice(),
+	                   mShaderManager.get(), mMaterialManager.get());
 
-	animationManager_->Init();
+	mAnimationManager->Init();
 
 	Console::Print("ResourceManager の初期化が完了しました\n", kConTextColorCompleted,
 	               Channel::ResourceSystem);
@@ -49,24 +49,24 @@ void ResourceManager::Shutdown() {
 
 	// 全てのリソースマネージャーを終了
 
-	if (animationManager_) {
-		animationManager_->Shutdown();
-		animationManager_.reset();
+	if (mAnimationManager) {
+		mAnimationManager->Shutdown();
+		mAnimationManager.reset();
 	}
 
-	if (meshManager_) {
-		meshManager_->Shutdown();
-		meshManager_.reset();
+	if (mMeshManager) {
+		mMeshManager->Shutdown();
+		mMeshManager.reset();
 	}
 
-	if (materialManager_) {
-		materialManager_->Shutdown();
-		materialManager_.reset();
+	if (mMaterialManager) {
+		mMaterialManager->Shutdown();
+		mMaterialManager.reset();
 	}
 
-	if (shaderManager_) {
-		shaderManager_->Shutdown();
-		shaderManager_.reset();
+	if (mShaderManager) {
+		mShaderManager->Shutdown();
+		mShaderManager.reset();
 	}
 
 	TexManager::Shutdown();
@@ -77,7 +77,7 @@ void ResourceManager::Shutdown() {
 /// @brief SrvManagerを取得
 /// @return SrvManagerへのポインタ
 SrvManager* ResourceManager::GetSrvManager() const {
-	return srvManager_.get();
+	return mSrvManager.get();
 }
 
 /// @brief TexManagerを取得
@@ -89,23 +89,23 @@ TexManager* ResourceManager::GetTexManager() const {
 /// @brief MeshManagerを取得
 /// @return MeshManagerへのポインタ
 MeshManager* ResourceManager::GetMeshManager() const {
-	return meshManager_.get();
+	return mMeshManager.get();
 }
 
 /// @brief AnimationManagerを取得
 /// @return AnimationManagerへのポインタ
 AnimationManager* ResourceManager::GetAnimationManager() const {
-	return animationManager_.get();
+	return mAnimationManager.get();
 }
 
 /// @brief MaterialManagerを取得
 /// @return MaterialManagerへのポインタ
 MaterialManager* ResourceManager::GetMaterialManager() const {
-	return materialManager_.get();
+	return mMaterialManager.get();
 }
 
 /// @brief ShaderManagerを取得
 /// @return ShaderManagerへのポインタ
 ShaderManager* ResourceManager::GetShaderManager() const {
-	return shaderManager_.get();
+	return mShaderManager.get();
 }

@@ -66,40 +66,40 @@ private:
 	// テクスチャサイズをイメージに合わせる
 	void AdjustTextureSize();
 
-	SpriteCommon* spriteCommon_ = nullptr;
+	SpriteCommon* mSpriteCommon = nullptr;
 
-	Vec2 anchorPoint_ = {0.0f, 0.0f};
+	Vec2 mAnchorPoint = {0.0f, 0.0f};
 
-	Transform transform_;
-	Transform uvTransform_;
+	Transform mTransform;
+	Transform mUvTransform;
 
 	// 左右フリップ
-	bool isFlipX_ = false;
+	bool mIsFlipX = false;
 	// 上下フリップ
-	bool isFlipY_ = false;
+	bool mIsFlipY = false;
 
 	// テクスチャ左上座標
-	Vec2 textureLeftTop = {0.0f, 0.0f};
-	Vec2 textureSize    = {100.0f, 100.0f};
+	Vec2 mTextureLeftTop = {0.0f, 0.0f};
+	Vec2 mTextureSize    = {100.0f, 100.0f};
 
 	// テクスチャ番号
-	std::string textureFilePath_;
+	std::string mTextureFilePath;
 
-	std::vector<Vertex> vertices_;
+	std::vector<Vertex> mVertices;
 
-	uint32_t indices[kSpriteVertexCount] = {
+	uint32_t mIndices[kSpriteVertexCount] = {
 		0, 1, 2, // 1つ目の三角形
 		1, 4, 2  // 2つ目の三角形
 	};
 
 	// バッファリソース
-	std::unique_ptr<VertexBuffer<Vertex>> vertexBuffer_     = nullptr;
-	std::unique_ptr<ConstantBuffer>       materialResource_ = nullptr;
-	std::unique_ptr<ConstantBuffer>       transformation_   = nullptr;
-	std::unique_ptr<IndexBuffer>          indexBuffer_      = nullptr;
+	std::unique_ptr<VertexBuffer<Vertex>> mVertexBuffer     = nullptr;
+	std::unique_ptr<ConstantBuffer>       mMaterialResource = nullptr;
+	std::unique_ptr<ConstantBuffer>       mTransformation   = nullptr;
+	std::unique_ptr<IndexBuffer>          mIndexBuffer      = nullptr;
 	// バッファリソース内のデータを指すポインタ
-	Vertex*               vertexData_               = nullptr;
-	uint32_t*             indexData                 = nullptr;
-	Material*             materialData_             = nullptr;
-	TransformationMatrix* transformationMatrixData_ = nullptr;
+	Vertex*               mVertexData               = nullptr;
+	uint32_t*             mIndexData                 = nullptr;
+	Material*             mMaterialData             = nullptr;
+	TransformationMatrix* mTransformationMatrixData = nullptr;
 };

@@ -50,7 +50,7 @@ void Win32WindowSystem::RegisterPlatformEvent(
 /// @param windowInfo ウィンドウ情報
 /// @return 作成されたウィンドウのポインタ
 IWindow* Win32WindowSystem::CreateNewWindow(
-	const IWindow::WindowInfo& windowInfo
+	const IWindow::WindowCreateInfo& windowInfo
 ) {
 	auto win = std::make_unique<Win32Window>(windowInfo);
 	if (

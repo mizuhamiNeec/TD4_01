@@ -25,13 +25,13 @@ Material* MaterialManager::GetOrCreateMaterial(const std::string& name,
 	std::string key = GenerateMaterialKey(name, meshName);
 
 	// 既に作成済みのマテリアルがあるか確認
-	if (materials_.contains(key)) {
+	if (mMaterials.contains(key)) {
 		Console::Print(
 			std::format("MaterialManager: 既存マテリアル再利用 {} (キー: {})\n", name, key),
 			kConTextColorCompleted,
 			Channel::ResourceSystem
 		);
-		return materials_[key].get();
+		return mMaterials[key].get();
 	}
 
 	// なかったので作成
@@ -42,7 +42,7 @@ Material* MaterialManager::GetOrCreateMaterial(const std::string& name,
 		material->SetMeshName(meshName);
 	}
 
-	materials_[key] = std::move(material);
+	mMaterials[key] = std::move(material);
 
 	Console::Print(
 		std::format("MaterialManager: 新規マテリアル作成 {} (キー: {})\n", name, key),
@@ -50,7 +50,7 @@ Material* MaterialManager::GetOrCreateMaterial(const std::string& name,
 		Channel::ResourceSystem
 	);
 
-	return materials_[key].get();
+	return mMaterials[key].get();
 }
 
 /// @brief マテリアル取得（メッシュ名なし）
@@ -67,8 +67,8 @@ Material* MaterialManager::GetMaterial(const std::string& name) {
 Material* MaterialManager::GetMaterial(const std::string& name,
                                        const std::string& meshName) {
 	std::string key = GenerateMaterialKey(name, meshName);
-	auto        it  = materials_.find(key);
-	return it != materials_.end() ? it->second.get() : nullptr;
+	auto        it  = mMaterials.find(key);
+	return it != mMaterials.end() ? it->second.get() : nullptr;
 }
 
 /// @brief マテリアルキー生成ヘルパー関数
@@ -90,12 +90,12 @@ void MaterialManager::Init() {
 		kConTextColorGray,
 		Channel::ResourceSystem
 	);
-	materials_.clear();
+	mMaterials.clear();
 }
 
 /// @brief シャットダウン
 void MaterialManager::Shutdown() {
-	for (auto& material : materials_) {
+	for (auto& material : mMaterials) {
 		Console::Print(
 			"MatMgr: Releasing " + material.second->GetName() + "\n",
 			Vec4::white,
@@ -105,5 +105,5 @@ void MaterialManager::Shutdown() {
 	}
 
 	PipelineManager::Shutdown();
-	materials_.clear();
+	mMaterials.clear();
 }

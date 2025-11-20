@@ -16,6 +16,6 @@ public:
 	std::shared_ptr<BaseScene> GetCurrentScene() const;
 
 private:
-	SceneFactory&              factory_;
-	std::shared_ptr<BaseScene> currentScene_;
+	SceneFactory&              mFactory;
+	std::shared_ptr<BaseScene> mCurrentScene;
 };

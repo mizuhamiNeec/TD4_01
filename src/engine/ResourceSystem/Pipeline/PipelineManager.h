@@ -19,8 +19,10 @@ public:
 	static void Shutdown();
 
 private:
-	static std::unordered_map<std::string, Microsoft::WRL::ComPtr<
-		                          ID3D12PipelineState>> mPipelineStates;
-	static std::unordered_map<size_t, Microsoft::WRL::ComPtr<
-		                          ID3D12PipelineState>> mPipelineStatesByHash;
+	static std::unordered_map<
+		std::string, Microsoft::WRL::ComPtr<ID3D12PipelineState>
+	> mPipelineStates;
+	static std::unordered_map<
+		size_t, Microsoft::WRL::ComPtr<ID3D12PipelineState>
+	> mPipelineStatesByHash;
 };

@@ -26,9 +26,9 @@ public:
 private:
 	D3D12* d3d12_;
 
-	std::unique_ptr<SrvManager>       srvManager_;
-	std::unique_ptr<ShaderManager>    shaderManager_;
-	std::unique_ptr<MaterialManager>  materialManager_;
-	std::unique_ptr<MeshManager>      meshManager_;
-	std::unique_ptr<AnimationManager> animationManager_;
+	std::unique_ptr<SrvManager>       mSrvManager;
+	std::unique_ptr<ShaderManager>    mShaderManager;
+	std::unique_ptr<MaterialManager>  mMaterialManager;
+	std::unique_ptr<MeshManager>      mMeshManager;
+	std::unique_ptr<AnimationManager> mAnimationManager;
 };

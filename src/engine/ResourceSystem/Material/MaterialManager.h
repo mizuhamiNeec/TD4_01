@@ -17,5 +17,5 @@ public:
 private:
 	std::string GenerateMaterialKey(const std::string& materialName,
 	                                const std::string& meshName = "") const;
-	std::unordered_map<std::string, std::unique_ptr<Material>> materials_;
+	std::unordered_map<std::string, std::unique_ptr<Material>> mMaterials;
 };

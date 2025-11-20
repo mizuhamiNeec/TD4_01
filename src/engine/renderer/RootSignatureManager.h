@@ -21,8 +21,8 @@ public:
 	);
 
 	ID3D12RootSignature* Get(const std::string& name) const {
-		auto it = rootSignatures_.find(name);
-		if (it != rootSignatures_.end()) {
+		auto it = mRootSignatures.find(name);
+		if (it != mRootSignatures.end()) {
 			return it->second.Get();
 		}
 		return nullptr;
@@ -31,7 +31,7 @@ public:
 	void Shutdown();
 
 private:
-	ID3D12Device* device_;
+	ID3D12Device* mDevice;
 	std::unordered_map<std::string, ComPtr<ID3D12RootSignature>>
-	rootSignatures_;
+	mRootSignatures;
 };

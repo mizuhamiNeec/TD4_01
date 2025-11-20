@@ -6,15 +6,15 @@
 
 /// @brief コンストラクタ
 Audio::Audio() {
-	audioBuffer_ = {};
+	mAudioBuffer = {};
 }
 
 /// @brief デストラクタ
 Audio::~Audio() {
-	if (sourceVoice_) {
-		sourceVoice_->Stop();
-		sourceVoice_->DestroyVoice();
-		sourceVoice_ = nullptr;
+	if (mSourceVoice) {
+		mSourceVoice->Stop();
+		mSourceVoice->DestroyVoice();
+		mSourceVoice = nullptr;
 	}
 }
 
@@ -43,7 +43,7 @@ bool Audio::LoadFromFile(IXAudio2* xAudio2, const char* filename) {
 	}
 
 	// ソースボイスの生成（詳細なエラーハンドリング）
-	HRESULT hr = xAudio2->CreateSourceVoice(&sourceVoice_, &soundData.wfex);
+	HRESULT hr = xAudio2->CreateSourceVoice(&mSourceVoice, &soundData.wfex);
 	if (FAILED(hr)) {
 		switch (hr) {
 		case XAUDIO2_E_INVALID_CALL:
@@ -62,12 +62,12 @@ bool Audio::LoadFromFile(IXAudio2* xAudio2, const char* filename) {
 	}
 
 	// バッファの設定
-	audioBuffer_.pAudioData = soundData.pBuffer;
-	audioBuffer_.AudioBytes = soundData.bufferSize;
-	audioBuffer_.Flags      = XAUDIO2_END_OF_STREAM;
+	mAudioBuffer.pAudioData = soundData.pBuffer;
+	mAudioBuffer.AudioBytes = soundData.bufferSize;
+	mAudioBuffer.Flags      = XAUDIO2_END_OF_STREAM;
 
 	// データを保持
-	audioData_ = soundData;
+	mAudioData = soundData;
 
 	return true;
 }
@@ -75,63 +75,63 @@ bool Audio::LoadFromFile(IXAudio2* xAudio2, const char* filename) {
 /// @brief オーディオの再生
 /// @param isLoop ループ再生するかどうか
 void Audio::Play(const bool isLoop) {
-	if (!sourceVoice_) {
+	if (!mSourceVoice) {
 		return;
 	}
 
 	Stop();
-	audioBuffer_.LoopCount = isLoop ? XAUDIO2_LOOP_INFINITE : 0;
-	sourceVoice_->SubmitSourceBuffer(&audioBuffer_);
-	sourceVoice_->Start();
-	isPlaying_ = true;
+	mAudioBuffer.LoopCount = isLoop ? XAUDIO2_LOOP_INFINITE : 0;
+	mSourceVoice->SubmitSourceBuffer(&mAudioBuffer);
+	mSourceVoice->Start();
+	mIsPlaying = true;
 }
 
 /// @brief オーディオの停止
 void Audio::Stop() {
-	if (!sourceVoice_) {
+	if (!mSourceVoice) {
 		return;
 	}
-	sourceVoice_->Stop();
-	sourceVoice_->FlushSourceBuffers();
-	isPlaying_ = false;
+	mSourceVoice->Stop();
+	mSourceVoice->FlushSourceBuffers();
+	mIsPlaying = false;
 }
 
 /// @brief オーディオの一時停止
 void Audio::Pause() {
-	if (!sourceVoice_ || !isPlaying_) {
+	if (!mSourceVoice || !mIsPlaying) {
 		return;
 	}
-	sourceVoice_->Stop();
-	isPlaying_ = false;
+	mSourceVoice->Stop();
+	mIsPlaying = false;
 }
 
 /// @brief オーディオの再開
 void Audio::Resume() {
-	if (!sourceVoice_ || isPlaying_) {
+	if (!mSourceVoice || mIsPlaying) {
 		return;
 	}
-	sourceVoice_->Start();
-	isPlaying_ = true;
+	mSourceVoice->Start();
+	mIsPlaying = true;
 }
 
 /// @brief ボリュームの設定
 /// @param volume ボリューム (0.0f から 1.0f)
 void Audio::SetVolume(float volume) const {
-	if (!sourceVoice_) {
+	if (!mSourceVoice) {
 		return;
 	}
 	// 0.0f から 1.0f の範囲にクランプ
 	volume = std::clamp(volume, 0.0f, 1.0f);
-	sourceVoice_->SetVolume(volume);
+	mSourceVoice->SetVolume(volume);
 }
 
 /// @brief ピッチの設定
 /// @param pitch ピッチ (1.0f が標準、2.0f が2倍速、0.5f が半分の速さ)
 void Audio::SetPitch(float pitch) const {
-	if (!sourceVoice_) {
+	if (!mSourceVoice) {
 		return;
 	}
-	sourceVoice_->SetFrequencyRatio(pitch);
+	mSourceVoice->SetFrequencyRatio(pitch);
 }
 
 /// @brief WAVファイルの読み込み

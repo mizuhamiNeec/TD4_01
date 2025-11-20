@@ -37,15 +37,15 @@ public:
 		const bool&       bMax,
 		const float&      fMax
 	) :
-		name_(std::move(name)),
-		value_(defaultValue),
-		defaultValue_(defaultValue),
-		helpString_(std::move(description)),
-		flags_(flags),
-		bMin_(bMin),
-		fMin_(fMin),
-		bMax_(bMax),
-		fMax_(fMax) {
+		mName(std::move(name)),
+		mValue(defaultValue),
+		mDefaultValue(defaultValue),
+		mHelpString(std::move(description)),
+		mFlags(flags),
+		mBMin(bMin),
+		mFMin(fMin),
+		mBMax(bMax),
+		mFMax(fMax) {
 	}
 
 	/// @brief 型を文字列として取得します
@@ -69,33 +69,33 @@ public:
 	/// @return 文字列としての値
 	[[nodiscard]] std::string GetValueAsString() const override {
 		if constexpr (std::is_same_v<T, std::string>) {
-			return value_;
+			return mValue;
 		} else if constexpr (std::is_same_v<T, Vec3>) {
-			return std::format("{} {} {}", value_.x, value_.y, value_.z);
+			return std::format("{} {} {}", mValue.x, mValue.y, mValue.z);
 		} else {
-			return std::to_string(value_);
+			return std::to_string(mValue);
 		}
 	}
 
 	/// @brief コンソール変数の名前を取得します
 	/// @return コンソール変数の名前
 	[[nodiscard]] const std::string& GetName() const override {
-		return name_;
+		return mName;
 	}
 
 	/// @brief コンソール変数のヘルプテキストを取得します
 	/// @return ヘルプテキスト
 	[[nodiscard]] const std::string& GetHelp() const override {
-		return helpString_;
+		return mHelpString;
 	}
 
 	/// @brief 値をfloat型として取得します
 	/// @return float型の値
 	[[nodiscard]] float GetValueAsFloat() const override {
 		if constexpr (std::is_same_v<T, float>) {
-			return value_;
+			return mValue;
 		} else if constexpr (std::is_arithmetic_v<T>) {
-			return static_cast<float>(value_);
+			return static_cast<float>(mValue);
 		} else {
 			throw std::runtime_error(
 				"Unsupported type for conversion to float");
@@ -106,9 +106,9 @@ public:
 	/// @return double型の値
 	[[nodiscard]] double GetValueAsDouble() const override {
 		if constexpr (std::is_same_v<T, double>) {
-			return value_;
+			return mValue;
 		} else if constexpr (std::is_arithmetic_v<T>) {
-			return static_cast<double>(value_);
+			return static_cast<double>(mValue);
 		} else {
 			throw std::runtime_error(
 				"Unsupported type for conversion to double");
@@ -119,9 +119,9 @@ public:
 	/// @return int型の値
 	[[nodiscard]] int GetValueAsInt() const override {
 		if constexpr (std::is_same_v<T, int>) {
-			return value_;
+			return mValue;
 		} else if constexpr (std::is_arithmetic_v<T>) {
-			return static_cast<int>(value_);
+			return static_cast<int>(mValue);
 		} else {
 			throw std::runtime_error("Unsupported type for conversion to int");
 		}
@@ -131,9 +131,9 @@ public:
 	/// @return bool型の値
 	[[nodiscard]] bool GetValueAsBool() const override {
 		if constexpr (std::is_same_v<T, bool>) {
-			return value_;
+			return mValue;
 		} else if constexpr (std::is_arithmetic_v<T>) {
-			return value_ != 0;
+			return mValue != 0;
 		} else {
 			throw std::runtime_error("Unsupported type for conversion to bool");
 		}
@@ -143,7 +143,7 @@ public:
 	/// @return Vec3型の値
 	[[nodiscard]] Vec3 GetValueAsVec3() const override {
 		if constexpr (std::is_same_v<T, Vec3>) {
-			return value_;
+			return mValue;
 		} else {
 			throw std::runtime_error("Unsupported type for conversion to Vec3");
 		}
@@ -237,26 +237,26 @@ public:
 
 	/// @brief Vec3型の値から設定します
 	[[nodiscard]] ConVarFlags GetFlags() const {
-		return flags_;
+		return mFlags;
 	}
 
 	/// @brief 値を取得します
 	T GetValue() const {
-		return value_;
+		return mValue;
 	}
 
 	/// @brief 値を設定します
 	/// @param newValue 設定する新しい値
 	void SetValue(const T& newValue) {
-		value_ = newValue;
+		mValue = newValue;
 
-		if (HasFlags(flags_, ConVarFlags::ConVarFlags_Notify)) {
+		if (HasFlags(mFlags, ConVarFlags::ConVarFlags_Notify)) {
 			// プレイヤーに通知する
 			Console::Print(
 				std::format(
 					"{}のCVAR 値 '{}' を {} に変更しました\n",
 					"クライアント",
-					name_,
+					mName,
 					GetValueAsString()
 				),
 				kConTextColorWarning,
@@ -268,16 +268,16 @@ public:
 	/// @brief 値をトグル（切り替え）します
 	void Toggle() override {
 		if constexpr (std::is_same_v<T, bool>) {
-			SetValue(!value_);
+			SetValue(!mValue);
 		} else if constexpr (std::is_same_v<T, int>) {
-			if (value_ == 0) {
-				value_ = 1;
+			if (mValue == 0) {
+				mValue = 1;
 			} else {
-				value_ = 0;
+				mValue = 0;
 			}
 		} else {
 			Console::Print(
-				std::format("{} : CVAR は bool 型か int 型でなければなりません\n", name_),
+				std::format("{} : CVAR は bool 型か int 型でなければなりません\n", mName),
 				kConTextColorError,
 				Channel::Console
 			);
@@ -288,18 +288,18 @@ public:
 	void DrawImGui() override {
 #ifdef _DEBUG
 		if constexpr (std::is_same_v<T, bool>) {
-			ImGui::Checkbox(name_.c_str(), &value_);
+			ImGui::Checkbox(mName.c_str(), &mValue);
 		} else if constexpr (std::is_same_v<T, int>) {
-			ImGui::DragInt(name_.c_str(), &value_);
+			ImGui::DragInt(mName.c_str(), &mValue);
 		} else if constexpr (std::is_same_v<T, float>) {
-			ImGui::DragFloat(name_.c_str(), &value_);
+			ImGui::DragFloat(mName.c_str(), &mValue);
 		} else if constexpr (std::is_same_v<T, Vec3>) {
-			ImGui::DragFloat3(name_.c_str(), &value_.x);
+			ImGui::DragFloat3(mName.c_str(), &mValue.x);
 		} else if constexpr (std::is_same_v<T, std::string>) {
 			char buffer[256];
-			strncpy_s(buffer, value_.c_str(), sizeof(buffer));
-			if (ImGui::InputText(name_.c_str(), buffer, sizeof(buffer))) {
-				value_ = buffer;
+			strncpy_s(buffer, mValue.c_str(), sizeof(buffer));
+			if (ImGui::InputText(mName.c_str(), buffer, sizeof(buffer))) {
+				mValue = buffer;
 			}
 		} else {
 			//ImGui::InputText(name_.c_str(), &value_);
@@ -311,20 +311,20 @@ private:
 	/// @brief 型変換エラーメッセージを表示します
 	void PrintConvertErrorMessage() {
 		Console::Print(
-			std::format("{} : CVAR を {} 型へ変換できませんでした\n", name_,
+			std::format("{} : CVAR を {} 型へ変換できませんでした\n", mName,
 			            GetTypeAsString()),
 			kConTextColorError,
 			Channel::General
 		);
 	}
 
-	std::string name_;
-	T           value_;
-	T           defaultValue_;
-	std::string helpString_;
-	ConVarFlags flags_;
-	bool        bMin_ = false;
-	float       fMin_ = 0.0f;
-	bool        bMax_ = false;
-	float       fMax_ = 0.0f;
+	std::string mName;
+	T           mValue;
+	T           mDefaultValue;
+	std::string mHelpString;
+	ConVarFlags mFlags;
+	bool        mBMin = false;
+	float       mFMin = 0.0f;
+	bool        mBMax = false;
+	float       mFMax = 0.0f;
 };

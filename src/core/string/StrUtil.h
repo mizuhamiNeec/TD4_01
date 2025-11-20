@@ -78,4 +78,9 @@ namespace StrUtil {
 	/// @param string 対象文字列
 	/// @return トリムされた文字列
 	std::string TrimSpaces(const std::string& string);
+
+	/// @brief ブール文字列かを判定する
+	/// @param str 判定する文字列
+	/// @return ブール文字列の場合true
+	bool CheckBoolString(std::string str);
 }

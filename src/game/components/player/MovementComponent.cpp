@@ -1,31 +1,17 @@
 #include "MovementComponent.h"
 
 #include <algorithm>
-#include <cmath>
 #include <array>
+#include <cmath>
+
 #include <engine/Camera/CameraManager.h>
 #include <engine/Components/Camera/CameraComponent.h>
+#include <engine/Components/ColliderComponent/AABBCollider.h>
 #include <engine/Components/Transform/SceneComponent.h>
+#include <engine/Entity/Entity.h>
 #include <engine/ImGui/ImGuiWidgets.h>
+#include <engine/Input/InputSystem.h>
 #include <engine/OldConsole/ConVarManager.h>
-
-#include "engine/Components/ColliderComponent/AABBCollider.h"
-#include "engine/Entity/Entity.h"
-#include "engine/Input/InputSystem.h"
-#include "MovementComponent.h"
-
-#include <algorithm>
-#include <cmath>
-#include <array>
-#include <engine/Camera/CameraManager.h>
-#include <engine/Components/Camera/CameraComponent.h>
-#include <engine/Components/Transform/SceneComponent.h>
-#include <engine/ImGui/ImGuiWidgets.h>
-#include <engine/OldConsole/ConVarManager.h>
-
-#include "engine/Components/ColliderComponent/AABBCollider.h"
-#include "engine/Entity/Entity.h"
-#include "engine/Input/InputSystem.h"
 
 static constexpr std::string_view kChannel = "MovementComponent";
 
@@ -57,11 +43,12 @@ void MovementComponent::OnAttach(Entity& owner) {
 }
 
 /// @brief 初期化
-/// @param uphysics UPhysicsエンジンポインタ
+/// @param uPhysics UPhysicsエンジンポインタ
 /// @param md 移動データ
-void MovementComponent::Init(UPhysics::Engine*   uphysics,
-                             const MovementData& md) {
-	mUPhysicsEngine             = uphysics;
+void MovementComponent::Init(
+	UPhysics::Engine* uPhysics, const MovementData& md
+) {
+	mUPhysicsEngine             = uPhysics;
 	mData                       = md;
 	mData.velocity              = Vec3::zero;
 	mData.state                 = MOVEMENT_STATE::AIR;
@@ -257,8 +244,7 @@ void MovementComponent::ProcessMovement(const float dt) {
 		}
 
 		Msg(
-			kChannel,
-			"Hit {}",
+			kChannel, "Hit {}",
 			surfaceHit.hitEntity ? surfaceHit.hitEntity->GetName() : "None"
 		);
 	} else {
@@ -277,7 +263,8 @@ void MovementComponent::ProcessMovement(const float dt) {
 		Unnamed::Box test    = {
 			.center = posFeet + Vec3::up * Math::HtoM(targetHU * 0.5f),
 			.halfSize = Math::HtoM({
-				mData.currentWidthHu * 0.5f, targetHU * 0.5f,
+				mData.currentWidthHu * 0.5f,
+				targetHU * 0.5f,
 				mData.currentWidthHu * 0.5f
 			})
 		};
@@ -318,15 +305,6 @@ void MovementComponent::ProcessMovement(const float dt) {
 
 		// スライディング中のジャンプでスライディング終了
 		if (mData.isSliding) {
-			// // スライドホップ時の速度キャップを適用
-			// Vec3 velHorz          = mData.velocity;
-			// velHorz.y             = 0;
-			// const float horzSpeed = velHorz.Length();
-			// const float speedCapM = Math::HtoM(kSlideHopSpeedCap);
-			// if (horzSpeed > speedCapM) {
-			// 	mData.velocity.x *= (speedCapM / horzSpeed);
-			// 	mData.velocity.z *= (speedCapM / horzSpeed);
-			// }
 			EndSlide();
 		}
 	}
@@ -1288,7 +1266,7 @@ void MovementComponent::Slide(
 	// 通常時より低い摩擦を適用
 	Friction(kSlideFriction, dt);
 
-	// ちょっとだけ方向転換できる
+	// accel値は低めに
 	if (!mData.wishDirection.IsZero()) {
 		Vec3 wishDir = mData.wishDirection;
 		wishDir.y    = 0;

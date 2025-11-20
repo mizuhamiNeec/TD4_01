@@ -95,7 +95,7 @@ struct MovementData {
 class MovementComponent : public Component {
 public:
 	void OnAttach(Entity& owner) override;
-	void Init(UPhysics::Engine* uphysics, const MovementData& md);
+	void Init(UPhysics::Engine* uPhysics, const MovementData& md);
 
 	void PrePhysics(float dt) override;
 	void Update(float dt) override;

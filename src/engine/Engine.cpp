@@ -43,6 +43,19 @@ namespace Unnamed {
 	/// @return 成功したらtrueを返す
 	bool Engine::Init() {
 		//---------------------------------------------------------------------
+		// Purpose: 旧エンジン
+		//---------------------------------------------------------------------
+#ifdef _DEBUG
+		ConVarManager::RegisterConVar<bool>(
+			"verbose", true, "Enable verbose logging"
+		);
+#else
+		ConVarManager::RegisterConVar<bool>(
+			"verbose", false, "Enable verbose logging"
+		);
+#endif
+
+		//---------------------------------------------------------------------
 		// Purpose: 新エンジン
 		//---------------------------------------------------------------------
 		mSubsystems.emplace_back(std::make_unique<ConsoleSystem>());
@@ -65,22 +78,14 @@ namespace Unnamed {
 		mConsoleSystem = ServiceLocator::Get<ConsoleSystem>();
 		mTimeSystem    = ServiceLocator::Get<TimeSystem>();
 
-		//---------------------------------------------------------------------
-		// Purpose: 旧エンジン
-		//---------------------------------------------------------------------
-#ifdef _DEBUG
-		ConVarManager::RegisterConVar<bool>(
-			"verbose", true, "Enable verbose logging"
-		);
-#else
-		ConVarManager::RegisterConVar<bool>(
-			"verbose", false, "Enable verbose logging"
-		);
-#endif
 		Msg(
 			"CommandLine", "command line arguments:\n{}",
 			StrUtil::ToString(GetCommandLineW())
 		);
+
+		//---------------------------------------------------------------------
+		// Purpose: 旧エンジン
+		//---------------------------------------------------------------------
 		ConVarManager::RegisterConVar<std::string>(
 			"launchargs", StrUtil::ToString(GetCommandLineW()),
 			"Command line arguments"

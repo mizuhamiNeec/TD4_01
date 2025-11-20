@@ -14,8 +14,13 @@
 #include <engine/subsystem/interface/ServiceLocator.h>
 #include <engine/subsystem/time/SystemClock.h>
 
+#include "ConsoleScriptParser.h"
+#include "ConVarWriter.h"
+
 namespace Unnamed {
-	static constexpr std::string_view kChannel = "Console";
+	static constexpr std::string_view kChannel     = "Console";
+	static constexpr std::string_view kUserCfgPath =
+		"./content/core/cfg/user.cfg";
 
 	/// @brief EXEC_FLAGのOR演算子オーバーロード
 	/// @param lhs 左辺
@@ -48,6 +53,7 @@ namespace Unnamed {
 
 		RegisterBuiltInCommands();
 		RegisterBuiltInConVars();
+		ConsoleScriptParser parser(kUserCfgPath);
 
 		return true;
 	}
@@ -62,6 +68,7 @@ namespace Unnamed {
 
 	/// @brief コンソールシステムのシャットダウン
 	void ConsoleSystem::Shutdown() {
+		ConVarWriter writer(kUserCfgPath);
 	}
 
 	/// @brief コンソールシステムの名前を取得します
@@ -70,8 +77,8 @@ namespace Unnamed {
 		return "Console";
 	}
 
-	RingBuffer<ConsoleLogText, kConsoleBufferSize>& ConsoleSystem::
-	GetLogBuffer() {
+	RingBuffer<ConsoleLogText, kConsoleBufferSize>&
+	ConsoleSystem::GetLogBuffer() {
 		return mLogBuffer;
 	}
 
@@ -216,9 +223,7 @@ namespace Unnamed {
 						if (auto* cBool = dynamic_cast<UnnamedConVar<bool>*>(
 							var)) {
 							cBool->SetValue(
-								args[0] == "true" ||
-								args[0] == "1" ||
-								args[0] == "on"
+								StrUtil::CheckBoolString(args[0])
 							);
 						}
 						break;
@@ -248,7 +253,15 @@ namespace Unnamed {
 							auto* cs = dynamic_cast<UnnamedConVar<std::string>*>
 								(var)
 						) {
-							cs->SetValue(args[0]);
+							// 空白対応
+							std::string combined;
+							for (size_t i = 0; i < args.size(); ++i) {
+								combined += args[i];
+								if (i != args.size() - 1) {
+									combined += " ";
+								}
+							}
+							cs->SetValue(combined);
 						}
 						break;
 					case CVAR_TYPE::VEC3:
@@ -283,6 +296,11 @@ namespace Unnamed {
 				// }
 			}
 		}
+	}
+
+	std::unordered_map<std::string, UnnamedConVarBase*>
+	ConsoleSystem::GetConVars() {
+		return mConVars;
 	}
 
 	UnnamedConVarBase* ConsoleSystem::GetConVar(std::string_view name) {

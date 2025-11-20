@@ -67,6 +67,9 @@ namespace Unnamed {
 			EXEC_FLAG          flag = EXEC_FLAG::FROM_ENGINE
 		);
 
+		[[nodiscard]]
+		std::unordered_map<std::string, UnnamedConVarBase*> GetConVars();
+
 		UnnamedConVarBase* GetConVar(std::string_view name);
 
 		static enum class CVAR_TYPE GetConVarType(UnnamedConVarBase* var);

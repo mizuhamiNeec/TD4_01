@@ -21,7 +21,7 @@ ImGuiManager::ImGuiManager(D3D12*      renderer,
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 
-	ImGuiIO& io = ImGui::GetIO();
+	ImGuiIO& io    = ImGui::GetIO();
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 	io.ConfigFlags |= ImGuiConfigFlags_IsSRGB;
@@ -40,14 +40,14 @@ ImGuiManager::ImGuiManager(D3D12*      renderer,
 
 	// Ascii
 	io.Fonts->AddFontFromFileTTF(
-		R"(.\content\core\fonts\JetBrainsMono.ttf)", 16.0f, &imFontConfig,
+		R"(.\content\core\fonts\JetBrainsMono.ttf)", 14.0f, &imFontConfig,
 		io.Fonts->GetGlyphRangesDefault()
 	);
 	imFontConfig.MergeMode = true;
 
 	// 日本語フォールバック
 	io.Fonts->AddFontFromFileTTF(
-		R"(.\content\core\fonts\NotoSansJP.ttf)", 16.0f, &imFontConfig,
+		R"(.\content\core\fonts\NotoSansJP.ttf)", 14.0f, &imFontConfig,
 		GetGlyphRangesJapanese()
 	);
 
@@ -200,38 +200,66 @@ void ImGuiManager::StyleColorsDark() {
 	colors[ImGuiCol_NavWindowingDimBg]     = ImVec4(0.17f, 0.17f, 0.17f, 0.86f);
 	colors[ImGuiCol_ModalWindowDimBg]      = ImVec4(0.17f, 0.17f, 0.17f, 0.86f);
 
-	style.GrabMinSize   = 8.0f;
-	style.ScrollbarSize = 16.0f;
+	// Main
+	style.WindowPadding    = ImVec2(4, 4);
+	style.FramePadding     = ImVec2(4, 4);
+	style.ItemSpacing      = ImVec2(6, 6);
+	style.ItemInnerSpacing = ImVec2(2, 2);
+	style.IndentSpacing    = 20.0f;
+	style.GrabMinSize      = 4.0f;
 
-	// 角丸
-	style.WindowRounding    = 4.0f;
-	style.FrameRounding     = 4.0f;
-	style.GrabRounding      = 4.0f;
-	style.ScrollbarRounding = 8.0f;
-	style.TabRounding       = 4.0f;
-
-	// ボーダー
+	// Borders
 	style.WindowBorderSize = 1.0f;
+	style.ChildBorderSize  = 1.0f;
+	style.PopupBorderSize  = 1.0f;
 	style.FrameBorderSize  = 0.0f;
-	style.TabBarBorderSize = 2.0f;
 
-	// パディング
-	style.FramePadding  = ImVec2(6, 6);
-	style.WindowPadding = ImVec2(4, 4);
+	// Rounding
+	style.WindowRounding = 4.0f;
+	style.ChildRounding  = 2.0f;
+	style.FrameRounding  = 4.0f;
+	style.PopupRounding  = 8.0f;
+	style.GrabRounding   = 12.0f;
 
-	// セル
-	style.CellPadding = ImVec2(2, 2);
+	// Scrollbar
+	style.ScrollbarSize     = 14.0f;
+	style.ScrollbarRounding = 8.0f;
+	style.ScrollbarPadding  = 0.0f;
 
-	// アイテムの間隔
-	style.ItemSpacing = ImVec2(8, 8);
+	// Tabs
+	style.TabBorderSize      = 1.0f;
+	style.TabBarBorderSize   = 1.0f;
+	style.TabBarOverlineSize = 2.0f;
+	style.TabMinWidthBase    = 1.0f;
+	style.TabMinWidthShrink  = 80.0f;
+	style.TabRounding        = 4.0f;
 
-	// ウィンドウタイトルの配置
-	style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
+	// Tables
+	style.CellPadding             = ImVec2(2, 2);
+	style.TableAngledHeadersAngle = 35.0f;
 
+	// Trees
+	style.TreeLinesFlags    = ImGuiTreeNodeFlags_DrawLinesToNodes;
+	style.TreeLinesSize     = 1.0f;
+	style.TreeLinesRounding = 0.0f;
+
+	// Windows
+	style.WindowTitleAlign         = ImVec2(0.5f, 0.5f);
+	style.WindowBorderHoverPadding = 4.0f;
+	style.WindowMenuButtonPosition = ImGuiDir_Left;
+
+	// Widgets
+	style.ColorButtonPosition     = ImGuiDir_Right;
+	style.ButtonTextAlign         = ImVec2(0.5f, 0.5f);
+	style.SelectableTextAlign     = ImVec2(0.0f, 0.0f);
 	style.SeparatorTextBorderSize = 2.0f;
+	style.ImageBorderSize         = 0.0f;
 
-	// アクティブなタブのオーバーラインA
-	style.TabBarOverlineSize = 1.5f;
+	// Docking
+	style.DockingSeparatorSize = 3.0f;
+
+	// Tooltips
+	style.HoverFlagsForTooltipMouse = ImGuiHoveredFlags_DelayNone; // 絶対いらん
 }
 
 /// @brief ImGuiのバックエンドを再作成します。

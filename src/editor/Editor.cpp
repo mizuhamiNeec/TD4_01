@@ -118,42 +118,6 @@ void Editor::Init() {
 
 /// @brief エディターの更新
 void Editor::Update([[maybe_unused]] const float deltaTime) {
-	// // タブの名前
-	// static const char* tabNames[] = {
-	// 	"Test",
-	// 	"いい感じのヘッダー",
-	// 	"Physics",
-	// 	"Audio",
-	// 	"Input"
-	// };
-	// static int selectedTab = 0; // 現在選択中のタブインデックス
-	//
-	// // 縦方向のレイアウトを作成
-	// ImGui::Begin("Vertical Tabs Example");
-	//
-	// // タブ用の列を分割
-	// ImGui::Columns(2, nullptr, false);
-	//
-	// // タブのリスト (左側の列)
-	// ImGui::BeginChild("Tabs", ImVec2(512, 0), true);
-	// for (int i = 0; i < IM_ARRAYSIZE(tabNames); i++) {
-	// 	// ボタンまたは選択可能なアイテムとしてタブを表現
-	// 	if (ImGui::Selectable(
-	// 		(StrUtil::ConvertToUtf8(kIconTerminal) + tabNames[i]).c_str(),
-	// 		selectedTab == i)) {
-	// 		selectedTab = i; // タブを切り替える
-	// 	}
-	// }
-	// ImGui::EndChild();
-	//
-	// // コンテンツ表示エリア (右側の列)
-	// ImGui::NextColumn();
-	// ImGui::BeginChild("Content", ImVec2(0, 0), false);
-	// ImGui::Text("Content for tab: %s", tabNames[selectedTab]);
-	// ImGui::EndChild();
-	//
-	// ImGui::End();
-
 	// インスペクタ
 #ifdef _DEBUG
 	if (ImGui::Begin("Inspector")) {
@@ -318,8 +282,6 @@ void Editor::Update([[maybe_unused]] const float deltaTime) {
 			32.0f
 		);
 
-
-		//		ImGui::SetNextWindowBgAlpha(1.0f);
 		if (
 			ImGui::BeginViewportSideBar(
 				"##TopToolbar",
@@ -392,6 +354,113 @@ void Editor::Update([[maybe_unused]] const float deltaTime) {
 
 			ImGui::End();
 		}
+	}
+
+	if (
+		ImGui::BeginViewportSideBar(
+			"##MainStatusBar",
+			ImGui::GetMainViewport(),
+			ImGuiDir_Down,
+			32.0f,
+			ImGuiWindowFlags_NoScrollbar |
+			ImGuiWindowFlags_NoScrollWithMouse |
+			ImGuiWindowFlags_NoSavedSettings
+		)
+	) {
+		// ステータスバーの幅を取得
+		float statusBarWidth = ImGui::GetWindowWidth();
+
+		// アングルスナップ
+		{
+			//const float windowHeight = ImGui::GetWindowSize().y;
+			const char* items[] = {
+				"0.25°", "0.5°", "1°", "5°", "5.625°", "11.25°", "15°",
+				"22.5°", "30°", "45°", "90°"
+			};
+			static int  itemCurrentIndex = 6;
+			const char* comboLabel       = items[itemCurrentIndex];
+
+			ImGui::Text("Angle: ");
+
+			ImGui::SameLine();
+
+			// // 垂直中央に配置
+			// float comboHeight = ImGui::GetFrameHeight();
+			// float offsetY     = (windowHeight - comboHeight) * 0.5f;
+			// ImGui::SetCursorPosY(offsetY);
+
+			// コンボボックスの幅をステータスバーの幅に合わせて調整
+			ImGui::PushItemWidth(statusBarWidth * 0.2f);
+			if (ImGui::BeginCombo("##angle", comboLabel)) {
+				for (int n = 0; n < IM_ARRAYSIZE(items); ++n) {
+					const bool isSelected = (itemCurrentIndex == n);
+					if (ImGui::Selectable(items[n], isSelected)) {
+						itemCurrentIndex = n;
+						mAngleSnap       = std::stof(
+							items[itemCurrentIndex]);
+					}
+					if (isSelected) {
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				ImGui::EndCombo();
+			}
+			ImGui::PopItemWidth();
+		}
+
+		ImGui::SameLine();
+
+		// グリッドスナップ
+		{
+			const char* items[] = {
+				"0.125", "0.25", "0.5",
+				"1", "2", "4", "8",
+				"16", "32", "64", "128",
+				"256", "512", "1024", "2048"
+			};
+			static int  itemCurrentIndex = 9;
+			const char* comboLabel       = items[itemCurrentIndex];
+			ImGui::Text("Grid: ");
+
+			ImGui::SameLine();
+
+			// コンボボックスの幅をステータスバーの幅に合わせて調整
+			ImGui::PushItemWidth(statusBarWidth * 0.2f);
+			ImGui::PushID("GridCombo"); // IDの衝突を避けるためにプッシュ
+
+			if (ImGui::BeginCombo("##grid", comboLabel)) {
+				for (int n = 0; n < IM_ARRAYSIZE(items); ++n) {
+					const bool isSelected = (itemCurrentIndex == n);
+					if (ImGui::Selectable(items[n], isSelected)) {
+						itemCurrentIndex = n;
+						// 選択された文字列を浮動小数点数に変換してgridSize_に設定
+						mGridSize = std::stof(items[itemCurrentIndex]);
+					}
+					if (isSelected) {
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				ImGui::EndCombo();
+			}
+
+			// コンボボックスにマウスオーバーしている時にホイールで操作
+			if (ImGui::IsItemHovered()) {
+				float wheel = ImGui::GetIO().MouseWheel;
+				if (wheel != 0.0f) {
+					itemCurrentIndex -= static_cast<int>(wheel);
+					itemCurrentIndex = std::clamp(
+						itemCurrentIndex, 0, IM_ARRAYSIZE(items) - 1);
+					// 選択された文字列を浮動小数点数に変換してgridSize_に設定
+					mGridSize = std::stof(items[itemCurrentIndex]);
+				}
+			}
+
+			ImGui::PopID();
+			ImGui::PopItemWidth();
+		}
+		
+		  
+		ImGui::End();
 	}
 
 	// 左側のツールバー
@@ -482,114 +551,6 @@ void Editor::Update([[maybe_unused]] const float deltaTime) {
 			}
 			ImGui::End();
 		}
-	}
-
-	if (
-		ImGui::BeginViewportSideBar(
-			"##MainStatusBar",
-			ImGui::GetMainViewport(),
-			ImGuiDir_Down,
-			0.0f,
-			ImGuiWindowFlags_NoScrollbar |
-			ImGuiWindowFlags_NoSavedSettings |
-			ImGuiWindowFlags_MenuBar
-		)
-	) {
-		if (ImGui::BeginMenuBar()) {
-			//ImGui::PopStyleVar();
-
-			// ステータスバーの幅を取得
-			float statusBarWidth = ImGui::GetWindowWidth();
-
-			// アングルスナップ
-			{
-				const float windowHeight = ImGui::GetWindowSize().y;
-				const char* items[]      = {
-					"0.25°", "0.5°", "1°", "5°", "5.625°", "11.25°", "15°",
-					"22.5°", "30°", "45°", "90°"
-				};
-				static int  itemCurrentIndex = 6;
-				const char* comboLabel       = items[itemCurrentIndex];
-
-				ImGui::Text("Angle: ");
-
-				// 垂直中央に配置
-				float comboHeight = ImGui::GetFrameHeight();
-				float offsetY     = (windowHeight - comboHeight) * 0.5f;
-				ImGui::SetCursorPosY(offsetY);
-
-				// コンボボックスの幅をステータスバーの幅に合わせて調整
-				ImGui::PushItemWidth(statusBarWidth * 0.2f);
-				if (ImGui::BeginCombo("##angle", comboLabel)) {
-					for (int n = 0; n < IM_ARRAYSIZE(items); ++n) {
-						const bool isSelected = (itemCurrentIndex == n);
-						if (ImGui::Selectable(items[n], isSelected)) {
-							itemCurrentIndex = n;
-							mAngleSnap       = std::stof(
-								items[itemCurrentIndex]);
-						}
-						if (isSelected) {
-							ImGui::SetItemDefaultFocus();
-						}
-					}
-					ImGui::EndCombo();
-				}
-				ImGui::PopItemWidth();
-			}
-
-			// グリッドスナップ
-			{
-				const float windowHeight = ImGui::GetWindowSize().y;
-				const char* items[]      = {
-					"0.125", "0.25", "0.5", "1", "2", "4", "8", "16", "32",
-					"64", "128", "256", "512"
-				};
-				static int  itemCurrentIndex = 9;
-				const char* comboLabel       = items[itemCurrentIndex];
-				ImGui::Text("Grid: ");
-				// 垂直中央に配置
-				float comboHeight = ImGui::GetFrameHeight();
-				float offsetY     = (windowHeight - comboHeight) * 0.5f;
-				ImGui::SetCursorPosY(offsetY);
-
-				// コンボボックスの幅をステータスバーの幅に合わせて調整
-				ImGui::PushItemWidth(statusBarWidth * 0.2f);
-				ImGui::PushID("GridCombo"); // IDの衝突を避けるためにプッシュ
-
-				if (ImGui::BeginCombo("##grid", comboLabel)) {
-					for (int n = 0; n < IM_ARRAYSIZE(items); ++n) {
-						const bool isSelected = (itemCurrentIndex == n);
-						if (ImGui::Selectable(items[n], isSelected)) {
-							itemCurrentIndex = n;
-							// 選択された文字列を浮動小数点数に変換してgridSize_に設定
-							mGridSize = std::stof(items[itemCurrentIndex]);
-						}
-						if (isSelected) {
-							ImGui::SetItemDefaultFocus();
-						}
-					}
-					ImGui::EndCombo();
-				}
-
-				// コンボボックスにマウスオーバーしている時にホイールで操作
-				if (ImGui::IsItemHovered()) {
-					float wheel = ImGui::GetIO().MouseWheel;
-					if (wheel != 0.0f) {
-						itemCurrentIndex -= static_cast<int>(wheel);
-						itemCurrentIndex = std::clamp(
-							itemCurrentIndex, 0, IM_ARRAYSIZE(items) - 1);
-						// 選択された文字列を浮動小数点数に変換してgridSize_に設定
-						mGridSize = std::stof(items[itemCurrentIndex]);
-					}
-				}
-
-				ImGui::PopID();
-				ImGui::PopItemWidth();
-			}
-
-			ImGui::EndMenuBar();
-		}
-		ImGui::End();
 	}
 #endif
 
@@ -893,43 +854,56 @@ void Editor::Update([[maybe_unused]] const float deltaTime) {
 
 	ImGui::ShowDemoWindow();
 
-	// アウトライナウィンドウの開始
+	DrawOutliner();
+
+#endif
+}
+
+/// @brief エディタのレンダリング処理
+void Editor::Render() const {
+	if (auto currentScene = mSceneManager->GetCurrentScene()) {
+		currentScene->Render();
+		mCameraEntity->Render(Unnamed::Engine::GetRenderer()->GetCommandList());
+	}
+}
+
+/// @brief ギズモ操作中かどうかを取得する
+/// @return ギズモ操作中であればtrue、そうでなければfalse
+bool Editor::IsManipulating() {
+	return mIsManipulating;
+}
+
+/// @brief インスペクタウィンドウを描画します
+void Editor::DrawInspector() {
+}
+
+/// @brief アウトライナウィンドウを描画します
+void Editor::DrawOutliner() {
 	if (ImGui::Begin("Outliner")) {
 		if (ImGui::Button("Add Entity")) {
-			mScene->AddEntity(
-				new Entity("New Entity"));
+			mScene->AddEntity(NEW Entity("New Entity"));
 		}
 
-		// テーブルの開始
-		if (ImGui::BeginTable(
-			"OutlinerTable", 3
-			//ImGuiTableFlags_NoBordersInBody |
-			//ImGuiTableFlags_SizingFixedFit 
-			// ImGuiTableFlags_RowBg |
-			// ImGuiTableFlags_BordersInnerH 
-		)) {
+		// なにかと便利なのでテーブルで表示
+		if (ImGui::BeginTable("OutlinerTable", 3)) {
 			// カラムの設定
 			ImGui::TableSetupColumn(
 				"Name",
 				ImGuiTableColumnFlags_NoHide |
-				ImGuiTableColumnFlags_WidthStretch);
-			ImGui::TableSetupColumn("Visible", ImGuiTableColumnFlags_WidthFixed,
-			                        30.0f);
-			ImGui::TableSetupColumn("Active", ImGuiTableColumnFlags_WidthFixed,
-			                        38.0f);
+				ImGuiTableColumnFlags_WidthStretch
+			);
+			ImGui::TableSetupColumn(
+				"Visible", ImGuiTableColumnFlags_WidthFixed, 30.0f
+			);
+			ImGui::TableSetupColumn(
+				"Active", ImGuiTableColumnFlags_WidthFixed,
+				38.0f
+			);
 
 			// 再帰的にエンティティを表示する関数
 			std::function<void(Entity*)>
 				drawEntityNode =
 					[&](Entity* entity) {
-					if (!entity) {
-						return;
-					}
-
-					if (entity->GetName().empty()) {
-						return;
-					}
-
 					ImGui::PushID(entity);
 
 					ImGui::TableNextRow();
@@ -991,46 +965,22 @@ void Editor::Update([[maybe_unused]] const float deltaTime) {
 						ImGui::EndPopup();
 					}
 
-
 					// Visible アイコン
-					ImGui::TableNextColumn();
-					bool visible = entity->IsVisible();
+					{
+						ImGui::TableNextColumn();
+						bool visible = entity->IsVisible();
 
-					// アイコンのサイズを一時的に変更
-					ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,
-					                    ImVec2(0, 0));
-					// // アイコン間のスペースを調整
-					// float originalScale     = ImGui::GetFont()->Scale;
-					// ImGui::GetFont()->Scale = 1.2f; // スケールを1.2倍に
-					// ImGui::PushFont(ImGui::GetFont());
-
-					ImGui::PushStyleColor(
-						ImGuiCol_Text,
-						visible ?
-							ImGui::GetStyleColorVec4(ImGuiCol_Text) :
-							ImVec4(0.5f, 0.5f, 0.5f, 0.5f)
-					);
-
-					// アイコンを中央に配置
-					float iconWidth = ImGui::CalcTextSize(
-						StrUtil::ConvertToUtf8(kIconVisibility).c_str()).x;
-					float columnWidth = ImGui::GetColumnWidth();
-					ImGui::SetCursorPosX(
-						ImGui::GetCursorPosX() + (columnWidth - iconWidth) *
-						0.5f);
-
-					if (ImGui::Selectable(
-						StrUtil::ConvertToUtf8(
-							visible ? kIconVisibility : kIconVisibilityOff
-						).c_str(), false,
-						ImGuiSelectableFlags_NoAutoClosePopups
-					)) {
-						entity->SetVisible(!visible);
+						if (ImGuiWidgets::IconButton(
+							StrUtil::ConvertToUtf8(visible ?
+								                       kIconVisibility :
+								                       kIconVisibilityOff
+							).c_str(),
+							nullptr,
+							ImVec2(22.0f, 22.0f), 1.0f
+						)) {
+							entity->SetVisible(!visible);
+						}
 					}
-
-					// スタイルを元に戻す
-					ImGui::PopStyleColor();
-					ImGui::PopStyleVar();
 
 					// Active チェックボックス
 					ImGui::TableNextColumn();
@@ -1087,15 +1037,6 @@ void Editor::Update([[maybe_unused]] const float deltaTime) {
 		}
 	}
 	ImGui::End();
-#endif
-}
-
-/// @brief エディタのレンダリング処理
-void Editor::Render() const {
-	if (auto currentScene = mSceneManager->GetCurrentScene()) {
-		currentScene->Render();
-		mCameraEntity->Render(Unnamed::Engine::GetRenderer()->GetCommandList());
-	}
 }
 
 /// @brief グリッドを描画する

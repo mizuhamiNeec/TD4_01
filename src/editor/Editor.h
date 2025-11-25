@@ -19,11 +19,12 @@ public:
 	void Update(float deltaTime);
 	void Render() const;
 
-	static bool IsManipulating() {
-		return mIsManipulating;
-	}
+	static bool IsManipulating();
 
 private:
+	void DrawInspector();
+	void DrawOutliner();
+
 	static void DrawGrid(
 		float gridSize, float range, const Vec4& color, const Vec4& majorColor,
 		const Vec4& axisColor, const Vec4& minorColor,

@@ -601,8 +601,7 @@ namespace Unnamed {
 				if (i == 2) {
 					continue;
 				}
-				auto& postProcess = mPostChain[i];
-				if (postProcess) {
+				if (auto& postProcess = mPostChain[i]) {
 					postProcess->Update(
 						mTimeSystem->GetGameTime()->DeltaTime<float>());
 				}

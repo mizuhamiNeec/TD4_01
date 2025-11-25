@@ -2,11 +2,10 @@
 
 #include <fstream>
 
+#include <core/string/StrUtil.h>
+
+#include <engine/OldConsole/Console.h>
 #include <engine/subsystem/console/Log.h>
-
-#include "core/string/StrUtil.h"
-
-#include "engine/OldConsole/Console.h"
 
 namespace Unnamed {
 	static constexpr std::string_view kChannel = "ConsoleScriptParser";
@@ -58,7 +57,7 @@ namespace Unnamed {
 			}
 
 			// TODO: とりあえず新旧両方で実行
-			// Console::SubmitCommand(line);
+			Console::SubmitCommand(line);
 			ServiceLocator::Get<ConsoleSystem>()->ExecuteCommand(line);
 		}
 	}

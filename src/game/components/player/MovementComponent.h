@@ -3,6 +3,10 @@
 #include <runtime/core/math/Math.h>
 #include <runtime/physics/core/UPhysics.h>
 
+namespace Unnamed {
+	class ConsoleSystem;
+}
+
 class AABBCollider;
 
 /**
@@ -221,4 +225,5 @@ private:
 	AABBCollider*     mCollider       = nullptr;
 	Unnamed::Box      mHull;
 	MovementData      mData;
+	Unnamed::ConsoleSystem*    mConsoleSystem = nullptr;
 };

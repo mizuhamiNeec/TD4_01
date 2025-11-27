@@ -13,6 +13,8 @@
 #include <engine/Input/InputSystem.h>
 #include <engine/OldConsole/ConVarManager.h>
 
+#include "engine/subsystem/console/concommand/UnnamedConVar.h"
+
 static constexpr std::string_view kChannel = "MovementComponent";
 
 /// @brief コンストラクタ
@@ -39,6 +41,13 @@ void MovementComponent::OnAttach(Entity& owner) {
 
 	if (!mCollider) {
 		Error(kChannel, "AABBColliderを取得できませんでした。");
+	}
+
+	// コンソールを取得
+	mConsoleSystem = ServiceLocator::Get<Unnamed::ConsoleSystem>();
+
+	if (!mConsoleSystem) {
+		Error(kChannel, "ConsoleSystemを取得できませんでした。");
 	}
 }
 
@@ -242,11 +251,6 @@ void MovementComponent::ProcessMovement(const float dt) {
 			oldPos = currentPos;
 			prevRot = currentRot;
 		}
-
-		Msg(
-			kChannel, "Hit {}",
-			surfaceHit.hitEntity ? surfaceHit.hitEntity->GetName() : "None"
-		);
 	} else {
 	}
 
@@ -363,11 +367,15 @@ void MovementComponent::ProcessMovement(const float dt) {
 	// 前フレームのジャンプ入力を保存
 	mData.lastFrameWishJump = mData.wishJump;
 
-	const float g = ConVarManager::GetConVar("sv_gravity")->GetValueAsFloat();
+	const auto gravity = dynamic_cast<Unnamed::UnnamedConVar<float>*>(
+		mConsoleSystem->GetConVar("sv_gravity")
+	);
+	const float gravityValue = static_cast<float>(*gravity);
 
 	if (mData.isWallRunning) {
 		// Wallrun gravity (reduced)
-		mData.velocity.y -= Math::HtoM(g) * kWallrunGravityScale * dt;
+		mData.velocity.y -= Math::HtoM(gravityValue) * kWallrunGravityScale *
+			dt;
 		Wallrun(wishspeed, dt);
 		UpdateWallrun(dt);
 	} else if (mData.isSliding) {
@@ -415,8 +423,11 @@ void MovementComponent::Ground(const float wishspeed, const float dt) {
 	// Y成分は0にして水平移動のみ計算
 	mData.velocity.y = 0.0f;
 
-	const float groundFriction = ConVarManager::GetConVar("sv_friction")->
-		GetValueAsFloat();
+	const auto friction = dynamic_cast<Unnamed::UnnamedConVar<float>*>(
+		mConsoleSystem->GetConVar("sv_friction")
+	);
+
+	const float groundFriction = static_cast<float>(*friction);
 
 	Friction(groundFriction, dt); // 摩擦を適用
 

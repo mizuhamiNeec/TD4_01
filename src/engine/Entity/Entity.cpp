@@ -124,7 +124,7 @@ void Entity::Update(const float deltaTime) {
 
 			ImVec4 textColor = ImGuiUtil::ToImVec4(Vec4::white);
 
-			ImGuiManager::TextOutlined(
+			ImGuiUtil::TextOutlined(
 				drawList,
 				textPos,
 				mName.c_str(),

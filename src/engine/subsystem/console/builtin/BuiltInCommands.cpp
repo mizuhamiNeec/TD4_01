@@ -5,6 +5,7 @@
 #include <engine/subsystem/console/concommand/UnnamedConVar.h>
 #include <engine/subsystem/interface/ServiceLocator.h>
 
+#include "engine/subsystem/console/ConsoleScriptParser.h"
 #include "engine/subsystem/window/Win32/Win32WindowSystem.h"
 
 namespace Unnamed {
@@ -109,6 +110,20 @@ namespace Unnamed {
 				return true;
 			},
 			"Quit the engine."
+		);
+
+		static UnnamedConCommand exec(
+			"exec",
+			[](const std::vector<std::string>& args) {
+				if (args.empty()) {
+					Error(kChannelNone, "Usage: exec <script file path>");
+					return false;
+				}
+
+				ConsoleScriptParser parser(args[0]);
+				return true;
+			},
+			"Execute a console script file."
 		);
 	}
 }

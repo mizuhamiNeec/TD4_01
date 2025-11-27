@@ -1,13 +1,13 @@
+#include <engine/Camera/CameraManager.h>
+#include <engine/Components/Camera/CameraComponent.h>
+#include <engine/Debug/Debug.h>
+#include <engine/ImGui/ImGuiManager.h>
+#include <engine/ImGui/ImGuiUtil.h>
+#include <engine/particle/ParticleManager.h>
 #include <engine/particle/ParticleObject.h>
-
-#include "engine/Camera/CameraManager.h"
-#include "engine/Components/Camera/CameraComponent.h"
-#include "engine/Debug/Debug.h"
-#include "engine/ImGui/ImGuiManager.h"
-#include "engine/particle/ParticleManager.h"
-#include "engine/renderer/D3D12.h"
-#include "engine/renderer/SrvManager.h"
-#include "engine/TextureManager/TexManager.h"
+#include <engine/renderer/D3D12.h>
+#include <engine/renderer/SrvManager.h>
+#include <engine/TextureManager/TexManager.h>
 
 #include <runtime/core/math/Math.h>
 
@@ -89,19 +89,19 @@ void ParticleObject::Update(const float deltaTime) {
 	ImGui::Begin(("Particle" + mTextureFilePath).c_str());
 	ImGui::Text("Particle Instance : %u", mParticles.size());
 
-	ImGuiManager::DragVec3(
+	ImGuiUtil::DragVec3(
 		"position",
 		mEmitter.transform.translate,
 		0.1f,
 		"%.2f"
 	);
-	ImGuiManager::DragVec3(
+	ImGuiUtil::DragVec3(
 		"rotation",
 		mEmitter.transform.rotate,
 		0.1f,
 		"%.2f"
 	);
-	ImGuiManager::DragVec3(
+	ImGuiUtil::DragVec3(
 		"scale",
 		mEmitter.transform.scale,
 		0.1f,

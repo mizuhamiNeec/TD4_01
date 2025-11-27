@@ -977,7 +977,7 @@ void SkeletalMeshRenderer::DrawBoneHierarchy(
 
 					ImVec4 textColor = ImGuiUtil::ToImVec4(Vec4::white);
 
-					ImGuiManager::TextOutlined(
+					ImGuiUtil::TextOutlined(
 						drawList,
 						textPos,
 						node.name.c_str(),

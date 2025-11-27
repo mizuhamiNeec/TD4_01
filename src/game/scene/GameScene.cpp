@@ -104,7 +104,7 @@ void GameScene::Init() {
 	InitializePhysics();
 	InitializeCamera();
 	InitializePlayer();
-	InitializeWorldMesh();
+	//InitializeWorldMesh();
 	InitializeFanMesh();
 	InitializeCameraRoot();
 	InitializeShakeRoot();
@@ -968,13 +968,6 @@ void GameScene::UpdateEntities(float deltaTime) {
 		}
 	}
 
-	// auto* transform = mFanEntity->GetTransform();
-	// Vec3  newPos    = Vec3::right * std::sin(mTimer->FrameCount() * 0.01f) +
-	// 	Vec3::forward * std::cos(mTimer->FrameCount() * 0.01f);
-	// newPos   *= 8.0f;
-	// newPos.y = -10.0f;
-	// transform->SetWorldPos(newPos); // 位置を維持
-
 	// 回転が適用された後に再登録
 	mFanEntity->AddComponent<MeshColliderComponent>();
 	if (mUPhysicsEngine) {
@@ -1062,7 +1055,7 @@ void GameScene::DrawDebugHud(
 			ImDrawList*  drawList = ImGui::GetWindowDrawList();
 			const ImVec2 textPos  = ImGui::GetCursorPos();
 
-			ImGuiManager::TextOutlined(
+			ImGuiUtil::TextOutlined(
 				drawList,
 				textPos,
 				text.c_str(),

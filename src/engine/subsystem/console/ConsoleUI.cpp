@@ -25,7 +25,7 @@ namespace Unnamed {
 	ConsoleUI::ConsoleUI(
 		ConsoleSystem* consoleSystem
 	) : mConsoleSystem(consoleSystem) {
-		bIsImGuiInitialized = false;
+		bIsImGuiInitialized = true;
 	}
 
 	/// @brief コンソールUIを表示します。
@@ -82,9 +82,12 @@ namespace Unnamed {
 				selection.location.line(),
 				selection.location.function_name()
 			);
-			ImGui::Text(
-				bufferInfo.data()
-			);
+
+			const float prevScale = ImGui::GetFontSize();
+			ImGui::SetWindowFontScale(1.75f); // フォント表示倍率を変更
+			ImGui::TextWrapped(bufferInfo.data());
+			ImGui::SetWindowFontScale(prevScale); // 元に戻す
+
 			ImGui::EndChild();
 
 			DrawInputText();
@@ -114,20 +117,27 @@ namespace Unnamed {
 			ImGui::GetFrameHeightWithSpacing() - spacing.y
 		};
 
-		ImGui::InputTextEx(
-			"##Input",
-			nullptr,
-			mInputBuffer,
-			IM_ARRAYSIZE(mInputBuffer),
-			size,
-			kInputTextFlags,
-			reinterpret_cast<ImGuiInputTextCallback>(InputTextCallback)
-		);
+		if (
+			ImGui::InputTextEx(
+				"##Input",
+				nullptr,
+				mInputBuffer,
+				IM_ARRAYSIZE(mInputBuffer),
+				size,
+				kInputTextFlags,
+				reinterpret_cast<ImGuiInputTextCallback>(InputTextCallback)
+			)
+		) {
+			mConsoleSystem->ExecuteCommand(std::string(mInputBuffer));
+			mInputBuffer[0] = '\0';
+		}
 	}
 
 	/// @brief 送信ボタンを描画します。
 	void ConsoleUI::DrawSubmitButton() {
 		if (ImGui::Button(kSubmitButtonText)) {
+			mConsoleSystem->ExecuteCommand(std::string(mInputBuffer));
+			mInputBuffer[0] = '\0';
 		}
 	}
 

@@ -6,6 +6,12 @@ namespace Unnamed {
 	void RegisterBuiltInConVars() {
 		EngineConVar();
 		ClientConVar();
+		ServerConVar();
+		UserConVar();
+
+#ifdef _DEBUG
+		EditorConVar();
+#endif
 	}
 
 	void EngineConVar() {
@@ -26,15 +32,103 @@ namespace Unnamed {
 		);
 	}
 
-	void ClientConVar() {
-		static UnnamedConVar fps_max(
-			"fps_max", 0, FCVAR::ARCHIVE,
-			"Frame rate limiter (0 = unlimited)"
+	void EditorConVar() {
+		static UnnamedConVar ed_gridcolor_r(
+			"ed_gridcolor_r", 0.28f, FCVAR::ARCHIVE,
+			"Editor grid r color."
+		);
+		static UnnamedConVar ed_gridcolor_g(
+			"ed_gridcolor_g", 0.28f, FCVAR::ARCHIVE,
+			"Editor grid g color."
+		);
+		static UnnamedConVar ed_gridcolor_b(
+			"ed_gridcolor_b", 0.28f, FCVAR::ARCHIVE,
+			"Editor grid b color."
 		);
 
+		static UnnamedConVar ed_gridmajorcolor_r(
+			"ed_gridmajorcolor_r", 0.39f, FCVAR::ARCHIVE,
+			"Editor grid major line r color."
+		);
+		static UnnamedConVar ed_gridmajorcolor_g(
+			"ed_gridmajorcolor_g", 0.2f, FCVAR::ARCHIVE,
+			"Editor grid major line g color."
+		);
+		static UnnamedConVar ed_gridmajorcolor_b(
+			"ed_gridmajorcolor_b", 0.02f, FCVAR::ARCHIVE,
+			"Editor grid major line b color."
+		);
+
+		static UnnamedConVar ed_gridaxiscolor_r(
+			"ed_gridaxiscolor_r", 0.0f, FCVAR::ARCHIVE,
+			"Editor grid axis line r color."
+		);
+		static UnnamedConVar ed_gridaxiscolor_g(
+			"ed_gridaxiscolor_g", 0.39f, FCVAR::ARCHIVE,
+			"Editor grid axis line g color."
+		);
+		static UnnamedConVar ed_gridaxiscolor_b(
+			"ed_gridaxiscolor_b", 0.39f, FCVAR::ARCHIVE,
+			"Editor grid axis line b color."
+		);
+
+		static UnnamedConVar ed_gridminorcolor_r(
+			"ed_gridminorcolor_r", 0.39f, FCVAR::ARCHIVE,
+			"Editor grid minor line r color."
+		);
+		static UnnamedConVar ed_gridminorcolor_g(
+			"ed_gridminorcolor_g", 0.39f, FCVAR::ARCHIVE,
+			"Editor grid minor line g color."
+		);
+		static UnnamedConVar ed_gridminorcolor_b(
+			"ed_gridminorcolor_b", 0.39f, FCVAR::ARCHIVE,
+			"Editor grid minor line b color."
+		);
+	}
+
+	void UserConVar() {
+		// Game
 		static UnnamedConVar sensitivity(
 			"sensitivity", 1.0f, FCVAR::ARCHIVE,
 			"Mouse sensitivity."
+		);
+
+		static UnnamedConVar cl_fov(
+			"cl_fov", 90.0f, FCVAR::ARCHIVE,
+			"Player Camera field of view."
+		);
+
+		// Graphics
+		static UnnamedConVar fps_max(
+			"fps_max", 0, FCVAR::ARCHIVE,
+			"Frame rate limiter. 0 = unlimited."
+		);
+
+		static UnnamedConVar r_vsync(
+			"r_vsync", false, FCVAR::ARCHIVE,
+			"Vertical sync"
+		);
+
+		static UnnamedConVar r_gamma(
+			"r_gamma", 2.2f, FCVAR::ARCHIVE,
+			"Gamma correction value."
+		);
+	}
+
+	void ClientConVar() {
+		static UnnamedConVar cl_pitchdown(
+			"cl_pitchdown", 89.0f, FCVAR::CHEAT,
+			"Maximum downward pitch angle."
+		);
+
+		static UnnamedConVar cl_pitchup(
+			"cl_pitchup", 89.0f, FCVAR::CHEAT,
+			"Maximum upward pitch angle."
+		);
+
+		static UnnamedConVar r_mapextents(
+			"r_mapextents", 16384.0f, FCVAR::CHEAT,
+			"Set the max dimension for the map."
 		);
 	}
 

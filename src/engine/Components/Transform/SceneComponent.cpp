@@ -1,7 +1,7 @@
 #include "engine/Components/Transform/SceneComponent.h"
 
-#include "engine/Entity/Entity.h"
-#include "engine/ImGui/ImGuiManager.h"
+#include <engine/ImGui/ImGuiUtil.h>
+#include <engine/Entity/Entity.h>
 
 /// @brief 更新処理
 /// @param deltaTime 前フレームからの経過時間（秒）
@@ -165,7 +165,7 @@ Mat4 SceneComponent::GetWorldMat() const {
 /// @brief ImGuiでインスペクターを描画します。
 void SceneComponent::DrawInspectorImGui() {
 #ifdef _DEBUG
-	ImGuiManager::EditTransform(*this, 0.1f);
+	ImGuiUtil::EditTransform(*this, 0.1f);
 #endif
 }
 

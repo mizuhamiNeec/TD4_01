@@ -168,13 +168,6 @@ namespace UPhysics {
 				triangles.begin(),
 				triangles.end()
 			);
-
-			DevMsg(
-				"UPhysics",
-				"Registered entity '{}' with {} triangles.",
-				subMesh->GetName(),
-				subMesh->GetPolygons().size()
-			);
 		}
 	}
 
@@ -490,8 +483,8 @@ namespace UPhysics {
 									box.halfSize.x, box.halfSize.y,
 									box.halfSize.z
 								}) - penetrationDepth * 0.5f);
-							tmpHit.normal   = separationAxis;
-							tmpHit.triIndex = triIdx;
+							tmpHit.normal    = separationAxis;
+							tmpHit.triIndex  = triIdx;
 							tmpHit.hitEntity = bvh->owner;
 
 							outHits[hitCount] = tmpHit;

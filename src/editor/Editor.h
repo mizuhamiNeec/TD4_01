@@ -22,8 +22,11 @@ public:
 	static bool IsManipulating();
 
 private:
-	void DrawInspector();
+	void DrawInspector() const;
 	void DrawOutliner();
+	void DrawTopBar();
+	void DrawSideBar();
+	void DrawStatusBar();
 
 	static void DrawGrid(
 		float gridSize, float range, const Vec4& color, const Vec4& majorColor,

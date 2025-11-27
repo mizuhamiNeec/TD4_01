@@ -7,6 +7,8 @@
 #include <engine/Components/Base/Component.h>
 #include <engine/Debug/Debug.h>
 #include <engine/ImGui/Icons.h>
+#include <engine/ImGui/ImGuiUtil.h>
+#include <engine/ImGui/ImGuiWidgets.h>
 #include <engine/Input/InputSystem.h>
 #include <engine/OldConsole/ConVarManager.h>
 #include <engine/SceneManager/SceneManager.h>
@@ -14,7 +16,7 @@
 
 #include <runtime/core/math/Math.h>
 
-#include <engine/ImGui/ImGuiWidgets.h>
+#include "engine/subsystem/console/concommand/UnnamedConVar.h"
 
 #ifdef _DEBUG
 #include <imgui_internal.h>
@@ -120,448 +122,68 @@ void Editor::Init() {
 void Editor::Update([[maybe_unused]] const float deltaTime) {
 	// インスペクタ
 #ifdef _DEBUG
-	if (ImGui::Begin("Inspector")) {
-		if (mSelectedEntity) {
-			ImGui::Text("Name: %s", mSelectedEntity->GetName().c_str());
+	DrawInspector();
 
-			mSelectedEntity->GetTransform()->DrawInspectorImGui();
-
-			// コンポーネントの一覧表示と編集
-			const auto& components = mSelectedEntity->GetComponents<
-				Component>();
-			for (const auto& component : components) {
-				if (component) {
-					component->DrawInspectorImGui();
-				}
-			}
-		}
-	}
-	ImGui::End();
-
-	if (ImGui::Begin("World Settings")) {
-		ImGui::Text("Grid Size");
-		ImGui::SliderFloat("##GridSize", &mGridSize, 0.125f, 64.0f, "%.3f",
-		                   ImGuiSliderFlags_Logarithmic);
-		ImGui::Text("Grid Range");
-		ImGui::SliderFloat("##GridRange", &mGridRange, 128.0f, 16384.0f, "%.3f",
-		                   ImGuiSliderFlags_Logarithmic);
-	}
-	ImGui::End();
-#endif
-
-#ifdef _DEBUG
-	{
-		ImGui::Begin("WidgetsTest");
-
-		ImGui::BeginGroup();
-		ImGui::Text("Hello there");
-		ImGui::Button("Button Inside");
-		static Vec3 vec3(0.0f, 0.0f, 0.0f);
-		ImGuiWidgets::DragVec3("Vec3", vec3, Vec3::zero, 0.1f, "%.2f");
-		ImGui::EndGroup();
-
-		ImGui::End();
-	}
-
-	// TODO: アウトライナに使おう
-	{
-		ImGui::Begin("TreeTable");
-
-		const float TEXT_BASE_WIDTH = ImGui::CalcTextSize("A").x;
-
-		static ImGuiTableFlags table_flags = ImGuiTableFlags_BordersV |
-			ImGuiTableFlags_BordersOuterH | ImGuiTableFlags_Resizable |
-			ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody;
-
-		static ImGuiTreeNodeFlags tree_node_flags_base =
-			ImGuiTreeNodeFlags_SpanAllColumns | ImGuiTreeNodeFlags_DefaultOpen |
-			ImGuiTreeNodeFlags_DrawLinesFull;
-
-		if (ImGui::BeginTable("3ways", 3, table_flags)) {
-			// The first column will use the default _WidthStretch when ScrollX is Off and _WidthFixed when ScrollX is On
-			ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
-			ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed,
-			                        TEXT_BASE_WIDTH * 12.0f);
-			ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed,
-			                        TEXT_BASE_WIDTH * 18.0f);
-			ImGui::TableHeadersRow();
-
-			// Simple storage to output a fake file-system.
-			struct MyTreeNode {
-				const char* name;
-				const char* type;
-				int         size;
-				int         childIdx;
-				int         childCount;
-
-				static void DisplayNode(const MyTreeNode* node,
-				                        const MyTreeNode* all_nodes) {
-					ImGui::TableNextRow();
-					ImGui::TableNextColumn();
-					const bool is_folder = (node->childCount > 0);
-
-					ImGuiTreeNodeFlags node_flags = tree_node_flags_base;
-					if (node != &all_nodes[0]) {
-						node_flags &= ~ImGuiTreeNodeFlags_LabelSpanAllColumns;
-						// Only demonstrate this on the root node.
-					}
-
-					if (is_folder) {
-						bool open = ImGui::TreeNodeEx(node->name, node_flags);
-						if ((node_flags &
-							ImGuiTreeNodeFlags_LabelSpanAllColumns) == 0) {
-							ImGui::TableNextColumn();
-							ImGui::TextDisabled("--");
-							ImGui::TableNextColumn();
-							ImGui::TextUnformatted(node->type);
-						}
-						if (open) {
-							for (int child_n = 0; child_n < node->childCount;
-							     child_n++) {
-								DisplayNode(
-									&all_nodes[node->childIdx + child_n],
-									all_nodes);
-							}
-							ImGui::TreePop();
-						}
-					} else {
-						ImGui::TreeNodeEx(node->name,
-						                  node_flags | ImGuiTreeNodeFlags_Leaf |
-						                  ImGuiTreeNodeFlags_Bullet |
-						                  ImGuiTreeNodeFlags_NoTreePushOnOpen);
-						ImGui::TableNextColumn();
-						ImGui::Text("%d", node->size);
-						ImGui::TableNextColumn();
-						ImGui::TextUnformatted(node->type);
-					}
-				}
-			};
-			static const MyTreeNode nodes[] =
-			{
-				{"Root with Long Name", "Folder", -1, 1, 3},            // 0
-				{"Music", "Folder", -1, 4, 2},                          // 1
-				{"Textures", "Folder", -1, 6, 3},                       // 2
-				{"desktop.ini", "System file", 1024, -1, -1},           // 3
-				{"File1_a.wav", "Audio file", 123000, -1, -1},          // 4
-				{"File1_b.wav", "Audio file", 456000, -1, -1},          // 5
-				{"Image001.png", "Image file", 203128, -1, -1},         // 6
-				{"Copy of Image001.png", "Image file", 203256, -1, -1}, // 7
-				{"Copy of Image001 (Final2).png", "Image file", 203512, -1, -1},
-				// 8
-			};
-
-			MyTreeNode::DisplayNode(&nodes[0], nodes);
-
-			ImGui::EndTable();
-		}
-
-		ImGui::End();
-	}
-#endif
-
-#ifdef _DEBUG
 	ImVec2 windowPadding = ImGui::GetStyle().WindowPadding;
-	ImVec2 framePadding  = ImGui::GetStyle().FramePadding;
-	ImVec2 itemSpacing   = ImGui::GetStyle().ItemSpacing;
 
-	// 上側のツールバー
-	{
-		constexpr ImGuiWindowFlags flags =
-			ImGuiWindowFlags_NoTitleBar |
-			ImGuiWindowFlags_NoScrollbar |
-			ImGuiWindowFlags_NoScrollWithMouse |
-			ImGuiWindowFlags_NoCollapse |
-			ImGuiWindowFlags_NoResize |
-			ImGuiWindowFlags_NoSavedSettings |
-			ImGuiWindowFlags_NoFocusOnAppearing |
-			ImGuiWindowFlags_NoBringToFrontOnFocus;
+	DrawTopBar();
 
-		// 横長にする
-		constexpr auto toolbarIconSize = ImVec2(
-			96.0f,
-			32.0f
-		);
+	DrawStatusBar();
 
-		if (
-			ImGui::BeginViewportSideBar(
-				"##TopToolbar",
-				ImGui::GetMainViewport(),
-				ImGuiDir_Up,
-				toolbarIconSize.y + windowPadding.y * 2.0f,
-				flags
-			)
-		) {
-			// 選択
-			{
-				constexpr float iconScale = 0.75f;
-
-				ImGui::BeginDisabled();
-
-				ImGuiWidgets::IconButton(
-					StrUtil::ConvertToUtf8(kIconVertex).c_str(), "Vertices",
-					toolbarIconSize,
-					iconScale,
-					ImGuiDir_Right
-				);
-
-				ImGui::SameLine();
-
-				ImGuiWidgets::IconButton(
-					StrUtil::ConvertToUtf8(kIconEdge).c_str(), "Edges",
-					toolbarIconSize,
-					iconScale,
-					ImGuiDir_Right
-				);
-
-				ImGui::SameLine();
-
-				ImGuiWidgets::IconButton(
-					StrUtil::ConvertToUtf8(kIconFace).c_str(), "Faces",
-					toolbarIconSize,
-					iconScale,
-					ImGuiDir_Right
-				);
-
-				ImGui::SameLine();
-
-				ImGuiWidgets::IconButton(
-					StrUtil::ConvertToUtf8(kIconMesh).c_str(), "Meshes",
-					toolbarIconSize,
-					iconScale,
-					ImGuiDir_Right
-				);
-
-				ImGui::SameLine();
-
-				ImGuiWidgets::IconButton(
-					StrUtil::ConvertToUtf8(kIconObject).c_str(), "Objects",
-					toolbarIconSize,
-					iconScale,
-					ImGuiDir_Right
-				);
-
-				ImGui::SameLine();
-
-				ImGuiWidgets::IconButton(
-					StrUtil::ConvertToUtf8(kIconGroup).c_str(), "Groups",
-					toolbarIconSize,
-					iconScale,
-					ImGuiDir_Right
-				);
-			}
-
-			ImGui::EndDisabled();
-
-			ImGui::End();
-		}
-	}
-
-	if (
-		ImGui::BeginViewportSideBar(
-			"##MainStatusBar",
-			ImGui::GetMainViewport(),
-			ImGuiDir_Down,
-			32.0f,
-			ImGuiWindowFlags_NoScrollbar |
-			ImGuiWindowFlags_NoScrollWithMouse |
-			ImGuiWindowFlags_NoSavedSettings
-		)
-	) {
-		// ステータスバーの幅を取得
-		float statusBarWidth = ImGui::GetWindowWidth();
-
-		// アングルスナップ
-		{
-			//const float windowHeight = ImGui::GetWindowSize().y;
-			const char* items[] = {
-				"0.25°", "0.5°", "1°", "5°", "5.625°", "11.25°", "15°",
-				"22.5°", "30°", "45°", "90°"
-			};
-			static int  itemCurrentIndex = 6;
-			const char* comboLabel       = items[itemCurrentIndex];
-
-			ImGui::Text("Angle: ");
-
-			ImGui::SameLine();
-
-			// // 垂直中央に配置
-			// float comboHeight = ImGui::GetFrameHeight();
-			// float offsetY     = (windowHeight - comboHeight) * 0.5f;
-			// ImGui::SetCursorPosY(offsetY);
-
-			// コンボボックスの幅をステータスバーの幅に合わせて調整
-			ImGui::PushItemWidth(statusBarWidth * 0.2f);
-			if (ImGui::BeginCombo("##angle", comboLabel)) {
-				for (int n = 0; n < IM_ARRAYSIZE(items); ++n) {
-					const bool isSelected = (itemCurrentIndex == n);
-					if (ImGui::Selectable(items[n], isSelected)) {
-						itemCurrentIndex = n;
-						mAngleSnap       = std::stof(
-							items[itemCurrentIndex]);
-					}
-					if (isSelected) {
-						ImGui::SetItemDefaultFocus();
-					}
-				}
-				ImGui::EndCombo();
-			}
-			ImGui::PopItemWidth();
-		}
-
-		ImGui::SameLine();
-
-		// グリッドスナップ
-		{
-			const char* items[] = {
-				"0.125", "0.25", "0.5",
-				"1", "2", "4", "8",
-				"16", "32", "64", "128",
-				"256", "512", "1024", "2048"
-			};
-			static int  itemCurrentIndex = 9;
-			const char* comboLabel       = items[itemCurrentIndex];
-			ImGui::Text("Grid: ");
-
-			ImGui::SameLine();
-
-			// コンボボックスの幅をステータスバーの幅に合わせて調整
-			ImGui::PushItemWidth(statusBarWidth * 0.2f);
-			ImGui::PushID("GridCombo"); // IDの衝突を避けるためにプッシュ
-
-			if (ImGui::BeginCombo("##grid", comboLabel)) {
-				for (int n = 0; n < IM_ARRAYSIZE(items); ++n) {
-					const bool isSelected = (itemCurrentIndex == n);
-					if (ImGui::Selectable(items[n], isSelected)) {
-						itemCurrentIndex = n;
-						// 選択された文字列を浮動小数点数に変換してgridSize_に設定
-						mGridSize = std::stof(items[itemCurrentIndex]);
-					}
-					if (isSelected) {
-						ImGui::SetItemDefaultFocus();
-					}
-				}
-				ImGui::EndCombo();
-			}
-
-			// コンボボックスにマウスオーバーしている時にホイールで操作
-			if (ImGui::IsItemHovered()) {
-				float wheel = ImGui::GetIO().MouseWheel;
-				if (wheel != 0.0f) {
-					itemCurrentIndex -= static_cast<int>(wheel);
-					itemCurrentIndex = std::clamp(
-						itemCurrentIndex, 0, IM_ARRAYSIZE(items) - 1);
-					// 選択された文字列を浮動小数点数に変換してgridSize_に設定
-					mGridSize = std::stof(items[itemCurrentIndex]);
-				}
-			}
-
-			ImGui::PopID();
-			ImGui::PopItemWidth();
-		}
-		
-		  
-		ImGui::End();
-	}
-
-	// 左側のツールバー
-	{
-		constexpr ImGuiWindowFlags flags =
-			ImGuiWindowFlags_NoTitleBar |
-			ImGuiWindowFlags_NoScrollbar |
-			ImGuiWindowFlags_NoCollapse |
-			ImGuiWindowFlags_NoResize |
-			ImGuiWindowFlags_NoSavedSettings |
-			ImGuiWindowFlags_NoFocusOnAppearing |
-			ImGuiWindowFlags_NoBringToFrontOnFocus;
-
-		constexpr float iconSize  = 40; // アイコンのサイズを設定
-		constexpr float iconScale = 0.75f;
-
-		constexpr auto toolbarIconSize = ImVec2(iconSize, iconSize);
-
-		ImGui::SetNextWindowBgAlpha(1.0f);
-		if (
-			ImGui::BeginViewportSideBar(
-				"##LeftToolbar",
-				ImGui::GetMainViewport(),
-				ImGuiDir_Left,
-				toolbarIconSize.x + windowPadding.x * 2.0f,
-				flags
-			)
-		) {
-			// ツールバー
-			{
-				ImGui::BeginDisabled();
-
-				ImGuiWidgets::IconButton(
-					StrUtil::ConvertToUtf8(kIconSelect).c_str(), "",
-					toolbarIconSize,
-					iconScale,
-					ImGuiDir_None
-				);
-				ImGuiWidgets::IconButton(
-					StrUtil::ConvertToUtf8(kIconMove).c_str(), "",
-					toolbarIconSize,
-					iconScale,
-					ImGuiDir_None
-				);
-				ImGuiWidgets::IconButton(
-					StrUtil::ConvertToUtf8(kIconRotate).c_str(), "",
-					toolbarIconSize,
-					iconScale,
-					ImGuiDir_None
-				);
-				ImGuiWidgets::IconButton(
-					StrUtil::ConvertToUtf8(kIconScale).c_str(), "",
-					toolbarIconSize,
-					iconScale,
-					ImGuiDir_None
-				);
-				ImGuiWidgets::IconButton(
-					StrUtil::ConvertToUtf8(kIconPivot).c_str(), "",
-					toolbarIconSize,
-					iconScale,
-					ImGuiDir_None
-				);
-
-				ImGui::Separator();
-
-				ImGuiWidgets::IconButton(
-					StrUtil::ConvertToUtf8(kIconObject).c_str(), "",
-					toolbarIconSize,
-					iconScale,
-					ImGuiDir_None
-				);
-				ImGuiWidgets::IconButton(
-					StrUtil::ConvertToUtf8(kIconNANKABOX).c_str(), "",
-					toolbarIconSize,
-					iconScale,
-					ImGuiDir_None
-				);
-
-				ImGuiWidgets::IconButton(
-					StrUtil::ConvertToUtf8(kIconTexture).c_str(),
-					"",
-					toolbarIconSize,
-					iconScale,
-					ImGuiDir_None
-				);
-
-				ImGui::EndDisabled();
-			}
-			ImGui::End();
-		}
-	}
+	DrawSideBar();
 #endif
+
+	auto con = ServiceLocator::Get<Unnamed::ConsoleSystem>();
+
+	auto ed_gridcolor_r = dynamic_cast<Unnamed::UnnamedConVar<float>*>(con->
+		GetConVar("ed_gridcolor_r"));
+	auto ed_gridcolor_g = dynamic_cast<Unnamed::UnnamedConVar<float>*>(con->
+		GetConVar("ed_gridcolor_g"));
+	auto ed_gridcolor_b = dynamic_cast<Unnamed::UnnamedConVar<float>*>(con->
+		GetConVar("ed_gridcolor_b"));
+
+	auto ed_gridmajorcolor_r = dynamic_cast<Unnamed::UnnamedConVar<float>*>(
+		con->GetConVar("ed_gridmajorcolor_r"));
+	auto ed_gridmajorcolor_g = dynamic_cast<Unnamed::UnnamedConVar<float>*>(
+		con->GetConVar("ed_gridmajorcolor_g"));
+	auto ed_gridmajorcolor_b = dynamic_cast<Unnamed::UnnamedConVar<float>*>(
+		con->GetConVar("ed_gridmajorcolor_b"));
+
+	auto ed_gridaxiscolor_r = dynamic_cast<Unnamed::UnnamedConVar<float>*>(
+		con->GetConVar("ed_gridaxiscolor_r"));
+	auto ed_gridaxiscolor_g = dynamic_cast<Unnamed::UnnamedConVar<float>*>(
+		con->GetConVar("ed_gridaxiscolor_g"));
+	auto ed_gridaxiscolor_b = dynamic_cast<Unnamed::UnnamedConVar<float>*>(
+		con->GetConVar("ed_gridaxiscolor_b"));
+
+	auto ed_gridminorcolor_r = dynamic_cast<Unnamed::UnnamedConVar<float>*>(
+		con->GetConVar("ed_gridminorcolor_r"));
+	auto ed_gridminorcolor_g = dynamic_cast<Unnamed::UnnamedConVar<float>*>(
+		con->GetConVar("ed_gridminorcolor_g"));
+	auto ed_gridminorcolor_b = dynamic_cast<Unnamed::UnnamedConVar<float>*>(
+		con->GetConVar("ed_gridminorcolor_b"));
+
+	auto gridColor = Vec4(ed_gridcolor_r->GetValue(),
+	                      ed_gridcolor_g->GetValue(),
+	                      ed_gridcolor_b->GetValue());
+	auto majorLineColor = Vec4(ed_gridmajorcolor_r->GetValue(),
+	                           ed_gridmajorcolor_g->GetValue(),
+	                           ed_gridmajorcolor_b->GetValue());
+	auto axisLineColor = Vec4(ed_gridaxiscolor_r->GetValue(),
+	                          ed_gridaxiscolor_g->GetValue(),
+	                          ed_gridaxiscolor_b->GetValue());
+	auto minorLineColor = Vec4(ed_gridminorcolor_r->GetValue(),
+	                           ed_gridminorcolor_g->GetValue(),
+	                           ed_gridminorcolor_b->GetValue());
 
 	// グリッドの表示
 	DrawGrid(
 		mGridSize,
 		mGridRange,
-		{0.28f, 0.28f, 0.28f, 1.0f},
-		{0.39f, 0.2f, 0.02f, 1.0f},
-		{0.0f, 0.39f, 0.39f, 1.0f},
-		{0.39f, 0.39f, 0.39f, 1.0f},
+		gridColor,
+		majorLineColor,
+		axisLineColor,
+		minorLineColor,
 		CameraManager::GetActiveCamera()->GetViewMat().Inverse().GetTranslate(),
 		mGridSize * 32.0f
 	);
@@ -874,7 +496,24 @@ bool Editor::IsManipulating() {
 }
 
 /// @brief インスペクタウィンドウを描画します
-void Editor::DrawInspector() {
+void Editor::DrawInspector() const {
+	if (ImGui::Begin("Inspector")) {
+		if (mSelectedEntity) {
+			ImGui::Text("Name: %s", mSelectedEntity->GetName().c_str());
+
+			mSelectedEntity->GetTransform()->DrawInspectorImGui();
+
+			// コンポーネントの一覧表示と編集
+			const auto& components = mSelectedEntity->GetComponents<
+				Component>();
+			for (const auto& component : components) {
+				if (component) {
+					component->DrawInspectorImGui();
+				}
+			}
+		}
+	}
+	ImGui::End();
 }
 
 /// @brief アウトライナウィンドウを描画します
@@ -884,20 +523,44 @@ void Editor::DrawOutliner() {
 			mScene->AddEntity(NEW Entity("New Entity"));
 		}
 
-		// なにかと便利なのでテーブルで表示
-		if (ImGui::BeginTable("OutlinerTable", 3)) {
+		static std::string buttonLabel = StrUtil::ConvertToUtf8(kIconFilter) +
+			" " + StrUtil::ConvertToUtf8(kIconDropDown);
+
+		if (ImGui::Button(buttonLabel.c_str())) {
+			ImGui::OpenPopup("filterPopup");
+		}
+
+		if (ImGui::BeginPopup("filterPopup")) {
+			ImGui::Button(
+				StrUtil::ConvertToUtf8(kIconVisibility).c_str()
+			);
+			ImGui::SameLine();
+			ImGui::Button(
+				StrUtil::ConvertToUtf8(kIconPower).c_str()
+			);
+			ImGui::SameLine();
+			ImGui::Button(
+				StrUtil::ConvertToUtf8(kIconArrowBack).c_str()
+			);
+			ImGui::EndPopup();
+		}
+
+		ImGuiTableFlags tableFlags =
+			ImGuiTableFlags_BordersV |
+			ImGuiTableFlags_BordersOuterH |
+			ImGuiTableFlags_Resizable |
+			ImGuiTableFlags_RowBg |
+			ImGuiTableFlags_NoBordersInBody;
+
+		// テーブルで表示
+		if (ImGui::BeginTable("OutlinerTable", 3, tableFlags)) {
 			// カラムの設定
+			ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
 			ImGui::TableSetupColumn(
-				"Name",
-				ImGuiTableColumnFlags_NoHide |
-				ImGuiTableColumnFlags_WidthStretch
+				"Visible", ImGuiTableColumnFlags_WidthFixed
 			);
 			ImGui::TableSetupColumn(
-				"Visible", ImGuiTableColumnFlags_WidthFixed, 30.0f
-			);
-			ImGui::TableSetupColumn(
-				"Active", ImGuiTableColumnFlags_WidthFixed,
-				38.0f
+				"Active", ImGuiTableColumnFlags_WidthFixed
 			);
 
 			// 再帰的にエンティティを表示する関数
@@ -910,10 +573,11 @@ void Editor::DrawOutliner() {
 					ImGui::TableNextColumn();
 
 					// エンティティ名とツリー構造
-					ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow |
+					ImGuiTreeNodeFlags flags =
 						ImGuiTreeNodeFlags_SpanAvailWidth |
-						ImGuiTreeNodeFlags_AllowOverlap |
-						ImGuiTreeNodeFlags_DefaultOpen;
+						ImGuiTreeNodeFlags_DefaultOpen |
+						ImGuiTreeNodeFlags_OpenOnArrow |
+						ImGuiTreeNodeFlags_DrawLinesFull;
 
 					if (entity->GetChildren().empty()) {
 						flags |= ImGuiTreeNodeFlags_Leaf;
@@ -1037,6 +701,299 @@ void Editor::DrawOutliner() {
 		}
 	}
 	ImGui::End();
+}
+
+void Editor::DrawTopBar() {
+	constexpr ImGuiWindowFlags flags =
+		ImGuiWindowFlags_NoTitleBar |
+		ImGuiWindowFlags_NoScrollbar |
+		ImGuiWindowFlags_NoScrollWithMouse |
+		ImGuiWindowFlags_NoCollapse |
+		ImGuiWindowFlags_NoResize |
+		ImGuiWindowFlags_NoSavedSettings |
+		ImGuiWindowFlags_NoFocusOnAppearing |
+		ImGuiWindowFlags_NoBringToFrontOnFocus;
+
+	// 横長にする
+	constexpr auto toolbarIconSize = ImVec2(96.0f, 32.0f);
+
+	const auto windowPadding = ImGui::GetStyle().WindowPadding;
+
+	if (
+		ImGui::BeginViewportSideBar(
+			"##TopToolbar",
+			ImGui::GetMainViewport(),
+			ImGuiDir_Up,
+			toolbarIconSize.y + windowPadding.y * 2.0f,
+			flags
+		)
+	) {
+		// 選択
+		{
+			constexpr float iconScale = 0.75f;
+
+			ImGui::BeginDisabled();
+
+			ImGuiWidgets::IconButton(
+				StrUtil::ConvertToUtf8(kIconVertex).c_str(), "Vertices",
+				toolbarIconSize,
+				iconScale,
+				ImGuiDir_Right
+			);
+
+			ImGui::SameLine();
+
+			ImGuiWidgets::IconButton(
+				StrUtil::ConvertToUtf8(kIconEdge).c_str(), "Edges",
+				toolbarIconSize,
+				iconScale,
+				ImGuiDir_Right
+			);
+
+			ImGui::SameLine();
+
+			ImGuiWidgets::IconButton(
+				StrUtil::ConvertToUtf8(kIconFace).c_str(), "Faces",
+				toolbarIconSize,
+				iconScale,
+				ImGuiDir_Right
+			);
+
+			ImGui::SameLine();
+
+			ImGuiWidgets::IconButton(
+				StrUtil::ConvertToUtf8(kIconMesh).c_str(), "Meshes",
+				toolbarIconSize,
+				iconScale,
+				ImGuiDir_Right
+			);
+
+			ImGui::SameLine();
+
+			ImGuiWidgets::IconButton(
+				StrUtil::ConvertToUtf8(kIconObject).c_str(), "Objects",
+				toolbarIconSize,
+				iconScale,
+				ImGuiDir_Right
+			);
+
+			ImGui::SameLine();
+
+			ImGuiWidgets::IconButton(
+				StrUtil::ConvertToUtf8(kIconGroup).c_str(), "Groups",
+				toolbarIconSize,
+				iconScale,
+				ImGuiDir_Right
+			);
+		}
+
+		ImGui::EndDisabled();
+
+		ImGui::End();
+	}
+}
+
+void Editor::DrawSideBar() {
+	// 左側のツールバー
+	{
+		constexpr ImGuiWindowFlags flags =
+			ImGuiWindowFlags_NoTitleBar |
+			ImGuiWindowFlags_NoScrollbar |
+			ImGuiWindowFlags_NoCollapse |
+			ImGuiWindowFlags_NoResize |
+			ImGuiWindowFlags_NoSavedSettings |
+			ImGuiWindowFlags_NoFocusOnAppearing |
+			ImGuiWindowFlags_NoBringToFrontOnFocus;
+
+		constexpr float iconSize  = 40; // アイコンのサイズを設定
+		constexpr float iconScale = 0.75f;
+
+		constexpr auto toolbarIconSize = ImVec2(iconSize, iconSize);
+
+		const auto windowPadding = ImGui::GetStyle().WindowPadding;
+
+		ImGui::SetNextWindowBgAlpha(1.0f);
+		if (
+			ImGui::BeginViewportSideBar(
+				"##LeftToolbar",
+				ImGui::GetMainViewport(),
+				ImGuiDir_Left,
+				toolbarIconSize.x + windowPadding.x * 2.0f,
+				flags
+			)
+		) {
+			// ツールバー
+			{
+				ImGui::BeginDisabled();
+
+				ImGuiWidgets::IconButton(
+					StrUtil::ConvertToUtf8(kIconSelect).c_str(), "",
+					toolbarIconSize,
+					iconScale,
+					ImGuiDir_None
+				);
+				ImGuiWidgets::IconButton(
+					StrUtil::ConvertToUtf8(kIconMove).c_str(), "",
+					toolbarIconSize,
+					iconScale,
+					ImGuiDir_None
+				);
+				ImGuiWidgets::IconButton(
+					StrUtil::ConvertToUtf8(kIconRotate).c_str(), "",
+					toolbarIconSize,
+					iconScale,
+					ImGuiDir_None
+				);
+				ImGuiWidgets::IconButton(
+					StrUtil::ConvertToUtf8(kIconScale).c_str(), "",
+					toolbarIconSize,
+					iconScale,
+					ImGuiDir_None
+				);
+				ImGuiWidgets::IconButton(
+					StrUtil::ConvertToUtf8(kIconPivot).c_str(), "",
+					toolbarIconSize,
+					iconScale,
+					ImGuiDir_None
+				);
+
+				ImGui::Separator();
+
+				ImGuiWidgets::IconButton(
+					StrUtil::ConvertToUtf8(kIconObject).c_str(), "",
+					toolbarIconSize,
+					iconScale,
+					ImGuiDir_None
+				);
+				ImGuiWidgets::IconButton(
+					StrUtil::ConvertToUtf8(kIconNANKABOX).c_str(), "",
+					toolbarIconSize,
+					iconScale,
+					ImGuiDir_None
+				);
+
+				ImGuiWidgets::IconButton(
+					StrUtil::ConvertToUtf8(kIconTexture).c_str(),
+					"",
+					toolbarIconSize,
+					iconScale,
+					ImGuiDir_None
+				);
+
+				ImGui::EndDisabled();
+			}
+			ImGui::End();
+		}
+	}
+}
+
+void Editor::DrawStatusBar() {
+	if (
+		ImGui::BeginViewportSideBar(
+			"##MainStatusBar",
+			ImGui::GetMainViewport(),
+			ImGuiDir_Down,
+			32.0f,
+			ImGuiWindowFlags_NoScrollbar |
+			ImGuiWindowFlags_NoScrollWithMouse |
+			ImGuiWindowFlags_NoSavedSettings
+		)
+	) {
+		// ステータスバーの幅を取得
+		float statusBarWidth = ImGui::GetWindowWidth();
+
+		// アングルスナップ
+		{
+			//const float windowHeight = ImGui::GetWindowSize().y;
+			const char* items[] = {
+				"0.25°", "0.5°", "1°", "5°", "5.625°", "11.25°", "15°",
+				"22.5°", "30°", "45°", "90°"
+			};
+			static int  itemCurrentIndex = 6;
+			const char* comboLabel       = items[itemCurrentIndex];
+
+			ImGui::Text("Angle: ");
+
+			ImGui::SameLine();
+
+			// // 垂直中央に配置
+			// float comboHeight = ImGui::GetFrameHeight();
+			// float offsetY     = (windowHeight - comboHeight) * 0.5f;
+			// ImGui::SetCursorPosY(offsetY);
+
+			// コンボボックスの幅をステータスバーの幅に合わせて調整
+			ImGui::PushItemWidth(statusBarWidth * 0.2f);
+			if (ImGui::BeginCombo("##angle", comboLabel)) {
+				for (int n = 0; n < IM_ARRAYSIZE(items); ++n) {
+					const bool isSelected = (itemCurrentIndex == n);
+					if (ImGui::Selectable(items[n], isSelected)) {
+						itemCurrentIndex = n;
+						mAngleSnap       = std::stof(
+							items[itemCurrentIndex]);
+					}
+					if (isSelected) {
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				ImGui::EndCombo();
+			}
+			ImGui::PopItemWidth();
+		}
+
+		ImGui::SameLine();
+
+		// グリッドスナップ
+		{
+			const char* items[] = {
+				"0.125", "0.25", "0.5",
+				"1", "2", "4", "8",
+				"16", "32", "64", "128",
+				"256", "512", "1024", "2048"
+			};
+			static int  itemCurrentIndex = 9;
+			const char* comboLabel       = items[itemCurrentIndex];
+			ImGui::Text("Grid: ");
+
+			ImGui::SameLine();
+
+			// コンボボックスの幅をステータスバーの幅に合わせて調整
+			ImGui::PushItemWidth(statusBarWidth * 0.2f);
+			ImGui::PushID("GridCombo"); // IDの衝突を避けるためにプッシュ
+
+			if (ImGui::BeginCombo("##grid", comboLabel)) {
+				for (int n = 0; n < IM_ARRAYSIZE(items); ++n) {
+					const bool isSelected = (itemCurrentIndex == n);
+					if (ImGui::Selectable(items[n], isSelected)) {
+						itemCurrentIndex = n;
+						// 選択された文字列を浮動小数点数に変換してgridSizeに設定
+						mGridSize = std::stof(items[itemCurrentIndex]);
+					}
+					if (isSelected) {
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				ImGui::EndCombo();
+			}
+
+			// コンボボックスにマウスオーバーしている時にホイールで操作
+			if (ImGui::IsItemHovered()) {
+				float wheel = ImGui::GetIO().MouseWheel;
+				if (wheel != 0.0f) {
+					itemCurrentIndex -= static_cast<int>(wheel);
+					itemCurrentIndex = std::clamp(
+						itemCurrentIndex, 0, IM_ARRAYSIZE(items) - 1);
+					// 選択された文字列を浮動小数点数に変換してgridSize_に設定
+					mGridSize = std::stof(items[itemCurrentIndex]);
+				}
+			}
+
+			ImGui::PopID();
+			ImGui::PopItemWidth();
+		}
+
+
+		ImGui::End();
+	}
 }
 
 /// @brief グリッドを描画する

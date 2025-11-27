@@ -48,3 +48,6 @@ constexpr uint32_t kIconPivot  = 0xE147; // 原点
 
 constexpr uint32_t kIconNANKABOX = 0xF720; // ボックス TODO: 本家から名称を持ってこよう
 constexpr uint32_t kIconTexture  = 0xE421; // テクスチャ
+
+constexpr uint32_t kIconFilter   = 0xEF4F; // フィルター
+constexpr uint32_t kIconDropDown = 0xE5C5; // ドロップダウン

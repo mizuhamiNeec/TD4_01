@@ -332,5 +332,5 @@ namespace ImGuiUtil {
 		ImGui::PopID();
 		return isOpen;
 	}
-#endif
 }
+#endif

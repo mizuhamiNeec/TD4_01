@@ -495,6 +495,8 @@ bool Editor::IsManipulating() {
 	return mIsManipulating;
 }
 
+#ifdef _DEBUG
+
 /// @brief インスペクタウィンドウを描画します
 void Editor::DrawInspector() const {
 	if (ImGui::Begin("Inspector")) {
@@ -995,6 +997,7 @@ void Editor::DrawStatusBar() {
 		ImGui::End();
 	}
 }
+#endif
 
 /// @brief グリッドを描画する
 /// @param gridSize グリッドの間隔

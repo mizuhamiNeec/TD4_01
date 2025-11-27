@@ -2,9 +2,8 @@
 #include <engine/ImGui/ImGuiManager.h>
 #include <engine/ImGui/ImGuiUtil.h>
 #include <engine/OldConsole/ConVarManager.h>
-#include <engine/subsystem/time/GameTime.h>
 
-#include "engine/Engine.h"
+#include <engine/Engine.h>
 
 /// @brief 更新処理
 /// @param deltaTime 前フレームからの経過時間（秒）
@@ -73,7 +72,7 @@ void DebugHud::ShowFrameRate([[maybe_unused]] const float deltaTime) {
 		textColor = ImGuiUtil::ToImVec4(kConTextColorWarning);
 	}
 
-	ImGuiManager::TextOutlined(
+	ImGuiUtil::TextOutlined(
 		drawList,
 		textPos,
 		text.c_str(),

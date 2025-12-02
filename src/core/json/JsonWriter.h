@@ -4,9 +4,6 @@
 #include <string>
 #include <vector>
 
-#include <runtime/core/math/Math.h>
-
-
 /// @brief JSON書き込みクラス
 /// @details JSON形式のデータを構築し、ファイルに保存するためのクラスです。
 ///			 オブジェクトと配列のネストをサポートします。
@@ -39,7 +36,7 @@ public:
 	void BeginObject();
 
 	/// @brief オブジェクトの終了
-	void EndObject();
+	void EndObject() const;
 
 	/// @brief 配列の開始
 	void BeginArray();
@@ -47,7 +44,7 @@ public:
 	/**
 	 * @brief 配列の終了
 	 */
-	void EndArray();
+	void EndArray() const;
 
 	/**
 	 * @brief オブジェクトのキーを設定する
@@ -57,8 +54,7 @@ public:
 
 	template <typename T>
 	void Write(const T& value) {
-		// const 削除
-		mStringCache.clear(); // キャッシュ無効化
+		mStringCache.clear();
 		auto* cur = Current();
 		if (!cur) {
 			if (!mRoot.is_null()) {

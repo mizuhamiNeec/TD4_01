@@ -1,12 +1,9 @@
 #ifdef _DEBUG
 #include <imgui_impl_dx12.h>
 #include <imgui_impl_win32.h>
-#include <imgui_internal.h>
 
-#include <engine/Components/Transform/SceneComponent.h>
 #include <engine/Entity/Entity.h>
 #include <engine/ImGui/ImGuiManager.h>
-#include <engine/ImGui/ImGuiWidgets.h>
 #include <engine/renderer/SrvManager.h>
 #include <engine/Window/WindowManager.h>
 #include <engine/Window/WindowsUtils.h>
@@ -53,13 +50,13 @@ ImGuiManager::ImGuiManager(D3D12*      renderer,
 		GetGlyphRangesJapanese()
 	);
 
-	// ??? 何故かベースラインがずれるので補正
-	imFontConfig.GlyphOffset = ImVec2(0.0f, 5.0f);
+	// ??? 何故かアイコンフォントのベースラインがずれるので補正
+	imFontConfig.GlyphOffset = ImVec2(0.0f, 2.0f);
 
 	static constexpr ImWchar iconRanges[] = {0xe003, 0xf8ff, 0};
 	io.Fonts->AddFontFromFileTTF(
 		R"(.\content\core\fonts\MaterialSymbolsRounded_Filled_28pt-Regular.ttf)",
-		24.0f, &imFontConfig, iconRanges
+		14.0f, &imFontConfig, iconRanges
 	);
 
 	// テーマの設定
@@ -80,7 +77,7 @@ ImGuiManager::ImGuiManager(D3D12*      renderer,
 	init_info.SrvDescriptorHeap       = mSrvManager->GetDescriptorHeap();
 	init_info.UserData                = this;
 
-	auto allocFn =
+	auto AllocFn =
 		[](ImGui_ImplDX12_InitInfo*     info,
 		   D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle,
 		   D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle) {
@@ -90,7 +87,7 @@ ImGuiManager::ImGuiManager(D3D12*      renderer,
 		*gpuHandle       = mgr->GetSrvManager()->GetGPUDescriptorHandle(index);
 	};
 
-	auto freeFn =
+	auto FreeFn =
 		[](ImGui_ImplDX12_InitInfo*    info,
 		   D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle,
 		   D3D12_GPU_DESCRIPTOR_HANDLE) {
@@ -99,10 +96,9 @@ ImGuiManager::ImGuiManager(D3D12*      renderer,
 		mgr->GetSrvManager()->DeallocateTexture2D(cpuIndex);
 	};
 
-	init_info.SrvDescriptorAllocFn = allocFn;
-	init_info.SrvDescriptorFreeFn  = freeFn;
-
-
+	init_info.SrvDescriptorAllocFn = AllocFn;
+	init_info.SrvDescriptorFreeFn  = FreeFn;
+	
 	ImGui_ImplDX12_Init(&init_info);
 }
 
@@ -179,7 +175,7 @@ void ImGuiManager::Recreate() const {
 
 SrvManager* ImGuiManager::GetSrvManager() const { return mSrvManager; }
 
-/// @brief 日本語のグリフ範囲を取得します。
+/// @brief 日本語のグリフ範囲を取得します。ImGui本家から拝借
 /// @return 日本語のグリフ範囲へのポインタ
 const ImWchar* ImGuiManager::GetGlyphRangesJapanese() {
 	// 2999 ideograms code points for Japanese

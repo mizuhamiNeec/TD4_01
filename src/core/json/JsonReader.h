@@ -63,12 +63,12 @@ public:
 	}
 
 	// 配列サイズ
-	size_t Size() const {
+	[[nodiscard]] size_t Size() const {
 		if (!mNode || !mNode->is_array()) { return 0; }
 		return mNode->size();
 	}
 
-	std::string GetString() const {
+	[[nodiscard]] std::string GetString() const {
 		if (!mNode) { return {}; }
 		if (mNode->is_string()) { return mNode->get<std::string>(); }
 		// 数値を文字列化など最低限のフォールバック
@@ -76,7 +76,7 @@ public:
 		return {};
 	}
 
-	float GetFloat() const {
+	[[nodiscard]] float GetFloat() const {
 		if (!mNode) { return 0.f; }
 		if (mNode->is_number_float() || mNode->is_number_integer() || mNode->
 			is_number_unsigned()) {
@@ -96,8 +96,20 @@ public:
 		return 0;
 	}
 
+	[[nodiscard]] bool GetBool() const {
+		if (!mNode) { return false; }
+		if (mNode->is_boolean()) {
+			return mNode->get<bool>();
+		}
+		// フォールバック: 数値から判定
+		if (mNode->is_number()) {
+			return mNode->get<int>() != 0;
+		}
+		return false;
+	}
+
 	// 配列ラッパを返す (UWorld::LoadFromJson では GetArray() の戻りに対し [i] / GetFloat を呼ぶ)
-	JsonReader GetArray() const { return *this; }
+	[[nodiscard]] JsonReader GetArray() const { return *this; }
 
 	template <typename T>
 	std::optional<T> Read(const std::string_view& key) const {

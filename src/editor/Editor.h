@@ -9,6 +9,7 @@
 
 class GameTime;
 class SceneManager;
+class EntityLoader;
 
 /// @brief エディタークラス
 class Editor {
@@ -16,17 +17,23 @@ public:
 	explicit Editor(SceneManager* sceneManager, GameTime* gameTime);
 	void     Init();
 
+	void DrawMenuBars();
 	void Update(float deltaTime);
 	void Render() const;
+
+	void SetEntityLoader(EntityLoader* entityLoader);
 
 	static bool IsManipulating();
 
 private:
+#ifdef _DEBUG
 	void DrawInspector() const;
 	void DrawOutliner();
+	void DrawMainMenuBar();
 	void DrawTopBar();
 	void DrawSideBar();
 	void DrawStatusBar();
+#endif
 
 	static void DrawGrid(
 		float gridSize, float range, const Vec4& color, const Vec4& majorColor,
@@ -39,6 +46,9 @@ private:
 	// 持ってきたやつ
 	SceneManager* mSceneManager = nullptr;
 	GameTime*     mGameTime     = nullptr;
+	EntityLoader* mEntityLoader = nullptr;
+
+	std::optional<std::string> mLoadFilePath;
 
 	std::shared_ptr<BaseScene> mScene;                    // 現在編集中のシーン
 	Entity*                    mSelectedEntity = nullptr; // 選択中のエンティティ

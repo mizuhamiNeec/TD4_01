@@ -6,15 +6,19 @@
 #include <engine/Camera/CameraManager.h>
 #include <engine/Components/Base/Component.h>
 #include <engine/Debug/Debug.h>
+#include <engine/Entity/EntityLoader.h>
 #include <engine/ImGui/Icons.h>
 #include <engine/ImGui/ImGuiUtil.h>
 #include <engine/ImGui/ImGuiWidgets.h>
 #include <engine/Input/InputSystem.h>
 #include <engine/OldConsole/ConVarManager.h>
+#include <engine/OldConsole/Console.h>
 #include <engine/SceneManager/SceneManager.h>
 #include <engine/Window/WindowManager.h>
 
+#include <core/string/StrUtil.h>
 #include <runtime/core/math/Math.h>
+#include <runtime/core/Properties.h>
 
 #include "engine/subsystem/console/concommand/UnnamedConVar.h"
 
@@ -118,19 +122,41 @@ void Editor::Init() {
 #endif
 }
 
+#ifdef _DEBUG
+void Editor::DrawMenuBars() {
+	DrawMainMenuBar();
+	DrawTopBar();
+	DrawStatusBar();
+	DrawSideBar();
+}
+#endif
+
 /// @brief エディターの更新
 void Editor::Update([[maybe_unused]] const float deltaTime) {
-	// インスペクタ
+	// シーンのインポート処理
+	if (mLoadFilePath) {
+		BaseScene* currentScene = mSceneManager->GetCurrentScene().get();
+		if (currentScene && mEntityLoader) {
+			auto resourceManager = Unnamed::Engine::GetResourceManager();
+			if (resourceManager) {
+				mEntityLoader->LoadScene(
+					mLoadFilePath.value(), currentScene,
+					resourceManager);
+				Msg(
+					"Editor",
+					"Scene imported from: {}",
+					mLoadFilePath.value()
+				);
+			}
+		}
+		mLoadFilePath.reset(); // ロード後はリセット
+	}
+
 #ifdef _DEBUG
+
+	// インスペクタ
 	DrawInspector();
 
-	ImVec2 windowPadding = ImGui::GetStyle().WindowPadding;
-
-	DrawTopBar();
-
-	DrawStatusBar();
-
-	DrawSideBar();
 #endif
 
 	auto con = ServiceLocator::Get<Unnamed::ConsoleSystem>();
@@ -185,7 +211,7 @@ void Editor::Update([[maybe_unused]] const float deltaTime) {
 		axisLineColor,
 		minorLineColor,
 		CameraManager::GetActiveCamera()->GetViewMat().Inverse().GetTranslate(),
-		mGridSize * 32.0f
+		mGridSize * 128.0f
 	);
 
 #ifdef _DEBUG
@@ -489,6 +515,10 @@ void Editor::Render() const {
 	}
 }
 
+void Editor::SetEntityLoader(EntityLoader* entityLoader) {
+	mEntityLoader = entityLoader;
+}
+
 /// @brief ギズモ操作中かどうかを取得する
 /// @return ギズモ操作中であればtrue、そうでなければfalse
 bool Editor::IsManipulating() {
@@ -496,7 +526,6 @@ bool Editor::IsManipulating() {
 }
 
 #ifdef _DEBUG
-
 /// @brief インスペクタウィンドウを描画します
 void Editor::DrawInspector() const {
 	if (ImGui::Begin("Inspector")) {
@@ -547,12 +576,12 @@ void Editor::DrawOutliner() {
 			ImGui::EndPopup();
 		}
 
-		ImGuiTableFlags tableFlags =
+		const ImGuiTableFlags tableFlags =
+			ImGuiTableFlags_ScrollY |
 			ImGuiTableFlags_BordersV |
 			ImGuiTableFlags_BordersOuterH |
-			ImGuiTableFlags_Resizable |
 			ImGuiTableFlags_RowBg |
-			ImGuiTableFlags_NoBordersInBody;
+			ImGuiTableFlags_NoBordersInBodyUntilResize;
 
 		// テーブルで表示
 		if (ImGui::BeginTable("OutlinerTable", 3, tableFlags)) {
@@ -642,7 +671,7 @@ void Editor::DrawOutliner() {
 								                       kIconVisibilityOff
 							).c_str(),
 							nullptr,
-							ImVec2(22.0f, 22.0f), 1.0f
+							ImVec2(22.0f, 22.0f)
 						)) {
 							entity->SetVisible(!visible);
 						}
@@ -705,6 +734,171 @@ void Editor::DrawOutliner() {
 	ImGui::End();
 }
 
+void Editor::DrawMainMenuBar() {
+	// メニューバーを少し高くする
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,
+	                    ImVec2(
+		                    0.0f, kTitleBarH * 0.5f -
+		                    ImGui::GetFontSize() * 0.5f));
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,
+	                    ImVec2(0.0f, kTitleBarH));
+	if (ImGui::BeginMainMenuBar()) {
+		ImGui::PopStyleVar(2); // メニューバーのスタイルを元に戻す
+		// アイコンメニュー
+		ImGui::PushStyleColor(ImGuiCol_Text,
+		                      ImVec4(0.13f, 0.5f, 1.0f, 1.0f));
+
+		if (ImGuiWidgets::BeginMainMenu(
+			StrUtil::ConvertToUtf8(kIconArrowBack).c_str())) {
+			ImGui::PopStyleColor();
+			if (ImGui::MenuItemEx(
+				"About Unnamed",
+				nullptr)) {
+			}
+			ImGui::EndMenu();
+		} else {
+			ImGui::PopStyleColor();
+		}
+
+		if (ImGuiWidgets::BeginMainMenu("File")) {
+			ImGui::BeginDisabled();
+			if (ImGui::MenuItemEx(
+				"Save",
+				StrUtil::ConvertToUtf8(kIconSave).c_str())) {
+			}
+
+			if (ImGui::MenuItemEx("Save As",
+			                      StrUtil::ConvertToUtf8(
+				                      kIconSaveAs).
+			                      c_str())) {
+			}
+			ImGui::EndDisabled();
+
+			ImGui::Separator();
+
+			if (ImGui::MenuItemEx("Import",
+			                      StrUtil::ConvertToUtf8(
+				                      kIconDownload)
+			                      .
+			                      c_str())) {
+				BaseScene* currentScene = mSceneManager->
+				                          GetCurrentScene().
+				                          get();
+				if (currentScene) {
+					char szFile[MAX_PATH] = ""; // 初期ファイル名は空
+
+					OPENFILENAMEA ofn;
+					ZeroMemory(&ofn, sizeof(ofn)); // 構造体をゼロ初期化
+					ofn.lStructSize = sizeof(OPENFILENAMEA);
+
+					HWND hwndOwner = nullptr;
+					if (OldWindowManager::GetMainWindow()) {
+						hwndOwner =
+							OldWindowManager::GetMainWindow()->
+							GetWindowHandle();
+					}
+					ofn.hwndOwner   = hwndOwner;
+					ofn.lpstrFilter =
+						"Scene Files (*.scene)\0*.scene\0All Files (*.*)\0*.*\0";
+					ofn.lpstrFile  = szFile;
+					ofn.nMaxFile   = MAX_PATH;
+					ofn.lpstrTitle = "Import Scene From";
+					ofn.Flags      = OFN_PATHMUSTEXIST |
+						OFN_FILEMUSTEXIST |
+						OFN_NOCHANGEDIR;
+					// ファイル/パス存在確認、カレントディレクトリ変更なし
+					ofn.lpstrDefExt = "scene";
+
+					if (GetOpenFileNameA(&ofn)) {
+						mLoadFilePath = ofn.lpstrFile;
+					}
+				} else {
+					Error(
+						"ImportScene",
+						"Import failed: No active scene found."
+					);
+				}
+			}
+
+			if (ImGui::MenuItemEx("Export",
+			                      StrUtil::ConvertToUtf8(
+				                      kIconUpload).
+			                      c_str())) {
+				BaseScene* currentScene = mSceneManager->
+				                          GetCurrentScene().
+				                          get();
+				if (currentScene) {
+					char szFile[MAX_PATH] = "scene.json";
+					// デフォルトのファイル名
+
+					OPENFILENAMEA ofn;
+					ZeroMemory(&ofn, sizeof(ofn)); // 構造体をゼロ初期化
+					ofn.lStructSize = sizeof(OPENFILENAMEA);
+
+					HWND hwndOwner = nullptr;
+					if (OldWindowManager::GetMainWindow()) {
+						hwndOwner =
+							OldWindowManager::GetMainWindow()->
+							GetWindowHandle();
+					}
+					ofn.hwndOwner   = hwndOwner;
+					ofn.lpstrFilter =
+						"Scene Files (*.scene)\0*.scene\0All Files (*.*)\0*.*\0";
+					ofn.lpstrFile  = szFile;
+					ofn.nMaxFile   = MAX_PATH;
+					ofn.lpstrTitle = "Export Scene As";
+					ofn.Flags      = OFN_OVERWRITEPROMPT |
+						OFN_NOCHANGEDIR;
+					// 上書き確認、カレントディレクトリ変更なし
+					ofn.lpstrDefExt = "scene";
+
+					if (GetSaveFileNameA(&ofn)) {
+						std::string filePath = ofn.lpstrFile;
+						if (mEntityLoader) {
+							mEntityLoader->
+								SaveScene(filePath, currentScene);
+							SpecialMsg(
+								Unnamed::LogLevel::Success,
+								"SceneExport",
+								"Scene exported to: {}",
+								filePath
+							);
+						}
+					}
+				} else {
+					Error(
+						"SceneExport",
+						"Export failed: No active scene found."
+					);
+				}
+			}
+
+			ImGui::Separator();
+
+			ImGui::BeginDisabled();
+			if (ImGui::MenuItemEx(
+					"Exit",
+					StrUtil::ConvertToUtf8(kIconPower).c_str())
+			) {
+				Console::SubmitCommand("quit");
+			}
+			ImGui::EndDisabled();
+			ImGui::EndMenu();
+		}
+
+		if (ImGuiWidgets::BeginMainMenu("Edit")) {
+			ImGui::Separator();
+			if (ImGuiWidgets::MenuItemWithIcon(
+				StrUtil::ConvertToUtf8(kIconSettings).c_str(),
+				"Settings")) {
+			}
+
+			ImGui::EndMenu();
+		}
+		ImGui::EndMainMenuBar();
+	}
+}
+
 void Editor::DrawTopBar() {
 	constexpr ImGuiWindowFlags flags =
 		ImGuiWindowFlags_NoTitleBar |
@@ -732,7 +926,7 @@ void Editor::DrawTopBar() {
 	) {
 		// 選択
 		{
-			constexpr float iconScale = 0.75f;
+			constexpr float iconScale = 1.0f;
 
 			ImGui::BeginDisabled();
 
@@ -950,7 +1144,7 @@ void Editor::DrawStatusBar() {
 				"0.125", "0.25", "0.5",
 				"1", "2", "4", "8",
 				"16", "32", "64", "128",
-				"256", "512", "1024", "2048"
+				"256", "512", "1024"
 			};
 			static int  itemCurrentIndex = 9;
 			const char* comboLabel       = items[itemCurrentIndex];
@@ -1009,12 +1203,14 @@ void Editor::DrawStatusBar() {
 /// @param cameraPosition カメラの位置
 /// @param drawRadius 描画する円形範囲の半径
 void Editor::DrawGrid(
-	const float gridSize, const float range, const Vec4& color,
-	const Vec4& majorColor,
-	const Vec4& axisColor, const Vec4& minorColor, const Vec3& cameraPosition,
+	const float gridSize, const float range,
+	const Vec4& color,
+	const Vec4& majorColor, const Vec4& axisColor, const Vec4& minorColor,
+	const Vec3& cameraPosition,
 	const float drawRadius
 ) {
-	const float minorInterval = gridSize * 8.0f;
+	constexpr float majorInterval = 1024.0f;
+	const float     minorInterval = gridSize * 8.0f;
 
 	// 描画範囲の二乗を事前計算
 	const float drawRadiusSq = drawRadius * drawRadius;
@@ -1023,77 +1219,150 @@ void Editor::DrawGrid(
 	const float cameraPosX = cameraPosition.x;
 	const float cameraPosZ = cameraPosition.z;
 
-	// 範囲内のグリッドラインを計算
-	const int   numLines = static_cast<int>((range * 2) / gridSize) + 1;
-	const float startX   = -range;
-	const float startZ   = -range;
+	// グリッドサイズの逆数を事前計算（除算を乗算に変換）
+	const float invGridSize      = 1.0f / gridSize;
+	const float invMajorInterval = 1.0f / majorInterval;
 
-	for (int i = 0; i < numLines; ++i) {
-		constexpr float majorInterval = 1024.0f;
-		float           x             = startX + i * gridSize;
-		float           z             = startZ + i * gridSize;
-
-		// 垂直線（X軸に沿った線）の描画
-		{
-			Vec4 lineColor = color;
-
-			if (std::fmod(x, majorInterval) == 0.0f) {
-				lineColor = majorColor; // 主要なグリッド線
-			} else if (std::fmod(x, minorInterval) == 0.0f) {
-				lineColor = minorColor; // 細かいグリッド線
-			}
-
-			if (x == 0.0f) {
-				lineColor = axisColor; // 軸線
-			}
-
-			if (std::fmod(x, majorInterval) == 0.0f || x == 0.0f) {
-				// 主要線・軸線は常に最大範囲で描画
-				Debug::DrawLine(Vec3(x, 0, -range), Vec3(x, 0, range),
-				                lineColor);
-			} else {
-				// 細かいグリッド線は円形範囲内のみ描画
-				float distToLineSq = (cameraPosX - x) * (cameraPosX - x);
-				if (distToLineSq <= drawRadiusSq) {
-					float maxZ = std::sqrt(drawRadiusSq - distToLineSq);
-					Debug::DrawLine(
-						Vec3(x, 0, cameraPosZ - maxZ),
-						Vec3(x, 0, cameraPosZ + maxZ),
-						lineColor
-					);
-				}
-			}
+	// 主要線と軸線を先に描画（range全体から探す）
+	// X軸方向の主要線
+	{
+		// 軸線（X=0）の描画
+		if (std::abs(0.0f) <= range) {
+			Debug::DrawLine(Vec3(0, 0, -range), Vec3(0, 0, range), axisColor);
 		}
 
-		// 水平線（Z軸に沿った線）の描画
-		{
-			Vec4 lineColor = color;
+		// 1024間隔の主要線を描画
+		const int majorStartIdx = static_cast<int>(std::ceil(
+			-range * invMajorInterval));
+		const int majorEndIdx = static_cast<int>(std::floor(
+			range * invMajorInterval));
 
-			if (std::fmod(z, majorInterval) == 0.0f) {
-				lineColor = majorColor; // 主要なグリッド線
-			} else if (std::fmod(z, minorInterval) == 0.0f) {
-				lineColor = minorColor; // 細かいグリッド線
+		for (int i = majorStartIdx; i <= majorEndIdx; ++i) {
+			if (i == 0) continue; // 軸線は既に描画済み
+			const float x = i * majorInterval;
+			if (std::abs(x) <= range) {
+				Debug::DrawLine(Vec3(x, 0, -range), Vec3(x, 0, range),
+				                majorColor);
 			}
+		}
+	}
 
-			if (z == 0.0f) {
-				lineColor = axisColor; // 軸線
-			}
+	// Z軸方向の主要線
+	{
+		// 軸線（Z=0）の描画
+		if (std::abs(0.0f) <= range) {
+			Debug::DrawLine(Vec3(-range, 0, 0), Vec3(range, 0, 0), axisColor);
+		}
 
-			if (std::fmod(z, majorInterval) == 0.0f || z == 0.0f) {
-				// 主要線・軸線は常に最大範囲で描画
+		// 1024間隔の主要線を描画
+		const int majorStartIdx = static_cast<int>(std::ceil(
+			-range * invMajorInterval));
+		const int majorEndIdx = static_cast<int>(std::floor(
+			range * invMajorInterval));
+
+		for (int i = majorStartIdx; i <= majorEndIdx; ++i) {
+			if (i == 0) continue; // 軸線は既に描画済み
+			const float z = i * majorInterval;
+			if (std::abs(z) <= range) {
 				Debug::DrawLine(Vec3(-range, 0, z), Vec3(range, 0, z),
-				                lineColor);
-			} else {
-				// 細かいグリッド線は円形範囲内のみ描画
-				float distToLineSq = (cameraPosZ - z) * (cameraPosZ - z);
-				if (distToLineSq <= drawRadiusSq) {
-					float maxX = std::sqrt(drawRadiusSq - distToLineSq);
-					Debug::DrawLine(
-						Vec3(cameraPosX - maxX, 0, z),
-						Vec3(cameraPosX + maxX, 0, z),
-						lineColor
-					);
-				}
+				                majorColor);
+			}
+		}
+	}
+
+	// 通常のグリッド線（カメラ周辺のみ）
+	const float cullingRadius = drawRadius;
+	const float minX          = std::max(-range, cameraPosX - cullingRadius);
+	const float maxX          = std::min(range, cameraPosX + cullingRadius);
+	const float minZ          = std::max(-range, cameraPosZ - cullingRadius);
+	const float maxZ          = std::min(range, cameraPosZ + cullingRadius);
+
+	// X軸方向の通常グリッド線
+	{
+		const int startIdx = static_cast<int>(std::floor(minX * invGridSize));
+		const int endIdx   = static_cast<int>(std::ceil(maxX * invGridSize));
+
+		for (int i = startIdx; i <= endIdx; ++i) {
+			const float x = i * gridSize;
+
+			// range外の線はスキップ
+			if (x < -range || x > range) continue;
+
+			// 主要線と軸線は既に描画済みなのでスキップ
+			const bool isAxis  = (i == 0);
+			const bool isMajor = !isAxis && (std::abs(
+				std::fmod(x, majorInterval)) < 0.01f);
+			if (isAxis || isMajor) continue;
+
+			// 細線判定
+			const bool isMinor = (std::abs(std::fmod(x, minorInterval)) <
+				0.01f);
+
+			// 通常のグリッド線は近距離のみ描画判定
+			const float dx     = cameraPosX - x;
+			const float distSq = dx * dx;
+			if (distSq > drawRadiusSq) continue;
+
+			// 色の決定
+			Vec4 lineColor = isMinor ? minorColor : color;
+
+			// 円形範囲内で描画（range内にクリップ）
+			const float halfLen = std::sqrt(drawRadiusSq - distSq);
+			const float startZ  = std::max(-range, cameraPosZ - halfLen);
+			const float endZ    = std::min(range, cameraPosZ + halfLen);
+
+			// 有効な範囲の場合のみ描画
+			if (startZ < endZ && startZ <= range && endZ >= -range) {
+				Debug::DrawLine(
+					Vec3(x, 0, startZ),
+					Vec3(x, 0, endZ),
+					lineColor
+				);
+			}
+		}
+	}
+
+	// Z軸方向の通常グリッド線
+	{
+		const int startIdx = static_cast<int>(std::floor(minZ * invGridSize));
+		const int endIdx   = static_cast<int>(std::ceil(maxZ * invGridSize));
+
+		for (int i = startIdx; i <= endIdx; ++i) {
+			const float z = i * gridSize;
+
+			// range外の線はスキップ
+			if (z < -range || z > range) continue;
+
+			// 主要線と軸線は既に描画済みなのでスキップ
+			const bool isAxis  = (i == 0);
+			const bool isMajor = !isAxis && (std::abs(
+				std::fmod(z, majorInterval)) < 0.01f);
+			if (isAxis || isMajor) continue;
+
+			// 細線判定
+			const bool isMinor = (std::abs(std::fmod(z, minorInterval)) <
+				0.01f);
+
+			// 通常のグリッド線は近距離のみ描画判定
+			const float dz     = cameraPosZ - z;
+			const float distSq = dz * dz;
+			if (distSq > drawRadiusSq) continue;
+
+			// 色の決定
+			Vec4 lineColor = isMinor ? minorColor : color;
+
+			// 円形範囲内で描画（range内にクリップ）
+			const float halfLen = std::sqrt(drawRadiusSq - distSq);
+			const float startX  = std::max(-range, cameraPosX - halfLen);
+			const float endX    = std::min(range, cameraPosX + halfLen);
+
+			// 有効な範囲の場合のみ描画
+			if (startX < endX && startX <= range && endX >= -range) {
+				Debug::DrawLine(
+					Vec3(startX, 0, z),
+					Vec3(endX, 0, z),
+					lineColor
+				);
 			}
 		}
 	}

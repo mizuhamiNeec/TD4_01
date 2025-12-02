@@ -21,58 +21,54 @@ namespace ImGuiUtil {
 		ImGuiStyle& style  = ImGui::GetStyle();
 		ImVec4*     colors = style.Colors;
 
-		colors[ImGuiCol_WindowBg] = ImVec4(0.14f, 0.14f, 0.14f, 0.94f);
-		colors[ImGuiCol_Border] = ImVec4(0.10f, 0.10f, 0.10f, 1.00f);
-		colors[ImGuiCol_FrameBg] = ImVec4(0.18f, 0.18f, 0.18f, 1.00f);
-		colors[ImGuiCol_FrameBgHovered] = ImVec4(0.24f, 0.24f, 0.24f, 1.00f);
-		colors[ImGuiCol_FrameBgActive] = ImVec4(0.26f, 0.26f, 0.26f, 1.00f);
-		colors[ImGuiCol_TitleBg] = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
-		colors[ImGuiCol_TitleBgActive] = ImVec4(0.18f, 0.18f, 0.18f, 1.00f);
-		colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
-		colors[ImGuiCol_Button] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f);
-		colors[ImGuiCol_ButtonHovered] = ImVec4(0.30f, 0.30f, 0.30f, 1.00f);
-		colors[ImGuiCol_ButtonActive] = ImVec4(0.35f, 0.35f, 0.35f, 1.00f);
-		colors[ImGuiCol_Header] = ImVec4(0.23f, 0.23f, 0.23f, 1.00f);
-		colors[ImGuiCol_HeaderHovered] = ImVec4(0.28f, 0.28f, 0.28f, 1.00f);
-		colors[ImGuiCol_HeaderActive] = ImVec4(0.32f, 0.32f, 0.32f, 1.00f);
-		colors[ImGuiCol_ResizeGrip] = ImVec4(0.30f, 0.30f, 0.30f, 1.00f);
-		colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.45f, 0.45f, 0.45f, 1.00f);
-		colors[ImGuiCol_ResizeGripActive] = ImVec4(0.55f, 0.55f, 0.55f, 1.00f);
-		colors[ImGuiCol_ScrollbarBg] = ImVec4(0.15f, 0.15f, 0.15f, 1.00f);
-		colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.30f, 0.30f, 0.30f, 1.00f);
-		colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(
-			0.35f, 0.35f, 0.35f, 1.00f);
-		colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(
-			0.40f, 0.40f, 0.40f, 1.00f);
-		colors[ImGuiCol_Text] = ImVec4(0.71f, 0.71f, 0.71f, 1.00f);
-		colors[ImGuiCol_TextDisabled] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
-		colors[ImGuiCol_CheckMark] = ImVec4(0.90f, 0.90f, 0.90f, 1.00f);
-		colors[ImGuiCol_MenuBarBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f);
-		colors[ImGuiCol_SliderGrab] = ImVec4(0.89f, 0.49f, 0.02f, 1.00f);
-		colors[ImGuiCol_SliderGrabActive] = ImVec4(0.89f, 0.57f, 0.19f, 1.00f);
-		colors[ImGuiCol_SeparatorHovered] = ImVec4(0.89f, 0.49f, 0.02f, 0.78f);
-		colors[ImGuiCol_SeparatorActive] = ImVec4(0.89f, 0.49f, 0.02f, 1.00f);
-		colors[ImGuiCol_TabHovered] = ImVec4(0.20f, 0.20f, 0.20f, 0.81f);
-		colors[ImGuiCol_Tab] = ImVec4(0.25f, 0.25f, 0.25f, 0.86f);
-		colors[ImGuiCol_TabSelected] = ImVec4(0.31f, 0.31f, 0.31f, 1.00f);
-		colors[ImGuiCol_TabSelectedOverline] = ImVec4(
-			0.89f, 0.49f, 0.02f, 1.00f);
-		colors[ImGuiCol_TabDimmed] = ImVec4(0.18f, 0.18f, 0.18f, 0.97f);
-		colors[ImGuiCol_TabDimmedSelected] = ImVec4(0.25f, 0.25f, 0.25f, 1.00f);
-		colors[ImGuiCol_DockingPreview] = ImVec4(0.89f, 0.49f, 0.02f, 0.70f);
-		colors[ImGuiCol_TextLink] = ImVec4(0.89f, 0.49f, 0.02f, 1.00f);
-		colors[ImGuiCol_TextSelectedBg] = ImVec4(0.89f, 0.49f, 0.02f, 0.70f);
-		colors[ImGuiCol_NavCursor] = ImVec4(0.89f, 0.49f, 0.02f, 1.00f);
-		colors[ImGuiCol_NavWindowingHighlight] = ImVec4(
-			0.89f, 0.49f, 0.02f, 0.70f);
-		colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.17f, 0.17f, 0.17f, 0.86f);
-		colors[ImGuiCol_ModalWindowDimBg]  = ImVec4(0.17f, 0.17f, 0.17f, 0.86f);
+		colors[ImGuiCol_WindowBg]              = {0.14f, 0.14f, 0.14f, 0.94f};
+		colors[ImGuiCol_Border]                = {0.10f, 0.10f, 0.10f, 1.00f};
+		colors[ImGuiCol_FrameBg]               = {0.18f, 0.18f, 0.18f, 1.00f};
+		colors[ImGuiCol_FrameBgHovered]        = {0.24f, 0.24f, 0.24f, 1.00f};
+		colors[ImGuiCol_FrameBgActive]         = {0.26f, 0.26f, 0.26f, 1.00f};
+		colors[ImGuiCol_TitleBg]               = {0.14f, 0.14f, 0.14f, 1.00f};
+		colors[ImGuiCol_TitleBgActive]         = {0.18f, 0.18f, 0.18f, 1.00f};
+		colors[ImGuiCol_TitleBgCollapsed]      = {0.14f, 0.14f, 0.14f, 1.00f};
+		colors[ImGuiCol_Button]                = {0.20f, 0.20f, 0.20f, 1.00f};
+		colors[ImGuiCol_ButtonHovered]         = {0.30f, 0.30f, 0.30f, 1.00f};
+		colors[ImGuiCol_ButtonActive]          = {0.35f, 0.35f, 0.35f, 1.00f};
+		colors[ImGuiCol_Header]                = {0.23f, 0.23f, 0.23f, 1.00f};
+		colors[ImGuiCol_HeaderHovered]         = {0.28f, 0.28f, 0.28f, 1.00f};
+		colors[ImGuiCol_HeaderActive]          = {0.32f, 0.32f, 0.32f, 1.00f};
+		colors[ImGuiCol_ResizeGrip]            = {0.30f, 0.30f, 0.30f, 1.00f};
+		colors[ImGuiCol_ResizeGripHovered]     = {0.45f, 0.45f, 0.45f, 1.00f};
+		colors[ImGuiCol_ResizeGripActive]      = {0.55f, 0.55f, 0.55f, 1.00f};
+		colors[ImGuiCol_ScrollbarBg]           = {0.15f, 0.15f, 0.15f, 1.00f};
+		colors[ImGuiCol_ScrollbarGrab]         = {0.30f, 0.30f, 0.30f, 1.00f};
+		colors[ImGuiCol_ScrollbarGrabHovered]  = {0.35f, 0.35f, 0.35f, 1.00f};
+		colors[ImGuiCol_ScrollbarGrabActive]   = {0.40f, 0.40f, 0.40f, 1.00f};
+		colors[ImGuiCol_Text]                  = {0.71f, 0.71f, 0.71f, 1.00f};
+		colors[ImGuiCol_TextDisabled]          = {0.50f, 0.50f, 0.50f, 1.00f};
+		colors[ImGuiCol_CheckMark]             = {0.90f, 0.90f, 0.90f, 1.00f};
+		colors[ImGuiCol_MenuBarBg]             = {0.20f, 0.20f, 0.20f, 1.00f};
+		colors[ImGuiCol_SliderGrab]            = {0.89f, 0.49f, 0.02f, 1.00f};
+		colors[ImGuiCol_SliderGrabActive]      = {0.89f, 0.57f, 0.19f, 1.00f};
+		colors[ImGuiCol_SeparatorHovered]      = {0.89f, 0.49f, 0.02f, 0.78f};
+		colors[ImGuiCol_SeparatorActive]       = {0.89f, 0.49f, 0.02f, 1.00f};
+		colors[ImGuiCol_TabHovered]            = {0.20f, 0.20f, 0.20f, 0.81f};
+		colors[ImGuiCol_Tab]                   = {0.25f, 0.25f, 0.25f, 0.86f};
+		colors[ImGuiCol_TabSelected]           = {0.31f, 0.31f, 0.31f, 1.00f};
+		colors[ImGuiCol_TabSelectedOverline]   = {0.89f, 0.49f, 0.02f, 1.00f};
+		colors[ImGuiCol_TabDimmed]             = {0.18f, 0.18f, 0.18f, 0.97f};
+		colors[ImGuiCol_TabDimmedSelected]     = {0.25f, 0.25f, 0.25f, 1.00f};
+		colors[ImGuiCol_DockingPreview]        = {0.89f, 0.49f, 0.02f, 0.70f};
+		colors[ImGuiCol_TextLink]              = {0.89f, 0.49f, 0.02f, 1.00f};
+		colors[ImGuiCol_TextSelectedBg]        = {0.89f, 0.49f, 0.02f, 0.70f};
+		colors[ImGuiCol_NavCursor]             = {0.89f, 0.49f, 0.02f, 1.00f};
+		colors[ImGuiCol_NavWindowingHighlight] = {0.89f, 0.49f, 0.02f, 0.70f};
+		colors[ImGuiCol_NavWindowingDimBg]     = {0.17f, 0.17f, 0.17f, 0.86f};
+		colors[ImGuiCol_ModalWindowDimBg]      = {0.17f, 0.17f, 0.17f, 0.86f};
 
 		// Main
-		style.WindowPadding    = ImVec2(4, 4);
-		style.FramePadding     = ImVec2(4, 4);
-		style.ItemSpacing      = ImVec2(6, 6);
-		style.ItemInnerSpacing = ImVec2(2, 2);
+		style.WindowPadding    = {4, 4};
+		style.FramePadding     = {4, 4};
+		style.ItemSpacing      = {6, 6};
+		style.ItemInnerSpacing = {2, 2};
 		style.IndentSpacing    = 20.0f;
 		style.GrabMinSize      = 4.0f;
 
@@ -112,14 +108,14 @@ namespace ImGuiUtil {
 		style.TreeLinesRounding = 0.0f;
 
 		// Windows
-		style.WindowTitleAlign         = ImVec2(0.5f, 0.5f);
+		style.WindowTitleAlign         = {0.5f, 0.5f};
 		style.WindowBorderHoverPadding = 4.0f;
 		style.WindowMenuButtonPosition = ImGuiDir_Left;
 
 		// Widgets
 		style.ColorButtonPosition     = ImGuiDir_Right;
-		style.ButtonTextAlign         = ImVec2(0.5f, 0.5f);
-		style.SelectableTextAlign     = ImVec2(0.0f, 0.0f);
+		style.ButtonTextAlign         = {0.5f, 0.5f};
+		style.SelectableTextAlign     = {0.0f, 0.0f};
 		style.SeparatorTextBorderSize = 2.0f;
 		style.ImageBorderSize         = 0.0f;
 
@@ -139,9 +135,9 @@ namespace ImGuiUtil {
 	/// @param bg 通常時の背景色
 	/// @param bgHovered ホバー時の背景色
 	/// @param bgActive アクティブ時の背景色
-	void PushStyleColorForDrag(const ImVec4& bg,
-	                           const ImVec4& bgHovered,
-	                           const ImVec4& bgActive) {
+	void PushStyleColorForDrag(
+		const ImVec4& bg, const ImVec4& bgHovered, const ImVec4& bgActive
+	) {
 		ImGui::PushStyleColor(ImGuiCol_FrameBg, bg);
 		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, bgHovered);
 		ImGui::PushStyleColor(ImGuiCol_FrameBgActive, bgActive);
@@ -150,8 +146,9 @@ namespace ImGuiUtil {
 	/// @brief Transformコンポーネントの編集ウィジェットを表示します。
 	/// @param transform 編集するTransformコンポーネントへの参照
 	/// @param vSpeed ドラッグ操作の速度
-	bool EditTransform(SceneComponent& transform,
-	                   const float&    vSpeed) {
+	bool EditTransform(
+		SceneComponent& transform, const float& vSpeed
+	) {
 		bool       isEditing  = false;
 		Vec3       localPos   = transform.GetLocalPos();
 		Quaternion localRot   = transform.GetLocalRot();
@@ -208,8 +205,10 @@ namespace ImGuiUtil {
 	/// @param vSpeed ドラッグ操作の速度
 	/// @param format 表示フォーマット
 	/// @return 編集された場合はtrueを返す
-	bool DragVec3(const std::string& name, Vec3&         v,
-	              const float&       vSpeed, const char* format) {
+	bool DragVec3(
+		const std::string& name, Vec3& v, const float& vSpeed,
+		const char*        format
+	) {
 		// 編集中かどうか
 		bool isEditing = false;
 
@@ -226,10 +225,10 @@ namespace ImGuiUtil {
 
 		constexpr ImVec4 yBg        = {0.11f, 0.37f, 0.13f, 0.75f};
 		constexpr ImVec4 yBgHovered = {0.22f, 0.56f, 0.24f, 0.75f};
-		constexpr ImVec4 yBgActive  = {0.3f, 0.69f, 0.31f, 0.75f};
+		constexpr ImVec4 yBgActive  = {0.30f, 0.69f, 0.31f, 0.75f};
 
 		constexpr ImVec4 zBg        = {0.05f, 0.28f, 0.63f, 0.75f};
-		constexpr ImVec4 zBgHovered = {0.1f, 0.46f, 0.82f, 0.75f};
+		constexpr ImVec4 zBgHovered = {0.10f, 0.46f, 0.82f, 0.75f};
 		constexpr ImVec4 zBgActive  = {0.13f, 0.59f, 0.95f, 0.75f};
 
 		// 幅を決定
@@ -278,7 +277,7 @@ namespace ImGuiUtil {
 	/// @param pos テキストの位置
 	/// @param text 描画するテキスト
 	/// @param textColor テキストの色
-	/// @param outlineColor アウトラインの色
+	/// @param outlineColor アウトラインの
 	/// @param outlineSize アウトラインのサイズ
 	void TextOutlined(
 		ImDrawList*   drawList,
@@ -289,32 +288,44 @@ namespace ImGuiUtil {
 		const float   outlineSize
 	) {
 		// クライアント領域の左上座標を取得
-		ImVec2 windowPos = ImGui::GetWindowPos();
-		auto   clientPos = ImVec2(windowPos.x + pos.x, windowPos.y + pos.y);
+		const auto windowPos = ImGui::GetWindowPos();
+		const auto clientPos = ImVec2(windowPos.x + pos.x, windowPos.y + pos.y);
 
-		ImU32 outlineCol = ImGui::ColorConvertFloat4ToU32(outlineColor);
-		ImU32 textCol    = ImGui::ColorConvertFloat4ToU32(textColor);
+		const auto outlineCol = ImGui::ColorConvertFloat4ToU32(outlineColor);
+		const auto textCol    = ImGui::ColorConvertFloat4ToU32(textColor);
 
-		drawList->AddText(ImVec2(clientPos.x - outlineSize, clientPos.y),
-		                  outlineCol, text);
-		drawList->AddText(ImVec2(clientPos.x + outlineSize, clientPos.y),
-		                  outlineCol, text);
-		drawList->AddText(ImVec2(clientPos.x, clientPos.y - outlineSize),
-		                  outlineCol, text);
-		drawList->AddText(ImVec2(clientPos.x, clientPos.y + outlineSize),
-		                  outlineCol, text);
 		drawList->AddText(
-			ImVec2(clientPos.x - outlineSize, clientPos.y - outlineSize),
-			outlineCol, text);
+			{clientPos.x - outlineSize, clientPos.y}, outlineCol,
+			text
+		);
 		drawList->AddText(
-			ImVec2(clientPos.x + outlineSize, clientPos.y - outlineSize),
-			outlineCol, text);
+			{clientPos.x + outlineSize, clientPos.y}, outlineCol,
+			text
+		);
 		drawList->AddText(
-			ImVec2(clientPos.x - outlineSize, clientPos.y + outlineSize),
-			outlineCol, text);
+			{clientPos.x, clientPos.y - outlineSize}, outlineCol,
+			text
+		);
 		drawList->AddText(
-			ImVec2(clientPos.x + outlineSize, clientPos.y + outlineSize),
-			outlineCol, text);
+			{clientPos.x, clientPos.y + outlineSize}, outlineCol,
+			text
+		);
+		drawList->AddText(
+			{clientPos.x - outlineSize, clientPos.y - outlineSize}, outlineCol,
+			text
+		);
+		drawList->AddText(
+			{clientPos.x + outlineSize, clientPos.y - outlineSize}, outlineCol,
+			text
+		);
+		drawList->AddText(
+			{clientPos.x - outlineSize, clientPos.y + outlineSize}, outlineCol,
+			text
+		);
+		drawList->AddText(
+			{clientPos.x + outlineSize, clientPos.y + outlineSize}, outlineCol,
+			text
+		);
 		drawList->AddText(clientPos, textCol, text);
 	}
 

@@ -32,7 +32,38 @@
 #include <game/scene/EmptyScene.h>
 #include <game/scene/GameScene.h>
 
+namespace {
+	constexpr std::string_view kSceneEmpty = "EmptyScene";
+	constexpr std::string_view kSceneGame  = "GameScene";
+}
+
 namespace Unnamed {
+	bool Engine::RequestSceneChange(const std::string_view sceneName) {
+		if (sceneName.empty()) {
+			Warning("Engine", "RequestSceneChange ignored: empty name");
+			return false;
+		}
+
+		mPendingSceneChange = std::string(sceneName);
+		return true;
+	}
+
+	void Engine::ApplyPendingSceneChange() {
+		if (!mPendingSceneChange || mPendingSceneChange->empty()) {
+			return;
+		}
+
+		if (!mSceneManager) {
+			Error("Engine", "SceneManager missing; cannot apply pending scene change.");
+			mPendingSceneChange.reset();
+			return;
+		}
+
+		Msg("Engine", "Switching to scene '{}'", *mPendingSceneChange);
+		mSceneManager->ChangeScene(*mPendingSceneChange);
+		mPendingSceneChange.reset();
+	}
+
 	/// @brief コンストラクタ
 	Engine::Engine() = default;
 
@@ -324,168 +355,10 @@ namespace Unnamed {
 
 		if (IsEditorMode()) {
 #ifdef _DEBUG
+			mEditor->DrawMenuBars();
+
+			// DockSpace
 			{
-				// メニューバーを少し高くする
-				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,
-				                    ImVec2(
-					                    0.0f, kTitleBarH * 0.5f -
-					                    ImGui::GetFontSize() * 0.5f));
-				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,
-				                    ImVec2(0.0f, kTitleBarH));
-				if (ImGui::BeginMainMenuBar()) {
-					ImGui::PopStyleVar(2); // メニューバーのスタイルを元に戻す
-					// アイコンメニュー
-					ImGui::PushStyleColor(ImGuiCol_Text,
-					                      ImVec4(0.13f, 0.5f, 1.0f, 1.0f));
-
-					if (ImGuiWidgets::BeginMainMenu(
-						StrUtil::ConvertToUtf8(kIconArrowBack).c_str())) {
-						ImGui::PopStyleColor();
-						if (ImGui::MenuItemEx(
-							("About " + std::string(ENGINE_NAME)).c_str(),
-							nullptr)) {
-						}
-						ImGui::EndMenu();
-					} else {
-						ImGui::PopStyleColor();
-					}
-
-					if (ImGuiWidgets::BeginMainMenu("File")) {
-						ImGui::BeginDisabled();
-						if (ImGui::MenuItemEx(
-							"Save",
-							StrUtil::ConvertToUtf8(kIconSave).c_str())) {
-						}
-
-						if (ImGui::MenuItemEx("Save As",
-						                      StrUtil::ConvertToUtf8(
-							                      kIconSaveAs).
-						                      c_str())) {
-						}
-						ImGui::EndDisabled();
-
-						ImGui::Separator();
-
-						if (ImGui::MenuItemEx("Import",
-						                      StrUtil::ConvertToUtf8(
-							                      kIconDownload)
-						                      .
-						                      c_str())) {
-							BaseScene* currentScene = mSceneManager->
-								GetCurrentScene().
-								get();
-							if (currentScene) {
-								char szFile[MAX_PATH] = ""; // 初期ファイル名は空
-
-								OPENFILENAMEA ofn;
-								ZeroMemory(&ofn, sizeof(ofn)); // 構造体をゼロ初期化
-								ofn.lStructSize = sizeof(OPENFILENAMEA);
-
-								HWND hwndOwner = nullptr;
-								if (OldWindowManager::GetMainWindow()) {
-									hwndOwner =
-										OldWindowManager::GetMainWindow()->
-										GetWindowHandle();
-								}
-								ofn.hwndOwner   = hwndOwner;
-								ofn.lpstrFilter =
-									"Scene Files (*.scene)\0*.scene\0All Files (*.*)\0*.*\0";
-								ofn.lpstrFile  = szFile;
-								ofn.nMaxFile   = MAX_PATH;
-								ofn.lpstrTitle = "Import Scene From";
-								ofn.Flags      = OFN_PATHMUSTEXIST |
-									OFN_FILEMUSTEXIST |
-									OFN_NOCHANGEDIR;
-								// ファイル/パス存在確認、カレントディレクトリ変更なし
-								ofn.lpstrDefExt = "scene";
-
-								if (GetOpenFileNameA(&ofn)) {
-									mLoadFilePath = ofn.lpstrFile;
-								}
-							} else {
-								Error(
-									"ImportScene",
-									"Import failed: No active scene found."
-								);
-							}
-						}
-
-						if (ImGui::MenuItemEx("Export",
-						                      StrUtil::ConvertToUtf8(
-							                      kIconUpload).
-						                      c_str())) {
-							BaseScene* currentScene = mSceneManager->
-								GetCurrentScene().
-								get();
-							if (currentScene) {
-								char szFile[MAX_PATH] = "scene.json";
-								// デフォルトのファイル名
-
-								OPENFILENAMEA ofn;
-								ZeroMemory(&ofn, sizeof(ofn)); // 構造体をゼロ初期化
-								ofn.lStructSize = sizeof(OPENFILENAMEA);
-
-								HWND hwndOwner = nullptr;
-								if (OldWindowManager::GetMainWindow()) {
-									hwndOwner =
-										OldWindowManager::GetMainWindow()->
-										GetWindowHandle();
-								}
-								ofn.hwndOwner   = hwndOwner;
-								ofn.lpstrFilter =
-									"Scene Files (*.scene)\0*.scene\0All Files (*.*)\0*.*\0";
-								ofn.lpstrFile  = szFile;
-								ofn.nMaxFile   = MAX_PATH;
-								ofn.lpstrTitle = "Export Scene As";
-								ofn.Flags      = OFN_OVERWRITEPROMPT |
-									OFN_NOCHANGEDIR;
-								// 上書き確認、カレントディレクトリ変更なし
-								ofn.lpstrDefExt = "scene";
-
-								if (GetSaveFileNameA(&ofn)) {
-									std::string filePath = ofn.lpstrFile;
-									mEntityLoader->
-										SaveScene(filePath, currentScene);
-									SpecialMsg(
-										LogLevel::Success,
-										"SceneExport",
-										"Scene exported to: {}",
-										filePath
-									);
-								}
-							} else {
-								Error(
-									"SceneExport",
-									"Export failed: No active scene found."
-								);
-							}
-						}
-
-						ImGui::Separator();
-
-						ImGui::BeginDisabled();
-						if (ImGui::MenuItemEx(
-								"Exit",
-								StrUtil::ConvertToUtf8(kIconPower).c_str())
-						) {
-							Console::SubmitCommand("quit");
-						}
-						ImGui::EndDisabled();
-						ImGui::EndMenu();
-					}
-
-					if (ImGuiWidgets::BeginMainMenu("Edit")) {
-						ImGui::Separator();
-						if (ImGuiWidgets::MenuItemWithIcon(
-							StrUtil::ConvertToUtf8(kIconSettings).c_str(),
-							"Settings")) {
-						}
-
-						ImGui::EndMenu();
-					}
-					ImGui::EndMainMenuBar();
-				}
-
 				const ImGuiViewport* viewport = ImGui::GetMainViewport();
 				ImGui::SetNextWindowPos(viewport->WorkPos);
 				ImGui::SetNextWindowSize(viewport->WorkSize);
@@ -819,26 +692,6 @@ namespace Unnamed {
 			mRenderer->GetCommandList()->ResourceBarrier(1, &postBarrier);
 		}
 
-		if (mLoadFilePath) {
-			BaseScene* currentScene = mSceneManager->
-			                          GetCurrentScene().
-			                          get();
-			ResourceManager* resourceManager =
-				GetResourceManager();
-			if (resourceManager) {
-				mEntityLoader->LoadScene(
-					mLoadFilePath.value(), currentScene,
-					resourceManager);
-				Msg(
-					"Engine",
-					"Scene imported from: {}",
-					mLoadFilePath.value()
-				);
-			}
-
-			mLoadFilePath.reset(); // ロード後はリセット
-		}
-
 		mRenderer->PostRender();
 
 		mTimeSystem->EndFrame();
@@ -1040,6 +893,22 @@ namespace Unnamed {
 			"Toggle editor mode."
 		);
 
+		ConCommand::RegisterCommand(
+			"scene_title",
+			[]([[maybe_unused]] const std::vector<std::string>& args) {
+				return Engine::RequestSceneChange("EmptyScene");
+			},
+			"Switch to the title scene."
+		);
+
+		ConCommand::RegisterCommand(
+			"scene_game",
+			[]([[maybe_unused]] const std::vector<std::string>& args) {
+				return Engine::RequestSceneChange("GameScene");
+			},
+			"Switch to the gameplay scene."
+		);
+
 		// コンソール変数を登録
 		ConVarManager::RegisterConVar(
 			"cl_showpos", 1,
@@ -1086,29 +955,6 @@ namespace Unnamed {
 
 		// デバッグ用にエンティティのaxisを表示するかのコンソール変数
 		ConVarManager::RegisterConVar("ent_axis", 0, "Show entity axis");
-
-		// // デフォルトのバインド
-		// Console::SubmitCommand("bind esc togglelockcursor", true);
-		// Console::SubmitCommand("bind w +forward", true);
-		// Console::SubmitCommand("bind s +back", true);
-		// Console::SubmitCommand("bind a +moveleft", true);
-		// Console::SubmitCommand("bind d +moveright", true);
-		// Console::SubmitCommand("bind e +moveup", true);
-		// Console::SubmitCommand("bind q +movedown", true);
-		// Console::SubmitCommand("bind c +crouch", true);
-		// Console::SubmitCommand("bind space +jump", true);
-		// Console::SubmitCommand("bind mouse1 +attack1", true);
-		// Console::SubmitCommand("bind mouse2 +attack2", true);
-		// Console::SubmitCommand("bind r +reload", true);
-		// Console::SubmitCommand("bind mousewheelup +invprev", true);
-		// Console::SubmitCommand("bind mousewheeldown +invnext", true);
-		// Console::SubmitCommand("bind f1 toggleeditor", true);
-		//
-		// Console::SubmitCommand("bind 4 +bounds", true);
-		// Console::SubmitCommand("bind 1 +translate", true);
-		// Console::SubmitCommand("bind 2 +rotate", true);
-		// Console::SubmitCommand("bind 3 +scale", true);
-		// Console::SubmitCommand("bind tab +toggleGizmo", true);
 	}
 
 	/// @brief エンジン終了コマンド
@@ -1124,6 +970,7 @@ namespace Unnamed {
 				mSceneManager.get(),
 				mTimeSystem->GetGameTime()
 			);
+			mEditor->SetEntityLoader(mEntityLoader.get());
 		} else {
 			mEditor.reset();
 		}
@@ -1140,6 +987,8 @@ namespace Unnamed {
 
 	Vec2 Engine::mViewportLT   = Vec2::zero;
 	Vec2 Engine::mViewportSize = Vec2::zero;
+	
+	std::optional<std::string> Engine::mPendingSceneChange = std::nullopt;
 
 #ifdef _DEBUG
 	bool Engine::mIsEditorMode = true;

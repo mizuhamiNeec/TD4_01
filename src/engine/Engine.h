@@ -1,6 +1,8 @@
 #pragma once
 #include <memory>
 #include <string>
+#include <string_view>
+#include <optional>
 #include <vector>
 
 #include <editor/Editor.h>
@@ -99,6 +101,8 @@ namespace Unnamed {
 		// DEPRECATED: 旧エンジンクラス
 		static float blurStrength;
 
+		static bool RequestSceneChange(std::string_view sceneName);
+
 
 		void OnResize(uint32_t width, uint32_t height);
 		void ResizeOffscreenRenderTextures(uint32_t width, uint32_t height);
@@ -110,6 +114,20 @@ namespace Unnamed {
 
 	private:
 		std::unique_ptr<OldWindowManager> mWindowManager;
+		std::unique_ptr<Editor>           mEditor;
+		std::unique_ptr<EntityLoader>     mEntityLoader;
+		std::unique_ptr<Console>          mConsole;
+		std::unique_ptr<CopyImagePass>    mCopyImagePass;
+		std::vector<std::unique_ptr<IPostProcess>> mPostChain;
+		RenderTargetTexture               mOffscreenRtv;
+		DepthStencilTexture               mOffscreenDsv;
+		RenderPassTargets                 mOffscreenRenderPassTargets;
+		RenderTargetTexture               mPostProcessedRtv;
+		DepthStencilTexture               mPostProcessedDsv;
+		RenderPassTargets                 mPostProcessedRenderPassTargets;
+		RenderTargetTexture               mPingRtv[2];
+		uint32_t                          mPingIndex = 0;
+		bool                              bSwapchainPassBegun = false;
 
 		static std::unique_ptr<SrvManager>      mSrvManager;
 		static std::unique_ptr<ResourceManager> mResourceManager;
@@ -121,37 +139,16 @@ namespace Unnamed {
 
 		static std::unique_ptr<ParticleManager> mParticleManager;
 
-		std::unique_ptr<CopyImagePass> mCopyImagePass;
-
 		static std::unique_ptr<SpriteCommon> mSpriteCommon;
 		std::unique_ptr<Object3DCommon>      mObject3DCommon;
 		std::unique_ptr<ModelCommon>         mModelCommon;
 		std::unique_ptr<LineCommon>          mLineCommon;
-
-		std::unique_ptr<SceneFactory> mSceneFactory;
+		std::unique_ptr<SceneFactory>        mSceneFactory;
 
 		static std::shared_ptr<SceneManager> mSceneManager;
+		static std::optional<std::string>   mPendingSceneChange;
 
-		std::unique_ptr<Editor>  mEditor;
-		std::unique_ptr<Console> mConsole;
-
-		std::optional<std::string> mLoadFilePath;
-
-		std::unique_ptr<EntityLoader> mEntityLoader;
-
-		RenderTargetTexture                        mPingRtv[2];
-		uint32_t                                   mPingIndex = 0;
-		std::vector<std::unique_ptr<IPostProcess>> mPostChain;
-		bool                                       bSwapchainPassBegun = false;
-
-		RenderTargetTexture mOffscreenRtv;
-		DepthStencilTexture mOffscreenDsv;
-		RenderPassTargets   mOffscreenRenderPassTargets;
-
-		RenderTargetTexture mPostProcessedRtv;
-		DepthStencilTexture mPostProcessedDsv;
-		RenderPassTargets   mPostProcessedRenderPassTargets;
-
+		static void ApplyPendingSceneChange();
 		static Vec2 mViewportLT;
 		static Vec2 mViewportSize;
 		static bool mIsEditorMode;

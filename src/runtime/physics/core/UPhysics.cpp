@@ -69,15 +69,6 @@ namespace UPhysics {
 	/// @details メッシュコライダーを持ったエンティティを登録します
 	/// @param entity 登録するエンティティ
 	void Engine::RegisterEntity(Entity* entity) {
-		if (!entity->HasComponent<MeshColliderComponent>()) {
-			Warning(
-				"UPhysics",
-				"Entity '{}' does not have a MeshColliderComponent.",
-				entity->GetName()
-			);
-			return;
-		}
-
 		auto meshCollider = entity->GetComponent<MeshColliderComponent>();
 		if (!meshCollider) {
 			Warning(
@@ -88,55 +79,48 @@ namespace UPhysics {
 			return;
 		}
 
-		const auto transform = meshCollider->GetOwner()->GetTransform();
+		const auto  transform = meshCollider->GetOwner()->GetTransform();
+		const Mat4& worldMat  = transform->GetWorldMat();
+
+		const float m00 = worldMat.m[0][0], m01 = worldMat.m[0][1], m02 =
+			            worldMat.m[0][2];
+		const float m10 = worldMat.m[1][0], m11 = worldMat.m[1][1], m12 =
+			            worldMat.m[1][2];
+		const float m20 = worldMat.m[2][0], m21 = worldMat.m[2][1], m22 =
+			            worldMat.m[2][2];
+		const float m30 = worldMat.m[3][0], m31 = worldMat.m[3][1], m32 =
+			            worldMat.m[3][2];
 
 		for (
 			const auto& subMesh : meshCollider->GetStaticMesh()->GetSubMeshes()
 		) {
-			auto tris = subMesh->GetPolygons();
-
+			const auto& tris = subMesh->GetPolygons();
 
 			std::vector<Unnamed::Triangle> triangles;
+			triangles.reserve(tris.size());
 
 			// UPhysics::Triangleに変換
-			for (auto tri : tris) {
-				// ローカル座標をワールド座標に変換
-				// ワールド変換行列を取得
-				const Mat4& worldMat = transform->GetWorldMat();
-
-				// 頂点をワールド座標に変換（スケール、回転、位置をすべて適用）
-				// 同次座標系を使用して変換
-				Vec3 t0 = Vec3(
-					tri.v0.x * worldMat.m[0][0] + tri.v0.y * worldMat.m[1][0] +
-					tri.v0.z * worldMat.m[2][0] + worldMat.m[3][0],
-					tri.v0.x * worldMat.m[0][1] + tri.v0.y * worldMat.m[1][1] +
-					tri.v0.z * worldMat.m[2][1] + worldMat.m[3][1],
-					tri.v0.x * worldMat.m[0][2] + tri.v0.y * worldMat.m[1][2] +
-					tri.v0.z * worldMat.m[2][2] + worldMat.m[3][2]
-				);
-
-				Vec3 t1 = Vec3(
-					tri.v1.x * worldMat.m[0][0] + tri.v1.y * worldMat.m[1][0] +
-					tri.v1.z * worldMat.m[2][0] + worldMat.m[3][0],
-					tri.v1.x * worldMat.m[0][1] + tri.v1.y * worldMat.m[1][1] +
-					tri.v1.z * worldMat.m[2][1] + worldMat.m[3][1],
-					tri.v1.x * worldMat.m[0][2] + tri.v1.y * worldMat.m[1][2] +
-					tri.v1.z * worldMat.m[2][2] + worldMat.m[3][2]
-				);
-
-				Vec3 t2 = Vec3(
-					tri.v2.x * worldMat.m[0][0] + tri.v2.y * worldMat.m[1][0] +
-					tri.v2.z * worldMat.m[2][0] + worldMat.m[3][0],
-					tri.v2.x * worldMat.m[0][1] + tri.v2.y * worldMat.m[1][1] +
-					tri.v2.z * worldMat.m[2][1] + worldMat.m[3][1],
-					tri.v2.x * worldMat.m[0][2] + tri.v2.y * worldMat.m[1][2] +
-					tri.v2.z * worldMat.m[2][2] + worldMat.m[3][2]
-				);
-
+			for (const auto& tri : tris) {
 				triangles.emplace_back(
-					t0, t1, t2
+					Vec3(
+						tri.v0.x * m00 + tri.v0.y * m10 + tri.v0.z * m20 + m30,
+						tri.v0.x * m01 + tri.v0.y * m11 + tri.v0.z * m21 + m31,
+						tri.v0.x * m02 + tri.v0.y * m12 + tri.v0.z * m22 + m32
+					),
+					Vec3(
+						tri.v1.x * m00 + tri.v1.y * m10 + tri.v1.z * m20 + m30,
+						tri.v1.x * m01 + tri.v1.y * m11 + tri.v1.z * m21 + m31,
+						tri.v1.x * m02 + tri.v1.y * m12 + tri.v1.z * m22 + m32
+					),
+					Vec3(
+						tri.v2.x * m00 + tri.v2.y * m10 + tri.v2.z * m20 + m30,
+						tri.v2.x * m01 + tri.v2.y * m11 + tri.v2.z * m21 + m31,
+						tri.v2.x * m02 + tri.v2.y * m12 + tri.v2.z * m22 + m32
+					)
 				);
-			} // BVHを構築
+			}
+
+			// BVHを構築
 			BVHBuilder            bvhBuilder;
 			std::vector<FlatNode> nodes;
 			std::vector<uint32_t> triIndices;
@@ -147,22 +131,17 @@ namespace UPhysics {
 
 			size_t triCount = triangles.size();
 
-			// インデックスにグローバルオフセットを追加
-			AddGlobalOffset(
-				triIndices,
-				static_cast<uint32_t>(mTriangles.size())
-			);
+			AddGlobalOffset(triIndices,
+			                static_cast<uint32_t>(mTriangles.size()));
 
-			// メンバに突っ込む
-			mBVHs.emplace_back(
-				RegisteredBVH{
-					.nodes = std::move(nodes),
-					.triIndices = std::move(triIndices),
-					.triStart = triStart,
-					.triCount = triCount,
-					.owner = entity
-				}
-			);
+			mBVHs.emplace_back(RegisteredBVH{
+				.nodes = std::move(nodes),
+				.triIndices = std::move(triIndices),
+				.triStart = triStart,
+				.triCount = triCount,
+				.owner = entity
+			});
+
 			mTriangles.insert(
 				mTriangles.end(),
 				triangles.begin(),

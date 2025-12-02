@@ -83,4 +83,14 @@ namespace StrUtil {
 	/// @param str 判定する文字列
 	/// @return ブール文字列の場合true
 	bool CheckBoolString(std::string str);
+
+	struct LinkSpan {
+		std::size_t begin;
+		std::size_t end; // [begin, end]
+	};
+
+	/// @brief 行からリンクを解析する
+	/// @param line 入力行文字列
+	/// @return リンクのスパン配列
+	std::vector<LinkSpan> ParseLinksFromLine(std::string_view line);
 }

@@ -219,4 +219,105 @@ namespace StrUtil {
 		bool ret = (str == "1" || str == "true" || str == "yes" || str == "on");
 		return ret;
 	}
+
+	std::vector<LinkSpan> ParseLinksFromLine(const std::string_view line) {
+		std::vector<LinkSpan> result;
+		const auto            size = line.size();
+
+		auto IsSpace = [](unsigned char c) {
+			return std::isspace(c) != 0;
+		};
+
+		auto IsTrailingPunct  = [](char c) {
+			switch (c) {
+			case '.':
+			case ',':
+			case ';':
+			case ':':
+			case ')':
+			case ']':
+			case '}':
+			case '>':
+			case '"':
+			case '\'':
+				return true;
+			default:
+				return false;
+			}
+		};
+
+		auto StartsWithAt = [&](const std::size_t pos, const std::string_view prefix) {
+			return pos + prefix.size() <= size &&
+				std::string_view(line.data() + pos, prefix.size()) == prefix;
+		};
+
+		for (std::size_t i = 0; i < size; ++i) {
+			LinkSpan span{};
+			bool     matched = false;
+
+			// ブラウザリンク
+			if (StartsWithAt(i, "http://") || StartsWithAt(i, "https://") ||
+				StartsWithAt(i, "file://")) {
+				span.begin    = i;
+				std::size_t j = i;
+				while (j < size && !IsSpace(
+					static_cast<unsigned char>(line[j]))) {
+					++j;
+				}
+				// 末尾の句読点などを削る
+				while (j > span.begin && IsTrailingPunct(line[j - 1])) {
+					--j;
+				}
+				if (j > span.begin) {
+					span.end = j;
+					matched  = true;
+				}
+			}
+			// Windows 絶対パス: C:\ or D:/ など
+			else if (i + 2 < size &&
+				std::isalpha(static_cast<unsigned char>(line[i])) &&
+				line[i + 1] == ':' &&
+				(line[i + 2] == '\\' || line[i + 2] == '/')) {
+				span.begin    = i;
+				std::size_t j = i;
+				while (j < size && !IsSpace(
+					static_cast<unsigned char>(line[j]))) {
+					++j;
+				}
+				while (j > span.begin && IsTrailingPunct(line[j - 1])) {
+					--j;
+				}
+				if (j > span.begin + 3) {
+					span.end = j;
+					matched  = true;
+				}
+			}
+			// 相対パス
+			else if (StartsWithAt(i, "./") || StartsWithAt(i, ".\\") ||
+				StartsWithAt(i, "../") || StartsWithAt(i, "..\\")
+			) {
+				span.begin    = i;
+				std::size_t j = i;
+				while (j < size && !IsSpace(
+					static_cast<unsigned char>(line[j]))) {
+					++j;
+				}
+				while (j > span.begin && IsTrailingPunct(line[j - 1])) {
+					--j;
+				}
+				if (j > span.begin + 2) {
+					span.end = j;
+					matched  = true;
+				}
+			}
+
+			if (matched) {
+				result.emplace_back(span);
+				// 見つけたリンクの末尾まで飛ばす
+				i = span.end;
+			}
+		}
+
+		return result;
+	}
 }

@@ -69,8 +69,9 @@ public:
 		/// @param buffer 対象のリングバッファ
 		/// @param index 開始インデックス
 		/// @param count 反復回数
-		Iterator(const RingBuffer* buffer, size_t index, size_t count) :
-			mBuffer(buffer), mIndex(index), mCount(count) {
+		Iterator(
+			const RingBuffer* buffer, const size_t index, const size_t count
+		) : mBuffer(buffer), mIndex(index), mCount(count) {
 		}
 
 		const T& operator*() const {
@@ -87,20 +88,24 @@ public:
 			return mCount != other.mCount;
 		}
 
+		[[nodiscard]] size_t Index() const {
+			return mIndex;
+		}
+
 	private:
 		const RingBuffer* mBuffer;
 		size_t            mIndex;
 		size_t            mCount;
 	};
 
-	/// @brief 範囲forループ用の開始イテレータを取得する
+	/// @brief 範囲for用の開始イテレータを取得
 	/// @return 開始イテレータ
 	[[nodiscard]] Iterator begin() const {
 		std::lock_guard lock(mMutex);
 		return Iterator(this, mTail, mSize);
 	}
 
-	///@brief 範囲forループ用の終了イテレータを取得する
+	///@brief 範囲for用の終了イテレータを取得
 	///@return 終了イテレータ
 	///@return 終了イテレータ
 	[[nodiscard]] Iterator end() const {

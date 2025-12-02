@@ -76,6 +76,8 @@ private:
 	void UpdateTeleport();
 	void UpdateParticlesAndEffects(float deltaTime);
 	void UpdateEntities(float deltaTime);
+	void QueueReturnToTitle();
+
 #ifdef _DEBUG
 	void DrawDebugHud(const std::shared_ptr<CameraComponent>& camera) const;
 #endif
@@ -133,6 +135,7 @@ private:
 	// 遅延読み込み用フラグ
 	bool mPendingMeshReload = false;
 	bool mMeshReloadArmed   = false;
+	bool mPendingReturnToTitle = false;
 
 	IConVar* mShowPosConVar = nullptr;
 	IConVar* mNameConVar    = nullptr;

@@ -14,6 +14,7 @@
 #include <engine/Debug/DebugHud.h>
 #include <engine/ImGui/ImGuiUtil.h>
 #include <engine/Input/InputSystem.h>
+#include <engine/OldConsole/ConCommand.h>
 #include <engine/OldConsole/ConVarManager.h>
 #include <engine/subsystem/console/Log.h>
 #include <engine/TextureManager/TexManager.h>
@@ -34,8 +35,8 @@ namespace {
 		"./content/core/textures/wave.dds";
 	constexpr char kSmokeTexturePath[] =
 		"./content/core/textures/smoke.png";
-	constexpr char kNextCheckpointArrowTexturePath[] =
-		"./content/parkour/textures/arrow.png";
+	constexpr char kPingTexturePath[] =
+		"./content/parkour/textures/ping.png";
 	constexpr char kWindParticleTexturePath[] =
 		"./content/core/textures/circle.png";
 	constexpr char kWeaponMeshPath[]   = "./content/core/models/weapon.obj";
@@ -104,7 +105,7 @@ void GameScene::Init() {
 	InitializePhysics();
 	InitializeCamera();
 	InitializePlayer();
-	//InitializeWorldMesh();
+	InitializeWorldMesh();
 	InitializeFanMesh();
 	InitializeCameraRoot();
 	InitializeShakeRoot();
@@ -121,7 +122,7 @@ void GameScene::Init() {
 	mNextCheckpointSprite = std::make_unique<Sprite>();
 	mNextCheckpointSprite->Init(
 		mSpriteCommon,
-		kNextCheckpointArrowTexturePath
+		kPingTexturePath
 	);
 	mNextCheckpointSprite->SetAnchorPoint({0.5f, 0.5f});
 
@@ -133,6 +134,10 @@ void GameScene::Init() {
 /// @param deltaTime 経過時間
 void GameScene::Update(const float deltaTime) {
 	HandleMeshReload();
+
+	if (InputSystem::IsTriggered("escape")) {
+		QueueReturnToTitle();
+	}
 
 	// ファンを物理エンジンから登録解除
 	if (mUPhysicsEngine) {
@@ -183,10 +188,9 @@ void GameScene::Update(const float deltaTime) {
 			);
 		}
 
-		mNextCheckpointSprite->SetPos(Vec3(
-			Unnamed::Engine::GetViewportLT() +
-			Unnamed::Engine::GetViewportSize() * 0.5f));
-		mNextCheckpointSprite->SetRot({0.0f, 0.0f, angle});
+		mNextCheckpointSprite->SetPos(
+			Unnamed::Engine::GetViewportLT() + screenPos
+		);
 	} else {
 		CheckpointManager::ResetAllCheckpoints();
 	}
@@ -194,6 +198,30 @@ void GameScene::Update(const float deltaTime) {
 	mNextCheckpointSprite->Update();
 
 #ifdef _DEBUG
+	// チェックポイントのデバッグ表示
+	if (!mCheckpointEntities.empty()) {
+		const Vec4 lineColor(0.0f, 1.0f, 0.0f, 1.0f); // 緑色
+
+		// 順番に隣接するチェックポイント同士を結ぶ
+		for (size_t i = 0; i + 1 < mCheckpointEntities.size(); ++i) {
+			auto* a = mCheckpointEntities[i].get();
+			auto* b = mCheckpointEntities[i + 1].get();
+			if (!a || !b) {
+				continue;
+			}
+			const Vec3 posA = a->GetTransform()->GetWorldPos();
+			const Vec3 posB = b->GetTransform()->GetWorldPos();
+			Debug::DrawLine(posA, posB, lineColor);
+		}
+
+		// 最後のチェックポイントからゴールへ繋ぐ
+		auto* last = mCheckpointEntities.back().get();
+		if (last && mGoalEntity) {
+			const Vec3 posLast = last->GetTransform()->GetWorldPos();
+			const Vec3 posGoal = mGoalEntity->GetTransform()->GetWorldPos();
+			Debug::DrawLine(posLast, posGoal, lineColor);
+		}
+	}
 	DrawDebugHud(camera);
 #endif
 }
@@ -245,6 +273,11 @@ void GameScene::Render() {
 		}
 		mNextCheckpointSprite->Draw();
 	}
+
+	if (mPendingReturnToTitle) {
+		Unnamed::Engine::RequestSceneChange("EmptyScene");
+		mPendingReturnToTitle = false;
+	}
 }
 
 /// @brief コンソール変数の登録
@@ -276,7 +309,7 @@ void GameScene::LoadCoreTextures() const {
 			{kUvCheckerTexturePath, false},
 			{kWaveTexturePath, true},
 			{kSmokeTexturePath, false},
-			{kNextCheckpointArrowTexturePath, false},
+			{kPingTexturePath, false},
 		}
 	};
 
@@ -461,7 +494,7 @@ void GameScene::InitializeFanMesh() {
 	}
 
 	mFanEntity = std::make_unique<Entity>("fan");
-	mFanEntity->GetTransform()->SetWorldPos(Vec3::down * 8.0f);
+	mFanEntity->GetTransform()->SetWorldPos(Vec3::down * 16.0f);
 	auto* fanRenderer = mFanEntity->AddComponent<StaticMeshRenderer>();
 	mFanMeshRenderer  = AdoptComponent(fanRenderer);
 	if (mFanMeshRenderer && meshManager) {
@@ -968,6 +1001,21 @@ void GameScene::UpdateEntities(float deltaTime) {
 		}
 	}
 
+	// ファンをSinCosで移動させる
+	if (mFanEntity) {
+		static float moveSpeed = 100.0f;
+
+		const auto newPos = Vec3(
+			std::sin(moveSpeed) * 20.0f,
+			mFanEntity->GetTransform()->GetWorldPos().y,
+			mFanEntity->GetTransform()->GetWorldPos().z
+		);
+
+		moveSpeed += deltaTime;
+
+		mFanEntity->GetTransform()->SetWorldPos(newPos);
+	}
+
 	// 回転が適用された後に再登録
 	mFanEntity->AddComponent<MeshColliderComponent>();
 	if (mUPhysicsEngine) {
@@ -1327,4 +1375,13 @@ void GameScene::SafeReloadWorldMesh() {
 	               kConTextColorCompleted);
 
 	Console::Print("Safe world mesh reload completed!", kConTextColorCompleted);
+}
+
+void GameScene::QueueReturnToTitle() {
+	if (mPendingReturnToTitle) {
+		return;
+	}
+
+
+	mPendingReturnToTitle = true;
 }

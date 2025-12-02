@@ -115,29 +115,22 @@ namespace Unnamed {
 		// Visual Studioの出力
 		OutputDebugStringW(StrUtil::ToWString(out).c_str());
 		OutputDebugStringW(StrUtil::ToWString("\n").c_str());
+
+#ifdef _DEBUG
+		mConsoleUI->OnConsoleUpdate();
+#endif
 	}
 
 	/// @brief コンソールコマンドを登録します
 	/// @param conCommand 登録するコマンドへのポインタ
 	void ConsoleSystem::RegisterConCommand(UnnamedConCommandBase* conCommand) {
 		mConCommands[std::string(conCommand->GetName())] = conCommand;
-
-		DevMsg(
-			kChannel,
-			"コマンドが登録されました: {}",
-			conCommand->GetName()
-		);
 	}
 
 	/// @brief コンソール変数を登録します
 	/// @param conVar 登録する変数へのポインタ
 	void ConsoleSystem::RegisterConVar(UnnamedConVarBase* conVar) {
 		mConVars[std::string(conVar->GetName())] = conVar;
-
-		DevMsg(
-			kChannel,
-			"ConVarが登録されました"
-		);
 	}
 
 	/// @brief コンソールにコマンドを送信します。
@@ -172,6 +165,9 @@ namespace Unnamed {
 				"> {}",
 				trimmed
 			);
+#ifdef _DEBUG
+			mConsoleUI->OnConsoleUpdate();
+#endif
 		}
 
 		for (const auto& singleCommand : commands) {

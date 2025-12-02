@@ -343,6 +343,11 @@ void Sprite::SetUvRot(const float& newRot) {
 
 /// @brief テクスチャサイズに合わせてスプライトのサイズを調整
 void Sprite::AdjustTextureSize() {
+	mTextureSize = {
+		static_cast<float>(TexManager::GetInstance()->GetMetaData(mTextureFilePath).width),
+		static_cast<float>(TexManager::GetInstance()->GetMetaData(mTextureFilePath).height)
+	};
+
 	mTransform.scale.x = mTextureSize.x;
 	mTransform.scale.y = mTextureSize.y;
 }

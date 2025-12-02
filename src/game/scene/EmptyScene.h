@@ -7,6 +7,8 @@
 
 #include <runtime/physics/core/UPhysics.h>
 
+#include "runtime/gui/UiDocument.h"
+
 class D3D12;
 
 /**
@@ -42,5 +44,10 @@ public:
 	void Shutdown() override;
 
 private:
+	void HandleLaunchInput();
+	void BindUiCallbacks() const;
+
 	D3D12* mRenderer = nullptr;
+	bool   mGameLaunchQueued = false;
+	std::shared_ptr<Unnamed::Gui::UiDocument> mActiveDocument;
 };

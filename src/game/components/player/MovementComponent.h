@@ -141,6 +141,8 @@ private:
 	void UpdateHullDimensions();
 	void CheckForNaNAndClamp();
 
+	void ResolvePenetration();
+	
 	// 衝突応答
 	void MoveWithCollisions(float dt);
 
@@ -218,8 +220,13 @@ private:
 	static constexpr float kSlideHopSpeedCap  = 2000.0f; // HU/s - スライドホップの速度上限
 
 	// 動的地形
-	Vec3                   mSurfaceVelocity    = Vec3::zero; // 接触した地形の速度
-	static constexpr float kDynamicCheckSkinHu = 2.0f;       // 
+	Vec3                   mSurfaceVelocity       = Vec3::zero; // 接触した地形の速度
+	Entity*                mLastGroundEntity      = nullptr;    // 前フレームで接触していた床のエンティティ
+	Vec3                   mLastGroundPosition    = Vec3::zero; // 前フレームの床の位置
+	Quaternion             mLastGroundRotation    = Quaternion::identity; // 前フレームの床の回転
+	Vec3                   mRelativeVelocity      = Vec3::zero; // 床に対する相対速度
+	bool                   mWasOnMovingSurface    = false;      // 前フレームで動く床にいたか
+	static constexpr float kDynamicCheckSkinHu    = 8.0f;       // 
 
 	UPhysics::Engine* mUPhysicsEngine = nullptr;
 	AABBCollider*     mCollider       = nullptr;

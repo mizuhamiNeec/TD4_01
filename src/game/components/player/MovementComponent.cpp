@@ -69,6 +69,14 @@ void MovementComponent::Init(
 	mData.wallRunTime           = 0.0f;
 	mData.timeSinceLastWallRun  = 999.0f;
 	mData.wallRunJumpWasPressed = false;
+
+	// 動く床トラッキングの初期化
+	mLastGroundEntity   = nullptr;
+	mLastGroundPosition = Vec3::zero;
+	mLastGroundRotation = Quaternion::identity;
+	mSurfaceVelocity    = Vec3::zero;
+	mWasOnMovingSurface = false;
+
 	UpdateHullDimensions();
 }
 
@@ -113,6 +121,34 @@ void MovementComponent::DrawInspectorImGui() {
 		ImGui::Checkbox("Grounded", &mData.isGrounded);
 		ImGui::Text("HeightHU: %.2f  WidthHU: %.2f", mData.currentHeightHu,
 		            mData.currentWidthHu);
+
+		// Moving surface info
+		if (mWasOnMovingSurface) {
+			ImGui::Separator();
+			ImGui::TextColored({1.0f, 1.0f, 0.0f, 1.0f}, "On Moving Surface");
+			ImGui::Text("Total Surface Vel: (%.2f, %.2f, %.2f) HU/s",
+			            Math::MtoH(mSurfaceVelocity.x),
+			            Math::MtoH(mSurfaceVelocity.y),
+			            Math::MtoH(mSurfaceVelocity.z));
+			Vec3 horizontalVel = mSurfaceVelocity;
+			horizontalVel.y    = 0.0f;
+			ImGui::Text("Horizontal: %.2f HU/s",
+			            Math::MtoH(horizontalVel.Length()));
+			ImGui::Text("Magnitude: %.2f HU/s",
+			            Math::MtoH(mSurfaceVelocity.Length()));
+
+			if (mLastGroundEntity) {
+				ImGui::Text("Entity: %s", mLastGroundEntity->GetName().c_str());
+
+				// 回転中心からの距離を表示
+				Vec3 platformPos = mLastGroundEntity->GetTransform()->
+					GetWorldPos();
+				Vec3  toPlayer = mScene->GetWorldPos() - platformPos;
+				float radius   = toPlayer.Length();
+				ImGui::Text("Distance from center: %.2f m (%.2f HU)", radius,
+				            Math::MtoH(radius));
+			}
+		}
 
 		// Wallrun info
 		if (mData.isWallRunning) {
@@ -216,19 +252,22 @@ void MovementComponent::ProcessInput() {
 /// @brief 移動処理
 /// @param dt 経過時間
 void MovementComponent::ProcessMovement(const float dt) {
-	static Vec3       oldPos; // 触れたオブジェクトの前フレーム位置
-	static Quaternion prevRot = Quaternion::identity;
-	mSurfaceVelocity          = Vec3::zero;
+	// 動く床の速度計算と適用
+	mSurfaceVelocity            = Vec3::zero;
+	Entity* currentGroundEntity = nullptr;
 
+	// プレイヤーの足元周辺で床を検出（接地している場合のみ）
 	Unnamed::Box extendedHull = {
 		.center = mHull.center,
-		.halfSize = mHull.halfSize + Vec3::one * Math::HtoM(
-			kDynamicCheckSkinHu)
+		.halfSize = mHull.halfSize + Vec3::one * Math::HtoM(kDynamicCheckSkinHu)
 	};
 
 	UPhysics::Hit surfaceHit;
+	bool          isOnMovingSurface = false;
 
-	if (mUPhysicsEngine->BoxOverlap(extendedHull, &surfaceHit, 1)) {
+	// 接地している場合のみ床を検出
+	if (mData.isGrounded && mUPhysicsEngine->BoxOverlap(
+		extendedHull, &surfaceHit, 1)) {
 		Debug::DrawBox(
 			extendedHull.center,
 			Quaternion::identity,
@@ -238,21 +277,87 @@ void MovementComponent::ProcessMovement(const float dt) {
 
 		// 接触したオブジェクトの速度を計算
 		if (surfaceHit.hitEntity) {
-			Vec3 currentPos = surfaceHit.hitEntity->GetTransform()->
-			                             GetWorldPos();
-			Quaternion currentRot = surfaceHit.hitEntity->GetTransform()->
-			                                   GetWorldRot();
-			mSurfaceVelocity = (currentPos - oldPos) / dt;
-			// 回転による速度も加算
-			Vec3 rotVel = (currentRot * prevRot.Inverse()).ToEulerAngles();
-			Vec3 toPlayer = mScene->GetWorldPos() - currentPos;
-			Vec3 tangentialVel = rotVel.Cross(toPlayer);
-			mSurfaceVelocity += tangentialVel;
-			oldPos = currentPos;
-			prevRot = currentRot;
+			currentGroundEntity = surfaceHit.hitEntity;
+			isOnMovingSurface   = true;
+
+			auto*      transform  = currentGroundEntity->GetTransform();
+			Vec3       currentPos = transform->GetWorldPos();
+			Quaternion currentRot = transform->GetWorldRot();
+
+			// 同じエンティティに接触し続けている場合のみ速度を計算
+			if (mLastGroundEntity == currentGroundEntity) {
+				// 移動による速度
+				Vec3 linearVelocity = (currentPos - mLastGroundPosition) / dt;
+
+				// 回転による速度（プレイヤー位置での接線速度）
+				Vec3 rotationalVelocity = Vec3::zero;
+				if (dt > 0.0f) {
+					// 1. プレイヤーの現在位置を取得
+					Vec3 playerWorldPos = mScene->GetWorldPos();
+
+					// 2. 前フレームのプラットフォーム基準でのプレイヤーの相対位置（ローカル座標）を計算
+					//    Rel = Inv(Rot_Old) * (Pos_Player - Pos_Origin_Old)
+					Vec3 localPos = mLastGroundRotation.Inverse() * (
+						playerWorldPos - mLastGroundPosition);
+
+					// 3. その相対位置が、現在のプラットフォーム座標系でどこにあるべきかを計算
+					//    Pos_Target = Pos_Origin_New + Rot_New * Rel
+					Vec3 targetWorldPos = currentPos + currentRot * localPos;
+
+					// 4. その差分を移動速度とする
+					//    これにより、円弧に沿った正確な位置への移動ベクトル（中心へ向かう成分含む）が得られる
+					Vec3 totalDisplacement = targetWorldPos - playerWorldPos;
+					mSurfaceVelocity       = totalDisplacement / dt;
+				}
+				// デバッグ表示
+				// 合成速度（シアン）
+				Debug::DrawArrow(
+					mScene->GetWorldPos(),
+					mSurfaceVelocity * 0.5f,
+					Vec4::cyan,
+					0.05f
+				);
+
+				// 線形速度（緑）
+				if (linearVelocity.Length() > 0.01f) {
+					Debug::DrawArrow(
+						mScene->GetWorldPos(),
+						linearVelocity * 0.5f,
+						{0.0f, 1.0f, 0.0f, 1.0f}, // 緑
+						0.03f
+					);
+				}
+
+				// 回転速度（マゼンタ）
+				if (rotationalVelocity.Length() > 0.01f) {
+					Debug::DrawArrow(
+						mScene->GetWorldPos(),
+						rotationalVelocity * 0.5f,
+						{1.0f, 0.0f, 1.0f, 1.0f}, // マゼンタ
+						0.03f
+					);
+				}
+
+				// 回転中心からプレイヤーへの半径ベクトル（白）
+				Debug::DrawLine(
+					currentPos,
+					mScene->GetWorldPos(),
+					{1.0f, 1.0f, 1.0f, 0.5f} // 白（半透明）
+				);
+			}
+
+			// 現在の状態を保存
+			mLastGroundPosition = currentPos;
+			mLastGroundRotation = currentRot;
+			mLastGroundEntity   = currentGroundEntity;
 		}
 	} else {
+		// 空中にいる場合はトラッキングをリセット
+		mLastGroundEntity = nullptr;
 	}
+
+	// 床から離れた場合の処理は後で行う（ジャンプ処理の後）
+	mWasOnMovingSurface = isOnMovingSurface;
 
 	// 前フレームの接地状態を記録
 	mData.wasGroundedLastFrame = mData.isGrounded;
@@ -302,6 +407,13 @@ void MovementComponent::ProcessMovement(const float dt) {
 	}
 
 	if (mData.wishJump && mData.isGrounded) {
+		// 動く床から離れる前に速度を継承
+		if (isOnMovingSurface) {
+			Vec3 horizontalSurfaceVel = mSurfaceVelocity;
+			horizontalSurfaceVel.y    = 0.0f; // 水平成分のみ
+			mData.velocity            += horizontalSurfaceVel;
+		}
+
 		mData.velocity.y    = Math::HtoM(kJumpVelocityHu);
 		mData.isGrounded    = false;
 		mData.state         = MOVEMENT_STATE::AIR;
@@ -390,11 +502,27 @@ void MovementComponent::ProcessMovement(const float dt) {
 		if (!mData.isGrounded) ApplyHalfGravity(dt);
 	}
 
-	mData.velocity += mSurfaceVelocity;
-
+	// 動く床の速度を適用（接地している場合のみ）
+	// 一時的に速度を加算して移動し、その後減算して相対速度を維持
+	if (mData.isGrounded && isOnMovingSurface) {
+		mData.velocity += mSurfaceVelocity;
+	}
 
 	// 衝突付き移動
 	MoveWithCollisions(dt);
+
+	// 動く床の速度を減算（次フレームで再度加算するため）
+	// ただし、空中に離れた場合は減算しない（慣性を保持）
+	if (mData.isGrounded && isOnMovingSurface) {
+		// まだ接地している場合は速度を元に戻す
+		Vec3 horizontalSurfaceVel = mSurfaceVelocity;
+		horizontalSurfaceVel.y    = 0.0f;
+		mData.velocity            -= horizontalSurfaceVel;
+
+		// Y方向は衝突で変化している可能性があるので保持
+	} else if (!mData.isGrounded && isOnMovingSurface) {
+		// 移動中に空中に離れた場合、床の速度は既に継承されているので何もしない
+	}
 
 	// 空中で下方向に移動している場合、着地時の速度として保存
 	if (!mData.isGrounded && mData.velocity.y < 0.0f) {
@@ -568,6 +696,97 @@ void MovementComponent::CheckForNaNAndClamp() {
 		}
 		mData.velocity[i] = std::min(mData.velocity[i], Math::HtoM(maxVel));
 		mData.velocity[i] = std::max(mData.velocity[i], -Math::HtoM(maxVel));
+	}
+}
+
+void MovementComponent::ResolvePenetration() {
+	if (!mUPhysicsEngine || !mCollider) return;
+
+	// 最大反復回数（コーナーなどで複数の壁に挟まれた場合用）
+	const int kMaxIterations = 4;
+
+	for (int iter = 0; iter < kMaxIterations; ++iter) {
+		// 現在のハルで重なりをチェック
+		// ※重なっている全てのオブジェクトを取得したいが、
+		//   BoxOverlapが単一ヒットか複数ヒットか不明なため、とりあえず単一ヒットでループ処理して解消する
+		UPhysics::Hit hit{};
+
+		// 自分のハルを少し小さくして判定するか、そのまま判定するか
+		// ここでは正確なAABB判定を行うため、現在のハルを使用
+		if (!mUPhysicsEngine->BoxOverlap(mHull, &hit)) {
+			break; // 重なりなし
+		}
+
+		// 相手がトリガーや、接触判定のないエンティティなら無視
+		if (!hit.hitEntity) break;
+		// ※必要に応じて、相手が「動く床/壁」タグを持っているかチェックしても良い
+
+		// 相手のAABBを取得
+		auto* otherCollider = hit.hitEntity->GetComponent<AABBCollider>();
+		if (!otherCollider) break;
+
+		// ワールド座標系でのAABBを取得
+		Vec3 otherMin, otherMax;
+		{
+			auto [localMin, localMax] = otherCollider->AABB();
+			Vec3 offset = otherCollider->Offset();
+			Vec3 otherPos = hit.hitEntity->GetTransform()->GetWorldPos();
+			otherMin = otherPos + offset + localMin;
+			otherMax = otherPos + offset + localMax;
+		}
+
+		// 自分のAABB（現在のハルから計算）
+		Vec3 myMin = mHull.center - mHull.halfSize;
+		Vec3 myMax = mHull.center + mHull.halfSize;
+
+		// 各軸の重なり量を計算
+		float overlapX = std::min(myMax.x, otherMax.x) - std::max(
+			myMin.x, otherMin.x);
+		float overlapY = std::min(myMax.y, otherMax.y) - std::max(
+			myMin.y, otherMin.y);
+		float overlapZ = std::min(myMax.z, otherMax.z) - std::max(
+			myMin.z, otherMin.z);
+
+		// 重なっていない軸があれば終了（念のため）
+		if (overlapX <= 0 || overlapY <= 0 || overlapZ <= 0) break;
+
+		// 最も浅い（脱出しやすい）軸を探す
+		// Y軸（上下）は、ステップアップなどで誤検知しやすいので、少し優先度を下げるか慎重に扱う
+		// ここでは純粋に最小の重なりを採用
+		float minOverlap = overlapX;
+		Vec3  pushDir    = Vec3(1, 0, 0); // X軸
+
+		if (overlapY < minOverlap) {
+			minOverlap = overlapY;
+			pushDir    = Vec3(0, 1, 0); // Y軸
+		}
+		if (overlapZ < minOverlap) {
+			minOverlap = overlapZ;
+			pushDir    = Vec3(0, 0, 1); // Z軸
+		}
+
+		// 押し出す方向を決定（相手の中心から自分の中心への方向）
+		Vec3 otherCenter = (otherMin + otherMax) * 0.5f;
+		Vec3 myCenter    = mHull.center;
+
+		// 現在の軸成分だけで方向を判定
+		float dirCheck = (myCenter - otherCenter).Dot(pushDir);
+		if (dirCheck < 0) {
+			pushDir = -pushDir;
+		}
+
+		// 押し出しベクトル
+		Vec3 separation = pushDir * (minOverlap + 0.001f); // 浮動小数点誤差のために少し余分に
+
+		// 位置を修正
+		mScene->SetWorldPos(mScene->GetWorldPos() + separation);
+		UpdateHullDimensions(); // ハル位置更新
+
+		// 押し出された方向の速度を殺す（壁に押し続けられているときに速度が蓄積するのを防ぐ）
+		float velProjected = mData.velocity.Dot(pushDir);
+		if (velProjected < 0) {
+			mData.velocity -= pushDir * velProjected;
+		}
 	}
 }
 
@@ -813,11 +1032,14 @@ void MovementComponent::MoveWithCollisions(const float dt) {
 		return;
 	}
 
+	// スタック状態の解決
+	ResolvePenetration();
+
 	// 位置と速度をコピー
 	Vec3 position = mScene->GetWorldPos();
 	Vec3 velocity = mData.velocity;
 
-	// オプション: 前フレームで接地しており、水平に移動している場合のステップ試行
+	// 前フレームで接地しており、水平に移動している場合のステップテスト
 	Vec3       horizVel = velocity;
 	const bool wantStep = mData.wasGroundedLastFrame && (horizVel.SqrLength() >
 		1e-8f);
@@ -835,6 +1057,10 @@ void MovementComponent::MoveWithCollisions(const float dt) {
 	mScene->SetWorldPos(position);
 	mData.velocity   = velocity;
 	mData.isGrounded = isGrounded;
+
+	// 移動後もめり込み解消
+	UpdateHullDimensions();
+	ResolvePenetration();
 
 	if (mData.isGrounded && mData.velocity.y < 0.0f) {
 		mData.velocity.y = 0.0f;

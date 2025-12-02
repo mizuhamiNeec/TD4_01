@@ -1,7 +1,9 @@
-﻿#include <core/json/JsonWriter.h>
+#include <core/json/JsonWriter.h>
 
 #include <fstream>
 #include <stdexcept>
+
+#include "engine/subsystem/console/Log.h"
 
 JsonWriter::JsonWriter(std::string path) : mRoot(nullptr),
                                            mPath(std::move(path)) {
@@ -47,7 +49,7 @@ void JsonWriter::BeginObject() {
 	BeginContainerInternal(nlohmann::json::object());
 }
 
-void JsonWriter::EndObject() {
+void JsonWriter::EndObject() const {
 	if (mStack.empty()) {
 		throw std::runtime_error("EndObject() called with empty stack");
 	}
@@ -68,7 +70,7 @@ void JsonWriter::BeginArray() {
 	BeginContainerInternal(nlohmann::json::array());
 }
 
-void JsonWriter::EndArray() {
+void JsonWriter::EndArray() const {
 	if (mStack.empty()) {
 		throw std::runtime_error("EndArray() called with empty stack");
 	}
@@ -99,19 +101,25 @@ bool JsonWriter::Save() const {
 	if (mPath.empty()) {
 		throw std::runtime_error("Save path is empty");
 	}
+
+	std::filesystem::path filePath(mPath);
+	if (filePath.has_parent_path()) {
+		std::filesystem::create_directories(filePath.parent_path());
+	}
+
 	std::ofstream ofs(mPath, std::ios::binary);
 	if (!ofs) {
 		throw std::runtime_error("Failed to open file for writing: " + mPath);
 	}
 	ofs << ToString();
+	Msg(Unnamed::kChannelNone, "{}", ToString());
 	ofs.flush();
-
 	return true;
 }
 
 std::string_view JsonWriter::ToString() const {
 	if (mStringCache.empty()) {
-		mStringCache = mRoot.dump(4); // pretty
+		mStringCache = mRoot.dump(4);
 	}
 	return mStringCache;
 }

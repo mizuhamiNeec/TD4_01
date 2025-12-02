@@ -31,7 +31,7 @@ namespace ImGuiWidgets {
 		const char* icon,
 		const char* label     = nullptr,
 		ImVec2      size      = ImVec2(0, 0),
-		float       iconScale = 0.40f,
+		float       iconScale = 1.0f,
 		ImGuiDir    labelDir  = ImGuiDir_Down
 	);
 

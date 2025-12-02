@@ -286,17 +286,17 @@ namespace ImGuiWidgets {
 		const float    iconScale,
 		const ImGuiDir labelDir
 	) {
-		// 1) レイアウト境界をまとめる
+		// 1) レイアウト境界
 		ImGui::BeginGroup();
-		ImDrawList* dl    = ImGui::GetWindowDrawList();
-		ImVec2      start = ImGui::GetCursorScreenPos();
-		ImGuiStyle& style = ImGui::GetStyle();
-		ImFont*     font  = ImGui::GetFont();
+		const ImVec2      start = ImGui::GetCursorScreenPos();
+		const ImGuiStyle& style = ImGui::GetStyle();
+		ImDrawList*       dl    = ImGui::GetWindowDrawList();
+		ImFont*           font  = ImGui::GetFont();
 
 		// 2) サイズを見積もる
 		const bool  hasLabel = label && label[0];
-		const float kGap     = (labelDir == ImGuiDir_Left || labelDir ==
-			                       ImGuiDir_Right) ?
+		const float gap      = (labelDir == ImGuiDir_Left ||
+			                       labelDir == ImGuiDir_Right) ?
 			                       style.ItemSpacing.x :
 			                       style.ItemSpacing.y;
 
@@ -305,26 +305,31 @@ namespace ImGuiWidgets {
 
 		// 仮の高さが決まらないと iconFontSize が計算できないので、
 		// まず label を含まない最小寸法で初期化しておく
-		ImVec2 labelSize = hasLabel ? ImGui::CalcTextSize(label) : ImVec2(0, 0);
+		const ImVec2 labelSize = hasLabel ?
+			                         ImGui::CalcTextSize(label) :
+			                         ImVec2(0, 0);
 		if (size.x <= 0.0f)
 			size.x = std::max(iconBaseSize.x, labelSize.x);
 		if (size.y <= 0.0f)
-			size.y = iconBaseSize.y + (hasLabel ? (labelSize.y + kGap) : 0);
+			size.y = iconBaseSize.y + (hasLabel ? (labelSize.y + gap) : 0);
 
-		ImVec2 pad        = style.FramePadding;
-		ImVec2 innerStart = {start.x + pad.x, start.y + pad.y};
-		ImVec2 innerSize  = {size.x - pad.x * 2.0f, size.y - pad.y * 2.0f};
+		const ImVec2 pad        = style.FramePadding;
+		const ImVec2 innerStart = {start.x + pad.x, start.y + pad.y};
+		const ImVec2 innerSize  = {size.x - pad.x * 2.0f, size.y - pad.y * 2.0f};
 
 		// 確定した高さからアイコン描画サイズを算出
+		const float baseFontSize = ImGui::GetFontSize();
 		const float iconFontSize = innerSize.y * iconScale;
-		ImGui::PushFont(font, iconFontSize);
-		const ImVec2 iconSize = ImGui::CalcTextSize(icon);
-		ImGui::PopFont();
+		const float fontScale = iconFontSize / baseFontSize;
+		const auto iconSize = ImVec2(
+			ImGui::CalcTextSize(icon).x * fontScale,
+			ImGui::CalcTextSize(icon).y * fontScale
+		);
 
 		// 横レイアウト時は幅を再調整
 		if (labelDir == ImGuiDir_Left || labelDir == ImGuiDir_Right)
 			if (size.x <= 0.0f)
-				size.x = iconSize.x + (hasLabel ? (labelSize.x + kGap) : 0);
+				size.x = iconSize.x + (hasLabel ? (labelSize.x + gap) : 0) + pad.x * 2.0f;
 
 		// 3) InvisibleButton でヒット領域登録
 		const std::string btnId = "##IconBtn" + std::string(icon) +
@@ -339,7 +344,7 @@ namespace ImGuiWidgets {
 		case ImGuiDir_Down: {
 			// 垂直方向の合計サイズ
 			const float blockH = iconSize.y + (hasLabel ?
-				                                   (labelSize.y + kGap) :
+				                                   (labelSize.y + gap) :
 				                                   0.0f);
 			const float y0 = innerStart.y + (innerSize.y - blockH) * 0.5f;
 
@@ -347,10 +352,10 @@ namespace ImGuiWidgets {
 				labelPos = {start.x + (size.x - labelSize.x) * 0.5f, y0};
 				iconPos  = {
 					start.x + (size.x - iconSize.x) * 0.5f,
-					y0 + labelSize.y + kGap
+					y0 + labelSize.y + gap
 				};
-			} else // Down (= デフォルト)
-			{
+			} else {
+				// Down (= デフォルト)
 				iconPos = {
 					start.x + (size.x - iconSize.x) * 0.5f,
 					y0
@@ -358,7 +363,7 @@ namespace ImGuiWidgets {
 				if (hasLabel)
 					labelPos = {
 						start.x + (size.x - labelSize.x) * 0.5f,
-						y0 + iconSize.y + kGap
+						y0 + iconSize.y + gap
 					};
 			}
 			break;
@@ -368,7 +373,7 @@ namespace ImGuiWidgets {
 		default: {
 			// 水平方向の合計サイズ
 			const float blockW = iconSize.x + (hasLabel ?
-				                                   (labelSize.x + kGap) :
+				                                   (labelSize.x + gap) :
 				                                   0.0f);
 			const float x0 = innerStart.x + (innerSize.x - blockW) * 0.5f;
 			// ブロック X 先頭
@@ -377,13 +382,13 @@ namespace ImGuiWidgets {
 
 			if (labelDir == ImGuiDir_Left) {
 				labelPos = {x0, cy + (iconSize.y - labelSize.y) * 0.5f};
-				iconPos  = {x0 + labelSize.x + kGap, cy};
+				iconPos  = {x0 + labelSize.x + gap, cy};
 			} else // Right
 			{
 				iconPos = {x0, cy};
 				if (hasLabel)
 					labelPos = {
-						x0 + iconSize.x + kGap,
+						x0 + iconSize.x + gap,
 						cy + (iconSize.y - labelSize.y) * 0.5f
 					};
 			}
@@ -393,10 +398,18 @@ namespace ImGuiWidgets {
 
 		// 5) 描画
 		const ImU32 col = ImGui::GetColorU32(ImGuiCol_Text);
+		
+		// クリッピング領域を設定（ボタンの境界内に収める）
+		dl->PushClipRect(start, ImVec2(start.x + size.x, start.y + size.y), true);
+		
+		// アイコンを描画（指定されたフォントサイズで）
 		dl->AddText(font, iconFontSize, iconPos, col, icon);
 
 		if (hasLabel)
 			dl->AddText(labelPos, col, label);
+		
+		// クリッピング領域を解除
+		dl->PopClipRect();
 
 		// 6) グループ終了
 		ImGui::EndGroup();

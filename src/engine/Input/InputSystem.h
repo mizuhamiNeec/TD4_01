@@ -15,6 +15,7 @@ public:
 	static void Update();
 	static void ProcessInput(long lParam);
 	static Vec2 GetMouseDelta();
+	static Vec2 GetMousePosition();
 	static bool IsTriggered(const std::string& command);
 	static bool IsPressed(const std::string& command);
 	static bool IsReleased(const std::string& command);
@@ -33,7 +34,8 @@ private:
 
 	static std::string GetKeyName(UINT virtualKey);
 
-	static Vec2 mOuseDelta;
+	static Vec2 mMouseDelta;
+	static Vec2 mMousePosition;
 
 	struct CommandState {
 		bool isTriggered = false; // トリガーされた

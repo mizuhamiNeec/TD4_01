@@ -100,7 +100,7 @@ void InputSystem::Update() {
 	}
 
 	// マウスの移動量をリセット
-	mOuseDelta = Vec2::zero;
+	mMouseDelta = Vec2::zero;
 }
 
 /**
@@ -119,7 +119,7 @@ void InputSystem::ProcessInput(const long lParam) {
 		return;
 	}
 
-	auto* raw = reinterpret_cast<RAWINPUT*>(lpb.get());
+	const auto* raw = reinterpret_cast<RAWINPUT*>(lpb.get());
 
 	// キーボード入力
 	if (raw->header.dwType == RIM_TYPEKEYBOARD) {
@@ -158,8 +158,15 @@ void InputSystem::ProcessInput(const long lParam) {
 	// マウス入力
 	else if (raw->header.dwType == RIM_TYPEMOUSE) {
 		// マウスの移動量を更新
-		mOuseDelta.x += static_cast<float>(raw->data.mouse.lLastX);
-		mOuseDelta.y += static_cast<float>(raw->data.mouse.lLastY);
+		mMouseDelta.x += static_cast<float>(raw->data.mouse.lLastX);
+		mMouseDelta.y += static_cast<float>(raw->data.mouse.lLastY);
+
+		// マウスの位置を更新
+		POINT cursorPos;
+		GetCursorPos(&cursorPos);
+		//ScreenToClient(OldWindowManager::GetMainWindow()->GetWindowHandle(), &cursorPos);
+		mMousePosition.x = static_cast<float>(cursorPos.x);
+		mMousePosition.y = static_cast<float>(cursorPos.y);
 
 		// マウスボタンの状態を更新
 		// 左クリック
@@ -217,8 +224,14 @@ void InputSystem::ProcessInput(const long lParam) {
  * @return マウスの移動量（ピクセル）
  */
 Vec2 InputSystem::GetMouseDelta() {
-	Vec2 delta = mOuseDelta;
+	Vec2 delta = mMouseDelta;
 	return delta;
+}
+
+/// @brief マウスの位置を取得する
+/// @return マウスの位置（ピクセル）
+Vec2 InputSystem::GetMousePosition() {
+	return mMousePosition;
 }
 
 /**
@@ -335,7 +348,7 @@ void InputSystem::ResetAllKeys() {
 	mTriggeredCommands.clear();
 	mReleasedCommands.clear();
 	mCommandStates.clear();
-	mOuseDelta    = Vec2::zero;
+	mMouseDelta   = Vec2::zero;
 	mMouseLock    = false;
 	mCursorHidden = false;
 }
@@ -425,7 +438,8 @@ std::string InputSystem::GetKeyName(const UINT virtualKey) {
 	return "Unknown";
 }
 
-Vec2 InputSystem::mOuseDelta = Vec2::zero;
+Vec2 InputSystem::mMouseDelta    = Vec2::zero;
+Vec2 InputSystem::mMousePosition = Vec2::zero;
 
 std::unordered_map<std::string, std::string> InputSystem::mKeyBindings;
 std::unordered_map<std::string, InputSystem::CommandState>

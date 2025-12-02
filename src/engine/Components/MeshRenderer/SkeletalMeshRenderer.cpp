@@ -23,7 +23,6 @@ struct MatParam {
 
 /// @brief デストラクタ
 SkeletalMeshRenderer::~SkeletalMeshRenderer() {
-	ReleaseComputeShaderResources();
 	mTransformationMatrixConstantBuffer.reset();
 	mBoneMatricesConstantBuffer.reset();
 	mTransformationMatrix = nullptr;
@@ -192,11 +191,6 @@ void SkeletalMeshRenderer::Render(ID3D12GraphicsCommandList* commandList) {
 		return;
 	}
 
-	// コンピュートシェーダーでスキニング処理を実行
-	if (mUseComputeShaderSkinning) {
-		PerformComputeShaderSkinning(commandList);
-	}
-
 	// 現在バインドされているマテリアルを追跡
 	Material* currentlyBoundMaterial = nullptr;
 
@@ -304,21 +298,6 @@ void SkeletalMeshRenderer::DrawInspectorImGui() {
 	// 子クラスのインスペクターUIの描画
 	if (ImGui::CollapsingHeader("SkeletalMeshRenderer",
 	                            ImGuiTreeNodeFlags_DefaultOpen)) {
-		// コンピュートシェーダー制御
-		ImGui::Separator();
-		ImGui::Text("Skinning Method");
-		bool useComputeShader = mUseComputeShaderSkinning;
-		if (ImGui::Checkbox("Use Compute Shader Skinning", &useComputeShader)) {
-			SetUseComputeShaderSkinning(useComputeShader);
-		}
-		if (mUseComputeShaderSkinning) {
-			ImGui::TextColored(ImVec4{0.0f, 1.0f, 0.0f, 1.0f},
-			                   "GPU Compute Skinning Active");
-		} else {
-			ImGui::TextColored(ImVec4{1.0f, 1.0f, 0.0f, 1.0f},
-			                   "CPU/Vertex Shader Skinning Active");
-		}
-
 		if (mSkeletalMesh) {
 			ImGui::Checkbox("Show Bone Debug", &mShowBoneDebug);
 
@@ -1008,57 +987,4 @@ void SkeletalMeshRenderer::DrawBoneDebug() {
 
 	const Skeleton& skeleton = mSkeletalMesh->GetSkeleton();
 	DrawBoneHierarchy(skeleton.rootNode, Mat4::identity);
-}
-
-/// @brief コンピュートシェーダースキニングの使用設定
-/// @param enable trueで有効化、falseで無効化
-void SkeletalMeshRenderer::SetUseComputeShaderSkinning(const bool enable) {
-	if (mUseComputeShaderSkinning != enable) {
-		mUseComputeShaderSkinning = enable;
-
-		if (enable) {
-			InitializeComputeShaderResources();
-		} else {
-			ReleaseComputeShaderResources();
-		}
-	}
-}
-
-/// @brief コンピュートシェーダースキニングの使用状態を取得
-/// @return trueなら使用中、falseなら未使用
-bool SkeletalMeshRenderer::IsUsingComputeShaderSkinning() const {
-	return mUseComputeShaderSkinning;
-}
-
-/// @brief コンピュートシェーダーでスキニング処理を実行
-/// @param commandList 描画コマンドリスト
-void SkeletalMeshRenderer::PerformComputeShaderSkinning(
-	ID3D12GraphicsCommandList* commandList
-) {
-	commandList;
-
-	// if (!mSkinningComputeShader || !mSkeletalMesh) {
-	// 	return;
-	// }
-
-	Msg("SkeletalMeshRenderer", "コンピュートシェーダーでスキニング処理を実行中...");
-}
-
-/// @brief コンピュートシェーダー用リソースを初期化
-void SkeletalMeshRenderer::InitializeComputeShaderResources() {
-	if (!mSkeletalMesh) {
-		return;
-	}
-
-	Msg("SkeletalMeshRenderer", "コンピュートシェーダー用リソースを初期化中...");
-}
-
-/// @brief コンピュートシェーダー用リソースを解放
-void SkeletalMeshRenderer::ReleaseComputeShaderResources() {
-	mInputVertexBuffer.Reset();
-	mOutputVertexBuffer.Reset();
-	mTransformedVertexBuffer.Reset();
-	//mSkinningComputeShader.reset();
-
-	Msg("SkeletalMeshRenderer", "コンピュートシェーダー用リソースを解放しました");
 }

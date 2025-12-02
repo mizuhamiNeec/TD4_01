@@ -14,14 +14,6 @@ struct BoneMatrices {
 	Mat4                 bones[MAX_BONES];
 };
 
-// コンピュートシェーダー用の変換済み頂点データ
-struct TransformedVertex {
-	Vec4 position;
-	Vec2 uv;
-	Vec3 normal;
-	Vec3 worldPosition;
-};
-
 /// @brief スケルタルメッシュレンダラーコンポーネント
 class SkeletalMeshRenderer : public MeshRenderer {
 public:
@@ -52,10 +44,6 @@ public:
 	void                SetAnimationTime(float t);
 	[[nodiscard]] float GetAnimationTime() const;
 
-	// コンピュートシェーダーでのスキニング制御
-	void               SetUseComputeShaderSkinning(bool enable);
-	[[nodiscard]] bool IsUsingComputeShaderSkinning() const;
-
 protected:
 	void BindTransform(ID3D12GraphicsCommandList* commandList) override;
 	void UpdateBoneMatrices();
@@ -69,11 +57,6 @@ protected:
 
 	void DrawBoneHierarchy(const Node& node, const Mat4& parentTransform);
 	void DrawBoneDebug();
-
-	// コンピュートシェーダー関連
-	void PerformComputeShaderSkinning(ID3D12GraphicsCommandList* commandList);
-	void InitializeComputeShaderResources();
-	void ReleaseComputeShaderResources();
 
 private:
 	std::unique_ptr<ConstantBuffer> mTransformationMatrixConstantBuffer;
@@ -127,18 +110,4 @@ private:
 	// b4
 	std::unique_ptr<ConstantBuffer> mSpotLightCb;
 	SpotLight*                      mSpotLightData = nullptr;
-
-	// コンピュートシェーダー関連
-	bool mUseComputeShaderSkinning = false;
-
-	// コンピュートシェーダー用リソース
-	Microsoft::WRL::ComPtr<ID3D12Resource> mInputVertexBuffer;
-	Microsoft::WRL::ComPtr<ID3D12Resource> mOutputVertexBuffer;
-	Microsoft::WRL::ComPtr<ID3D12Resource> mTransformedVertexBuffer;
-
-	D3D12_GPU_DESCRIPTOR_HANDLE mInputVertexSRV       = {};
-	D3D12_GPU_DESCRIPTOR_HANDLE mOutputVertexUAV      = {};
-	D3D12_GPU_DESCRIPTOR_HANDLE mTransformedVertexSRV = {};
-
-	//std::unique_ptr<class ComputeShader> mSkinningComputeShader;
 };

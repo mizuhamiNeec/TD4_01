@@ -7,6 +7,9 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
+#include "engine/ImGui/Icons.h"
+#include "engine/ImGui/ImGuiWidgets.h"
+
 namespace Unnamed {
 	static constexpr auto kSubmitButtonText = " Submit ";
 
@@ -94,16 +97,31 @@ namespace Unnamed {
 			);
 
 			const std::string bufferInfo = std::format(
-				"File: {}\nLine: {}\nFunc: {}",
+				"File: {}\nLine: {}\nColumn: {}\nFunc: {}",
 				selection.location.file_name(),
 				selection.location.line(),
+				selection.location.column(),
 				selection.location.function_name()
 			);
 
-			const float prevScale = ImGui::GetFontSize();
-			ImGui::SetWindowFontScale(1.25f); // フォント表示倍率を変更
 			ImGui::TextWrapped(bufferInfo.data());
-			ImGui::SetWindowFontScale(prevScale); // 元に戻す
+			const std::string command = std::format(
+					"Rider.cmd --line {} --column {} {}",
+					selection.location.line(),
+					selection.location.column(),
+					selection.location.file_name()
+				);
+
+			ImGui::Text(command.c_str());
+			if (
+				ImGuiWidgets::IconButton(
+					StrUtil::ConvertToUtf8(kIconNANKABOX).c_str(),
+					"Open in Rider"
+				)
+			) {
+
+				system(command.c_str());
+			}
 
 			ImGui::EndChild();
 

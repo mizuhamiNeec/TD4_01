@@ -228,7 +228,7 @@ namespace StrUtil {
 			return std::isspace(c) != 0;
 		};
 
-		auto IsTrailingPunct  = [](char c) {
+		auto IsTrailingPunct = [](char c) {
 			switch (c) {
 			case '.':
 			case ',':
@@ -246,7 +246,9 @@ namespace StrUtil {
 			}
 		};
 
-		auto StartsWithAt = [&](const std::size_t pos, const std::string_view prefix) {
+		auto StartsWithAt = [&](
+			const std::size_t pos, const std::string_view prefix
+		                        ) {
 			return pos + prefix.size() <= size &&
 				std::string_view(line.data() + pos, prefix.size()) == prefix;
 		};
@@ -309,6 +311,7 @@ namespace StrUtil {
 					span.end = j;
 					matched  = true;
 				}
+				span.isRelativePath = true;
 			}
 
 			if (matched) {

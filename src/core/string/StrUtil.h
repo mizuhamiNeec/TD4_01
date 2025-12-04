@@ -87,6 +87,7 @@ namespace StrUtil {
 	struct LinkSpan {
 		std::size_t begin;
 		std::size_t end; // [begin, end]
+		bool        isRelativePath = false;
 	};
 
 	/// @brief 行からリンクを解析する

@@ -142,9 +142,14 @@ void Console::Update() {
 			}
 		}
 
-		if (ImGuiWidgets::IconButton(
-			StrUtil::ConvertToUtf8(kIconTerminal).c_str(), "ConVar",
-			{48.0f, 48.0f})) {
+		if (
+			ImGuiWidgets::IconButton(
+				StrUtil::ConvertToUtf8(kIconTerminal).c_str(),
+				"ConVar",
+				{48.0f, 48.0f},
+				0.5f
+			)
+		) {
 			mShowConVarHelper = !mShowConVarHelper;
 		}
 
@@ -486,7 +491,7 @@ void Console::Clear([[maybe_unused]] const std::vector<std::string>& args) {
 	mSuggestions.shrink_to_fit();
 	mRepeatCounts.clear(); // 繰り返しカウントをクリア
 	mRepeatCounts.shrink_to_fit();
-	mHistoryIndex        = -1;   // 履歴インデックスを初期化
+	mHistoryIndex       = -1;   // 履歴インデックスを初期化
 	mWishScrollToBottom = true; // 再描画の際にスクロールをリセット
 #endif
 }
@@ -922,7 +927,7 @@ void Console::ShowConsoleText() {
 				} else {
 					Vec4 color = mDisplayState.buffer[i].color;
 					Vec3 col   = {color.x, color.y, color.z};
-					col *= 0.5f;
+					col        *= 0.5f;
 					ImGui::PushStyleColor(ImGuiCol_Text,
 					                      ImGuiUtil::ToImVec4(Vec4(col, 1.0f)));
 				}
@@ -1362,7 +1367,7 @@ void Console::ShowConVarHelper() {
 							// 右クリックでコンテキストメニューを表示
 							if (ImGui::BeginPopupContextItem(cellId.c_str())) {
 								if (ImGui::MenuItem("Edit Label")) {
-									mShowElementPopup   = true;
+									mShowElementPopup    = true;
 									mEditingElementIndex = cellIndex;
 								}
 								if (ImGui::MenuItem("Delete Label")) {
@@ -1403,7 +1408,7 @@ void Console::ShowConVarHelper() {
 							// 右クリックでコンテキストメニューを表示
 							if (ImGui::BeginPopupContextItem(cellId.c_str())) {
 								if (ImGui::MenuItem("Edit Button")) {
-									mShowElementPopup   = true;
+									mShowElementPopup    = true;
 									mEditingElementIndex = cellIndex;
 								}
 								if (element.type == GridElement::Type::Label) {
@@ -2149,7 +2154,7 @@ std::vector<std::string> Console::SplitCommands(const std::string& command) {
 	for (char ch : command) {
 		if (ch == '"') {
 			inQuotes = !inQuotes;
-			current += ch;
+			current  += ch;
 		} else if (ch == ';' && !inQuotes) {
 			result.emplace_back(current);
 			current.clear();
@@ -2326,8 +2331,8 @@ std::ofstream            Console::mLogFile;
 Console::DisplayState Console::mDisplayState;
 
 // ConVarヘルパー
-bool                       Console::mShowConVarHelper   = false;
-bool                       Console::mShowElementPopup   = false;
+bool                       Console::mShowConVarHelper    = false;
+bool                       Console::mShowElementPopup    = false;
 size_t                     Console::mEditingElementIndex = 0;
 std::vector<Console::Page> Console::mPages               = {
 	{

@@ -104,6 +104,37 @@ void EmptyScene::Update(const float deltaTime) {
 		}
 	}
 #ifdef _DEBUG
+
+	ImGui::Begin("URL Test");
+
+	static const std::string testLine =
+		"hi https://www.google.co.jp C:/Windows/ lol .//";
+
+	const auto span = StrUtil::ParseLinksFromLine(testLine);
+
+	for (const auto& s : span) {
+		const auto b    = s.begin;
+		const auto e    = s.end;
+		auto       link = testLine.substr(b, e - b);
+
+		if (s.isRelativePath) {
+			std::filesystem::path absPath = std::filesystem::absolute(link);
+			ImGui::TextLinkOpenURL(
+				absPath.string().c_str(),
+				absPath.string().c_str()
+			);
+		} else {
+			ImGui::TextLinkOpenURL(link.c_str(), link.c_str());
+		}
+	}
+
+	ImGui::TextLinkOpenURL(
+		"jetbrains://Rider/",
+		"jetbrains://Rider/"
+		);
+	
+	ImGui::End();
+
 	DrawUiHierarchyWindow(*uiRoot);
 	DrawUiInspectorWindow();
 

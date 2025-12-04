@@ -1,5 +1,7 @@
 #include "engine/ResourceSystem/Material/MaterialManager.h"
 
+#include <format>
+
 #include "engine/OldConsole/Console.h"
 #include "engine/ResourceSystem/Material/Material.h"
 #include "engine/ResourceSystem/Pipeline/PipelineManager.h"

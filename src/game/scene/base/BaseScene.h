@@ -3,6 +3,7 @@
 #include <vector>
 #include <engine/Entity/Entity.h>
 
+class AudioManager;
 class SrvManager;
 class ModelCommon;
 class Object3DCommon;
@@ -90,6 +91,7 @@ protected:
 
 	ResourceManager* mResourceManager = nullptr;
 
+	AudioManager* mAudioManager = nullptr;
 	SpriteCommon*    mSpriteCommon    = nullptr;
 	ParticleManager* mParticleManager = nullptr;
 	Object3DCommon*  mObject3DCommon  = nullptr;

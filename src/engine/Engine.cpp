@@ -32,6 +32,8 @@
 #include <game/scene/EmptyScene.h>
 #include <game/scene/GameScene.h>
 
+#include "ResourceSystem/Audio/AudioManager.h"
+
 namespace {
 	constexpr std::string_view kSceneEmpty = "EmptyScene";
 	constexpr std::string_view kSceneGame  = "GameScene";
@@ -54,7 +56,8 @@ namespace Unnamed {
 		}
 
 		if (!mSceneManager) {
-			Error("Engine", "SceneManager missing; cannot apply pending scene change.");
+			Error("Engine",
+			      "SceneManager missing; cannot apply pending scene change.");
 			mPendingSceneChange.reset();
 			return;
 		}
@@ -169,6 +172,9 @@ namespace Unnamed {
 		mResourceManager->Init();
 		mRenderer->SetShaderResourceViewManager(mSrvManager.get());
 		mRenderer->Init();
+		
+		mAudioManager = std::make_unique<AudioManager>();
+		mAudioManager->Init();
 
 
 #ifdef _DEBUG
@@ -977,6 +983,7 @@ namespace Unnamed {
 	}
 
 	bool                             Engine::mWishShutdown    = false;
+	std::unique_ptr<AudioManager>    Engine::mAudioManager    = nullptr;
 	std::unique_ptr<D3D12>           Engine::mRenderer        = nullptr;
 	std::unique_ptr<ResourceManager> Engine::mResourceManager = nullptr;
 	std::unique_ptr<ParticleManager> Engine::mParticleManager = nullptr;
@@ -987,7 +994,7 @@ namespace Unnamed {
 
 	Vec2 Engine::mViewportLT   = Vec2::zero;
 	Vec2 Engine::mViewportSize = Vec2::zero;
-	
+
 	std::optional<std::string> Engine::mPendingSceneChange = std::nullopt;
 
 #ifdef _DEBUG

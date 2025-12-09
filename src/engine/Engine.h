@@ -27,6 +27,8 @@
 
 #include <game/scene/GameScene.h>
 
+class AudioManager;
+
 namespace Unnamed {
 	class ConsoleSystem;
 
@@ -56,6 +58,10 @@ namespace Unnamed {
 		// DEPRECATED: 旧エンジンクラス
 		static bool IsEditorMode() {
 			return mIsEditorMode;
+		}
+
+		static AudioManager* GetAudioManager() {
+			return mAudioManager.get();
 		}
 
 		// DEPRECATED: 旧エンジンクラス
@@ -114,20 +120,20 @@ namespace Unnamed {
 
 	private:
 		std::unique_ptr<OldWindowManager> mWindowManager;
-		std::unique_ptr<Editor>           mEditor;
-		std::unique_ptr<EntityLoader>     mEntityLoader;
-		std::unique_ptr<Console>          mConsole;
-		std::unique_ptr<CopyImagePass>    mCopyImagePass;
+		std::unique_ptr<Editor> mEditor;
+		std::unique_ptr<EntityLoader> mEntityLoader;
+		std::unique_ptr<Console> mConsole;
+		std::unique_ptr<CopyImagePass> mCopyImagePass;
 		std::vector<std::unique_ptr<IPostProcess>> mPostChain;
-		RenderTargetTexture               mOffscreenRtv;
-		DepthStencilTexture               mOffscreenDsv;
-		RenderPassTargets                 mOffscreenRenderPassTargets;
-		RenderTargetTexture               mPostProcessedRtv;
-		DepthStencilTexture               mPostProcessedDsv;
-		RenderPassTargets                 mPostProcessedRenderPassTargets;
-		RenderTargetTexture               mPingRtv[2];
-		uint32_t                          mPingIndex = 0;
-		bool                              bSwapchainPassBegun = false;
+		RenderTargetTexture mOffscreenRtv;
+		DepthStencilTexture mOffscreenDsv;
+		RenderPassTargets mOffscreenRenderPassTargets;
+		RenderTargetTexture mPostProcessedRtv;
+		DepthStencilTexture mPostProcessedDsv;
+		RenderPassTargets mPostProcessedRenderPassTargets;
+		RenderTargetTexture mPingRtv[2];
+		uint32_t mPingIndex = 0;
+		bool bSwapchainPassBegun = false;
 
 		static std::unique_ptr<SrvManager>      mSrvManager;
 		static std::unique_ptr<ResourceManager> mResourceManager;
@@ -144,9 +150,10 @@ namespace Unnamed {
 		std::unique_ptr<ModelCommon>         mModelCommon;
 		std::unique_ptr<LineCommon>          mLineCommon;
 		std::unique_ptr<SceneFactory>        mSceneFactory;
+		static std::unique_ptr<AudioManager> mAudioManager;
 
 		static std::shared_ptr<SceneManager> mSceneManager;
-		static std::optional<std::string>   mPendingSceneChange;
+		static std::optional<std::string>    mPendingSceneChange;
 
 		static void ApplyPendingSceneChange();
 		static Vec2 mViewportLT;

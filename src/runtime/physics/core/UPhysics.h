@@ -164,7 +164,7 @@ namespace UPhysics {
 				if (nLenSq > 1e-12f) {
 					finalNormal /= std::sqrt(nLenSq);
 				} else {
-					finalNormal = Vec3::up;
+					finalNormal = Vec3::zero;
 				}
 				const float hitDistance = bestTOI * length;
 				outHit->t               = hitDistance;
@@ -178,7 +178,7 @@ namespace UPhysics {
 				);
 				outHit->triIndex  = hitTri;
 				outHit->hitEntity = bvhSet[0].owner;
-				
+
 			}
 			return true;
 		}

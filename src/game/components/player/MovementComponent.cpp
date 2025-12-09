@@ -69,6 +69,7 @@ void MovementComponent::Init(
 	mData.wallRunTime           = 0.0f;
 	mData.timeSinceLastWallRun  = 999.0f;
 	mData.wallRunJumpWasPressed = false;
+	mData.jumpSnapDisableTime   = 0.0f;
 
 	// 動く床トラッキングの初期化
 	mLastGroundEntity   = nullptr;
@@ -232,17 +233,22 @@ void MovementComponent::ProcessInput() {
 	if (InputSystem::IsPressed("back")) mData.vecMoveInput.y -= 1.0f;
 	if (InputSystem::IsPressed("moveright")) mData.vecMoveInput.x += 1.0f;
 	if (InputSystem::IsPressed("moveleft")) mData.vecMoveInput.x -= 1.0f;
-	if (mData.vecMoveInput.SqrLength() > 1.0f) mData.vecMoveInput.Normalize();
+	const float sqrLen = mData.vecMoveInput.SqrLength();
+	if (sqrLen > 1.0f) mData.vecMoveInput *= 1.0f / std::sqrt(sqrLen);
 
 	Vec3 wish = Vec3::zero;
-	if (auto cam = CameraManager::GetActiveCamera()) {
-		Vec3 f = cam->GetViewMat().Inverse().GetForward();
-		f.y    = 0.0f;
-		if (!f.IsZero()) f.Normalize();
-		Vec3 r = Vec3::up.Cross(f).Normalized();
-		wish   = f * mData.vecMoveInput.y + r * mData.vecMoveInput.x;
-		wish.y = 0.0f;
-		if (!wish.IsZero()) wish.Normalize();
+	if (const auto cam = CameraManager::GetActiveCamera()) {
+		Vec3 f           = cam->GetViewMat().Inverse().GetForward();
+		f.y              = 0.0f;
+		const float fLen = f.Length();
+		if (fLen > 1e-6f) {
+			f *= 1.0f / fLen;
+			const Vec3 r = Vec3::up.Cross(f).Normalized();
+			wish = f * mData.vecMoveInput.y + r * mData.vecMoveInput.x;
+			wish.y = 0.0f;
+			const float wishLen = wish.Length();
+			if (wishLen > 1e-6f) wish *= 1.0f / wishLen;
+		}
 	}
 	mData.wishDirection = wish;
 	mData.wishJump      = InputSystem::IsPressed("jump");
@@ -252,6 +258,11 @@ void MovementComponent::ProcessInput() {
 /// @brief 移動処理
 /// @param dt 経過時間
 void MovementComponent::ProcessMovement(const float dt) {
+	// ジャンプスナップ無効時間の更新
+	if (mData.jumpSnapDisableTime > 0.0f) {
+		mData.jumpSnapDisableTime -= dt;
+	}
+
 	// 動く床の速度計算と適用
 	mSurfaceVelocity            = Vec3::zero;
 	Entity* currentGroundEntity = nullptr;
@@ -287,10 +298,10 @@ void MovementComponent::ProcessMovement(const float dt) {
 			// 同じエンティティに接触し続けている場合のみ速度を計算
 			if (mLastGroundEntity == currentGroundEntity) {
 				// 移動による速度
-				Vec3 linearVelocity = (currentPos - mLastGroundPosition) / dt;
+				const Vec3 linearVelocity = (currentPos - mLastGroundPosition) /
+					dt;
 
 				// 回転による速度（プレイヤー位置での接線速度）
-				Vec3 rotationalVelocity = Vec3::zero;
 				if (dt > 0.0f) {
 					// 1. プレイヤーの現在位置を取得
 					Vec3 playerWorldPos = mScene->GetWorldPos();
@@ -319,21 +330,11 @@ void MovementComponent::ProcessMovement(const float dt) {
 				);
 
 				// 線形速度（緑）
-				if (linearVelocity.Length() > 0.01f) {
+				if (linearVelocity.SqrLength() > 0.0001f) {
 					Debug::DrawArrow(
 						mScene->GetWorldPos(),
 						linearVelocity * 0.5f,
 						{0.0f, 1.0f, 0.0f, 1.0f}, // 緑
-						0.03f
-					);
-				}
-
-				// 回転速度（マゼンタ）
-				if (rotationalVelocity.Length() > 0.01f) {
-					Debug::DrawArrow(
-						mScene->GetWorldPos(),
-						rotationalVelocity * 0.5f,
-						{1.0f, 0.0f, 1.0f, 1.0f}, // マゼンタ
 						0.03f
 					);
 				}
@@ -406,25 +407,6 @@ void MovementComponent::ProcessMovement(const float dt) {
 		UpdateSlide(dt);
 	}
 
-	if (mData.wishJump && mData.isGrounded) {
-		// 動く床から離れる前に速度を継承
-		if (isOnMovingSurface) {
-			Vec3 horizontalSurfaceVel = mSurfaceVelocity;
-			horizontalSurfaceVel.y    = 0.0f; // 水平成分のみ
-			mData.velocity            += horizontalSurfaceVel;
-		}
-
-		mData.velocity.y    = Math::HtoM(kJumpVelocityHu);
-		mData.isGrounded    = false;
-		mData.state         = MOVEMENT_STATE::AIR;
-		mData.hasDoubleJump = true;
-
-		// スライディング中のジャンプでスライディング終了
-		if (mData.isSliding) {
-			EndSlide();
-		}
-	}
-
 	const float wishspeed = mData.wishDirection.IsZero() ?
 		                        0.0f :
 		                        mData.currentSpeed;
@@ -440,10 +422,23 @@ void MovementComponent::ProcessMovement(const float dt) {
 	if (mData.wishJump) {
 		if (mData.isGrounded) {
 			// 地上ジャンプ
+			if (isOnMovingSurface) {
+				Vec3 horizontalSurfaceVel = mSurfaceVelocity;
+				horizontalSurfaceVel.y    = 0.0f;
+				mData.velocity            += horizontalSurfaceVel;
+			}
+
 			mData.velocity.y    = Math::HtoM(kJumpVelocityHu);
 			mData.isGrounded    = false;
 			mData.state         = MOVEMENT_STATE::AIR;
-			mData.hasDoubleJump = true; // 地上ジャンプでダブルジャンプリセット
+			mData.hasDoubleJump = true;
+
+			mData.jumpSnapDisableTime  = kJumpSnapDisableTime;
+			mData.wasGroundedLastFrame = false;
+
+			if (mData.isSliding) {
+				EndSlide();
+			}
 		} else if (mData.isWallRunning && !mData.wallRunJumpWasPressed) {
 			// Wallrun jump: キーを一度離してから再度押した場合のみ
 			// (バニーホップでの誤発動防止)
@@ -462,12 +457,16 @@ void MovementComponent::ProcessMovement(const float dt) {
 				kWallrunJumpForce);
 
 			mData.hasDoubleJump = true; // ウォールランジャンプでダブルジャンプリセット
+
+			mData.jumpSnapDisableTime  = kJumpSnapDisableTime;
+			mData.wasGroundedLastFrame = false; // ★念のため追加
 			EndWallrun();
 		} else if (!mData.isGrounded && !mData.isWallRunning && mData.
 			hasDoubleJump && jumpPressed) {
 			// ダブルジャンプ（空中で、キーを離してから押した場合）
-			mData.velocity.y    = Math::HtoM(kDoubleJumpVelocityHu);
-			mData.hasDoubleJump = false; // 使用済み
+			mData.velocity.y          = Math::HtoM(kDoubleJumpVelocityHu);
+			mData.hasDoubleJump       = false; // 使用済み
+			mData.jumpSnapDisableTime = kJumpSnapDisableTime;
 		}
 	} else {
 		// ジャンプキーが離されたらフラグをリセット
@@ -479,10 +478,8 @@ void MovementComponent::ProcessMovement(const float dt) {
 	// 前フレームのジャンプ入力を保存
 	mData.lastFrameWishJump = mData.wishJump;
 
-	const auto gravity = dynamic_cast<Unnamed::UnnamedConVar<float>*>(
-		mConsoleSystem->GetConVar("sv_gravity")
-	);
-	const float gravityValue = static_cast<float>(*gravity);
+	const float gravityValue = ConVarManager::GetConVar("sv_gravity")->
+		GetValueAsFloat();
 
 	if (mData.isWallRunning) {
 		// Wallrun gravity (reduced)
@@ -547,23 +544,20 @@ void MovementComponent::ProcessMovement(const float dt) {
 /// @param wishspeed 目標速度
 /// @param dt 経過時間
 void MovementComponent::Ground(const float wishspeed, const float dt) {
-	// Source Engine方式：2Dで速度計算、後で押し上げ/押し下げで対応
 	// Y成分は0にして水平移動のみ計算
 	mData.velocity.y = 0.0f;
 
-	const auto friction = dynamic_cast<Unnamed::UnnamedConVar<float>*>(
-		mConsoleSystem->GetConVar("sv_friction")
-	);
-
-	const float groundFriction = static_cast<float>(*friction);
+	const float groundFriction = ConVarManager::GetConVar("sv_friction")->
+		GetValueAsFloat();
 
 	Friction(groundFriction, dt); // 摩擦を適用
 
 	Vec3 wishdir = mData.wishDirection;
 	wishdir.y    = 0.0f; // 水平方向のみ
 
-	if (!wishdir.IsZero() && wishspeed > 0.0f) {
-		wishdir.Normalize();
+	const float wishdirSqrLen = wishdir.SqrLength();
+	if (wishdirSqrLen > 1e-8f && wishspeed > 0.0f) {
+		wishdir *= 1.0f / std::sqrt(wishdirSqrLen);
 		// 加速
 		Accelerate(
 			wishdir,
@@ -603,9 +597,10 @@ void MovementComponent::Friction(const float amount, const float dt) {
 	if (!mData.isGrounded) return;
 
 	// Quake/Source: 水平速度のみで摩擦を計算
-	Vec3 vel_horz     = mData.velocity;
-	vel_horz.y        = 0;
-	const float speed = Math::MtoH(vel_horz.Length());
+	Vec3 vel_horz      = mData.velocity;
+	vel_horz.y         = 0;
+	const float speedM = vel_horz.Length();
+	const float speed  = Math::MtoH(speedM);
 	if (speed < 0.1f) return;
 
 	const float stop = ConVarManager::GetConVar("sv_stopspeed")->
@@ -854,10 +849,6 @@ int MovementComponent::SlideMove(
 			break;
 		}
 
-		if (hit.hitEntity) {
-			DevMsg("Movement", "HitEnt: {}", hit.hitEntity->GetName());
-		}
-
 		// 接触点まで移動（わずかな隙間を残す）
 		const float travel  = std::clamp(hit.t, 0.0f, castLen);
 		const float allowed = std::min(moveLen,
@@ -933,8 +924,8 @@ void MovementComponent::StepMove(
 	Vec3&       velocity,
 	const float timeTotal
 ) {
-	Vec3 startPos = position;
-	Vec3 startVel = velocity;
+	const Vec3 startPos = position;
+	const Vec3 startVel = velocity;
 
 	// まず通常のスライド移動を試す
 	SlideMove(position, velocity, timeTotal);
@@ -993,32 +984,41 @@ void MovementComponent::StepMove(
 /// @param position [in/out] 足元の位置（接地時はスナップされる）
 /// @return 接地しているか
 bool MovementComponent::GroundCheck(Vec3& position) {
+	// ジャンプ直後や上昇中はスナップしない
+	if (mData.jumpSnapDisableTime > 0.0f || mData.velocity.y > 0.0f) {
+		return false;
+	}
+
 	Unnamed::Box  box = BuildHullAtFeet(position);
 	UPhysics::Hit gHit{};
-	const float   snapRange = RestOffsetM() + std::max(
-		MaxAdhesionM(), StepHeightM());
 
-	if (!mUPhysicsEngine->BoxCast(box, -Vec3::up, snapRange, &gHit)) {
+	// 探索距離の決定
+	float snapRange;
+	if (mData.wasGroundedLastFrame) {
+		snapRange = RestOffsetM() + std::max(MaxAdhesionM(), StepHeightM());
+	} else {
+		snapRange = RestOffsetM() + CastSkinM();
+	}
+
+	// 地面検出
+	if (!mUPhysicsEngine->BoxCast(box, Vec3::down, snapRange, &gHit)) {
 		return false;
 	}
 
-	// このフレームでジャンプ中（上方向に移動中）の場合はスナップしない
-	if (mData.wishJump && mData.velocity.y > 0.0f) {
+	// 立てる角度か?
+	const float threshold = mData.groundNormalY;
+	if (gHit.normal.y < threshold) {
 		return false;
 	}
 
-	// スナップ
-	float drop = std::max(0.0f, gHit.t - RestOffsetM());
-	position   += -Vec3::up * drop;
-
-	// ヒステリシス: 接地中なら緩い閾値で判定、空中からなら厳しい閾値で判定
-	const float threshold  = mData.groundNormalY;
-	const bool  isGrounded = (gHit.normal.y >= threshold);
+	// 立てる地面なのでスナップ
+	const float drop = std::max(0.0f, gHit.t - RestOffsetM());
+	position         += -Vec3::up * drop;
 
 	mData.lastGroundNormal = gHit.normal;
 	mData.lastGroundDistM  = gHit.t;
 
-	return isGrounded;
+	return true;
 }
 
 /// @brief 衝突判定付きで移動を行う
@@ -1040,9 +1040,8 @@ void MovementComponent::MoveWithCollisions(const float dt) {
 	Vec3 velocity = mData.velocity;
 
 	// 前フレームで接地しており、水平に移動している場合のステップテスト
-	Vec3       horizVel = velocity;
-	const bool wantStep = mData.wasGroundedLastFrame && (horizVel.SqrLength() >
-		1e-8f);
+	const float horizVelSqr = velocity.x * velocity.x + velocity.z * velocity.z;
+	const bool  wantStep = mData.wasGroundedLastFrame && (horizVelSqr > 1e-8f);
 
 	if (wantStep) {
 		StepMove(position, velocity, dt);
@@ -1077,14 +1076,15 @@ void MovementComponent::MoveWithCollisions(const float dt) {
 
 /// @brief スタック状態の検出と解決
 /// @param dt 経過時間
-void MovementComponent::DetectAndResolveStuck(float dt) {
+void MovementComponent::DetectAndResolveStuck(const float dt) {
 	Vec3 currentPos = mScene->GetWorldPos();
 
 	// 移動距離を計算
 	float distMoved = (currentPos - mData.lastPosition).Length();
 
 	// 入力があるかチェック
-	bool hasInput = !mData.vecMoveInput.IsZero() || mData.wishJump;
+	const bool hasInput = (mData.vecMoveInput.x != 0.0f || mData.vecMoveInput.y
+		!= 0.0f) || mData.wishJump;
 
 	// スタック判定：入力があるのにほとんど動いていない
 	if (hasInput && distMoved < kStuckThreshold * dt) {
@@ -1150,10 +1150,10 @@ bool MovementComponent::CanWallrun() const {
 	if (mData.wishCrouch) return false;
 
 	// 最小速度があるか
-	Vec3 velHorz      = mData.velocity;
-	velHorz.y         = 0;
-	const float speed = Math::MtoH(velHorz.Length());
-	if (speed < kWallrunMinSpeed) return false;
+	const float velHorzSqr = mData.velocity.x * mData.velocity.x + mData.
+		velocity.z * mData.velocity.z;
+	const float minSpeedM = Math::HtoM(kWallrunMinSpeed);
+	if (velHorzSqr < minSpeedM * minSpeedM) return false;
 
 	// クールダウン中でないか
 	if (mData.timeSinceLastWallRun < kWallrunCooldown) return false;
@@ -1166,27 +1166,24 @@ bool MovementComponent::CanWallrun() const {
 bool MovementComponent::TryStartWallrun() {
 	if (!mUPhysicsEngine) return false;
 
-	// 左右に壁があるかチェック
-	Vec3 camForward = Vec3::zero;
-	if (auto cam = CameraManager::GetActiveCamera()) {
-		Vec3 f = cam->GetViewMat().Inverse().GetForward();
-		f.y    = 0;
-		if (!f.IsZero()) f.Normalize();
-		camForward = f;
-	}
+	const auto cam = CameraManager::GetActiveCamera();
+	if (!cam) return false;
 
-	if (camForward.IsZero()) return false;
+	Vec3 f           = cam->GetViewMat().Inverse().GetForward();
+	f.y              = 0;
+	const float fLen = f.Length();
+	if (fLen < 1e-6f) return false;
 
-	Vec3 right = Vec3::up.Cross(camForward).Normalized();
+	const Vec3 camForward = f * (1.0f / fLen);
+	const Vec3 right      = Vec3::up.Cross(camForward).Normalized();
 
 	// 左右両方向にレイキャスト
-	Vec3        checkDirections[] = {right, -right};
+	const Vec3  checkDirections[] = {right, -right};
 	const float checkDistance = Math::HtoM(mData.currentWidthHu * 0.5f + 10.0f);
 	// 壁から少し離れてもOK
 
 	for (const Vec3& dir : checkDirections) {
 		UPhysics::Hit hit{};
-		Vec3          startPos = mHull.center;
 
 		if (mUPhysicsEngine->BoxCast(mHull, dir, checkDistance, &hit)) {
 			Vec3 wallNormal = hit.normal.Normalized();
@@ -1299,15 +1296,17 @@ void MovementComponent::UpdateWallrun(float dt) {
 			Normalized();
 
 		// 壁走り方向も再計算
-		if (auto cam = CameraManager::GetActiveCamera()) {
+		if (const auto cam = CameraManager::GetActiveCamera()) {
 			Vec3 camForward = cam->GetViewMat().Inverse().GetForward();
-			camForward.y    = 0;
-			if (!camForward.IsZero()) {
-				camForward.Normalize();
+			camForward.y = 0;
+			const float camForwardLen = camForward.Length();
+			if (camForwardLen > 1e-6f) {
+				camForward        *= 1.0f / camForwardLen;
 				Vec3 projectedDir = Math::ProjectOnPlane(
 					camForward, mData.wallRunNormal);
-				if (!projectedDir.IsZero()) {
-					mData.wallRunDirection = projectedDir.Normalized();
+				const float projLen = projectedDir.Length();
+				if (projLen > 1e-6f) {
+					mData.wallRunDirection = projectedDir * (1.0f / projLen);
 				}
 			}
 		}
@@ -1329,24 +1328,22 @@ void MovementComponent::UpdateWallrun(float dt) {
 
 	if (kWallrunDetachOnSideInput && std::abs(mData.vecMoveInput.x) > 0.5f) {
 		// 壁が左右どちらにあるか判定
-		Vec3 camForward = Vec3::zero;
-		if (auto cam = CameraManager::GetActiveCamera()) {
-			Vec3 f = cam->GetViewMat().Inverse().GetForward();
-			f.y    = 0;
-			if (!f.IsZero()) f.Normalize();
-			camForward = f;
-		}
+		if (const auto cam = CameraManager::GetActiveCamera()) {
+			Vec3 f           = cam->GetViewMat().Inverse().GetForward();
+			f.y              = 0;
+			const float fLen = f.Length();
+			if (fLen > 1e-6f) {
+				const Vec3  camForward = f * (1.0f / fLen);
+				const Vec3  camRight = Vec3::up.Cross(camForward).Normalized();
+				const float wallSide = camRight.Dot(mData.wallRunNormal);
 
-		if (!camForward.IsZero()) {
-			Vec3  camRight = Vec3::up.Cross(camForward).Normalized();
-			float wallSide = camRight.Dot(mData.wallRunNormal);
-
-			// 壁から離れる方向への入力で離脱
-			// wallSide > 0 なら壁は右側 -> 右入力(x>0)で離脱
-			// wallSide < 0 なら壁は左側 -> 左入力(x<0)で離脱
-			if ((wallSide > 0 && mData.vecMoveInput.x > 0.5f) ||
-				(wallSide < 0 && mData.vecMoveInput.x < -0.5f)) {
-				EndWallrun();
+				// 壁から離れる方向への入力で離脱
+				// wallSide > 0 なら壁は右側 -> 右入力(x>0)で離脱
+				// wallSide < 0 なら壁は左側 -> 左入力(x<0)で離脱
+				if ((wallSide > 0 && mData.vecMoveInput.x > 0.5f) ||
+					(wallSide < 0 && mData.vecMoveInput.x < -0.5f)) {
+					EndWallrun();
+				}
 			}
 		}
 	}
@@ -1374,20 +1371,21 @@ void MovementComponent::Wallrun(const float wishspeed, const float dt) {
 		const float addSpeed     = wishspeed * 1.2f - currentSpeed;
 
 		if (addSpeed > 0) {
-			float accel = ConVarManager::GetConVar("sv_airaccelerate")->
+			const float accel = ConVarManager::GetConVar("sv_airaccelerate")->
 				GetValueAsFloat() * 1.5f;
-			float accelspeed = std::min(accel * wishspeed * dt, addSpeed);
-			mData.velocity   += Math::HtoM(accelspeed) * wishdir;
+			const float accelspeed = std::min(accel * wishspeed * dt, addSpeed);
+			mData.velocity         += Math::HtoM(accelspeed) * wishdir;
 		}
 	} else {
 		// 前進入力がない場合は摩擦で減速
-		float speed = Math::MtoH(mData.velocity.Length());
+		const float speedM = mData.velocity.Length();
+		const float speed  = Math::MtoH(speedM);
 		if (speed > 0.1f) {
 			const float fric = ConVarManager::GetConVar("sv_friction")->
 				GetValueAsFloat();
 			const float drop = speed * fric * dt * 0.5f; // 壁では摩擦が弱め
 			const float news = std::max(0.0f, speed - drop);
-			if (news != speed && speed > 0) {
+			if (news != speed) {
 				mData.velocity *= (news / speed);
 			}
 		}
@@ -1411,11 +1409,11 @@ bool MovementComponent::CanSlide() const {
 	if (!mData.wishCrouch) return false;
 
 	// 水平速度が十分にあるか
-	Vec3 velHorizontal = mData.velocity;
-	velHorizontal.y    = 0;
-	const float speed  = Math::MtoH(velHorizontal.Length());
+	const float velHorzSqr = mData.velocity.x * mData.velocity.x + mData.
+		velocity.z * mData.velocity.z;
+	const float minSpeedM = Math::HtoM(kSlideMinSpeed);
 
-	return speed >= kSlideMinSpeed;
+	return velHorzSqr >= minSpeedM * minSpeedM;
 }
 
 /// @brief スライドを開始しようとする

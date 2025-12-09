@@ -94,6 +94,7 @@ struct MovementData {
 	bool  wasGroundedLastFrame = false; // 前フレームの接地していたか?
 	float lastLandingVelocityY = 0.0f;  // 着地時の垂直速度
 	bool  justLanded           = false; // 今フレーム着地したか?
+	float jumpSnapDisableTime  = 0.0f;
 };
 
 class MovementComponent : public Component {
@@ -142,7 +143,7 @@ private:
 	void CheckForNaNAndClamp();
 
 	void ResolvePenetration();
-	
+
 	// 衝突応答
 	void MoveWithCollisions(float dt);
 
@@ -155,17 +156,18 @@ private:
 	[[nodiscard]] Unnamed::Box BuildHullAtFeet(const Vec3& feetPos) const;
 
 	// params
-	static constexpr float kStepHeightHu   = 18.0f; // HL2 Default
-	static constexpr float kCastSkinHu     = 0.25f;
-	static constexpr float kSkinHu         = 0.25f;
-	static constexpr float kRestOffsetHu   = 0.75f;
-	static constexpr float kMaxAdhesionHu  = 2.0f; // 接地維持の最大距離
-	static constexpr float kSnapVyMax      = 1.0f; // m/s
-	static constexpr int   kMaxBumps       = 8;    // 最大衝突回数
-	static constexpr int   kMaxClipPlanes  = 5;
-	static constexpr float kFracEps        = 1e-4f;
-	static constexpr float kAirSpeedCap    = 30.0f;
-	static constexpr float kJumpVelocityHu = 400.0f; // HU/s
+	static constexpr float kStepHeightHu        = 18.0f; // HL2 Default
+	static constexpr float kCastSkinHu          = 0.25f;
+	static constexpr float kSkinHu              = 0.25f;
+	static constexpr float kRestOffsetHu        = 0.75f;
+	static constexpr float kMaxAdhesionHu       = 2.0f; // 接地維持の最大距離
+	static constexpr float kSnapVyMax           = 1.0f; // m/s
+	static constexpr int   kMaxBumps            = 8;    // 最大衝突回数
+	static constexpr int   kMaxClipPlanes       = 5;
+	static constexpr float kFracEps             = 1e-4f;
+	static constexpr float kAirSpeedCap         = 30.0f;
+	static constexpr float kJumpVelocityHu      = 400.0f; // HU/s
+	static constexpr float kJumpSnapDisableTime = 0.5f;   // seconds
 
 	[[nodiscard]] static float StepHeightM() {
 		return Math::HtoM(kStepHeightHu);
@@ -220,17 +222,17 @@ private:
 	static constexpr float kSlideHopSpeedCap  = 2000.0f; // HU/s - スライドホップの速度上限
 
 	// 動的地形
-	Vec3                   mSurfaceVelocity       = Vec3::zero; // 接触した地形の速度
-	Entity*                mLastGroundEntity      = nullptr;    // 前フレームで接触していた床のエンティティ
-	Vec3                   mLastGroundPosition    = Vec3::zero; // 前フレームの床の位置
-	Quaternion             mLastGroundRotation    = Quaternion::identity; // 前フレームの床の回転
-	Vec3                   mRelativeVelocity      = Vec3::zero; // 床に対する相対速度
-	bool                   mWasOnMovingSurface    = false;      // 前フレームで動く床にいたか
-	static constexpr float kDynamicCheckSkinHu    = 8.0f;       // 
+	Vec3 mSurfaceVelocity = Vec3::zero; // 接触した地形の速度
+	Entity* mLastGroundEntity = nullptr; // 前フレームで接触していた床のエンティティ
+	Vec3 mLastGroundPosition = Vec3::zero; // 前フレームの床の位置
+	Quaternion mLastGroundRotation = Quaternion::identity; // 前フレームの床の回転
+	Vec3 mRelativeVelocity = Vec3::zero; // 床に対する相対速度
+	bool mWasOnMovingSurface = false; // 前フレームで動く床にいたか
+	static constexpr float kDynamicCheckSkinHu = 8.0f; // 
 
-	UPhysics::Engine* mUPhysicsEngine = nullptr;
-	AABBCollider*     mCollider       = nullptr;
-	Unnamed::Box      mHull;
-	MovementData      mData;
-	Unnamed::ConsoleSystem*    mConsoleSystem = nullptr;
+	UPhysics::Engine*       mUPhysicsEngine = nullptr;
+	AABBCollider*           mCollider       = nullptr;
+	Unnamed::Box            mHull;
+	MovementData            mData;
+	Unnamed::ConsoleSystem* mConsoleSystem = nullptr;
 };

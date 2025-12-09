@@ -19,6 +19,7 @@
 
 #include "engine/Sprite/Sprite.h"
 
+class Audio;
 class GameTime;
 class D3D12;
 class EnemyMovement;
@@ -132,9 +133,11 @@ private:
 
 	std::unique_ptr<Sprite> mNextCheckpointSprite;
 
+	std::shared_ptr<Audio> mWind;
+
 	// 遅延読み込み用フラグ
-	bool mPendingMeshReload = false;
-	bool mMeshReloadArmed   = false;
+	bool mPendingMeshReload    = false;
+	bool mMeshReloadArmed      = false;
 	bool mPendingReturnToTitle = false;
 
 	IConVar* mShowPosConVar = nullptr;

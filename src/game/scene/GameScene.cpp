@@ -23,6 +23,8 @@
 #include <game/components/checkpoint/CheckpointManager.h>
 #include <game/components/checkpoint/GoalComponent.h>
 
+#include "engine/ResourceSystem/Audio/AudioManager.h"
+
 #include "game/components/RotateComponent.h"
 
 namespace {
@@ -88,6 +90,7 @@ GameScene::~GameScene() {
 /// @brief 初期化
 void GameScene::Init() {
 	// 各種マネージャーの取得
+	mAudioManager = Unnamed::Engine::GetAudioManager();
 	mRenderer = Unnamed::Engine::GetRenderer();
 	mResourceManager = Unnamed::Engine::GetResourceManager();
 	mSrvManager = Unnamed::Engine::GetSrvManager();
@@ -96,7 +99,6 @@ void GameScene::Init() {
 
 	// CheckpointManagerを初期化
 	CheckpointManager::Initialize();
-
 	// 各種初期化処理
 	LoadCoreTextures();
 	InitializeCubeMap();
@@ -124,6 +126,18 @@ void GameScene::Init() {
 		kPingTexturePath
 	);
 	mNextCheckpointSprite->SetAnchorPoint({0.5f, 0.5f});
+
+	const auto run = mAudioManager->GetAudio(
+		"./content/parkour/sounds/bgm/Run.wav"
+	);
+	run->Play(true);
+	run->SetVolume(0.5f);
+
+	mWind = mAudioManager->GetAudio(
+		"./content/parkour/sounds/amb/wind.wav"
+	);
+	mWind->Play(true);
+	mWind->SetVolume(1.0f);
 
 	// ゲームタイマー開始
 	mTimer->StartGame();
@@ -166,10 +180,19 @@ void GameScene::Update(const float deltaTime) {
 		float angle         = 0.0f;
 		Vec2  screenPos;
 
+		Vec2 clientSize = {
+			static_cast<float>(OldWindowManager::GetMainWindow()->
+				GetClientWidth()),
+			static_cast<float>(OldWindowManager::GetMainWindow()->
+				GetClientHeight())
+		};
+
+		Vec2 viewportSize = clientSize;
+
 		if (nextCheckpoint) {
 			screenPos = Math::WorldToScreen(
 				nextCheckpoint->GetOwner()->GetTransform()->GetWorldPos(),
-				Unnamed::Engine::GetViewportSize(),
+				viewportSize,
 				true,
 				64.0f,
 				isOutOfScreen,
@@ -179,7 +202,7 @@ void GameScene::Update(const float deltaTime) {
 			// 次のチェックポイントがない場合はゴールに向かう
 			screenPos = Math::WorldToScreen(
 				goal->GetOwner()->GetTransform()->GetWorldPos(),
-				Unnamed::Engine::GetViewportSize(),
+				viewportSize,
 				true,
 				64.0f,
 				isOutOfScreen,
@@ -188,7 +211,7 @@ void GameScene::Update(const float deltaTime) {
 		}
 
 		mNextCheckpointSprite->SetPos(
-			Unnamed::Engine::GetViewportLT() + screenPos
+			screenPos
 		);
 	} else {
 		CheckpointManager::ResetAllCheckpoints();
@@ -911,6 +934,22 @@ void GameScene::UpdatePlayer(const float deltaTime) {
 	targetFov = std::lerp(currentFov, targetFov, deltaTime * 10.0f);
 
 	CameraManager::GetActiveCamera()->SetFovVertical(targetFov * Math::deg2Rad);
+
+	// プレイヤーが高速で移動しているときは風の音を大きくする
+	if (mMovementComponent && mWind) {
+		auto            velocity       = mMovementComponent->GetVelocity();
+		const float     speed          = Math::MtoH(velocity.Length());
+		const float     maxSpeed       = 3500.0f;
+		constexpr float kWindThreshold = 500.0f;
+		static float    volume         = 0.0f;
+		const float     target         = speed >= kWindThreshold ?
+			                     std::clamp(
+				                     speed / maxSpeed, 0.0f, 0.9f
+			                     ) :
+			                     0.0f;
+		volume = std::lerp(volume, target, deltaTime * 10.0f);
+		mWind->SetVolume(volume);
+	}
 }
 
 /// @brief ポストプロセッシングの更新

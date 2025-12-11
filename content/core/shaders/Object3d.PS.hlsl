@@ -100,7 +100,7 @@ PixelShaderOutput PSMain(VertexShaderOutput input) {
 
 	// 反射を強化（特に金属表面で）
 	float reflectionStrength = lerp(0.1, 1.0, metallic); // 金属度に応じた反射強度
-	reflectionStrength *= (1.0 - roughness * 0.8);       // ラフネスで反射を減衰
+	reflectionStrength       *= (1.0 - roughness * 0.8); // ラフネスで反射を減衰
 
 	// 環境マップからの直接反射（よりクリアな反射）
 	float3 environmentReflection = gEnvironmentTexture.SampleLevel(
@@ -110,7 +110,7 @@ PixelShaderOutput PSMain(VertexShaderOutput input) {
 
 	// ラフネスが高いほどspecularIBLを弱める（元のコード）
 	float specularFactor = (1.0 - roughness) * (0.5 + 0.5 * metallic);
-	specularIBL *= specularFactor;
+	specularIBL          *= specularFactor;
 
 	// Directional Light
 	float3 L = normalize(-gDirectionalLight.direction);
@@ -174,27 +174,34 @@ PixelShaderOutput PSMain(VertexShaderOutput input) {
 	float3 diffuse = baseColor.rgb * lightColor * diffuseFactor;
 
 	// --- リムライト ---
-	// 輪郭を強調して奥行き感を出す
 	float  rimDot       = 1.0 - saturate(dot(N, V));
-	float  rimIntensity = 1.0 - pow(rimDot, 3.0) * 1.25;        // 輪郭を強く光らせる
-	float3 rimColor     = float3(0.025, 0.025, 0.025) * rimIntensity; // 少し黄色がかったリムライト
+	float  rimIntensity = 1.0 - pow(rimDot, 3.0) * 1.25; // 輪郭を強く光らせる
+	float3 rimColor     = float3(0.025, 0.025, 0.025) * rimIntensity; // リムライト
 
 	// --- 環境光 ---
-	// 全体的な明るさを確保するための環境光
 	float3 ambient = float3(0.025, 0.025, 0.125) * baseColor.rgb;
 
 	// --- 合成 ---
 	// ディフューズ光 + リムライト + 環境光 + 自己発光
 	float3 finalColor = diffuse + rimColor + ambient + gMaterial.emissive;
 
-    // --- フォグ ---
-    float  distance    = length(gCamera.worldPosition - input.worldPosition);
-    float  fogStart    = 6.5024f;
-    float  fogEnd      = 416.1536f;
-    float3 fogColor    = float3(0.23f, 0.26f, 0.28f);
-    float  fogFactor   = saturate((distance - fogStart) / (fogEnd - fogStart));
-    
-    finalColor = lerp(finalColor, fogColor, fogFactor * 0.5f);
+	// 立てない面は青くしとく
+	if (input.normal.y < 0.7) {
+		finalColor -= lerp(
+			float3(0.0f, 0.0f, 0.0f),
+			float3(0.42f, 0.58f, 0.92f),
+			1.0f - input.normal.y / 0.7f
+		) * 0.1f;
+	}
+
+	// --- フォグ ---
+	float  distance  = length(gCamera.worldPosition - input.worldPosition);
+	float  fogStart  = 6.5024f;
+	float  fogEnd    = 416.1536f;
+	float3 fogColor  = float3(0.23f, 0.26f, 0.28f);
+	float  fogFactor = saturate((distance - fogStart) / (fogEnd - fogStart));
+
+	finalColor = lerp(finalColor, fogColor, fogFactor * 0.5f);
 
 	output.color.rgb = finalColor;
 	output.color.a   = baseColor.a;

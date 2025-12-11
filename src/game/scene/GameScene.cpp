@@ -687,7 +687,7 @@ void GameScene::InitializeCheckpoints() {
 		checkpoint->AddComponent<AABBCollider>(aabb, Vec3::zero);
 
 		checkpoint->AddComponent<CheckpointComponent>(
-			2, Vec3(162.560f, 1.626f, 177.190f) // リスポーン位置も地面基準に
+			2, Vec3(162.560f, 4.0f, 177.190f) // リスポーン位置も地面基準に
 		);
 
 		AddEntity(checkpoint.get());

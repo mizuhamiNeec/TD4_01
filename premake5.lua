@@ -50,9 +50,10 @@ function ConfigurationSettings()
         runtime "Release"
 
     filter "configurations:Release"
-        defines { "NDEBUG" }
-        optimize "On"
         runtime "Release"
+        staticruntime "On"
+        optimize "Speed"
+        defines { "NDEBUG" }
     filter {}
 end
 
@@ -171,7 +172,7 @@ group "Engine"
     
         filter "configurations:Release"
         links {
-			"src/thirdparty/assimp/lib/Release/assimp-vc143-md.lib",
+			"src/thirdparty/assimp/lib/Release/assimp-vc143-mt.lib",
 		}
             
         filter {}

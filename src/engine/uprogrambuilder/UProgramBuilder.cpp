@@ -101,11 +101,14 @@ struct VSOut {
 	float3 nrmWS:TEXCOORD1; 
 	float2 uv:TEXCOORD0;
 };
-VSOut VSMain(VSIn i) {
+VSOut VSMain(VSIn i, uint instanceId : SV_InstanceID) {
+	InstanceData inst = GetInstanceData(instanceId);
+
 	VSOut o;
-	float4 wpos = mul(float4(i.pos,1), gWorld);
+	float3 posWS = TransformPositionWS(inst,i.pos);
+	float4 wpos = float4(posWS,1.0);
 	o.pos   = mul(wpos, gViewProj);
-	float3 nWS = mul(float4(i.nrm,0), gWorld).xyz;
+	float3 nWS = TransformNormalWS(inst, i.nrm);
 	o.nrmWS = normalize(nWS);
 	o.uv    = i.uv;
 	return o;

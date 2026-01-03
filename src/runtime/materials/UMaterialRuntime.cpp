@@ -209,6 +209,12 @@ namespace Unnamed {
 		pObjectCB.cbvSpace      = 0;
 		rs.params.emplace_back(pObjectCB);
 
+		RootParamDesc pInstanceSRV = {};
+		pInstanceSRV.kind          = RootParamDesc::Kind::ROOT_SRV;
+		pInstanceSRV.srvRegister   = 1; // t1
+		pInstanceSRV.srvSpace      = 0;
+		rs.params.emplace_back(pInstanceSRV);
+
 		StaticSamplerDesc s0 = {};
 		s0.desc              = LinerWrap();
 		s0.reg               = 0; // s0
@@ -220,10 +226,11 @@ namespace Unnamed {
 			return false;
 		}
 
-		rootParams.srvTable   = 0;
-		rootParams.materialCB = 1;
-		rootParams.frameCB    = 2;
-		rootParams.objectCB   = 3;
+		rootParams.srvTable    = 0;
+		rootParams.materialCB  = 1;
+		rootParams.frameCB     = 2;
+		rootParams.objectCB    = 3;
+		rootParams.instanceSRV = 4;
 
 		static constexpr D3D12_INPUT_ELEMENT_DESC kStdMeshLayout[] = {
 			{
@@ -460,7 +467,9 @@ namespace Unnamed {
 		for (auto& slot : mTextureSlots) {
 			if (slot.name == "MainTex" && slot.handle.IsValid()) {
 				commandList->SetGraphicsRootDescriptorTable(
-					0, renderResourceManager->GetSrvGPU(slot.handle));
+					rootParams.srvTable,
+					renderResourceManager->GetSrvGPU(slot.handle)
+				);
 				break;
 			}
 		}

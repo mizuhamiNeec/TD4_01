@@ -44,10 +44,11 @@ namespace Unnamed {
 		PsoHandle           pso           = {};
 
 		struct RootParamIndices {
-			UINT srvTable   = UINT_MAX;
-			UINT materialCB = UINT_MAX;
-			UINT frameCB    = UINT_MAX;
-			UINT objectCB   = UINT_MAX;
+			UINT srvTable    = UINT_MAX;
+			UINT materialCB  = UINT_MAX;
+			UINT frameCB     = UINT_MAX;
+			UINT objectCB    = UINT_MAX;
+			UINT instanceSRV = UINT_MAX;
 		};
 
 		RootParamIndices rootParams;

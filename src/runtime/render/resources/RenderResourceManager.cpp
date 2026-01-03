@@ -737,6 +737,23 @@ namespace Unnamed {
 			return {};
 		}
 
+		// バウンズを計算
+		Vec3 minP = meshData->positions[0];
+		Vec3 maxP = meshData->positions[0];
+		for (const auto& p : meshData->positions) {
+			minP = Vec3::Min(minP, p);
+			maxP = Vec3::Max(maxP, p);
+		}
+		const Vec3 center = (minP + maxP) * 0.5f;
+
+		float r2 = 0.0f;
+		for (const auto& p : meshData->positions) {
+			const Vec3 d = p - center;
+			r2           = std::max(r2, d.Dot(d));
+		}
+		gpuMesh.mesh.bounds.center = center;
+		gpuMesh.mesh.bounds.radius = std::sqrt(r2);
+
 		// インデックスバッファ作成
 		const size_t ibSize = meshData->indices.size() * sizeof(uint32_t);
 		if (!CreateStaticIndexBuffer(

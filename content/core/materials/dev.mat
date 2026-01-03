@@ -3,12 +3,12 @@
     "programBody": "./content/core/materials/src/UserMat.hlsl",
     "programMeta": "./content/core/materials/src/UserMat.hlsl.meta.json",
     "textures": {
-        "MainTex": "./content/core/textures/uvChecker.png"
+        "MainTex": "./content/core/textures/dev_measure.png"
     },
     "floats": {
-        "Metallic": 0.2,
-        "Roughness": 100,
-        "Opacity": 0.6,
+        "Metallic": 1,
+        "Roughness": 1,
+        "Opacity": 1,
         "EmissiveStrength": 0
     },
     "float4s": {

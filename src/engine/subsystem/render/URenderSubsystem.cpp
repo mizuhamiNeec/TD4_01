@@ -204,7 +204,7 @@ namespace Unnamed {
 
 					const Mat4 worldMat = tr->WorldMat() * parent;
 
-					mr->UpdateWorldBoundsSphere(
+					mr->UpdateWorldBoundsCache(
 						worldMat, tr->WorldRevision(), mesh->bounds
 					);
 					const auto& bs = mr->WorldBoundsSphere();

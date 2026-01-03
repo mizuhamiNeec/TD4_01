@@ -9,10 +9,16 @@
 
 #include "engine/uuploadarena/UploadArena.h"
 
+#include "runtime/assets/core/UAssetManager.h"
+#include "runtime/materials/UMaterialRuntime.h"
+#include "runtime/render/resources/RenderResourceManager.h"
+#include "runtime/render/utils/Frustum.h"
+#include "runtime/render/utils/RenderUtils.h"
+
 namespace Unnamed {
 	namespace {
 		/// @brief ワールド行列とビュー行列からビュー空間での深度を計算します
-		/// @param world ワールド行列
+		/// @param matWorld ワールド行列
 		/// @param view ビュー行列
 		/// @return ビュー空間での深度値
 		float ComputeViewDepth(const Mat4& world, const Mat4& view) {
@@ -29,17 +35,20 @@ namespace Unnamed {
 	/// @param shaderLibrary シェーダーライブラリ
 	/// @param rootSignatureCache ルートシグネチャキャッシュ
 	/// @param pipelineCache パイプラインキャッシュ
+	/// @param assetManager アセットマネージャ
 	URenderSubsystem::URenderSubsystem(
 		GraphicsDevice*        graphicsDevice,
 		RenderResourceManager* renderResourceManager,
 		ShaderLibrary*         shaderLibrary,
 		RootSignatureCache*    rootSignatureCache,
-		UPipelineCache*        pipelineCache
+		UPipelineCache*        pipelineCache,
+		UAssetManager*         assetManager
 	) : mGraphicsDevice(graphicsDevice),
 	    mRenderResourceManager(renderResourceManager),
 	    mShaderLibrary(shaderLibrary),
 	    mRootSignatureCache(rootSignatureCache),
-	    mPipelineCache(pipelineCache) {
+	    mPipelineCache(pipelineCache),
+	    mAssetManager(assetManager) {
 		ServiceLocator::Register<URenderSubsystem>(this);
 	}
 
@@ -48,6 +57,16 @@ namespace Unnamed {
 	/// @brief 初期化
 	/// @return 初期化成功ならtrue
 	bool URenderSubsystem::Init() {
+		if (mAssetManager) {
+			mAssetManager->RegisterReload(
+				[this](AssetID id) {
+					OnAssetReloaded(id);
+				}
+			);
+		}
+
+		DevMsg("Render", "sizeof(instanceData) = {}", sizeof(InstanceData));
+
 		return true;
 	}
 
@@ -93,6 +112,15 @@ namespace Unnamed {
 			.time = 0.0f
 		};
 		mFrameCBVA = UploadCB(&f, sizeof(f));
+
+		ObjectCBData dummyObj = {
+			.world = Mat4::identity,
+			.worldInverseTranspose = Mat4::identity,
+		};
+		mDummyObjectCBVA = UploadCB(&dummyObj, sizeof(dummyObj));
+
+		// フレーム開始時にフラスタムの更新
+		mFrustum = Frustum::FromViewProjRowVec(mView.viewProj);
 	}
 
 	/// @brief ワールドのレンダリング
@@ -105,10 +133,20 @@ namespace Unnamed {
 				if (a.psoId != b.psoId) {
 					return a.psoId < b.psoId;
 				}
+
 				if (a.materialKey != b.materialKey) {
 					return a.materialKey < b.materialKey;
 				}
-				return a.depthVS < b.depthVS; // Front to Back (不透明用)
+
+				if (a.meshHandle.id != b.meshHandle.id) {
+					return a.meshHandle.id < b.meshHandle.id;
+				}
+
+				if (a.meshHandle.gen != b.meshHandle.gen) {
+					return a.meshHandle.gen < b.meshHandle.gen;
+				}
+
+				return a.depthVS < b.depthVS;
 			}
 		);
 
@@ -150,8 +188,8 @@ namespace Unnamed {
 	void URenderSubsystem::Collect(const UWorld& world, const Mat4& parent) {
 		for (auto& e : world.Entities()) {
 			if (!e) { continue; }
-			const auto* tr = e->GetComponent<TransformComponent>();
-			auto*       mr = e->GetComponent<MeshRendererComponent>();
+			auto* tr = e->GetComponent<TransformComponent>();
+			auto* mr = e->GetComponent<MeshRendererComponent>();
 			if (tr && mr) {
 				if (
 					mr->EnsureGPU(
@@ -160,17 +198,35 @@ namespace Unnamed {
 						mPipelineCache, mContext.cmd
 					)
 				) {
+					const MeshGPU* mesh = mRenderResourceManager->GetMesh(
+						mr->meshHandle);
+					if (!mesh) { continue; }
+
 					const Mat4 worldMat = tr->WorldMat() * parent;
 
+					mr->UpdateWorldBoundsSphere(
+						worldMat, tr->WorldRevision(), mesh->bounds
+					);
+					const auto& bs = mr->WorldBoundsSphere();
+					if (!mFrustum.TestSphere(bs.center, bs.radius)) {
+						continue;
+					}
+
 					RenderItem it{};
-					it.world      = worldMat;
-					it.material   = &mr->material;
-					it.meshHandle = mr->meshHandle; // 共有メッシュのハンドル
+					it.matWorld   = worldMat;
+					it.tr         = tr;
+					it.meshHandle = mr->meshHandle;
 
-					it.depthVS = ComputeViewDepth(it.world, mView.view);
+					it.materialAsset = mr->materialAsset;
+					it.material      = EnsureMaterialGPU(
+						it.materialAsset, mContext.cmd);
+					if (!it.material) {
+						continue;
+					}
 
-					it.psoId = mr->material.pso.id;
-					it.materialKey = mr->materialAsset;
+					it.depthVS = ComputeViewDepth(it.matWorld, mView.view);
+					it.psoId = it.material->pso.id;
+					it.materialKey = it.materialAsset;
 					it.rsPtr = mRootSignatureCache->Get(it.material->root);
 
 					mItems.emplace_back(std::move(it));
@@ -195,54 +251,100 @@ namespace Unnamed {
 			mGraphicsDevice->GetSrvAllocator()->GetHeap(),
 			mGraphicsDevice->GetSamplerAllocator()->GetHeap()
 		};
-		cmd->SetDescriptorHeaps(
-			static_cast<UINT>(heaps.size()), heaps.data()
-		);
+		cmd->SetDescriptorHeaps(static_cast<UINT>(heaps.size()), heaps.data());
 
 		const ID3D12RootSignature* lastRs  = nullptr;
 		uint32_t                   lastPso = 0;
 		uint32_t                   lastMat = UINT32_MAX;
 
-		for (auto& it : mItems) {
-			if (it.psoId != lastPso || it.rsPtr != lastRs) {
-				cmd->SetGraphicsRootSignature(it.rsPtr);
-				cmd->SetPipelineState(mPipelineCache->Get({it.psoId}));
-				lastPso = it.psoId;
-				lastRs  = it.rsPtr;
-				// ルートシグネチャが変わったら同じマテリアルでもう一度適用
-				it.material->Apply(cmd, mRenderResourceManager,
-				                   mContext.backIndex);
-				lastMat = it.materialKey;
-			}
+		size_t i = 0;
+		while (i < mItems.size()) {
+			const RenderItem& head = mItems[i];
 
-			// マテリアル変更時に適用
-			else if (it.materialKey != lastMat) {
-				it.material->Apply(
-					cmd, mRenderResourceManager, mContext.backIndex
-				);
-				lastMat = it.materialKey;
-			}
-
-			cmd->SetGraphicsRootConstantBufferView(
-				it.material->rootParams.frameCB, mFrameCBVA
+			const MeshGPU* mesh = mRenderResourceManager->GetMesh(
+				head.meshHandle
 			);
 
-			// オブジェクトコンスタントバッファ
-			ObjectCBData o = {
-				.world = it.world,
-				.worldInverseTranspose = it.world.Inverse().Transpose()
-			};
-			D3D12_GPU_VIRTUAL_ADDRESS objCbGpu = UploadCB(&o, sizeof(o));
-			UASSERT(objCbGpu != 0 && (objCbGpu & 0xFF) == 0);
-			cmd->SetGraphicsRootConstantBufferView(
-				it.material->rootParams.objectCB, objCbGpu);
-
-			// 共有メッシュから実際のメッシュデータを取得
-			const MeshGPU* mesh = mRenderResourceManager->
-				GetMesh(it.meshHandle);
 			if (!mesh) {
-				continue; // メッシュが無効な場合はスキップ
+				++i;
+				continue;
 			}
+
+			// 同じPSO、マテリアル、メッシュをまとめる
+			size_t j = i;
+			while (j < mItems.size()) {
+				const auto& it = mItems[j];
+				if (it.psoId != head.psoId) { break; }
+				if (it.materialKey != head.materialKey) { break; }
+				if (it.meshHandle != head.meshHandle) { break; }
+				++j;
+			}
+
+			const uint32_t instanceCount = static_cast<uint32_t>(j - i);
+
+			if (head.psoId != lastPso || head.rsPtr != lastRs) {
+				cmd->SetGraphicsRootSignature(head.rsPtr);
+				cmd->SetPipelineState(mPipelineCache->Get({head.psoId}));
+				lastPso = head.psoId;
+				lastRs  = head.rsPtr;
+
+				head.material->Apply(
+					cmd, mRenderResourceManager, mContext.backIndex
+				);
+				lastMat = head.materialKey;
+			} else if (head.materialKey != lastMat) {
+				head.material->Apply(cmd, mRenderResourceManager,
+				                     mContext.backIndex);
+				lastMat = head.materialKey;
+			}
+
+			// FrameCB
+			cmd->SetGraphicsRootConstantBufferView(
+				head.material->rootParams.frameCB, mFrameCBVA
+			);
+
+			// Dummy
+			cmd->SetGraphicsRootConstantBufferView(
+				head.material->rootParams.objectCB, mDummyObjectCBVA
+			);
+
+			// インスタンスデータをアップロードアリーナに書く
+			const size_t bytes = sizeof(InstanceData) * instanceCount;
+			const auto   slice = mRenderResourceManager->GetUploadArena()->
+				Allocate(bytes, 16);
+			if (!slice.cpu) {
+				Warning("Render",
+				        "UploadArena capacity exceeded (instances={}, bytes={})",
+				        instanceCount, bytes);
+				break;
+			}
+			auto* dst = reinterpret_cast<InstanceData*>(slice.cpu);
+			for (size_t k = 0; k < instanceCount; ++k) {
+				const auto& srcItem = mItems[i + k];
+				const auto& [
+					worldCol0, worldCol1, worldCol2,
+					normalCol0, normalCol1, normalCol2
+				] = srcItem.tr->RenderCache();
+
+				std::memcpy(dst[k].worldCol0, worldCol0, sizeof(float) * 4);
+				std::memcpy(dst[k].worldCol1, worldCol1, sizeof(float) * 4);
+				std::memcpy(dst[k].worldCol2, worldCol2, sizeof(float) * 4);
+
+				std::memcpy(
+					dst[k].normalCol0, normalCol0, sizeof(float) * 4
+				);
+				std::memcpy(
+					dst[k].normalCol1, normalCol1, sizeof(float) * 4
+				);
+				std::memcpy(
+					dst[k].normalCol2, normalCol2, sizeof(float) * 4
+				);
+			}
+
+			cmd->SetGraphicsRootShaderResourceView(
+				head.material->rootParams.instanceSRV,
+				slice.gpuVirtualAddress
+			);
 
 			mRenderResourceManager->BindVertexBuffer(cmd, mesh->vb);
 			mRenderResourceManager->BindIndexBuffer(cmd, mesh->ib);
@@ -251,13 +353,78 @@ namespace Unnamed {
 			if (mesh->indexCount > 0) {
 				cmd->DrawIndexedInstanced(
 					mesh->indexCount,
-					1,
+					instanceCount,
 					mesh->firstIndex,
 					mesh->baseVertex,
 					0
 				);
 			} else {
-				cmd->DrawInstanced(3, 1, 0, 0);
+				cmd->DrawInstanced(3, instanceCount, 0, 0);
+			}
+
+			i = j;
+		}
+	}
+
+	UMaterialRuntime* URenderSubsystem::EnsureMaterialGPU(
+		AssetID materialAsset, ID3D12GraphicsCommandList* cmd
+	) {
+		if (materialAsset == kInvalidAssetID || !mAssetManager) {
+			return nullptr;
+		}
+
+		const auto& meta = mAssetManager->Meta(materialAsset);
+		if (meta.type != UASSET_TYPE::MATERIAL) {
+			return nullptr;
+		}
+
+		auto& entry = mMaterialCache[materialAsset];
+
+		if (!entry.runtime || entry.lastBuiltVersion != meta.version) {
+			entry.runtime                = std::make_unique<UMaterialRuntime>();
+			entry.runtime->materialAsset = materialAsset;
+
+			const bool ok = entry.runtime->BuildCPU(
+				mAssetManager,
+				mShaderLibrary,
+				mRootSignatureCache,
+				mPipelineCache,
+				mGraphicsDevice
+			);
+
+			if (!ok) {
+				entry.runtime.reset();
+				return nullptr;
+			}
+
+			entry.runtime->RealizeGPU(mRenderResourceManager, cmd);
+			entry.lastBuiltVersion = meta.version;
+		}
+
+		return entry.runtime.get();
+	}
+
+	void URenderSubsystem::OnAssetReloaded(AssetID id) {
+		if (!mAssetManager) { return; }
+
+		const auto& meta = mAssetManager->Meta(id);
+
+		// マテリアルが更新された
+		if (meta.type == UASSET_TYPE::MATERIAL) {
+			mMaterialCache.erase(id);
+			return;
+		}
+
+		// テクスチャ、シェーダーが更新されたら、参照しているマテリアルを無効にする
+		if (meta.type == UASSET_TYPE::TEXTURE || meta.type ==
+			UASSET_TYPE::SHADER) {
+			// 参照元
+			const auto dependencies = mAssetManager->Dependencies(id);
+			for (const AssetID parent : dependencies) {
+				const auto& parentMeta = mAssetManager->Meta(parent);
+				if (parentMeta.type == UASSET_TYPE::MATERIAL) {
+					mMaterialCache.erase(parent);
+				}
 			}
 		}
 	}

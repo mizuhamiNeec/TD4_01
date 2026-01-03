@@ -6,8 +6,8 @@ public:
 	/// @brief ウィンドウ情報構造体
 	struct WindowCreateInfo {
 		std::string title           = "Unnamed Window";
-		uint32_t    clWidth         = 1280;
-		uint32_t    clHeight        = 720;
+		int         clWidth         = 1280;
+		int         clHeight        = 720;
 		bool        bIsInactive     = false;
 		bool        bIsResizable    = true;
 		bool        bCreateAtCenter = true;
@@ -15,10 +15,10 @@ public:
 
 	virtual ~IWindow() = default;
 
-	[[nodiscard]] virtual bool       ShouldClose() const = 0; // 閉じて良いか?
+	[[nodiscard]] virtual bool             ShouldClose() const = 0; // 閉じて良いか?
 	[[nodiscard]] virtual WindowCreateInfo GetInfo() const = 0; // ウィンドウ情報を取得
-	[[nodiscard]] virtual void*      GetNativeHandle() const = 0; // ハンドル
-	virtual void                     RequestClose() = 0; // 閉じなさい!シ○ジ君!!
+	[[nodiscard]] virtual void*            GetNativeHandle() const = 0; // ハンドル
+	virtual void                           RequestClose() = 0; // 閉じなさい!シ○ジ君!!
 
 	virtual void SetTitle(std::string_view title) = 0;
 	virtual void SetInactive(bool flag) = 0; // プロシージャから使用されます

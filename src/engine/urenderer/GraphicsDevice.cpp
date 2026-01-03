@@ -13,7 +13,6 @@
 #ifndef DFCC_DXIL
 #define DFCC_DXIL MAKEFOURCC('D', 'X', 'I', 'L')
 #endif
-#include <dxcapi.h>
 
 namespace Unnamed {
 	using namespace Microsoft::WRL;
@@ -469,14 +468,16 @@ namespace Unnamed {
 		frameContext.commandList->OMSetRenderTargets(
 			1, &bb.rtv, TRUE, &db.dsv
 		);
-		const FLOAT color[4] = {
-			clearColor.x, clearColor.y, clearColor.z, clearColor.w
-		};
-		color;
-		// TODO: クリアするかを選べるようにする
-		frameContext.commandList->ClearRenderTargetView(
-			bb.rtv, color, 0, nullptr
-		);
+
+		if (mInfo.bClearColor) {
+			const FLOAT color[4] = {
+				clearColor.x, clearColor.y, clearColor.z, clearColor.w
+			};
+			frameContext.commandList->ClearRenderTargetView(
+				bb.rtv, color, 0, nullptr
+			);
+		}
+
 		frameContext.commandList->ClearDepthStencilView(
 			db.dsv, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr
 		);
@@ -523,7 +524,7 @@ namespace Unnamed {
 			_countof(commandLists), commandLists
 		);
 
-		const HRESULT hr = mSwapChain->Present(1, 0);
+		const HRESULT hr = mSwapChain->Present(0, 0);
 		if (FAILED(hr)) {
 			Error(
 				kChannel,

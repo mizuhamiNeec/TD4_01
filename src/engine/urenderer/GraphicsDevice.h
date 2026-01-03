@@ -29,10 +29,11 @@ namespace Unnamed {
 
 	/// @brief グラフィックスデバイス情報
 	struct GraphicsDeviceInfo {
-		void*    hWnd;
-		uint32_t width;
-		uint32_t height;
-		bool     bEnableDebug;
+		void* hWnd;
+		int   width;
+		int   height;
+		bool  bClearColor;
+		bool  bEnableDebug;
 	};
 
 	/// @brief グラフィックスデバイスクラス
@@ -123,8 +124,9 @@ namespace Unnamed {
 
 		std::vector<GPUBuffer> mBuffers;
 
-		HANDLE mAdapterChangeEvent;       // アダプター変更イベント
-		DWORD  mAdapterChangeEventCookie; // アダプター変更イベントのコール
+		HANDLE mAdapterChangeEvent; // アダプター変更イベント
+		DWORD mAdapterChangeEventCookie; // アダプター変更イベントのコール
+		Microsoft::WRL::ComPtr<IDXGIFactory7> mFactory; // イベント解除用に保持
 
 		Microsoft::WRL::ComPtr<ID3D12Device>       mDevice;
 		Microsoft::WRL::ComPtr<IDXGISwapChain4>    mSwapChain;

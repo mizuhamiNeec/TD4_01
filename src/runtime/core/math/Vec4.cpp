@@ -43,11 +43,15 @@ Vec4 Vec4::operator*(const float rhs) const {
 	return Vec4(x * rhs, y * rhs, z * rhs, w * rhs);
 }
 
-Vec4 Vec4::operator+(const Vec4& vec4) const {
-	return Vec4(x + vec4.x, y + vec4.y, z + vec4.z, w + vec4.w);
+Vec4 Vec4::operator+(const Vec4& rhs) const {
+	return Vec4(x + rhs.x, y + rhs.y, z + rhs.z, w + rhs.w);
 }
 
-Vec4 Vec4::operator/(float rhs) const {
+Vec4 Vec4::operator-(const Vec4& rhs) const {
+	return Vec4(x - rhs.x, y - rhs.y, z - rhs.z, w - rhs.w);
+}
+
+Vec4 Vec4::operator/(const float rhs) const {
 	return Vec4(x / rhs, y / rhs, z / rhs, w / rhs);
 }
 

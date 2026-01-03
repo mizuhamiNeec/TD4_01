@@ -23,6 +23,9 @@
 #include <runtime/assets/loaders/MeshLoader.h>
 #include <runtime/assets/loaders/RawLoader.h>
 #include <runtime/assets/loaders/ShaderLoader.h>
+#include <runtime/render/pipeline/UPipelineCache.h>
+#include <runtime/render/resources/RenderResourceManager.h>
+#include <runtime/render/resources/ShaderLibrary.h>
 
 namespace Unnamed {
 	constexpr std::string_view kChannel = "Engine";
@@ -40,11 +43,11 @@ namespace Unnamed {
 		Shutdown();
 	}
 
-	UMaterialRuntime mr;
-
 	/// @brief 初期化
 	void UEngine::Init() {
+		// 挨拶は大事
 		Msg(kChannel, "Hello!");
+
 		// サブシステムの作成
 		mSubsystems.emplace_back(std::make_unique<ConsoleSystem>());
 		mSubsystems.emplace_back(std::make_unique<TimeSystem>());
@@ -91,10 +94,11 @@ namespace Unnamed {
 			.hWnd = mainWindow->GetNativeHandle(),
 			.width = mainWindow->GetInfo().clWidth,
 			.height = mainWindow->GetInfo().clHeight,
+			.bClearColor = true,
 #ifdef _DEBUG
-			.bEnableDebug = true,
-#else
 			.bEnableDebug = false,
+#else
+			.bEnableDebug = false
 #endif
 		};
 		mGraphicsDevice->Init(gdInfo);
@@ -195,7 +199,7 @@ namespace Unnamed {
 			auto space = KeyNameTable::FromString("space");
 			if (space.has_value()) {
 				mInputSystem->BindAction(
-					"shutdown",
+					"hotreload",
 					{
 						.device = space->device,
 						.code = space->code
@@ -248,8 +252,8 @@ namespace Unnamed {
 
 		mUploadArena = std::make_unique<UploadArena>();
 
-		// 128MB/Frame
-		mUploadArena->Init(mGraphicsDevice->Device(), 16ull * 1024 * 1024);
+		// 128MB per Frame
+		mUploadArena->Init(mGraphicsDevice->Device(), 128ull * 1024 * 1024);
 
 		// RRMの作成と初期化
 		mRenderResourceManager = std::make_unique<RenderResourceManager>(
@@ -278,7 +282,8 @@ namespace Unnamed {
 				mRenderResourceManager.get(),
 				mShaderLibrary.get(),
 				mRootSignatureCache.get(),
-				mPipelineCache.get()
+				mPipelineCache.get(),
+				mAssetManager.get()
 			)
 		);
 
@@ -288,27 +293,24 @@ namespace Unnamed {
 		mWorld = std::make_unique<UWorld>("Sandbox");
 
 		{
-			mr.materialAsset = mAssetManager->LoadFromFile(
+			mMaterialAsset = mAssetManager->LoadFromFile(
 				"./content/core/materials/dev.mat", UASSET_TYPE::MATERIAL
 			);
-			mAssetManager->AddRef(mr.materialAsset);
-			bool ok = mr.BuildCPU(
-				mAssetManager.get(),
-				mShaderLibrary.get(),
-				mRootSignatureCache.get(),
-				mPipelineCache.get(),
-				mGraphicsDevice.get()
-			);
-			UASSERT(ok && "Failed to build material.");
+			mAssetManager->AddRef(mMaterialAsset);
 
 			const auto meshAsset = mAssetManager->LoadFromFile(
-				"./content/core/models/Error.obj", UASSET_TYPE::MESH
+				"./content/core/models/error.obj", UASSET_TYPE::MESH
 			);
 			mAssetManager->AddRef(meshAsset);
 
+			const auto meshAsset2 = mAssetManager->LoadFromFile(
+				"./content/core/models/fan.obj", UASSET_TYPE::MESH
+			);
+			mAssetManager->AddRef(meshAsset2);
+
 			// グリッドでエンティティをスポーン
-			constexpr int   rows    = 0;
-			constexpr int   cols    = 0;
+			constexpr int   rows    = 32;
+			constexpr int   cols    = 32;
 			constexpr float spacing = 4.0f;
 			constexpr float offsetX = (cols - 1) * spacing * 0.5f;
 			constexpr float offsetZ = (rows - 1) * spacing * 0.5f;
@@ -324,19 +326,30 @@ namespace Unnamed {
 						MeshRendererComponent>();
 					auto* rotator = entity->GetOrAddComponent<
 						RotatorComponent>();
-					rotator->SetRotationRate(Vec3::up * 15.0f);
+					rotator->SetRotationRate(Vec3::up * 3.0f);
 
 					meshRenderer->meshAsset     = meshAsset;
-					meshRenderer->material      = mr;
-					meshRenderer->materialAsset = mr.materialAsset;
+					meshRenderer->materialAsset = mMaterialAsset;
 
 					const float x = static_cast<float>(j) * spacing -
 						offsetX;
 					const float z = static_cast<float>(i) * spacing -
 						offsetZ;
 					tr->SetPosition(Vec3(x, 0.0f, z));
+
+					tr->SetScale(
+						Random::Vec3Range(Vec3::one * 0.1f, Vec3::one * 8.0f)
+					);
 				}
 			}
+
+			auto* ent          = mWorld->SpawnEmpty("fan");
+			auto* tr           = ent->GetOrAddComponent<TransformComponent>();
+			auto* meshRenderer = ent->GetOrAddComponent<
+				MeshRendererComponent>();
+			meshRenderer->meshAsset     = meshAsset2;
+			meshRenderer->materialAsset = mMaterialAsset;
+			tr->SetPosition(Vec3::up * 32.0f);
 		}
 
 		{
@@ -452,6 +465,11 @@ namespace Unnamed {
 			mWorld->Tick(deltaTime);
 			mWorld->PostPhysicsTick(deltaTime);
 
+			if (mInputSystem->IsPressed("hotreload")) {
+				Msg(kChannel, "HotReload triggered!");
+				mAssetManager->Reload(mMaterialAsset);
+			}
+
 			//-----------------------------------------------------------------
 
 			// const uint32_t reload = mr.DetectChanges();
@@ -548,13 +566,14 @@ namespace Unnamed {
 
 	/// @brief シャットダウン
 	void UEngine::Shutdown() const {
-		mGraphicsDevice->Shutdown();
 		mPlatformEvents->RemoveListener(mInputSystem);
 
 		for (const auto& subsystem : mSubsystems) {
 			subsystem->Shutdown();
 		}
 
-		Msg(kChannelNone, "アリーヴェ帰ルチ! (さよナランチャ");
+		mGraphicsDevice->Shutdown();
+
+		Msg(kChannel, "アリーヴェ帰ルチ! (さよナランチャ");
 	}
 }

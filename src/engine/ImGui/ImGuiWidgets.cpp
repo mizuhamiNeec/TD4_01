@@ -31,7 +31,7 @@ namespace ImGuiWidgets {
 	/// @return 値が変更された場合にtrueを返します。
 	bool DragVec3(
 		const std::string& name,
-		Vec3               value,
+		Vec3&              value,
 		const Vec3         defaultValue,
 		const float        vSpeed,
 		const char*        format

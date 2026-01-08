@@ -255,9 +255,12 @@ namespace Unnamed {
 	/// @param key 入力キー
 	/// @param axisType 軸タイプ（X軸またはY軸）
 	/// @param scale スケール
-	void UInputSystem::BindAxis2D(const std::string& axis, const InputKey& key,
-	                              const INPUT_AXIS&  axisType,
-	                              const float&       scale) {
+	void UInputSystem::BindAxis2D(
+		const std::string& axis,
+		const InputKey&    key,
+		const INPUT_AXIS&  axisType,
+		const float&       scale
+	) {
 		InputBinding binding;
 		binding.key    = key;
 		binding.type   = BINDING_TYPE::AXIS_2D;

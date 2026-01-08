@@ -8,19 +8,19 @@
 /// @brief デバッグ描画クラス
 class Debug {
 public:
-	static void DrawLine(const Vec3& a, const Vec3& b, const Vec4& color);
+	static void DrawLine(Vec3 a, Vec3 b, const Vec4& color);
 	static void DrawRay(const Vec3& position, const Vec3& dir,
 	                    const Vec4& color);
 	static void DrawAxis(const Vec3& position, const Quaternion& orientation);
 	static void DrawCircle(
-		const Vec3& position, const Quaternion& rotation, const float& radius,
-		const Vec4& color, const uint32_t&      segments = 32
+		const Vec3& position, const Quaternion& rotation, float radius,
+		const Vec4& color, uint32_t             segments = 32
 	);
 	static void DrawArc(
-		const float& startAngle, const float& endAngle, const Vec3& position,
-		const Quaternion& orientation, const float& radius, const Vec4& color,
-		const bool& drawChord = false, const bool& drawSector = false,
-		const int& arcSegments = 32
+		float             startAngle, float endAngle, const Vec3& position,
+		const Quaternion& orientation, float radius, const Vec4& color,
+		bool              drawChord   = false, bool drawSector = false,
+		int               arcSegments = 32
 	);
 	static void DrawArrow(const Vec3& position, const Vec3& direction,
 	                      const Vec4& color, float          headSize = 0.25f);
@@ -41,17 +41,17 @@ public:
 	static void DrawBox(const Vec3& position, const Quaternion& orientation,
 	                    Vec3        size, const Vec4&           color);
 	static void DrawCylinder(
-		const Vec3&  position, const Quaternion& orientation,
-		const float& height,
-		const float& radius, const Vec4& color, const bool& drawFromBase = true
+		const Vec3& position, const Quaternion& orientation,
+		float       height,
+		float       radius, const Vec4& color, bool drawFromBase = true
 	);
 	static void DrawCapsule(
-		const Vec3&  position, const Quaternion& orientation,
-		const float& height,
-		const float& radius, const Vec4& color, const bool& drawFromBase = true
+		const Vec3& position, const Quaternion& orientation,
+		float       height,
+		float       radius, const Vec4& color, bool drawFromBase = true
 	);
 	static void DrawCapsule(
-		const Vec3& start, const Vec3& end, const float& radius,
+		const Vec3& start, const Vec3& end, float radius,
 		const Vec4& color
 	);
 	static void DrawTriangle(const Unnamed::Triangle& triangle, Vec4 color);

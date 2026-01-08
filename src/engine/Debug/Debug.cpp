@@ -7,7 +7,7 @@
 /// @param a 線の始点
 /// @param b 線の終点
 /// @param color 線の色
-void Debug::DrawLine(const Vec3& a, const Vec3& b, const Vec4& color) {
+void Debug::DrawLine(const Vec3 a, const Vec3 b, const Vec4& color) {
 	if (Unnamed::Engine::IsEditorMode()) {
 		mLine->AddLine(a, b, color);
 	}
@@ -64,9 +64,11 @@ void Debug::DrawAxis(const Vec3& position, const Quaternion& orientation) {
 /// @param color 円の色
 /// @param segments 円の分割数
 void Debug::DrawCircle(
-	const Vec3&     position, const Quaternion& rotation, const float& radius,
-	const Vec4&     color,
-	const uint32_t& segments
+	const Vec3&       position,
+	const Quaternion& rotation,
+	const float       radius,
+	const Vec4&       color,
+	const uint32_t    segments
 ) {
 	// 描画できない形状の場合
 	if (radius <= 0.0f || segments <= 0) {
@@ -96,7 +98,7 @@ void Debug::DrawCircle(
 
 		// 目的の半径にする
 		lineStart *= radius;
-		lineEnd *= radius;
+		lineEnd   *= radius;
 
 		// 回転させる
 		lineStart = rotation * lineStart;
@@ -104,7 +106,7 @@ void Debug::DrawCircle(
 
 		// 目的の座標に移動
 		lineStart += position;
-		lineEnd += position;
+		lineEnd   += position;
 
 		// なんやかんやした線を描画
 		DrawLine(lineStart, lineEnd, color);
@@ -122,9 +124,9 @@ void Debug::DrawCircle(
 /// @param drawSector 扇形の辺を描画するかどうか
 /// @param arcSegments 円弧の分割数
 void Debug::DrawArc(
-	const float&      startAngle, const float& endAngle, const Vec3& position,
-	const Quaternion& orientation, const float& radius, const Vec4& color,
-	const bool&       drawChord, const bool& drawSector, const int& arcSegments
+	const float       startAngle, const float  endAngle, const Vec3& position,
+	const Quaternion& orientation, const float radius, const Vec4&   color,
+	const bool        drawChord, const bool    drawSector, const int arcSegments
 ) {
 	float arcSpan = Math::DeltaAngle(startAngle, endAngle);
 
@@ -158,13 +160,13 @@ void Debug::DrawArc(
 		lineEnd.z = 0.0f;
 
 		lineStart *= radius;
-		lineEnd *= radius;
+		lineEnd   *= radius;
 
 		lineStart = orientation * lineStart;
 		lineEnd   = orientation * lineEnd;
 
 		lineStart += position;
-		lineEnd += position;
+		lineEnd   += position;
 
 		if (i == 0) {
 			arcStart = lineStart;
@@ -379,9 +381,12 @@ void Debug::DrawBox(
 /// @param color 円柱の色
 /// @param drawFromBase 底面から描画するかどうか
 void Debug::DrawCylinder(
-	const Vec3&  position, const Quaternion& orientation, const float& height,
-	const float& radius, const Vec4&         color,
-	const bool&  drawFromBase
+	const Vec3&       position,
+	const Quaternion& orientation,
+	const float       height,
+	const float       radius,
+	const Vec4&       color,
+	const bool        drawFromBase
 ) {
 	const Vec3 localUp      = orientation * Vec3::up;
 	const Vec3 localRight   = orientation * Vec3::right;
@@ -418,9 +423,9 @@ void Debug::DrawCylinder(
 /// @param color カプセルの色
 /// @param drawFromBase 底面から描画するかどうか
 void Debug::DrawCapsule(
-	const Vec3&  position, const Quaternion& orientation, const float& height,
-	const float& radius, const Vec4&         color,
-	const bool&  drawFromBase
+	const Vec3& position, const Quaternion& orientation, const float height,
+	const float radius, const Vec4&         color,
+	const bool  drawFromBase
 ) {
 	const float      rad            = std::clamp(radius, 0.0f, height * 0.5f);
 	const Vec3       localUp        = orientation * Vec3::up;
@@ -449,8 +454,9 @@ void Debug::DrawCapsule(
 /// @param end カプセルの終点
 /// @param radius カプセルの半径
 /// @param color カプセルの色
-void Debug::DrawCapsule(const Vec3& start, const Vec3& end, const float& radius,
-                        const Vec4& color) {
+void Debug::DrawCapsule(
+	const Vec3& start, const Vec3& end, const float radius, const Vec4& color
+) {
 	// 始点から終点へのベクトルと長さを計算
 	const Vec3  direction = (end - start).Normalized();
 	const float length    = (end - start).Length();

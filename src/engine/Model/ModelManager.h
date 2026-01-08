@@ -18,16 +18,15 @@ public:
 	void                 LoadModel(const std::string& filePath);
 	[[nodiscard]] Model* FindModel(const std::string& filePath) const;
 
+	ModelManager(ModelManager&)            = delete;
+	ModelManager& operator=(ModelManager&) = delete;
+
 private:
-	static std::unique_ptr<ModelManager> mInstance;
+	ModelManager()  = default;
+	~ModelManager() = default;
 
 	std::unique_ptr<ModelCommon> mModelCommon;
 
 	// モデルデータ
 	std::map<std::string, std::unique_ptr<Model>> mModels;
-
-	ModelManager()                         = default;
-	~ModelManager()                        = default;
-	ModelManager(ModelManager&)            = delete;
-	ModelManager& operator=(ModelManager&) = delete;
 };

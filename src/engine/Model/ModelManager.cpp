@@ -4,15 +4,10 @@
 #include <engine/renderer/ConstantBuffer.h>
 #include <engine/renderer/VertexBuffer.h>
 
-// 静的インスタンスはunique_ptrで管理
-std::unique_ptr<ModelManager> ModelManager::mInstance = nullptr;
-
 /// @brief ModelManagerのインスタンスを取得します
 ModelManager* ModelManager::GetInstance() {
-	if (mInstance == nullptr) {
-		mInstance = std::make_unique<ModelManager>();
-	}
-	return mInstance.get();
+	static ModelManager instance;
+	return &instance;
 }
 
 /// @brief モデルマネージャーを初期化します
@@ -25,8 +20,9 @@ void ModelManager::Init(D3D12* d3d12) {
 
 /// @brief モデルマネージャーをシャットダウンします
 void ModelManager::Shutdown() {
-	// unique_ptrをリセットしてインスタンスを破棄
-	mInstance.reset();
+	ModelManager* instance = GetInstance();
+	instance->mModels.clear();
+	instance->mModelCommon.reset();
 }
 
 /// @brief モデルを読み込みます
@@ -35,6 +31,10 @@ void ModelManager::LoadModel(const std::string& filePath) {
 	// 読み込み済みモデルを検索
 	if (mModels.contains(filePath)) {
 		// 読み込み済みなら早期return
+		return;
+	}
+	
+	if (!mModelCommon) {
 		return;
 	}
 

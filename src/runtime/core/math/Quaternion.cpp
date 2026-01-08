@@ -95,7 +95,7 @@ Quaternion Quaternion::Euler(const Vec3& eulerRad) {
 	).Normalized();
 }
 
-Quaternion Quaternion::Euler(const float& x, const float& y, const float& z) {
+Quaternion Quaternion::Euler(const float x, const float y, const float z) {
 	return Euler({x, y, z});
 }
 
@@ -103,12 +103,13 @@ Quaternion Quaternion::EulerDegrees(const Vec3& eulerDeg) {
 	return Euler(eulerDeg * Math::deg2Rad);
 }
 
-Quaternion Quaternion::EulerDegrees(const float& x, const float& y,
-                                    const float& z) {
+Quaternion Quaternion::EulerDegrees(
+	const float x, const float y, const float z
+) {
 	return Euler(x * Math::deg2Rad, y * Math::deg2Rad, z * Math::deg2Rad);
 }
 
-Quaternion Quaternion::AxisAngle(const Vec3& axis, const float& angleDeg) {
+Quaternion Quaternion::AxisAngle(const Vec3& axis, const float angleDeg) {
 	const float angleRad = angleDeg;
 	return Quaternion(axis, angleRad);
 }

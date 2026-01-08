@@ -139,9 +139,12 @@ namespace UPhysics {
 							uint32_t triIdx = bvh->triIndices[first + i];
 							float    toi;
 							Vec3     nrm;
-							if (cast.TestTriangle(
-								allTriangles[triIdx], dir, length,
-								toi, nrm)) {
+							if (
+								cast.TestTriangle(
+									allTriangles[triIdx], dir, length,
+									toi, nrm
+								)
+							) {
 								if (toi < bestTOI) {
 									bestTOI   = toi;
 									hitTri    = triIdx;
@@ -178,7 +181,6 @@ namespace UPhysics {
 				);
 				outHit->triIndex  = hitTri;
 				outHit->hitEntity = bvhSet[0].owner;
-
 			}
 			return true;
 		}

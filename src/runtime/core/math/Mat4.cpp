@@ -240,7 +240,7 @@ Mat4 Mat4::Transpose() const {
 	};
 }
 
-Mat4 Mat4::Translate(const Vec3& translate) {
+Mat4 Mat4::Translate(const Vec3 translate) {
 	return {
 		{
 			{1.0f, 0.0f, 0.0f, 0.0f},
@@ -251,7 +251,7 @@ Mat4 Mat4::Translate(const Vec3& translate) {
 	};
 }
 
-Mat4 Mat4::Scale(const Vec3& scale) {
+Mat4 Mat4::Scale(const Vec3 scale) {
 	return {
 		{
 			{scale.x, 0.0f, 0.0f, 0.0f},
@@ -262,7 +262,7 @@ Mat4 Mat4::Scale(const Vec3& scale) {
 	};
 }
 
-Vec3 Mat4::Transform(const Vec3& vector, const Mat4& matrix) {
+Vec3 Mat4::Transform(const Vec3 vector, const Mat4& matrix) {
 	Vec3 result; // w=1がデカルト座標系であるので(x,y,z,1)のベクトルとしてmatrixとの積をとる
 	result.x = vector.x * matrix.m[0][0] + vector.y * matrix.m[1][0] + vector.z
 		* matrix.m[2][0] + 1.0f * matrix.m[3][
@@ -390,8 +390,9 @@ Mat4 Mat4::RotateZ(const float radian) {
 	return result;
 }
 
-Mat4 Mat4::Affine(const Vec3& scale, const Vec3& rotate,
-                  const Vec3& translate) {
+Mat4 Mat4::Affine(
+	const Vec3 scale, const Vec3 rotate, const Vec3 translate
+) {
 	const Mat4 s  = Scale(scale);
 	const Mat4 rx = RotateX(rotate.x);
 	const Mat4 ry = RotateY(rotate.y);
@@ -402,9 +403,9 @@ Mat4 Mat4::Affine(const Vec3& scale, const Vec3& rotate,
 }
 
 Mat4 Mat4::Affine(
-	const Vec3&       scale,
+	const Vec3        scale,
 	const Quaternion& rotate,
-	const Vec3&       translate
+	const Vec3        translate
 ) {
 	const Mat4 s = Scale(scale);
 	const Mat4 r = RotateQuaternion(rotate);
@@ -412,8 +413,10 @@ Mat4 Mat4::Affine(
 	return s * r * t;
 }
 
-Mat4 Mat4::PerspectiveFovMat(const float fovY, const float     aspectRatio,
-                             const float nearClip, const float farClip) {
+Mat4 Mat4::PerspectiveFovMat(
+	const float fovY, const float     aspectRatio,
+	const float nearClip, const float farClip
+) {
 	Mat4 result = identity;
 
 	const float cot  = 1.0f / std::tan(fovY * 0.5f);
@@ -447,8 +450,7 @@ Mat4 Mat4::MakeOrthographicMat(
 
 Mat4 Mat4::ViewportMat(
 	const float left, const float top, const float width, const float height,
-	const float minDepth,
-	const float maxDepth
+	const float minDepth, const float maxDepth
 ) {
 	Mat4 result = identity;
 
@@ -463,8 +465,8 @@ Mat4 Mat4::ViewportMat(
 }
 
 Quaternion Mat4::ToQuaternion() const {
-	Quaternion q;
-	float      trace = m[0][0] + m[1][1] + m[2][2];
+	Quaternion  q;
+	const float trace = m[0][0] + m[1][1] + m[2][2];
 	if (trace > 0) {
 		float s = 0.5f / sqrtf(trace + 1.0f);
 		q.w     = 0.25f / s;

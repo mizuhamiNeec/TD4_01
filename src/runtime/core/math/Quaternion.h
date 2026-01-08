@@ -78,7 +78,7 @@ struct Quaternion {
 	 * @param z Z軸回転（ラジアン）
 	 * @return クォータニオン
 	 */
-	static Quaternion Euler(const float& x, const float& y, const float& z);
+	static Quaternion Euler(float x, float y, float z);
 
 	/**
 	 * @brief オイラー角（度数法）からクォータニオンを生成する
@@ -94,8 +94,8 @@ struct Quaternion {
 	 * @param z Z軸回転（度数法）
 	 * @return クォータニオン
 	 */
-	static Quaternion EulerDegrees(const float& x, const float& y,
-	                               const float& z);
+	static Quaternion EulerDegrees(float x, float y,
+	                               float z);
 
 	/**
 	 * @brief 軸と角度からクォータニオンを生成する
@@ -103,7 +103,7 @@ struct Quaternion {
 	 * @param angleDeg 回転角（度数法）
 	 * @return クォータニオン
 	 */
-	static Quaternion AxisAngle(const Vec3& axis, const float& angleDeg);
+	static Quaternion AxisAngle(const Vec3& axis, float angleDeg);
 
 	/**
 	 * @brief 前方向と上方向から回転を生成する

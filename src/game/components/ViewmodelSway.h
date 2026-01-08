@@ -3,7 +3,7 @@
 #include <engine/Components/Base/Component.h>
 
 /**
- * @brief 武器（ViewModel）を揺らすコンポーネント
+ * @brief 武器、手、その他を揺らすコンポーネント
  * @details カメラの動きに応じて武器モデルに揺れの演出を加えます
  */
 class ViewmodelSway final : public Component {
@@ -12,7 +12,7 @@ public:
 	 * @brief コンストラクタ
 	 * @param swayAmount 揺れの量
 	 */
-	ViewmodelSway(const float& swayAmount = -0.025f) : mSwayAmount(swayAmount) {
+	ViewmodelSway(const float swayAmount = -0.025f) : mSwayAmount(swayAmount) {
 	}
 
 	/**

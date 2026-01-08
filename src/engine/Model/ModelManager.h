@@ -19,9 +19,9 @@ public:
 	[[nodiscard]] Model* FindModel(const std::string& filePath) const;
 
 private:
-	static ModelManager* mInstance;
+	static std::unique_ptr<ModelManager> mInstance;
 
-	ModelCommon* mModelCommon = nullptr;
+	std::unique_ptr<ModelCommon> mModelCommon;
 
 	// モデルデータ
 	std::map<std::string, std::unique_ptr<Model>> mModels;

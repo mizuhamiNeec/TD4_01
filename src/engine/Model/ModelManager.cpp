@@ -4,27 +4,29 @@
 #include <engine/renderer/ConstantBuffer.h>
 #include <engine/renderer/VertexBuffer.h>
 
-ModelManager* ModelManager::mInstance = nullptr;
+// 静的インスタンスはunique_ptrで管理
+std::unique_ptr<ModelManager> ModelManager::mInstance = nullptr;
 
 /// @brief ModelManagerのインスタンスを取得します
 ModelManager* ModelManager::GetInstance() {
 	if (mInstance == nullptr) {
-		mInstance = new ModelManager;
+		mInstance = std::make_unique<ModelManager>();
 	}
-	return mInstance;
+	return mInstance.get();
 }
 
 /// @brief モデルマネージャーを初期化します
 /// @param d3d12 D3D12レンダラーへのポインタ
 void ModelManager::Init(D3D12* d3d12) {
-	mModelCommon = new ModelCommon;
+	// mModelCommonはunique_ptrで所有
+	mModelCommon = std::make_unique<ModelCommon>();
 	mModelCommon->Init(d3d12);
 }
 
 /// @brief モデルマネージャーをシャットダウンします
 void ModelManager::Shutdown() {
-	delete mInstance;
-	mInstance = nullptr;
+	// unique_ptrをリセットしてインスタンスを破棄
+	mInstance.reset();
 }
 
 /// @brief モデルを読み込みます

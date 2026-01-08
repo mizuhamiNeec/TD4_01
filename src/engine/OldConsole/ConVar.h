@@ -32,10 +32,10 @@ public:
 		const T&          defaultValue,
 		std::string       description,
 		const ConVarFlags flags,
-		const bool&       bMin,
-		const float&      fMin,
-		const bool&       bMax,
-		const float&      fMax
+		const bool        bMin,
+		const float       fMin,
+		const bool        bMax,
+		const float       fMax
 	) :
 		mName(std::move(name)),
 		mValue(defaultValue),
@@ -185,7 +185,7 @@ public:
 
 	/// @brief float型の値から設定します
 	/// @param newValue 設定するfloat型の値
-	void SetValueFromFloat(const float& newValue) override {
+	void SetValueFromFloat(const float newValue) override {
 		if constexpr (std::is_convertible_v<float, T>) {
 			SetValue(static_cast<T>(newValue));
 		} else {
@@ -195,7 +195,7 @@ public:
 
 	/// @brief double型の値から設定します
 	/// @param newValue 設定するdouble型の値
-	void SetValueFromDouble(const double& newValue) override {
+	void SetValueFromDouble(const double newValue) override {
 		if constexpr (std::is_convertible_v<double, T>) {
 			if constexpr (std::is_same_v<T, float>) {
 				SetValue(static_cast<T>(static_cast<float>(newValue)));
@@ -210,7 +210,7 @@ public:
 	}
 
 	/// @brief int型の値から設定します
-	void SetValueFromInt(const int& newValue) override {
+	void SetValueFromInt(const int newValue) override {
 		if constexpr (std::is_convertible_v<int, T>) {
 			if constexpr (std::is_same_v<T, float>) {
 				SetValue(static_cast<T>(static_cast<float>(newValue)));
@@ -227,7 +227,7 @@ public:
 	}
 
 	/// @brief bool型の値から設定します
-	void SetValueFromBool(const bool& newValue) override {
+	void SetValueFromBool(const bool newValue) override {
 		if constexpr (std::is_same_v<T, bool>) {
 			SetValue(newValue);
 		} else {

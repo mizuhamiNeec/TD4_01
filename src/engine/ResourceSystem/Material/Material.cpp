@@ -562,20 +562,20 @@ Material::GetTextures() const {
 /// @brief メッシュ名を設定します
 /// @param meshName メッシュ名
 void Material::SetMeshName(const std::string& meshName) {
-	mEshName = meshName;
+	mMeshName = meshName;
 }
 
 /// @brief メッシュ名を取得します
 /// @return メッシュ名
 std::string Material::GetMeshName() const {
-	return mEshName;
+	return mMeshName;
 }
 
 /// @brief フルネーム（メッシュ名_マテリアル名）を取得します
 /// @return フルネーム
 std::string Material::GetFullName() const {
-	if (!mEshName.empty()) {
-		return mEshName + "_" + mName;
+	if (!mMeshName.empty()) {
+		return mMeshName + "_" + mName;
 	}
 	return mName;
 }

@@ -91,5 +91,5 @@ private:
 
 	uint32_t mKNumMaxInstance = 16385; // 最大インスタンス数
 
-	std::unordered_map<ParticleMeshType, MeshData> mEshData;
+	std::unordered_map<ParticleMeshType, MeshData> mMeshData;
 };

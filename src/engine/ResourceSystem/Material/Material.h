@@ -46,7 +46,7 @@ private:
 	                                     UINT                    bindPoint);
 
 	std::string mName;    // マテリアルの名前
-	std::string mEshName; // 関連付けられたメッシュの名前
+	std::string mMeshName; // 関連付けられたメッシュの名前
 	Shader*     mShader;  // シェーダ
 
 	// キャッシュされたパイプラインステート

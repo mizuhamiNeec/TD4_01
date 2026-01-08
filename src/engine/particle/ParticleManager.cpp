@@ -64,13 +64,13 @@ void ParticleManager::Shutdown() {
 		mParticleGroups[name].instancingResource.reset();
 	}
 
-	mEshData[ParticleMeshType::Quad].vertexBuffer.reset();
-	mEshData[ParticleMeshType::Quad].indexBuffer.reset();
+	mMeshData[ParticleMeshType::Quad].vertexBuffer.reset();
+	mMeshData[ParticleMeshType::Quad].indexBuffer.reset();
 
-	mEshData[ParticleMeshType::Ring].vertexBuffer.reset();
-	mEshData[ParticleMeshType::Ring].indexBuffer.reset();
+	mMeshData[ParticleMeshType::Ring].vertexBuffer.reset();
+	mMeshData[ParticleMeshType::Ring].indexBuffer.reset();
 
-	mEshData.clear();
+	mMeshData.clear();
 
 	Console::Print("ParticleManager : ParticleCommonの終了が完了しました。\n",
 	               kConTextColorCompleted, Channel::Engine);
@@ -356,14 +356,14 @@ void ParticleManager::RegisterMesh(const ParticleMeshType       meshType,
 		indices.data()
 	);
 
-	mEshData[meshType] = std::move(meshData);
+	mMeshData[meshType] = std::move(meshData);
 }
 
 /// @brief メッシュデータを取得します
 /// @param type メッシュタイプ
 /// @return メッシュデータへの参照
 MeshData& ParticleManager::GetMeshData(ParticleMeshType type) {
-	return mEshData[type];
+	return mMeshData[type];
 }
 
 /// @brief パーティクルを放出します

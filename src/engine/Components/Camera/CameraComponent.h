@@ -16,13 +16,13 @@ public:
 	void DrawInspectorImGui() override;
 
 	float& GetFovVertical();
-	void   SetFovVertical(const float& newFovVertical);
+	void   SetFovVertical(float newFovVertical);
 
 	float& GetZNear();
-	void   SetNearZ(const float& newNearZ);
+	void   SetNearZ(float newNearZ);
 
 	float& GetZFar();
-	void   SetFarZ(const float& newFarZ);
+	void   SetFarZ(float newFarZ);
 
 	Mat4& GetViewProjMat();
 	Mat4& GetViewMat();

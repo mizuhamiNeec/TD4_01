@@ -82,7 +82,7 @@ float& CameraComponent::GetFovVertical() {
 
 /// @brief 垂直視野角を設定します
 /// @param newFovVertical 新しい垂直視野角[ラジアン]
-void CameraComponent::SetFovVertical(const float& newFovVertical) {
+void CameraComponent::SetFovVertical(const float newFovVertical) {
 	mFov = std::clamp(newFovVertical, kFovMin, kFovMax);
 }
 
@@ -94,7 +94,7 @@ float& CameraComponent::GetZNear() {
 
 /// @brief ニアクリップ距離を設定します
 /// @param newNearZ 新しいニアクリップ距離
-void CameraComponent::SetNearZ(const float& newNearZ) {
+void CameraComponent::SetNearZ(const float newNearZ) {
 	mZNear = newNearZ;
 }
 
@@ -106,7 +106,7 @@ float& CameraComponent::GetZFar() {
 
 /// @brief ファークリップ距離を設定します
 /// @param newFarZ 新しいファークリップ距離
-void CameraComponent::SetFarZ(const float& newFarZ) {
+void CameraComponent::SetFarZ(const float newFarZ) {
 	mZFar = newFarZ;
 }
 

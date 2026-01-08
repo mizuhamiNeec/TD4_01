@@ -68,7 +68,7 @@ static std::mutex lineMutex;
 /// @param start ラインの開始点
 /// @param end ラインの終了点
 /// @param color ラインの色
-void Line::AddLine(const Vec3& start, const Vec3& end, const Vec4& color) {
+void Line::AddLine(const Vec3 start, const Vec3 end, const Vec4& color) {
 	std::lock_guard lock(lineMutex);
 
 	// 頂点を追加

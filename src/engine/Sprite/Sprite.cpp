@@ -337,7 +337,7 @@ void Sprite::SetUvSize(const Vec2& newSize) {
 
 /// @brief UV回転の設定
 /// @param newRot 新しいUV回転
-void Sprite::SetUvRot(const float& newRot) {
+void Sprite::SetUvRot(const float newRot) {
 	mUvTransform.rotate.z = newRot;
 }
 

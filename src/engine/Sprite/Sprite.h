@@ -51,7 +51,7 @@ public:
 	void SetTextureSize(const Vec2& newTextureSize);
 	void SetUvPos(const Vec2& newPos);
 	void SetUvSize(const Vec2& newSize);
-	void SetUvRot(const float& newRot);
+	void SetUvRot(float newRot);
 
 private:
 	struct Material {

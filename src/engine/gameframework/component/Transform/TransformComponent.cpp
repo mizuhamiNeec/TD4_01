@@ -100,22 +100,53 @@ namespace Unnamed {
 
 	/// @brief 毎フレーム呼び出されます。
 	void TransformComponent::OnTick(float) {
-		if (!mIsDirty) {
-			return; // ・・・・・・なにも!!! な゛かった・・・!!!!(ドンッ!!)
+		if (mIsDirty) {
+			const Mat4 localMat =
+				Mat4::Scale(mLocalScale) *
+				Mat4::FromQuaternion(mLocalRot) *
+				Mat4::Translate(mLocalPos);
+
+			if (mParent) {
+				mWorldMat = localMat * mParent->WorldMat();
+			} else {
+				mWorldMat = localMat;
+			}
+
+			const Mat4 world     = mWorldMat;
+			const Mat4 worldInvT = world.Inverse().Transpose();
+
+			auto FillCols3 = [](float outCol0[4], float       outCol1[4],
+			                    float outCol2[4], const Mat4& m) {
+				// col0
+				outCol0[0] = m.m[0][0];
+				outCol0[1] = m.m[1][0];
+				outCol0[2] = m.m[2][0];
+				outCol0[3] = m.m[3][0];
+				// col1
+				outCol1[0] = m.m[0][1];
+				outCol1[1] = m.m[1][1];
+				outCol1[2] = m.m[2][1];
+				outCol1[3] = m.m[3][1];
+				// col2
+				outCol2[0] = m.m[0][2];
+				outCol2[1] = m.m[1][2];
+				outCol2[2] = m.m[2][2];
+				outCol2[3] = m.m[3][2];
+			};
+
+			FillCols3(
+				mRenderCache.worldCol0, mRenderCache.worldCol1,
+				mRenderCache.worldCol2, world
+			);
+			FillCols3(
+				mRenderCache.normalCol0, mRenderCache.normalCol1,
+				mRenderCache.normalCol2, worldInvT
+			);
+
+			++mWorldRevision;
+
+			mIsDirty = false;
 		}
-
-		const Mat4 localMat =
-			Mat4::Scale(mLocalScale) *
-			Mat4::FromQuaternion(mLocalRot) *
-			Mat4::Translate(mLocalPos);
-
-		if (mParent) {
-			mWorldMat = localMat * mParent->WorldMat();
-		} else {
-			mWorldMat = localMat;
-		}
-
-		mIsDirty = false;
 	}
 
 	/// @brief 物理演算の後に呼び出されます。
@@ -219,7 +250,20 @@ namespace Unnamed {
 		return "Transform";
 	}
 
-	/// @brief 自身と子孫の TransformComponent をすべて汚れた状態にします。
+	/// @brief レンダー用のインスタンスキャッシュを取得します。
+	/// @return レンダー用のインスタンスキャッシュ
+	const TransformComponent::RenderInstanceCache&
+	TransformComponent::RenderCache() const noexcept {
+		return mRenderCache;
+	}
+
+	/// @brief ワールドのリビジョン番号を取得します。
+	/// @return ワールドのリビジョン番号
+	uint64_t TransformComponent::WorldRevision() const noexcept {
+		return mWorldRevision;
+	}
+
+	/// @brief 自身と子孫の TransformComponent をすべてDirty状態にします。
 	void TransformComponent::MarkDirty() {
 		mIsDirty = true;
 		for (auto* child : mChildren) {

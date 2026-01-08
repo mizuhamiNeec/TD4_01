@@ -34,7 +34,7 @@ namespace Unnamed {
 			outputFile.close();
 			inputFile.open(path.data());
 		}
-		
+
 		if (!inputFile.is_open()) {
 			Error(
 				kChannel, "Failed to open script file: {}", std::string(path)
@@ -56,8 +56,15 @@ namespace Unnamed {
 				continue;
 			}
 
-			// TODO: とりあえず新旧両方で実行
-			Console::SubmitCommand(line);
+			// TODO: とりあえず-new引数が無い場合のみSubmitCommandを呼ぶようにする
+			bool isNewArg = false;
+			for (int i = 1; i < __argc; ++i) {
+				if (__wargv[i] && std::wcscmp(__wargv[i], L"-new") == 0) {
+					isNewArg = true;
+					break;
+				}
+			}
+			if (!isNewArg) { Console::SubmitCommand(line); }
 			ServiceLocator::Get<ConsoleSystem>()->ExecuteCommand(line);
 		}
 	}

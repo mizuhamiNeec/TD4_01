@@ -1,21 +1,21 @@
 {
-  "textures": [
-    "MainTex"
-  ],
-  "params": {
-    "Roughness": {
-      "type": "float",
-      "default": 0.5,
-      "slot": 0
-    },
-    "Emissive": {
-      "type": "float3",
-      "default": [
-        1,
-        1,
-        1
-      ],
-      "slot": 1
-    }
-  }
+	"textures": [
+		"MainTex"
+	],
+	"params": {
+		"Roughness": {
+			"type": "float",
+			"default": 0.5,
+			"slot": 0
+		},
+		"Emissive": {
+			"type": "float3",
+			"default": [
+				1,
+				1,
+				1
+			],
+			"slot": 1
+		}
+	}
 }

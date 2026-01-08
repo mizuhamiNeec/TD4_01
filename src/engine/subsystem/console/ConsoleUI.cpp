@@ -28,7 +28,19 @@ namespace Unnamed {
 	ConsoleUI::ConsoleUI(
 		ConsoleSystem* consoleSystem
 	) : mConsoleSystem(consoleSystem) {
-		mIsImGuiInitialized = true;
+#ifdef _DEBUG
+		bool isNewArg = false;
+		for (int i = 1; i < __argc; ++i) {
+			// wWinMainの場合は__wargvらしい  へぇー(x512)
+			if (__wargv[i] && std::wcscmp(__wargv[i], L"-new") == 0) {
+				isNewArg = true;
+				break;
+			}
+		}
+		mIsImGuiInitialized = !isNewArg;
+#else
+		mIsImGuiInitialized = false;
+#endif
 	}
 
 	/// @brief コンソールUIを表示します。
@@ -106,11 +118,11 @@ namespace Unnamed {
 
 			ImGui::TextWrapped(bufferInfo.data());
 			const std::string command = std::format(
-					"Rider.cmd --line {} --column {} {}",
-					selection.location.line(),
-					selection.location.column(),
-					selection.location.file_name()
-				);
+				"Rider.cmd --line {} --column {} {}",
+				selection.location.line(),
+				selection.location.column(),
+				selection.location.file_name()
+			);
 
 			ImGui::Text(command.c_str());
 			if (
@@ -119,7 +131,6 @@ namespace Unnamed {
 					"Open in Rider"
 				)
 			) {
-
 				system(command.c_str());
 			}
 

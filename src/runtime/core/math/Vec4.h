@@ -70,7 +70,8 @@ struct Vec4 final {
 
 	Vec4 operator*(const Mat4& mat4) const;
 	Vec4 operator*(float rhs) const;
-	Vec4 operator+(const Vec4& vec4) const;
+	Vec4 operator+(const Vec4& rhs) const;
+	Vec4 operator-(const Vec4& rhs) const;
 	Vec4 operator/(float rhs) const;
 };
 

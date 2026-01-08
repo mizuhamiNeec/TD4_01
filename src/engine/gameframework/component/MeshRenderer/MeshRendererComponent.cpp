@@ -1,15 +1,15 @@
-﻿#include <pch.h>
+﻿//-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
+#include <core/json/JsonReader.h>
 
 #include <engine/gameframework/component/MeshRenderer/MeshRendererComponent.h>
 #include <engine/urenderer/GraphicsDevice.h>
 
-#include "core/json/JsonReader.h"
+#include <runtime/render/resources/RenderResourceManager.h>
 
-#include "engine/VertexFormats.h"
+#include "engine/urootsignaturecache/RootSignatureCache.h"
 
-#include "runtime/assets/core/UAssetManager.h"
+#include "runtime/render/utils/RenderUtils.h"
 
 namespace Unnamed {
 	static constexpr std::string_view kChannel = "MeshRendererComponent";
@@ -41,14 +41,13 @@ namespace Unnamed {
 		}
 	}
 
+	std::string_view MeshRendererComponent::GetComponentName() const {
+		return "MeshRenderer";
+	}
+
 	///	 @brief GPUリソースの確保
-	/// @param graphicsDevice グラフィックスデバイス
 	/// @param renderResourceManager レンダーリソースマネージャー
-	/// @param shaderLibrary シェーダーライブラリ
-	/// @param rootSignatureCache ルートシグネチャキャッシュ
-	/// @param pipelineCache パイプラインキャッシュ
-	/// @param cmd コマンドリスト
-	/// @return GPUリソースが確保できたらtrue
+	/// @return GPUリソースが確保できたらtrueを返す
 	bool MeshRendererComponent::EnsureGPU(
 		GraphicsDevice*            graphicsDevice,
 		RenderResourceManager*     renderResourceManager,
@@ -57,44 +56,19 @@ namespace Unnamed {
 		UPipelineCache*            pipelineCache,
 		ID3D12GraphicsCommandList* cmd
 	) {
+		(void)graphicsDevice;
+		(void)shaderLibrary;
+		(void)rootSignatureCache;
+		(void)pipelineCache;
+		(void)cmd;
+
 		if (mGPUReady) { return true; }
 
-		if (
-			material.materialAsset == kInvalidAssetID &&
-			materialAsset != kInvalidAssetID
-		) {
-			material.materialAsset = materialAsset;
-		}
-
-		if (
-			!material.BuildCPU(
-				renderResourceManager->GetAssetManager(), shaderLibrary,
-				rootSignatureCache, pipelineCache, graphicsDevice
-			)
-		) {
-			return false;
-		}
-
-		if (!material.IsGPUReady()) {
-			material.RealizeGPU(renderResourceManager, cmd);
-		}
-
-		// メッシュの取得（共有機構を使用）
 		if (!meshHandle.IsValid() && meshAsset != kInvalidAssetID) {
 			meshHandle = renderResourceManager->AcquireMesh(meshAsset);
-			if (!meshHandle.IsValid()) {
-				Error(
-					kChannel,
-					"Failed to acquire mesh: {}",
-					renderResourceManager->GetAssetManager()->Meta(meshAsset).
-					name.c_str()
-				);
-				return false;
-			}
 		}
 
 		mGPUReady = meshHandle.IsValid();
-
 		return mGPUReady;
 	}
 
@@ -103,8 +77,6 @@ namespace Unnamed {
 	void MeshRendererComponent::InvalidateGPU(
 		RenderResourceManager* renderResourceManager
 	) {
-		material.InvalidateGPU(renderResourceManager, nullptr, 0);
-
 		// メッシュの解放
 		if (meshHandle.IsValid()) {
 			renderResourceManager->ReleaseMesh(meshHandle, nullptr, 0);
@@ -112,5 +84,22 @@ namespace Unnamed {
 		}
 
 		mGPUReady = false;
+	}
+
+	const MeshRendererComponent::WorldBoundsSphereCache& MeshRendererComponent::
+	WorldBoundsSphere() const noexcept { return mWorldBoundsSphere; }
+
+	void MeshRendererComponent::UpdateWorldBoundsCache(const Mat4& worldMat,
+		uint64_t worldRevision, const BoundsSphere& bounds) {
+		if (mWorldBoundsRevision == worldRevision) {
+			return;
+		}
+
+		const Vec3 centerWS = TransformPointRowVec(worldMat, bounds.center);
+		float      radiusWS = bounds.radius * MaxScaleRowVec(worldMat);
+
+		mWorldBoundsSphere.center = centerWS;
+		mWorldBoundsSphere.radius = radiusWS;
+		mWorldBoundsRevision      = worldRevision;
 	}
 }

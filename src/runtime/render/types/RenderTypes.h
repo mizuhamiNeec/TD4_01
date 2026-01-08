@@ -13,9 +13,10 @@ namespace Unnamed {
 
 	/// @brief メッシュハンドル
 	struct MeshHandle {
-		uint32_t           id  = UINT32_MAX;
-		uint32_t           gen = 0;
+		uint32_t id = UINT32_MAX;
+		uint32_t gen = 0;
 		[[nodiscard]] bool IsValid() const { return id != UINT32_MAX; }
+		bool operator==(const MeshHandle& meshHandle) const = default;
 	};
 
 	/// @brief 描画に使うカメラの情報
@@ -38,6 +39,12 @@ namespace Unnamed {
 		DXGI_FORMAT  format = DXGI_FORMAT_R32_UINT;
 	};
 
+	/// @brief カリングに使用される球体境界情報
+	struct BoundsSphere {
+		Vec3  center = Vec3::zero;
+		float radius = 0.0f;
+	};
+
 	/// @brief GPU上のメッシュ情報
 	struct MeshGPU {
 		GpuVB    vb;
@@ -45,5 +52,7 @@ namespace Unnamed {
 		uint32_t indexCount = 0;
 		uint32_t firstIndex = 0;
 		int32_t  baseVertex = 0;
+
+		BoundsSphere bounds;
 	};
 }

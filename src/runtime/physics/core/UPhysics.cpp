@@ -67,7 +67,7 @@ namespace UPhysics {
 
 	/// @brief エンティティを登録する関数
 	/// @details メッシュコライダーを持ったエンティティを登録します
-	/// @param entity 登録するエンティティ
+	/// @param entity 登録するエンティティ(旧)
 	void Engine::RegisterEntity(Entity* entity) {
 		auto meshCollider = entity->GetComponent<MeshColliderComponent>();
 		if (!meshCollider) {

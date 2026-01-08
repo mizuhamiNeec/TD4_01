@@ -25,7 +25,12 @@ namespace Unnamed {
 
 	/// @brief ルートパラメータ記述子
 	struct RootParamDesc {
-		enum class Kind { TABLE, ROOT_CBV, ROOT32_BIT_CONST };
+		enum class Kind {
+			TABLE,
+			ROOT_CBV,
+			ROOT_SRV,
+			ROOT32_BIT_CONST,
+		};
 
 		Kind                   kind = Kind::TABLE;
 		std::vector<RangeDesc> ranges; // TABLEの時に使用
@@ -33,6 +38,10 @@ namespace Unnamed {
 		// RootCBV用
 		UINT cbvRegister = 0;
 		UINT cbvSpace    = 0;
+
+		// RootSRV用
+		UINT srvRegister = 0;
+		UINT srvSpace    = 0;
 
 		// 32BitConst用
 		UINT num32Bit      = 0;

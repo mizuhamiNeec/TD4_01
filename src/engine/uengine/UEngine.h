@@ -31,6 +31,11 @@ namespace Unnamed {
 
 	private:
 		std::vector<std::unique_ptr<ISubsystem>> mSubsystems;
+		ConsoleSystem*                           mConsole;
+		TimeSystem*                              mTime;
+		Win32WindowSystem*                       mWindowSystem;
+		UInputSystem*                            mInputSystem;
+		URenderSubsystem*                        mRenderer;
 
 		std::unique_ptr<PlatformEventsImpl> mPlatformEvents;
 
@@ -44,11 +49,8 @@ namespace Unnamed {
 
 		std::unique_ptr<UWorld> mWorld;
 
-		ConsoleSystem*     mConsole;
-		TimeSystem*        mTime;
-		Win32WindowSystem* mWindowSystem;
-		UInputSystem*      mInputSystem;
-		URenderSubsystem*  mRenderer;
+
+		uint32_t mMaterialAsset;
 
 		TransformComponent* mCameraTransform = nullptr;
 		UCameraComponent*   mCamera          = nullptr;

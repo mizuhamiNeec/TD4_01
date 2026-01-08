@@ -72,10 +72,11 @@ namespace {
 		const std::string body = std::format(fmt, std::forward<Args>(args)...);
 
 		if (!console) {
-			// ServiceLocator無効時のフォールバック
+			// ServiceLocatorが使えない時のフォールバック
 			Print(level, channel, body);
 			return;
 		}
+
 		console->Print(level, channel, body, location);
 	}
 }

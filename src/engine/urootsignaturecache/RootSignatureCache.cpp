@@ -4,10 +4,9 @@
 #include <string>
 
 #include <engine/subsystem/console/Log.h>
+#include <engine/urenderer/GraphicsDevice.h>
 
 #include "RootSignatureDebugDump.h"
-
-#include "engine/urenderer/GraphicsDevice.h"
 
 namespace Unnamed {
 	constexpr std::string_view kChannel = "RootSignatureCache";
@@ -85,6 +84,13 @@ namespace Unnamed {
 				rootParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 			}
 			break;
+			case RootParamDesc::Kind::ROOT_SRV: {
+				rootParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
+				rootParam.Descriptor.ShaderRegister = param.srvRegister;
+				rootParam.Descriptor.RegisterSpace = param.srvSpace;
+				rootParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+			}
+			break;
 			case RootParamDesc::Kind::ROOT32_BIT_CONST: {
 				rootParam.ParameterType =
 					D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
@@ -138,11 +144,7 @@ namespace Unnamed {
 
 		if (FAILED(hr)) {
 			if (error) {
-				Fatal(
-					kChannel,
-					"{}",
-					error->GetBufferPointer()
-				);
+				Fatal(kChannel, "{}", error->GetBufferPointer());
 			}
 			return {};
 		}
@@ -194,6 +196,10 @@ namespace Unnamed {
 			HashCombine(h, hash(static_cast<uint64_t>(param.kind)));
 			HashCombine(h, hash(param.cbvRegister));
 			HashCombine(h, hash(param.cbvSpace));
+			
+			HashCombine(h, hash(param.srvRegister));
+			HashCombine(h, hash(param.srvSpace));
+
 			HashCombine(h, hash(param.num32Bit));
 			HashCombine(h, hash(param.constRegister));
 			HashCombine(h, hash(param.constSpace));
@@ -208,7 +214,6 @@ namespace Unnamed {
 		for (auto& sampler : desc.staticSamplers) {
 			HashCombine(h, hash(sampler.reg));
 			HashCombine(h, hash(sampler.space));
-			// sampler desc の主に使用する値
 			HashCombine(h, hash(sampler.desc.Filter));
 			HashCombine(h, hash(sampler.desc.AddressU));
 			HashCombine(h, hash(sampler.desc.AddressV));

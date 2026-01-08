@@ -29,9 +29,13 @@ namespace ImGuiWidgets {
 	/// @param vSpeed ドラッグ操作の速度
 	/// @param format 表示フォーマット
 	/// @return 値が変更された場合にtrueを返します。
-	bool DragVec3(const std::string& name, Vec3&                value,
-	              const Vec3&        defaultValue, const float& vSpeed,
-	              const char*        format) {
+	bool DragVec3(
+		const std::string& name,
+		Vec3               value,
+		const Vec3         defaultValue,
+		const float        vSpeed,
+		const char*        format
+	) {
 		if (ImGui::GetCurrentWindow()->SkipItems) {
 			return false;
 		}
@@ -149,8 +153,9 @@ namespace ImGuiWidgets {
 	/// @param p2 コントロールポイント2のX座標への参照
 	/// @param p3 コントロールポイント2のY座標への参照
 	/// @return 値が変更された場合にtrueを返します。
-	bool EditCubicBezier(const std::string& label, float& p0, float& p1,
-	                     float&             p2, float&    p3) {
+	bool EditCubicBezier(
+		const std::string& label, float p0, float p1, float p2, float p3
+	) {
 		// ドラッグ中か?
 		static bool bIsDraggingCp1 = false;
 		static bool bIsDraggingCp2 = false;
@@ -313,15 +318,15 @@ namespace ImGuiWidgets {
 		if (size.y <= 0.0f)
 			size.y = iconBaseSize.y + (hasLabel ? (labelSize.y + gap) : 0);
 
-		const ImVec2 pad        = style.FramePadding;
+		const ImVec2 pad = style.FramePadding;
 		const ImVec2 innerStart = {start.x + pad.x, start.y + pad.y};
-		const ImVec2 innerSize  = {size.x - pad.x * 2.0f, size.y - pad.y * 2.0f};
+		const ImVec2 innerSize = {size.x - pad.x * 2.0f, size.y - pad.y * 2.0f};
 
 		// 確定した高さからアイコン描画サイズを算出
 		const float baseFontSize = ImGui::GetFontSize();
 		const float iconFontSize = innerSize.y * iconScale;
-		const float fontScale = iconFontSize / baseFontSize;
-		const auto iconSize = ImVec2(
+		const float fontScale    = iconFontSize / baseFontSize;
+		const auto  iconSize     = ImVec2(
 			ImGui::CalcTextSize(icon).x * fontScale,
 			ImGui::CalcTextSize(icon).y * fontScale
 		);
@@ -329,7 +334,8 @@ namespace ImGuiWidgets {
 		// 横レイアウト時は幅を再調整
 		if (labelDir == ImGuiDir_Left || labelDir == ImGuiDir_Right)
 			if (size.x <= 0.0f)
-				size.x = iconSize.x + (hasLabel ? (labelSize.x + gap) : 0) + pad.x * 2.0f;
+				size.x = iconSize.x + (hasLabel ? (labelSize.x + gap) : 0) + pad
+					.x * 2.0f;
 
 		// 3) InvisibleButton でヒット領域登録
 		const std::string btnId = "##IconBtn" + std::string(icon) +
@@ -398,16 +404,17 @@ namespace ImGuiWidgets {
 
 		// 5) 描画
 		const ImU32 col = ImGui::GetColorU32(ImGuiCol_Text);
-		
+
 		// クリッピング領域を設定（ボタンの境界内に収める）
-		dl->PushClipRect(start, ImVec2(start.x + size.x, start.y + size.y), true);
-		
+		dl->PushClipRect(start, ImVec2(start.x + size.x, start.y + size.y),
+		                 true);
+
 		// アイコンを描画（指定されたフォントサイズで）
 		dl->AddText(font, iconFontSize, iconPos, col, icon);
 
 		if (hasLabel)
 			dl->AddText(labelPos, col, label);
-		
+
 		// クリッピング領域を解除
 		dl->PopClipRect();
 

@@ -17,8 +17,8 @@ namespace ImGuiUtil {
 	void PushStyleColorForDrag(const ImVec4& bg, const ImVec4& bgHovered,
 	                           const ImVec4& bgActive);
 	bool EditTransform(SceneComponent& transform,
-	                   const float&    vSpeed);
-	bool DragVec3(const std::string& name, Vec3& v, const float& vSpeed,
+	                   float           vSpeed);
+	bool DragVec3(const std::string& name, Vec3& v, float vSpeed,
 	              const char*        format);
 	void TextOutlined(
 		ImDrawList* drawList, const ImVec2& pos, const char* text,
@@ -27,7 +27,7 @@ namespace ImGuiUtil {
 	);
 
 	bool CollapsingHeaderWithCheckbox(
-		const char* label, bool* v, const ImGuiTreeNodeFlags flags = 0
+		const char* label, bool* v, ImGuiTreeNodeFlags flags = 0
 	);
 #endif
 }

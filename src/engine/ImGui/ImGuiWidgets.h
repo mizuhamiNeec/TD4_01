@@ -13,18 +13,18 @@ namespace ImGuiWidgets {
 
 	bool DragVec3(
 		const std::string& name,
-		Vec3&              value,
-		const Vec3&        defaultValue,
-		const float&       vSpeed,
+		Vec3               value,
+		Vec3               defaultValue,
+		float              vSpeed,
 		const char*        format
 	);
 
 	bool EditCubicBezier(
 		const std::string& label,
-		float&             p0,
-		float&             p1,
-		float&             p2,
-		float&             p3
+		float              p0,
+		float              p1,
+		float              p2,
+		float              p3
 	);
 
 	bool IconButton(

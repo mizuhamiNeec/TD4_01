@@ -147,7 +147,7 @@ namespace ImGuiUtil {
 	/// @param transform 編集するTransformコンポーネントへの参照
 	/// @param vSpeed ドラッグ操作の速度
 	bool EditTransform(
-		SceneComponent& transform, const float& vSpeed
+		SceneComponent& transform, float vSpeed
 	) {
 		bool       isEditing  = false;
 		Vec3       localPos   = transform.GetLocalPos();
@@ -206,7 +206,7 @@ namespace ImGuiUtil {
 	/// @param format 表示フォーマット
 	/// @return 編集された場合はtrueを返す
 	bool DragVec3(
-		const std::string& name, Vec3& v, const float& vSpeed,
+		const std::string& name, Vec3& v, float vSpeed,
 		const char*        format
 	) {
 		// 編集中かどうか

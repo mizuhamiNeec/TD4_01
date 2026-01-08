@@ -197,8 +197,8 @@ bool Audio::LoadWavFile(const std::string& filename, SoundData& outData) {
 	}
 
 	// 音声データの読み込み
-	auto pBuffer = new char[chunkHeader.size];
-	file.read(pBuffer, chunkHeader.size);
+	auto pBuffer = std::make_unique<char[]>(chunkHeader.size);
+	file.read(pBuffer.get(), chunkHeader.size);
 
 	// フォーマット情報のログ出力
 	Console::Print(std::format(
@@ -213,7 +213,7 @@ bool Audio::LoadWavFile(const std::string& filename, SoundData& outData) {
 
 	// 出力データの設定
 	outData.wfex       = format.fmt;
-	outData.pBuffer    = reinterpret_cast<BYTE*>(pBuffer);
+	outData.pBuffer    = reinterpret_cast<BYTE*>(pBuffer.release());
 	outData.bufferSize = chunkHeader.size;
 
 	return true;

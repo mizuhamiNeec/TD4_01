@@ -15,17 +15,15 @@
 #include <engine/ImGui/ImGuiUtil.h>
 #include <engine/Input/InputSystem.h>
 #include <engine/OldConsole/ConVarManager.h>
+#include <engine/ResourceSystem/Audio/AudioManager.h>
 #include <engine/subsystem/console/Log.h>
 #include <engine/TextureManager/TexManager.h>
 
 #include <game/components/CameraRotator.h>
+#include <game/components/RotateComponent.h>
 #include <game/components/checkpoint/CheckpointComponent.h>
 #include <game/components/checkpoint/CheckpointManager.h>
 #include <game/components/checkpoint/GoalComponent.h>
-
-#include "engine/ResourceSystem/Audio/AudioManager.h"
-
-#include "game/components/RotateComponent.h"
 
 namespace {
 	constexpr char kDevMeasureTexturePath[] =
@@ -38,6 +36,12 @@ namespace {
 		"./content/core/textures/smoke.png";
 	constexpr char kPingTexturePath[] =
 		"./content/parkour/textures/ping.png";
+	constexpr char kDigitsAtlasPath[] =
+		"./content/parkour/textures/uvChecker.png";
+	constexpr char kColonTexturePath[] =
+		"./content/parkour/textures/colon.png";
+	constexpr char kDotTexturePath[] =
+		"./content/parkour/textures/dot.png";
 	constexpr char kWindParticleTexturePath[] =
 		"./content/core/textures/circle.png";
 	constexpr char kWeaponMeshPath[]   = "./content/core/models/weapon.obj";
@@ -130,8 +134,10 @@ void GameScene::Init() {
 	const auto run = mAudioManager->GetAudio(
 		"./content/parkour/sounds/bgm/Run.wav"
 	);
+#ifndef _DEBUG
 	run->Play(true);
 	run->SetVolume(0.5f);
+#endif
 
 	mWind = mAudioManager->GetAudio(
 		"./content/parkour/sounds/amb/wind.wav"
@@ -325,13 +331,16 @@ void GameScene::LoadCoreTextures() const {
 		bool        useSrgb = false;
 	};
 
-	constexpr std::array<TextureRequest, 5> requests{
+	constexpr std::array<TextureRequest, 8> requests{
 		{
 			{kDevMeasureTexturePath, false},
 			{kUvCheckerTexturePath, false},
 			{kWaveTexturePath, true},
 			{kSmokeTexturePath, false},
 			{kPingTexturePath, false},
+			{kDigitsAtlasPath, true},
+			{kColonTexturePath, true},
+			{kDotTexturePath, true},
 		}
 	};
 

@@ -941,7 +941,7 @@ namespace Unnamed {
 			"Mouse sensitivity."
 		);
 		// World
-		ConVarManager::RegisterConVar("sv_gravity", 800.0f, "World gravity.");
+		ConVarManager::RegisterConVar("sv_gravity", 1000.0f, "World gravity.");
 		ConVarManager::RegisterConVar(
 			"sv_maxvelocity", 3500.0f,
 			"Maximum speed any ballistically moving object is allowed to attain per axis."

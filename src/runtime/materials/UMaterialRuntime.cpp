@@ -6,13 +6,13 @@
 
 #include <filesystem>
 
-#include <engine/uprogrambuilder/UProgramBuilder.h>
-#include <engine/urenderer/GraphicsDevice.h>
+#include <engine/unnamed/uprogrambuilder/UProgramBuilder.h>
+#include <engine/unnamed/urenderer/GraphicsDevice.h>
 
 #include <runtime/assets/core/UAssetManager.h>
 #include <runtime/render/resources/ShaderLibrary.h>
 
-#include "core/UnnamedMacro.h"
+#include "core/unnamed/UnnamedMacro.h"
 
 namespace Unnamed {
 	constexpr std::string_view kChannel = "UMaterialRuntime";

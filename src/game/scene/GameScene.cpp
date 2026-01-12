@@ -16,7 +16,7 @@
 #include <engine/Input/InputSystem.h>
 #include <engine/OldConsole/ConVarManager.h>
 #include <engine/ResourceSystem/Audio/AudioManager.h>
-#include <engine/subsystem/console/Log.h>
+#include <engine/unnamed/subsystem/console/Log.h>
 #include <engine/TextureManager/TexManager.h>
 
 #include <game/components/CameraRotator.h>
@@ -24,6 +24,8 @@
 #include <game/components/checkpoint/CheckpointComponent.h>
 #include <game/components/checkpoint/CheckpointManager.h>
 #include <game/components/checkpoint/GoalComponent.h>
+
+#include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 
 namespace {
 	constexpr char kDevMeasureTexturePath[] =

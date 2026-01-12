@@ -2,8 +2,8 @@
 
 #include "UPipelineCache.h"
 
-#include "engine/urenderer/GraphicsDevice.h"
-#include "engine/urootsignaturecache/RootSignatureDebugDump.h"
+#include "engine/unnamed/urenderer/GraphicsDevice.h"
+#include "engine/unnamed/urootsignaturecache/RootSignatureDebugDump.h"
 
 #include "runtime/render/resources/DebugDumpShader.h"
 

@@ -3,7 +3,7 @@
 #include <engine/Line/Line.h>
 #include <runtime/core/math/Math.h>
 
-#include "engine/uprimitive/UPrimitives.h"
+#include "engine/unnamed/uprimitive/UPrimitives.h"
 
 /// @brief デバッグ描画クラス
 class Debug {

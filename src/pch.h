@@ -20,8 +20,8 @@
 //-----------------------------------------------------------------------------
 // Unnamed
 //-----------------------------------------------------------------------------
-#include <engine/subsystem/console/Log.h>
-#include <core/UnnamedMacro.h>
+#include <engine/unnamed/subsystem/console/Log.h>
+#include <core/unnamed/UnnamedMacro.h>
 #include <core/string/StrUtil.h>
 
 //-----------------------------------------------------------------------------

@@ -14,11 +14,10 @@
 #include <engine/OldConsole/ConCommand.h>
 #include <engine/OldConsole/Console.h>
 #include <engine/OldConsole/ConVarManager.h>
-#include <engine/subsystem/time/SystemClock.h>
+#include <engine/unnamed/subsystem/time/SystemClock.h>
 #include <engine/Window/WindowManager.h>
 #include <engine/Window/WindowsUtils.h>
-
-#include "core/ini/IniParser.h"
+#include <core/unnamed/ini/IniParser.h>
 
 #include "engine/ImGui/ImGuiWidgets.h"
 
@@ -1534,8 +1533,8 @@ void Console::ImportPage() {
 	if (GetOpenFileName(&ofn) == TRUE) {
 		std::ifstream file(ofn.lpstrFile);
 		if (file.is_open()) {
-			IniParser parser;
-			auto      iniData = parser.ParseIniFile(
+			Unnamed::IniParser parser;
+			auto               iniData = parser.ParseIniFile(
 				StrUtil::ToString(ofn.lpstrFile));
 
 			// Generalセクションからグリッドサイズを取得

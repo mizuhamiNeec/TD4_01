@@ -2,7 +2,7 @@
 #include <functional>
 
 #include <engine/Components/base/Component.h>
-#include <engine/uphysics/PhysicsTypes.h>
+#include <engine/unnamed/uphysics/PhysicsTypes.h>
 
 #include <runtime/core/math/Math.h>
 

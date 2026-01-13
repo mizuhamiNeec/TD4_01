@@ -371,3 +371,6 @@ imgui.ini
 /obj/
 *.vcxproj
 *.vcxproj.filters
+
+# Unnamed
+*.cfg

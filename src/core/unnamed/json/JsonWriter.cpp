@@ -1,7 +1,7 @@
 #include <fstream>
 #include <stdexcept>
 
-#include <core/json/JsonWriter.h>
+#include "JsonWriter.h"
 
 #include "engine/unnamed/subsystem/console/Log.h"
 

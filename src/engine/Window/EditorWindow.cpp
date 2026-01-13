@@ -30,7 +30,7 @@ bool EditorWindow::Create(const WindowInfo info) {
 	wc.hCursor       = LoadCursor(nullptr, IDC_ARROW);
 	wc.hbrBackground = static_cast<HBRUSH>(GetStockObject(WHITE_BRUSH));
 	wc.lpszMenuName  = nullptr;
-	wc.lpszClassName = StrUtil::ToWString(mInfo.className).c_str();
+	wc.lpszClassName = Unnamed::StrUtil::ToWString(mInfo.className).c_str();
 	wc.hIcon         = LoadIcon(nullptr, IDI_APPLICATION);
 	wc.hIconSm       = LoadIcon(mInfo.hInstance, IDI_APPLICATION);
 
@@ -52,7 +52,7 @@ bool EditorWindow::Create(const WindowInfo info) {
 	mHWnd = CreateWindowEx(
 		mInfo.exStyle, // 拡張ウィンドウスタイル
 		wc.lpszClassName,
-		StrUtil::ToWString(mInfo.title).c_str(),              // ウィンドウタイトル
+		Unnamed::StrUtil::ToWString(mInfo.title).c_str(),              // ウィンドウタイトル
 		mInfo.style,                                          // ウィンドウスタイル
 		CW_USEDEFAULT, CW_USEDEFAULT,                         // ウィンドウの初期位置
 		wrc.right - wrc.left,                                 // ウィンドウの幅

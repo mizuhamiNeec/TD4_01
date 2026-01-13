@@ -1,4 +1,4 @@
-﻿#include <core/memory/MemUtil.h>
+﻿#include <core/unnamed/memory/MemUtil.h>
 
 #include <runtime/assets/core/UAssetManager.h>
 #include <runtime/assets/types/TextureAsset.h>

@@ -4,7 +4,7 @@
 
 ///@brief 文字列ユーティリティクラス
 ///@details 文字列の変換、操作、解析のための静的ヘルパー関数を提供します
-namespace StrUtil {
+namespace Unnamed::StrUtil {
 	/// @brief ワイド文字列をマルチバイト文字列に変換する
 	/// @param string ワイド文字列
 	/// @return マルチバイト文字列

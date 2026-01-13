@@ -201,7 +201,7 @@ void Win32WindowSystem::RegisterClassOnce() {
 		return;
 	}
 
-	auto classNameW = StrUtil::ToWString(mClassName);
+	auto classNameW = Unnamed::StrUtil::ToWString(mClassName);
 
 	WNDCLASSEXW wc   = {};
 	wc.cbSize        = sizeof(WNDCLASSEXW);

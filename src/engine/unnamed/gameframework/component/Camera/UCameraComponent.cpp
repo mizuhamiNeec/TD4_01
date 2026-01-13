@@ -1,7 +1,7 @@
 ﻿#include "UCameraComponent.h"
 
-#include <core/json/JsonWriter.h>
-#include <core/json/JsonReader.h>
+#include <core/unnamed/json/JsonWriter.h>
+#include <core/unnamed/json/JsonReader.h>
 
 #include <engine/unnamed/gameframework/component/Transform/TransformComponent.h>
 

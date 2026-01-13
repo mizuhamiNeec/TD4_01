@@ -33,7 +33,7 @@ void Win32Window::RequestClose() {
 void Win32Window::SetTitle(const std::string_view title) {
 	mWindowInfo.title = title;
 	if (mHWnd) {
-		const auto titleW = StrUtil::ToWString(std::string(title));
+		const auto titleW = Unnamed::StrUtil::ToWString(std::string(title));
 		SetWindowTextW(mHWnd, titleW.c_str());
 	}
 }
@@ -93,8 +93,8 @@ bool Win32Window::Create(
 		y = (desktop.bottom - winH) / 2;
 	}
 
-	const auto titleW     = StrUtil::ToWString(mWindowInfo.title);
-	const auto classNameW = StrUtil::ToWString(std::string(className));
+	const auto titleW     = Unnamed::StrUtil::ToWString(mWindowInfo.title);
+	const auto classNameW = Unnamed::StrUtil::ToWString(std::string(className));
 
 	mHWnd = CreateWindowEx(
 		0,

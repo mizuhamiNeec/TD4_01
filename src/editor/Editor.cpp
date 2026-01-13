@@ -16,7 +16,6 @@
 #include <engine/SceneManager/SceneManager.h>
 #include <engine/Window/WindowManager.h>
 
-#include <core/string/StrUtil.h>
 #include <runtime/core/math/Math.h>
 #include <runtime/core/Properties.h>
 
@@ -478,13 +477,14 @@ void Editor::Update([[maybe_unused]] const float deltaTime) {
 			ImGui::SetCursorPos(
 				ImVec2(
 					(windowSize.x - ImGui::CalcTextSize(
-						(StrUtil::ConvertToUtf8(0xe9e4) + std::format(
+						(Unnamed::StrUtil::ConvertToUtf8(0xe9e4) + std::format(
 							" {:.2f}", moveSpd)).c_str()).x) * 0.5f,
 					(windowSize.y - ImGui::GetFontSize()) * 0.5f
 				)
 			);
-			ImGui::Text((StrUtil::ConvertToUtf8(0xe9e4) + " %.2f").c_str(),
-			            moveSpd);
+			ImGui::Text(
+				(Unnamed::StrUtil::ConvertToUtf8(0xe9e4) + " %.2f").c_str(),
+				moveSpd);
 
 			// 一定時間経過後にポップアップをフェードアウトして閉じる
 			// ゲーム内ではないのでScaledDeltaTimeではなくDeltaTimeを使用
@@ -554,8 +554,9 @@ void Editor::DrawOutliner() {
 			mScene->AddEntity(NEW Entity("New Entity"));
 		}
 
-		static std::string buttonLabel = StrUtil::ConvertToUtf8(kIconFilter) +
-			" " + StrUtil::ConvertToUtf8(kIconDropDown);
+		static std::string buttonLabel = Unnamed::StrUtil::ConvertToUtf8(
+				kIconFilter) +
+			" " + Unnamed::StrUtil::ConvertToUtf8(kIconDropDown);
 
 		if (ImGui::Button(buttonLabel.c_str())) {
 			ImGui::OpenPopup("filterPopup");
@@ -563,15 +564,15 @@ void Editor::DrawOutliner() {
 
 		if (ImGui::BeginPopup("filterPopup")) {
 			ImGui::Button(
-				StrUtil::ConvertToUtf8(kIconVisibility).c_str()
+				Unnamed::StrUtil::ConvertToUtf8(kIconVisibility).c_str()
 			);
 			ImGui::SameLine();
 			ImGui::Button(
-				StrUtil::ConvertToUtf8(kIconPower).c_str()
+				Unnamed::StrUtil::ConvertToUtf8(kIconPower).c_str()
 			);
 			ImGui::SameLine();
 			ImGui::Button(
-				StrUtil::ConvertToUtf8(kIconArrowBack).c_str()
+				Unnamed::StrUtil::ConvertToUtf8(kIconArrowBack).c_str()
 			);
 			ImGui::EndPopup();
 		}
@@ -619,7 +620,7 @@ void Editor::DrawOutliner() {
 
 					ImGui::AlignTextToFramePadding();
 					bool nodeOpen = ImGui::TreeNodeEx(
-						(StrUtil::ConvertToUtf8(kIconEntity) +
+						(Unnamed::StrUtil::ConvertToUtf8(kIconEntity) +
 							" " +
 							entity->GetName())
 						.c_str(),
@@ -666,9 +667,9 @@ void Editor::DrawOutliner() {
 						bool visible = entity->IsVisible();
 
 						if (ImGuiWidgets::IconButton(
-							StrUtil::ConvertToUtf8(visible ?
-								                       kIconVisibility :
-								                       kIconVisibilityOff
+							Unnamed::StrUtil::ConvertToUtf8(visible ?
+										kIconVisibility :
+										kIconVisibilityOff
 							).c_str(),
 							nullptr,
 							ImVec2(22.0f, 22.0f)
@@ -749,7 +750,7 @@ void Editor::DrawMainMenuBar() {
 		                      ImVec4(0.13f, 0.5f, 1.0f, 1.0f));
 
 		if (ImGuiWidgets::BeginMainMenu(
-			StrUtil::ConvertToUtf8(kIconArrowBack).c_str())) {
+			Unnamed::StrUtil::ConvertToUtf8(kIconArrowBack).c_str())) {
 			ImGui::PopStyleColor();
 			if (ImGui::MenuItemEx(
 				"About Unnamed",
@@ -764,11 +765,11 @@ void Editor::DrawMainMenuBar() {
 			ImGui::BeginDisabled();
 			if (ImGui::MenuItemEx(
 				"Save",
-				StrUtil::ConvertToUtf8(kIconSave).c_str())) {
+				Unnamed::StrUtil::ConvertToUtf8(kIconSave).c_str())) {
 			}
 
 			if (ImGui::MenuItemEx("Save As",
-			                      StrUtil::ConvertToUtf8(
+			                      Unnamed::StrUtil::ConvertToUtf8(
 				                      kIconSaveAs).
 			                      c_str())) {
 			}
@@ -777,7 +778,7 @@ void Editor::DrawMainMenuBar() {
 			ImGui::Separator();
 
 			if (ImGui::MenuItemEx("Import",
-			                      StrUtil::ConvertToUtf8(
+			                      Unnamed::StrUtil::ConvertToUtf8(
 				                      kIconDownload)
 			                      .
 			                      c_str())) {
@@ -821,7 +822,7 @@ void Editor::DrawMainMenuBar() {
 			}
 
 			if (ImGui::MenuItemEx("Export",
-			                      StrUtil::ConvertToUtf8(
+			                      Unnamed::StrUtil::ConvertToUtf8(
 				                      kIconUpload).
 			                      c_str())) {
 				BaseScene* currentScene = mSceneManager->
@@ -878,7 +879,7 @@ void Editor::DrawMainMenuBar() {
 			ImGui::BeginDisabled();
 			if (ImGui::MenuItemEx(
 					"Exit",
-					StrUtil::ConvertToUtf8(kIconPower).c_str())
+					Unnamed::StrUtil::ConvertToUtf8(kIconPower).c_str())
 			) {
 				Console::SubmitCommand("quit");
 			}
@@ -889,7 +890,7 @@ void Editor::DrawMainMenuBar() {
 		if (ImGuiWidgets::BeginMainMenu("Edit")) {
 			ImGui::Separator();
 			if (ImGuiWidgets::MenuItemWithIcon(
-				StrUtil::ConvertToUtf8(kIconSettings).c_str(),
+				Unnamed::StrUtil::ConvertToUtf8(kIconSettings).c_str(),
 				"Settings")) {
 			}
 
@@ -931,7 +932,8 @@ void Editor::DrawTopBar() {
 			ImGui::BeginDisabled();
 
 			ImGuiWidgets::IconButton(
-				StrUtil::ConvertToUtf8(kIconVertex).c_str(), "Vertices",
+				Unnamed::StrUtil::ConvertToUtf8(kIconVertex).c_str(),
+				"Vertices",
 				toolbarIconSize,
 				iconScale,
 				ImGuiDir_Right
@@ -940,7 +942,7 @@ void Editor::DrawTopBar() {
 			ImGui::SameLine();
 
 			ImGuiWidgets::IconButton(
-				StrUtil::ConvertToUtf8(kIconEdge).c_str(), "Edges",
+				Unnamed::StrUtil::ConvertToUtf8(kIconEdge).c_str(), "Edges",
 				toolbarIconSize,
 				iconScale,
 				ImGuiDir_Right
@@ -949,7 +951,7 @@ void Editor::DrawTopBar() {
 			ImGui::SameLine();
 
 			ImGuiWidgets::IconButton(
-				StrUtil::ConvertToUtf8(kIconFace).c_str(), "Faces",
+				Unnamed::StrUtil::ConvertToUtf8(kIconFace).c_str(), "Faces",
 				toolbarIconSize,
 				iconScale,
 				ImGuiDir_Right
@@ -958,7 +960,7 @@ void Editor::DrawTopBar() {
 			ImGui::SameLine();
 
 			ImGuiWidgets::IconButton(
-				StrUtil::ConvertToUtf8(kIconMesh).c_str(), "Meshes",
+				Unnamed::StrUtil::ConvertToUtf8(kIconMesh).c_str(), "Meshes",
 				toolbarIconSize,
 				iconScale,
 				ImGuiDir_Right
@@ -967,7 +969,7 @@ void Editor::DrawTopBar() {
 			ImGui::SameLine();
 
 			ImGuiWidgets::IconButton(
-				StrUtil::ConvertToUtf8(kIconObject).c_str(), "Objects",
+				Unnamed::StrUtil::ConvertToUtf8(kIconObject).c_str(), "Objects",
 				toolbarIconSize,
 				iconScale,
 				ImGuiDir_Right
@@ -976,7 +978,7 @@ void Editor::DrawTopBar() {
 			ImGui::SameLine();
 
 			ImGuiWidgets::IconButton(
-				StrUtil::ConvertToUtf8(kIconGroup).c_str(), "Groups",
+				Unnamed::StrUtil::ConvertToUtf8(kIconGroup).c_str(), "Groups",
 				toolbarIconSize,
 				iconScale,
 				ImGuiDir_Right
@@ -1023,31 +1025,31 @@ void Editor::DrawSideBar() {
 				ImGui::BeginDisabled();
 
 				ImGuiWidgets::IconButton(
-					StrUtil::ConvertToUtf8(kIconSelect).c_str(), "",
+					Unnamed::StrUtil::ConvertToUtf8(kIconSelect).c_str(), "",
 					toolbarIconSize,
 					iconScale,
 					ImGuiDir_None
 				);
 				ImGuiWidgets::IconButton(
-					StrUtil::ConvertToUtf8(kIconMove).c_str(), "",
+					Unnamed::StrUtil::ConvertToUtf8(kIconMove).c_str(), "",
 					toolbarIconSize,
 					iconScale,
 					ImGuiDir_None
 				);
 				ImGuiWidgets::IconButton(
-					StrUtil::ConvertToUtf8(kIconRotate).c_str(), "",
+					Unnamed::StrUtil::ConvertToUtf8(kIconRotate).c_str(), "",
 					toolbarIconSize,
 					iconScale,
 					ImGuiDir_None
 				);
 				ImGuiWidgets::IconButton(
-					StrUtil::ConvertToUtf8(kIconScale).c_str(), "",
+					Unnamed::StrUtil::ConvertToUtf8(kIconScale).c_str(), "",
 					toolbarIconSize,
 					iconScale,
 					ImGuiDir_None
 				);
 				ImGuiWidgets::IconButton(
-					StrUtil::ConvertToUtf8(kIconPivot).c_str(), "",
+					Unnamed::StrUtil::ConvertToUtf8(kIconPivot).c_str(), "",
 					toolbarIconSize,
 					iconScale,
 					ImGuiDir_None
@@ -1056,20 +1058,20 @@ void Editor::DrawSideBar() {
 				ImGui::Separator();
 
 				ImGuiWidgets::IconButton(
-					StrUtil::ConvertToUtf8(kIconObject).c_str(), "",
+					Unnamed::StrUtil::ConvertToUtf8(kIconObject).c_str(), "",
 					toolbarIconSize,
 					iconScale,
 					ImGuiDir_None
 				);
 				ImGuiWidgets::IconButton(
-					StrUtil::ConvertToUtf8(kIconNANKABOX).c_str(), "",
+					Unnamed::StrUtil::ConvertToUtf8(kIconNANKABOX).c_str(), "",
 					toolbarIconSize,
 					iconScale,
 					ImGuiDir_None
 				);
 
 				ImGuiWidgets::IconButton(
-					StrUtil::ConvertToUtf8(kIconTexture).c_str(),
+					Unnamed::StrUtil::ConvertToUtf8(kIconTexture).c_str(),
 					"",
 					toolbarIconSize,
 					iconScale,

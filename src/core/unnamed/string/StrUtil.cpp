@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <sstream>
 
-namespace StrUtil {
+namespace Unnamed::StrUtil {
 	std::string ToString(const std::wstring& string) {
 		if (string.empty()) {
 			return {};
@@ -248,7 +248,7 @@ namespace StrUtil {
 
 		auto StartsWithAt = [&](
 			const std::size_t pos, const std::string_view prefix
-		                        ) {
+		) {
 			return pos + prefix.size() <= size &&
 				std::string_view(line.data() + pos, prefix.size()) == prefix;
 		};

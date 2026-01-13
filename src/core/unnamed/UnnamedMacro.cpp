@@ -39,7 +39,7 @@ int LogAssertionFailure(
 		func
 	);
 
-	auto messageW = StrUtil::ToWString(message);
+	auto messageW = Unnamed::StrUtil::ToWString(message);
 
 	int result;
 #ifdef _DEBUG

@@ -3,8 +3,6 @@
 #include <core/unnamed/ini/IniParser.h>
 #include <engine/OldConsole/Console.h>
 
-#include "core/string/StrUtil.h"
-
 namespace Unnamed {
 	/// @brief INIファイルをパースする
 	/// @param filePath INIファイルのパス

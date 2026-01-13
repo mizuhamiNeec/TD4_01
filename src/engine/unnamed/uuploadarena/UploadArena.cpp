@@ -2,7 +2,7 @@
 
 #include "UploadArena.h"
 
-#include <core/memory/MemUtil.h>
+#include <core/unnamed/memory/MemUtil.h>
 #include <engine/unnamed/subsystem/console/Log.h>
 #include <runtime/core/Properties.h>
 

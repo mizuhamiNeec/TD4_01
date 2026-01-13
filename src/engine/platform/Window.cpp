@@ -30,7 +30,7 @@ Window::Window(
 	mHWnd = CreateWindowExW(
 		0,
 		kClassName,
-		StrUtil::ToWString(desc.title).c_str(),
+		Unnamed::StrUtil::ToWString(desc.title).c_str(),
 		desc.style,
 		CW_USEDEFAULT, CW_USEDEFAULT,
 		rect.right - rect.left,

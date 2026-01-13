@@ -57,7 +57,7 @@ bool MainWindow::Create(const WindowInfo info) {
 	wc.hCursor              = LoadCursor(nullptr, IDC_ARROW);
 	wc.hbrBackground        = GetSysColorBrush(COLOR_BACKGROUND);
 	wc.lpszMenuName         = nullptr;
-	std::wstring classNameW = StrUtil::ToWString(mInfo.className);
+	std::wstring classNameW = Unnamed::StrUtil::ToWString(mInfo.className);
 	wc.lpszClassName        = classNameW.c_str();
 	wc.hIcon                = LoadIcon(nullptr, IDI_APPLICATION);
 	wc.hIconSm              = LoadIcon(mInfo.hInstance, IDI_APPLICATION);
@@ -95,7 +95,7 @@ bool MainWindow::Create(const WindowInfo info) {
 	mHWnd = CreateWindowEx(
 		mInfo.exStyle, // 拡張ウィンドウスタイル
 		wc.lpszClassName,
-		StrUtil::ToWString(mInfo.title).c_str(), // ウィンドウタイトル
+		Unnamed::StrUtil::ToWString(mInfo.title).c_str(), // ウィンドウタイトル
 		mInfo.style,                             // ウィンドウスタイル
 		posX, posY,                              // ウィンドウの初期位置
 		wrc.right - wrc.left,                    // ウィンドウの幅

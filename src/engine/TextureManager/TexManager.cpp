@@ -219,7 +219,7 @@ void TexManager::LoadTexture(const std::string& filePath, bool forceCubeMap) {
 		filePath.find_last_of('.') + 1);
 	// 小文字に変換
 	DirectX::ScratchImage image     = {};
-	std::wstring          filePathW = StrUtil::ToWString(filePath);
+	std::wstring          filePathW = Unnamed::StrUtil::ToWString(filePath);
 	HRESULT               hr        = E_FAIL;
 
 	bool isCubeMap = forceCubeMap;
@@ -256,7 +256,7 @@ void TexManager::LoadTexture(const std::string& filePath, bool forceCubeMap) {
 			filePath, hr
 		);
 		// デフォルトテクスチャの読み込み
-		filePathW = StrUtil::ToWString("./content/core/textures/error.png");
+		filePathW = Unnamed::StrUtil::ToWString("./content/core/textures/error.png");
 		hr        = DirectX::LoadFromWICFile(
 			filePathW.c_str(),
 			DirectX::WIC_FLAGS_FORCE_SRGB,
@@ -393,7 +393,7 @@ void TexManager::LoadTexture(const std::string& filePath, bool forceCubeMap) {
 		);
 	}
 
-	textureData.resource->SetName(StrUtil::ToWString(filePath).c_str());
+	textureData.resource->SetName(Unnamed::StrUtil::ToWString(filePath).c_str());
 }
 
 /// @brief ファイルパスからテクスチャデータを取得します

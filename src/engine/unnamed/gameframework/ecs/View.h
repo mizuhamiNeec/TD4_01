@@ -1,6 +1,9 @@
 ﻿#pragma once
 #include <tuple>
 #include "World.h"
+#include "ComponentStorage.h"
+#include "IComponentStorage.h"
+#include <array>
 
 namespace Unnamed::ECS {
 	template <typename... Ts>

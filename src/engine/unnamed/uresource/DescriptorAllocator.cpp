@@ -166,4 +166,17 @@ namespace Unnamed {
 			mFreeList[i] = mCapacity - 1 - i;
 		}
 	}
+
+	uint32_t DescriptorAllocator::GetIndexFromCPUHandle(
+		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle
+	) {
+		const uint32_t index = static_cast<uint32_t>(
+			(
+				cpuHandle.ptr - mHeap->
+				                GetCPUDescriptorHandleForHeapStart().
+				                ptr
+			) / mDescSize
+		);
+		return index;
+	}
 }

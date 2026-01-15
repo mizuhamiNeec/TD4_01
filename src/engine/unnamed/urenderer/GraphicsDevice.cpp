@@ -1,4 +1,4 @@
-﻿#include <pch.h>
+#include <pch.h>
 
 //-----------------------------------------------------------------------------
 
@@ -657,6 +657,23 @@ namespace Unnamed {
 		);
 	}
 
+	/// @brief GPUの完了を待つ
+	/// @param frameIndex フレームインデックス
+	void GraphicsDevice::WaitGPU(const uint32_t frameIndex) const {
+		const auto& [
+			commandAllocator,
+			commandList,
+			fence,
+			event,
+			fenceValue
+		] = mFrameContexts[frameIndex];
+
+		if (fence->GetCompletedValue() < fenceValue) {
+			THROW(fence->SetEventOnCompletion( fenceValue, event ));
+			WaitForSingleObject(event, INFINITE);
+		}
+	}
+
 	/// @brief デバイスの取得
 	/// @return D3D12デバイス
 	ID3D12Device* GraphicsDevice::Device() const noexcept {
@@ -693,24 +710,8 @@ namespace Unnamed {
 		return mDsvAllocator.get();
 	}
 
-	/// @brief GPUの完了を待つ
-	/// @param frameIndex フレームインデックス
-	void GraphicsDevice::WaitGPU(const uint32_t frameIndex) const {
-		const auto& [
-			commandAllocator,
-			commandList,
-			fence,
-			event,
-			fenceValue
-		] = mFrameContexts[frameIndex];
-		if (fence->GetCompletedValue() < fenceValue) {
-			THROW(
-				fence->SetEventOnCompletion(
-					fenceValue, event
-				)
-			);
-			WaitForSingleObject(event, INFINITE);
-		}
+	ID3D12CommandQueue* GraphicsDevice::GetCommandQueue() const noexcept {
+		return mCommandQueue.Get();
 	}
 
 	/// @brief 静的バッファの作成

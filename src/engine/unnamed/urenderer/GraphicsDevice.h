@@ -90,6 +90,8 @@ namespace Unnamed {
 			INT                        baseVertexLocation = 0
 		);
 
+		void WaitGPU(uint32_t frameIndex) const;
+
 		[[nodiscard]] ID3D12Device*    Device() const noexcept;
 		[[nodiscard]] IDXGISwapChain4* SwapChain() const noexcept;
 
@@ -98,9 +100,9 @@ namespace Unnamed {
 		[[nodiscard]] DescriptorAllocator* GetRtvAllocator() const;
 		[[nodiscard]] DescriptorAllocator* GetDsvAllocator() const;
 
-	private:
-		void WaitGPU(uint32_t frameIndex) const;
+		[[nodiscard]] ID3D12CommandQueue* GetCommandQueue() const noexcept;
 
+	private:
 		BufferHandle CreateStaticBuffer(
 			const void* data, size_t bytes, D3D12_RESOURCE_STATES initState
 		);

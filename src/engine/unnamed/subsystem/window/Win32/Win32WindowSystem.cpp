@@ -123,6 +123,18 @@ bool Win32WindowSystem::IsInactiveWindow() {
 	return true;
 }
 
+#ifdef _DEBUG
+/// @brief ImGuiのWin32ウィンドウプロシージャハンドラ
+/// @param hWnd ウィンドウハンドル
+/// @param msg メッセージ
+/// @param wParam wParam
+/// @param lParam lParam
+/// @return 処理結果
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(
+	HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
+);
+#endif
+
 /// @brief ウィンドウプロシージャ
 /// @param hWnd ウィンドウハンドル
 /// @param msg メッセージ
@@ -136,7 +148,14 @@ LRESULT Win32WindowSystem::WndProc(
 	const auto it = mHWndMap.find(hWnd);
 	auto*      w  = it != mHWndMap.end() ? it->second : nullptr;
 
+#ifdef _DEBUG
+	if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam)) {
+		return true;
+	}
+#endif
+
 	if (mPlatformEvents) {
+		// メッセージを他のシステムに横流し
 		mPlatformEvents->DispatchMessage(hWnd, msg, wParam, lParam);
 	}
 

@@ -500,7 +500,7 @@ Quaternion Mat4::ToQuaternion() const {
 //-----------------------------------------------------------------------------
 // Purpose: ベクトルを行列で変換する
 //-----------------------------------------------------------------------------
-Vec3& Mat4::TransformPoint(Vec3 vec3) const {
+Vec3 Mat4::TransformPoint(Vec3 vec3) const {
 	const float w = vec3.x * m[0][3] + vec3.y * m[1][3] + vec3.z * m[2][3] + m[
 		3][3];
 	assert(w != 0.0f); // wが0になることはありえない

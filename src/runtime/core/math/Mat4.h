@@ -135,7 +135,7 @@ struct Mat4 final {
 	/// @brief 点を変換する
 	/// @param vec3 変換する点
 	/// @return 変換された点
-	Vec3& TransformPoint(Vec3 vec3) const;
+	Vec3 TransformPoint(Vec3 vec3) const;
 
 	/// @brief 平行移動成分を取得する
 	/// @return 平行移動ベクトル

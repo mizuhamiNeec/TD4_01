@@ -1,0 +1,23 @@
+{
+	"fontpath": {
+		"default": {
+			"path": "./content/core/fonts/JetBrainsMono.ttf",
+			"size": 14.0
+		},
+		"japanese": {
+			"path": "./content/core/fonts/NotoSansJP.ttf",
+			"size": 14.0
+		},
+		"icon": {
+			"path": "./content/core/fonts/MaterialSymbolsRounded_Filled_28pt-Regular.ttf",
+			"size": 14.0
+		}
+	},
+	"fontconfig": {
+		"GlyphMinAdvanceX": 2.0,
+		"OversampleH": 4,
+		"OversampleV": 4,
+		"PixelSnapH": true,
+		"SizePixels": 128.0
+	}
+}

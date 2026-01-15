@@ -32,22 +32,22 @@
 namespace Unnamed {
 	constexpr std::string_view kChannel = "Engine";
 
-	/// @brief コンストラクタ
+
 	UEngine::UEngine() = default;
 
-	/// @brief デストラクタ
+
 	UEngine::~UEngine() = default;
 
-	/// @brief メインループを実行します
+
 	void UEngine::Run() {
 		Init();
 		Tick();
 		Shutdown();
 	}
 
-	/// @brief 初期化
+
 	void UEngine::Init() {
-		// 挨拶は大事
+		// 挨拶大事!
 		Msg(kChannel, "Hello!");
 
 		// サブシステムの作成
@@ -96,14 +96,17 @@ namespace Unnamed {
 			.hWnd = mainWindow->GetNativeHandle(),
 			.width = mainWindow->GetInfo().clWidth,
 			.height = mainWindow->GetInfo().clHeight,
-			.bClearColor = true,
+			.bClearColor = false,
 #ifdef _DEBUG
-			.bEnableDebug = false,
+			.bEnableDebug = true,
 #else
 			.bEnableDebug = false
 #endif
 		};
 		mGraphicsDevice->Init(gdInfo);
+
+		mImGuiManager = std::make_unique<UImGuiManager>(
+			mGraphicsDevice.get(), mainWindow->GetNativeHandle());
 
 		// プラットフォームイベントの作成
 		mPlatformEvents = std::make_unique<PlatformEventsImpl>();
@@ -383,6 +386,7 @@ namespace Unnamed {
 
 		auto camera = std::make_unique<UCameraComponent>();
 
+		// 簡易的にマウスをウィンドウ中央に固定
 		{
 			RECT client;
 			GetClientRect(
@@ -406,16 +410,18 @@ namespace Unnamed {
 			ClipCursor(&clip);
 		}
 
-		mEntity = mECSWorld.CreateEntity();
+		mEntity = mEcsWorld.CreateEntity();
 
-		mECSWorld.Add<ECS::Transform>(mEntity, {});
+		mEcsWorld.Add<ECS::Transform>(mEntity, {});
 	}
 
-	/// @brief メインループ
+
 	void UEngine::Tick() {
 		while (!mWindowSystem->AllClosed()) {
 			mTime->BeginFrame();
 			const float deltaTime = mTime->GetGameTime()->DeltaTime<float>();
+
+			mImGuiManager->BeginFrame();
 
 			// サブシステムの更新
 			for (const auto& subsystem : mSubsystems) {
@@ -481,107 +487,47 @@ namespace Unnamed {
 				mAssetManager->Reload(mMaterialAsset);
 			}
 
+			ImGui::ShowDemoWindow();
+
 			//-----------------------------------------------------------------
-
-			// const uint32_t reload = mr.DetectChanges();
-			// if (reload & RELOAD_CPU) {
-			// 	mAssetManager->Reload(mr.materialAsset);
-			//
-			// 	mr.BuildCPU(
-			// 		mAssetManager.get(),
-			// 		mShaderLibrary.get(),
-			// 		mRootSignatureCache.get(),
-			// 		mPipelineCache.get(),
-			// 		mGraphicsDevice.get()
-			// 	);
-			// }
-			//
-			// if (reload & RELOAD_TEXTURE) {
-			// 	if (mLastSubmit.valid) {
-			// 		mr.InvalidateGPU(
-			// 			mRenderResourceManager.get(),
-			// 			mLastSubmit.fence.Get(),
-			// 			mLastSubmit.value
-			// 		);
-			// 	} else {
-			// 		mr.InvalidateGPU(
-			// 			mRenderResourceManager.get(),
-			// 			nullptr,
-			// 			0
-			// 		);
-			// 	}
-			// }
-
-			// bool ok      = mUploadArena->BeginFrame(context.backIndex);
-			// UASSERT(ok);
-			// 描画処理↓
-			//-----------------------------------------------------------------
-			//
-			// if (!mr.IsGPUReady()) {
-			// 	mr.RealizeGPU(mRenderResourceManager.get(), context.cmd);
-			// }
-			//
-			// context.cmd->SetGraphicsRootSignature(
-			// 	mRootSignatureCache->Get(mr.root));
-			// context.cmd->SetPipelineState(mPipelineCache->Get(mr.pso));
-			//
-			// mr.Apply(
-			// 	context.cmd,
-			// 	mRenderResourceManager.get(),
-			// 	context.backIndex,
-			// 	static_cast<float>(mTime->GetGameTime()->TotalTime())
-			// );
-			//
-			// mRenderResourceManager->ProcessDeferredMipUploads(context.cmd);
-			//
-			// mGraphicsDevice->DrawTriangleTest(context.cmd);
-
-			const auto* cam  = mWorld->MainCamera();
-			RenderView  view = {
+			const auto* cam        = mWorld->MainCamera();
+			auto        mainWindow = mWindowSystem->GetWindows().front().get();
+			auto        info       = mainWindow->GetInfo();
+			float       width      = static_cast<float>(info.clWidth);
+			float       height     = static_cast<float>(info.clHeight);
+			float       aspect     = width / height;
+			RenderView  view       = {};
+			view                   = {
 				.view = UCameraComponent::View(mCameraTransform),
-				.proj = cam->Proj(
-					mWindowSystem->GetWindows().front()->GetInfo().clWidth /
-					static_cast<float>(mWindowSystem->GetWindows().front()->
-						GetInfo().clHeight
-					)
-				),
+				.proj = cam->Proj(aspect),
+				.viewProj = Mat4::identity,
 				.cameraPos = mCameraTransform->Position()
 			};
 			view.viewProj = view.view * view.proj;
 			mRenderer->SetView(view);
 			mRenderer->BeginFrame();
-			mRenderer->RenderWorld(*mWorld);
-			mRenderer->EndFrame();
+			// 描画処理↓
 			//-----------------------------------------------------------------
 
-			// auto buffer = mGraphicsDevice->GetFrameBuffer(context.backIndex);
-			// mUploadArena->OnFrameSubmitted(
-			// 	context.backIndex,
-			// 	buffer.fence.Get(),
-			// 	buffer.fenceValue
-			// );
-			// mRenderResourceManager->FlushUploads(
-			// 	buffer.fence.Get(), buffer.fenceValue
-			// );
-			// mRenderResourceManager->GarbageCollect();
-			//
-			// mLastSubmit = {
-			// 	.fence = buffer.fence,
-			// 	.value = buffer.fenceValue,
-			// 	.valid = true
-			// };
+			// DO SOMETHING HERE!!
 
+			//-----------------------------------------------------------------
+			mRenderer->RenderWorld(*mWorld);
+			mImGuiManager->EndFrame(mRenderer->GetContext().cmd);
+			mRenderer->EndFrame();
 			mTime->EndFrame();
 		}
 	}
 
-	/// @brief シャットダウン
+
 	void UEngine::Shutdown() const {
 		mPlatformEvents->RemoveListener(mInputSystem);
 
 		for (const auto& subsystem : mSubsystems) {
 			subsystem->Shutdown();
 		}
+
+		mImGuiManager->Shutdown();
 
 		mGraphicsDevice->Shutdown();
 

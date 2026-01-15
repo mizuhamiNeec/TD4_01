@@ -15,6 +15,12 @@ namespace Unnamed {
 	}
 
 	void EngineConVar() {
+		static UnnamedConVar<std::string> im_configpath(
+			"im_configpath",
+			"./content/core/settings/imconfig.json",
+			FCVAR::NONE, "Path to ImGui config file."
+		);
+
 		static UnnamedConVar cl_showpos(
 			"cl_showpos", 0, FCVAR::NONE,
 			"Draw current position at top of screen (1 = meter, 2 = hammer)"

@@ -20,8 +20,9 @@ namespace Unnamed {
 			return "Camera";
 		}
 
-		float fovY  = 90.0f * Math::deg2Rad;
-		float zNear = 0.001f;
-		float zFar  = 10000.0f;
+	private:
+		float mFovY  = 90.0f * Math::deg2Rad;
+		float mZNear = 0.001f;
+		float mZFar  = 10000.0f;
 	};
 }

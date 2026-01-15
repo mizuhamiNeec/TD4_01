@@ -23,7 +23,7 @@ namespace Unnamed {
 	/// @return 射影行列
 	Mat4 UCameraComponent::Proj(const float aspectRatio) const {
 		return Mat4::PerspectiveFovMat(
-			fovY, aspectRatio, zNear, zFar
+			mFovY, aspectRatio, mZNear, mZFar
 		);
 	}
 
@@ -31,18 +31,18 @@ namespace Unnamed {
 	/// @param writer JSONライター
 	void UCameraComponent::Serialize(JsonWriter& writer) const {
 		writer.Key("fov");
-		writer.Write(fovY);
+		writer.Write(mFovY);
 		writer.Key("zNear");
-		writer.Write(zNear);
+		writer.Write(mZNear);
 		writer.Key("zFar");
-		writer.Write(zFar);
+		writer.Write(mZFar);
 	}
 
 	/// @brief デシリアライズ処理
 	/// @param reader JSONリーダー
 	void UCameraComponent::Deserialize(const JsonReader& reader) {
-		if (reader.Has("fov")) { fovY = reader["fov"].GetFloat(); }
-		if (reader.Has("zNear")) { zNear = reader["zNear"].GetFloat(); }
-		if (reader.Has("zFar")) { zFar = reader["zFar"].GetFloat(); }
+		if (reader.Has("fov")) { mFovY = reader["fov"].GetFloat(); }
+		if (reader.Has("zNear")) { mZNear = reader["zNear"].GetFloat(); }
+		if (reader.Has("zFar")) { mZFar = reader["zFar"].GetFloat(); }
 	}
 }

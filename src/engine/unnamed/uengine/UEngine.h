@@ -56,13 +56,16 @@ namespace Unnamed {
 		// Managers and Systems
 		std::unique_ptr<UAssetManager>         mAssetManager;
 		std::unique_ptr<GraphicsDevice>        mGraphicsDevice;
-		std::unique_ptr<UImGuiManager>         mImGuiManager;
 		std::unique_ptr<PlatformEventsImpl>    mPlatformEvents;
 		std::unique_ptr<RootSignatureCache>    mRootSignatureCache;
 		std::unique_ptr<RenderResourceManager> mRenderResourceManager;
 		std::unique_ptr<ShaderLibrary>         mShaderLibrary;
 		std::unique_ptr<UPipelineCache>        mPipelineCache;
 		std::unique_ptr<UploadArena>           mUploadArena;
+
+#ifdef _DEBUG
+		std::unique_ptr<UImGuiManager> mImGuiManager;
+#endif
 
 		// TODO: 削除予定
 		std::unique_ptr<UWorld> mWorld;

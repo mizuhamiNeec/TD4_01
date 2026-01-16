@@ -105,8 +105,10 @@ namespace Unnamed {
 		};
 		mGraphicsDevice->Init(gdInfo);
 
+#ifdef _DEBUG
 		mImGuiManager = std::make_unique<UImGuiManager>(
 			mGraphicsDevice.get(), mainWindow->GetNativeHandle());
+#endif
 
 		// プラットフォームイベントの作成
 		mPlatformEvents = std::make_unique<PlatformEventsImpl>();
@@ -421,7 +423,9 @@ namespace Unnamed {
 			mTime->BeginFrame();
 			const float deltaTime = mTime->GetGameTime()->DeltaTime<float>();
 
+#ifdef _DEBUG
 			mImGuiManager->BeginFrame();
+#endif
 
 			// サブシステムの更新
 			for (const auto& subsystem : mSubsystems) {
@@ -487,7 +491,9 @@ namespace Unnamed {
 				mAssetManager->Reload(mMaterialAsset);
 			}
 
+#ifdef _DEBUG
 			ImGui::ShowDemoWindow();
+#endif
 
 			//-----------------------------------------------------------------
 			const auto* cam        = mWorld->MainCamera();
@@ -513,7 +519,9 @@ namespace Unnamed {
 
 			//-----------------------------------------------------------------
 			mRenderer->RenderWorld(*mWorld);
+#ifdef _DEBUG
 			mImGuiManager->EndFrame(mRenderer->GetContext().cmd);
+#endif
 			mRenderer->EndFrame();
 			mTime->EndFrame();
 		}
@@ -527,7 +535,9 @@ namespace Unnamed {
 			subsystem->Shutdown();
 		}
 
+#ifdef _DEBUG
 		mImGuiManager->Shutdown();
+#endif
 
 		mGraphicsDevice->Shutdown();
 

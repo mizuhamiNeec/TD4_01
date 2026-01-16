@@ -4,7 +4,7 @@
 
 #include <engine/Entity/Entity.h>
 
-std::vector<Entity*>& BaseScene::GetEntities() {
+std::vector<Entity*> BaseScene::GetEntities() {
 	return mEntities;
 }
 

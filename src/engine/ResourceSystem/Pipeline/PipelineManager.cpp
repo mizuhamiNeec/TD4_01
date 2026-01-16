@@ -121,7 +121,7 @@ ID3D12PipelineState* PipelineManager::GetOrCreatePipelineState(
 		Channel::RenderPipeline
 	);
 
-	pipelineState->SetName(StrUtil::ToWString(key).c_str());
+	pipelineState->SetName(Unnamed::StrUtil::ToWString(key).c_str());
 
 	return pipelineState.Get();
 }

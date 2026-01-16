@@ -49,7 +49,7 @@ public:
 	 * @brief シーン内のエンティティリストを取得する
 	 * @return エンティティリストへの参照
 	 */
-	virtual std::vector<Entity*>& GetEntities();
+	virtual std::vector<Entity*> GetEntities();
 
 	/**
 	 * @brief シーンにエンティティを追加する

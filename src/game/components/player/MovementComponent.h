@@ -157,14 +157,14 @@ private:
 
 	// params
 	static constexpr float kStepHeightHu        = 18.0f; // HL2 Default
-	static constexpr float kCastSkinHu          = 0.25f;
-	static constexpr float kSkinHu              = 0.25f;
+	static constexpr float kCastSkinHu          = 0.5f;
+	static constexpr float kSkinHu              = 1.0f;
 	static constexpr float kRestOffsetHu        = 0.75f;
 	static constexpr float kMaxAdhesionHu       = 2.0f; // 接地維持の最大距離
 	static constexpr float kSnapVyMax           = 1.0f; // m/s
 	static constexpr int   kMaxBumps            = 8;    // 最大衝突回数
 	static constexpr int   kMaxClipPlanes       = 5;
-	static constexpr float kFracEps             = 1e-4f;
+	static constexpr float kFracEps             = 0.01f;
 	static constexpr float kAirSpeedCap         = 30.0f;
 	static constexpr float kJumpVelocityHu      = 400.0f; // HU/s
 	static constexpr float kJumpSnapDisableTime = 0.5f;   // seconds

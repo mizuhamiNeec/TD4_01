@@ -3,7 +3,7 @@
 #include "UiButton.h"
 #include "UiPanel.h"
 
-#include "engine/subsystem/console/Log.h"
+#include "engine/unnamed/subsystem/console/Log.h"
 
 #include "layout/UiVerticalLayout.h"
 

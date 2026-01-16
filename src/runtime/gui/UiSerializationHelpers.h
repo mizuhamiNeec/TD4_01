@@ -2,8 +2,8 @@
 #include "Rect.h"
 #include "UiWidget.h"
 
-#include "core/json/JsonReader.h"
-#include "core/json/JsonWriter.h"
+#include "core/unnamed/json/JsonReader.h"
+#include "core/unnamed/json/JsonWriter.h"
 
 #include "layout/base/UiLayout.h"
 

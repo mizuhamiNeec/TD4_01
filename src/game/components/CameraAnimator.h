@@ -89,11 +89,11 @@ private:
 
 	static constexpr float kSlideRollAmount  = 2.0f; // degrees
 	static constexpr float kSlideShakeAmount = 0.01f;
-	static constexpr float kSlideRollSpeed   = 15.0f; // より速く傾く
+	static constexpr float kSlideRollSpeed   = 30.0f;
 
-	static constexpr float kWallrunRollAmount  = 5.0f;  // degrees
-	static constexpr float kWallrunRollSpeed   = 20.0f; // より速く傾く
-	static constexpr float kWallrunShakeAmount = 0.008f;
+	static constexpr float kWallrunRollAmount  = 45.0f;
+	static constexpr float kWallrunRollSpeed   = 15.0f;
+	static constexpr float kWallrunShakeAmount = 0.08f;
 
 	static constexpr float kLandingShakeAmount   = 0.4f;
 	static constexpr float kLandingShakeDuration = 0.25f;

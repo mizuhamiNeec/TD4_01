@@ -1,6 +1,6 @@
 #include "UiScreenStack.h"
 
-#include "engine/subsystem/console/Log.h"
+#include "engine/unnamed/subsystem/console/Log.h"
 
 namespace Unnamed::Gui {
 	static constexpr std::string_view kChannel = "UiScreen";

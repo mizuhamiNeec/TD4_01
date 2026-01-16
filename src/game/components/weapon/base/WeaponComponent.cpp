@@ -52,24 +52,6 @@ namespace {
 }
 
 //-----------------------------------------------------------------------------
-// 近接攻撃モジュール
-//-----------------------------------------------------------------------------
-// MeleeModule::~MeleeModule() {
-// }
-//
-// void MeleeModule::Execute([[maybe_unused]] Entity& entity) {
-// 	auto                  cam     = CameraManager::GetActiveCamera();
-// 	[[maybe_unused]] Vec3 forward = cam->GetViewMat().GetForward();
-// 	[[maybe_unused]] Vec3 eyePos  = cam->GetViewMat().GetTranslate();
-// }
-//
-// void MeleeModule::Update([[maybe_unused]] const float& deltaTime) {
-// }
-//
-// void MeleeModule::DrawInspectorImGui() {
-// }
-
-//-----------------------------------------------------------------------------
 // WeaponComponent
 //-----------------------------------------------------------------------------
 WeaponComponent::~WeaponComponent() {
@@ -99,8 +81,8 @@ void WeaponComponent::Update([[maybe_unused]] float deltaTime) {
 	if (mIsReloading) {
 		mReloadTimer += deltaTime;
 		if (mReloadTimer >= 0.0f) {
-			int need = mWeaponData->clipSize - mCurrentClip;
-			int load = (std::min)(need, mCurrentAmmo);
+			int need     = mWeaponData->clipSize - mCurrentClip;
+			int load     = (std::min)(need, mCurrentAmmo);
 			mCurrentClip += load;
 			mCurrentAmmo -= load;
 			mIsReloading = false;
@@ -166,7 +148,7 @@ Vec3 WeaponComponent::GetHitPosition() const {
 	return dynamic_cast<HitscanModule*>(mPrimaryModule.get())->GetHitPosition();
 }
 
-Vec3& WeaponComponent::GetHitNormal() const {
+Vec3 WeaponComponent::GetHitNormal() const {
 	return dynamic_cast<HitscanModule*>(mPrimaryModule.get())->GetHitNormal();
 }
 

@@ -1,4 +1,4 @@
-﻿#include <core/memory/MemUtil.h>
+﻿#include <core/unnamed/memory/MemUtil.h>
 
 #include <runtime/assets/core/UAssetManager.h>
 #include <runtime/assets/types/TextureAsset.h>
@@ -7,15 +7,17 @@
 
 #include <engine/VertexFormats.h>
 
+#include "core/unnamed/UnnamedMacro.h"
+
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
 
 #include <d3dx12.h>
 
-#include <engine/subsystem/console/Log.h>
-#include <engine/urenderer/GraphicsDevice.h>
-#include <engine/uuploadarena/UploadArena.h>
+#include <engine/unnamed/subsystem/console/Log.h>
+#include <engine/unnamed/urenderer/GraphicsDevice.h>
+#include <engine/unnamed/uuploadarena/UploadArena.h>
 
 namespace Unnamed {
 	using namespace Microsoft::WRL;

@@ -5,8 +5,8 @@
 
 #include <fstream>
 
-#include <core/json/JsonReader.h>
-#include <core/string/StrUtil.h>
+#include <core/unnamed/json/JsonReader.h>
+#include <core/unnamed/string/StrUtil.h>
 
 #include <runtime/assets/core/UAssetManager.h>
 

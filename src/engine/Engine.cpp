@@ -19,11 +19,11 @@
 #include <engine/postprocess/PPRadialBlur.h>
 #include <engine/postprocess/PPVignette.h>
 #include <engine/renderer/SrvManager.h>
-#include <engine/subsystem/console/ConsoleScriptParser.h>
-#include <engine/subsystem/console/ConsoleSystem.h>
-#include <engine/subsystem/console/concommand/UnnamedConVar.h>
-#include <engine/subsystem/interface/ServiceLocator.h>
-#include <engine/subsystem/time/TimeSystem.h>
+#include <engine/unnamed/subsystem/console/ConsoleScriptParser.h>
+#include <engine/unnamed/subsystem/console/ConsoleSystem.h>
+#include <engine/unnamed/subsystem/console/concommand/UnnamedConVar.h>
+#include <engine/unnamed/subsystem/interface/ServiceLocator.h>
+#include <engine/unnamed/subsystem/time/TimeSystem.h>
 #include <engine/TextureManager/TexManager.h>
 #include <engine/Window/MainWindow.h>
 #include <engine/Window/WindowsUtils.h>
@@ -172,7 +172,7 @@ namespace Unnamed {
 		mResourceManager->Init();
 		mRenderer->SetShaderResourceViewManager(mSrvManager.get());
 		mRenderer->Init();
-		
+
 		mAudioManager = std::make_unique<AudioManager>();
 		mAudioManager->Init();
 
@@ -886,6 +886,7 @@ namespace Unnamed {
 		ConCommand::RegisterCommand("exit", Quit, "Exit the engine.");
 		ConCommand::RegisterCommand("quit", Quit, "Exit the engine.");
 
+#ifdef _DEBUG
 		ConCommand::RegisterCommand(
 			"toggleeditor",
 			[]([[maybe_unused]] const std::vector<std::string>& args) {
@@ -898,6 +899,7 @@ namespace Unnamed {
 			},
 			"Toggle editor mode."
 		);
+#endif
 
 		ConCommand::RegisterCommand(
 			"scene_title",

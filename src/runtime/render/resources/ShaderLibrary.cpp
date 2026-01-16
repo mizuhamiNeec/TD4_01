@@ -7,8 +7,8 @@
 #include <d3d12.h>
 #include <ranges>
 
-#include <engine/subsystem/console/Log.h>
-#include <engine/uengine/UEngine.h>
+#include <engine/unnamed/subsystem/console/Log.h>
+#include <engine/unnamed/uengine/UEngine.h>
 
 #include "runtime/assets/core/UAssetManager.h"
 

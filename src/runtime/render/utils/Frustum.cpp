@@ -1,7 +1,7 @@
 ﻿#include "Frustum.h"
 
 namespace Unnamed {
-	Plane NormalizePlane(const Vec4& p) {
+	static Plane NormalizePlane(const Vec4& p) {
 		const Vec3  n(p.x, p.y, p.z);
 		const float lenSq = n.SqrLength();
 		if (lenSq > 1e-12f) {
@@ -22,12 +22,12 @@ namespace Unnamed {
 		const Mat4 mT = viewProj.Transpose();
 
 		auto Row = [&](const int i) -> Vec4 {
-			return Vec4(
+			return {
 				mT.m[i][0],
 				mT.m[i][1],
 				mT.m[i][2],
 				mT.m[i][3]
-			);
+			};
 		};
 
 		const Vec4 r0 = Row(0);

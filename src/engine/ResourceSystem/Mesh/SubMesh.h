@@ -6,7 +6,7 @@
 #include <engine/Renderer/VertexBuffer.h>
 #include <engine/ResourceSystem/Material/Material.h>
 
-#include "engine/uprimitive/UPrimitives.h"
+#include "engine/unnamed/uprimitive/UPrimitives.h"
 
 /// @brief サブメッシュクラス
 class SubMesh {

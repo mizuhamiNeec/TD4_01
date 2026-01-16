@@ -292,14 +292,21 @@ void Material::Apply(ID3D12GraphicsCommandList* commandList,
 								GetTextureResource(filePath);
 							if (textureResource) {
 								// 連続スロットに適切なSRVを作成
+								const DXGI_FORMAT srvFormat = textureData ? textureData->metadata.format : DXGI_FORMAT_UNKNOWN;
+								const UINT srvMipLevels = textureData ? static_cast<UINT>(textureData->metadata.mipLevels) : 1u;
+
 								if (isCubeMap) {
 									srvManager->CreateSRVForTextureCube(
-										newSrvIndex, textureResource,
-										DXGI_FORMAT_UNKNOWN, 1);
+										newSrvIndex,
+										textureResource,
+										srvFormat,
+										srvMipLevels);
 								} else {
 									srvManager->CreateSRVForTexture2D(
-										newSrvIndex, textureResource.Get(),
-										DXGI_FORMAT_UNKNOWN, 1);
+										newSrvIndex,
+										textureResource.Get(),
+										srvFormat,
+										srvMipLevels);
 								}
 
 								// TexManagerのマッピングを更新

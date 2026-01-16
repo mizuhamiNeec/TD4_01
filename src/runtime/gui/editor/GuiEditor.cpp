@@ -1,6 +1,6 @@
 #include "GuiEditor.h"
 
-#include "engine/subsystem/console/Log.h"
+#include "engine/unnamed/subsystem/console/Log.h"
 
 #include "runtime/gui/UiButton.h"
 #include "runtime/gui/UiPanel.h"

@@ -1,7 +1,7 @@
 #pragma once
 #include <engine/Components/ColliderComponent/Base/ColliderComponent.h>
 
-#include "engine/uprimitive/UPrimitives.h"
+#include "engine/unnamed/uprimitive/UPrimitives.h"
 
 class StaticMesh;
 class StaticMeshRenderer;

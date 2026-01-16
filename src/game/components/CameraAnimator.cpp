@@ -106,14 +106,16 @@ float CameraAnimator::PerlinNoise(float x, float y, float z) const {
 	return std::lerp(
 		std::lerp(
 			std::lerp(Grad(p[AA], x, y, z), Grad(p[BA], x - 1, y, z), u),
-			std::lerp(Grad(p[AB], x, y - 1, z), Grad(p[BB], x - 1, y - 1, z), u),
+			std::lerp(Grad(p[AB], x, y - 1, z), Grad(p[BB], x - 1, y - 1, z),
+			          u),
 			v
 		),
 		std::lerp(
-			std::lerp(Grad(p[AA + 1], x, y, z - 1), Grad(p[BA + 1], x - 1, y, z - 1),
-			     u),
+			std::lerp(Grad(p[AA + 1], x, y, z - 1),
+			          Grad(p[BA + 1], x - 1, y, z - 1),
+			          u),
 			std::lerp(Grad(p[AB + 1], x, y - 1, z - 1),
-			     Grad(p[BB + 1], x - 1, y - 1, z - 1), u),
+			          Grad(p[BB + 1], x - 1, y - 1, z - 1), u),
 			v
 		),
 		w
@@ -292,7 +294,7 @@ void CameraAnimator::ApplyShakeAndTilt(float dt) {
 		} else {
 			// 戻る（ピッチ増加）
 			float returnT = (pitchT - 1.0f) / 2.33f; // 残りの時間で正規化
-			pitch -= kJumpPitchAmount * (1.0f - returnT);
+			pitch         -= kJumpPitchAmount * (1.0f - returnT);
 		}
 	}
 
@@ -319,7 +321,7 @@ void CameraAnimator::ApplyShakeAndTilt(float dt) {
 		} else {
 			// 戻る（ピッチ増加）
 			float returnT = (pitchT - 1.0f) / 1.5f; // 残りの時間で正規化
-			pitch -= kDoubleJumpPitchAmount * (1.0f - returnT);
+			pitch         -= kDoubleJumpPitchAmount * (1.0f - returnT);
 		}
 	}
 
@@ -328,7 +330,7 @@ void CameraAnimator::ApplyShakeAndTilt(float dt) {
 		// スライド中の傾き（進行方向に合わせた微妙な傾き）
 		float slideT     = std::min(1.0f, mSlideAnimTime * 2.0f);
 		float targetRoll = kSlideRollAmount * slideT;
-		roll += targetRoll;
+		roll             += targetRoll;
 
 		// スライド中の振動（速度に応じて、パーリンノイズ使用）
 		float speedFactor = std::min(1.0f, mSlideEntrySpeed / 10.0f);
@@ -341,14 +343,16 @@ void CameraAnimator::ApplyShakeAndTilt(float dt) {
 		shake.y += noiseY * intensity * 0.5f;
 	}
 
-	// === ウォールラン傾き＆シェイク（パーリンノイズベース） ===
+	// ウォールラン傾き＆シェイク
 	if (mWallrunAnimTime > 0.0f) {
-		// ウォールラン中の大きな傾き（壁の方向に）
-		float wallrunT   = std::min(1.0f, mWallrunAnimTime * 3.0f);
-		float targetRoll = kWallrunRollAmount * mWallrunSide * wallrunT;
-		roll += targetRoll;
+		// ウォールラン中の傾き
+		roll = std::lerp(
+			roll,
+			kWallrunRollAmount * mWallrunSide,
+			dt * kWallrunRollSpeed
+		);
 
-		// ウォールラン中の微妙な振動（パーリンノイズ使用）
+		// ウォールラン中の振動
 		float intensity = kWallrunShakeAmount;
 
 		float noiseX = PerlinNoise(mNoiseTime * 12.0f, 0.0f, 0.0f);

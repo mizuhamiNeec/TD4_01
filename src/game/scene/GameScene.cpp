@@ -16,7 +16,7 @@
 #include <engine/Input/InputSystem.h>
 #include <engine/OldConsole/ConVarManager.h>
 #include <engine/ResourceSystem/Audio/AudioManager.h>
-#include <engine/subsystem/console/Log.h>
+#include <engine/unnamed/subsystem/console/Log.h>
 #include <engine/TextureManager/TexManager.h>
 
 #include <game/components/CameraRotator.h>
@@ -24,6 +24,8 @@
 #include <game/components/checkpoint/CheckpointComponent.h>
 #include <game/components/checkpoint/CheckpointManager.h>
 #include <game/components/checkpoint/GoalComponent.h>
+
+#include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 
 namespace {
 	constexpr char kDevMeasureTexturePath[] =
@@ -60,7 +62,7 @@ namespace {
 	constexpr char  kMeshReloadBindCommand[] = "bind f5 +f5";
 	constexpr Vec3  kShakeRootOffset(0.08f, -0.1f, 0.18f);
 	constexpr float kCameraRootHeight  = 1.7f;
-	constexpr float kPlayerSpawnHeight = 4.0f;
+	constexpr float kPlayerSpawnHeight = 2.0f;
 	constexpr Vec3  kTeleportTriggerCenter(19.5072f, -29.2608f, 260.096f);
 	const Vec3      kTeleportTriggerExtent(Vec3::one * 13.0048f);
 	constexpr float kTeleportReenableBuffer      = 1.0f;

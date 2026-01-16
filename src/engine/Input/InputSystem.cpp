@@ -128,7 +128,7 @@ void InputSystem::ProcessInput(const long lParam) {
 
 		// 仮想キーを文字列に変換
 		std::string keyName = GetKeyName(vKey);
-		keyName             = StrUtil::ToLowerCase(keyName);
+		keyName             = Unnamed::StrUtil::ToLowerCase(keyName);
 
 		if (!keyName.empty() && mKeyBindings.contains(keyName)) {
 			std::string cmd = mKeyBindings[keyName];

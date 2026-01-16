@@ -65,7 +65,7 @@ namespace ImGuiWidgets {
 		};
 
 		// リセットアイコンの文字列を作成 (UTF-8)
-		const std::string iconResetStr = StrUtil::ConvertToUtf8(kIconReset);
+		const std::string iconResetStr = Unnamed::StrUtil::ConvertToUtf8(kIconReset);
 
 		ImGui::PushID(name.c_str());
 		ImGui::BeginGroup();

@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <vector>
 
-#include <engine/uprimitive/UPrimitives.h>
+#include <engine/unnamed/uprimitive/UPrimitives.h>
 
 namespace Unnamed {
 	/// @brief メッシュのサブメッシュ情報

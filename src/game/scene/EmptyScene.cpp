@@ -2,7 +2,7 @@
 
 #include "engine/Engine.h"
 #include "engine/Input/InputSystem.h"
-#include "engine/subsystem/console/Log.h"
+#include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/OldConsole/Console.h"
 #include "runtime/gui/UiButton.h"
 #include "runtime/gui/UiDocumentManager.h"
@@ -110,7 +110,7 @@ void EmptyScene::Update(const float deltaTime) {
 	static const std::string testLine =
 		"hi https://www.google.co.jp C:/Windows/ lol .//";
 
-	const auto span = StrUtil::ParseLinksFromLine(testLine);
+	const auto span = Unnamed::StrUtil::ParseLinksFromLine(testLine);
 
 	for (const auto& s : span) {
 		const auto b    = s.begin;
@@ -131,8 +131,8 @@ void EmptyScene::Update(const float deltaTime) {
 	ImGui::TextLinkOpenURL(
 		"jetbrains://Rider/",
 		"jetbrains://Rider/"
-		);
-	
+	);
+
 	ImGui::End();
 
 	DrawUiHierarchyWindow(*uiRoot);

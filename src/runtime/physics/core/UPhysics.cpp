@@ -9,11 +9,11 @@
 #include <engine/Debug/Debug.h>
 #include <engine/Entity/Entity.h>
 #include <engine/ResourceSystem/Mesh/StaticMesh.h>
-#include <engine/subsystem/console/Log.h>
-#include <engine/uphysics/BoxCast.h>
-#include <engine/uphysics/PhysicsTypes.h>
-#include <engine/uphysics/RayCast.h>
-#include <engine/uphysics/SphereCast.h>
+#include <engine/unnamed/subsystem/console/Log.h>
+#include <engine/unnamed/uphysics/BoxCast.h>
+#include <engine/unnamed/uphysics/PhysicsTypes.h>
+#include <engine/unnamed/uphysics/RayCast.h>
+#include <engine/unnamed/uphysics/SphereCast.h>
 
 namespace UPhysics {
 	/// @brief 初期化

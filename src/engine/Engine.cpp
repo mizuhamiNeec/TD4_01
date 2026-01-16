@@ -172,7 +172,7 @@ namespace Unnamed {
 		mResourceManager->Init();
 		mRenderer->SetShaderResourceViewManager(mSrvManager.get());
 		mRenderer->Init();
-		
+
 		mAudioManager = std::make_unique<AudioManager>();
 		mAudioManager->Init();
 
@@ -886,6 +886,7 @@ namespace Unnamed {
 		ConCommand::RegisterCommand("exit", Quit, "Exit the engine.");
 		ConCommand::RegisterCommand("quit", Quit, "Exit the engine.");
 
+#ifdef _DEBUG
 		ConCommand::RegisterCommand(
 			"toggleeditor",
 			[]([[maybe_unused]] const std::vector<std::string>& args) {
@@ -898,6 +899,7 @@ namespace Unnamed {
 			},
 			"Toggle editor mode."
 		);
+#endif
 
 		ConCommand::RegisterCommand(
 			"scene_title",

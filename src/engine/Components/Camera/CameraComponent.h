@@ -15,20 +15,20 @@ public:
 
 	void DrawInspectorImGui() override;
 
-	float& GetFovVertical();
-	void   SetFovVertical(float newFovVertical);
+	float GetFovVertical() const;
+	void  SetFovVertical(float newFovVertical);
 
-	float& GetZNear();
-	void   SetNearZ(float newNearZ);
+	float GetZNear() const;
+	void  SetNearZ(float newNearZ);
 
-	float& GetZFar();
-	void   SetFarZ(float newFarZ);
+	float GetZFar() const;
+	void  SetFarZ(float newFarZ);
 
-	Mat4& GetViewProjMat();
-	Mat4& GetViewMat();
-	Mat4& GetProjMat();
+	Mat4 GetViewProjMat();
+	Mat4 GetViewMat();
+	Mat4 GetProjMat();
 
-	float& GetAspectRatio();
+	float GetAspectRatio();
 	void   SetAspectRatio(float newAspectRatio);
 	void   SetViewMat(const Mat4& mat4);
 

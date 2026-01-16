@@ -76,7 +76,7 @@ void CameraComponent::DrawInspectorImGui() {
 
 /// @brief 垂直視野角を取得します
 /// @return 垂直視野角[ラジアン]
-float& CameraComponent::GetFovVertical() {
+float CameraComponent::GetFovVertical() const {
 	return mFov;
 }
 
@@ -88,7 +88,7 @@ void CameraComponent::SetFovVertical(const float newFovVertical) {
 
 /// @brief ニアクリップ距離を取得します
 /// @return ニアクリップ距離
-float& CameraComponent::GetZNear() {
+float CameraComponent::GetZNear() const {
 	return mZNear;
 }
 
@@ -100,7 +100,7 @@ void CameraComponent::SetNearZ(const float newNearZ) {
 
 /// @brief ファークリップ距離を取得します
 /// @return ファークリップ距離
-float& CameraComponent::GetZFar() {
+float CameraComponent::GetZFar() const {
 	return mZFar;
 }
 
@@ -112,25 +112,25 @@ void CameraComponent::SetFarZ(const float newFarZ) {
 
 /// @brief ビュー・プロジェクション行列を取得します
 /// @return ビュー・プロジェクション行列
-Mat4& CameraComponent::GetViewProjMat() {
+Mat4 CameraComponent::GetViewProjMat() {
 	return mViewProjMat;
 }
 
 /// @brief ビューマトリックスを取得します
 /// @return ビューマトリックス
-Mat4& CameraComponent::GetViewMat() {
+Mat4 CameraComponent::GetViewMat() {
 	return mViewMat;
 }
 
 /// @brief プロジェクションマトリックスを取得します
 /// @return プロジェクションマトリックス
-Mat4& CameraComponent::GetProjMat() {
+Mat4 CameraComponent::GetProjMat() {
 	return mProjMat;
 }
 
 /// @brief アスペクト比を取得します
 /// @return アスペクト比
-float& CameraComponent::GetAspectRatio() {
+float CameraComponent::GetAspectRatio() {
 	return mAspectRatio;
 }
 

@@ -5,17 +5,9 @@
 #include <engine/unnamed/uengine/UEngine.h>
 
 /// @brief エントリーポイント
-/// @param hInstance インスタンスハンドル
-/// @param hPrevInstance 以前のインスタンスハンドル（未使用）
 /// @param lpCmdLine コマンドライン引数
-/// @param nShowCmd ウィンドウ表示オプション（未使用）
 /// @return 終了コード
-int WINAPI wWinMain(
-	[[maybe_unused]] const HINSTANCE hInstance,
-	[[maybe_unused]] HINSTANCE       hPrevInstance,
-	[[maybe_unused]] const PWSTR     lpCmdLine,
-	[[maybe_unused]] const int       nShowCmd
-) {
+int WINAPI wWinMain(HINSTANCE, HINSTANCE, const PWSTR lpCmdLine, int) {
 	// リークチェック
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	[[maybe_unused]] HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);

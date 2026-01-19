@@ -31,8 +31,10 @@ struct PixelShaderOutput {
 
 // Schlick-IBL向けのFresnel式
 float3 FresnelSchlickRoughness(float cosTheta, float3 F0, float roughness) {
-	return F0 + (max(float3(1.0 - roughness, 1.0 - roughness, 1.0 - roughness),
-	                 F0) - F0) * pow(1.0 - cosTheta, 5.0);
+	return F0 + (max(
+		             float3(1.0 - roughness, 1.0 - roughness, 1.0 - roughness),
+		             F0
+	             ) - F0) * pow(1.0 - cosTheta, 5.0);
 }
 
 // SchlickのFresnel項
@@ -58,13 +60,13 @@ float Geometry_SmithGGX(float NdotV, float NdotL, float roughness) {
 	return G_V * G_L;
 }
 
-#if 0 // 元のPBRシェーダーを無効化
+#if 0 // PBR擬き
 PixelShaderOutput PSMain(VertexShaderOutput input) {
 	PixelShaderOutput output;
 
 	// テクスチャサンプリング
 	float4 baseColor = gBaseColorTexture.Sample(gSampler, input.texcoord) *
-		gMaterial.baseColor;
+	                   gMaterial.baseColor;
 	float  metallic  = gMaterial.metallic;
 	float  roughness = max(gMaterial.roughness, 0.05);
 	float3 emissive  = gMaterial.emissive;
@@ -83,13 +85,13 @@ PixelShaderOutput PSMain(VertexShaderOutput input) {
 
 	// IBL
 	float3 irradiance = gEnvironmentTexture.Sample(gSampler, N).rgb *
-		environmentIntensity;
+	                    environmentIntensity;
 
 	const float MAX_REFLECTION_LOD = 4.0f;
 	float mipLevel = roughness * MAX_REFLECTION_LOD;
 	float3 prefiltered = gEnvironmentTexture.SampleLevel(gSampler, R, mipLevel).
 	                                         rgb *
-		environmentIntensity;
+	                     environmentIntensity;
 
 	// IBLのFresnel項は視線方向と法線を使用
 	float3 F_IBL = FresnelSchlickRoughness(NdotV, F0, roughness);
@@ -104,9 +106,10 @@ PixelShaderOutput PSMain(VertexShaderOutput input) {
 
 	// 環境マップからの直接反射（よりクリアな反射）
 	float3 environmentReflection = gEnvironmentTexture.SampleLevel(
-		gSampler, R, 0).rgb;
+		gSampler, R, 0
+	).rgb;
 	float3 clearReflection = environmentReflection * F_IBL * reflectionStrength
-		* environmentIntensity;
+	                         * environmentIntensity;
 
 	// ラフネスが高いほどspecularIBLを弱める（元のコード）
 	float specularFactor = (1.0 - roughness) * (0.5 + 0.5 * metallic);
@@ -128,48 +131,45 @@ PixelShaderOutput PSMain(VertexShaderOutput input) {
 	float3 diffuse  = (1.0 - F) * baseColor.rgb * (1.0 - metallic) / 3.141592;
 
 	float3 lightColor = gDirectionalLight.color.rgb * gDirectionalLight.
-		intensity;
+	                    intensity;
 	float3 radiance = lightColor * NdotL;
 
 	float3 directLight = (diffuse + specular) * radiance;
 
 	// アンビエントライトを追加して影の部分を明るく
 	float3 ambientContribution = ambientLight * baseColor.rgb * (1.0 - metallic
-		* 0.5);
+		                             * 0.5);
 
 	// 出力（アンビエントライト + クリアな環境反射を追加）
 	output.color.rgb = diffuseIBL + specularIBL + directLight +
-		ambientContribution + clearReflection + emissive;
+	                   ambientContribution + clearReflection + emissive;
 	output.color.a = baseColor.a;
 
 	return output;
 }
-#endif
+
+#else // Toon風
 
 PixelShaderOutput PSMain(VertexShaderOutput input) {
 	PixelShaderOutput output;
 
 	// 基本的な値の準備
 	float4 baseColor = gBaseColorTexture.Sample(gSampler, input.texcoord) *
-		gMaterial.baseColor;
+	                   gMaterial.baseColor;
 	float3 N          = normalize(input.normal);
 	float3 V          = normalize(gCamera.worldPosition - input.worldPosition);
 	float3 L          = normalize(-gDirectionalLight.direction);
 	float3 lightColor = gDirectionalLight.color.rgb * gDirectionalLight.
-		intensity;
+	                    intensity;
 
 	// --- Toon Shading 風のライティング ---
 	float NdotL = saturate(dot(N, L));
 
 	// 3段階のトゥーンシェーディング
 	float diffuseFactor;
-	if (NdotL > 0.75) {
-		diffuseFactor = 1.0;
-	} else if (NdotL > 0.4) {
+	if (NdotL > 0.75) { diffuseFactor = 1.0; } else if (NdotL > 0.4) {
 		diffuseFactor = 0.7;
-	} else {
-		diffuseFactor = 0.4;
-	}
+	} else { diffuseFactor = 0.4; }
 
 	float3 diffuse = baseColor.rgb * lightColor * diffuseFactor;
 
@@ -185,20 +185,18 @@ PixelShaderOutput PSMain(VertexShaderOutput input) {
 	// ディフューズ光 + リムライト + 環境光 + 自己発光
 	float3 finalColor = diffuse + rimColor + ambient + gMaterial.emissive;
 
-	// 立てない面は青くしとく
+	// 立てない面は青色にする
 	if (input.normal.y < 0.7) {
-		finalColor -= lerp(
-			float3(0.0f, 0.0f, 0.0f),
-			float3(0.42f, 0.58f, 0.92f),
-			1.0f - input.normal.y / 0.7f
-		) * 0.1f;
+		const float3 synthwaveBlueTint = float3(0.10f, 0.65f, 1.00f);
+		float        t                 = saturate(1.0f - input.normal.y / 0.7f);
+		finalColor                     += synthwaveBlueTint * t * 0.01f;
 	}
 
 	// --- フォグ ---
 	float  distance  = length(gCamera.worldPosition - input.worldPosition);
 	float  fogStart  = 6.5024f;
 	float  fogEnd    = 416.1536f;
-	float3 fogColor  = float3(0.23f, 0.26f, 0.28f);
+	float3 fogColor  = float3(0.78f, 0.22f, 0.92f);
 	float  fogFactor = saturate((distance - fogStart) / (fogEnd - fogStart));
 
 	finalColor = lerp(finalColor, fogColor, fogFactor * 0.5f);
@@ -208,3 +206,4 @@ PixelShaderOutput PSMain(VertexShaderOutput input) {
 
 	return output;
 }
+#endif

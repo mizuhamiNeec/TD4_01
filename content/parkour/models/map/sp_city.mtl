@@ -1,22 +1,32 @@
-# Blender 5.0.0 MTL File: 'landscape.blend'
+# Blender 5.0.1 MTL File: 'None'
 # www.blender.org
 
-newmtl Floor
-Ns 250.000000
+newmtl materials/dev/primary_red.vmat
+Ns 50.000011
 Ka 1.000000 1.000000 1.000000
-Ks 0.500000 0.500000 0.500000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd ../../../core/textures/error.png
+
+newmtl materials/dev/reflectivity_30.vmat
+Ns 50.000011
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd ../../../core/textures/dev_measure.png
+
+newmtl materials/models/props/de_train/hr_t/modern_lights_lng_a/emissive.vmat
+Ns 50.000011
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
 Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 d 1.000000
 illum 2
 map_Kd ../../../core/textures/dev_measuregray.png
-
-newmtl Material
-Ns 250.000000
-Ka 1.000000 1.000000 1.000000
-Ks 0.500000 0.500000 0.500000
-Ke 0.000000 0.000000 0.000000
-Ni 1.450000
-d 1.000000
-illum 2
-map_Kd ../../../core/textures/dev_measure.png

@@ -16,8 +16,8 @@
 #include <engine/Input/InputSystem.h>
 #include <engine/OldConsole/ConVarManager.h>
 #include <engine/ResourceSystem/Audio/AudioManager.h>
-#include <engine/unnamed/subsystem/console/Log.h>
 #include <engine/TextureManager/TexManager.h>
+#include <engine/unnamed/subsystem/console/Log.h>
 
 #include <game/components/CameraRotator.h>
 #include <game/components/RotateComponent.h>
@@ -26,6 +26,8 @@
 #include <game/components/checkpoint/GoalComponent.h>
 
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
+
+#include "game/components/ViewmodelSway.h"
 
 namespace {
 	constexpr char kDevMeasureTexturePath[] =
@@ -38,6 +40,8 @@ namespace {
 		"./content/core/textures/smoke.png";
 	constexpr char kPingTexturePath[] =
 		"./content/parkour/textures/ping.png";
+	constexpr char kArrowTexturePath[] =
+		"./content/parkour/textures/arrow.png";
 	constexpr char kDigitsAtlasPath[] =
 		"./content/parkour/textures/uvChecker.png";
 	constexpr char kColonTexturePath[] =
@@ -77,8 +81,7 @@ namespace {
 
 	template <typename T>
 	std::shared_ptr<T> AdoptComponent(T* raw) {
-		return std::shared_ptr<T>(raw, [](T*) {
-		});
+		return std::shared_ptr<T>(raw, [](T*) {});
 	}
 }
 
@@ -133,13 +136,21 @@ void GameScene::Init() {
 	);
 	mNextCheckpointSprite->SetAnchorPoint({0.5f, 0.5f});
 
+	mNextCheckpointArrowSprite = std::make_unique<Sprite>();
+	mNextCheckpointArrowSprite->Init(
+		mSpriteCommon,
+		kArrowTexturePath
+	);
+	mNextCheckpointArrowSprite->SetAnchorPoint({0.5f, 0.5f});
+
 	const auto run = mAudioManager->GetAudio(
 		"./content/parkour/sounds/bgm/Run.wav"
 	);
-#ifndef _DEBUG
+	
+//#ifndef _DEBUG
 	run->Play(true);
-	run->SetVolume(0.5f);
-#endif
+	run->SetVolume(0.125f);
+//#endif
 
 	mWind = mAudioManager->GetAudio(
 		"./content/parkour/sounds/amb/wind.wav"
@@ -156,9 +167,7 @@ void GameScene::Init() {
 void GameScene::Update(const float deltaTime) {
 	HandleMeshReload();
 
-	if (InputSystem::IsTriggered("escape")) {
-		QueueReturnToTitle();
-	}
+	if (InputSystem::IsTriggered("escape")) { QueueReturnToTitle(); }
 
 	// ファンを物理エンジンから登録解除
 	if (mUPhysicsEngine) {
@@ -202,7 +211,7 @@ void GameScene::Update(const float deltaTime) {
 				nextCheckpoint->GetOwner()->GetTransform()->GetWorldPos(),
 				viewportSize,
 				true,
-				64.0f,
+				100.0f,
 				isOutOfScreen,
 				angle
 			);
@@ -212,20 +221,41 @@ void GameScene::Update(const float deltaTime) {
 				goal->GetOwner()->GetTransform()->GetWorldPos(),
 				viewportSize,
 				true,
-				64.0f,
+				100.0f,
 				isOutOfScreen,
 				angle
 			);
 		}
 
+		// 画面中心からの距離に応じて透明度を変化させる
+		{
+			const Vec2  center   = viewportSize * 0.5f;
+			const Vec2  toCenter = screenPos - center;
+			const float dist     = std::sqrt(
+				toCenter.x * toCenter.x + toCenter.y * toCenter.y
+			);
+
+			const float maxDist = std::max(
+				1.0f, std::sqrt(center.x * center.x + center.y * center.y)
+			);
+			const float t     = std::clamp(dist / maxDist, 0.0f, 1.0f);
+			const float alpha = std::lerp(0.025f, 1.0f, t);
+
+			mNextCheckpointSprite->SetColor(Vec4(1.0f, 1.0f, 1.0f, alpha));
+		}
+
 		mNextCheckpointSprite->SetPos(
 			screenPos
 		);
-	} else {
-		CheckpointManager::ResetAllCheckpoints();
-	}
+
+		mNextCheckpointArrowSprite->SetPos(screenPos);
+		if (isOutOfScreen) {
+			mNextCheckpointArrowSprite->SetRot(Vec3::forward * angle);
+		} else { mNextCheckpointArrowSprite->SetPos(Vec3::min); }
+	} else { CheckpointManager::ResetAllCheckpoints(); }
 
 	mNextCheckpointSprite->Update();
+	mNextCheckpointArrowSprite->Update();
 
 #ifdef _DEBUG
 	// チェックポイントのデバッグ表示
@@ -236,9 +266,7 @@ void GameScene::Update(const float deltaTime) {
 		for (size_t i = 0; i + 1 < mCheckpointEntities.size(); ++i) {
 			auto* a = mCheckpointEntities[i].get();
 			auto* b = mCheckpointEntities[i + 1].get();
-			if (!a || !b) {
-				continue;
-			}
+			if (!a || !b) { continue; }
 			const Vec3 posA = a->GetTransform()->GetWorldPos();
 			const Vec3 posB = b->GetTransform()->GetWorldPos();
 			Debug::DrawLine(posA, posB, lineColor);
@@ -258,9 +286,7 @@ void GameScene::Update(const float deltaTime) {
 
 /// @brief 描画
 void GameScene::Render() {
-	if (!mRenderer) {
-		return;
-	}
+	if (!mRenderer) { return; }
 
 	auto* commandList = mRenderer->GetCommandList();
 
@@ -269,40 +295,30 @@ void GameScene::Render() {
 	}
 
 	for (const auto* entity : mEntities) {
-		if (entity) {
-			entity->Render(commandList);
-		}
+		if (entity) { entity->Render(commandList); }
 	}
 
 	if (auto* particleManager = Unnamed::Engine::GetParticleManager()) {
 		particleManager->Render();
 	}
 
-	if (mParticleObject) {
-		mParticleObject->Draw();
-	}
+	if (mParticleObject) { mParticleObject->Draw(); }
 
-	if (mWindEffect) {
-		mWindEffect->Draw();
-	}
+	if (mWindEffect) { mWindEffect->Draw(); }
 
-	if (mExplosionEffect) {
-		mExplosionEffect->Draw();
-	}
+	if (mExplosionEffect) { mExplosionEffect->Draw(); }
 
-	if (mSpriteCommon) {
-		mSpriteCommon->Render();
-	}
+	if (mSpriteCommon) { mSpriteCommon->Render(); }
 
 	if (mNextCheckpointSprite) {
 		if (mGoalEntity) {
 			auto* goal = mGoalEntity->GetComponent<GoalComponent>();
-			if (goal && goal->IsReached()) {
-				return;
-			}
+			if (goal && goal->IsReached()) { return; }
 		}
 		mNextCheckpointSprite->Draw();
 	}
+
+	if (mNextCheckpointArrowSprite) { mNextCheckpointArrowSprite->Draw(); }
 
 	if (mPendingReturnToTitle) {
 		Unnamed::Engine::RequestSceneChange("EmptyScene");
@@ -313,33 +329,36 @@ void GameScene::Render() {
 /// @brief コンソール変数の登録
 void GameScene::RegisterConVars() {
 	ConVarManager::RegisterConVar("sv_ducktime", 1000.0f, "ms");
-	ConVarManager::RegisterConVar("sv_jumptime", 510.0f,
-	                              "ms approx - based on the 21 unit height jump");
+	ConVarManager::RegisterConVar(
+		"sv_jumptime", 510.0f,
+		"ms approx - based on the 21 unit height jump"
+	);
 	ConVarManager::RegisterConVar("sv_jumpheight", 21.0f, "units");
 	ConVarManager::RegisterConVar("sv_timetounduck", 0.2f * 1000.0f, "ms");
-	ConVarManager::RegisterConVar("sv_timetounduckinv",
-	                              1000.0f - 0.2f * 1000.0f, "ms");
+	ConVarManager::RegisterConVar(
+		"sv_timetounduckinv",
+		1000.0f - 0.2f * 1000.0f, "ms"
+	);
 }
 
 /// @brief コアテクスチャの読み込み
 void GameScene::LoadCoreTextures() const {
 	auto* texManager = TexManager::GetInstance();
-	if (!texManager) {
-		return;
-	}
+	if (!texManager) { return; }
 
 	struct TextureRequest {
 		const char* path    = nullptr;
 		bool        useSrgb = false;
 	};
 
-	constexpr std::array<TextureRequest, 8> requests{
+	constexpr std::array<TextureRequest, 9> requests{
 		{
 			{kDevMeasureTexturePath, false},
 			{kUvCheckerTexturePath, false},
 			{kWaveTexturePath, true},
 			{kSmokeTexturePath, false},
 			{kPingTexturePath, false},
+			{kArrowTexturePath, false},
 			{kDigitsAtlasPath, true},
 			{kColonTexturePath, true},
 			{kDotTexturePath, true},
@@ -347,23 +366,17 @@ void GameScene::LoadCoreTextures() const {
 	};
 
 	for (const auto& request : requests) {
-		if (!request.path) {
-			continue;
-		}
+		if (!request.path) { continue; }
 
 		if (request.useSrgb) {
 			texManager->LoadTexture(request.path, true);
-		} else {
-			texManager->LoadTexture(request.path);
-		}
+		} else { texManager->LoadTexture(request.path); }
 	}
 }
 
 /// @brief キューブマップの初期化
 void GameScene::InitializeCubeMap() {
-	if (!mRenderer || !mSrvManager) {
-		return;
-	}
+	if (!mRenderer || !mSrvManager) { return; }
 
 	mCubeMap = std::make_unique<CubeMap>(
 		mRenderer->GetDevice(),
@@ -375,9 +388,7 @@ void GameScene::InitializeCubeMap() {
 /// @brief パーティクルの初期化
 void GameScene::InitializeParticles() {
 	auto* particleManager = Unnamed::Engine::GetParticleManager();
-	if (!particleManager) {
-		return;
-	}
+	if (!particleManager) { return; }
 
 	particleManager->CreateParticleGroup("wind", kWindParticleTexturePath);
 
@@ -391,9 +402,7 @@ void GameScene::InitializeParticles() {
 /// @brief エフェクトの初期化
 void GameScene::InitializeEffects() {
 	auto* particleManager = Unnamed::Engine::GetParticleManager();
-	if (!particleManager) {
-		return;
-	}
+	if (!particleManager) { return; }
 
 	if (mMovementComponent) {
 		mWindEffect = std::make_unique<WindEffect>();
@@ -420,9 +429,7 @@ void GameScene::InitializeCamera() {
 	AddEntity(mCamera.get());
 
 	auto* rawCamera = mCamera->AddComponent<CameraComponent>();
-	if (!rawCamera) {
-		return;
-	}
+	if (!rawCamera) { return; }
 
 	const auto camera = AdoptComponent(rawCamera);
 	CameraManager::AddCamera(camera);
@@ -471,9 +478,7 @@ void GameScene::InitializeWeapon() {
 	auto* meshManager = mResourceManager ?
 		                    mResourceManager->GetMeshManager() :
 		                    nullptr;
-	if (meshManager) {
-		meshManager->LoadMeshFromFile(kWeaponMeshPath);
-	}
+	if (meshManager) { meshManager->LoadMeshFromFile(kWeaponMeshPath); }
 
 	mEntWeapon          = std::make_unique<Entity>("weapon");
 	auto* renderer      = mEntWeapon->AddComponent<StaticMeshRenderer>();
@@ -485,7 +490,8 @@ void GameScene::InitializeWeapon() {
 	}
 
 	auto* weaponComponent = mEntWeapon->AddComponent<WeaponComponent>(
-		kWeaponScriptPath);
+		kWeaponScriptPath
+	);
 	mWeaponComponent = AdoptComponent(weaponComponent);
 
 	AddEntity(mEntWeapon.get());
@@ -497,9 +503,7 @@ void GameScene::InitializeWorldMesh() {
 	auto* meshManager = mResourceManager ?
 		                    mResourceManager->GetMeshManager() :
 		                    nullptr;
-	if (meshManager) {
-		meshManager->LoadMeshFromFile(kWorldMeshInitialPath);
-	}
+	if (meshManager) { meshManager->LoadMeshFromFile(kWorldMeshInitialPath); }
 
 	mEntWorldMesh      = std::make_unique<Entity>("worldMesh");
 	auto* renderer     = mEntWorldMesh->AddComponent<StaticMeshRenderer>();
@@ -522,9 +526,7 @@ void GameScene::InitializeFanMesh() {
 	auto* meshManager = mResourceManager ?
 		                    mResourceManager->GetMeshManager() :
 		                    nullptr;
-	if (meshManager) {
-		meshManager->LoadMeshFromFile(kFanMeshPath);
-	}
+	if (meshManager) { meshManager->LoadMeshFromFile(kFanMeshPath); }
 
 	mFanEntity = std::make_unique<Entity>("fan");
 	mFanEntity->GetTransform()->SetWorldPos(Vec3::down * 16.0f);
@@ -599,8 +601,10 @@ void GameScene::ConfigureEntityHierarchy() {
 
 	if (mCamera && mEntShakeRoot) {
 		mCamera->SetParent(mEntShakeRoot.get());
-		mCamera->GetTransform()->SetLocalPos(Vec3::forward *
-			Math::HtoM(kPlayerCameraForwardOffsetHU));
+		mCamera->GetTransform()->SetLocalPos(
+			Vec3::forward *
+			Math::HtoM(kPlayerCameraForwardOffsetHU)
+		);
 	}
 
 	if (mEntSkeletalMesh && mEntCameraRoot) {
@@ -686,7 +690,8 @@ void GameScene::InitializeCheckpoints() {
 	{
 		auto checkpoint = std::make_unique<Entity>("Checkpoint3");
 		checkpoint->GetTransform()->SetWorldPos(
-			Vec3(162.560f, 1.626f, 177.190f));
+			Vec3(162.560f, 1.626f, 177.190f)
+		);
 
 		const float   width  = Math::HtoM(1024.0f);
 		const float   height = Math::HtoM(1280.0f);
@@ -716,7 +721,8 @@ void GameScene::InitializeGoal() {
 	mGoalEntity = std::make_unique<Entity>("Goal");
 	// エンティティ位置は地面（Y=0）の中心点とする
 	mGoalEntity->GetTransform()->SetWorldPos(
-		Vec3(-216.205f, -183.693f, 152.806f));
+		Vec3(-216.205f, -183.693f, 152.806f)
+	);
 
 	// AABBコライダーを追加（幅10m、高さ5mのトリガー）
 	// 地面から上方向に伸びるAABBにする
@@ -748,38 +754,29 @@ void GameScene::HandleMeshReload() {
 		Console::Print("Mesh reload requested...", kConTextColorCompleted);
 	}
 
-	if (!mPendingMeshReload) {
-		return;
-	}
+	if (!mPendingMeshReload) { return; }
 
 	if (mMeshReloadArmed) {
 		ReloadWorldMesh();
 		mPendingMeshReload = false;
 		mMeshReloadArmed   = false;
-	} else {
-		mMeshReloadArmed = true;
-	}
+	} else { mMeshReloadArmed = true; }
 }
 
 /// @brief カメラルートの同期
 void GameScene::SyncCameraRoot() const {
-	if (!mEntCameraRoot || !mMovementComponent) {
-		return;
-	}
+	if (!mEntCameraRoot || !mMovementComponent) { return; }
 
 	mEntCameraRoot->GetTransform()->SetWorldPos(
-		mMovementComponent->GetHeadPos());
+		mMovementComponent->GetHeadPos()
+	);
 }
 
 /// @brief 武器入力の処理
 void GameScene::HandleWeaponInput() {
-	if (!mWeaponComponent) {
-		return;
-	}
+	if (!mWeaponComponent) { return; }
 
-	if (InputSystem::IsPressed("+attack1")) {
-		mWeaponComponent->PullTrigger();
-	}
+	if (InputSystem::IsPressed("+attack1")) { mWeaponComponent->PullTrigger(); }
 	if (InputSystem::IsReleased("+attack1")) {
 		mWeaponComponent->ReleaseTrigger();
 	}
@@ -791,15 +788,12 @@ void GameScene::HandleWeaponInput() {
 
 /// @brief 武器発射の処理
 void GameScene::HandleWeaponFire(
-	const std::shared_ptr<CameraComponent>& camera) {
+	const std::shared_ptr<CameraComponent>& camera
+) {
 	if (!mWeaponComponent || !mWeaponComponent->HasFiredThisFrame() || !
-		mUPhysicsEngine) {
-		return;
-	}
+	    mUPhysicsEngine) { return; }
 
-	if (!camera) {
-		return;
-	}
+	if (!camera) { return; }
 
 	Mat4       inverseView = camera->GetViewMat().Inverse();
 	const Vec3 origin      = inverseView.GetTranslate();
@@ -825,9 +819,7 @@ void GameScene::HandleWeaponFire(
 	ray.tMax   = 100.0f;
 
 	UPhysics::Hit hit{};
-	if (!mUPhysicsEngine->RayCast(ray, &hit)) {
-		return;
-	}
+	if (!mUPhysicsEngine->RayCast(ray, &hit)) { return; }
 
 	if (mExplosionEffect) {
 		mExplosionEffect->TriggerExplosion(
@@ -838,9 +830,7 @@ void GameScene::HandleWeaponFire(
 		);
 	}
 
-	if (!mEntPlayer || !mMovementComponent) {
-		return;
-	}
+	if (!mEntPlayer || !mMovementComponent) { return; }
 
 	const Vec3  playerPos   = mEntPlayer->GetTransform()->GetWorldPos();
 	const float blastRadius = Math::HtoM(kBlastRadiusHu);
@@ -852,7 +842,8 @@ void GameScene::HandleWeaponFire(
 		const Vec3  forceDir = toPlayer.Normalized();
 		const float force    = blastPower * (1.0f - (distance / blastRadius));
 		mMovementComponent->SetVelocity(
-			mMovementComponent->GetVelocity() + forceDir * force);
+			mMovementComponent->GetVelocity() + forceDir * force
+		);
 	}
 }
 
@@ -861,9 +852,7 @@ void GameScene::UpdateSkeletalAnimation() {
 	if (
 		!mSkeletalMeshRenderer ||
 		!mMovementComponent
-	) {
-		return;
-	}
+	) { return; }
 
 	// プレイヤーが前に進んでいるかチェック
 	Mat4 cameraInvViewMat = CameraManager::GetActiveCamera()->GetViewMat().
@@ -872,7 +861,8 @@ void GameScene::UpdateSkeletalAnimation() {
 	forward.y    = 0.0f; // 上下成分は無視
 	forward.Normalize();
 	const float dot = forward.Dot(
-		mMovementComponent->GetVelocity().Normalized());
+		mMovementComponent->GetVelocity().Normalized()
+	);
 	constexpr float kMovingForwardThreshold = 0.125f;
 	const bool      movingForward           = dot > kMovingForwardThreshold;
 
@@ -926,19 +916,18 @@ void GameScene::UpdateSkeletalAnimation() {
 /// @brief プレイヤーの更新
 /// @param deltaTime 経過時間
 void GameScene::UpdatePlayer(const float deltaTime) {
-	// スライディング中はFOVを広げる
-	bool isSliding = mMovementComponent->IsSliding();
+	// スライディング中・ウォールラン中はFOVを広げる
+	bool isSliding = mMovementComponent->IsSliding() || mMovementComponent->
+	                 IsWallRunning();
 
 	constexpr float defaultFov = 90.0f;
 	float targetFov;
 	float currentFov = CameraManager::GetActiveCamera()->GetFovVertical() *
-		Math::rad2Deg;
+	                   Math::rad2Deg;
 
 	(void)currentFov;
 
-	if (isSliding) {
-		targetFov = defaultFov + 8.0f;
-	} else {
+	if (isSliding) { targetFov = defaultFov + 14.0f; } else {
 		targetFov = defaultFov;
 	}
 
@@ -954,10 +943,10 @@ void GameScene::UpdatePlayer(const float deltaTime) {
 		constexpr float kWindThreshold = 500.0f;
 		static float    volume         = 0.0f;
 		const float     target         = speed >= kWindThreshold ?
-			                     std::clamp(
-				                     speed / maxSpeed, 0.0f, 0.9f
-			                     ) :
-			                     0.0f;
+			                                 std::clamp(
+				                                 speed / maxSpeed, 0.0f, 0.9f
+			                                 ) :
+			                                 0.0f;
 		volume = std::lerp(volume, target, deltaTime * 10.0f);
 		mWind->SetVolume(volume);
 	}
@@ -979,19 +968,17 @@ void GameScene::UpdatePostProcessing(float deltaTime) {
 
 /// @brief テレポートの更新
 void GameScene::UpdateTeleport() {
-	if (!mEntPlayer) {
-		return;
-	}
+	if (!mEntPlayer) { return; }
 
 	const Vec3 playerPos = mEntPlayer->GetTransform()->GetWorldPos();
 
 	if (mTeleportActive &&
-		playerPos.x >= mTeleportTriggerMin.x && playerPos.x <=
-		mTeleportTriggerMax.x &&
-		playerPos.y >= mTeleportTriggerMin.y && playerPos.y <=
-		mTeleportTriggerMax.y &&
-		playerPos.z >= mTeleportTriggerMin.z && playerPos.z <=
-		mTeleportTriggerMax.z) {
+	    playerPos.x >= mTeleportTriggerMin.x && playerPos.x <=
+	    mTeleportTriggerMax.x &&
+	    playerPos.y >= mTeleportTriggerMin.y && playerPos.y <=
+	    mTeleportTriggerMax.y &&
+	    playerPos.z >= mTeleportTriggerMin.z && playerPos.z <=
+	    mTeleportTriggerMax.z) {
 		mEntPlayer->GetTransform()->SetWorldPos(Vec3::zero);
 		mTeleportActive = false;
 		Console::Print("テレポートしました！");
@@ -1014,9 +1001,7 @@ void GameScene::UpdateTeleport() {
 			playerPos.z < mTeleportTriggerMin.z - kTeleportReenableBuffer ||
 			playerPos.z > mTeleportTriggerMax.z + kTeleportReenableBuffer;
 
-		if (outside) {
-			mTeleportActive = true;
-		}
+		if (outside) { mTeleportActive = true; }
 	}
 }
 
@@ -1027,17 +1012,11 @@ void GameScene::UpdateParticlesAndEffects(float deltaTime) {
 		particleManager->Update(deltaTime);
 	}
 
-	if (mParticleEmitter) {
-		mParticleEmitter->Update(deltaTime);
-	}
+	if (mParticleEmitter) { mParticleEmitter->Update(deltaTime); }
 
-	if (mWindEffect) {
-		mWindEffect->Update(deltaTime);
-	}
+	if (mWindEffect) { mWindEffect->Update(deltaTime); }
 
-	if (mExplosionEffect) {
-		mExplosionEffect->Update(deltaTime);
-	}
+	if (mExplosionEffect) { mExplosionEffect->Update(deltaTime); }
 }
 
 /// @brief エンティティの更新
@@ -1045,9 +1024,7 @@ void GameScene::UpdateParticlesAndEffects(float deltaTime) {
 void GameScene::UpdateEntities(float deltaTime) {
 	// 物理更新前の処理
 	for (auto* entity : mEntities) {
-		if (entity && !entity->GetParent()) {
-			entity->PrePhysics(deltaTime);
-		}
+		if (entity && !entity->GetParent()) { entity->PrePhysics(deltaTime); }
 	}
 
 	// ファンをSinCosで移動させる
@@ -1067,34 +1044,27 @@ void GameScene::UpdateEntities(float deltaTime) {
 
 	// 回転が適用された後に再登録
 	mFanEntity->AddComponent<MeshColliderComponent>();
-	if (mUPhysicsEngine) {
-		mUPhysicsEngine->RegisterEntity(mFanEntity.get());
-	}
+	if (mUPhysicsEngine) { mUPhysicsEngine->RegisterEntity(mFanEntity.get()); }
 
 	// 物理更新
 	for (auto* entity : mEntities) {
-		if (entity && !entity->GetParent()) {
-			entity->Update(deltaTime);
-		}
+		if (entity && !entity->GetParent()) { entity->Update(deltaTime); }
 	}
 
 	// 物理エンジンの更新
-	if (mUPhysicsEngine) {
-		mUPhysicsEngine->Update(deltaTime);
-	}
+	if (mUPhysicsEngine) { mUPhysicsEngine->Update(deltaTime); }
 
 	// 物理更新後の処理
 	for (auto* entity : mEntities) {
-		if (entity && !entity->GetParent()) {
-			entity->PostPhysics(deltaTime);
-		}
+		if (entity && !entity->GetParent()) { entity->PostPhysics(deltaTime); }
 	}
 }
 
 #ifdef _DEBUG
 /// @brief デバッグHUDの描画
 void GameScene::DrawDebugHud(
-	const std::shared_ptr<CameraComponent>& camera) const {
+	const std::shared_ptr<CameraComponent>& camera
+) const {
 	if (mShowPosConVar) {
 		const int flag = mShowPosConVar->GetValueAsInt();
 		if (flag != 0) {
@@ -1114,14 +1084,10 @@ void GameScene::DrawDebugHud(
 			ImGui::SetNextWindowPos(windowPos, ImGuiCond_Always);
 
 			Mat4 inverseView = Mat4::identity;
-			if (camera) {
-				inverseView = camera->GetViewMat().Inverse();
-			}
+			if (camera) { inverseView = camera->GetViewMat().Inverse(); }
 
 			Vec3 cameraPosition = inverseView.GetTranslate();
-			if (flag == 2) {
-				cameraPosition = Math::MtoH(cameraPosition);
-			}
+			if (flag == 2) { cameraPosition = Math::MtoH(cameraPosition); }
 			const Vec3 cameraRotation = inverseView.ToQuaternion().
 			                                        ToEulerAngles();
 
@@ -1145,8 +1111,10 @@ void GameScene::DrawDebugHud(
 			);
 
 			const ImVec2 textSize = ImGui::CalcTextSize(text.c_str());
-			ImGui::SetNextWindowSize({textSize.x + 20.0f, textSize.y + 20.0f},
-			                         ImGuiCond_Always);
+			ImGui::SetNextWindowSize(
+				{textSize.x + 20.0f, textSize.y + 20.0f},
+				ImGuiCond_Always
+			);
 
 			ImGui::Begin("##cl_showpos", nullptr, windowFlags);
 			ImDrawList*  drawList = ImGui::GetWindowDrawList();
@@ -1167,9 +1135,7 @@ void GameScene::DrawDebugHud(
 	}
 
 	const ImGuiViewport* viewport = ImGui::GetMainViewport();
-	if (!viewport) {
-		return;
-	}
+	if (!viewport) { return; }
 
 	const ImVec2 windowCenter(
 		viewport->Pos.x + viewport->Size.x * 0.5f,
@@ -1245,31 +1211,37 @@ void GameScene::ReloadWorldMesh() {
 	// リロード開始前にGPU処理の完了を待機
 	if (mRenderer) {
 		mRenderer->WaitPreviousFrame();
-		Console::Print("Initial GPU sync before mesh reload",
-		               kConTextColorCompleted);
+		Console::Print(
+			"Initial GPU sync before mesh reload",
+			kConTextColorCompleted
+		);
 	}
 
 	try {
 		// とりあえず安全な方法を試す
 		SafeReloadWorldMesh();
 	} catch (const std::exception& e) {
-		Console::Print(std::string("Safe reload failed: ") + e.what(),
-		               kConTextColorError);
-		Console::Print("Attempting full entity recreation...",
-		               kConTextColorWarning);
-		try {
-			RecreateWorldMeshEntity();
-		} catch (...) {
+		Console::Print(
+			std::string("Safe reload failed: ") + e.what(),
+			kConTextColorError
+		);
+		Console::Print(
+			"Attempting full entity recreation...",
+			kConTextColorWarning
+		);
+		try { RecreateWorldMeshEntity(); } catch (...) {
 			Console::Print("Full recreation also failed!", kConTextColorError);
 		}
 	} catch (...) {
-		Console::Print("Unknown exception during safe reload",
-		               kConTextColorError);
-		Console::Print("Attempting full entity recreation...",
-		               kConTextColorWarning);
-		try {
-			RecreateWorldMeshEntity();
-		} catch (...) {
+		Console::Print(
+			"Unknown exception during safe reload",
+			kConTextColorError
+		);
+		Console::Print(
+			"Attempting full entity recreation...",
+			kConTextColorWarning
+		);
+		try { RecreateWorldMeshEntity(); } catch (...) {
 			Console::Print("Full recreation also failed!", kConTextColorError);
 		}
 	}
@@ -1297,14 +1269,16 @@ void GameScene::RecreateWorldMeshEntity() {
 	// GPU処理の完了を待機（テクスチャロード前の同期）
 	if (mRenderer) {
 		mRenderer->WaitPreviousFrame();
-		Console::Print("Waited for GPU completion before entity recreation",
-		               kConTextColorCompleted);
+		Console::Print(
+			"Waited for GPU completion before entity recreation",
+			kConTextColorCompleted
+		);
 	}
 
 	// メッシュをリロード
 	const std::string meshPath      = kWorldMeshReloadPath;
 	bool              reloadSuccess = mResourceManager->GetMeshManager()->
-	                                       ReloadMeshFromFile(meshPath);
+		ReloadMeshFromFile(meshPath);
 
 	if (!reloadSuccess) {
 		Console::Print("Failed to reload mesh!", kConTextColorError);
@@ -1314,8 +1288,10 @@ void GameScene::RecreateWorldMeshEntity() {
 	// GPU処理の完了を再度待機（テクスチャロード後の同期）
 	if (mRenderer) {
 		mRenderer->WaitPreviousFrame();
-		Console::Print("Waited for GPU completion after mesh reload",
-		               kConTextColorCompleted);
+		Console::Print(
+			"Waited for GPU completion after mesh reload",
+			kConTextColorCompleted
+		);
 	}
 
 	// 新しいエンティティを作成
@@ -1326,7 +1302,8 @@ void GameScene::RecreateWorldMeshEntity() {
 
 	// 新しいメッシュを設定
 	StaticMesh* newMesh = mResourceManager->GetMeshManager()->GetStaticMesh(
-		meshPath);
+		meshPath
+	);
 	if (newMesh) {
 		mWorldMeshRenderer->SetStaticMesh(newMesh);
 		Console::Print("Set new mesh to new entity", kConTextColorCompleted);
@@ -1345,8 +1322,10 @@ void GameScene::RecreateWorldMeshEntity() {
 		mUPhysicsEngine->RegisterEntity(mEntWorldMesh.get());
 	}
 
-	Console::Print("World mesh entity recreation completed!",
-	               kConTextColorCompleted);
+	Console::Print(
+		"World mesh entity recreation completed!",
+		kConTextColorCompleted
+	);
 }
 
 /// @brief 安全なワールドメッシュのリロード
@@ -1362,8 +1341,10 @@ void GameScene::SafeReloadWorldMesh() {
 	if (mUPhysicsEngine) {
 		mUPhysicsEngine->UnregisterEntity(mEntWorldMesh.get());
 	}
-	Console::Print("Unregistered entity from physics engine",
-	               kConTextColorWarning);
+	Console::Print(
+		"Unregistered entity from physics engine",
+		kConTextColorWarning
+	);
 
 	// MeshColliderComponentを削除
 	if (mEntWorldMesh->HasComponent<MeshColliderComponent>()) {
@@ -1374,14 +1355,16 @@ void GameScene::SafeReloadWorldMesh() {
 	// GPU処理の完了を待機（テクスチャロード前の同期）
 	if (mRenderer) {
 		mRenderer->WaitPreviousFrame();
-		Console::Print("Waited for GPU completion before mesh reload",
-		               kConTextColorCompleted);
+		Console::Print(
+			"Waited for GPU completion before mesh reload",
+			kConTextColorCompleted
+		);
 	}
 
 	// メッシュをリロード
 	const std::string meshPath      = kWorldMeshReloadPath;
 	bool              reloadSuccess = mResourceManager->GetMeshManager()->
-	                                       ReloadMeshFromFile(meshPath);
+		ReloadMeshFromFile(meshPath);
 
 	if (!reloadSuccess) {
 		Console::Print("Failed to reload mesh!", kConTextColorError);
@@ -1396,19 +1379,24 @@ void GameScene::SafeReloadWorldMesh() {
 	// GPU処理の完了を再度待機（テクスチャロード後の同期）
 	if (mRenderer) {
 		mRenderer->WaitPreviousFrame();
-		Console::Print("Waited for GPU completion after mesh reload",
-		               kConTextColorCompleted);
+		Console::Print(
+			"Waited for GPU completion after mesh reload",
+			kConTextColorCompleted
+		);
 	}
 
 	// 新しいメッシュをレンダラーに設定
 	StaticMesh* newMesh = mResourceManager->GetMeshManager()->GetStaticMesh(
-		meshPath);
+		meshPath
+	);
 	if (newMesh && mWorldMeshRenderer) {
 		mWorldMeshRenderer->SetStaticMesh(newMesh);
 		Console::Print("Set new mesh to renderer", kConTextColorCompleted);
 	} else {
-		Console::Print("Failed to get new mesh or renderer!",
-		               kConTextColorError);
+		Console::Print(
+			"Failed to get new mesh or renderer!",
+			kConTextColorError
+		);
 		return;
 	}
 
@@ -1420,17 +1408,16 @@ void GameScene::SafeReloadWorldMesh() {
 	if (mUPhysicsEngine) {
 		mUPhysicsEngine->RegisterEntity(mEntWorldMesh.get());
 	}
-	Console::Print("Re-registered entity to physics engine",
-	               kConTextColorCompleted);
+	Console::Print(
+		"Re-registered entity to physics engine",
+		kConTextColorCompleted
+	);
 
 	Console::Print("Safe world mesh reload completed!", kConTextColorCompleted);
 }
 
 void GameScene::QueueReturnToTitle() {
-	if (mPendingReturnToTitle) {
-		return;
-	}
-
+	if (mPendingReturnToTitle) { return; }
 
 	mPendingReturnToTitle = true;
 }

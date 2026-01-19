@@ -12,7 +12,6 @@
 #include <runtime/physics/core/UPhysics.h>
 
 #include <game/components/CameraAnimator.h>
-#include <game/components/ViewmodelSway.h>
 #include <game/components/player/MovementComponent.h>
 #include <game/components/weapon/base/WeaponComponent.h>
 #include <game/scene/base/BaseScene.h>
@@ -132,6 +131,7 @@ private:
 	std::unique_ptr<Entity>              mGoalEntity;
 
 	std::unique_ptr<Sprite> mNextCheckpointSprite;
+	std::unique_ptr<Sprite> mNextCheckpointArrowSprite;
 
 	std::shared_ptr<Audio> mWind;
 

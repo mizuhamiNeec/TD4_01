@@ -21,8 +21,10 @@ public:
 	 * @param movementComponent 移動コンポーネントへの参照
 	 * @param cameraRotator カメラ回転コンポーネントへの参照
 	 */
-	void Init(MovementComponent* movementComponent,
-	          CameraRotator*     cameraRotator);
+	void Init(
+		MovementComponent* movementComponent,
+		CameraRotator*     cameraRotator
+	);
 
 	/**
 	 * @brief 毎フレーム更新処理を行う
@@ -81,10 +83,10 @@ private:
 	float PerlinNoise(float x, float y, float z) const;
 
 	//
-	static constexpr float kJumpShakeAmount   = 0.07f;
+	static constexpr float kJumpShakeAmount   = 0.15f;
 	static constexpr float kJumpShakeDuration = 0.2f;
 
-	static constexpr float kDoubleJumpShakeAmount   = 0.1f;
+	static constexpr float kDoubleJumpShakeAmount   = 0.4f;
 	static constexpr float kDoubleJumpShakeDuration = 0.3f;
 
 	static constexpr float kSlideRollAmount  = 2.0f; // degrees
@@ -93,17 +95,18 @@ private:
 
 	static constexpr float kWallrunRollAmount  = 45.0f;
 	static constexpr float kWallrunRollSpeed   = 15.0f;
-	static constexpr float kWallrunShakeAmount = 0.08f;
+	static constexpr float kWallrunShakeAmount = 0.1f;
 
-	static constexpr float kLandingShakeAmount   = 0.4f;
+	static constexpr float kLandingShakeAmount   = 0.8f;
 	static constexpr float kLandingShakeDuration = 0.25f;
 	static constexpr float kLandingMinSpeed      = 3.0f; // m/s
 	static constexpr float kLandingPitchAmount   = 4.0f; // degrees - 着地時に下を向く
 
-	static constexpr float kJumpPitchAmount = 3.0f; // degrees - ジャンプ時に上を向く
+	// degrees - ジャンプ時に上を向く
+	static constexpr float kJumpPitchAmount = 6.0f;
 
 	// degrees - ダブルジャンプ時にさらに上を向く
-	static constexpr float kDoubleJumpPitchAmount = 5.0f;
+	static constexpr float kDoubleJumpPitchAmount = 7.0f;
 
 	static constexpr float kShakeFrequency = 15.0f;
 };

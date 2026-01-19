@@ -51,13 +51,13 @@ namespace Unnamed {
 	}
 
 	void Engine::ApplyPendingSceneChange() {
-		if (!mPendingSceneChange || mPendingSceneChange->empty()) {
-			return;
-		}
+		if (!mPendingSceneChange || mPendingSceneChange->empty()) { return; }
 
 		if (!mSceneManager) {
-			Error("Engine",
-			      "SceneManager missing; cannot apply pending scene change.");
+			Error(
+				"Engine",
+				"SceneManager missing; cannot apply pending scene change."
+			);
 			mPendingSceneChange.reset();
 			return;
 		}
@@ -103,9 +103,7 @@ namespace Unnamed {
 					LogLevel::Success, "Engine",
 					"Subsystem initialized: {}", subsystem->GetName()
 				);
-			} else {
-				UASSERT(false && "Failed to initialize subsystem");
-			}
+			} else { UASSERT(false && "Failed to initialize subsystem"); }
 		}
 
 		// メンバに持っておく
@@ -130,11 +128,11 @@ namespace Unnamed {
 
 		// ウィンドウ情報の設定
 		WindowInfo gameWindowInfo = {
-			.title = "GameWindow",
-			.width = kClientWidth,
-			.height = kClientHeight,
-			.style = WS_OVERLAPPEDWINDOW,
-			.exStyle = 0,
+			.title     = "GameWindow",
+			.width     = kClientWidth,
+			.height    = kClientHeight,
+			.style     = WS_OVERLAPPEDWINDOW,
+			.exStyle   = 0,
 			.hInstance = GetModuleHandle(nullptr),
 			.className = "gameWindowClassName"
 		};
@@ -150,8 +148,10 @@ namespace Unnamed {
 		mRenderer = std::make_unique<D3D12>(mWindowManager->GetMainWindow());
 
 		mWindowManager->GetMainWindow()->SetResizeCallback(
-			[this]([[maybe_unused]] const uint32_t width,
-			       [[maybe_unused]] const uint32_t height) {
+			[this](
+			[[maybe_unused]] const uint32_t width,
+			[[maybe_unused]] const uint32_t height
+		) {
 				OnResize(width, height);
 			}
 		);
@@ -175,7 +175,6 @@ namespace Unnamed {
 
 		mAudioManager = std::make_unique<AudioManager>();
 		mAudioManager->Init();
-
 
 #ifdef _DEBUG
 		// ImGuiFontテクスチャ用にSRVを確保
@@ -223,25 +222,25 @@ namespace Unnamed {
 		);
 
 		mOffscreenRenderPassTargets = {
-			.pRTVs = &mOffscreenRtv.rtvHandle,
-			.numRTVs = 1,
-			.pDSV = &mOffscreenDsv.dsvHandle,
-			.clearColor = kOffscreenClearColor,
-			.clearDepth = 1.0f,
+			.pRTVs        = &mOffscreenRtv.rtvHandle,
+			.numRTVs      = 1,
+			.pDSV         = &mOffscreenDsv.dsvHandle,
+			.clearColor   = kOffscreenClearColor,
+			.clearDepth   = 1.0f,
 			.clearStencil = 0,
-			.bClearColor = true,
-			.bClearDepth = true,
+			.bClearColor  = true,
+			.bClearDepth  = true,
 		};
 
 		mPostProcessedRenderPassTargets = {
-			.pRTVs = &mPostProcessedRtv.rtvHandle,
-			.numRTVs = 1,
-			.pDSV = &mPostProcessedDsv.dsvHandle,
-			.clearColor = kOffscreenClearColor,
-			.clearDepth = 1.0f,
+			.pRTVs        = &mPostProcessedRtv.rtvHandle,
+			.numRTVs      = 1,
+			.pDSV         = &mPostProcessedDsv.dsvHandle,
+			.clearColor   = kOffscreenClearColor,
+			.clearDepth   = 1.0f,
 			.clearStencil = 0,
-			.bClearColor = true,
-			.bClearDepth = true,
+			.bClearColor  = true,
+			.bClearDepth  = true,
 		};
 
 		mPostChain.emplace_back(
@@ -371,8 +370,10 @@ namespace Unnamed {
 				ImGui::SetNextWindowViewport(viewport->ID);
 				ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 				ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-				ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding,
-				                    ImVec2(0.0f, 0.0f));
+				ImGui::PushStyleVar(
+					ImGuiStyleVar_WindowPadding,
+					ImVec2(0.0f, 0.0f)
+				);
 
 				constexpr ImGuiDockNodeFlags dockSpaceFlags =
 					ImGuiDockNodeFlags_PassthruCentralNode;
@@ -392,8 +393,10 @@ namespace Unnamed {
 				const ImGuiIO& io = ImGui::GetIO();
 				if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) {
 					const ImGuiID dockSpaceId = ImGui::GetID("MyDockSpace");
-					ImGui::DockSpace(dockSpaceId, ImVec2(0.0f, 0.0f),
-					                 dockSpaceFlags);
+					ImGui::DockSpace(
+						dockSpaceId, ImVec2(0.0f, 0.0f),
+						dockSpaceFlags
+					);
 				}
 
 				ImGui::End();
@@ -406,9 +409,7 @@ namespace Unnamed {
 				ImGuiWindowFlags_NoScrollbar |
 				ImGuiWindowFlags_NoScrollWithMouse;
 
-			if (ImGuizmo::IsUsing()) {
-				windowFlags |= ImGuiWindowFlags_NoMove;
-			}
+			if (ImGuizmo::IsUsing()) { windowFlags |= ImGuiWindowFlags_NoMove; }
 
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 			ImGui::Begin(
@@ -441,9 +442,7 @@ namespace Unnamed {
 				ImVec2 drawSize = avail;
 				if (availAspect > texAspect) {
 					drawSize.x = avail.y * texAspect;
-				} else {
-					drawSize.y = avail.x / texAspect;
-				}
+				} else { drawSize.y = avail.x / texAspect; }
 
 				float titleBarHeight = ImGui::GetCurrentWindow()->
 					TitleBarHeight;
@@ -477,19 +476,19 @@ namespace Unnamed {
 #ifdef _DEBUG
 			ImGui::Begin("Post Process");
 			for (int i = 0; i < mPostChain.size(); ++i) {
-				if (i == 2) {
-					continue;
-				}
+				if (i == 2) { continue; }
 				if (auto& postProcess = mPostChain[i]) {
 					postProcess->Update(
-						mTimeSystem->GetGameTime()->DeltaTime<float>());
+						mTimeSystem->GetGameTime()->DeltaTime<float>()
+					);
 				}
 			}
 			ImGui::End();
 #endif
 		} else {
 			mSceneManager->Update(
-				mTimeSystem->GetGameTime()->ScaledDeltaTime<float>());
+				mTimeSystem->GetGameTime()->ScaledDeltaTime<float>()
+			);
 			mViewportLT   = Vec2::zero;
 			mViewportSize = {
 				static_cast<float>(mWindowManager->GetMainWindow()->
@@ -506,12 +505,12 @@ namespace Unnamed {
 		DebugHud::Update(mTimeSystem->GetGameTime()->ScaledDeltaTime<float>());
 #endif
 
-
 #ifdef _DEBUG
 		Debug::Update();
 #endif
 		CameraManager::Update(
-			mTimeSystem->GetGameTime()->ScaledDeltaTime<float>());
+			mTimeSystem->GetGameTime()->ScaledDeltaTime<float>()
+		);
 
 		mOffscreenRenderPassTargets.bClearColor =
 			ConVarManager::GetConVar("r_clear")->GetValueAsBool();
@@ -525,11 +524,7 @@ namespace Unnamed {
 			mOffscreenRtv.rtv->GetDesc().Height
 		);
 		mRenderer->BeginRenderPass(mOffscreenRenderPassTargets);
-		if (IsEditorMode()) {
-			if (mEditor) {
-				mEditor->Render();
-			}
-		} else {
+		if (IsEditorMode()) { if (mEditor) { mEditor->Render(); } } else {
 			mSceneManager->Render();
 		}
 
@@ -550,9 +545,7 @@ namespace Unnamed {
 		mRenderer->GetCommandList()->ResourceBarrier(1, &barrier);
 
 		auto* radialBlur = dynamic_cast<PPRadialBlur*>(mPostChain[5].get());
-		if (radialBlur) {
-			radialBlur->SetBlurStrength(blurStrength);
-		}
+		if (radialBlur) { radialBlur->SetBlurStrength(blurStrength); }
 
 		// ポストプロセスを適用するRTV
 		ID3D12Resource* postProcessTarget = mOffscreenRtv.rtv.Get();
@@ -589,7 +582,8 @@ namespace Unnamed {
 					mRenderer->BeginSwapChainRenderPass();
 					mRenderer->SetViewportAndScissor(
 						OldWindowManager::GetMainWindow()->GetClientWidth(),
-						OldWindowManager::GetMainWindow()->GetClientHeight());
+						OldWindowManager::GetMainWindow()->GetClientHeight()
+					);
 					bSwapchainPassBegun = true;
 				}
 
@@ -614,7 +608,6 @@ namespace Unnamed {
 				outRtvHandle = dest.rtvHandle;
 			}
 
-
 			if (IsEditorMode()) {
 				// CopyImagePass実行後にSRVを再作成して最新の内容を反映
 				if (mSrvManager) {
@@ -629,7 +622,8 @@ namespace Unnamed {
 					// GPUハンドルを再取得
 					mPostProcessedRtv.srvHandleGPU = mSrvManager->
 						GetGPUDescriptorHandle(
-							mPostProcessedRtv.srvIndex);
+							mPostProcessedRtv.srvIndex
+						);
 				}
 
 				PostProcessContext context = {};
@@ -659,9 +653,7 @@ namespace Unnamed {
 
 		//---------------------------------------------------------------------
 		// --- PostRender↓ ---
-		if (IsEditorMode()) {
-			mRenderer->BeginSwapChainRenderPass();
-		}
+		if (IsEditorMode()) { mRenderer->BeginSwapChainRenderPass(); }
 
 		//---------------------------------------------------------------------
 		// Purpose: 新エンジン
@@ -671,9 +663,7 @@ namespace Unnamed {
 			subsystem->Update(mTimeSystem->GetGameTime()->DeltaTime<float>());
 		}
 
-		for (auto& subsystem : mSubsystems) {
-			subsystem->Render();
-		}
+		for (auto& subsystem : mSubsystems) { subsystem->Render(); }
 
 #ifdef _DEBUG
 		mImGuiManager->EndFrame();
@@ -722,9 +712,7 @@ namespace Unnamed {
 		mRenderer->Shutdown();
 
 #ifdef _DEBUG
-		if (mImGuiManager) {
-			mImGuiManager->Shutdown();
-		}
+		if (mImGuiManager) { mImGuiManager->Shutdown(); }
 #endif
 		mResourceManager->Shutdown();
 		mResourceManager.reset();
@@ -740,9 +728,7 @@ namespace Unnamed {
 		//---------------------------------------------------------------------
 		// 登録されたサブシステムをシャットダウン
 		for (auto& subsystem : mSubsystems) {
-			if (subsystem) {
-				subsystem->Shutdown();
-			}
+			if (subsystem) { subsystem->Shutdown(); }
 		}
 	}
 
@@ -750,9 +736,7 @@ namespace Unnamed {
 	/// @param width 幅
 	/// @param height 高さ
 	void Engine::OnResize(const uint32_t width, const uint32_t height) {
-		if (width == 0 || height == 0) {
-			return;
-		}
+		if (width == 0 || height == 0) { return; }
 
 		// GPUの処理が終わるまで待つ
 		mRenderer->Flush();
@@ -817,9 +801,7 @@ namespace Unnamed {
 		const uint32_t width,
 		const uint32_t height
 	) {
-		if (width == 0 || height == 0) {
-			return;
-		}
+		if (width == 0 || height == 0) { return; }
 
 		// GPUの処理が終わるまで待つ
 		mRenderer->Flush();
@@ -950,16 +932,24 @@ namespace Unnamed {
 		);
 
 		// Player
-		ConVarManager::RegisterConVar("sv_accelerate", 10.0f,
-		                              "Linear acceleration amount (old value is 5.6)");
+		ConVarManager::RegisterConVar(
+			"sv_accelerate", 20.0f,
+			"Linear acceleration amount (old value is 5.6)"
+		);
 		ConVarManager::RegisterConVar("sv_airaccelerate", 12.0f);
-		ConVarManager::RegisterConVar("sv_maxspeed", 320.0f,
-		                              "Maximum speed a player can move.");
-		ConVarManager::RegisterConVar("sv_stopspeed", 100.0f,
-		                              "Minimum stopping speed when on ground.");
-		ConVarManager::RegisterConVar("sv_friction", 4.0f, "World friction.");
-		ConVarManager::RegisterConVar("sv_stepsize", 18.0f,
-		                              "Maximum step height.");
+		ConVarManager::RegisterConVar(
+			"sv_maxspeed", 320.0f,
+			"Maximum speed a player can move."
+		);
+		ConVarManager::RegisterConVar(
+			"sv_stopspeed", 100.0f,
+			"Minimum stopping speed when on ground."
+		);
+		ConVarManager::RegisterConVar("sv_friction", 8.0f, "World friction.");
+		ConVarManager::RegisterConVar(
+			"sv_stepsize", 18.0f,
+			"Maximum step height."
+		);
 
 		// デバッグ用にエンティティのaxisを表示するかのコンソール変数
 		ConVarManager::RegisterConVar("ent_axis", 0, "Show entity axis");
@@ -979,9 +969,7 @@ namespace Unnamed {
 				mTimeSystem->GetGameTime()
 			);
 			mEditor->SetEntityLoader(mEntityLoader.get());
-		} else {
-			mEditor.reset();
-		}
+		} else { mEditor.reset(); }
 	}
 
 	bool                             Engine::mWishShutdown    = false;

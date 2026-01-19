@@ -10,46 +10,38 @@
 #include "engine/OldConsole/Console.h"
 
 // 静的メンバの定義
-Entity*                                  CheckpointManager::sPlayer = nullptr;
-std::map<int, CheckpointComponent*>      CheckpointManager::sCheckpoints;
-CheckpointComponent*                     CheckpointManager::sLastActivatedCheckpoint = nullptr;
-int                                      CheckpointManager::sNextExpectedOrder       = 0;
+Entity* CheckpointManager::sPlayer = nullptr;
+std::map<int, CheckpointComponent*> CheckpointManager::sCheckpoints;
+CheckpointComponent* CheckpointManager::sLastActivatedCheckpoint = nullptr;
+int CheckpointManager::sNextExpectedOrder = 0;
 
 void CheckpointManager::Initialize() {
-	sPlayer                   = nullptr;
+	sPlayer = nullptr;
 	sCheckpoints.clear();
 	sLastActivatedCheckpoint = nullptr;
 	sNextExpectedOrder       = 0;
 }
 
 void CheckpointManager::Shutdown() {
-	sPlayer                   = nullptr;
+	sPlayer = nullptr;
 	sCheckpoints.clear();
 	sLastActivatedCheckpoint = nullptr;
 	sNextExpectedOrder       = 0;
 }
 
-void CheckpointManager::SetPlayer(Entity* player) {
-	sPlayer = player;
-}
+void CheckpointManager::SetPlayer(Entity* player) { sPlayer = player; }
 
-Entity* CheckpointManager::GetPlayer() {
-	return sPlayer;
-}
+Entity* CheckpointManager::GetPlayer() { return sPlayer; }
 
 void CheckpointManager::RegisterCheckpoint(CheckpointComponent* checkpoint) {
-	if (!checkpoint) {
-		return;
-	}
+	if (!checkpoint) { return; }
 
-	const int order = checkpoint->GetOrder();
+	const int order     = checkpoint->GetOrder();
 	sCheckpoints[order] = checkpoint;
 }
 
 void CheckpointManager::UnregisterCheckpoint(CheckpointComponent* checkpoint) {
-	if (!checkpoint) {
-		return;
-	}
+	if (!checkpoint) { return; }
 
 	const int order = checkpoint->GetOrder();
 	if (sCheckpoints.find(order) != sCheckpoints.end()) {
@@ -70,14 +62,10 @@ void CheckpointManager::ResetAllCheckpoints() {
 }
 
 bool CheckpointManager::CanActivateCheckpoint(CheckpointComponent* checkpoint) {
-	if (!checkpoint) {
-		return false;
-	}
+	if (!checkpoint) { return false; }
 
 	// 既に起動されている場合は不可
-	if (checkpoint->IsActivated()) {
-		return false;
-	}
+	if (checkpoint->IsActivated()) { return false; }
 
 	// 順番通りかチェック
 	const int order = checkpoint->GetOrder();
@@ -85,9 +73,7 @@ bool CheckpointManager::CanActivateCheckpoint(CheckpointComponent* checkpoint) {
 }
 
 void CheckpointManager::OnCheckpointActivated(CheckpointComponent* checkpoint) {
-	if (!checkpoint) {
-		return;
-	}
+	if (!checkpoint) { return; }
 
 	const int order = checkpoint->GetOrder();
 	Console::Print(
@@ -101,9 +87,7 @@ void CheckpointManager::OnCheckpointActivated(CheckpointComponent* checkpoint) {
 
 bool CheckpointManager::AreAllCheckpointsActivated() {
 	for (const auto& [order, checkpoint] : sCheckpoints) {
-		if (!checkpoint->IsActivated()) {
-			return false;
-		}
+		if (!checkpoint->IsActivated()) { return false; }
 	}
 	return !sCheckpoints.empty();
 }
@@ -144,17 +128,13 @@ void CheckpointManager::RespawnAtLastCheckpoint() {
 
 	// プレイヤーの速度をリセット
 	auto* movementComponent = sPlayer->GetComponent<MovementComponent>();
-	if (movementComponent) {
-		movementComponent->SetVelocity(Vec3::zero);
-	}
+	if (movementComponent) { movementComponent->SetVelocity(Vec3::zero); }
 }
 
 int CheckpointManager::GetActivatedCheckpointCount() {
 	int count = 0;
 	for (const auto& [order, checkpoint] : sCheckpoints) {
-		if (checkpoint->IsActivated()) {
-			count++;
-		}
+		if (checkpoint->IsActivated()) { count++; }
 	}
 	return count;
 }
@@ -165,8 +145,6 @@ int CheckpointManager::GetTotalCheckpointCount() {
 
 CheckpointComponent* CheckpointManager::GetNextCheckpoint() {
 	auto it = sCheckpoints.find(sNextExpectedOrder);
-	if (it != sCheckpoints.end()) {
-		return it->second;
-	}
+	if (it != sCheckpoints.end()) { return it->second; }
 	return nullptr;
 }

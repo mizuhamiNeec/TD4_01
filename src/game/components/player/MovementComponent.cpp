@@ -27,7 +27,8 @@ MovementData::MovementData(float width, float height) : currentWidthHu(width),
 }
 
 /// @brief デフォルトコンストラクタ
-MovementData::MovementData() : currentWidthHu(32.0f), currentHeightHu(72.0f) {
+MovementData::MovementData() : currentWidthHu(32.0f),
+                               currentHeightHu(72.0f) {
 	defaultHeightHu = currentHeightHu;
 	crouchHeightHu  = currentHeightHu * 0.75f;
 }
@@ -39,16 +40,12 @@ void MovementComponent::OnAttach(Entity& owner) {
 	// AABBコライダーを取得
 	mCollider = owner.GetComponent<AABBCollider>();
 
-	if (!mCollider) {
-		Error(kChannel, "AABBColliderを取得できませんでした。");
-	}
+	if (!mCollider) { Error(kChannel, "AABBColliderを取得できませんでした。"); }
 
 	// コンソールを取得
 	mConsoleSystem = ServiceLocator::Get<Unnamed::ConsoleSystem>();
 
-	if (!mConsoleSystem) {
-		Error(kChannel, "ConsoleSystemを取得できませんでした。");
-	}
+	if (!mConsoleSystem) { Error(kChannel, "ConsoleSystemを取得できませんでした。"); }
 }
 
 /// @brief 初期化
@@ -102,41 +99,50 @@ void MovementComponent::PrePhysics(float) {
 
 /// @brief 更新
 /// @param dt 経過時間
-void MovementComponent::Update(const float dt) {
-	ProcessMovement(dt);
-}
+void MovementComponent::Update(const float dt) { ProcessMovement(dt); }
 
 /// @brief 物理演算後の更新
 /// @param deltaTime 経過時間
-void MovementComponent::PostPhysics(float) {
-}
+void MovementComponent::PostPhysics(float) {}
 
 /// @brief インスペクタ内のImGui描画
 void MovementComponent::DrawInspectorImGui() {
 #ifdef _DEBUG
-	if (ImGui::CollapsingHeader("MovementComponent",
-	                            ImGuiTreeNodeFlags_DefaultOpen)) {
+	if (ImGui::CollapsingHeader(
+		"MovementComponent",
+		ImGuiTreeNodeFlags_DefaultOpen
+	)) {
 		ImGui::Text("State: %s", ToString(mData.state));
-		ImGuiWidgets::DragVec3("Velocity", mData.velocity, Vec3::zero, 0.1f,
-		                       "%.3f");
+		ImGuiWidgets::DragVec3(
+			"Velocity", mData.velocity, Vec3::zero, 0.1f,
+			"%.3f"
+		);
 		ImGui::Checkbox("Grounded", &mData.isGrounded);
-		ImGui::Text("HeightHU: %.2f  WidthHU: %.2f", mData.currentHeightHu,
-		            mData.currentWidthHu);
+		ImGui::Text(
+			"HeightHU: %.2f  WidthHU: %.2f", mData.currentHeightHu,
+			mData.currentWidthHu
+		);
 
 		// Moving surface info
 		if (mWasOnMovingSurface) {
 			ImGui::Separator();
 			ImGui::TextColored({1.0f, 1.0f, 0.0f, 1.0f}, "On Moving Surface");
-			ImGui::Text("Total Surface Vel: (%.2f, %.2f, %.2f) HU/s",
-			            Math::MtoH(mSurfaceVelocity.x),
-			            Math::MtoH(mSurfaceVelocity.y),
-			            Math::MtoH(mSurfaceVelocity.z));
+			ImGui::Text(
+				"Total Surface Vel: (%.2f, %.2f, %.2f) HU/s",
+				Math::MtoH(mSurfaceVelocity.x),
+				Math::MtoH(mSurfaceVelocity.y),
+				Math::MtoH(mSurfaceVelocity.z)
+			);
 			Vec3 horizontalVel = mSurfaceVelocity;
 			horizontalVel.y    = 0.0f;
-			ImGui::Text("Horizontal: %.2f HU/s",
-			            Math::MtoH(horizontalVel.Length()));
-			ImGui::Text("Magnitude: %.2f HU/s",
-			            Math::MtoH(mSurfaceVelocity.Length()));
+			ImGui::Text(
+				"Horizontal: %.2f HU/s",
+				Math::MtoH(horizontalVel.Length())
+			);
+			ImGui::Text(
+				"Magnitude: %.2f HU/s",
+				Math::MtoH(mSurfaceVelocity.Length())
+			);
 
 			if (mLastGroundEntity) {
 				ImGui::Text("Entity: %s", mLastGroundEntity->GetName().c_str());
@@ -146,28 +152,36 @@ void MovementComponent::DrawInspectorImGui() {
 					GetWorldPos();
 				Vec3  toPlayer = mScene->GetWorldPos() - platformPos;
 				float radius   = toPlayer.Length();
-				ImGui::Text("Distance from center: %.2f m (%.2f HU)", radius,
-				            Math::MtoH(radius));
+				ImGui::Text(
+					"Distance from center: %.2f m (%.2f HU)", radius,
+					Math::MtoH(radius)
+				);
 			}
 		}
 
 		// Wallrun info
 		if (mData.isWallRunning) {
-			ImGui::TextColored({0.0f, 1.0f, 1.0f, 1.0f}, "WALLRUNNING! (%.2fs)",
-			                   mData.wallRunTime);
-			ImGuiWidgets::DragVec3("WallNormal", mData.wallRunNormal,
-			                       Vec3::zero, 0.1f, "%.3f");
+			ImGui::TextColored(
+				{0.0f, 1.0f, 1.0f, 1.0f}, "WALLRUNNING! (%.2fs)",
+				mData.wallRunTime
+			);
+			ImGuiWidgets::DragVec3(
+				"WallNormal", mData.wallRunNormal,
+				Vec3::zero, 0.1f, "%.3f"
+			);
 		} else {
-			ImGui::Text("Time since wallrun: %.2fs",
-			            mData.timeSinceLastWallRun);
+			ImGui::Text(
+				"Time since wallrun: %.2fs",
+				mData.timeSinceLastWallRun
+			);
 		}
 
 		if (mData.isStuck) {
-			ImGui::TextColored({1.0f, 0.0f, 0.0f, 1.0f}, "STUCK! (%.2fs)",
-			                   mData.stuckTime);
-		} else {
-			ImGui::Text("Stuck Timer: %.2fs", mData.stuckTime);
-		}
+			ImGui::TextColored(
+				{1.0f, 0.0f, 0.0f, 1.0f}, "STUCK! (%.2fs)",
+				mData.stuckTime
+			);
+		} else { ImGui::Text("Stuck Timer: %.2fs", mData.stuckTime); }
 	}
 #endif
 }
@@ -181,7 +195,8 @@ Vec3& MovementComponent::GetVelocity() { return mData.velocity; }
 Vec3 MovementComponent::GetHeadPos() const {
 	// 足元原点前提：頭は currentHeightHU から少し下げる
 	return mScene->GetWorldPos() + Vec3::up * Math::HtoM(
-		mData.currentHeightHu - 8.0f);
+		       mData.currentHeightHu - 8.0f
+	       );
 }
 
 /// @brief 速度を設定する
@@ -222,9 +237,7 @@ float MovementComponent::GetLastLandingVelocityY() const {
 	return mData.lastLandingVelocityY;
 }
 
-bool MovementComponent::IsDucking() const {
-	return mData.wishCrouch;
-}
+bool MovementComponent::IsDucking() const { return mData.wishCrouch; }
 
 /// @brief 入力処理
 void MovementComponent::ProcessInput() {
@@ -259,9 +272,7 @@ void MovementComponent::ProcessInput() {
 /// @param dt 経過時間
 void MovementComponent::ProcessMovement(const float dt) {
 	// ジャンプスナップ無効時間の更新
-	if (mData.jumpSnapDisableTime > 0.0f) {
-		mData.jumpSnapDisableTime -= dt;
-	}
+	if (mData.jumpSnapDisableTime > 0.0f) { mData.jumpSnapDisableTime -= dt; }
 
 	// 動く床の速度計算と適用
 	mSurfaceVelocity            = Vec3::zero;
@@ -269,7 +280,7 @@ void MovementComponent::ProcessMovement(const float dt) {
 
 	// プレイヤーの足元周辺で床を検出（接地している場合のみ）
 	Unnamed::Box extendedHull = {
-		.center = mHull.center,
+		.center   = mHull.center,
 		.halfSize = mHull.halfSize + Vec3::one * Math::HtoM(kDynamicCheckSkinHu)
 	};
 
@@ -278,7 +289,8 @@ void MovementComponent::ProcessMovement(const float dt) {
 
 	// 接地している場合のみ床を検出
 	if (mData.isGrounded && mUPhysicsEngine->BoxOverlap(
-		extendedHull, &surfaceHit, 1)) {
+		    extendedHull, &surfaceHit, 1
+	    )) {
 		Debug::DrawBox(
 			extendedHull.center,
 			Quaternion::identity,
@@ -299,7 +311,7 @@ void MovementComponent::ProcessMovement(const float dt) {
 			if (mLastGroundEntity == currentGroundEntity) {
 				// 移動による速度
 				const Vec3 linearVelocity = (currentPos - mLastGroundPosition) /
-					dt;
+				                            dt;
 
 				// 回転による速度（プレイヤー位置での接線速度）
 				if (dt > 0.0f) {
@@ -309,7 +321,7 @@ void MovementComponent::ProcessMovement(const float dt) {
 					// 2. 前フレームのプラットフォーム基準でのプレイヤーの相対位置（ローカル座標）を計算
 					//    Rel = Inv(Rot_Old) * (Pos_Player - Pos_Origin_Old)
 					Vec3 localPos = mLastGroundRotation.Inverse() * (
-						playerWorldPos - mLastGroundPosition);
+						                playerWorldPos - mLastGroundPosition);
 
 					// 3. その相対位置が、現在のプラットフォーム座標系でどこにあるべきかを計算
 					//    Pos_Target = Pos_Origin_New + Rot_New * Rel
@@ -371,16 +383,19 @@ void MovementComponent::ProcessMovement(const float dt) {
 		// 立てるかチェック
 		Vec3         posFeet = mScene->GetWorldPos();
 		Unnamed::Box test    = {
-			.center = posFeet + Vec3::up * Math::HtoM(targetHU * 0.5f),
-			.halfSize = Math::HtoM({
-				mData.currentWidthHu * 0.5f,
-				targetHU * 0.5f,
-				mData.currentWidthHu * 0.5f
-			})
+			.center   = posFeet + Vec3::up * Math::HtoM(targetHU * 0.5f),
+			.halfSize = Math::HtoM(
+				{
+					mData.currentWidthHu * 0.5f,
+					targetHU * 0.5f,
+					mData.currentWidthHu * 0.5f
+				}
+			)
 		};
 		UPhysics::Hit ov{};
 		const bool    blocked = mUPhysicsEngine && mUPhysicsEngine->BoxOverlap(
-			test, &ov);
+			                        test, &ov
+		                        );
 		mData.currentHeightHu =
 			blocked ?
 				mData.currentHeightHu :
@@ -398,14 +413,10 @@ void MovementComponent::ProcessMovement(const float dt) {
 		                     mData.crouchSpeed :
 		                     mData.sprintSpeed;
 
-	if (mData.isGrounded && !mData.isSliding && CanSlide()) {
-		TryStartSlide();
-	}
+	if (mData.isGrounded && !mData.isSliding && CanSlide()) { TryStartSlide(); }
 
 	// スライディング更新
-	if (mData.isSliding) {
-		UpdateSlide(dt);
-	}
+	if (mData.isSliding) { UpdateSlide(dt); }
 
 	const float wishspeed = mData.wishDirection.IsZero() ?
 		                        0.0f :
@@ -436,9 +447,7 @@ void MovementComponent::ProcessMovement(const float dt) {
 			mData.jumpSnapDisableTime  = kJumpSnapDisableTime;
 			mData.wasGroundedLastFrame = false;
 
-			if (mData.isSliding) {
-				EndSlide();
-			}
+			if (mData.isSliding) { EndSlide(); }
 		} else if (mData.isWallRunning && !mData.wallRunJumpWasPressed) {
 			// Wallrun jump: キーを一度離してから再度押した場合のみ
 			// (バニーホップでの誤発動防止)
@@ -446,7 +455,8 @@ void MovementComponent::ProcessMovement(const float dt) {
 
 			// 現在の進行方向の速度を取得
 			Vec3 forwardVel = mData.wallRunDirection * mData.velocity.Dot(
-				mData.wallRunDirection);
+				                  mData.wallRunDirection
+			                  );
 
 			// 壁から離れる方向（横と上）
 			Vec3 awayDir = mData.wallRunNormal * 0.7f + Vec3::up * 1.0f;
@@ -454,15 +464,16 @@ void MovementComponent::ProcessMovement(const float dt) {
 
 			// 進行方向の速度 + 壁から離れるブースト
 			mData.velocity = forwardVel + awayDir * Math::HtoM(
-				kWallrunJumpForce);
+				                 kWallrunJumpForce
+			                 );
 
 			mData.hasDoubleJump = true; // ウォールランジャンプでダブルジャンプリセット
 
 			mData.jumpSnapDisableTime  = kJumpSnapDisableTime;
-			mData.wasGroundedLastFrame = false; // ★念のため追加
+			mData.wasGroundedLastFrame = false; // 念のため追加
 			EndWallrun();
 		} else if (!mData.isGrounded && !mData.isWallRunning && mData.
-			hasDoubleJump && jumpPressed) {
+		           hasDoubleJump && jumpPressed) {
 			// ダブルジャンプ（空中で、キーを離してから押した場合）
 			mData.velocity.y          = Math::HtoM(kDoubleJumpVelocityHu);
 			mData.hasDoubleJump       = false; // 使用済み
@@ -470,9 +481,7 @@ void MovementComponent::ProcessMovement(const float dt) {
 		}
 	} else {
 		// ジャンプキーが離されたらフラグをリセット
-		if (mData.isWallRunning) {
-			mData.wallRunJumpWasPressed = false;
-		}
+		if (mData.isWallRunning) { mData.wallRunJumpWasPressed = false; }
 	}
 
 	// 前フレームのジャンプ入力を保存
@@ -531,9 +540,7 @@ void MovementComponent::ProcessMovement(const float dt) {
 
 	// 前フレームで空中、今フレームで地上 = 着地
 	if (!mData.wasGroundedLastFrame && mData.isGrounded && !mData.isWallRunning
-		&& !mData.isSliding) {
-		mData.justLanded = true;
-	} else {
+	    && !mData.isSliding) { mData.justLanded = true; } else {
 		mData.justLanded = false;
 	}
 
@@ -657,12 +664,15 @@ void MovementComponent::UpdateHullDimensions() {
 	// 足元原点
 	mHull = {
 		.center = mScene->GetWorldPos() + Vec3::up * Math::HtoM(
-			mData.currentHeightHu * 0.5f),
-		.halfSize = Math::HtoM({
-			mData.currentWidthHu * 0.5f,
-			mData.currentHeightHu * 0.5f,
-			mData.currentWidthHu * 0.5f
-		})
+			          mData.currentHeightHu * 0.5f
+		          ),
+		.halfSize = Math::HtoM(
+			{
+				mData.currentWidthHu * 0.5f,
+				mData.currentHeightHu * 0.5f,
+				mData.currentWidthHu * 0.5f
+			}
+		)
 	};
 
 	// ハルをもとにコライダーを更新
@@ -736,11 +746,14 @@ void MovementComponent::ResolvePenetration() {
 
 		// 各軸の重なり量を計算
 		float overlapX = std::min(myMax.x, otherMax.x) - std::max(
-			myMin.x, otherMin.x);
+			                 myMin.x, otherMin.x
+		                 );
 		float overlapY = std::min(myMax.y, otherMax.y) - std::max(
-			myMin.y, otherMin.y);
+			                 myMin.y, otherMin.y
+		                 );
 		float overlapZ = std::min(myMax.z, otherMax.z) - std::max(
-			myMin.z, otherMin.z);
+			                 myMin.z, otherMin.z
+		                 );
 
 		// 重なっていない軸があれば終了（念のため）
 		if (overlapX <= 0 || overlapY <= 0 || overlapZ <= 0) break;
@@ -766,9 +779,7 @@ void MovementComponent::ResolvePenetration() {
 
 		// 現在の軸成分だけで方向を判定
 		float dirCheck = (myCenter - otherCenter).Dot(pushDir);
-		if (dirCheck < 0) {
-			pushDir = -pushDir;
-		}
+		if (dirCheck < 0) { pushDir = -pushDir; }
 
 		// 押し出しベクトル
 		Vec3 separation = pushDir * (minOverlap + 0.001f); // 浮動小数点誤差のために少し余分に
@@ -779,9 +790,7 @@ void MovementComponent::ResolvePenetration() {
 
 		// 押し出された方向の速度を殺す（壁に押し続けられているときに速度が蓄積するのを防ぐ）
 		float velProjected = mData.velocity.Dot(pushDir);
-		if (velProjected < 0) {
-			mData.velocity -= pushDir * velProjected;
-		}
+		if (velProjected < 0) { mData.velocity -= pushDir * velProjected; }
 	}
 }
 
@@ -790,8 +799,10 @@ void MovementComponent::ResolvePenetration() {
 /// @param normal クリップ法線
 /// @param overbounce オーバーバウンス係数
 /// @return クリップ後の速度
-Vec3 MovementComponent::ClipVelocity(const Vec3& vel, const Vec3& normal,
-                                     float       overbounce) {
+Vec3 MovementComponent::ClipVelocity(
+	const Vec3& vel, const Vec3& normal,
+	float       overbounce
+) {
 	// Source/Quake PM_ClipVelocity
 	const float backoff = vel.Dot(normal) * overbounce;
 	Vec3        out     = vel - normal * backoff;
@@ -808,11 +819,13 @@ Vec3 MovementComponent::ClipVelocity(const Vec3& vel, const Vec3& normal,
 Unnamed::Box MovementComponent::BuildHullAtFeet(const Vec3& feetPos) const {
 	return Unnamed::Box{
 		.center = feetPos + Vec3::up * Math::HtoM(mData.currentHeightHu * 0.5f),
-		.halfSize = Math::HtoM({
-			mData.currentWidthHu * 0.5f,
-			mData.currentHeightHu * 0.5f,
-			mData.currentWidthHu * 0.5f,
-		})
+		.halfSize = Math::HtoM(
+			{
+				mData.currentWidthHu * 0.5f,
+				mData.currentHeightHu * 0.5f,
+				mData.currentWidthHu * 0.5f,
+			}
+		)
 	};
 }
 
@@ -851,8 +864,10 @@ int MovementComponent::SlideMove(
 
 		// 接触点まで移動（わずかな隙間を残す）
 		const float travel  = std::clamp(hit.t, 0.0f, castLen);
-		const float allowed = std::min(moveLen,
-		                               std::max(0.0f, travel - SkinM()));
+		const float allowed = std::min(
+			moveLen,
+			std::max(0.0f, travel - SkinM())
+		);
 		float usedFrac = (moveLen > 1e-7f) ? (allowed / moveLen) : 1.0f;
 		// 無限ループを回避するために前進を保証
 		usedFrac = std::clamp(usedFrac, kFracEps, 1.0f);
@@ -875,9 +890,7 @@ int MovementComponent::SlideMove(
 		}
 		if (i < numplanes) continue;
 
-		if (numplanes < kMaxClipPlanes) {
-			planes[numplanes++] = normal;
-		}
+		if (numplanes < kMaxClipPlanes) { planes[numplanes++] = normal; }
 
 		// 速度を修正: すべての記録された平面に対してクリップ
 		if (numplanes == 1) {
@@ -957,8 +970,10 @@ void MovementComponent::StepMove(
 	// ステップダウン
 	Unnamed::Box  boxAt = BuildHullAtFeet(position);
 	UPhysics::Hit downHit{};
-	if (mUPhysicsEngine->BoxCast(boxAt, -Vec3::up,
-	                             StepHeightM() + RestOffsetM(), &downHit)) {
+	if (mUPhysicsEngine->BoxCast(
+		boxAt, -Vec3::up,
+		StepHeightM() + RestOffsetM(), &downHit
+	)) {
 		// 立てる地面か?
 		const float threshold = mData.groundNormalY;
 		if (downHit.normal.y >= threshold) {
@@ -970,8 +985,10 @@ void MovementComponent::StepMove(
 	// 水平移動距離を比較
 	const float downDist = (
 		Vec3(down.x - startPos.x, 0.0f, down.z - startPos.z)).Length();
-	const float upDist = (Vec3(position.x - startPos.x, 0.0f,
-	                           position.z - startPos.z)).Length();
+	const float upDist = (Vec3(
+		position.x - startPos.x, 0.0f,
+		position.z - startPos.z
+	)).Length();
 
 	// ステップアップの方が進んでいない場合は元に戻す
 	if (downDist >= upDist) {
@@ -996,9 +1013,7 @@ bool MovementComponent::GroundCheck(Vec3& position) {
 	float snapRange;
 	if (mData.wasGroundedLastFrame) {
 		snapRange = RestOffsetM() + std::max(MaxAdhesionM(), StepHeightM());
-	} else {
-		snapRange = RestOffsetM() + CastSkinM();
-	}
+	} else { snapRange = RestOffsetM() + CastSkinM(); }
 
 	// 地面検出
 	if (!mUPhysicsEngine->BoxCast(box, Vec3::down, snapRange, &gHit)) {
@@ -1007,9 +1022,7 @@ bool MovementComponent::GroundCheck(Vec3& position) {
 
 	// 立てる角度か?
 	const float threshold = mData.groundNormalY;
-	if (gHit.normal.y < threshold) {
-		return false;
-	}
+	if (gHit.normal.y < threshold) { return false; }
 
 	// 立てる地面なのでスナップ
 	const float drop = std::max(0.0f, gHit.t - RestOffsetM());
@@ -1043,9 +1056,7 @@ void MovementComponent::MoveWithCollisions(const float dt) {
 	const float horizVelSqr = velocity.x * velocity.x + velocity.z * velocity.z;
 	const bool  wantStep = mData.wasGroundedLastFrame && (horizVelSqr > 1e-8f);
 
-	if (wantStep) {
-		StepMove(position, velocity, dt);
-	} else {
+	if (wantStep) { StepMove(position, velocity, dt); } else {
 		SlideMove(position, velocity, dt);
 	}
 
@@ -1084,7 +1095,7 @@ void MovementComponent::DetectAndResolveStuck(const float dt) {
 
 	// 入力があるかチェック
 	const bool hasInput = (mData.vecMoveInput.x != 0.0f || mData.vecMoveInput.y
-		!= 0.0f) || mData.wishJump;
+	                       != 0.0f) || mData.wishJump;
 
 	// スタック判定：入力があるのにほとんど動いていない
 	if (hasInput && distMoved < kStuckThreshold * dt) {
@@ -1134,9 +1145,7 @@ void MovementComponent::DetectAndResolveStuck(const float dt) {
 	} else {
 		// 正常に移動している
 		mData.stuckTime = std::max(0.0f, mData.stuckTime - dt * 2.0f);
-		if (mData.stuckTime == 0.0f) {
-			mData.isStuck = false;
-		}
+		if (mData.stuckTime == 0.0f) { mData.isStuck = false; }
 	}
 
 	// 現在位置を記録
@@ -1151,12 +1160,15 @@ bool MovementComponent::CanWallrun() const {
 
 	// 最小速度があるか
 	const float velHorzSqr = mData.velocity.x * mData.velocity.x + mData.
-		velocity.z * mData.velocity.z;
+	                         velocity.z * mData.velocity.z;
 	const float minSpeedM = Math::HtoM(kWallrunMinSpeed);
 	if (velHorzSqr < minSpeedM * minSpeedM) return false;
 
 	// クールダウン中でないか
 	if (mData.timeSinceLastWallRun < kWallrunCooldown) return false;
+
+	// 地上に接地していないか
+	if (mData.isGrounded) { return false; }
 
 	return true;
 }
@@ -1193,9 +1205,7 @@ bool MovementComponent::TryStartWallrun() {
 
 			// 同じ壁のクールダウン中か
 			if (mData.timeSinceLastWallRun < kWallrunSameWallCooldown &&
-				wallNormal.Dot(mData.lastWallRunNormal) > 0.9f) {
-				continue;
-			}
+			    wallNormal.Dot(mData.lastWallRunNormal) > 0.9f) { continue; }
 
 			// Wallrun開始
 			mData.isWallRunning = true;
@@ -1219,9 +1229,7 @@ bool MovementComponent::TryStartWallrun() {
 
 			// カメラ方向と同じ向きに揃える
 			// これにより、±X方向の壁でも正しく動作する
-			if (along.Dot(camForward) < 0) {
-				along = -along;
-			}
+			if (along.Dot(camForward) < 0) { along = -along; }
 			mData.wallRunDirection = along;
 
 			// 現在の速度を壁に沿った方向に投影
@@ -1270,7 +1278,8 @@ void MovementComponent::UpdateWallrun(float dt) {
 	// 壁がまだあるかチェック
 	if (mUPhysicsEngine) {
 		const float checkDistance = Math::HtoM(
-			mData.currentWidthHu * 0.5f + 20.0f);
+			mData.currentWidthHu * 0.5f + 20.0f
+		);
 		UPhysics::Hit hit{};
 
 		// 壁に向かって（法線の逆方向）キャスト
@@ -1303,7 +1312,8 @@ void MovementComponent::UpdateWallrun(float dt) {
 			if (camForwardLen > 1e-6f) {
 				camForward        *= 1.0f / camForwardLen;
 				Vec3 projectedDir = Math::ProjectOnPlane(
-					camForward, mData.wallRunNormal);
+					camForward, mData.wallRunNormal
+				);
 				const float projLen = projectedDir.Length();
 				if (projLen > 1e-6f) {
 					mData.wallRunDirection = projectedDir * (1.0f / projLen);
@@ -1314,6 +1324,12 @@ void MovementComponent::UpdateWallrun(float dt) {
 
 	// しゃがみボタンが押されたら離脱
 	if (mData.wishCrouch) {
+		EndWallrun();
+		return;
+	}
+
+	// 地面に接地したら終了
+	if (mData.isGrounded) {
 		EndWallrun();
 		return;
 	}
@@ -1341,7 +1357,7 @@ void MovementComponent::UpdateWallrun(float dt) {
 				// wallSide > 0 なら壁は右側 -> 右入力(x>0)で離脱
 				// wallSide < 0 なら壁は左側 -> 左入力(x<0)で離脱
 				if ((wallSide > 0 && mData.vecMoveInput.x > 0.5f) ||
-					(wallSide < 0 && mData.vecMoveInput.x < -0.5f)) {
+				    (wallSide < 0 && mData.vecMoveInput.x < -0.5f)) {
 					EndWallrun();
 				}
 			}
@@ -1372,7 +1388,7 @@ void MovementComponent::Wallrun(const float wishspeed, const float dt) {
 
 		if (addSpeed > 0) {
 			const float accel = ConVarManager::GetConVar("sv_airaccelerate")->
-				GetValueAsFloat() * 1.5f;
+			                    GetValueAsFloat() * 1.5f;
 			const float accelspeed = std::min(accel * wishspeed * dt, addSpeed);
 			mData.velocity         += Math::HtoM(accelspeed) * wishdir;
 		}
@@ -1385,17 +1401,13 @@ void MovementComponent::Wallrun(const float wishspeed, const float dt) {
 				GetValueAsFloat();
 			const float drop = speed * fric * dt * 0.5f; // 壁では摩擦が弱め
 			const float news = std::max(0.0f, speed - drop);
-			if (news != speed) {
-				mData.velocity *= (news / speed);
-			}
+			if (news != speed) { mData.velocity *= (news / speed); }
 		}
 	}
 
 	// 壁に向かう速度成分を除去
 	const float intoWall = mData.velocity.Dot(-mData.wallRunNormal);
-	if (intoWall > 0) {
-		mData.velocity += mData.wallRunNormal * intoWall;
-	}
+	if (intoWall > 0) { mData.velocity += mData.wallRunNormal * intoWall; }
 
 	// 壁に軽く吸い付く力を追加
 	const float pullForce = Math::HtoM(80.0f); // 80 HU/s
@@ -1410,7 +1422,7 @@ bool MovementComponent::CanSlide() const {
 
 	// 水平速度が十分にあるか
 	const float velHorzSqr = mData.velocity.x * mData.velocity.x + mData.
-		velocity.z * mData.velocity.z;
+	                         velocity.z * mData.velocity.z;
 	const float minSpeedM = Math::HtoM(kSlideMinSpeed);
 
 	return velHorzSqr >= minSpeedM * minSpeedM;
@@ -1471,9 +1483,7 @@ void MovementComponent::UpdateSlide(const float dt) {
 	}
 
 	// しゃがみが離されたら終了
-	if (!mData.wishCrouch) {
-		EndSlide();
-	}
+	if (!mData.wishCrouch) { EndSlide(); }
 }
 
 /// @brief スライドを終了する
@@ -1485,9 +1495,7 @@ void MovementComponent::EndSlide() {
 	mData.slideTime      = 0.0f;
 
 	// ハルサイズを元に戻す
-	if (mData.isGrounded) {
-		mData.state = MOVEMENT_STATE::GROUND;
-	} else {
+	if (mData.isGrounded) { mData.state = MOVEMENT_STATE::GROUND; } else {
 		mData.state = MOVEMENT_STATE::AIR;
 	}
 }

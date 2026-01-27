@@ -1,14 +1,13 @@
 ﻿#pragma once
 #include <d3d12.h>
 
-#include <engine/unnamed/gameframework/component/base/BaseComponent.h>
-
-#include "engine/unnamed/urootsignaturecache/RootSignatureCache.h"
+#include <game/gameframework/component/base/BaseComponent.h>
 
 #include "runtime/assets/core/UAssetID.h"
 #include "runtime/render/types/RenderTypes.h"
 
 namespace Unnamed {
+	class RootSignatureCache;
 	class RenderResourceManager;
 	class ShaderLibrary;
 	class RRootSignatureCache;

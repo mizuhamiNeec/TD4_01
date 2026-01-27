@@ -2,8 +2,9 @@
 
 #include <core/unnamed/json/JsonReader.h>
 
-#include <engine/unnamed/gameframework/component/MeshRenderer/MeshRendererComponent.h>
 #include <engine/unnamed/urenderer/GraphicsDevice.h>
+
+#include <game/gameframework/component/MeshRenderer/MeshRendererComponent.h>
 
 #include <runtime/render/resources/RenderResourceManager.h>
 

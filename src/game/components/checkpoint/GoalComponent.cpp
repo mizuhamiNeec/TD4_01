@@ -1,7 +1,7 @@
 #include "GoalComponent.h"
 
 #include <engine/Components/ColliderComponent/AABBCollider.h>
-#include <engine/Debug/Debug.h>
+#include <engine/Debug/DebugDraw.h>
 #include <engine/Entity/Entity.h>
 #include <engine/unnamed/subsystem/console/Log.h>
 #include <game/components/checkpoint/CheckpointManager.h>
@@ -26,7 +26,7 @@ void GoalComponent::Update(float) {
 	const Vec3          center    = (worldAABB.min + worldAABB.max) * 0.5f;
 	const Vec3          size      = worldAABB.Size();
 
-	Debug::DrawBox(
+	DebugDraw::DrawBox(
 		center,
 		Quaternion::identity,
 		size,

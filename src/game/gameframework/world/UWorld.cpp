@@ -3,10 +3,10 @@
 #include <core/unnamed/json/JsonReader.h>
 #include <core/unnamed/json/JsonWriter.h>
 
-#include <engine/unnamed/gameframework/component/Camera/UCameraComponent.h>
-#include <engine/unnamed/gameframework/component/MeshRenderer/MeshRendererComponent.h>
-#include <engine/unnamed/gameframework/component/Transform/TransformComponent.h>
-#include <engine/unnamed/gameframework/component/WorldInstance/WorldInstanceComponent.h>
+#include <game/gameframework/component/Camera/UCameraComponent.h>
+#include <game/gameframework/component/MeshRenderer/MeshRendererComponent.h>
+#include <game/gameframework/component/Transform/TransformComponent.h>
+#include <game/gameframework/component/WorldInstance/WorldInstanceComponent.h>
 
 namespace Unnamed {
 	/// @brief コンストラクタ

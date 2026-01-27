@@ -1,6 +1,6 @@
 ﻿#pragma once
-#include <engine/unnamed/gameframework/component/base/BaseComponent.h>
-#include <engine/unnamed/gameframework/world/UWorld.h>
+#include <game/gameframework/component/base/BaseComponent.h>
+#include <game/gameframework/world/UWorld.h>
 
 namespace Unnamed {
 	/// @brief エンティティ内にサブワールドを埋め込めるコンポーネント。

@@ -44,7 +44,6 @@ public:
 	void Shutdown() override;
 
 private:
-	void HandleLaunchInput();
 	void BindUiCallbacks() const;
 
 	D3D12* mRenderer = nullptr;

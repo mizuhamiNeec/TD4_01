@@ -1,6 +1,6 @@
 ﻿#include <pch.h>
 
-#include <engine/unnamed/gameframework/entity/UEntity/UEntity.h>
+#include "UEntity.h"
 
 namespace Unnamed {
 	/// @brief デストラクタ

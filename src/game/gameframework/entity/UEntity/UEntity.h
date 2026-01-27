@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <engine/unnamed/gameframework/entity/base/BaseEntity.h>
+#include <game/gameframework/entity/base/BaseEntity.h>
 
 namespace Unnamed {
 	/// @brief 汎用エンティティクラス

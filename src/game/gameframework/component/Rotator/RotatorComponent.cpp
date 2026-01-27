@@ -1,7 +1,7 @@
 ﻿#include "RotatorComponent.h"
 
-#include <engine/unnamed/gameframework/component/Transform/TransformComponent.h>
-#include <engine/unnamed/gameframework/entity/base/BaseEntity.h>
+#include <game/gameframework/component/Transform/TransformComponent.h>
+#include <game/gameframework/entity/base/BaseEntity.h>
 #include <core/unnamed/json/JsonReader.h>
 #include <core/unnamed/json/JsonWriter.h>
 

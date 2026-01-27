@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include <engine/unnamed/gameframework/component/base/BaseComponent.h>
+#include <game/gameframework/component/base/BaseComponent.h>
 
 namespace Unnamed {
 	// TODO: 旧Entityを取り除いたらEntityに名前変更
@@ -51,9 +51,7 @@ namespace Unnamed {
 		/// @brief エンティティが破棄されるときに呼び出されます。
 		virtual void OnDestroy() = 0;
 
-		//---------------------------------------------------------------------
-		// 関数
-		//---------------------------------------------------------------------
+	public:
 		/// @brief コンポーネントを追加します。
 		/// @tparam ComponentType 追加するコンポーネントの型
 		/// @tparam Args コンポーネントのコンストラクタに渡す引数の型

@@ -10,7 +10,7 @@
 #include <engine/Components/Camera/CameraComponent.h>
 #include <engine/Components/ColliderComponent/AABBCollider.h>
 #include <engine/Components/ColliderComponent/MeshColliderComponent.h>
-#include <engine/Debug/Debug.h>
+#include <engine/Debug/DebugDraw.h>
 #include <engine/Debug/DebugHud.h>
 #include <engine/ImGui/ImGuiUtil.h>
 #include <engine/Input/InputSystem.h>
@@ -269,7 +269,7 @@ void GameScene::Update(const float deltaTime) {
 			if (!a || !b) { continue; }
 			const Vec3 posA = a->GetTransform()->GetWorldPos();
 			const Vec3 posB = b->GetTransform()->GetWorldPos();
-			Debug::DrawLine(posA, posB, lineColor);
+			DebugDraw::DrawLine(posA, posB, lineColor);
 		}
 
 		// 最後のチェックポイントからゴールへ繋ぐ
@@ -277,7 +277,7 @@ void GameScene::Update(const float deltaTime) {
 		if (last && mGoalEntity) {
 			const Vec3 posLast = last->GetTransform()->GetWorldPos();
 			const Vec3 posGoal = mGoalEntity->GetTransform()->GetWorldPos();
-			Debug::DrawLine(posLast, posGoal, lineColor);
+			DebugDraw::DrawLine(posLast, posGoal, lineColor);
 		}
 	}
 	DrawDebugHud(camera);
@@ -321,7 +321,6 @@ void GameScene::Render() {
 	if (mNextCheckpointArrowSprite) { mNextCheckpointArrowSprite->Draw(); }
 
 	if (mPendingReturnToTitle) {
-		Unnamed::Engine::RequestSceneChange("EmptyScene");
 		mPendingReturnToTitle = false;
 	}
 }
@@ -985,7 +984,7 @@ void GameScene::UpdateTeleport() {
 	}
 
 	Unnamed::AABB teleportTriggerAABB(mTeleportTriggerMin, mTeleportTriggerMax);
-	Debug::DrawBox(
+	DebugDraw::DrawBox(
 		teleportTriggerAABB.Center(),
 		Quaternion::identity,
 		teleportTriggerAABB.Size(),

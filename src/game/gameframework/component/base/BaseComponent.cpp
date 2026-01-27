@@ -1,4 +1,4 @@
-﻿#include <engine/unnamed/gameframework/component/base/BaseComponent.h>
+﻿#include "BaseComponent.h"
 
 namespace Unnamed {
 	BaseComponent::BaseComponent() = default;

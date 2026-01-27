@@ -3,7 +3,7 @@
 #include <format>
 
 #include <engine/Components/ColliderComponent/AABBCollider.h>
-#include <engine/Debug/Debug.h>
+#include <engine/Debug/DebugDraw.h>
 #include <engine/Entity/Entity.h>
 #include <engine/ImGui/ImGuiWidgets.h>
 #include <game/components/checkpoint/CheckpointManager.h>
@@ -36,7 +36,7 @@ void CheckpointComponent::Update(float) {
 	const Vec3          center    = (worldAABB.min + worldAABB.max) * 0.5f;
 	const Vec3          size      = worldAABB.Size();
 
-	Debug::DrawBox(
+	DebugDraw::DrawBox(
 		center,
 		Quaternion::identity,
 		size,
@@ -44,7 +44,7 @@ void CheckpointComponent::Update(float) {
 	);
 
 	// リスポーン位置を表示
-	Debug::DrawSphere(mRespawnPosition, Quaternion::identity, 0.5f, Vec4::cyan);
+	DebugDraw::DrawSphere(mRespawnPosition, Quaternion::identity, 0.5f, Vec4::cyan);
 }
 
 void CheckpointComponent::DrawInspectorImGui() {

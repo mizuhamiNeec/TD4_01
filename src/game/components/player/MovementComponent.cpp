@@ -83,13 +83,13 @@ void MovementComponent::Init(
 void MovementComponent::PrePhysics(float) {
 	ProcessInput();
 
-	Debug::DrawBox(
+	DebugDraw::DrawBox(
 		mHull.center,
 		Quaternion::identity,
 		mHull.halfSize * 2.0f,
 		{0.34f, 0.66f, 0.95f, 1.0f}
 	);
-	Debug::DrawArrow(
+	DebugDraw::DrawArrow(
 		mHull.center,
 		mData.velocity * 0.25f,
 		Vec4::yellow,
@@ -291,7 +291,7 @@ void MovementComponent::ProcessMovement(const float dt) {
 	if (mData.isGrounded && mUPhysicsEngine->BoxOverlap(
 		    extendedHull, &surfaceHit, 1
 	    )) {
-		Debug::DrawBox(
+		DebugDraw::DrawBox(
 			extendedHull.center,
 			Quaternion::identity,
 			extendedHull.halfSize * 2.0f,
@@ -334,7 +334,7 @@ void MovementComponent::ProcessMovement(const float dt) {
 				}
 				// デバッグ表示
 				// 合成速度（シアン）
-				Debug::DrawArrow(
+				DebugDraw::DrawArrow(
 					mScene->GetWorldPos(),
 					mSurfaceVelocity * 0.5f,
 					Vec4::cyan,
@@ -343,7 +343,7 @@ void MovementComponent::ProcessMovement(const float dt) {
 
 				// 線形速度（緑）
 				if (linearVelocity.SqrLength() > 0.0001f) {
-					Debug::DrawArrow(
+					DebugDraw::DrawArrow(
 						mScene->GetWorldPos(),
 						linearVelocity * 0.5f,
 						{0.0f, 1.0f, 0.0f, 1.0f}, // 緑
@@ -352,7 +352,7 @@ void MovementComponent::ProcessMovement(const float dt) {
 				}
 
 				// 回転中心からプレイヤーへの半径ベクトル（白）
-				Debug::DrawLine(
+				DebugDraw::DrawLine(
 					currentPos,
 					mScene->GetWorldPos(),
 					{1.0f, 1.0f, 1.0f, 0.5f} // 白（半透明）

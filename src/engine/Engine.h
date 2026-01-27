@@ -1,12 +1,12 @@
 #pragma once
 #include <memory>
-#include <string>
-#include <string_view>
 #include <optional>
+#include <string>
 #include <vector>
 
 #include <editor/Editor.h>
 
+#include <engine/EngineConfig.h>
 #include <engine/CopyImagePass/CopyImagePass.h>
 #include <engine/Entity/EntityLoader.h>
 #include <engine/ImGui/ImGuiManager.h>
@@ -21,17 +21,20 @@
 #include <engine/SceneManager/SceneFactory.h>
 #include <engine/SceneManager/SceneManager.h>
 #include <engine/Sprite/SpriteCommon.h>
-#include <engine/unnamed/subsystem/interface/ISubsystem.h>
 #include <engine/unnamed/subsystem/time/TimeSystem.h>
 #include <engine/Window/WindowManager.h>
 
 #include <game/scene/GameScene.h>
 
+#include "editor/UEditor.h"
+
+#include "game/gameframework/map/Map.h"
+
+#include "unnamed/subsystem/input/UInputSystem.h"
+
 class AudioManager;
 
 namespace Unnamed {
-	class ConsoleSystem;
-
 	/// @brief エンジンクラス
 	class Engine {
 	public:
@@ -41,6 +44,7 @@ namespace Unnamed {
 		int Run();
 
 	public:
+		//DEPRECATED: 旧エンジンクラス
 		static AudioManager* GetAudioManager() {
 			return mAudioManager.get();
 		}
@@ -88,9 +92,6 @@ namespace Unnamed {
 		// DEPRECATED: 旧エンジンクラス
 		static float blurStrength;
 
-		static bool RequestSceneChange(std::string_view sceneName);
-
-
 		void OnResize(uint32_t width, uint32_t height);
 		void ResizeOffscreenRenderTextures(uint32_t width, uint32_t height);
 
@@ -100,13 +101,17 @@ namespace Unnamed {
 
 	private:
 		bool Init();
-		void Update();
+		void Tick();
 		void Shutdown() const;
 
 	private:
-		std::vector<std::unique_ptr<ISubsystem>> mSubsystems;
-		ConsoleSystem*                           mConsoleSystem = nullptr;
-		TimeSystem*                              mTimeSystem    = nullptr;
+		EngineConfig mConfig;
+
+		std::unique_ptr<ConsoleSystem> mConsoleSystem;
+		std::unique_ptr<TimeSystem>    mTimeSystem;
+		std::unique_ptr<UInputSystem>  mInputSystem;
+		std::unique_ptr<UEditor>       mUEditor;
+		std::unique_ptr<Map>           mMap;
 
 		std::unique_ptr<OldWindowManager> mWindowManager;
 		std::unique_ptr<Editor> mEditor;
@@ -128,6 +133,7 @@ namespace Unnamed {
 		static std::unique_ptr<ResourceManager> mResourceManager;
 
 		static std::unique_ptr<D3D12> mRenderer;
+
 #ifdef _DEBUG
 		std::unique_ptr<ImGuiManager> mImGuiManager;
 #endif
@@ -144,7 +150,6 @@ namespace Unnamed {
 		static std::shared_ptr<SceneManager> mSceneManager;
 		static std::optional<std::string>    mPendingSceneChange;
 
-		static void ApplyPendingSceneChange();
 		static Vec2 mViewportLT;
 		static Vec2 mViewportSize;
 		static bool mIsEditorMode;

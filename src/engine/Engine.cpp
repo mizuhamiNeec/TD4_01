@@ -8,9 +8,8 @@
 
 #include <engine/Engine.h>
 #include <engine/Camera/CameraManager.h>
-#include <engine/Debug/Debug.h>
+#include <engine/Debug/DebugDraw.h>
 #include <engine/Debug/DebugHud.h>
-#include <engine/ImGui/Icons.h>
 #include <engine/Input/InputSystem.h>
 #include <engine/OldConsole/ConCommand.h>
 #include <engine/OldConsole/ConVarManager.h>
@@ -36,38 +35,8 @@
 
 #include "ResourceSystem/Audio/AudioManager.h"
 
-namespace {
-	constexpr std::string_view kSceneEmpty = "EmptyScene";
-	constexpr std::string_view kSceneGame  = "GameScene";
-}
-
 namespace Unnamed {
-	bool Engine::RequestSceneChange(const std::string_view sceneName) {
-		if (sceneName.empty()) {
-			Warning("Engine", "RequestSceneChange ignored: empty name");
-			return false;
-		}
-
-		mPendingSceneChange = std::string(sceneName);
-		return true;
-	}
-
-	void Engine::ApplyPendingSceneChange() {
-		if (!mPendingSceneChange || mPendingSceneChange->empty()) { return; }
-
-		if (!mSceneManager) {
-			Error(
-				"Engine",
-				"SceneManager missing; cannot apply pending scene change."
-			);
-			mPendingSceneChange.reset();
-			return;
-		}
-
-		Msg("Engine", "Switching to scene '{}'", *mPendingSceneChange);
-		mSceneManager->ChangeScene(*mPendingSceneChange);
-		mPendingSceneChange.reset();
-	}
+	static constexpr std::string_view kChannel = "Engine";
 
 	/// @brief コンストラクタ
 	Engine::Engine() = default;
@@ -84,7 +53,7 @@ namespace Unnamed {
 			if (OldWindowManager::ProcessMessage()) {
 				break;
 			}
-			Update();
+			Tick();
 		}
 		Shutdown();
 		return EXIT_SUCCESS;
@@ -93,9 +62,9 @@ namespace Unnamed {
 	/// @brief 初期化
 	/// @return 成功したらtrueを返す
 	bool Engine::Init() {
-		//---------------------------------------------------------------------
-		// Purpose: 旧エンジン
-		//---------------------------------------------------------------------
+		if (mConfig.mode == ENGINE_MODE::EDITOR) {
+		}
+
 #ifdef _DEBUG
 		ConVarManager::RegisterConVar<bool>(
 			"verbose", true, "Enable verbose logging"
@@ -106,39 +75,16 @@ namespace Unnamed {
 		);
 #endif
 
-		//---------------------------------------------------------------------
-		// Purpose: 新エンジン
-		//---------------------------------------------------------------------
-		mSubsystems.emplace_back(std::make_unique<ConsoleSystem>());
-		mSubsystems.emplace_back(std::make_unique<TimeSystem>());
+		// ConsoleSystemの初期化
+		mConsoleSystem = std::make_unique<ConsoleSystem>();
+		if (!mConsoleSystem->Init()) { return false; }
 
-		// 各サブシステムを初期化
-		for (auto& subsystem : mSubsystems) {
-			if (subsystem->Init()) {
-				auto name = std::string(subsystem->GetName());
-				SpecialMsg(
-					LogLevel::Success, "Engine",
-					"Subsystem initialized: {}", subsystem->GetName()
-				);
-			} else { UASSERT(false && "Failed to initialize subsystem"); }
-		}
+		// TimeSystemの初期化
+		mTimeSystem = std::make_unique<TimeSystem>();
+		if (!mTimeSystem->Init()) { return false; }
 
-		// メンバに持っておく
-		mConsoleSystem = ServiceLocator::Get<ConsoleSystem>();
-		mTimeSystem    = ServiceLocator::Get<TimeSystem>();
-
-		Msg(
-			"CommandLine", "command line arguments:\n{}",
-			StrUtil::ToString(GetCommandLineW())
-		);
-
-		//---------------------------------------------------------------------
-		// Purpose: 旧エンジン
-		//---------------------------------------------------------------------
-		ConVarManager::RegisterConVar<std::string>(
-			"launchargs", StrUtil::ToString(GetCommandLineW()),
-			"Command line arguments"
-		);
+		mInputSystem = std::make_unique<UInputSystem>();
+		if (!mInputSystem->Init()) { return false; }
 
 		// メインウィンドウの作成
 		auto gameWindow = std::make_unique<MainWindow>();
@@ -176,11 +122,6 @@ namespace Unnamed {
 		InputSystem::Init();
 
 		RegisterConsoleCommandsAndVariables();
-
-		// コマンドライン引数をコンソールに送信
-		Console::SubmitCommand(
-			ConVarManager::GetConVar("launchargs")->GetValueAsString()
-		);
 
 		// 各マネージャーの初期化
 		mResourceManager = std::make_unique<ResourceManager>(mRenderer.get());
@@ -314,7 +255,7 @@ namespace Unnamed {
 		mLineCommon = std::make_unique<LineCommon>();
 		mLineCommon->Init(mRenderer.get());
 
-		Debug::Init(mLineCommon.get());
+		DebugDraw::Init(mLineCommon.get());
 
 		//---------------------------------------------------------------------
 		// すべての初期化が完了
@@ -332,7 +273,7 @@ namespace Unnamed {
 		mSceneFactory->RegisterScene<GameScene>("GameScene");
 		mSceneFactory->RegisterScene<EmptyScene>("EmptyScene");
 		// シーンの初期化
-		mSceneManager->ChangeScene("GameScene");
+		mSceneManager->ChangeScene("EmptyScene");
 
 		//---------------------------------------------------------------------
 		// エディターの初期化
@@ -349,22 +290,18 @@ namespace Unnamed {
 	}
 
 	/// @brief 更新
-	void Engine::Update() {
+	void Engine::Tick() {
 		mTimeSystem->BeginFrame();
+		float deltaTime = mTimeSystem->GetGameTime()->DeltaTime<float>();
 
-		//---------------------------------------------------------------------
-		// Purpose: 旧エンジン
-		//---------------------------------------------------------------------
-
-		// ウィンドウが閉じられた場合は終了 TODO: きたないので直そう
-		if (mWishShutdown) {
-			DestroyWindow(mWindowManager->GetMainWindow()->GetWindowHandle());
-		}
+		mInputSystem->Update(deltaTime);
 
 #ifdef _DEBUG
 		ImGuiManager::NewFrame();
 		ImGuizmo::BeginFrame();
 #endif
+
+		mConsoleSystem->Update(deltaTime);
 
 		// 前のフレームとeditorModeが違う場合はエディターモードを切り替える
 		static bool bPrevEditorMode = mIsEditorMode;
@@ -523,7 +460,7 @@ namespace Unnamed {
 #endif
 
 #ifdef _DEBUG
-		Debug::Update();
+		DebugDraw::Update();
 #endif
 		CameraManager::Update(
 			mTimeSystem->GetGameTime()->ScaledDeltaTime<float>()
@@ -547,7 +484,7 @@ namespace Unnamed {
 
 #ifdef _DEBUG
 		mLineCommon->Render();
-		Debug::Draw();
+		DebugDraw::Draw();
 #endif
 
 		// 先にバリアを設定
@@ -672,16 +609,6 @@ namespace Unnamed {
 		// --- PostRender↓ ---
 		if (mIsEditorMode) { mRenderer->BeginSwapChainRenderPass(); }
 
-		//---------------------------------------------------------------------
-		// Purpose: 新エンジン
-		//---------------------------------------------------------------------
-
-		for (auto& subsystem : mSubsystems) {
-			subsystem->Update(mTimeSystem->GetGameTime()->DeltaTime<float>());
-		}
-
-		for (auto& subsystem : mSubsystems) { subsystem->Render(); }
-
 #ifdef _DEBUG
 		mImGuiManager->EndFrame();
 #endif
@@ -712,12 +639,9 @@ namespace Unnamed {
 
 	/// @brief シャットダウン
 	void Engine::Shutdown() const {
-		//---------------------------------------------------------------------
-		// Purpose: 旧エンジン
-		//---------------------------------------------------------------------
 		mRenderer->WaitPreviousFrame();
 
-		Debug::Shutdown();
+		DebugDraw::Shutdown();
 
 		mCopyImagePass->Shutdown();
 
@@ -731,22 +655,20 @@ namespace Unnamed {
 #ifdef _DEBUG
 		if (mImGuiManager) { mImGuiManager->Shutdown(); }
 #endif
+
 		mResourceManager->Shutdown();
 		mResourceManager.reset();
+
+
+		mInputSystem->Shutdown();
+		mConsoleSystem->Shutdown();
+		mTimeSystem->Shutdown();
 
 		SpecialMsg(
 			LogLevel::Success,
 			"Engine",
 			"アリーヴェ帰ルチ! (さよナランチャ"
 		);
-
-		//---------------------------------------------------------------------
-		// Purpose: 新エンジン
-		//---------------------------------------------------------------------
-		// 登録されたサブシステムをシャットダウン
-		for (auto& subsystem : mSubsystems) {
-			if (subsystem) { subsystem->Shutdown(); }
-		}
 	}
 
 	/// @brief ウィンドウリサイズ時の処理
@@ -900,25 +822,9 @@ namespace Unnamed {
 		);
 #endif
 
-		ConCommand::RegisterCommand(
-			"scene_title",
-			[]([[maybe_unused]] const std::vector<std::string>& args) {
-				return Engine::RequestSceneChange("EmptyScene");
-			},
-			"Switch to the title scene."
-		);
-
-		ConCommand::RegisterCommand(
-			"scene_game",
-			[]([[maybe_unused]] const std::vector<std::string>& args) {
-				return Engine::RequestSceneChange("GameScene");
-			},
-			"Switch to the gameplay scene."
-		);
-
 		// コンソール変数を登録
 		ConVarManager::RegisterConVar(
-			"cl_showpos", 1,
+			"cl_showpos", 2,
 			"Draw current position at top of screen (1 = meter, 2 = hammer)"
 		);
 		ConVarManager::RegisterConVar(

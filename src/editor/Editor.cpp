@@ -5,7 +5,7 @@
 #include <engine/Engine.h>
 #include <engine/Camera/CameraManager.h>
 #include <engine/Components/Base/Component.h>
-#include <engine/Debug/Debug.h>
+#include <engine/Debug/DebugDraw.h>
 #include <engine/Entity/EntityLoader.h>
 #include <engine/ImGui/Icons.h>
 #include <engine/ImGui/ImGuiUtil.h>
@@ -1230,7 +1230,7 @@ void Editor::DrawGrid(
 	{
 		// 軸線（X=0）の描画
 		if (std::abs(0.0f) <= range) {
-			Debug::DrawLine(Vec3(0, 0, -range), Vec3(0, 0, range), axisColor);
+			DebugDraw::DrawLine(Vec3(0, 0, -range), Vec3(0, 0, range), axisColor);
 		}
 
 		// 1024間隔の主要線を描画
@@ -1243,7 +1243,7 @@ void Editor::DrawGrid(
 			if (i == 0) continue; // 軸線は既に描画済み
 			const float x = i * majorInterval;
 			if (std::abs(x) <= range) {
-				Debug::DrawLine(Vec3(x, 0, -range), Vec3(x, 0, range),
+				DebugDraw::DrawLine(Vec3(x, 0, -range), Vec3(x, 0, range),
 				                majorColor);
 			}
 		}
@@ -1253,7 +1253,7 @@ void Editor::DrawGrid(
 	{
 		// 軸線（Z=0）の描画
 		if (std::abs(0.0f) <= range) {
-			Debug::DrawLine(Vec3(-range, 0, 0), Vec3(range, 0, 0), axisColor);
+			DebugDraw::DrawLine(Vec3(-range, 0, 0), Vec3(range, 0, 0), axisColor);
 		}
 
 		// 1024間隔の主要線を描画
@@ -1266,7 +1266,7 @@ void Editor::DrawGrid(
 			if (i == 0) continue; // 軸線は既に描画済み
 			const float z = i * majorInterval;
 			if (std::abs(z) <= range) {
-				Debug::DrawLine(Vec3(-range, 0, z), Vec3(range, 0, z),
+				DebugDraw::DrawLine(Vec3(-range, 0, z), Vec3(range, 0, z),
 				                majorColor);
 			}
 		}
@@ -1315,7 +1315,7 @@ void Editor::DrawGrid(
 
 			// 有効な範囲の場合のみ描画
 			if (startZ < endZ && startZ <= range && endZ >= -range) {
-				Debug::DrawLine(
+				DebugDraw::DrawLine(
 					Vec3(x, 0, startZ),
 					Vec3(x, 0, endZ),
 					lineColor
@@ -1360,7 +1360,7 @@ void Editor::DrawGrid(
 
 			// 有効な範囲の場合のみ描画
 			if (startX < endX && startX <= range && endX >= -range) {
-				Debug::DrawLine(
+				DebugDraw::DrawLine(
 					Vec3(startX, 0, z),
 					Vec3(endX, 0, z),
 					lineColor

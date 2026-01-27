@@ -6,7 +6,7 @@
 #include <engine/Camera/CameraManager.h>
 #include <engine/Components/Camera/CameraComponent.h>
 #include <engine/Components/ColliderComponent/MeshColliderComponent.h>
-#include <engine/Debug/Debug.h>
+#include <engine/Debug/DebugDraw.h>
 #include <engine/Entity/Entity.h>
 #include <engine/ResourceSystem/Mesh/StaticMesh.h>
 #include <engine/unnamed/subsystem/console/Log.h>
@@ -39,23 +39,23 @@ namespace UPhysics {
 				.tMax = 1e30f
 			};
 
-			Debug::DrawAxis(
+			DebugDraw::DrawAxis(
 				start,
 				Quaternion::identity
 			);
 
 			Hit hit;
 			if (RayCast(ray, &hit)) {
-				Debug::DrawRay(
+				DebugDraw::DrawRay(
 					start,
 					dir * hit.t,
 					Vec4::blue
 				);
-				Debug::DrawAxis(
+				DebugDraw::DrawAxis(
 					hit.pos,
 					Quaternion::identity
 				);
-				Debug::DrawRay(
+				DebugDraw::DrawRay(
 					hit.pos,
 					hit.normal,
 					Vec4::magenta

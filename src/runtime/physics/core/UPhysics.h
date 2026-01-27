@@ -1,6 +1,6 @@
 #pragma once
 #include <cmath>
-#include <engine/Debug/Debug.h>
+#include <engine/Debug/DebugDraw.h>
 #include <engine/unnamed/uphysics/BVH.h>
 #include <engine/unnamed/uphysics/BVHBuilder.h>
 #include <engine/unnamed/uphysics/CollisionDetection.h>
@@ -107,7 +107,7 @@ namespace UPhysics {
 					Vec3 center = (node.bounds.min + node.bounds.max) *
 						0.5f;
 					const Vec3 size = node.bounds.max - node.bounds.min;
-					Debug::DrawBox(
+					DebugDraw::DrawBox(
 						center,
 						Quaternion::identity,
 						size,

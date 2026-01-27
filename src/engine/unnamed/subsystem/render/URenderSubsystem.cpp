@@ -1,9 +1,9 @@
 #include <pch.h>
 #include <unordered_set>
 
-#include <engine/unnamed/gameframework/component/MeshRenderer/MeshRendererComponent.h>
-#include <engine/unnamed/gameframework/component/Transform/TransformComponent.h>
-#include <engine/unnamed/gameframework/world/UWorld.h>
+#include <game/gameframework/component/MeshRenderer/MeshRendererComponent.h>
+#include <game/gameframework/component/Transform/TransformComponent.h>
+#include <game/gameframework/world/UWorld.h>
 #include <engine/unnamed/subsystem/interface/ServiceLocator.h>
 #include <engine/unnamed/subsystem/render/URenderSubsystem.h>
 

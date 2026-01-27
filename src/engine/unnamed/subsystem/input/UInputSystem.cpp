@@ -8,6 +8,8 @@
 #include <engine/unnamed/subsystem/input/device/mouse/MouseDevice.h>
 #include <engine/unnamed/subsystem/interface/ServiceLocator.h>
 
+#include "engine/unnamed/subsystem/console/concommand/UnnamedConCommand.h"
+
 namespace Unnamed {
 	static constexpr std::string_view kChannel = "InputSystem";
 
@@ -16,6 +18,15 @@ namespace Unnamed {
 	/// @brief 初期化
 	bool UInputSystem::Init() {
 		ServiceLocator::Register<UInputSystem>(this);
+
+		static UnnamedConCommand bind(
+			"bind",
+			[](const std::vector<std::string>& args) {
+				return true;
+			},
+			"Bind a key to a command."
+		);
+
 		return true;
 	}
 
@@ -109,8 +120,8 @@ namespace Unnamed {
 		// 一時マップから最終アクション状態を更新
 		for (const auto& [action, states] : tempActionStates) {
 			mActionStates[action] = {
-				.bIsPressed = std::get<0>(states),
-				.bIsHeld = std::get<1>(states),
+				.bIsPressed  = std::get<0>(states),
+				.bIsHeld     = std::get<1>(states),
 				.bIsReleased = std::get<2>(states)
 			};
 		}
@@ -158,44 +169,43 @@ namespace Unnamed {
 		LPARAM                lParam
 	) {
 		switch (msg) {
-		case WM_ACTIVATE:
-			// ウィンドウが非アクティブになったら入力をリセット
-			if (LOWORD(wParam) == WA_INACTIVE) {
-				ResetInputStates();
-			}
-			break;
+			case WM_ACTIVATE:
+				// ウィンドウが非アクティブになったら入力をリセット
+				if (LOWORD(wParam) == WA_INACTIVE) {
+					ResetInputStates();
+				}
+				break;
 
-		case WM_INPUT: {
-			// RAW Inputを受け取る
-			UINT size = 0;
-			GetRawInputData(
-				reinterpret_cast<HRAWINPUT>(lParam), // NOLINT(performance-no-int-to-ptr)
-				RID_INPUT,
-				nullptr,
-				&size,
-				sizeof(RAWINPUTHEADER)
-			);
-
-			std::vector<uint8_t> buffer(size);
-
-			if (
+			case WM_INPUT: {
+				// RAW Inputを受け取る
+				UINT size = 0;
 				GetRawInputData(
 					reinterpret_cast<HRAWINPUT>(lParam), // NOLINT(performance-no-int-to-ptr)
 					RID_INPUT,
-					buffer.data(),
+					nullptr,
 					&size,
 					sizeof(RAWINPUTHEADER)
-				) == size
-			) {
-				const RAWINPUT* raw = reinterpret_cast<RAWINPUT*>(buffer.
-					data());
-				OnRawInput(*raw);
-			}
-			break;
-		}
+				);
 
-		default:
-			break;
+				std::vector<uint8_t> buffer(size);
+
+				if (
+					GetRawInputData(
+						reinterpret_cast<HRAWINPUT>(lParam), // NOLINT(performance-no-int-to-ptr)
+						RID_INPUT,
+						buffer.data(),
+						&size,
+						sizeof(RAWINPUTHEADER)
+					) == size
+				) {
+					const RAWINPUT* raw = reinterpret_cast<RAWINPUT*>(buffer.
+						data());
+					OnRawInput(*raw);
+				}
+				break;
+			}
+
+			default: break;
 		}
 
 		return false;

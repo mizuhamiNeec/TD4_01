@@ -56,15 +56,7 @@ namespace Unnamed {
 				continue;
 			}
 
-			// TODO: とりあえず-new引数が無い場合のみSubmitCommandを呼ぶようにする
-			bool isNewArg = false;
-			for (int i = 1; i < __argc; ++i) {
-				if (__wargv[i] && std::wcscmp(__wargv[i], L"-new") == 0) {
-					isNewArg = true;
-					break;
-				}
-			}
-			if (!isNewArg) { Console::SubmitCommand(line); }
+			Console::SubmitCommand(line);
 			ServiceLocator::Get<ConsoleSystem>()->ExecuteCommand(line);
 		}
 	}

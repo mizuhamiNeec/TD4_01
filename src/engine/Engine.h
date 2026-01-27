@@ -38,28 +38,9 @@ namespace Unnamed {
 		Engine();
 		~Engine();
 
-		bool Init();
-		void Update();
-		void Shutdown() const;
-
-		//---------------------------------------------------------------------
-		// Purpose: 新エンジンクラス
-		//---------------------------------------------------------------------
-	private:
-		std::vector<std::unique_ptr<ISubsystem>> mSubsystems;
-		ConsoleSystem*                           mConsoleSystem = nullptr;
-		TimeSystem*                              mTimeSystem    = nullptr;
+		int Run();
 
 	public:
-		//---------------------------------------------------------------------
-		// Purpose: 旧エンジンクラス
-		//---------------------------------------------------------------------
-
-		// DEPRECATED: 旧エンジンクラス
-		static bool IsEditorMode() {
-			return mIsEditorMode;
-		}
-
 		static AudioManager* GetAudioManager() {
 			return mAudioManager.get();
 		}
@@ -113,12 +94,20 @@ namespace Unnamed {
 		void OnResize(uint32_t width, uint32_t height);
 		void ResizeOffscreenRenderTextures(uint32_t width, uint32_t height);
 
-
 		static void RegisterConsoleCommandsAndVariables();
 		static void Quit(const std::vector<std::string>& args = {});
 		void        CheckEditorMode();
 
 	private:
+		bool Init();
+		void Update();
+		void Shutdown() const;
+
+	private:
+		std::vector<std::unique_ptr<ISubsystem>> mSubsystems;
+		ConsoleSystem*                           mConsoleSystem = nullptr;
+		TimeSystem*                              mTimeSystem    = nullptr;
+
 		std::unique_ptr<OldWindowManager> mWindowManager;
 		std::unique_ptr<Editor> mEditor;
 		std::unique_ptr<EntityLoader> mEntityLoader;

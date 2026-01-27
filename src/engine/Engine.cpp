@@ -32,6 +32,8 @@
 #include <game/scene/EmptyScene.h>
 #include <game/scene/GameScene.h>
 
+#include "platform/Win32App.h"
+
 #include "ResourceSystem/Audio/AudioManager.h"
 
 namespace {
@@ -72,6 +74,21 @@ namespace Unnamed {
 
 	/// @brief デストラクタ
 	Engine::~Engine() = default;
+
+	int Engine::Run() {
+		if (!Init()) {
+			UASSERT(false && "Failed to initialize Engine");
+			return EXIT_FAILURE;
+		}
+		while (!Win32App::PollEvents()) {
+			if (OldWindowManager::ProcessMessage()) {
+				break;
+			}
+			Update();
+		}
+		Shutdown();
+		return EXIT_SUCCESS;
+	}
 
 	/// @brief 初期化
 	/// @return 成功したらtrueを返す
@@ -358,7 +375,7 @@ namespace Unnamed {
 
 		/* ----------- 更新処理 ---------- */
 
-		if (IsEditorMode()) {
+		if (mIsEditorMode) {
 #ifdef _DEBUG
 			mEditor->DrawMenuBars();
 
@@ -524,7 +541,7 @@ namespace Unnamed {
 			mOffscreenRtv.rtv->GetDesc().Height
 		);
 		mRenderer->BeginRenderPass(mOffscreenRenderPassTargets);
-		if (IsEditorMode()) { if (mEditor) { mEditor->Render(); } } else {
+		if (mIsEditorMode) { if (mEditor) { mEditor->Render(); } } else {
 			mSceneManager->Render();
 		}
 
@@ -559,7 +576,7 @@ namespace Unnamed {
 			const uint32_t next = mPingIndex ^ 1; // 次のインデックス
 			auto&          dest = mPingRtv[next];
 
-			if (IsEditorMode()) {
+			if (mIsEditorMode) {
 				mRenderer->SetViewportAndScissor(
 					static_cast<uint32_t>(mOffscreenRtv.rtv->GetDesc().Width),
 					mOffscreenRtv.rtv->GetDesc().Height
@@ -576,7 +593,7 @@ namespace Unnamed {
 
 			D3D12_CPU_DESCRIPTOR_HANDLE outRtvHandle{};
 
-			if (isLastPass && !IsEditorMode()) {
+			if (isLastPass && !mIsEditorMode) {
 				// ゲーム
 				if (!bSwapchainPassBegun) {
 					mRenderer->BeginSwapChainRenderPass();
@@ -608,7 +625,7 @@ namespace Unnamed {
 				outRtvHandle = dest.rtvHandle;
 			}
 
-			if (IsEditorMode()) {
+			if (mIsEditorMode) {
 				// CopyImagePass実行後にSRVを再作成して最新の内容を反映
 				if (mSrvManager) {
 					// SRVを再作成
@@ -653,7 +670,7 @@ namespace Unnamed {
 
 		//---------------------------------------------------------------------
 		// --- PostRender↓ ---
-		if (IsEditorMode()) { mRenderer->BeginSwapChainRenderPass(); }
+		if (mIsEditorMode) { mRenderer->BeginSwapChainRenderPass(); }
 
 		//---------------------------------------------------------------------
 		// Purpose: 新エンジン
@@ -675,8 +692,8 @@ namespace Unnamed {
 		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 		mRenderer->GetCommandList()->ResourceBarrier(1, &barrier);
 
-		if (IsEditorMode()) {
-			// postProcessedRTV_ のバリアを戻す
+		if (mIsEditorMode) {
+			// mPostProcessedRtv のバリアを戻す
 			D3D12_RESOURCE_BARRIER postBarrier = {};
 			postBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 			postBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;

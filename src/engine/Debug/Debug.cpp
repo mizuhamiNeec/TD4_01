@@ -8,9 +8,7 @@
 /// @param b 線の終点
 /// @param color 線の色
 void Debug::DrawLine(const Vec3 a, const Vec3 b, const Vec4& color) {
-	if (Unnamed::Engine::IsEditorMode()) {
-		mLine->AddLine(a, b, color);
-	}
+	mLine->AddLine(a, b, color);
 }
 
 /// @brief レイを描画
@@ -18,9 +16,7 @@ void Debug::DrawLine(const Vec3 a, const Vec3 b, const Vec4& color) {
 /// @param dir レイの方向と長さ
 /// @param color レイの色
 void Debug::DrawRay(const Vec3& position, const Vec3& dir, const Vec4& color) {
-	if (Unnamed::Engine::IsEditorMode()) {
-		mLine->AddLine(position, position + dir, color);
-	}
+	mLine->AddLine(position, position + dir, color);
 }
 
 /// @brief 軸を描画
@@ -135,7 +131,7 @@ void Debug::DrawArc(
 	}
 
 	float angleStep = (arcSpan / static_cast<float>(arcSegments)) *
-		Math::deg2Rad;
+	                  Math::deg2Rad;
 	float stepOffset = startAngle * Math::deg2Rad;
 
 	Vec3 lineStart = Vec3::zero;
@@ -149,7 +145,7 @@ void Debug::DrawArc(
 	for (int i = 0; i < arcSegments; i++) {
 		const float stepStart = angleStep * static_cast<float>(i) + stepOffset;
 		const float stepEnd   = angleStep * static_cast<float>(i + 1) +
-			stepOffset;
+		                      stepOffset;
 
 		lineStart.x = std::cos(stepStart);
 		lineStart.y = std::sin(stepStart);
@@ -216,9 +212,9 @@ void Debug::DrawArrow(
 
 	// 頭部の羽根を描画
 	const Vec3 arrowLeft = end - (dirNormalized * headSize) + (right * headSize
-		* 0.5f);
+		                       * 0.5f);
 	const Vec3 arrowRight = end - (dirNormalized * headSize) - (right * headSize
-		* 0.5f);
+		                        * 0.5f);
 
 	// 主体の線
 	DrawLine(position, end, color);
@@ -399,7 +395,7 @@ void Debug::DrawCylinder(
 	const Vec3 topPosition  = basePosition + localUp * height;
 
 	const Quaternion circleOrientation = orientation * Quaternion::Euler(
-		90.0f * Math::deg2Rad, 0, 0);
+		                                     90.0f * Math::deg2Rad, 0, 0);
 
 	const Vec3 pointA = basePosition + localRight * radius;
 	const Vec3 pointB = basePosition + localForward * radius;
@@ -430,7 +426,7 @@ void Debug::DrawCapsule(
 	const float      rad            = std::clamp(radius, 0.0f, height * 0.5f);
 	const Vec3       localUp        = orientation * Vec3::up;
 	const Quaternion arcOrientation = orientation * Quaternion::Euler(
-		0, 90.0f * Math::deg2Rad, 0);
+		                                  0, 90.0f * Math::deg2Rad, 0);
 
 	const Vec3 basePositionOffset = drawFromBase ?
 		                                Vec3::zero :

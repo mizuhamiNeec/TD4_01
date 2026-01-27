@@ -5,7 +5,6 @@ namespace Unnamed {
 	void RegisterBuiltInConVars();
 	void EngineConVar();
 	void EditorConVar();
-	void UserConVar();
 	void ClientConVar();
 	void ServerConVar();
 }

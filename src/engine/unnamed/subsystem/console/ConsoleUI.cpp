@@ -7,6 +7,8 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
+#include "concommand/UnnamedConCommand.h"
+
 #include "engine/ImGui/Icons.h"
 #include "engine/ImGui/ImGuiWidgets.h"
 
@@ -28,122 +30,118 @@ namespace Unnamed {
 	ConsoleUI::ConsoleUI(
 		ConsoleSystem* consoleSystem
 	) : mConsoleSystem(consoleSystem) {
-#ifdef _DEBUG
-		bool isNewArg = false;
-		for (int i = 1; i < __argc; ++i) {
-			// wWinMainの場合は__wargvらしい  へぇー(x512)
-			if (__wargv[i] && std::wcscmp(__wargv[i], L"-new") == 0) {
-				isNewArg = true;
-				break;
-			}
-		}
-		mIsImGuiInitialized = !isNewArg;
-#else
-		mIsImGuiInitialized = false;
-#endif
+	}
+
+	void ConsoleUI::Init() const {
+		static UnnamedConCommand clear(
+			"clear",
+			[&](const std::vector<std::string>&) {
+				mConsoleSystem->GetLogBuffer().Clear();
+				return true;
+			},
+			"Clears the console output."
+		);
 	}
 
 	/// @brief コンソールUIを表示します。
 	/// @details ImGuiのコンテキスト内で呼び出し
 	void ConsoleUI::Show() {
-		if (mIsImGuiInitialized) {
-			ImGui::Begin("Console##ConsoleUI", nullptr, kWindowFlags);
+		ImGui::Begin("Console##ConsoleUI", nullptr, kWindowFlags);
 
-			constexpr ImGuiChildFlags childFlags =
-				ImGuiChildFlags_ResizeX |
-				ImGuiChildFlags_FrameStyle;
+		constexpr ImGuiChildFlags childFlags =
+			ImGuiChildFlags_ResizeX |
+			ImGuiChildFlags_FrameStyle;
 
-			// このウィンドウで使えるサイズを取得
-			const auto region = ImGui::GetWindowContentRegionMax();
+		// このウィンドウで使えるサイズを取得
+		const auto region = ImGui::GetWindowContentRegionMax();
 
-			// 子ウィンドウの高さを計算
-			const float childHeight = region.y -
-				ImGui::GetFrameHeightWithSpacing() * 2.0f;
+		// 子ウィンドウの高さを計算
+		const float childHeight = region.y -
+		                          ImGui::GetFrameHeightWithSpacing() * 2.0f;
 
-			ImGui::BeginChild(
-				"Output##ConsoleUI", {region.x * 0.5f, childHeight}, childFlags
-			);
+		ImGui::BeginChild(
+			"Output##ConsoleUI", {region.x * 0.5f, childHeight}, childFlags
+		);
 
-			static ConsoleLogText selection;
+		static ConsoleLogText selection;
 
-			for (
-				auto it = mConsoleSystem->GetLogBuffer().begin();
-				it != mConsoleSystem->GetLogBuffer().end();
-				++it
-			) {
-				const auto& buffer = *it;
-				std::string display;
-				if (!buffer.channel.empty()) {
-					display =
-						"[" + buffer.channel + "] " + // チャンネル名
-						buffer.message;               // メッセージ
-				} else {
-					display = buffer.message;
-				}
-
-				display += "##" + std::to_string(it.Index()); // ユニーク ID 用
-
-				// テキストの色を設定
-				PushTextColor(buffer);
-
-				// セレクション用のユニーク ID は別で付与する
-				ImGui::PushID(static_cast<int>(it.Index()));
-				if (ImGui::Selectable(display.c_str(), false)) {
-					selection = buffer;
-				}
-				ImGui::PopID();
-
-				ImGui::PopStyleColor();
+		for (
+			auto it = mConsoleSystem->GetLogBuffer().begin();
+			it != mConsoleSystem->GetLogBuffer().end();
+			++it
+		) {
+			const auto& buffer = *it;
+			std::string display;
+			if (!buffer.channel.empty()) {
+				display =
+					"[" + buffer.channel + "] " + // チャンネル名
+					buffer.message;               // メッセージ
+			} else {
+				display = buffer.message;
 			}
 
-			CheckScroll();
+			display += "##" + std::to_string(it.Index()); // ユニーク ID 用
 
-			ImGui::EndChild();
+			// テキストの色を設定
+			PushTextColor(buffer);
 
-			ImGui::SameLine();
-
-			ImGui::BeginChild(
-				"About##ConsoleUI", ImVec2(0, childHeight),
-				ImGuiChildFlags_AlwaysUseWindowPadding |
-				ImGuiChildFlags_FrameStyle
-			);
-
-			const std::string bufferInfo = std::format(
-				"File: {}\nLine: {}\nColumn: {}\nFunc: {}",
-				selection.location.file_name(),
-				selection.location.line(),
-				selection.location.column(),
-				selection.location.function_name()
-			);
-
-			ImGui::TextWrapped(bufferInfo.data());
-			const std::string command = std::format(
-				"Rider.cmd --line {} --column {} {}",
-				selection.location.line(),
-				selection.location.column(),
-				selection.location.file_name()
-			);
-
-			ImGui::Text(command.c_str());
-			if (
-				ImGuiWidgets::IconButton(
-					StrUtil::ConvertToUtf8(kIconNANKABOX).c_str(),
-					"Open in Rider"
-				)
-			) {
-				system(command.c_str());
+			// セレクション用のユニーク ID は別で付与する
+			ImGui::PushID(static_cast<int>(it.Index()));
+			if (ImGui::Selectable(display.c_str(), false)) {
+				selection = buffer;
 			}
+			ImGui::PopID();
 
-			ImGui::EndChild();
-
-			DrawInputText();
-
-			ImGui::SameLine();
-
-			DrawSubmitButton();
-
-			ImGui::End();
+			ImGui::PopStyleColor();
 		}
+
+		CheckScroll();
+
+		ImGui::EndChild();
+
+		ImGui::SameLine();
+
+		ImGui::BeginChild(
+			"About##ConsoleUI", ImVec2(0, childHeight),
+			ImGuiChildFlags_AlwaysUseWindowPadding |
+			ImGuiChildFlags_FrameStyle
+		);
+
+		const std::string bufferInfo = std::format(
+			"File: {}\nLine: {}\nColumn: {}\nFunc: {}",
+			selection.location.file_name(),
+			selection.location.line(),
+			selection.location.column(),
+			selection.location.function_name()
+		);
+
+		ImGui::TextWrapped(bufferInfo.data());
+		const std::string command = std::format(
+			"Rider.cmd --line {} --column {} {}",
+			selection.location.line(),
+			selection.location.column(),
+			selection.location.file_name()
+		);
+
+		ImGui::Text(command.c_str());
+		if (
+			ImGuiWidgets::IconButton(
+				StrUtil::ConvertToUtf8(kIconNANKABOX).c_str(),
+				"Open in Rider"
+			)
+		) {
+			system(command.c_str());
+		}
+
+		ImGui::EndChild();
+
+		DrawInputText();
+
+		ImGui::SameLine();
+
+		DrawSubmitButton();
+
+		ImGui::End();
 	}
 
 	/// @brief コンソールが更新された際のイベント
@@ -220,57 +218,55 @@ namespace Unnamed {
 	/// @param buffer コンソールログのテキスト情報
 	void ConsoleUI::PushTextColor(const ConsoleLogText& buffer) {
 		switch (buffer.level) {
-		case LogLevel::None:
-			ImGui::PushStyleColor(ImGuiCol_Text, ToImVec4(kConTextColor));
-			break;
-		case LogLevel::Info:
-			ImGui::PushStyleColor(ImGuiCol_Text, ToImVec4(kConTextColor));
-			break;
-		case LogLevel::Dev:
-			ImGui::PushStyleColor(ImGuiCol_Text, ToImVec4(kConTextColorDev));
-			break;
-		case LogLevel::Warning:
-			ImGui::PushStyleColor(ImGuiCol_Text, ToImVec4(kConTextColorWarn));
-			break;
-		case LogLevel::Error:
-			ImGui::PushStyleColor(ImGuiCol_Text, ToImVec4(kConTextColorError));
-			break;
-		case LogLevel::Fatal:
-			ImGui::PushStyleColor(ImGuiCol_Text, ToImVec4(kConTextColorFatal));
-			break;
-		case LogLevel::Execute:
-			ImGui::PushStyleColor(ImGuiCol_Text, ToImVec4(kConTextColorExec));
-			break;
-		case LogLevel::Waiting:
-			ImGui::PushStyleColor(ImGuiCol_Text, ToImVec4(kConTextColorWait));
-			break;
-		case LogLevel::Success:
-			ImGui::PushStyleColor(
-				ImGuiCol_Text, ToImVec4(kConTextColorSuccess)
-			);
-			break;
+			case LogLevel::None: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColor));
+				break;
+			case LogLevel::Info: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColor));
+				break;
+			case LogLevel::Dev: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColorDev));
+				break;
+			case LogLevel::Warning: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColorWarn));
+				break;
+			case LogLevel::Error: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColorError));
+				break;
+			case LogLevel::Fatal: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColorFatal));
+				break;
+			case LogLevel::Execute: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColorExec));
+				break;
+			case LogLevel::Waiting: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColorWait));
+				break;
+			case LogLevel::Success: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColorSuccess)
+				);
+				break;
 		}
 	}
 
 	/// @brief インプットテキストからのコールバック
 	int ConsoleUI::InputTextCallback(const ImGuiInputTextCallbackData* data) {
 		switch (data->EventFlag) {
-		case ImGuiInputTextFlags_CallbackCompletion: {
-			Msg("callback", "completion");
-		}
-		break;
-
-		case ImGuiInputTextFlags_CallbackHistory:
-			Msg("callback", "history");
+			case ImGuiInputTextFlags_CallbackCompletion: {
+				Msg("callback", "completion");
+			}
 			break;
 
-		case ImGuiInputTextFlags_CallbackEdit:
-			Msg("callback", "edit");
-			break;
+			case ImGuiInputTextFlags_CallbackHistory:
+				Msg("callback", "history");
+				break;
 
-		case ImGuiInputTextFlags_CallbackResize:
-			break;
-		default: ;
+			case ImGuiInputTextFlags_CallbackEdit:
+				Msg("callback", "edit");
+				break;
+
+			case ImGuiInputTextFlags_CallbackResize: break;
+			default: ;
 		}
 		return 0;
 	}

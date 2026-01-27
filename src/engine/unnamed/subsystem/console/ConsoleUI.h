@@ -18,6 +18,8 @@ namespace Unnamed {
 	public:
 		explicit ConsoleUI(ConsoleSystem* consoleSystem);
 
+		void Init() const;
+
 		void Show();
 		void OnConsoleUpdate();
 
@@ -37,7 +39,6 @@ namespace Unnamed {
 
 		ConsoleSystem* mConsoleSystem;
 
-		bool mIsImGuiInitialized = false;
 		bool mWishScrollToBottom = false;
 
 		char mInputBuffer[256] = "";

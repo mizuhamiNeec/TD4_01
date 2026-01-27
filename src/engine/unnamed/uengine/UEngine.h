@@ -3,19 +3,13 @@
 #include <vector>
 
 #include <engine/platform/PlatformEventsImpl.h>
-#include <engine/unnamed/gameframework/ecs/ECSEntity.h>
-#include <engine/unnamed/gameframework/ecs/World.h>
-#include <engine/unnamed/gameframework/world/UWorld.h>
+#include <game/gameframework/world/UWorld.h>
 #include <engine/unnamed/subsystem/interface/ISubsystem.h>
 #include <engine/unnamed/subsystem/render/URenderSubsystem.h>
 #include <engine/unnamed/subsystem/window/Win32/Win32WindowSystem.h>
 #include <engine/unnamed/urenderer/GraphicsDevice.h>
 #include <engine/unnamed/urootsignaturecache/RootSignatureCache.h>
 #include <engine/unnamed/uuploadarena/UploadArena.h>
-
-#ifdef _DEBUG
-#include <engine/unnamed/imgui/UImGuiManager.h>
-#endif
 
 class TimeSystem;
 
@@ -63,14 +57,8 @@ namespace Unnamed {
 		std::unique_ptr<UPipelineCache>        mPipelineCache;
 		std::unique_ptr<UploadArena>           mUploadArena;
 
-#ifdef _DEBUG
-		std::unique_ptr<UImGuiManager> mImGuiManager;
-#endif
-
 		// TODO: 削除予定
 		std::unique_ptr<UWorld> mWorld;
-		ECS::World              mEcsWorld;
-		ECS::Entity             mEntity;
 		uint32_t                mMaterialAsset;
 		TransformComponent*     mCameraTransform = nullptr;
 		UCameraComponent*       mCamera          = nullptr;

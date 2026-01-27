@@ -2,10 +2,6 @@
 
 //-----------------------------------------------------------------------------
 
-#include <engine/unnamed/gameframework/component/Camera/UCameraComponent.h>
-#include <engine/unnamed/gameframework/component/MeshRenderer/MeshRendererComponent.h>
-#include <engine/unnamed/gameframework/component/Rotator/RotatorComponent.h>
-#include <engine/unnamed/gameframework/component/Transform/TransformComponent.h>
 #include <engine/unnamed/subsystem/console/ConsoleSystem.h>
 #include <engine/unnamed/subsystem/console/concommand/UnnamedConVar.h>
 #include <engine/unnamed/subsystem/input/KeyNameTable.h>
@@ -16,6 +12,10 @@
 #include <engine/unnamed/subsystem/time/TimeSystem.h>
 #include <engine/unnamed/subsystem/window/Win32/Win32WindowSystem.h>
 #include <engine/unnamed/uengine/UEngine.h>
+#include <game/gameframework/component/Camera/UCameraComponent.h>
+#include <game/gameframework/component/MeshRenderer/MeshRendererComponent.h>
+#include <game/gameframework/component/Rotator/RotatorComponent.h>
+#include <game/gameframework/component/Transform/TransformComponent.h>
 
 #include <runtime/assets/core/UAssetManager.h>
 #include <runtime/assets/loaders/DirectXTexTextureLoader.h>
@@ -26,8 +26,6 @@
 #include <runtime/render/pipeline/UPipelineCache.h>
 #include <runtime/render/resources/RenderResourceManager.h>
 #include <runtime/render/resources/ShaderLibrary.h>
-
-#include "engine/unnamed/gameframework/ecs/component/BasicComponent.h"
 
 namespace Unnamed {
 	constexpr std::string_view kChannel = "Engine";
@@ -81,9 +79,9 @@ namespace Unnamed {
 		const IWindow::WindowCreateInfo info = {
 			.title =
 			"Main Window  -  " + kEngineBuildDate + " " + kEngineBuildTime,
-			.clWidth = 1280,
-			.clHeight = 720,
-			.bIsResizable = true,
+			.clWidth         = 1280,
+			.clHeight        = 720,
+			.bIsResizable    = true,
 			.bCreateAtCenter = false,
 		};
 		mWindowSystem->CreateNewWindow(info);
@@ -93,9 +91,9 @@ namespace Unnamed {
 		// 作成したウィンドウに合わせてグラフィックスデバイスを初期化
 		mGraphicsDevice                 = std::make_unique<GraphicsDevice>();
 		const GraphicsDeviceInfo gdInfo = {
-			.hWnd = mainWindow->GetNativeHandle(),
-			.width = mainWindow->GetInfo().clWidth,
-			.height = mainWindow->GetInfo().clHeight,
+			.hWnd        = mainWindow->GetNativeHandle(),
+			.width       = mainWindow->GetInfo().clWidth,
+			.height      = mainWindow->GetInfo().clHeight,
 			.bClearColor = false,
 #ifdef _DEBUG
 			.bEnableDebug = true,
@@ -104,11 +102,6 @@ namespace Unnamed {
 #endif
 		};
 		mGraphicsDevice->Init(gdInfo);
-
-#ifdef _DEBUG
-		mImGuiManager = std::make_unique<UImGuiManager>(
-			mGraphicsDevice.get(), mainWindow->GetNativeHandle());
-#endif
 
 		// プラットフォームイベントの作成
 		mPlatformEvents = std::make_unique<PlatformEventsImpl>();
@@ -135,7 +128,7 @@ namespace Unnamed {
 					"move",
 					{
 						.device = w->device,
-						.code = w->code,
+						.code   = w->code,
 					},
 					INPUT_AXIS::Y,
 					1.0f
@@ -147,7 +140,7 @@ namespace Unnamed {
 					"move",
 					{
 						.device = s->device,
-						.code = s->code,
+						.code   = s->code,
 					},
 					INPUT_AXIS::Y,
 					-1.0f
@@ -160,7 +153,7 @@ namespace Unnamed {
 						"move",
 						{
 							.device = d->device,
-							.code = d->code,
+							.code   = d->code,
 						},
 						INPUT_AXIS::X,
 						1.0f
@@ -173,7 +166,7 @@ namespace Unnamed {
 					"move",
 					{
 						.device = a->device,
-						.code = a->code,
+						.code   = a->code,
 					},
 					INPUT_AXIS::X,
 					-1.0f
@@ -186,7 +179,7 @@ namespace Unnamed {
 					"vertical",
 					{
 						.device = q->device,
-						.code = q->code
+						.code   = q->code
 					},
 					-1.0f
 				);
@@ -197,7 +190,7 @@ namespace Unnamed {
 					"vertical",
 					{
 						.device = e->device,
-						.code = e->code
+						.code   = e->code
 					},
 					1.0f
 				);
@@ -209,7 +202,7 @@ namespace Unnamed {
 					"hotreload",
 					{
 						.device = space->device,
-						.code = space->code
+						.code   = space->code
 					}
 				);
 			}
@@ -218,7 +211,7 @@ namespace Unnamed {
 				"mouse",
 				{
 					.device = InputDeviceType::MOUSE,
-					.code = VM_X
+					.code   = VM_X
 				},
 				INPUT_AXIS::X,
 				1.0f
@@ -227,7 +220,7 @@ namespace Unnamed {
 				"mouse",
 				{
 					.device = InputDeviceType::MOUSE,
-					.code = VM_Y
+					.code   = VM_Y
 				},
 				INPUT_AXIS::Y,
 				1.0f
@@ -237,7 +230,7 @@ namespace Unnamed {
 				"wheel",
 				{
 					.device = InputDeviceType::MOUSE,
-					.code = VM_WHEEL
+					.code   = VM_WHEEL
 				},
 				1.0f
 			);
@@ -327,7 +320,7 @@ namespace Unnamed {
 				for (int j = 0; j < cols; ++j) {
 					for (int k = 0; k < height; ++k) {
 						std::string name = "Entity_" + std::to_string(i) + "_" +
-							std::to_string(j);
+						                   std::to_string(j);
 						auto* entity = mWorld->SpawnEmpty(name);
 						auto* tr     = entity->GetOrAddComponent<
 							TransformComponent>();
@@ -341,11 +334,11 @@ namespace Unnamed {
 						meshRenderer->materialAsset = mMaterialAsset;
 
 						const float x = static_cast<float>(j) * spacing -
-							offsetX;
+						                offsetX;
 						const float z = static_cast<float>(i) * spacing -
-							offsetZ;
+						                offsetZ;
 						const float y = static_cast<float>(k) * spacing -
-							offsetX;
+						                offsetX;
 						tr->SetPosition(Vec3(x, y, z));
 
 						// tr->SetScale(
@@ -411,10 +404,6 @@ namespace Unnamed {
 
 			ClipCursor(&clip);
 		}
-
-		mEntity = mEcsWorld.CreateEntity();
-
-		mEcsWorld.Add<ECS::Transform>(mEntity, {});
 	}
 
 
@@ -422,10 +411,6 @@ namespace Unnamed {
 		while (!mWindowSystem->AllClosed()) {
 			mTime->BeginFrame();
 			const float deltaTime = mTime->GetGameTime()->DeltaTime<float>();
-
-#ifdef _DEBUG
-			mImGuiManager->BeginFrame();
-#endif
 
 			// サブシステムの更新
 			for (const auto& subsystem : mSubsystems) {
@@ -504,9 +489,9 @@ namespace Unnamed {
 			float       aspect     = width / height;
 			RenderView  view       = {};
 			view                   = {
-				.view = UCameraComponent::View(mCameraTransform),
-				.proj = cam->Proj(aspect),
-				.viewProj = Mat4::identity,
+				.view      = UCameraComponent::View(mCameraTransform),
+				.proj      = cam->Proj(aspect),
+				.viewProj  = Mat4::identity,
 				.cameraPos = mCameraTransform->Position()
 			};
 			view.viewProj = view.view * view.proj;
@@ -519,9 +504,6 @@ namespace Unnamed {
 
 			//-----------------------------------------------------------------
 			mRenderer->RenderWorld(*mWorld);
-#ifdef _DEBUG
-			mImGuiManager->EndFrame(mRenderer->GetContext().cmd);
-#endif
 			mRenderer->EndFrame();
 			mTime->EndFrame();
 		}
@@ -534,10 +516,6 @@ namespace Unnamed {
 		for (const auto& subsystem : mSubsystems) {
 			subsystem->Shutdown();
 		}
-
-#ifdef _DEBUG
-		mImGuiManager->Shutdown();
-#endif
 
 		mGraphicsDevice->Shutdown();
 

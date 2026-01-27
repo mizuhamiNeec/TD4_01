@@ -1,6 +1,6 @@
 #include <engine/Camera/CameraManager.h>
 #include <engine/Components/Camera/CameraComponent.h>
-#include <engine/Debug/Debug.h>
+#include <engine/Debug/DebugDraw.h>
 #include <engine/ImGui/ImGuiManager.h>
 #include <engine/ImGui/ImGuiUtil.h>
 #include <engine/particle/ParticleManager.h>
@@ -280,13 +280,13 @@ void ParticleObject::Update(const float deltaTime) {
 	// エミッターの形状を描画
 	switch (shapeType) {
 	case 0: // Sphere
-		Debug::DrawSphere(
+		DebugDraw::DrawSphere(
 			mEmitter.transform.translate, Quaternion::identity, mEmitter.size.x,
 			{1.0f, 0.0f, 0.0f, 1.0f}
 		);
 		break;
 	case 1: // Cube
-		Debug::DrawBox(mEmitter.transform.translate, Quaternion::identity,
+		DebugDraw::DrawBox(mEmitter.transform.translate, Quaternion::identity,
 		               mEmitter.size, {0.0f, 1.0f, 0.0f, 1.0f});
 		break;
 	default: break;

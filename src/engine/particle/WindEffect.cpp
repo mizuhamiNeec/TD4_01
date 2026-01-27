@@ -2,7 +2,7 @@
 
 #include "engine/Camera/CameraManager.h"
 #include "engine/Components/Camera/CameraComponent.h"
-#include "engine/Debug/Debug.h"
+#include "engine/Debug/DebugDraw.h"
 #include "engine/Entity/Entity.h"
 #include "engine/particle/ParticleManager.h"
 #include "engine/particle/ParticleObject.h"
@@ -144,7 +144,7 @@ Vec3 WindEffect::GetRandomPositionInPlayerDirection() const {
 		up * std::sin(randomAngle) * randomDistance * 0.5f +
 		up * randomHeight;
 
-	Debug::DrawAxis(randomPos, Quaternion::identity);
+	DebugDraw::DrawAxis(randomPos, Quaternion::identity);
 
 	return randomPos;
 }

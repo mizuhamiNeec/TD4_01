@@ -6,7 +6,7 @@
 #include "engine/unnamed/uprimitive/UPrimitives.h"
 
 /// @brief デバッグ描画クラス
-class Debug {
+class DebugDraw {
 public:
 	static void DrawLine(Vec3 a, Vec3 b, const Vec4& color);
 	static void DrawRay(const Vec3& position, const Vec3& dir,

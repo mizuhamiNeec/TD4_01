@@ -1,4 +1,4 @@
-#include "engine/Debug/Debug.h"
+#include "engine/Debug/DebugDraw.h"
 
 #include "engine/Camera/CameraManager.h"
 #include "engine/Engine.h"
@@ -7,7 +7,7 @@
 /// @param a 線の始点
 /// @param b 線の終点
 /// @param color 線の色
-void Debug::DrawLine(const Vec3 a, const Vec3 b, const Vec4& color) {
+void DebugDraw::DrawLine(const Vec3 a, const Vec3 b, const Vec4& color) {
 	mLine->AddLine(a, b, color);
 }
 
@@ -15,14 +15,14 @@ void Debug::DrawLine(const Vec3 a, const Vec3 b, const Vec4& color) {
 /// @param position レイの始点
 /// @param dir レイの方向と長さ
 /// @param color レイの色
-void Debug::DrawRay(const Vec3& position, const Vec3& dir, const Vec4& color) {
+void DebugDraw::DrawRay(const Vec3& position, const Vec3& dir, const Vec4& color) {
 	mLine->AddLine(position, position + dir, color);
 }
 
 /// @brief 軸を描画
 /// @param position 軸の位置
 /// @param orientation 軸の向き
-void Debug::DrawAxis(const Vec3& position, const Quaternion& orientation) {
+void DebugDraw::DrawAxis(const Vec3& position, const Quaternion& orientation) {
 	Mat4 viewMat   = CameraManager::GetActiveCamera()->GetViewMat().Inverse();
 	Vec3 cameraPos = viewMat.GetTranslate();
 
@@ -59,7 +59,7 @@ void Debug::DrawAxis(const Vec3& position, const Quaternion& orientation) {
 /// @param radius 円の半径
 /// @param color 円の色
 /// @param segments 円の分割数
-void Debug::DrawCircle(
+void DebugDraw::DrawCircle(
 	const Vec3&       position,
 	const Quaternion& rotation,
 	const float       radius,
@@ -119,7 +119,7 @@ void Debug::DrawCircle(
 /// @param drawChord 弦を描画するかどうか
 /// @param drawSector 扇形の辺を描画するかどうか
 /// @param arcSegments 円弧の分割数
-void Debug::DrawArc(
+void DebugDraw::DrawArc(
 	const float       startAngle, const float  endAngle, const Vec3& position,
 	const Quaternion& orientation, const float radius, const Vec4&   color,
 	const bool        drawChord, const bool    drawSector, const int arcSegments
@@ -189,7 +189,7 @@ void Debug::DrawArc(
 /// @param direction 矢印の方向と長さ
 /// @param color 矢印の色
 /// @param headSize 矢印の頭の大きさ
-void Debug::DrawArrow(
+void DebugDraw::DrawArrow(
 	const Vec3& position, const Vec3& direction,
 	const Vec4& color,
 	float       headSize
@@ -230,7 +230,7 @@ void Debug::DrawArrow(
 /// @param pointC 四角形の頂点C
 /// @param pointD 四角形の頂点D
 /// @param color 四角形の色
-void Debug::DrawQuad(
+void DebugDraw::DrawQuad(
 	const Vec3& pointA, const Vec3& pointB, const Vec3& pointC,
 	const Vec3& pointD, const Vec4& color
 ) {
@@ -245,7 +245,7 @@ void Debug::DrawQuad(
 /// @param orientation 四角形の向き
 /// @param extent 四角形の幅と高さ
 /// @param color 四角形の色
-void Debug::DrawRect(const Vec3& position, const Quaternion& orientation,
+void DebugDraw::DrawRect(const Vec3& position, const Quaternion& orientation,
                      const Vec2& extent, const Vec4&         color) {
 	const Vec3 rightOffset = Vec3::right * extent.x * 0.5f;
 	const Vec3 upOffset    = Vec3::up * extent.y * 0.5f;
@@ -270,7 +270,7 @@ void Debug::DrawRect(const Vec3& position, const Quaternion& orientation,
 /// @param origin 四角形の原点位置（ワールド座標系）
 /// @param orientation 四角形の向き
 /// @param color 四角形の色
-void Debug::DrawRect(
+void DebugDraw::DrawRect(
 	const Vec2&       point1, const Vec2& point2, const Vec3& origin,
 	const Quaternion& orientation,
 	const Vec4&       color
@@ -295,7 +295,7 @@ void Debug::DrawRect(
 /// @param radius 球の半径
 /// @param color 球の色
 /// @param segments 球の分割数
-void Debug::DrawSphere(
+void DebugDraw::DrawSphere(
 	const Vec3& position, const Quaternion& orientation, float radius,
 	const Vec4& color, int                  segments
 ) {
@@ -343,7 +343,7 @@ void Debug::DrawSphere(
 /// @param orientation 箱の向き
 /// @param size 箱のサイズ
 /// @param color 箱の色
-void Debug::DrawBox(
+void DebugDraw::DrawBox(
 	const Vec3& position, const Quaternion& orientation,
 	Vec3        size, const Vec4&           color
 ) {
@@ -376,7 +376,7 @@ void Debug::DrawBox(
 /// @param radius 円柱の半径
 /// @param color 円柱の色
 /// @param drawFromBase 底面から描画するかどうか
-void Debug::DrawCylinder(
+void DebugDraw::DrawCylinder(
 	const Vec3&       position,
 	const Quaternion& orientation,
 	const float       height,
@@ -418,7 +418,7 @@ void Debug::DrawCylinder(
 /// @param radius カプセルの半径
 /// @param color カプセルの色
 /// @param drawFromBase 底面から描画するかどうか
-void Debug::DrawCapsule(
+void DebugDraw::DrawCapsule(
 	const Vec3& position, const Quaternion& orientation, const float height,
 	const float radius, const Vec4&         color,
 	const bool  drawFromBase
@@ -450,7 +450,7 @@ void Debug::DrawCapsule(
 /// @param end カプセルの終点
 /// @param radius カプセルの半径
 /// @param color カプセルの色
-void Debug::DrawCapsule(
+void DebugDraw::DrawCapsule(
 	const Vec3& start, const Vec3& end, const float radius, const Vec4& color
 ) {
 	// 始点から終点へのベクトルと長さを計算
@@ -482,7 +482,7 @@ void Debug::DrawCapsule(
 /// @brief 三角形を描画
 /// @param triangle 描画する三角形
 /// @param color 三角形の色
-void Debug::DrawTriangle(const Unnamed::Triangle& triangle, const Vec4 color) {
+void DebugDraw::DrawTriangle(const Unnamed::Triangle& triangle, const Vec4 color) {
 	DrawLine(triangle.v0, triangle.v1, color);
 	DrawLine(triangle.v1, triangle.v2, color);
 	DrawLine(triangle.v2, triangle.v0, color);
@@ -490,22 +490,22 @@ void Debug::DrawTriangle(const Unnamed::Triangle& triangle, const Vec4 color) {
 
 /// @brief デバッグ描画の初期化
 /// @param lineCommon 線描画共通設定
-void Debug::Init(LineCommon* lineCommon) {
+void DebugDraw::Init(LineCommon* lineCommon) {
 	mLine = std::make_unique<Line>(lineCommon);
 }
 
 /// @brief 毎フレーム更新
-void Debug::Update() {
+void DebugDraw::Update() {
 }
 
 /// @brief 描画
-void Debug::Draw() {
+void DebugDraw::Draw() {
 	mLine->Draw();
 }
 
 /// @brief デバッグ描画の終了処理
-void Debug::Shutdown() {
+void DebugDraw::Shutdown() {
 	mLine.reset();
 }
 
-std::unique_ptr<Line> Debug::mLine;
+std::unique_ptr<Line> DebugDraw::mLine;

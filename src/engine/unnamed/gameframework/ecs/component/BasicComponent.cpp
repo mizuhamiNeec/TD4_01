@@ -1,1 +1,0 @@
-﻿#include "BasicComponent.h"

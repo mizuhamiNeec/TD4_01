@@ -1,6 +1,6 @@
 #include "AABBCollider.h"
 
-#include "engine/Debug/Debug.h"
+#include "engine/Debug/DebugDraw.h"
 #include "engine/ImGui/ImGuiWidgets.h"
 
 AABBCollider::AABBCollider(const Unnamed::AABB& aabb, const Vec3 offset)
@@ -8,12 +8,6 @@ AABBCollider::AABBCollider(const Unnamed::AABB& aabb, const Vec3 offset)
 }
 
 void AABBCollider::Update(float) {
-	// Debug::DrawBox(
-	// 	mOwner->GetTransform()->GetWorldPos() + mOffset,
-	// 	Quaternion::identity,
-	// 	mAABB.Size(),
-	// 	Vec4::red
-	// );
 }
 
 void AABBCollider::DrawInspectorImGui() {

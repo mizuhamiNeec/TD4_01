@@ -1,6 +1,6 @@
 #include <engine/Engine.h>
 #include <engine/Camera/CameraManager.h>
-#include <engine/Debug/Debug.h>
+#include <engine/Debug/DebugDraw.h>
 #include <engine/Entity/Entity.h>
 #include <engine/OldConsole/ConVarManager.h>
 
@@ -69,7 +69,7 @@ void Entity::Update(const float deltaTime) {
 		Vec3 worldPos   = GetTransform()->GetWorldPos();
 		Vec2 screenSize = Unnamed::Engine::GetViewportSize();
 
-		Debug::DrawAxis(worldPos,
+		DebugDraw::DrawAxis(worldPos,
 		                GetTransform()->GetWorldRot());
 
 		Vec3 cameraPos = CameraManager::GetActiveCamera()->GetViewMat().

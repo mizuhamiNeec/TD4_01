@@ -6,7 +6,7 @@
 
 #include "engine/Engine.h"
 #include "engine/Camera/CameraManager.h"
-#include "engine/Debug/Debug.h"
+#include "engine/Debug/DebugDraw.h"
 #include "engine/Debug/DebugHud.h"
 #include "engine/Entity/Entity.h"
 #include "engine/ImGui/ImGuiUtil.h"
@@ -887,7 +887,7 @@ void SkeletalMeshRenderer::DrawBoneHierarchy(
 	Quaternion nodeRot         = globalTransform.ToQuaternion();
 
 	if (mSkeletalMesh->GetSkeleton().boneMap.contains(node.name)) {
-		Debug::DrawSphere(
+		DebugDraw::DrawSphere(
 			nodePos,
 			nodeRot,
 			0.03f,
@@ -898,7 +898,7 @@ void SkeletalMeshRenderer::DrawBoneHierarchy(
 		if (parentTransform != Mat4::identity) {
 			Mat4 parentT   = parentTransform;
 			Vec3 parentPos = parentT.GetTranslate();
-			Debug::DrawLine(parentPos, nodePos, {0.8f, 0.8f, 0.2f, 1.0f});
+			DebugDraw::DrawLine(parentPos, nodePos, {0.8f, 0.8f, 0.2f, 1.0f});
 			{
 				const Vec3 worldPos   = nodePos;
 				Vec2       screenSize = Unnamed::Engine::GetViewportSize();
@@ -971,9 +971,9 @@ void SkeletalMeshRenderer::DrawBoneHierarchy(
 			}
 		}
 
-		Debug::DrawAxis(nodePos, globalTransform.ToQuaternion());
+		DebugDraw::DrawAxis(nodePos, globalTransform.ToQuaternion());
 	} else {
-		Debug::DrawAxis(nodePos, globalTransform.ToQuaternion());
+		DebugDraw::DrawAxis(nodePos, globalTransform.ToQuaternion());
 	}
 
 	for (const Node& child : node.children) {

@@ -1,6 +1,6 @@
 #include <engine/Components/Camera/CameraComponent.h>
 #include <engine/Camera/CameraManager.h>
-#include <engine/Debug/Debug.h>
+#include <engine/Debug/DebugDraw.h>
 #include <engine/Entity/Entity.h>
 #include <engine/ImGui/ImGuiManager.h>
 

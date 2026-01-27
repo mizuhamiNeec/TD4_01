@@ -28,7 +28,7 @@ namespace Unnamed {
 	/// @return 演算結果
 	EXEC_FLAG operator|=(EXEC_FLAG& lhs, const EXEC_FLAG& rhs) {
 		lhs = static_cast<EXEC_FLAG>(static_cast<int>(lhs) | static_cast<int>(
-			rhs));
+			                             rhs));
 		return lhs;
 	}
 
@@ -47,12 +47,15 @@ namespace Unnamed {
 	/// @return 初期化成功ならtrue
 	bool ConsoleSystem::Init() {
 		ServiceLocator::Register<ConsoleSystem>(this);
+
 #ifdef _DEBUG
 		mConsoleUI = std::make_unique<ConsoleUI>(this);
+		mConsoleUI->Init();
 #endif
 
 		RegisterBuiltInCommands();
 		RegisterBuiltInConVars();
+
 		ConsoleScriptParser parser(kUserCfgPath);
 
 		return true;
@@ -203,6 +206,8 @@ namespace Unnamed {
 						cmd->GetDescription()
 					);
 				}
+
+				break;
 			}
 
 			// 変数の場合
@@ -215,81 +220,90 @@ namespace Unnamed {
 				// 引数がある場合は値を設定
 				if (!args.empty()) {
 					switch (cvarType) {
-					case CVAR_TYPE::BOOL:
-						if (auto* cBool = dynamic_cast<UnnamedConVar<bool>*>(
-							var)) {
-							cBool->SetValue(
-								StrUtil::CheckBoolString(args[0])
-							);
-						}
-						break;
-					case CVAR_TYPE::INT:
-						if (
-							auto* ci = dynamic_cast<UnnamedConVar<int>*>(var)
-						) {
-							ci->SetValue(std::stoi(args[0]));
-						}
-						break;
-					case CVAR_TYPE::FLOAT:
-						if (
-							auto* cf = dynamic_cast<UnnamedConVar<float>*>(var)
-						) {
-							cf->SetValue(std::stof(args[0]));
-						}
-						break;
-					case CVAR_TYPE::DOUBLE:
-						if (
-							auto* cd = dynamic_cast<UnnamedConVar<double>*>(var)
-						) {
-							cd->SetValue(std::stod(args[0]));
-						}
-						break;
-					case CVAR_TYPE::STRING:
-						if (
-							auto* cs = dynamic_cast<UnnamedConVar<std::string>*>
-								(var)
-						) {
-							// 空白対応
-							std::string combined;
-							for (size_t i = 0; i < args.size(); ++i) {
-								combined += args[i];
-								if (i != args.size() - 1) {
-									combined += " ";
-								}
+						case CVAR_TYPE::BOOL: if (auto* cBool = dynamic_cast<
+								UnnamedConVar<bool>*>(
+								var)) {
+								cBool->SetValue(
+									StrUtil::CheckBoolString(args[0])
+								);
 							}
-							cs->SetValue(combined);
-						}
-						break;
-					case CVAR_TYPE::VEC3:
-						// Vec3の場合は3つの引数が必要
-						if (args.size() >= 3) {
-							if (
-								auto* cv3 = dynamic_cast<UnnamedConVar<Vec3>*>(
+							break;
+						case CVAR_TYPE::INT: if (
+								auto* ci = dynamic_cast<UnnamedConVar<int>*>(
 									var)
 							) {
-								bool ok = false;
-								// 各引数が数字に変換できるか確認
-								for (const auto& arg : args) {
-									ok &= StrUtil::IsFloat(arg);
+								ci->SetValue(std::stoi(args[0]));
+							}
+							break;
+						case CVAR_TYPE::FLOAT: if (
+								auto* cf = dynamic_cast<UnnamedConVar<float>*>(
+									var)
+							) {
+								cf->SetValue(std::stof(args[0]));
+							}
+							break;
+						case CVAR_TYPE::DOUBLE: if (
+								auto* cd = dynamic_cast<UnnamedConVar<double>*>(
+									var)
+							) {
+								cd->SetValue(std::stod(args[0]));
+							}
+							break;
+						case CVAR_TYPE::STRING: if (
+								auto* cs = dynamic_cast<UnnamedConVar<
+										std::string>*>
+									(var)
+							) {
+								// 空白対応
+								std::string combined;
+								for (size_t i = 0; i < args.size(); ++i) {
+									combined += args[i];
+									if (i != args.size() - 1) {
+										combined += " ";
+									}
 								}
+								cs->SetValue(combined);
+							}
+							break;
+						case CVAR_TYPE::VEC3:
+							// Vec3の場合は3つの引数が必要
+							if (args.size() >= 3) {
+								if (
+									auto* cv3 = dynamic_cast<UnnamedConVar<Vec3>
+										*>(
+										var)
+								) {
+									bool ok = false;
+									// 各引数が数字に変換できるか確認
+									for (const auto& arg : args) {
+										ok &= StrUtil::IsFloat(arg);
+									}
 
-								if (ok) {
-									cv3->SetValue(
-										Vec3(
-											std::stof(args[0]),
-											std::stof(args[1]),
-											std::stof(args[2])
-										)
-									);
+									if (ok) {
+										cv3->SetValue(
+											Vec3(
+												std::stof(args[0]),
+												std::stof(args[1]),
+												std::stof(args[2])
+											)
+										);
+									}
 								}
 							}
-						}
-						break;
+							break;
 					}
 				}
 
 				// if (var->onExecute(args)) {
 				// }
+			} else {
+				// 謎な場合
+				SpecialMsg(
+					LogLevel::Error,
+					"",
+					"'{}' is not recognized as a command or variable.",
+					tokens[0]
+				);
 			}
 		}
 	}
@@ -323,32 +337,5 @@ namespace Unnamed {
 		}
 
 		return type;
-	}
-
-	/// @brief コンソール変数の型を取得します
-	/// @return 変数の型
-	void ConsoleSystem::Test() {
-		for (auto conVar : mConVars) {
-			DevMsg(kChannel, "ConVar: {}", conVar.first);
-
-			if (auto* cbool = dynamic_cast<UnnamedConVar<bool>*>(conVar.
-				second)) {
-				DevMsg(kChannel, "Value: {}", static_cast<bool>(*cbool));
-			} else if (auto* cint = dynamic_cast<UnnamedConVar<int>*>(
-				conVar.second)) {
-				DevMsg(kChannel, "Value: {}", static_cast<int>(*cint));
-			} else if (auto* cfloat = dynamic_cast<UnnamedConVar<float>*>(conVar
-				.second)) {
-				DevMsg(kChannel, "Value: {}", static_cast<float>(*cfloat));
-			} else if (auto* convarDouble = dynamic_cast<UnnamedConVar<double>*>
-				(conVar.second)) {
-				DevMsg(kChannel, "Value: {}",
-				       static_cast<double>(*convarDouble));
-			} else if (auto* convarString = dynamic_cast<UnnamedConVar<
-				std::string>*>(conVar.second)) {
-				DevMsg(kChannel, "Value: {}",
-				       static_cast<std::string>(*convarString));
-			}
-		}
 	}
 }

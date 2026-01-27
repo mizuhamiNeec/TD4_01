@@ -34,7 +34,7 @@ namespace Unnamed {
 		FROM_CONSOLE,
 	};
 
-	EXEC_FLAG operator |=(EXEC_FLAG& lhs, const EXEC_FLAG& rhs);
+	EXEC_FLAG operator|=(EXEC_FLAG& lhs, const EXEC_FLAG& rhs);
 	bool      operator&(EXEC_FLAG lhs, EXEC_FLAG rhs);
 
 	/// @brief コンソールシステムクラス
@@ -74,7 +74,22 @@ namespace Unnamed {
 
 		static enum class CVAR_TYPE GetConVarType(UnnamedConVarBase* var);
 
-		void Test();
+		template <class TVar>
+		[[nodiscard]] TVar* GetConVarAs(const std::string_view name) {
+			static_assert(
+				std::is_base_of_v<UnnamedConVarBase, TVar>,
+				"TVar must be derived from UnnamedConVarBase"
+			);
+
+			auto* base = GetConVar(name);
+			if (!base) {
+				return nullptr;
+			}
+
+			if (GetConVarType(base) != TVar::kType) { return nullptr; }
+
+			return static_cast<TVar*>(base);
+		}
 
 	private:
 		RingBuffer<ConsoleLogText, kConsoleBufferSize> mLogBuffer;

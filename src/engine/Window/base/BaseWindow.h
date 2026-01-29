@@ -5,10 +5,10 @@
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
+#include <Windows.h>
 #include <cstdint>
 #include <functional>
 #include <string>
-#include <Windows.h>
 
 /// ウィンドウ情報構造体
 struct WindowInfo {
@@ -29,10 +29,8 @@ public:
 	/// @brief デストラクタ
 	virtual ~BaseWindow() {
 		if (mHWnd) {
-			SetWindowLongPtr(
-				mHWnd, GWLP_USERDATA,
-				reinterpret_cast<LONG_PTR>(nullptr)
-			);
+			SetWindowLongPtr(mHWnd, GWLP_USERDATA,
+			                 reinterpret_cast<LONG_PTR>(nullptr));
 			DestroyWindow(mHWnd);
 			mHWnd = nullptr;
 		}
@@ -53,43 +51,44 @@ public:
 
 	/// @brief ウィンドウハンドルを取得する
 	/// @return ウィンドウハンドル
-	[[nodiscard]] HWND GetWindowHandle() const { return mHWnd; }
+	[[nodiscard]] HWND GetWindowHandle() const {
+		return mHWnd;
+	}
 
 	/// @brief クライアント幅を取得する
 	/// @return クライアント幅
-	[[nodiscard]] uint32_t GetClientWidth() const { return mInfo.width; }
+	[[nodiscard]] uint32_t GetClientWidth() const {
+		return mInfo.width;
+	}
 
 	/// @brief クライアント高さを取得する
 	/// @return クライアント高さ
-	[[nodiscard]] uint32_t GetClientHeight() const { return mInfo.height; }
+	[[nodiscard]] uint32_t GetClientHeight() const {
+		return mInfo.height;
+	}
 
 protected:
-	static LRESULT StaticWindowProc(
-		const HWND   hWnd, const UINT     msg,
-		const WPARAM wParam, const LPARAM lParam
-	) {
+	static LRESULT StaticWindowProc(const HWND   hWnd, const UINT     msg,
+	                                const WPARAM wParam, const LPARAM lParam) {
 		BaseWindow* pThis;
 		if (msg == WM_NCCREATE) {
 			auto pCreate = reinterpret_cast<LPCREATESTRUCT>(lParam);
 			pThis        = static_cast<BaseWindow*>(pCreate->lpCreateParams);
-			SetWindowLongPtr(
-				hWnd, GWLP_USERDATA,
-				reinterpret_cast<LONG_PTR>(pThis)
-			);
+			SetWindowLongPtr(hWnd, GWLP_USERDATA,
+			                 reinterpret_cast<LONG_PTR>(pThis));
 			pThis->mHWnd = hWnd;
 		} else {
 			pThis = reinterpret_cast<BaseWindow*>(GetWindowLongPtr(
-				hWnd, GWLP_USERDATA
-			));
+				hWnd, GWLP_USERDATA));
 		}
-		if (pThis) { return pThis->WindowProc(hWnd, msg, wParam, lParam); }
+		if (pThis) {
+			return pThis->WindowProc(hWnd, msg, wParam, lParam);
+		}
 		return DefWindowProc(hWnd, msg, wParam, lParam);
 	}
 
-	virtual LRESULT WindowProc(
-		HWND   hWnd, UINT msg, WPARAM wParam,
-		LPARAM lParam
-	) = 0;
+	virtual LRESULT WindowProc(HWND   hWnd, UINT msg, WPARAM wParam,
+	                           LPARAM lParam) = 0;
 
 	HWND           mHWnd = nullptr;
 	WindowInfo     mInfo;

@@ -19,12 +19,36 @@ namespace Unnamed {
 	bool UInputSystem::Init() {
 		ServiceLocator::Register<UInputSystem>(this);
 
+		// 組み込みコマンドの登録
 		static UnnamedConCommand bind(
 			"bind",
-			[](const std::vector<std::string>& args) {
+			[&](const std::vector<std::string>& args) {
+				if (args.empty()) { return false; }
+
+				const auto key = KeyNameTable::FromString(args[0]);
+				if (key.has_value()) {
+					BindAction(
+						args[1],
+						{
+							.device = key->device,
+							.code   = key->code
+						}
+					);
+				}
+
 				return true;
 			},
 			"Bind a key to a command."
+		);
+
+		static UnnamedConCommand unbind(
+			"unbind",
+			[&](const std::vector<std::string>& args) {
+				if (args.empty()) { return false; }
+				Unbind(args[0]);
+				return true;
+			},
+			"Unbind a key from a command."
 		);
 
 		return true;
@@ -289,6 +313,17 @@ namespace Unnamed {
 			"BindAxis2D: {}, key = {}, axis = {}, scale = {}",
 			axis, KeyNameTable::ToString(key),
 			static_cast<int>(axisType), scale
+		);
+	}
+
+	void UInputSystem::Unbind(const std::string& action) {
+		std::erase_if(
+			mBindings,
+			[&action](const InputBinding& binding) {
+				return binding.type ==
+				       BINDING_TYPE::ACTION &&
+				       binding.target == action;
+			}
 		);
 	}
 

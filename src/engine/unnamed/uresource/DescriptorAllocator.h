@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <cstdint>
 #include <d3d12.h>
@@ -72,7 +72,7 @@ namespace Unnamed {
 		/// @brief CPUデスクリプタハンドルからインデックスを取得する
 		/// @param cpuHandle CPUデスクリプタハンドル
 		/// @return インデックス
-		uint32_t GetIndexFromCPUHandle(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle);
+		uint32_t GetIndexFromCPUHandle(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle) const;
 
 	private:
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mHeap;

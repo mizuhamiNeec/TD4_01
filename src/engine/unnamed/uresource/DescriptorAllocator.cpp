@@ -1,4 +1,4 @@
-﻿#include <pch.h>
+#include <pch.h>
 
 #include <engine/unnamed/subsystem/console/Log.h>
 #include <engine/unnamed/uresource/DescriptorAllocator.h>
@@ -170,7 +170,7 @@ namespace Unnamed {
 
 	uint32_t DescriptorAllocator::GetIndexFromCPUHandle(
 		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle
-	) {
+	) const {
 		const uint32_t index = static_cast<uint32_t>(
 			(
 				cpuHandle.ptr - mHeap->

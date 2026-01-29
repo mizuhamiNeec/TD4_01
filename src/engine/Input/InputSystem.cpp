@@ -8,7 +8,6 @@
 #include <engine/Input/InputSystem.h>
 #include <engine/OldConsole/ConCommand.h>
 #include <engine/OldConsole/Console.h>
-#include <engine/Window/WindowManager.h>
 
 //-----------------------------------------------------------------------------
 // Purpose: インプットシステムの初期化を行います
@@ -363,33 +362,33 @@ void InputSystem::CheckMouseCursorLock() {
 	static int cursorCount = 0; // カーソル表示カウンタを追跡
 
 	if (mMouseLock) {
-		// カーソルをウィンドウの中央にリセット
-		const POINT centerCursorPos = {
-			static_cast<LONG>(OldWindowManager::GetMainWindow()->
-			                  GetClientWidth() /
-			                  2),
-			static_cast<LONG>(OldWindowManager::GetMainWindow()->
-			                  GetClientHeight() /
-			                  2)
-		};
-
-		if (OldWindowManager::GetMainWindow()->GetWindowHandle() ==
-		    GetForegroundWindow()) {
-			RECT rect;
-			rect.left   = centerCursorPos.x;
-			rect.top    = centerCursorPos.y;
-			rect.right  = centerCursorPos.x + 1;
-			rect.bottom = centerCursorPos.y + 1;
-			ClientToScreen(
-				OldWindowManager::GetMainWindow()->GetWindowHandle(),
-				reinterpret_cast<LPPOINT>(&rect)
-			);
-			ClientToScreen(
-				OldWindowManager::GetMainWindow()->GetWindowHandle(),
-				reinterpret_cast<LPPOINT>(&rect) + 1
-			);
-			ClipCursor(&rect);
-		}
+		// // カーソルをウィンドウの中央にリセット
+		// const POINT centerCursorPos = {
+		// 	static_cast<LONG>(OldWindowManager::GetMainWindow()->
+		// 	                  GetClientWidth() /
+		// 	                  2),
+		// 	static_cast<LONG>(OldWindowManager::GetMainWindow()->
+		// 	                  GetClientHeight() /
+		// 	                  2)
+		// };
+		//
+		// if (OldWindowManager::GetMainWindow()->GetWindowHandle() ==
+		//     GetForegroundWindow()) {
+		// 	RECT rect;
+		// 	rect.left   = centerCursorPos.x;
+		// 	rect.top    = centerCursorPos.y;
+		// 	rect.right  = centerCursorPos.x + 1;
+		// 	rect.bottom = centerCursorPos.y + 1;
+		// 	ClientToScreen(
+		// 		OldWindowManager::GetMainWindow()->GetWindowHandle(),
+		// 		reinterpret_cast<LPPOINT>(&rect)
+		// 	);
+		// 	ClientToScreen(
+		// 		OldWindowManager::GetMainWindow()->GetWindowHandle(),
+		// 		reinterpret_cast<LPPOINT>(&rect) + 1
+		// 	);
+		// 	ClipCursor(&rect);
+		// }
 
 		// カーソルを非表示にする
 		while (cursorCount >= 0) { cursorCount = ShowCursor(FALSE); }

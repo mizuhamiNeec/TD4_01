@@ -5,6 +5,7 @@
 
 #include "engine/renderer/D3D12.h"
 #include "engine/Engine.h"
+#include "engine/EngineServices.h"
 #include "engine/TextureManager/TexManager.h"
 #include "engine/Window/WindowManager.h"
 
@@ -197,13 +198,15 @@ void Sprite::Draw() const {
 	               );
 
 	// テクスチャのSRVを設定
-	if (auto* texManager = Unnamed::Engine::GetTexManager()) {
+	if (auto* engine = Unnamed::EngineServices::Get()) {
+		if (auto* texManager = engine->GetTexManagerInstance()) {
 		mSpriteCommon->GetD3D12()->GetCommandList()->
 		               SetGraphicsRootDescriptorTable(
 			               2, texManager->GetSrvHandleGPU(
 				               mTextureFilePath
 			               )
 		               );
+		}
 	}
 
 	// インデックスバッファの設定
@@ -325,7 +328,9 @@ void Sprite::SetUvRot(const float newRot) { mUvTransform.rotate.z = newRot; }
 
 /// @brief テクスチャサイズに合わせてスプライトのサイズを調整
 void Sprite::AdjustTextureSize() {
-	if (auto* texManager = Unnamed::Engine::GetTexManager()) {
+	if (auto* engine = Unnamed::EngineServices::Get()) {
+		auto* texManager = engine->GetTexManagerInstance();
+		if (!texManager) { return; }
 		mTextureSize = {
 			static_cast<float>(texManager->GetMetaData(
 				mTextureFilePath

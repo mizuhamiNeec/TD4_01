@@ -9,7 +9,7 @@
 enum class ConVarFlags {
 	ConVarFlags_None    = 0,      // フラグを適用しない
 	ConVarFlags_Archive = 1 << 0, // 値がファイルに保存されます
-	// ConVarFlags_Cheat = 1 << 1, // TODO : マルチプレイ用
+	// ConVarFlags_Cheat = 1 << 1,
 	ConVarFlags_Hidden = 1 << 2, // 隠しコマンド!!
 	ConVarFlags_Notify = 1 << 3, // 値が変更された際に通知を表示します
 };

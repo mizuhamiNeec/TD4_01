@@ -199,7 +199,7 @@ private:
 	static std::thread                       mConsoleThread;
 	static bool                              mStopThread;
 	bool                                     mConsoleUpdate = false;
-
+	
 #ifdef _DEBUG
 	// コンソール
 	static bool                     mShowConsole; // コンソールを表示するか?

@@ -16,7 +16,6 @@
 #include <engine/OldConsole/Console.h>
 #include <engine/OldConsole/ConVarManager.h>
 #include <engine/unnamed/subsystem/time/SystemClock.h>
-#include <engine/Window/WindowManager.h>
 #include <engine/Window/WindowsUtils.h>
 
 #include "engine/ImGui/ImGuiWidgets.h"
@@ -573,9 +572,9 @@ void Console::NeoFetch([[maybe_unused]] const std::vector<std::string>& args) {
 		(!prompt.empty() ? std::string(prompt.size(), '-') : "") + "\n",
 		uptime + "\n",
 		"Resolution:  " +
-		std::to_string(OldWindowManager::GetMainWindow()->GetClientWidth()) +
+		std::to_string(0) +
 		"x" +
-		std::to_string(OldWindowManager::GetMainWindow()->GetClientHeight()) +
+		std::to_string(0) +
 		"\n",
 		"CPU:  " + WindowsUtils::GetCPUName() + "\n",
 		"GPU:  " + WindowsUtils::GetGPUName() + "\n",
@@ -1583,7 +1582,7 @@ void Console::ImportPage() {
 	WCHAR        szFile[260] = {};
 	ZeroMemory(&ofn, sizeof(ofn));
 	ofn.lStructSize     = sizeof(ofn);
-	ofn.hwndOwner       = OldWindowManager::GetMainWindow()->GetWindowHandle();
+	ofn.hwndOwner       = nullptr;
 	ofn.lpstrFile       = szFile;
 	ofn.nMaxFile        = sizeof(szFile);
 	ofn.lpstrFilter     = L"Files (*.ini)\0*.ini\0";
@@ -1696,7 +1695,7 @@ void Console::ExportPage() {
 	WCHAR        szFile[260] = {};
 	ZeroMemory(&ofn, sizeof(ofn));
 	ofn.lStructSize     = sizeof(ofn);
-	ofn.hwndOwner       = OldWindowManager::GetMainWindow()->GetWindowHandle();
+	ofn.hwndOwner       = nullptr;
 	ofn.lpstrFile       = szFile;
 	ofn.nMaxFile        = sizeof(szFile);
 	ofn.lpstrFilter     = L"INI Files (*.ini)\0*.ini\0All Files (*.*)\0*.*\0";

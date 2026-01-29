@@ -10,7 +10,7 @@
 #include "engine/renderer/PipelineState.h"
 #include "engine/renderer/RootSignatureManager.h"
 #include "engine/renderer/SrvManager.h"
-#include "engine/TextureManager/TexManager.h"
+#include "engine/Engine.h"
 
 /// @brief ParticleManagerを初期化します
 /// @param d3d12 D3D12レンダラーへのポインタ
@@ -18,6 +18,7 @@
 void ParticleManager::Init(D3D12* d3d12, SrvManager* srvManager) {
 	mRenderer   = d3d12;
 	mSrvManager = srvManager;
+	mTexManager = Unnamed::Engine::GetTexManager();
 	Console::Print(
 		"ParticleManager : ParticleCommonを初期化します。\n",
 		kConTextColorWait, Channel::Engine
@@ -262,7 +263,7 @@ void ParticleManager::Render() {
 		}
 
 		mRenderer->GetCommandList()->SetGraphicsRootDescriptorTable(
-			2, TexManager::GetInstance()->GetSrvHandleGPU(
+			2, mTexManager->GetSrvHandleGPU(
 				particleGroup.materialData.textureFilePath
 			)
 		);
@@ -466,9 +467,9 @@ void ParticleManager::CreateParticleGroup(
 	// 新たなパーティクルグループのマテリアルデータにテクスチャファイルパスを設定
 	mParticleGroups[name].materialData.textureFilePath = textureFilePath;
 	// テクスチャを読み込む
-	TexManager::GetInstance()->LoadTexture(textureFilePath);
+	mTexManager->LoadTexture(textureFilePath);
 	// マテリアルデータにテクスチャのSRVインデックスを記録
-	mParticleGroups[name].materialData.textureIndex = TexManager::GetInstance()
+	mParticleGroups[name].materialData.textureIndex = mTexManager
 		->GetTextureIndexByFilePath(
 			textureFilePath
 		);

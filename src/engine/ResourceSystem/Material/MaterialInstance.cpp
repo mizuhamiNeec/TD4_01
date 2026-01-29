@@ -1,5 +1,6 @@
 #include "engine/ResourceSystem/Material/MaterialInstance.h"
 
+#include "engine/Engine.h"
 #include "engine/OldConsole/Console.h"
 #include "engine/renderer/SrvManager.h"
 #include "engine/TextureManager/TexManager.h"
@@ -77,7 +78,7 @@ void MaterialInstance::Apply(
 			);
 		}
 
-		TexManager* texManager = TexManager::GetInstance();
+		TexManager* texManager = Unnamed::Engine::GetTexManager();
 
 		// テクスチャをロード確認
 		texManager->LoadTexture(texturePath);

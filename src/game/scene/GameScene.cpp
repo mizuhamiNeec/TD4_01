@@ -17,6 +17,7 @@
 #include <engine/OldConsole/ConVarManager.h>
 #include <engine/ResourceSystem/Audio/AudioManager.h>
 #include <engine/TextureManager/TexManager.h>
+#include <engine/EngineServices.h>
 #include <engine/unnamed/subsystem/console/Log.h>
 
 #include <game/components/CameraRotator.h>
@@ -99,12 +100,15 @@ GameScene::~GameScene() {
 /// @brief 初期化
 void GameScene::Init() {
 	// 各種マネージャーの取得
-	mAudioManager = Unnamed::Engine::GetAudioManager();
-	mRenderer = Unnamed::Engine::GetRenderer();
-	mResourceManager = Unnamed::Engine::GetResourceManager();
-	mSrvManager = Unnamed::Engine::GetSrvManager();
+	auto* engine = Unnamed::EngineServices::Get();
+	UASSERT(engine && "Engine instance not registered");
+
+	mAudioManager = engine ? engine->GetAudioManagerInstance() : nullptr;
+	mRenderer = engine ? engine->GetRendererInstance() : nullptr;
+	mResourceManager = engine ? engine->GetResourceManagerInstance() : nullptr;
+	mSrvManager = engine ? engine->GetSrvManagerInstance() : nullptr;
 	mTimer = ServiceLocator::Get<Unnamed::TimeSystem>()->GetGameTime();
-	mSpriteCommon = Unnamed::Engine::GetSpriteCommon();
+	mSpriteCommon = engine ? engine->GetSpriteCommonInstance() : nullptr;
 
 	// CheckpointManagerを初期化
 	CheckpointManager::Initialize();
@@ -197,7 +201,9 @@ void GameScene::Update(const float deltaTime) {
 		float angle         = 0.0f;
 		Vec2  screenPos;
 
-		Vec2 clientSize = Unnamed::Engine::GetViewportSize();
+		Vec2 clientSize = Unnamed::EngineServices::Get() ?
+			                 Unnamed::EngineServices::Get()->GetViewportSizeInstance() :
+			                 Vec2{};
 
 		Vec2 viewportSize = clientSize;
 
@@ -293,8 +299,10 @@ void GameScene::Render() {
 		if (entity) { entity->Render(commandList); }
 	}
 
-	if (auto* particleManager = Unnamed::Engine::GetParticleManager()) {
-		particleManager->Render();
+	if (auto* engine = Unnamed::EngineServices::Get()) {
+		if (auto* particleManager = engine->GetParticleManagerInstance()) {
+			particleManager->Render();
+		}
 	}
 
 	if (mParticleObject) { mParticleObject->Draw(); }
@@ -335,7 +343,8 @@ void GameScene::RegisterConVars() {
 
 /// @brief コアテクスチャの読み込み
 void GameScene::LoadCoreTextures() const {
-	auto* texManager = Unnamed::Engine::GetTexManager();
+	auto* engine = Unnamed::EngineServices::Get();
+	auto* texManager = engine ? engine->GetTexManagerInstance() : nullptr;
 	if (!texManager) { return; }
 
 	struct TextureRequest {
@@ -369,18 +378,22 @@ void GameScene::LoadCoreTextures() const {
 /// @brief キューブマップの初期化
 void GameScene::InitializeCubeMap() {
 	if (!mRenderer || !mSrvManager) { return; }
+	auto* engine = Unnamed::EngineServices::Get();
+	auto* texManager = engine ? engine->GetTexManagerInstance() : nullptr;
+	if (!texManager) { return; }
 
 	mCubeMap = std::make_unique<CubeMap>(
 		mRenderer->GetDevice(),
 		mSrvManager,
-		Unnamed::Engine::GetTexManager(),
+		texManager,
 		kWaveTexturePath
 	);
 }
 
 /// @brief パーティクルの初期化
 void GameScene::InitializeParticles() {
-	auto* particleManager = Unnamed::Engine::GetParticleManager();
+	auto* engine = Unnamed::EngineServices::Get();
+	auto* particleManager = engine ? engine->GetParticleManagerInstance() : nullptr;
 	if (!particleManager) { return; }
 
 	particleManager->CreateParticleGroup("wind", kWindParticleTexturePath);
@@ -394,7 +407,8 @@ void GameScene::InitializeParticles() {
 
 /// @brief エフェクトの初期化
 void GameScene::InitializeEffects() {
-	auto* particleManager = Unnamed::Engine::GetParticleManager();
+	auto* engine = Unnamed::EngineServices::Get();
+	auto* particleManager = engine ? engine->GetParticleManagerInstance() : nullptr;
 	if (!particleManager) { return; }
 
 	if (mMovementComponent) {
@@ -952,7 +966,9 @@ void GameScene::UpdatePostProcessing(float deltaTime) {
 		                           Length() * kBlurScale :
 		                           0.0f;
 
-	Unnamed::Engine::blurStrength = blurStrength;
+	if (auto* engine = Unnamed::EngineServices::Get()) {
+		engine->GetBlurStrengthInstance() = blurStrength;
+	}
 
 	if (mClearConVar && mClearConVar->GetValueAsBool() && mCubeMap) {
 		mCubeMap->Update(deltaTime);
@@ -1001,8 +1017,10 @@ void GameScene::UpdateTeleport() {
 /// @brief パーティクルとエフェクトの更新
 /// @param deltaTime 経過時間
 void GameScene::UpdateParticlesAndEffects(float deltaTime) {
-	if (auto* particleManager = Unnamed::Engine::GetParticleManager()) {
-		particleManager->Update(deltaTime);
+	if (auto* engine = Unnamed::EngineServices::Get()) {
+		if (auto* particleManager = engine->GetParticleManagerInstance()) {
+			particleManager->Update(deltaTime);
+		}
 	}
 
 	if (mParticleEmitter) { mParticleEmitter->Update(deltaTime); }
@@ -1072,7 +1090,9 @@ void GameScene::DrawDebugHud(
 				ImGuiWindowFlags_NoFocusOnAppearing |
 				ImGuiWindowFlags_NoNav;
 
-			auto         viewportLt = Unnamed::Engine::GetViewportLT();
+			auto viewportLt = Unnamed::EngineServices::Get() ?
+			                    Unnamed::EngineServices::Get()->GetViewportLTInstance() :
+			                    Vec2{};
 			const ImVec2 windowPos(viewportLt.x, viewportLt.y + 128.0f + 16.0f);
 			ImGui::SetNextWindowPos(windowPos, ImGuiCond_Always);
 

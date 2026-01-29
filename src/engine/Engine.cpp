@@ -286,7 +286,7 @@ namespace Unnamed {
 		mSceneFactory->RegisterScene<GameScene>("GameScene");
 		mSceneFactory->RegisterScene<EmptyScene>("EmptyScene");
 		// シーンの初期化
-		mSceneManager->ChangeScene("EmptyScene");
+		mSceneManager->ChangeScene("GameScene");
 
 		//---------------------------------------------------------------------
 		// エディターの初期化

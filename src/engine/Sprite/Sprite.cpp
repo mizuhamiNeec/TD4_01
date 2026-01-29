@@ -4,6 +4,7 @@
 #include "engine/Sprite/SpriteCommon.h"
 
 #include "engine/renderer/D3D12.h"
+#include "engine/Engine.h"
 #include "engine/TextureManager/TexManager.h"
 #include "engine/Window/WindowManager.h"
 
@@ -196,12 +197,14 @@ void Sprite::Draw() const {
 	               );
 
 	// テクスチャのSRVを設定
-	mSpriteCommon->GetD3D12()->GetCommandList()->
-	               SetGraphicsRootDescriptorTable(
-		               2, TexManager::GetInstance()->GetSrvHandleGPU(
-			               mTextureFilePath
-		               )
-	               );
+	if (auto* texManager = Unnamed::Engine::GetTexManager()) {
+		mSpriteCommon->GetD3D12()->GetCommandList()->
+		               SetGraphicsRootDescriptorTable(
+			               2, texManager->GetSrvHandleGPU(
+				               mTextureFilePath
+			               )
+		               );
+	}
 
 	// インデックスバッファの設定
 	const D3D12_INDEX_BUFFER_VIEW indexBufferView = mIndexBuffer->View();
@@ -322,14 +325,16 @@ void Sprite::SetUvRot(const float newRot) { mUvTransform.rotate.z = newRot; }
 
 /// @brief テクスチャサイズに合わせてスプライトのサイズを調整
 void Sprite::AdjustTextureSize() {
-	mTextureSize = {
-		static_cast<float>(TexManager::GetInstance()->GetMetaData(
-			mTextureFilePath
-		).width),
-		static_cast<float>(TexManager::GetInstance()->GetMetaData(
-			mTextureFilePath
-		).height)
-	};
+	if (auto* texManager = Unnamed::Engine::GetTexManager()) {
+		mTextureSize = {
+			static_cast<float>(texManager->GetMetaData(
+				mTextureFilePath
+			).width),
+			static_cast<float>(texManager->GetMetaData(
+				mTextureFilePath
+			).height)
+		};
+	}
 
 	mTransform.scale.x = mTextureSize.x;
 	mTransform.scale.y = mTextureSize.y;

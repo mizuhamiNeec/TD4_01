@@ -7,6 +7,7 @@
 #include <engine/particle/ParticleObject.h>
 #include <engine/renderer/D3D12.h>
 #include <engine/renderer/SrvManager.h>
+#include <engine/Engine.h>
 #include <engine/TextureManager/TexManager.h>
 
 #include <runtime/core/math/Math.h>
@@ -340,7 +341,7 @@ void ParticleObject::Draw() const {
 	// SRVのDescriptorTableの先頭を設定
 	mParticleCommon->GetD3D12()->GetCommandList()->
 	                 SetGraphicsRootDescriptorTable(
-		                 2, TexManager::GetInstance()->GetSrvHandleGPU(
+		                 2, Unnamed::Engine::GetTexManager()->GetSrvHandleGPU(
 			                 mTextureFilePath
 		                 )
 	                 );

@@ -14,7 +14,6 @@
 #include <engine/OldConsole/Console.h>
 #include <engine/OldConsole/ConVarManager.h>
 #include <engine/SceneManager/SceneManager.h>
-#include <engine/Window/WindowManager.h>
 
 #include <runtime/core/Properties.h>
 #include <runtime/core/math/Math.h>
@@ -31,8 +30,9 @@
 /// @param sceneManager シーンマネージャーへのポインタ
 /// @param gameTime ゲームタイムへのポインタ
 Editor::Editor(SceneManager* sceneManager, GameTime* gameTime)
-	: mSceneManager(sceneManager),
-	  mGameTime(gameTime) {
+	:
+	mSceneManager(sceneManager),
+	mGameTime(gameTime) {
 	mScene = mSceneManager->GetCurrentScene();
 	Init();
 }
@@ -438,6 +438,7 @@ void Editor::Update([[maybe_unused]] const float deltaTime) {
 					moveSpd * mGameTime->ScaledDeltaTime<float>()
 				);
 			}
+			
 			// カーソルをウィンドウの中央にリセット
 			POINT centerCursorPos = {
 				static_cast<LONG>(OldWindowManager::GetMainWindow()->

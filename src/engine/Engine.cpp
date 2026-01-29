@@ -35,6 +35,9 @@
 
 #include "ResourceSystem/Audio/AudioManager.h"
 
+#include "unnamed/subsystem/input/device/keyboard/KeyboardDevice.h"
+#include "unnamed/subsystem/input/device/mouse/MouseDevice.h"
+
 namespace Unnamed {
 	static constexpr std::string_view kChannel = "Engine";
 
@@ -83,9 +86,6 @@ namespace Unnamed {
 		mTimeSystem = std::make_unique<TimeSystem>();
 		if (!mTimeSystem->Init()) { return false; }
 
-		mInputSystem = std::make_unique<UInputSystem>();
-		if (!mInputSystem->Init()) { return false; }
-
 		// メインウィンドウの作成
 		auto gameWindow = std::make_unique<MainWindow>();
 
@@ -107,6 +107,19 @@ namespace Unnamed {
 			Fatal("Engine", "Failed to create main window.");
 			throw std::runtime_error("Failed to create main window.");
 		}
+
+		// InputSystemの初期化
+		mInputSystem = std::make_unique<UInputSystem>();
+		if (!mInputSystem->Init()) { return false; }
+		// デバイス登録
+		const auto keyboardDevice = std::make_shared<KeyboardDevice>(
+			mWindowManager->GetMainWindow()->GetWindowHandle()
+		);
+		const auto mouseDevice = std::make_shared<MouseDevice>(
+			mWindowManager->GetMainWindow()->GetWindowHandle()
+		);
+		mInputSystem->RegisterDevice(keyboardDevice);
+		mInputSystem->RegisterDevice(mouseDevice);
 
 		mRenderer = std::make_unique<D3D12>(mWindowManager->GetMainWindow());
 

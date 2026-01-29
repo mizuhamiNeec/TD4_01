@@ -10,8 +10,9 @@ namespace Unnamed {
 		UnnamedConCommandBase(
 			const std::string_view& name, const std::string_view& description,
 			const FCVAR             flags = FCVAR::NONE
-		) : mName(name), mDescription(description), mFlags(flags) {
-		}
+		) : mName(name),
+		    mDescription(description),
+		    mFlags(flags) {}
 
 		virtual ~UnnamedConCommandBase() = default;
 

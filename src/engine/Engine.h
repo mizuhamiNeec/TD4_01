@@ -4,9 +4,7 @@
 #include <optional>
 #include <string>
 #include <vector>
-
 #include <editor/Editor.h>
-
 #include <engine/EngineConfig.h>
 #include <engine/CopyImagePass/CopyImagePass.h>
 #include <engine/Entity/EntityLoader.h>
@@ -24,18 +22,11 @@
 #include <engine/SceneManager/SceneFactory.h>
 #include <engine/SceneManager/SceneManager.h>
 #include <engine/Sprite/SpriteCommon.h>
+#include <engine/state/IEngineModeState.h>
+#include <engine/unnamed/subsystem/input/UInputSystem.h>
 #include <engine/unnamed/subsystem/time/TimeSystem.h>
 #include <engine/Window/WindowManager.h>
-
-#include <engine/state/IEngineModeState.h>
-
 #include <game/scene/GameScene.h>
-
-#include "editor/UEditor.h"
-
-#include "game/gameframework/map/Map.h"
-
-#include "unnamed/subsystem/input/UInputSystem.h"
 
 class AudioManager;
 
@@ -48,45 +39,19 @@ namespace Unnamed {
 
 		int Run();
 
-		//DEPRECATED: 旧エンジンクラス
-		static AudioManager* GetAudioManager() { return mAudioManager.get(); }
-
-		// DEPRECATED: 旧エンジンクラス
-		static D3D12* GetRenderer() { return mRenderer.get(); }
-
-		// DEPRECATED: 旧エンジンクラス
-		static ResourceManager* GetResourceManager() {
-			return mResourceManager.get();
+		[[nodiscard]] AudioManager* GetAudioManagerInstance() const { return mAudioManager.get(); }
+		[[nodiscard]] D3D12* GetRendererInstance() const { return mRenderer.get(); }
+		[[nodiscard]] ResourceManager* GetResourceManagerInstance() const { return mResourceManager.get(); }
+		[[nodiscard]] SpriteCommon* GetSpriteCommonInstance() const { return mSpriteCommon.get(); }
+		[[nodiscard]] ParticleManager* GetParticleManagerInstance() const { return mParticleManager.get(); }
+		[[nodiscard]] SrvManager* GetSrvManagerInstance() const { return mSrvManager.get(); }
+		[[nodiscard]] TexManager* GetTexManagerInstance() const {
+			return mResourceManager ? mResourceManager->GetTexManager() : nullptr;
 		}
-
-		// DEPRECATED: 旧エンジンクラス
-		static SpriteCommon* GetSpriteCommon() { return mSpriteCommon.get(); }
-
-		// DEPRECATED: 旧エンジンクラス
-		static ParticleManager* GetParticleManager() {
-			return mParticleManager.get();
-		}
-
-		// DEPRECATED: 旧エンジンクラス
-		static SrvManager* GetSrvManager() { return mSrvManager.get(); }
-
-		static TexManager* GetTexManager() {
-			return mResourceManager ?
-				       mResourceManager->GetTexManager() :
-				       nullptr;
-		}
-
-		// DEPRECATED: 旧エンジンクラス
-		static SceneManager* GetSceneManager() { return mSceneManager.get(); }
-
-		// DEPRECATED: 旧エンジンクラス
-		static Vec2 GetViewportLT() { return mViewportLT; }
-
-		// DEPRECATED: 旧エンジンクラス
-		static Vec2 GetViewportSize() { return mViewportSize; }
-
-		// DEPRECATED: 旧エンジンクラス
-		static float blurStrength;
+		[[nodiscard]] SceneManager* GetSceneManagerInstance() const { return mSceneManager.get(); }
+		[[nodiscard]] Vec2 GetViewportLTInstance() const { return mViewportLT; }
+		[[nodiscard]] Vec2 GetViewportSizeInstance() const { return mViewportSize; }
+		[[nodiscard]] float& GetBlurStrengthInstance() { return mBlurStrength; }
 
 		void OnResize(uint32_t width, uint32_t height);
 		void ResizeOffscreenRenderTextures(uint32_t width, uint32_t height);
@@ -107,11 +72,6 @@ namespace Unnamed {
 		IPostProcess* GetPostProcessAt(int index) const {
 			if (index < 0) { return nullptr; }
 			return mPostProcessPipeline.GetPassAt(static_cast<size_t>(index));
-		}
-
-		/// @brief シーンマネージャーインスタンスの取得
-		SceneManager* GetSceneManagerInstance() const {
-			return mSceneManager.get();
 		}
 
 		/// @brief ビューポートをメインウィンドウ全体へ設定
@@ -155,8 +115,6 @@ namespace Unnamed {
 		std::unique_ptr<ConsoleSystem> mConsoleSystem;
 		std::unique_ptr<TimeSystem>    mTimeSystem;
 		std::unique_ptr<UInputSystem>  mInputSystem;
-		std::unique_ptr<UEditor>       mUEditor;
-		std::unique_ptr<Map>           mMap;
 
 		std::unique_ptr<OldWindowManager> mWindowManager;
 		std::unique_ptr<Editor> mEditor;
@@ -192,5 +150,7 @@ namespace Unnamed {
 		static Vec2 mViewportSize;
 		static bool mIsEditorMode;
 		static bool mWishShutdown;
+
+		float mBlurStrength = 0.0f;
 	};
 }

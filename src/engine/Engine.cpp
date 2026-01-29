@@ -47,6 +47,7 @@ namespace Unnamed {
 	/// @brief デストラクタ
 	Engine::~Engine() = default;
 
+
 	int Engine::Run() {
 		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF); // リークチェック
 		[[maybe_unused]] HRESULT hr = CoInitializeEx(
@@ -68,6 +69,7 @@ namespace Unnamed {
 	/// @brief 初期化
 	/// @return 成功したらtrueを返す
 	bool Engine::Init() {
+		ServiceLocator::Register<Engine>(this);
 #ifdef _DEBUG
 		ConVarManager::RegisterConVar<bool>(
 			"verbose", true, "Enable verbose logging"
@@ -329,7 +331,7 @@ namespace Unnamed {
 		mRenderer->GetCommandList()->ResourceBarrier(1, &barrier);
 
 		auto* radialBlur = mPostProcessPipeline.FindPass<PPRadialBlur>();
-		if (radialBlur) { radialBlur->SetBlurStrength(blurStrength); }
+		if (radialBlur) { radialBlur->SetBlurStrength(mBlurStrength); }
 
 		// 最終出力先はモードで切り替え
 		D3D12_CPU_DESCRIPTOR_HANDLE finalOutRtv;
@@ -589,7 +591,6 @@ namespace Unnamed {
 	std::unique_ptr<SrvManager>      Engine::mSrvManager      = nullptr;
 	std::unique_ptr<SpriteCommon>    Engine::mSpriteCommon    = nullptr;
 	std::shared_ptr<SceneManager>    Engine::mSceneManager    = nullptr;
-	float                            Engine::blurStrength     = 0.0f;
 
 	Vec2 Engine::mViewportLT = Vec2::zero;
 	Vec2 Engine::mViewportSize = Vec2::zero;

@@ -11,6 +11,8 @@
 #include <engine/renderer/Structs.h>
 #include <engine/renderer/VertexBuffer.h>
 
+#include <engine/TextureManager/TexManager.h>
+
 
 class SrvManager;
 class CameraComponent;
@@ -91,6 +93,7 @@ private:
 	D3D12*                                mRenderer             = nullptr;
 	std::unique_ptr<RootSignatureManager> mRootSignatureManager = nullptr;
 	SrvManager*                           mSrvManager           = nullptr;
+	TexManager*                           mTexManager           = nullptr;
 	std::unique_ptr<PipelineState>        mPipelineState        = nullptr;
 	CameraComponent*                      mDefaultCamera        = nullptr;
 

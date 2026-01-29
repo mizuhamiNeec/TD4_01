@@ -346,18 +346,17 @@ void Shader::ReflectShaderBlob(
 
 			// シェーダーステージに応じたvisibilityを設定
 			switch (shaderType) {
-			case ShaderType::VertexShader:
-				info.visibility = D3D12_SHADER_VISIBILITY_VERTEX;
-				break;
-			case ShaderType::PixelShader:
-				info.visibility = D3D12_SHADER_VISIBILITY_PIXEL;
-				break;
-			case ShaderType::GeometryShader:
-				info.visibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
-				break;
-			default:
-				info.visibility = D3D12_SHADER_VISIBILITY_ALL;
-				break;
+				case ShaderType::VertexShader
+				: info.visibility = D3D12_SHADER_VISIBILITY_VERTEX;
+					break;
+				case ShaderType::PixelShader
+				: info.visibility = D3D12_SHADER_VISIBILITY_PIXEL;
+					break;
+				case ShaderType::GeometryShader
+				: info.visibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
+					break;
+				default: info.visibility = D3D12_SHADER_VISIBILITY_ALL;
+					break;
 			}
 
 			// ステージごとのリソースマップに追加
@@ -383,7 +382,7 @@ void Shader::ReflectShaderBlob(
 		if (it != mResourceRegisterMap.end()) {
 			// 既存のリソースがある場合
 			if (it->second.type == info.type && it->second.bindPoint == info.
-				bindPoint) {
+			    bindPoint) {
 				// 同じリソースが別のステージで使用される場合
 				if (it->second.visibility != info.visibility) {
 					it->second.visibility = D3D12_SHADER_VISIBILITY_ALL;
@@ -418,8 +417,8 @@ std::vector<std::string> Shader::GetTextureSlots() const {
 	for (const auto& [resourceName, info] : mResourceRegisterMap) {
 		// テクスチャっぽいリソース名を抽出（baseColorTextureなど）
 		if (resourceName.find("Texture") != std::string::npos ||
-			resourceName.find("Map") != std::string::npos ||
-			info.type == D3D_SIT_TEXTURE) {
+		    resourceName.find("Map") != std::string::npos ||
+		    info.type == D3D_SIT_TEXTURE) {
 			textureSlots.emplace_back(resourceName);
 		}
 	}

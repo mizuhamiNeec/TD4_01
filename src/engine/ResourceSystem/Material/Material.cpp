@@ -4,6 +4,7 @@
 //-----------------------------------------------------------------------------
 
 #include <engine/Engine.h>
+#include <engine/EngineServices.h>
 #include <engine/OldConsole/Console.h>
 #include <engine/renderer/SrvManager.h>
 #include <engine/ResourceSystem/Material/Material.h>
@@ -94,8 +95,10 @@ void Material::Apply(
 	}
 
 	// ルートシグネチャの取得と設定
+	auto* engine = Unnamed::EngineServices::Get();
+	if (!engine) { return; }
 	auto rootSignature = GetOrCreateRootSignature(
-		Unnamed::Engine::GetRenderer()->GetDevice()
+		engine->GetRendererInstance()->GetDevice()
 	);
 	if (!rootSignature) {
 		Console::Print(
@@ -142,8 +145,10 @@ void Material::Apply(
 		desc.InputLayout = SkinnedVertex::inputLayout;
 	} else { desc.InputLayout = Vertex::inputLayout; }
 
+	auto* engine2 = Unnamed::EngineServices::Get();
+	if (!engine2 || !engine2->GetRendererInstance()) { return; }
 	auto pso = GetOrCreatePipelineState(
-		Unnamed::Engine::GetRenderer()->GetDevice(),
+		engine2->GetRendererInstance()->GetDevice(),
 		desc, meshName
 	);
 	if (!pso) {
@@ -176,9 +181,10 @@ void Material::Apply(
 	}
 
 	// ディスクリプタヒープを設定
-	ID3D12DescriptorHeap* descriptorHeaps[] = {
-		Unnamed::Engine::GetSrvManager()->GetDescriptorHeap()
-	};
+	auto* engine3 = Unnamed::EngineServices::Get();
+	auto* srvManager3 = engine3 ? engine3->GetSrvManagerInstance() : nullptr;
+	if (!srvManager3) { return; }
+	ID3D12DescriptorHeap* descriptorHeaps[] = { srvManager3->GetDescriptorHeap() };
 	commandList->SetDescriptorHeaps(1, descriptorHeaps);
 
 	// テクスチャのディスクリプタテーブルバインド
@@ -212,8 +218,10 @@ void Material::Apply(
 		UINT totalTextureCount = static_cast<UINT>(texturesByRegister.size());
 
 		if (totalTextureCount > 0) {
-			auto srvManager = Unnamed::Engine::GetSrvManager();
-			auto texManager = Unnamed::Engine::GetTexManager();
+			auto* engine4 = Unnamed::EngineServices::Get();
+			auto* srvManager = engine4 ? engine4->GetSrvManagerInstance() : nullptr;
+			auto* texManager = engine4 ? engine4->GetTexManagerInstance() : nullptr;
+			if (!srvManager || !texManager) { return; }
 
 			// テクスチャの組み合わせキーを生成（再利用判定用）
 			std::string textureComboKey;

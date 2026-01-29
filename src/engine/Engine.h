@@ -17,7 +17,9 @@
 #include <engine/OldConsole/Console.h>
 #include <engine/particle/ParticleManager.h>
 #include <engine/postprocess/IPostProcess.h>
+#include <engine/postprocess/PostProcessPipeline.h>
 #include <engine/renderer/D3D12.h>
+#include <engine/renderer/RenderTargets.h>
 #include <engine/ResourceSystem/Manager/ResourceManager.h>
 #include <engine/SceneManager/SceneFactory.h>
 #include <engine/SceneManager/SceneManager.h>
@@ -68,6 +70,12 @@ namespace Unnamed {
 		// DEPRECATED: 旧エンジンクラス
 		static SrvManager* GetSrvManager() { return mSrvManager.get(); }
 
+		static TexManager* GetTexManager() {
+			return mResourceManager ?
+				       mResourceManager->GetTexManager() :
+				       nullptr;
+		}
+
 		// DEPRECATED: 旧エンジンクラス
 		static SceneManager* GetSceneManager() { return mSceneManager.get(); }
 
@@ -91,13 +99,14 @@ namespace Unnamed {
 		Editor* GetEditor() const { return mEditor.get(); }
 
 		/// @brief ポストプロセスエフェクト数の取得
-		std::size_t GetPostChainSize() const { return mPostChain.size(); }
+		std::size_t GetPostChainSize() const {
+			return mPostProcessPipeline.GetPassCount();
+		}
 
 		/// @brief ポストプロセスエフェクトの取得
 		IPostProcess* GetPostProcessAt(int index) const {
-			if (index < 0 || static_cast<std::size_t>(index) >= mPostChain.
-			    size()) { return nullptr; }
-			return mPostChain[static_cast<std::size_t>(index)].get();
+			if (index < 0) { return nullptr; }
+			return mPostProcessPipeline.GetPassAt(static_cast<size_t>(index));
 		}
 
 		/// @brief シーンマネージャーインスタンスの取得
@@ -113,12 +122,12 @@ namespace Unnamed {
 
 		/// @brief 現在の PingPong テクスチャの SRV (GPU ptr)
 		uint64_t GetActivePingSrvGpuPtr() const {
-			return mPingRtv[mPingIndex].srvHandleGPU.ptr;
+			return mPostProcessPipeline.GetActivePingSrvGpuPtr();
 		}
 
 		/// @brief 現在の PingPong テクスチャの RTV リソース記述子
 		D3D12_RESOURCE_DESC GetActivePingRtvDesc() const {
-			return mPingRtv[mPingIndex].rtv->GetDesc();
+			return mPostProcessPipeline.GetActivePingRtvDesc();
 		}
 
 		/// @brief エディター生成
@@ -135,6 +144,9 @@ namespace Unnamed {
 		/// @brief 終了処理
 		void Shutdown() const;
 
+		// @brief 終了要求があるかどうか
+		bool ShouldQuit();
+
 		/// @brief モード State を切り替える
 		void SetModeState(std::unique_ptr<IEngineModeState> state);
 
@@ -149,19 +161,11 @@ namespace Unnamed {
 		std::unique_ptr<OldWindowManager> mWindowManager;
 		std::unique_ptr<Editor> mEditor;
 		std::unique_ptr<IEngineModeState> mModeState;
-		std::unique_ptr<EntityLoader> mEntityLoader;
-		std::unique_ptr<Console> mConsole;
-		std::unique_ptr<CopyImagePass> mCopyImagePass;
-		std::vector<std::unique_ptr<IPostProcess>> mPostChain;
-		RenderTargetTexture mOffscreenRtv;
-		DepthStencilTexture mOffscreenDsv;
-		RenderPassTargets mOffscreenRenderPassTargets;
-		RenderTargetTexture mPostProcessedRtv;
-		DepthStencilTexture mPostProcessedDsv;
-		RenderPassTargets mPostProcessedRenderPassTargets;
-		RenderTargetTexture mPingRtv[2];
-		uint32_t mPingIndex = 0;
-		bool bSwapchainPassBegun = false;
+		std::unique_ptr<EntityLoader>     mEntityLoader;
+		std::unique_ptr<Console>          mConsole;
+		PostProcessPipeline               mPostProcessPipeline;
+		RenderTargets                     mRenderTargets;
+		bool                              bSwapchainPassBegun = false;
 
 		static std::unique_ptr<SrvManager>      mSrvManager;
 		static std::unique_ptr<ResourceManager> mResourceManager;

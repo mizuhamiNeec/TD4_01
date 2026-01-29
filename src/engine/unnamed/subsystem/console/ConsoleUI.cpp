@@ -19,7 +19,7 @@ namespace Unnamed {
 		ImGuiWindowFlags_NoScrollWithMouse |
 		ImGuiWindowFlags_NoScrollbar;
 
-	static constexpr ImGuiInputTextFlags kInputTextFlags =
+	static const ImGuiInputTextFlags kInputTextFlags =
 		ImGuiInputTextFlags_EnterReturnsTrue |
 		ImGuiInputTextFlags_CallbackCompletion |
 		ImGuiInputTextFlags_CallbackHistory |
@@ -46,6 +46,7 @@ namespace Unnamed {
 		                          ImGui::GetFrameHeightWithSpacing() * 2.0f;
 
 		static ConsoleLogText selection;
+		static bool           hasSelection = false;
 
 		if (
 			ImGui::BeginTable(
@@ -86,6 +87,7 @@ namespace Unnamed {
 				ImGui::PushID(static_cast<int>(it.Index()));
 				if (ImGui::Selectable(display.c_str(), false)) {
 					selection = buffer;
+					hasSelection = true;
 				}
 				ImGui::PopID();
 
@@ -105,37 +107,39 @@ namespace Unnamed {
 			ImGuiChildFlags_FrameStyle
 		);
 
-		const std::string bufferInfo = std::format(
+		const std::string bufferInfo = hasSelection ? std::format(
 			"File: {}\nLine: {}\nColumn: {}\nFunc: {}",
 			selection.location.file_name(),
 			selection.location.line(),
 			selection.location.column(),
 			selection.location.function_name()
-		);
+		) : "(no selection)";
 
 		ImGui::TextWrapped(bufferInfo.data());
-		const std::string command = std::format(
+		const std::string command = hasSelection ? std::format(
 			"--line {} --column {} {}",
 			selection.location.line(),
 			selection.location.column(),
 			selection.location.file_name()
-		);
+		) : std::string{};
 
-		ImGui::Text(command.c_str());
-		if (
-			ImGuiWidgets::IconButton(
-				StrUtil::ConvertToUtf8(kIconNANKABOX).c_str(),
-				"Open in Rider", ImVec2(128.0f, 32.0f), 1.0f, ImGuiDir_Right
-			)
-		) {
-			ShellExecuteW(
-				nullptr,
-				L"open",
-				L"Rider.cmd",
-				StrUtil::ToWString(command).c_str(),
-				nullptr,
-				SW_HIDE
-			);
+		if (hasSelection) {
+			ImGui::Text(command.c_str());
+			if (
+				ImGuiWidgets::IconButton(
+					StrUtil::ConvertToUtf8(kIconNANKABOX).c_str(),
+					"Open in Rider", ImVec2(128.0f, 32.0f), 1.0f, ImGuiDir_Right
+				)
+			) {
+				ShellExecuteW(
+					nullptr,
+					L"open",
+					L"Rider.cmd",
+					StrUtil::ToWString(command).c_str(),
+					nullptr,
+					SW_HIDE
+				);
+			}
 		}
 
 		ImGui::EndChild();
@@ -179,7 +183,8 @@ namespace Unnamed {
 				IM_ARRAYSIZE(mInputBuffer),
 				size,
 				kInputTextFlags,
-				reinterpret_cast<ImGuiInputTextCallback>(InputTextCallback)
+				InputTextCallback,
+				this
 			)
 		) { Submit(); }
 	}
@@ -254,7 +259,7 @@ namespace Unnamed {
 	}
 
 	/// @brief インプットテキストからのコールバック
-	int ConsoleUI::InputTextCallback(const ImGuiInputTextCallbackData* data) {
+	int ConsoleUI::InputTextCallback(ImGuiInputTextCallbackData* data) {
 		switch (data->EventFlag) {
 			case ImGuiInputTextFlags_CallbackCompletion: {
 				Msg("callback", "completion");
@@ -269,7 +274,10 @@ namespace Unnamed {
 				Msg("callback", "edit");
 				break;
 
-			case ImGuiInputTextFlags_CallbackResize: break;
+			case ImGuiInputTextFlags_CallbackResize: {
+
+			}
+			break;
 			default: ;
 		}
 		return 0;

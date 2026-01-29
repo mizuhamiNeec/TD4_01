@@ -197,12 +197,7 @@ void GameScene::Update(const float deltaTime) {
 		float angle         = 0.0f;
 		Vec2  screenPos;
 
-		Vec2 clientSize = {
-			static_cast<float>(OldWindowManager::GetMainWindow()->
-				GetClientWidth()),
-			static_cast<float>(OldWindowManager::GetMainWindow()->
-				GetClientHeight())
-		};
+		Vec2 clientSize = Unnamed::Engine::GetViewportSize();
 
 		Vec2 viewportSize = clientSize;
 
@@ -340,7 +335,7 @@ void GameScene::RegisterConVars() {
 
 /// @brief コアテクスチャの読み込み
 void GameScene::LoadCoreTextures() const {
-	auto* texManager = TexManager::GetInstance();
+	auto* texManager = Unnamed::Engine::GetTexManager();
 	if (!texManager) { return; }
 
 	struct TextureRequest {
@@ -378,6 +373,7 @@ void GameScene::InitializeCubeMap() {
 	mCubeMap = std::make_unique<CubeMap>(
 		mRenderer->GetDevice(),
 		mSrvManager,
+		Unnamed::Engine::GetTexManager(),
 		kWaveTexturePath
 	);
 }

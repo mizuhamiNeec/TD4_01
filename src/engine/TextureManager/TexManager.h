@@ -4,6 +4,10 @@
 #include <DirectXTex.h>
 #include <string>
 
+#include <unordered_map>
+
+#include <wrl/client.h>
+
 class SrvManager;
 class D3D12;
 
@@ -21,10 +25,12 @@ class TexManager {
 	};
 
 public:
-	static TexManager* GetInstance();
+	TexManager()                       = default;
+	~TexManager()                      = default;
+	TexManager(TexManager&)            = delete;
+	TexManager& operator=(TexManager&) = delete;
 
-	void        Init(D3D12* renderer, SrvManager* srvManager);
-	static void Shutdown();
+	void Init(D3D12* renderer, SrvManager* srvManager);
 
 	void LoadTexture(const std::string& filePath, bool forceCubeMap = false);
 	TextureData* GetTextureData(const std::string& filePath);
@@ -72,19 +78,5 @@ private:
 	D3D12*      mRenderer;
 	SrvManager* mSrvManager;
 
-	static D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(
-		ID3D12DescriptorHeap* descriptorHeap,
-		uint32_t              descriptorSize, uint32_t index
-	);
-	static D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(
-		ID3D12DescriptorHeap* descriptorHeap,
-		uint32_t              descriptorSize, uint32_t index
-	);
-
-	static TexManager* mInstance;
-
-	TexManager()                       = default;
-	~TexManager()                      = default;
-	TexManager(TexManager&)            = delete;
-	TexManager& operator=(TexManager&) = delete;
+	// (singleton廃止)
 };

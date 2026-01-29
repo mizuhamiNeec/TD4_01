@@ -11,15 +11,6 @@
 #include <engine/TextureManager/TexManager.h>
 #include <runtime/core/Properties.h>
 
-TexManager* TexManager::mInstance = nullptr;
-
-/// @brief シングルトンインスタンスを取得します
-/// @return TexManagerのインスタンス
-TexManager* TexManager::GetInstance() {
-	if (mInstance == nullptr) { mInstance = new TexManager; }
-	return mInstance;
-}
-
 /// @brief テクスチャマネージャーを初期化します
 /// @param renderer D3D12レンダラーのポインタ
 /// @param srvManager Srvマネージャのポインタ
@@ -93,43 +84,6 @@ Microsoft::WRL::ComPtr<ID3D12Resource> TexManager::CreateTextureResource(
 	return resource;
 }
 
-/// @brief CPUディスクリプタハンドルを取得します
-/// @param descriptorHeap ディスクリプタヒープ
-/// @param descriptorSize ディスクリプタサイズ
-/// @param index インデックス
-/// @return CPUディスクリプタハンドル
-D3D12_CPU_DESCRIPTOR_HANDLE TexManager::GetCPUDescriptorHandle(
-	ID3D12DescriptorHeap* descriptorHeap,
-	const uint32_t        descriptorSize,
-	const uint32_t        index
-) {
-	D3D12_CPU_DESCRIPTOR_HANDLE handleCPU = descriptorHeap->
-		GetCPUDescriptorHandleForHeapStart();
-	handleCPU.ptr += static_cast<unsigned long long>(descriptorSize) * index;
-	return handleCPU;
-}
-
-/// @brief GPUディスクリプタハンドルを取得します
-/// @param descriptorHeap ディスクリプタヒープ
-/// @param descriptorSize ディスクリプタサイズ
-/// @param index インデックス
-/// @return GPUディスクリプタハンドル
-D3D12_GPU_DESCRIPTOR_HANDLE TexManager::GetGPUDescriptorHandle(
-	ID3D12DescriptorHeap* descriptorHeap,
-	const uint32_t        descriptorSize,
-	const uint32_t        index
-) {
-	D3D12_GPU_DESCRIPTOR_HANDLE handleGPU = descriptorHeap->
-		GetGPUDescriptorHandleForHeapStart();
-	handleGPU.ptr += static_cast<unsigned long long>(descriptorSize) * index;
-	return handleGPU;
-}
-
-/// @brief テクスチャマネージャーを終了します
-void TexManager::Shutdown() {
-	delete mInstance;
-	mInstance = nullptr;
-}
 
 /// @brief テクスチャデータをアップロードします
 /// @param texture テクスチャリソース

@@ -1,7 +1,7 @@
 Write-Host "Generating projects..."
 
 try {
-    premake5.exe vs2022
+    premake5.exe vs2026
     if ($LASTEXITCODE -eq 0) {
         Write-Host "Premake5 execution completed."
         } else {

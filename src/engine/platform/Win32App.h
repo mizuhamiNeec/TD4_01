@@ -5,8 +5,8 @@
 class Win32App {
 public:
 	explicit Win32App(const HINSTANCE hInstance)
-		: mHInstance(hInstance),
-		  mWindowManager(hInstance) {}
+		: mHInstance(hInstance), mWindowManager(hInstance) {
+	}
 
 	bool Init();
 	void Shutdown();

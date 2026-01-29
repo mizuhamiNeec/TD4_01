@@ -17,6 +17,7 @@
 #include <engine/ResourceSystem/Material/MaterialManager.h>
 #include <engine/ResourceSystem/Mesh/MeshManager.h>
 #include <engine/ResourceSystem/Shader/DefaultShader.h>
+#include <engine/Engine.h>
 #include <engine/TextureManager/TexManager.h>
 
 /// @brief 初期化
@@ -483,8 +484,7 @@ SubMesh* MeshManager::ProcessMesh(
 				std::filesystem::path fullTexturePath = modelDir / texPath;
 
 				// 旧TexManagerを使用してテクスチャを読み込み
-				TexManager::GetInstance()->
-					LoadTexture(fullTexturePath.string());
+				Unnamed::Engine::GetTexManager()->LoadTexture(fullTexturePath.string());
 				material->SetTexture(
 					"gBaseColorTexture",
 					fullTexturePath.string()
@@ -500,7 +500,7 @@ SubMesh* MeshManager::ProcessMesh(
 
 		// 環境マップテクスチャの設定
 		// シェーダーがTexture2Dを期待している場合は、forceCubeMapをfalseにする
-		TexManager::GetInstance()->LoadTexture(
+		Unnamed::Engine::GetTexManager()->LoadTexture(
 			"./content/core/textures/wave.dds",
 			false
 		);
@@ -742,8 +742,7 @@ SubMesh* MeshManager::ProcessSkeletalMesh(
 			std::filesystem::path texPath(texturePathStr);
 			std::filesystem::path fullTexturePath = modelDir / texPath;
 
-			TexManager::GetInstance()->
-				LoadTexture(fullTexturePath.string());
+			Unnamed::Engine::GetTexManager()->LoadTexture(fullTexturePath.string());
 			material->SetTexture(
 				"gBaseColorTexture",
 				fullTexturePath.string()
@@ -758,7 +757,7 @@ SubMesh* MeshManager::ProcessSkeletalMesh(
 	}
 
 	// 環境マップテクスチャの設定
-	TexManager::GetInstance()->LoadTexture(
+	Unnamed::Engine::GetTexManager()->LoadTexture(
 		"./content/core/textures/wave.dds",
 		true
 	);

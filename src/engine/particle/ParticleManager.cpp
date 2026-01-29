@@ -11,6 +11,7 @@
 #include "engine/renderer/RootSignatureManager.h"
 #include "engine/renderer/SrvManager.h"
 #include "engine/Engine.h"
+#include "engine/EngineServices.h"
 
 /// @brief ParticleManagerを初期化します
 /// @param d3d12 D3D12レンダラーへのポインタ
@@ -18,7 +19,9 @@
 void ParticleManager::Init(D3D12* d3d12, SrvManager* srvManager) {
 	mRenderer   = d3d12;
 	mSrvManager = srvManager;
-	mTexManager = Unnamed::Engine::GetTexManager();
+	if (auto* engine = Unnamed::EngineServices::Get()) {
+		mTexManager = engine->GetTexManagerInstance();
+	}
 	Console::Print(
 		"ParticleManager : ParticleCommonを初期化します。\n",
 		kConTextColorWait, Channel::Engine

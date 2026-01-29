@@ -316,7 +316,12 @@ void StaticMeshRenderer::DrawInspectorImGui() {
 						const auto& textures = material->GetTextures();
 						if (!textures.empty()) {
 							ImGui::Text("Textures:");
-							auto texManager = TexManager::GetInstance();
+							auto* texManager = Unnamed::Engine::GetTexManager();
+							if (!texManager) {
+								ImGui::Text("TexManager is null");
+								ImGui::TreePop();
+								continue;
+							}
 
 							for (const auto& [name, filePath] : textures) {
 								// テクスチャ情報をより詳細に表示

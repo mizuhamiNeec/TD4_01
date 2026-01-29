@@ -106,7 +106,7 @@ void PipelineState::SetVertexShader(const std::wstring& filePath) {
 
 	mDesc.VS = {
 		.pShaderBytecode = mVsBlob->GetBufferPointer(),
-		.BytecodeLength = mVsBlob->
+		.BytecodeLength  = mVsBlob->
 		GetBufferSize()
 	}; // VertexShader
 }
@@ -122,7 +122,7 @@ void PipelineState::SetPixelShader(const std::wstring& filePath) {
 
 	mDesc.PS = {
 		.pShaderBytecode = mPsBlob->GetBufferPointer(),
-		.BytecodeLength = mPsBlob->
+		.BytecodeLength  = mPsBlob->
 		GetBufferSize()
 	}; // PixelShader
 }
@@ -151,7 +151,8 @@ IDxcBlob* PipelineState::CompileShader(
 	shaderSourceBuffer.Size     = shaderSource->GetBufferSize();
 	shaderSourceBuffer.Encoding = DXC_CP_UTF8; // UTF8の文字コードであることを通知
 
-	/* 2. Compileする */
+#ifdef _DEBUG
+	/// Compileの設定
 	LPCWSTR arguments[] = {
 		filePath.c_str(),         // コンパイル対象のhlslファイル名
 		L"-E", L"main",           // エントリーポイントの指定。基本的にmain以外にはしない
@@ -160,7 +161,16 @@ IDxcBlob* PipelineState::CompileShader(
 		L"-Od",                   // 最適化を外しておく
 		L"-Zpr",                  // メモリレイアウトは行優先
 	};
-
+#else
+	LPCWSTR arguments[] = {
+		filePath.c_str(), // コンパイル対象のhlslファイル名
+		L"-E", L"main",   // エントリーポイントの指定。基本的にmain以外にはしない
+		L"-T", profile,   // ShaderProfileの設定
+		L"-O3",           // 最適化レベル3
+		L"-Zpr",          // メモリレイアウトは行優先
+	};
+#endif
+	
 	// 実際にShaderをコンパイルする
 	IDxcResult* shaderResult = nullptr;
 	hr                       = dxcCompiler->Compile(
@@ -236,57 +246,57 @@ void PipelineState::SetBlendMode(const BlendMode blendMode) {
 	rtBlendDesc.RenderTargetWriteMask          = D3D12_COLOR_WRITE_ENABLE_ALL;
 
 	switch (blendMode) {
-	case kBlendModeNone: // 不透明
-		rtBlendDesc.BlendEnable = FALSE;
-		// ブレンドしないので値の設定不要
-		break;
-	case kBlendModeNormal: // アルファブレンド
-		rtBlendDesc.BlendEnable = TRUE;
-		rtBlendDesc.SrcBlend       = D3D12_BLEND_SRC_ALPHA;
-		rtBlendDesc.DestBlend      = D3D12_BLEND_INV_SRC_ALPHA;
-		rtBlendDesc.BlendOp        = D3D12_BLEND_OP_ADD;
-		rtBlendDesc.SrcBlendAlpha  = D3D12_BLEND_ZERO;
-		rtBlendDesc.DestBlendAlpha = D3D12_BLEND_ONE;
-		rtBlendDesc.BlendOpAlpha   = D3D12_BLEND_OP_ADD;
-		break;
-	case kBlendModeAdd: // 加算
-		rtBlendDesc.BlendEnable = TRUE;
-		rtBlendDesc.SrcBlend       = D3D12_BLEND_SRC_ALPHA;
-		rtBlendDesc.DestBlend      = D3D12_BLEND_ONE;
-		rtBlendDesc.BlendOp        = D3D12_BLEND_OP_ADD;
-		rtBlendDesc.SrcBlendAlpha  = D3D12_BLEND_ZERO;
-		rtBlendDesc.DestBlendAlpha = D3D12_BLEND_ONE;
-		rtBlendDesc.BlendOpAlpha   = D3D12_BLEND_OP_ADD;
-		break;
-	case kBlendModeSubtract: // 減算
-		rtBlendDesc.BlendEnable = TRUE;
-		rtBlendDesc.SrcBlend       = D3D12_BLEND_SRC_ALPHA;
-		rtBlendDesc.DestBlend      = D3D12_BLEND_ONE;
-		rtBlendDesc.BlendOp        = D3D12_BLEND_OP_REV_SUBTRACT;
-		rtBlendDesc.SrcBlendAlpha  = D3D12_BLEND_ZERO;
-		rtBlendDesc.DestBlendAlpha = D3D12_BLEND_ONE;
-		rtBlendDesc.BlendOpAlpha   = D3D12_BLEND_OP_ADD;
-		break;
-	case kBlendModeMultiply: // 乗算
-		rtBlendDesc.BlendEnable = TRUE;
-		rtBlendDesc.SrcBlend       = D3D12_BLEND_DEST_COLOR;
-		rtBlendDesc.DestBlend      = D3D12_BLEND_ZERO;
-		rtBlendDesc.BlendOp        = D3D12_BLEND_OP_ADD;
-		rtBlendDesc.SrcBlendAlpha  = D3D12_BLEND_ZERO;
-		rtBlendDesc.DestBlendAlpha = D3D12_BLEND_ONE;
-		rtBlendDesc.BlendOpAlpha   = D3D12_BLEND_OP_ADD;
-		break;
-	case kBlendModeScreen: // スクリーン（発光）
-		rtBlendDesc.BlendEnable = TRUE;
-		rtBlendDesc.SrcBlend       = D3D12_BLEND_ONE;
-		rtBlendDesc.DestBlend      = D3D12_BLEND_INV_SRC_COLOR;
-		rtBlendDesc.BlendOp        = D3D12_BLEND_OP_ADD;
-		rtBlendDesc.SrcBlendAlpha  = D3D12_BLEND_ZERO;
-		rtBlendDesc.DestBlendAlpha = D3D12_BLEND_ONE;
-		rtBlendDesc.BlendOpAlpha   = D3D12_BLEND_OP_ADD;
-		break;
-	case kCountOfBlendMode:
-	default: break;
+		case kBlendModeNone: // 不透明
+			rtBlendDesc.BlendEnable = FALSE;
+			// ブレンドしないので値の設定不要
+			break;
+		case kBlendModeNormal: // アルファブレンド
+			rtBlendDesc.BlendEnable = TRUE;
+			rtBlendDesc.SrcBlend       = D3D12_BLEND_SRC_ALPHA;
+			rtBlendDesc.DestBlend      = D3D12_BLEND_INV_SRC_ALPHA;
+			rtBlendDesc.BlendOp        = D3D12_BLEND_OP_ADD;
+			rtBlendDesc.SrcBlendAlpha  = D3D12_BLEND_ZERO;
+			rtBlendDesc.DestBlendAlpha = D3D12_BLEND_ONE;
+			rtBlendDesc.BlendOpAlpha   = D3D12_BLEND_OP_ADD;
+			break;
+		case kBlendModeAdd: // 加算
+			rtBlendDesc.BlendEnable = TRUE;
+			rtBlendDesc.SrcBlend       = D3D12_BLEND_SRC_ALPHA;
+			rtBlendDesc.DestBlend      = D3D12_BLEND_ONE;
+			rtBlendDesc.BlendOp        = D3D12_BLEND_OP_ADD;
+			rtBlendDesc.SrcBlendAlpha  = D3D12_BLEND_ZERO;
+			rtBlendDesc.DestBlendAlpha = D3D12_BLEND_ONE;
+			rtBlendDesc.BlendOpAlpha   = D3D12_BLEND_OP_ADD;
+			break;
+		case kBlendModeSubtract: // 減算
+			rtBlendDesc.BlendEnable = TRUE;
+			rtBlendDesc.SrcBlend       = D3D12_BLEND_SRC_ALPHA;
+			rtBlendDesc.DestBlend      = D3D12_BLEND_ONE;
+			rtBlendDesc.BlendOp        = D3D12_BLEND_OP_REV_SUBTRACT;
+			rtBlendDesc.SrcBlendAlpha  = D3D12_BLEND_ZERO;
+			rtBlendDesc.DestBlendAlpha = D3D12_BLEND_ONE;
+			rtBlendDesc.BlendOpAlpha   = D3D12_BLEND_OP_ADD;
+			break;
+		case kBlendModeMultiply: // 乗算
+			rtBlendDesc.BlendEnable = TRUE;
+			rtBlendDesc.SrcBlend       = D3D12_BLEND_DEST_COLOR;
+			rtBlendDesc.DestBlend      = D3D12_BLEND_ZERO;
+			rtBlendDesc.BlendOp        = D3D12_BLEND_OP_ADD;
+			rtBlendDesc.SrcBlendAlpha  = D3D12_BLEND_ZERO;
+			rtBlendDesc.DestBlendAlpha = D3D12_BLEND_ONE;
+			rtBlendDesc.BlendOpAlpha   = D3D12_BLEND_OP_ADD;
+			break;
+		case kBlendModeScreen: // スクリーン（発光）
+			rtBlendDesc.BlendEnable = TRUE;
+			rtBlendDesc.SrcBlend       = D3D12_BLEND_ONE;
+			rtBlendDesc.DestBlend      = D3D12_BLEND_INV_SRC_COLOR;
+			rtBlendDesc.BlendOp        = D3D12_BLEND_OP_ADD;
+			rtBlendDesc.SrcBlendAlpha  = D3D12_BLEND_ZERO;
+			rtBlendDesc.DestBlendAlpha = D3D12_BLEND_ONE;
+			rtBlendDesc.BlendOpAlpha   = D3D12_BLEND_OP_ADD;
+			break;
+		case kCountOfBlendMode:
+		default: break;
 	}
 	blendDesc.RenderTarget[0] = rtBlendDesc;
 	mDesc.BlendState          = blendDesc;

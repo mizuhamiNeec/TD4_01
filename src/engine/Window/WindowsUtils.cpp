@@ -38,7 +38,33 @@ std::string WindowsUtils::GetWindowsComputerName() {
 /// @brief Windowsのバージョンを取得します
 /// @return バージョン文字列
 std::string WindowsUtils::GetWindowsVersion() {
-	return "Windows 11"; // TODO: !?
+	// RtlGetVersion を動的取得して、実際の Windows バージョンを取得する
+	using RtlGetVersionFn = LONG(WINAPI*)(PRTL_OSVERSIONINFOW);
+
+	HMODULE ntdll = GetModuleHandleW(L"ntdll.dll");
+	if (!ntdll) { return "Windows"; }
+
+	const auto rtlGetVersion = reinterpret_cast<RtlGetVersionFn>(
+		GetProcAddress(ntdll, "RtlGetVersion")
+	);
+	if (!rtlGetVersion) { return "Windows"; }
+
+	RTL_OSVERSIONINFOW osvi{};
+	osvi.dwOSVersionInfoSize = sizeof(osvi);
+	if (rtlGetVersion(&osvi) != 0) { return "Windows"; }
+
+	// Windows 11 は major=10, minor=0 で、build >= 22000 で判定するのが一般的らしい
+	const bool isWindows11 = (osvi.dwMajorVersion == 10 && osvi.dwMinorVersion
+	                          == 0 &&
+	                          osvi.dwBuildNumber >= 22000);
+
+	std::string name = isWindows11 ? "Windows 11" : "Windows";
+
+	// 参考情報として build も付与
+	name += " (Build " + std::to_string(
+		static_cast<unsigned long>(osvi.dwBuildNumber)
+	) + ")";
+	return name;
 }
 
 /// @brief CPUの名前を取得します

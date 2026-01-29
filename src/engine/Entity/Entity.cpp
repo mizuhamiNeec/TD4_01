@@ -2,6 +2,7 @@
 #include <engine/Camera/CameraManager.h>
 #include <engine/Debug/DebugDraw.h>
 #include <engine/Entity/Entity.h>
+#include <engine/EngineServices.h>
 #include <engine/OldConsole/ConVarManager.h>
 
 #include "engine/Debug/DebugHud.h"
@@ -62,7 +63,9 @@ void Entity::Update(const float deltaTime) {
 
 	if (ConVarManager::GetConVar("ent_axis")->GetValueAsBool()) {
 		Vec3 worldPos   = GetTransform()->GetWorldPos();
-		Vec2 screenSize = Unnamed::Engine::GetViewportSize();
+		Vec2 screenSize = Unnamed::EngineServices::Get() ?
+			               Unnamed::EngineServices::Get()->GetViewportSizeInstance() :
+			               Vec2{};
 
 		DebugDraw::DrawAxis(
 			worldPos,
@@ -93,10 +96,10 @@ void Entity::Update(const float deltaTime) {
 		if (!bIsOffscreen) {
 #ifdef _DEBUG
 			//auto   viewport  = ImGui::GetMainViewport();
-			ImVec2 screenPos = {
-				Unnamed::Engine::GetViewportLT().x,
-				Unnamed::Engine::GetViewportLT().y
-			};
+			auto viewportLt = Unnamed::EngineServices::Get() ?
+			                    Unnamed::EngineServices::Get()->GetViewportLTInstance() :
+			                    Vec2{};
+			ImVec2 screenPos = { viewportLt.x, viewportLt.y };
 			ImGui::SetNextWindowPos(screenPos);
 			ImGui::SetNextWindowSize({screenSize.x, screenSize.y});
 			ImGui::SetNextWindowBgAlpha(0.0f); // 背景を透明にする

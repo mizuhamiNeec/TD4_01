@@ -4,6 +4,7 @@
 #include <engine/OldConsole/ConVarManager.h>
 
 #include <engine/Engine.h>
+#include <engine/EngineServices.h>
 
 /// @brief 更新処理
 /// @param deltaTime 前フレームからの経過時間（秒）
@@ -32,7 +33,9 @@ void DebugHud::ShowFrameRate([[maybe_unused]] const float deltaTime) {
 		ImGuiWindowFlags_NoFocusOnAppearing |
 		ImGuiWindowFlags_NoNav;
 
-	const auto viewportLt = Unnamed::Engine::GetViewportLT();
+	const auto viewportLt = Unnamed::EngineServices::Get() ?
+		                       Unnamed::EngineServices::Get()->GetViewportLTInstance() :
+		                       Vec2{};
 	const auto windowPos  = ImVec2(viewportLt.x, viewportLt.y + 128.0f);
 	ImGui::SetNextWindowPos(windowPos, ImGuiCond_Always);
 

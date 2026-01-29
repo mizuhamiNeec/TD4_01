@@ -40,7 +40,9 @@ Window::Window(
 		hInstance, this
 	);
 
-	if (!mHWnd) { throw std::runtime_error("Failed to create window."); }
+	if (!mHWnd) {
+		throw std::runtime_error("Failed to create window.");
+	}
 }
 
 /// @brief デストラクタ
@@ -93,21 +95,25 @@ LRESULT Window::WndProc(
 	// );
 
 	switch (msg) {
-		case WM_CLOSE: {
-			DestroyWindow(hWnd);
-			return 0;
-		}
+	case WM_CLOSE: {
+		DestroyWindow(hWnd);
+		return 0;
+	}
 
-		case WM_DESTROY: {
-			PostQuitMessage(0);
-			return 0;
-		}
+	case WM_DESTROY: {
+		PostQuitMessage(0);
+		return 0;
+	}
 
-		case WM_PAINT: { break; }
-		case WM_SIZE: { break; }
+	case WM_PAINT: {
+		break;
+	}
+	case WM_SIZE: {
+		break;
+	}
 
-		// TODO: メッセージを他のサブシステムに横流しする
-		default: ;
+	// TODO: メッセージを他のサブシステムに横流しする
+	default: ;
 	}
 
 	return DefWindowProcW(hWnd, msg, wParam, lParam);

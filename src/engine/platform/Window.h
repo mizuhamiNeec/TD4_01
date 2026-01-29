@@ -1,6 +1,6 @@
 ﻿#pragma once
-#include <cstdint>
 #include <string>
+#include <cstdint>
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN

@@ -213,7 +213,7 @@ void Material::Apply(
 
 		if (totalTextureCount > 0) {
 			auto srvManager = Unnamed::Engine::GetSrvManager();
-			auto texManager = TexManager::GetInstance();
+			auto texManager = Unnamed::Engine::GetTexManager();
 
 			// テクスチャの組み合わせキーを生成（再利用判定用）
 			std::string textureComboKey;

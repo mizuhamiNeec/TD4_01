@@ -7,8 +7,7 @@
 #endif
 
 /// @brief アニメーションコンポーネントのデストラクタ
-AnimationComponent::~AnimationComponent() {
-}
+AnimationComponent::~AnimationComponent() {}
 
 /// @brief アニメーションコンポーネントのコンストラクタ
 /// @param animation アニメーションデータ
@@ -26,15 +25,11 @@ AnimationComponent::AnimationComponent(
 void AnimationComponent::OnAttach(Entity& owner) {
 	Component::OnAttach(owner);
 	mScene = owner.GetTransform();
-	if (mIsAutoPlay) {
-		mIsPlaying = true;
-	}
+	if (mIsAutoPlay) { mIsPlaying = true; }
 }
 
 /// @brief エンティティからデタッチされたときに呼ばれる
-void AnimationComponent::OnDetach() {
-	Component::OnDetach();
-}
+void AnimationComponent::OnDetach() { Component::OnDetach(); }
 
 /// @brief アニメーションコンポーネントの更新
 /// @param deltaTime 前フレームからの経過時間
@@ -48,7 +43,7 @@ void AnimationComponent::Update(const float deltaTime) {
 
 		// 現在選択されているノードのアニメーションを再生
 		if (!mCurrentNodeName.empty() &&
-			mAnimation.nodeAnimations.contains(mCurrentNodeName)) {
+		    mAnimation.nodeAnimations.contains(mCurrentNodeName)) {
 			NodeAnimation& nodeAnimation = mAnimation.nodeAnimations[
 				mCurrentNodeName];
 
@@ -111,9 +106,7 @@ void AnimationComponent::DrawInspectorImGui() {
 				if (ImGui::Selectable(nodeName.c_str(), isSelected)) {
 					mCurrentNodeName = nodeName;
 				}
-				if (isSelected) {
-					ImGui::SetItemDefaultFocus();
-				}
+				if (isSelected) { ImGui::SetItemDefaultFocus(); }
 			}
 			ImGui::EndCombo();
 		}

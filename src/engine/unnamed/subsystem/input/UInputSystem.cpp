@@ -56,9 +56,7 @@ namespace Unnamed {
 
 	/// @brief 更新
 	void UInputSystem::Update(float) {
-		for (const auto& inputDevice : mDevices) {
-			inputDevice->Update();
-		}
+		for (const auto& inputDevice : mDevices) { inputDevice->Update(); }
 
 		//-------------------------------------------------------------------------
 		// 軸入力は毎フレームリセットする
@@ -98,7 +96,8 @@ namespace Unnamed {
 				// 一時マップに存在しなければ初期化
 				if (!tempActionStates.contains(target)) {
 					tempActionStates[target] = std::make_tuple(
-						false, false, false);
+						false, false, false
+					);
 				}
 
 				// 状態を論理ORで更新
@@ -195,9 +194,7 @@ namespace Unnamed {
 		switch (msg) {
 			case WM_ACTIVATE:
 				// ウィンドウが非アクティブになったら入力をリセット
-				if (LOWORD(wParam) == WA_INACTIVE) {
-					ResetInputStates();
-				}
+				if (LOWORD(wParam) == WA_INACTIVE) { ResetInputStates(); }
 				break;
 
 			case WM_INPUT: {
@@ -239,9 +236,7 @@ namespace Unnamed {
 	/// @param device 登録する入力デバイスの共有ポインタ
 	void UInputSystem::RegisterDevice(
 		const std::shared_ptr<BaseInputDevice>& device
-	) {
-		mDevices.emplace_back(device);
-	}
+	) { mDevices.emplace_back(device); }
 
 	/// @brief アクションをキーにバインドします
 	/// @param action アクション名
@@ -444,9 +439,7 @@ namespace Unnamed {
 			auto& [bIsPressed, bIsHeld, bIsReleased] :
 			mActionStates | std::views::values
 		) {
-			if (bIsHeld) {
-				bIsReleased = true;
-			}
+			if (bIsHeld) { bIsReleased = true; }
 
 			bIsPressed = false;
 			bIsHeld    = false;
@@ -461,9 +454,7 @@ namespace Unnamed {
 		}
 
 		// デバイス状態のリセット
-		for (auto& device : mDevices) {
-			device.get()->ResetStates();
-		}
+		for (auto& device : mDevices) { device.get()->ResetStates(); }
 	}
 
 	/// @brief RAW Inputの処理
@@ -521,14 +512,13 @@ namespace Unnamed {
 				static_cast<LONG>(
 					MapVirtualKeyA(
 						virtualKey,
-						MAPVK_VK_TO_VSC)
+						MAPVK_VK_TO_VSC
+					)
 				) << 16,
 				name,
 				sizeof(name)
 			)
-		) {
-			return name;
-		}
+		) { return name; }
 		Warning(
 			kChannel,
 			"キーの名前を取得できませんでした: {}",

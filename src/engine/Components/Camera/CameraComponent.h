@@ -29,8 +29,8 @@ public:
 	Mat4 GetProjMat();
 
 	float GetAspectRatio();
-	void   SetAspectRatio(float newAspectRatio);
-	void   SetViewMat(const Mat4& mat4);
+	void  SetAspectRatio(float newAspectRatio);
+	void  SetViewMat(const Mat4& mat4);
 
 private:
 	float mFov         = 90.0f * Math::deg2Rad;

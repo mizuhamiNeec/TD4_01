@@ -25,7 +25,8 @@ struct WeaponData {
 	/// @param jsonPath JSONファイルのパス
 	/// @return 武器データのユニークポインタ
 	static std::unique_ptr<WeaponData> LoadFromJson(
-		const std::string& jsonPath);
+		const std::string& jsonPath
+	);
 };
 
 /// @brief 武器モジュールのインターフェース
@@ -52,8 +53,7 @@ public:
 class HitscanModule final : public IWeaponModule {
 public:
 	explicit HitscanModule(const WeaponData& weaponData) :
-		mData(weaponData) {
-	}
+		mData(weaponData) {}
 
 	void Execute(Entity& entity) override;
 
@@ -64,16 +64,12 @@ public:
 	[[nodiscard]] WeaponData GetWeaponData() const { return mData; }
 
 	[[nodiscard]] Vec3 GetHitPosition() const {
-		if (mIsHit) {
-			return mHitPosition;
-		}
+		if (mIsHit) { return mHitPosition; }
 		return Vec3::min; // ヒットしていない場合はあらぬ座標を返す
 	}
 
 	Vec3 GetHitNormal() const {
-		if (mIsHit) {
-			return mHitNormal;
-		}
+		if (mIsHit) { return mHitNormal; }
 		return mHitNormal;
 	}
 

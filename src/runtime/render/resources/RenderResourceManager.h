@@ -23,7 +23,7 @@ namespace Unnamed {
 		uint32_t           gen = 0; // テクスチャの世代
 		[[nodiscard]] bool IsValid() const { return id != UINT32_MAX; }
 	};
-	
+
 	/// @brief レンダーリソースマネージャークラス
 	class RenderResourceManager {
 	public:
@@ -38,8 +38,10 @@ namespace Unnamed {
 
 		void ProcessDeferredMipUploads(ID3D12GraphicsCommandList* commandList);
 
-		void ReleaseTexture(TextureHandle handle, ID3D12Fence* fence,
-		                    uint64_t      value);
+		void ReleaseTexture(
+			TextureHandle handle, ID3D12Fence* fence,
+			uint64_t      value
+		);
 
 		[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE GetSrvGPU(
 			TextureHandle handle
@@ -51,7 +53,8 @@ namespace Unnamed {
 		UAssetManager* GetAssetManager() const;
 
 		void TrackUpload(
-			const Microsoft::WRL::ComPtr<ID3D12Resource>& resource);
+			const Microsoft::WRL::ComPtr<ID3D12Resource>& resource
+		);
 
 		void FlushUploads(ID3D12Fence* fence, uint64_t value);
 		void GarbageCollect();
@@ -69,10 +72,14 @@ namespace Unnamed {
 			const void* data, size_t bytes, DXGI_FORMAT fmt, GpuIB& out
 		) const;
 
-		void BindVertexBuffer(ID3D12GraphicsCommandList* cmd,
-		                      const GpuVB&               vb) const;
-		void BindIndexBuffer(ID3D12GraphicsCommandList* cmd,
-		                     const GpuIB&               ib) const;
+		void BindVertexBuffer(
+			ID3D12GraphicsCommandList* cmd,
+			const GpuVB&               vb
+		) const;
+		void BindIndexBuffer(
+			ID3D12GraphicsCommandList* cmd,
+			const GpuIB&               ib
+		) const;
 
 		MeshHandle AcquireMesh(AssetID meshAsset);
 		void ReleaseMesh(MeshHandle handle, ID3D12Fence* fence, uint64_t value);

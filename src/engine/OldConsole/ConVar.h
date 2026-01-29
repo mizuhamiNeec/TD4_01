@@ -45,43 +45,31 @@ public:
 		mBMin(bMin),
 		mFMin(fMin),
 		mBMax(bMax),
-		mFMax(fMax) {
-	}
+		mFMax(fMax) {}
 
 	/// @brief 型を文字列として取得します
 	/// @return 型の文字列表現
 	[[nodiscard]] std::string GetTypeAsString() const override {
-		if constexpr (std::is_same_v<T, bool>)
-			return "bool";
-		else if constexpr (std::is_same_v<T, int>)
-			return "int";
-		else if constexpr (std::is_same_v<T, float>)
-			return "float";
-		else if constexpr (std::is_same_v<T, std::string>)
-			return "string";
-		else if constexpr (std::is_same_v<T, Vec3>)
-			return "vec3";
-		else
-			return "unknown";
+		if constexpr (std::is_same_v<T, bool>) return "bool";
+		else if constexpr (std::is_same_v<T, int>) return "int";
+		else if constexpr (std::is_same_v<T, float>) return "float";
+		else if constexpr (std::is_same_v<T, std::string>) return "string";
+		else if constexpr (std::is_same_v<T, Vec3>) return "vec3";
+		else return "unknown";
 	}
 
 	/// @brief 値を文字列として取得します
 	/// @return 文字列としての値
 	[[nodiscard]] std::string GetValueAsString() const override {
-		if constexpr (std::is_same_v<T, std::string>) {
-			return mValue;
-		} else if constexpr (std::is_same_v<T, Vec3>) {
+		if constexpr (std::is_same_v<T, std::string>) { return mValue; } else if
+		constexpr (std::is_same_v<T, Vec3>) {
 			return std::format("{} {} {}", mValue.x, mValue.y, mValue.z);
-		} else {
-			return std::to_string(mValue);
-		}
+		} else { return std::to_string(mValue); }
 	}
 
 	/// @brief コンソール変数の名前を取得します
 	/// @return コンソール変数の名前
-	[[nodiscard]] const std::string& GetName() const override {
-		return mName;
-	}
+	[[nodiscard]] const std::string& GetName() const override { return mName; }
 
 	/// @brief コンソール変数のヘルプテキストを取得します
 	/// @return ヘルプテキスト
@@ -92,37 +80,35 @@ public:
 	/// @brief 値をfloat型として取得します
 	/// @return float型の値
 	[[nodiscard]] float GetValueAsFloat() const override {
-		if constexpr (std::is_same_v<T, float>) {
-			return mValue;
-		} else if constexpr (std::is_arithmetic_v<T>) {
+		if constexpr (std::is_same_v<T, float>) { return mValue; } else if
+		constexpr (std::is_arithmetic_v<T>) {
 			return static_cast<float>(mValue);
 		} else {
 			throw std::runtime_error(
-				"Unsupported type for conversion to float");
+				"Unsupported type for conversion to float"
+			);
 		}
 	}
 
 	/// @brief 値をdouble型として取得します
 	/// @return double型の値
 	[[nodiscard]] double GetValueAsDouble() const override {
-		if constexpr (std::is_same_v<T, double>) {
-			return mValue;
-		} else if constexpr (std::is_arithmetic_v<T>) {
+		if constexpr (std::is_same_v<T, double>) { return mValue; } else if
+		constexpr (std::is_arithmetic_v<T>) {
 			return static_cast<double>(mValue);
 		} else {
 			throw std::runtime_error(
-				"Unsupported type for conversion to double");
+				"Unsupported type for conversion to double"
+			);
 		}
 	}
 
 	/// @brief 値をint型として取得します
 	/// @return int型の値
 	[[nodiscard]] int GetValueAsInt() const override {
-		if constexpr (std::is_same_v<T, int>) {
-			return mValue;
-		} else if constexpr (std::is_arithmetic_v<T>) {
-			return static_cast<int>(mValue);
-		} else {
+		if constexpr (std::is_same_v<T, int>) { return mValue; } else if
+		constexpr (std::is_arithmetic_v<
+			T>) { return static_cast<int>(mValue); } else {
 			throw std::runtime_error("Unsupported type for conversion to int");
 		}
 	}
@@ -130,11 +116,8 @@ public:
 	/// @brief 値をbool型として取得します
 	/// @return bool型の値
 	[[nodiscard]] bool GetValueAsBool() const override {
-		if constexpr (std::is_same_v<T, bool>) {
-			return mValue;
-		} else if constexpr (std::is_arithmetic_v<T>) {
-			return mValue != 0;
-		} else {
+		if constexpr (std::is_same_v<T, bool>) { return mValue; } else if
+		constexpr (std::is_arithmetic_v<T>) { return mValue != 0; } else {
 			throw std::runtime_error("Unsupported type for conversion to bool");
 		}
 	}
@@ -142,9 +125,7 @@ public:
 	/// @brief 値をVec3型として取得します
 	/// @return Vec3型の値
 	[[nodiscard]] Vec3 GetValueAsVec3() const override {
-		if constexpr (std::is_same_v<T, Vec3>) {
-			return mValue;
-		} else {
+		if constexpr (std::is_same_v<T, Vec3>) { return mValue; } else {
 			throw std::runtime_error("Unsupported type for conversion to Vec3");
 		}
 	}
@@ -152,15 +133,15 @@ public:
 	/// @brief 文字列から値を設定します
 	/// @param valueStr 設定する値の文字列
 	void SetValueFromString(const std::string& valueStr) override {
-		if constexpr (std::is_same_v<T, bool>) {
+		if constexpr (std::is_same_v<
+			T, bool>) {
 			SetValue(valueStr == "true" || valueStr == "1");
-		} else if constexpr (std::is_same_v<T, int>) {
-			SetValue(std::stoi(valueStr));
-		} else if constexpr (std::is_same_v<T, float>) {
-			SetValue(std::stof(valueStr));
-		} else if constexpr (std::is_same_v<T, std::string>) {
-			SetValue(valueStr);
-		} else if constexpr (std::is_same_v<T, Vec3>) {
+		} else if constexpr (std::is_same_v<
+			T, int>) { SetValue(std::stoi(valueStr)); } else if constexpr (
+			std::is_same_v<T, float>) { SetValue(std::stof(valueStr)); } else if
+		constexpr (std::is_same_v<
+			T, std::string>) { SetValue(valueStr); } else if constexpr (
+			std::is_same_v<T, Vec3>) {
 			float x, y, z;
 			try {
 				// スペースで区切られた3つの数値を取得
@@ -174,11 +155,13 @@ public:
 					SetValue(Vec3(x, y, z));
 				} else {
 					throw std::runtime_error(
-						"Invalid format for Vec3. Expected: x y z");
+						"Invalid format for Vec3. Expected: x y z"
+					);
 				}
 			} catch (const std::exception&) {
 				throw std::runtime_error(
-					"Invalid format for Vec3. Expected: x y z");
+					"Invalid format for Vec3. Expected: x y z"
+				);
 			}
 		}
 	}
@@ -188,9 +171,7 @@ public:
 	void SetValueFromFloat(const float newValue) override {
 		if constexpr (std::is_convertible_v<float, T>) {
 			SetValue(static_cast<T>(newValue));
-		} else {
-			PrintConvertErrorMessage();
-		}
+		} else { PrintConvertErrorMessage(); }
 	}
 
 	/// @brief double型の値から設定します
@@ -201,12 +182,8 @@ public:
 				SetValue(static_cast<T>(static_cast<float>(newValue)));
 			} else if constexpr (std::is_same_v<T, Vec3>) {
 				SetValue(Vec3(Vec3::one * static_cast<float>(newValue)));
-			} else {
-				SetValue(static_cast<T>(newValue));
-			}
-		} else {
-			PrintConvertErrorMessage();
-		}
+			} else { SetValue(static_cast<T>(newValue)); }
+		} else { PrintConvertErrorMessage(); }
 	}
 
 	/// @brief int型の値から設定します
@@ -218,32 +195,22 @@ public:
 				SetValue(std::to_string(newValue));
 			} else if constexpr (std::is_same_v<T, Vec3>) {
 				SetValue(Vec3(Vec3::one * static_cast<float>(newValue)));
-			} else {
-				SetValue(static_cast<T>(newValue));
-			}
-		} else {
-			PrintConvertErrorMessage();
-		}
+			} else { SetValue(static_cast<T>(newValue)); }
+		} else { PrintConvertErrorMessage(); }
 	}
 
 	/// @brief bool型の値から設定します
 	void SetValueFromBool(const bool newValue) override {
-		if constexpr (std::is_same_v<T, bool>) {
-			SetValue(newValue);
-		} else {
+		if constexpr (std::is_same_v<T, bool>) { SetValue(newValue); } else {
 			PrintConvertErrorMessage();
 		}
 	}
 
 	/// @brief Vec3型の値から設定します
-	[[nodiscard]] ConVarFlags GetFlags() const {
-		return mFlags;
-	}
+	[[nodiscard]] ConVarFlags GetFlags() const { return mFlags; }
 
 	/// @brief 値を取得します
-	T GetValue() const {
-		return mValue;
-	}
+	T GetValue() const { return mValue; }
 
 	/// @brief 値を設定します
 	/// @param newValue 設定する新しい値
@@ -267,14 +234,9 @@ public:
 
 	/// @brief 値をトグル（切り替え）します
 	void Toggle() override {
-		if constexpr (std::is_same_v<T, bool>) {
-			SetValue(!mValue);
-		} else if constexpr (std::is_same_v<T, int>) {
-			if (mValue == 0) {
-				mValue = 1;
-			} else {
-				mValue = 0;
-			}
+		if constexpr (std::is_same_v<T, bool>) { SetValue(!mValue); } else if
+		constexpr (std::is_same_v<T, int>) {
+			if (mValue == 0) { mValue = 1; } else { mValue = 0; }
 		} else {
 			Console::Print(
 				std::format("{} : CVAR は bool 型か int 型でなければなりません\n", mName),
@@ -287,13 +249,13 @@ public:
 	/// @brief ImGuiでCVarを描画します
 	void DrawImGui() override {
 #ifdef _DEBUG
-		if constexpr (std::is_same_v<T, bool>) {
-			ImGui::Checkbox(mName.c_str(), &mValue);
-		} else if constexpr (std::is_same_v<T, int>) {
-			ImGui::DragInt(mName.c_str(), &mValue);
-		} else if constexpr (std::is_same_v<T, float>) {
-			ImGui::DragFloat(mName.c_str(), &mValue);
-		} else if constexpr (std::is_same_v<T, Vec3>) {
+		if constexpr (std::is_same_v<
+			T, bool>) { ImGui::Checkbox(mName.c_str(), &mValue); } else if
+		constexpr (std::is_same_v<
+			T, int>) { ImGui::DragInt(mName.c_str(), &mValue); } else if
+		constexpr (std::is_same_v<
+			T, float>) { ImGui::DragFloat(mName.c_str(), &mValue); } else if
+		constexpr (std::is_same_v<T, Vec3>) {
 			ImGui::DragFloat3(mName.c_str(), &mValue.x);
 		} else if constexpr (std::is_same_v<T, std::string>) {
 			char buffer[256];
@@ -311,8 +273,10 @@ private:
 	/// @brief 型変換エラーメッセージを表示します
 	void PrintConvertErrorMessage() {
 		Console::Print(
-			std::format("{} : CVAR を {} 型へ変換できませんでした\n", mName,
-			            GetTypeAsString()),
+			std::format(
+				"{} : CVAR を {} 型へ変換できませんでした\n", mName,
+				GetTypeAsString()
+			),
 			kConTextColorError,
 			Channel::General
 		);

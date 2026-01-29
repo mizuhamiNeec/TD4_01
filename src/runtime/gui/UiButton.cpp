@@ -24,17 +24,13 @@ namespace Unnamed::Gui {
 	}
 
 	void UiButton::BuildDrawCommands(std::vector<UiDrawCommand>& out) const {
-		if (!IsVisible()) {
-			return;
-		}
+		if (!IsVisible()) { return; }
 
 		const Rect& r = GetGlobalRect();
 
 		// 状態で色を変える
 		Color bg = mColorNormal;
-		if (IsPressed()) {
-			bg = mColorPressed;
-		} else if (IsHovered()) {
+		if (IsPressed()) { bg = mColorPressed; } else if (IsHovered()) {
 			bg = mColorHovered;
 		}
 
@@ -69,9 +65,7 @@ namespace Unnamed::Gui {
 
 	void UiButton::OnClick() {
 		UiWidget::OnClick();
-		if (mOnClick) {
-			mOnClick();
-		}
+		if (mOnClick) { mOnClick(); }
 	}
 
 	void UiButton::OnSerialize(JsonWriter& writer) const {
@@ -82,8 +76,6 @@ namespace Unnamed::Gui {
 	}
 
 	void UiButton::OnDeserialize(const JsonReader& reader) {
-		if (reader.Has("text")) {
-			SetText(reader["text"].GetString());
-		}
+		if (reader.Has("text")) { SetText(reader["text"].GetString()); }
 	}
 }

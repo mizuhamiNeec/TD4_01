@@ -6,14 +6,12 @@
 
 /// @brief コンストラクタ
 WindowManager::WindowManager(const HINSTANCE hInstance) : mHInstance(
-	hInstance) {
-}
+	hInstance
+) {}
 
 /// @brief シャットダウン処理
 void WindowManager::Shutdown() {
-	for (auto& window : mWindows | std::views::values) {
-		window.Show(SW_HIDE);
-	}
+	for (auto& window : mWindows | std::views::values) { window.Show(SW_HIDE); }
 	mWindows.clear();
 	mNextWindowId = 1;
 }
@@ -52,8 +50,6 @@ std::optional<std::reference_wrapper<Window>> WindowManager::Get(
 	const uint32_t windowId
 ) {
 	const auto it = mWindows.find(windowId);
-	if (it == mWindows.end()) {
-		return std::nullopt;
-	}
+	if (it == mWindows.end()) { return std::nullopt; }
 	return it->second;
 }

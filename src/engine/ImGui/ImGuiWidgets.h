@@ -13,7 +13,7 @@ namespace ImGuiWidgets {
 
 	bool DragVec3(
 		const std::string& name,
-		Vec3&               value,
+		Vec3&              value,
 		Vec3               defaultValue,
 		float              vSpeed,
 		const char*        format

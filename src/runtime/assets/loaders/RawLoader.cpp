@@ -13,9 +13,7 @@ namespace Unnamed {
 	/// @return ファイル内容の文字列
 	static std::string ReadTextFile(const std::string& path) {
 		const std::ifstream ifs(path, std::ios::binary);
-		if (!ifs) {
-			return {};
-		}
+		if (!ifs) { return {}; }
 		std::stringstream ss;
 		ss << ifs.rdbuf();
 		return ss.str();

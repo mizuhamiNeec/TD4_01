@@ -22,8 +22,10 @@ void ConVarManager::ToggleConVar(const std::string& name) {
 		return;
 	}
 
-	Console::Print("ConVar not found: " + name, kConTextColorError,
-	               Channel::Console);
+	Console::Print(
+		"ConVar not found: " + name, kConTextColorError,
+		Channel::Console
+	);
 }
 
 /// @brief 登録されている全てのコンソール変数を取得します

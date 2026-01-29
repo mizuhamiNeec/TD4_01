@@ -12,7 +12,9 @@ public:
 	[[nodiscard]] const std::string_view GetName() const override = 0;
 
 	// IWindowSystem
-	virtual IWindow* CreateNewWindow(const IWindow::WindowCreateInfo& windowInfo) = 0;
+	virtual IWindow* CreateNewWindow(
+		const IWindow::WindowCreateInfo& windowInfo
+	) = 0;
 
 	[[nodiscard]]
 	virtual const std::vector<std::unique_ptr<IWindow>>& GetWindows() const = 0;

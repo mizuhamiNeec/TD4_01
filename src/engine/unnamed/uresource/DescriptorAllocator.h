@@ -36,13 +36,15 @@ namespace Unnamed {
 		/// @param index デスクリプタのインデックス
 		/// @return CPUデスクリプタハンドル
 		[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE CPUHandle(
-			uint32_t index) const;
+			uint32_t index
+		) const;
 
 		/// @brief GPUデスクリプタハンドルを取得する
 		/// @param index デスクリプタのインデックス
 		/// @return GPUデスクリプタハンドル
 		[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE GPUHandle(
-			uint32_t index) const;
+			uint32_t index
+		) const;
 
 		/// @brief デスクリプタヒープを取得する
 		/// @return デスクリプタヒープ

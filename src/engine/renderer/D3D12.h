@@ -61,23 +61,27 @@ public: // メンバ関数
 
 	[[nodiscard]] RenderTargetTexture CreateRenderTargetTexture(
 		uint32_t    width, uint32_t height, Vec4 clearColor,
-		DXGI_FORMAT format = kBufferFormat);
+		DXGI_FORMAT format = kBufferFormat
+	);
 
 	// リサイズ時用：古いSRVインデックスを返却して新しいものを作成
 	// 使用例: newRtv = CreateRenderTargetTexture(w, h, clearColor, oldRtv.srvIndex);
 	[[nodiscard]] RenderTargetTexture CreateRenderTargetTexture(
 		uint32_t width, uint32_t          height, Vec4 clearColor,
-		uint32_t oldSrvIndex, DXGI_FORMAT format = kBufferFormat);
+		uint32_t oldSrvIndex, DXGI_FORMAT format = kBufferFormat
+	);
 
 	[[nodiscard]] DepthStencilTexture CreateDepthStencilTexture(
 		uint32_t    width, uint32_t height,
-		DXGI_FORMAT format = DXGI_FORMAT_D32_FLOAT);
+		DXGI_FORMAT format = DXGI_FORMAT_D32_FLOAT
+	);
 
 	// リサイズ時用：古いSRVインデックスを返却して新しいものを作成
 	// 使用例: newDsv = CreateDepthStencilTexture(w, h, oldDsv.srvIndex);
 	[[nodiscard]] DepthStencilTexture CreateDepthStencilTexture(
 		uint32_t    width, uint32_t height, uint32_t oldSrvIndex,
-		DXGI_FORMAT format = DXGI_FORMAT_D32_FLOAT);
+		DXGI_FORMAT format = DXGI_FORMAT_D32_FLOAT
+	);
 	void BeginRenderPass(const RenderPassTargets& targets) const;
 
 	void                        BeginSwapChainRenderPass();
@@ -85,8 +89,10 @@ public: // メンバ関数
 
 	void ResetCommandList();
 
-	static void WriteToUploadHeapMemory(ID3D12Resource* resource, uint32_t size,
-	                                    const void*     data);
+	static void WriteToUploadHeapMemory(
+		ID3D12Resource* resource, uint32_t size,
+		const void*     data
+	);
 
 	void WaitPreviousFrame();
 	void Flush();
@@ -170,9 +176,7 @@ public:
 	// -----------------------------------------------------------------------
 	// Accessor
 	// -----------------------------------------------------------------------
-	[[nodiscard]] ID3D12Device* GetDevice() const {
-		return mDevice.Get();
-	}
+	[[nodiscard]] ID3D12Device* GetDevice() const { return mDevice.Get(); }
 
 	[[nodiscard]] ID3D12GraphicsCommandList* GetCommandList() const {
 		return mCommandList.Get();
@@ -190,21 +194,15 @@ public:
 		return mSwapChain.Get();
 	}
 
-	[[nodiscard]] ID3D12Fence* GetFence() const {
-		return mFence.Get();
-	}
+	[[nodiscard]] ID3D12Fence* GetFence() const { return mFence.Get(); }
 
 	[[nodiscard]] ID3D12CommandAllocator* GetCommandAllocator() const {
 		return mCommandAllocator.Get();
 	}
 
-	[[nodiscard]] uint64_t GetFenceValue() const {
-		return mFenceValue;
-	}
+	[[nodiscard]] uint64_t GetFenceValue() const { return mFenceValue; }
 
-	void SetFenceValue(const uint64_t newValue) {
-		mFenceValue = newValue;
-	}
+	void SetFenceValue(const uint64_t newValue) { mFenceValue = newValue; }
 
 	//------------------------------------------------------------------------
 	// 汎用関数
@@ -222,7 +220,8 @@ private:
 	);
 	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource>
 	CreateDepthStencilTextureResource(
-		uint32_t width, uint32_t height, DXGI_FORMAT format) const;
+		uint32_t width, uint32_t height, DXGI_FORMAT format
+	) const;
 
 	[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE AllocateNewRTVHandle();
 };

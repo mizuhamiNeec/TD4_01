@@ -18,15 +18,20 @@ class Model {
 	};
 
 public:
-	void Init(ModelCommon*       modelCommon, const std::string& directoryPath,
-	          const std::string& fileName);
+	void Init(
+		ModelCommon*       modelCommon, const std::string& directoryPath,
+		const std::string& fileName
+	);
 	void ImGuiDraw() const;
 	void Draw() const;
 
 	static MaterialData LoadMaterialTemplateFile(
-		const std::string& directoryPath, const std::string& filename);
-	static ModelData LoadObjFile(const std::string& directoryPath,
-	                             const std::string& filename);
+		const std::string& directoryPath, const std::string& filename
+	);
+	static ModelData LoadObjFile(
+		const std::string& directoryPath,
+		const std::string& filename
+	);
 
 private:
 	struct Material {

@@ -13,12 +13,16 @@ const Vec3 Vec3::up(0.0f, 1.0f, 0.0f);
 const Vec3 Vec3::down(0.0f, -1.0f, 0.0f);
 const Vec3 Vec3::forward(0.0f, 0.0f, 1.0f);
 const Vec3 Vec3::backward(0.0f, 0.0f, -1.0f);
-const Vec3 Vec3::max(std::numeric_limits<float>::max(),
-                     std::numeric_limits<float>::max(),
-                     std::numeric_limits<float>::max());
-const Vec3 Vec3::min(std::numeric_limits<float>::lowest(),
-                     std::numeric_limits<float>::lowest(),
-                     std::numeric_limits<float>::lowest());
+const Vec3 Vec3::max(
+	std::numeric_limits<float>::max(),
+	std::numeric_limits<float>::max(),
+	std::numeric_limits<float>::max()
+);
+const Vec3 Vec3::min(
+	std::numeric_limits<float>::lowest(),
+	std::numeric_limits<float>::lowest(),
+	std::numeric_limits<float>::lowest()
+);
 
 float Vec3::Length() const {
 	if (const float sqrLength = SqrLength(); sqrLength > 0.0f) {
@@ -27,9 +31,7 @@ float Vec3::Length() const {
 	return 0.0f;
 }
 
-float Vec3::SqrLength() const {
-	return x * x + y * y + z * z;
-}
+float Vec3::SqrLength() const { return x * x + y * y + z * z; }
 
 float Vec3::Distance(const Vec3& other) const {
 	const float distX = other.x - x;
@@ -113,25 +115,23 @@ Vec3 Vec3::TransformDirection(const Quaternion& rotation) const {
 
 float& Vec3::operator[](const uint32_t index) {
 	switch (index) {
-	case 0: return x;
-	case 1: return y;
-	case 2: return z;
-	default: throw std::out_of_range("Vec3 添字演算子");
+		case 0: return x;
+		case 1: return y;
+		case 2: return z;
+		default: throw std::out_of_range("Vec3 添字演算子");
 	}
 }
 
 const float& Vec3::operator[](const uint32_t index) const {
 	switch (index) {
-	case 0: return x;
-	case 1: return y;
-	case 2: return z;
-	default: throw std::out_of_range("Vec3 添字演算子");
+		case 0: return x;
+		case 1: return y;
+		case 2: return z;
+		default: throw std::out_of_range("Vec3 添字演算子");
 	}
 }
 
-Vec3 Vec3::operator-() const {
-	return {-x, -y, -z};
-}
+Vec3 Vec3::operator-() const { return {-x, -y, -z}; }
 
 Vec3 Vec3::operator+(const Vec3& rhs) const {
 	return {x + rhs.x, y + rhs.y, z + rhs.z};

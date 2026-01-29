@@ -5,32 +5,35 @@
 /// @brief コンストラクタ
 /// @param device D3D12デバイスへのCOMポインタ
 /// @param name サブメッシュ名
-SubMesh::SubMesh(const Microsoft::WRL::ComPtr<ID3D12Device>& device,
-                 std::string                                 name) :
+SubMesh::SubMesh(
+	const Microsoft::WRL::ComPtr<ID3D12Device>& device,
+	std::string                                 name
+) :
 	mName(std::move(name)),
-	mDevice(device) {
-}
+	mDevice(device) {}
 
 /// @brief デストラクタ
-SubMesh::~SubMesh() {
-}
+SubMesh::~SubMesh() {}
 
 /// @brief 頂点バッファを設定します
 /// @param vertices 頂点データのベクター
 void SubMesh::SetVertexBuffer(const std::vector<Vertex>& vertices) {
 	size_t size   = vertices.size() * sizeof(Vertex);
 	mVertexBuffer = std::make_unique<VertexBuffer<Vertex>>(
-		mDevice, size, vertices.data());
+		mDevice, size, vertices.data()
+	);
 	mIsSkinnedMesh = false;
 }
 
 /// @brief スキニング頂点バッファを設定します
 /// @param vertices スキニング頂点データのベクター
 void SubMesh::SetSkinnedVertexBuffer(
-	const std::vector<SkinnedVertex>& vertices) {
+	const std::vector<SkinnedVertex>& vertices
+) {
 	size_t size          = vertices.size() * sizeof(SkinnedVertex);
 	mSkinnedVertexBuffer = std::make_unique<VertexBuffer<SkinnedVertex>>(
-		mDevice, size, vertices.data());
+		mDevice, size, vertices.data()
+	);
 	mIsSkinnedMesh = true;
 }
 
@@ -51,9 +54,7 @@ void SubMesh::SetMaterial(Material* material) { mMaterial = material; }
 
 /// @brief サブメッシュ名を取得します
 /// @return サブメッシュ名への参照
-std::string& SubMesh::GetName() {
-	return mName;
-}
+std::string& SubMesh::GetName() { return mName; }
 
 /// @brief サブメッシュ名を取得します
 /// @return サブメッシュ名
@@ -61,16 +62,20 @@ void SubMesh::Render(ID3D12GraphicsCommandList* commandList) const {
 	// 頂点バッファとインデックスバッファを設定
 	if (mIsSkinnedMesh) {
 		if (!mSkinnedVertexBuffer || !mIndexBuffer) {
-			Console::Print("スキニング頂点バッファまたはインデックスバッファが設定されていません",
-			               kConTextColorError, Channel::RenderSystem);
+			Console::Print(
+				"スキニング頂点バッファまたはインデックスバッファが設定されていません",
+				kConTextColorError, Channel::RenderSystem
+			);
 			return;
 		}
 		const D3D12_VERTEX_BUFFER_VIEW vbView = mSkinnedVertexBuffer->View();
 		commandList->IASetVertexBuffers(0, 1, &vbView);
 	} else {
 		if (!mVertexBuffer || !mIndexBuffer) {
-			Console::Print("頂点バッファまたはインデックスバッファが設定されていません", kConTextColorError,
-			               Channel::RenderSystem);
+			Console::Print(
+				"頂点バッファまたはインデックスバッファが設定されていません", kConTextColorError,
+				Channel::RenderSystem
+			);
 			return;
 		}
 		const D3D12_VERTEX_BUFFER_VIEW vbView = mVertexBuffer->View();
@@ -84,17 +89,14 @@ void SubMesh::Render(ID3D12GraphicsCommandList* commandList) const {
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	commandList->DrawIndexedInstanced(
 		static_cast<UINT>(mIndexBuffer->GetSize() / sizeof(uint32_t)), 1, 0, 0,
-		0);
+		0
+	);
 }
 
 /// @brief リソースを解放します
 void SubMesh::ReleaseResource() {
-	if (mVertexBuffer) {
-		mVertexBuffer.reset();
-	}
-	if (mSkinnedVertexBuffer) {
-		mSkinnedVertexBuffer.reset();
-	}
+	if (mVertexBuffer) { mVertexBuffer.reset(); }
+	if (mSkinnedVertexBuffer) { mSkinnedVertexBuffer.reset(); }
 	if (mIndexBuffer) {
 		//	indexBuffer_->Release();
 		mIndexBuffer.reset();
@@ -106,8 +108,10 @@ void SubMesh::ReleaseResource() {
 std::vector<Unnamed::Triangle> SubMesh::GetPolygons() const {
 	std::vector<Unnamed::Triangle> polygons;
 	if (!mIndexBuffer) {
-		Console::Print("インデックスバッファが設定されていません", kConTextColorError,
-		               Channel::RenderSystem);
+		Console::Print(
+			"インデックスバッファが設定されていません", kConTextColorError,
+			Channel::RenderSystem
+		);
 		return polygons;
 	}
 
@@ -115,8 +119,10 @@ std::vector<Unnamed::Triangle> SubMesh::GetPolygons() const {
 
 	if (mIsSkinnedMesh) {
 		if (!mSkinnedVertexBuffer) {
-			Console::Print("スキニング頂点バッファが設定されていません", kConTextColorError,
-			               Channel::RenderSystem);
+			Console::Print(
+				"スキニング頂点バッファが設定されていません", kConTextColorError,
+				Channel::RenderSystem
+			);
 			return polygons;
 		}
 		const std::vector<SkinnedVertex>& vertices = mSkinnedVertexBuffer->
@@ -133,8 +139,10 @@ std::vector<Unnamed::Triangle> SubMesh::GetPolygons() const {
 		}
 	} else {
 		if (!mVertexBuffer) {
-			Console::Print("頂点バッファが設定されていません", kConTextColorError,
-			               Channel::RenderSystem);
+			Console::Print(
+				"頂点バッファが設定されていません", kConTextColorError,
+				Channel::RenderSystem
+			);
 			return polygons;
 		}
 		const std::vector<Vertex>& vertices = mVertexBuffer->GetVertices();

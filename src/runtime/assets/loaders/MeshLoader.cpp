@@ -70,8 +70,10 @@ namespace Unnamed {
 		/// @param out 出力先のメッシュアセットデータ
 		/// @param m assimpのメッシュデータ
 		/// @param baseVertex 追加した頂点の開始インデックス
-		void AppendIndices(MeshAssetData& out, const aiMesh* m,
-		                   uint32_t       baseVertex) {
+		void AppendIndices(
+			MeshAssetData& out, const aiMesh* m,
+			uint32_t       baseVertex
+		) {
 			const uint32_t baseIndex = static_cast<uint32_t>(out.indices.
 				size());
 			uint32_t triCount = 0;
@@ -144,9 +146,7 @@ namespace Unnamed {
 					out.skin.invBind.emplace_back(
 						convertedMat
 					);
-				} else {
-					jix = it->second;
-				}
+				} else { jix = it->second; }
 
 				for (unsigned w = 0; w < bone->mNumWeights; ++w) {
 					const aiVertexWeight& weight = bone->mWeights[w];
@@ -167,13 +167,13 @@ namespace Unnamed {
 				auto& list = accum[v];
 				if (list.empty()) { continue; }
 
-				const int K = std::min(maxWeights,
-				                       static_cast<int>(list.size()));
+				const int K = std::min(
+					maxWeights,
+					static_cast<int>(list.size())
+				);
 				std::ranges::partial_sort(
 					list, list.begin() + K,
-					[](auto& a, auto& b) {
-						return a.second > b.second;
-					}
+					[](auto& a, auto& b) { return a.second > b.second; }
 				);
 
 				float                   sum = 0.0f;
@@ -182,12 +182,10 @@ namespace Unnamed {
 				for (int k = 0; k < K; ++k) {
 					jix[k] = static_cast<unsigned short>(list[k].first);
 					wgt[k] = list[k].second;
-					sum += wgt[k];
+					sum    += wgt[k];
 				}
 				if (sum > 0.0f) {
-					for (int k = 0; k < K; ++k) {
-						wgt[k] /= sum;
-					}
+					for (int k = 0; k < K; ++k) { wgt[k] /= sum; }
 				}
 
 				out.skin.joints[baseVertex + v]  = jix;
@@ -235,9 +233,7 @@ namespace Unnamed {
 						abs(deltaPos.x) > eps ||
 						abs(deltaPos.y) > eps ||
 						abs(deltaPos.z) > eps
-					) {
-						target.positions[baseVertex + v] = deltaPos;
-					}
+					) { target.positions[baseVertex + v] = deltaPos; }
 
 					if (am->HasNormals() && m->HasNormals()) {
 						const aiVector3D& bn        = m->mNormals[v];
@@ -249,9 +245,7 @@ namespace Unnamed {
 							abs(deltaNorm.x) > eps ||
 							abs(deltaNorm.y) > eps ||
 							abs(deltaNorm.z) > eps
-						) {
-							target.normals[baseVertex + v] = deltaNorm;
-						}
+						) { target.normals[baseVertex + v] = deltaNorm; }
 					}
 				}
 				out.morphTargets.emplace_back(std::move(target));
@@ -288,15 +282,15 @@ namespace Unnamed {
 		out.sourcePath    = path;
 
 		unsigned flags = 0;
-		flags |= aiProcess_Triangulate;              // 三角形化
-		flags |= aiProcess_JoinIdenticalVertices;    // 重複頂点の結合
-		flags |= aiProcess_ImproveCacheLocality;     // 頂点キャッシュの最適化
-		flags |= aiProcess_SplitLargeMeshes;         // 大きなメッシュの分割
-		flags |= aiProcess_SortByPType;              // プリミティブタイプでソート
-		flags |= aiProcess_RemoveRedundantMaterials; // 冗長なマテリアルの削除
-		flags |= aiProcess_GenSmoothNormals;         // スムースシェーディング用の法線生成
-		flags |= aiProcess_CalcTangentSpace;         // 接線空間の計算
-		flags |= aiProcess_ConvertToLeftHanded;      // 左手系に変換
+		flags          |= aiProcess_Triangulate; // 三角形化
+		flags          |= aiProcess_JoinIdenticalVertices; // 重複頂点の結合
+		flags          |= aiProcess_ImproveCacheLocality; // 頂点キャッシュの最適化
+		flags          |= aiProcess_SplitLargeMeshes; // 大きなメッシュの分割
+		flags          |= aiProcess_SortByPType; // プリミティブタイプでソート
+		flags          |= aiProcess_RemoveRedundantMaterials; // 冗長なマテリアルの削除
+		flags          |= aiProcess_GenSmoothNormals; // スムースシェーディング用の法線生成
+		flags          |= aiProcess_CalcTangentSpace; // 接線空間の計算
+		flags          |= aiProcess_ConvertToLeftHanded; // 左手系に変換
 
 		Assimp::Importer imp;
 		const aiScene*   scene = imp.ReadFile(path, flags);

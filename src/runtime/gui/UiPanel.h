@@ -12,14 +12,14 @@ namespace Unnamed::Gui {
 
 		void                SetCornerRadius(float r);
 		[[nodiscard]] float GetCornerRadius() const;
-		
+
 		[[nodiscard]] const char* GetTypeName() const override;
 
 	protected:
-		void                      BuildDrawCommands(std::vector<UiDrawCommand>& out) const override;
+		void BuildDrawCommands(std::vector<UiDrawCommand>& out) const override;
 
 	private:
 		Color mBackgroundColor = {0.15f, 0.15f, 0.18f, 1.0f};
-		float mCornerRadius = 4.0f;
+		float mCornerRadius    = 4.0f;
 	};
 }

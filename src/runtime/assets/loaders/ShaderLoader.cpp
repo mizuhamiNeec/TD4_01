@@ -46,8 +46,10 @@ namespace Unnamed {
 				Error(kChannel, "Failed to open file: {}", path);
 				return result;
 			}
-			std::string txt((std::istreambuf_iterator(ifs)),
-			                std::istreambuf_iterator<char>());
+			std::string txt(
+				(std::istreambuf_iterator(ifs)),
+				std::istreambuf_iterator<char>()
+			);
 			s.hlsl = std::move(txt);
 
 			// #include 解析して依存に登録
@@ -58,7 +60,8 @@ namespace Unnamed {
 				if (std::filesystem::exists(incp)) {
 					AssetID dep = mAssetManager ?
 						              mAssetManager->LoadFromFile(
-							              incp.string(), UASSET_TYPE::SHADER) :
+							              incp.string(), UASSET_TYPE::SHADER
+						              ) :
 						              kInvalidAssetID;
 					if (dep != kInvalidAssetID) {
 						result.dependencies.emplace_back(dep);
@@ -71,13 +74,13 @@ namespace Unnamed {
 				Error(kChannel, "Failed to open file: {}", path);
 				return result;
 			}
-			std::vector<uint8_t> bin((std::istreambuf_iterator<char>(ifs)),
-			                         std::istreambuf_iterator<char>());
+			std::vector<uint8_t> bin(
+				(std::istreambuf_iterator<char>(ifs)),
+				std::istreambuf_iterator<char>()
+			);
 
 			const std::string stage = GuessStageKeyFromFilename(path);
-			if (!stage.empty()) {
-				s.blobs[stage] = std::move(bin);
-			} else {
+			if (!stage.empty()) { s.blobs[stage] = std::move(bin); } else {
 				// 謎のステージの場合は ANY に突っ込む
 				s.blobs["ANY"] = std::move(bin);
 			}
@@ -102,26 +105,24 @@ namespace Unnamed {
 			const char* key;
 			const char* token;
 		} stages[] = {
-				{"VS", ".vs."}, {"PS", ".ps."}, {"GS", ".gs."}, {"CS", ".cs."},
-				{"VS", "_vs."}, {"PS", "_ps."}, {"GS", "_gs."}, {"CS", "_cs."},
-				{"VS", "-vs."}, {"PS", "-ps."}, {"GS", "-gs."}, {"CS", "-cs."},
-			};
+			{"VS", ".vs."}, {"PS", ".ps."}, {"GS", ".gs."}, {"CS", ".cs."},
+			{"VS", "_vs."}, {"PS", "_ps."}, {"GS", "_gs."}, {"CS", "_cs."},
+			{"VS", "-vs."}, {"PS", "-ps."}, {"GS", "-gs."}, {"CS", "-cs."},
+		};
 		for (auto& s : stages) {
-			if (lower.find(s.token) != std::string::npos) {
-				return s.key;
-			}
+			if (lower.find(s.token) != std::string::npos) { return s.key; }
 		}
 		if (lower.rfind("vs.cso") != std::string::npos || lower.rfind("vs.dxil")
-			!= std::string::npos)
+		    != std::string::npos)
 			return "VS";
 		if (lower.rfind("ps.cso") != std::string::npos || lower.rfind("ps.dxil")
-			!= std::string::npos)
+		    != std::string::npos)
 			return "PS";
 		if (lower.rfind("gs.cso") != std::string::npos || lower.rfind("gs.dxil")
-			!= std::string::npos)
+		    != std::string::npos)
 			return "GS";
 		if (lower.rfind("cs.cso") != std::string::npos || lower.rfind("cs.dxil")
-			!= std::string::npos)
+		    != std::string::npos)
 			return "CS";
 
 		return {};
@@ -136,10 +137,8 @@ namespace Unnamed {
 		static const std::regex  kRe(R"(#\s*include\s*\"([^\"]+)\")");
 		std::vector<std::string> out;
 		for (std::sregex_iterator it(src.begin(), src.end(), kRe), end; it !=
-		     end
-		     ; ++it) {
-			out.emplace_back((*it)[1].str());
-		}
+			     end
+		     ; ++it) { out.emplace_back((*it)[1].str()); }
 		return out;
 	}
 }

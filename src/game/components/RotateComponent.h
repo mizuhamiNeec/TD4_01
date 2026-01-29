@@ -20,25 +20,17 @@ public:
 		return mRotationRate;
 	}
 
-	void SetRotationEnabled(const bool enabled) {
-		mRotationEnabled = enabled;
-	}
+	void SetRotationEnabled(const bool enabled) { mRotationEnabled = enabled; }
 
 	[[nodiscard]] bool IsRotationEnabled() const noexcept {
 		return mRotationEnabled;
 	}
 
-	void SetPitchEnabled(const bool enabled) {
-		mPitchEnabled = enabled;
-	}
+	void SetPitchEnabled(const bool enabled) { mPitchEnabled = enabled; }
 
-	void SetYawEnabled(const bool enabled) {
-		mYawEnabled = enabled;
-	}
+	void SetYawEnabled(const bool enabled) { mYawEnabled = enabled; }
 
-	void SetRollEnabled(bool enabled) {
-		mRollEnabled = enabled;
-	}
+	void SetRollEnabled(bool enabled) { mRollEnabled = enabled; }
 
 private:
 	Vec3 mRotationRate = Vec3::zero; // 回転速度（度/秒）

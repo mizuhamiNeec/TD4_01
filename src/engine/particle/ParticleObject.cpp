@@ -14,8 +14,10 @@
 /// @brief パーティクルオブジェクトを初期化します
 /// @param particleCommon パーティクルマネージャーへのポインタ
 /// @param textureFilePath テクスチャファイルのパス
-void ParticleObject::Init(ParticleManager*   particleCommon,
-                          const std::string& textureFilePath) {
+void ParticleObject::Init(
+	ParticleManager*   particleCommon,
+	const std::string& textureFilePath
+) {
 	this->mParticleCommon  = particleCommon;
 	this->mTextureFilePath = textureFilePath;
 	this->mCamera          = mParticleCommon->GetDefaultCamera();
@@ -110,8 +112,10 @@ void ParticleObject::Update(const float deltaTime) {
 
 	// ビルボードタイプの設定
 	const char* billboardTypes[] = {"None", "XY", "XZ", "YZ", "All"};
-	ImGui::Combo("Billboard Type", reinterpret_cast<int*>(&mBillboardType),
-	             billboardTypes, IM_ARRAYSIZE(billboardTypes));
+	ImGui::Combo(
+		"Billboard Type", reinterpret_cast<int*>(&mBillboardType),
+		billboardTypes, IM_ARRAYSIZE(billboardTypes)
+	);
 
 	// 発生数と頻度の設定
 	ImGui::InputInt("Particle Count", reinterpret_cast<int*>(&mEmitter.count));
@@ -119,8 +123,10 @@ void ParticleObject::Update(const float deltaTime) {
 
 	// エミッション形状の選択
 	const char* shapeItems[] = {"Sphere", "Cube"};
-	ImGui::Combo("Emission Shape", &shapeType, shapeItems,
-	             IM_ARRAYSIZE(shapeItems));
+	ImGui::Combo(
+		"Emission Shape", &shapeType, shapeItems,
+		IM_ARRAYSIZE(shapeItems)
+	);
 	// コーン速度の設定
 	ImGui::SliderAngle("Cone Angle", &coneAngle, 0.0f, 90.0f);
 
@@ -140,19 +146,27 @@ void ParticleObject::Update(const float deltaTime) {
 	ImGui::DragFloat3("Emitter Size", &mEmitter.size.x);
 
 	if (ImGui::Button("Emit Particles")) {
-		mParticles.splice(mParticles.end(),
-		                  Emit(mEmitter, shapeType, coneAngle, drag, gravity,
-		                       Vec3::zero, Vec4::white, Vec4::white, Vec3::one,
-		                       Vec3::one));
+		mParticles.splice(
+			mParticles.end(),
+			Emit(
+				mEmitter, shapeType, coneAngle, drag, gravity,
+				Vec3::zero, Vec4::white, Vec4::white, Vec3::one,
+				Vec3::one
+			)
+		);
 	}
 
 	for (auto particle : mParticles) {
-		ImGui::Text("Particle Position : %.2f %.2f %.2f",
-		            particle.transform.translate.x,
-		            particle.transform.translate.y,
-		            particle.transform.translate.z);
-		ImGui::Text("Particle Velocity : %.2f %.2f %.2f", particle.vel.x,
-		            particle.vel.y, particle.vel.z);
+		ImGui::Text(
+			"Particle Position : %.2f %.2f %.2f",
+			particle.transform.translate.x,
+			particle.transform.translate.y,
+			particle.transform.translate.z
+		);
+		ImGui::Text(
+			"Particle Velocity : %.2f %.2f %.2f", particle.vel.x,
+			particle.vel.y, particle.vel.z
+		);
 		ImGui::Text("Particle LifeTime : %.2f", particle.lifeTime);
 	}
 
@@ -192,7 +206,7 @@ void ParticleObject::Update(const float deltaTime) {
 			particleIterator->currentTime += deltaTime;
 
 			float lifeRatio = particleIterator->currentTime / particleIterator->
-				lifeTime;
+			                  lifeTime;
 
 			particleIterator->color = Math::Lerp(
 				particleIterator->startColor, particleIterator->endColor,
@@ -207,7 +221,8 @@ void ParticleObject::Update(const float deltaTime) {
 			// スケールを時間に応じて変化させる（startSizeからendSizeへ補間）
 			particleIterator->transform.scale = Math::Lerp(
 				particleIterator->startSize, particleIterator->endSize,
-				lifeRatio);
+				lifeRatio
+			);
 
 			Mat4 worldMat;
 
@@ -246,11 +261,12 @@ void ParticleObject::Update(const float deltaTime) {
 
 				// ビルボード行列に回転を適用
 				worldMat = Mat4::Scale(particleIterator->transform.scale)
-					* rotationMat // 回転を適用
-					* billboardMat
-					* Mat4::Translate(particleIterator->transform.translate);
+				           * rotationMat // 回転を適用
+				           * billboardMat
+				           * Mat4::Translate(
+					           particleIterator->transform.translate
+				           );
 			}
-
 
 			Mat4 worldViewProjMat;
 
@@ -270,26 +286,33 @@ void ParticleObject::Update(const float deltaTime) {
 	mEmitter.frequencyTime += deltaTime; // 時刻を進める
 	// 頻度より大きいなら発生
 	if (mEmitter.frequency <= mEmitter.frequencyTime) {
-		mParticles.splice(mParticles.end(),
-		                  Emit(mEmitter, shapeType, coneAngle, drag, gravity,
-		                       Vec3::zero, Vec4::white, Vec4::white, Vec3::one,
-		                       Vec3::one));           // 発生処理
+		mParticles.splice(
+			mParticles.end(),
+			Emit(
+				mEmitter, shapeType, coneAngle, drag, gravity,
+				Vec3::zero, Vec4::white, Vec4::white, Vec3::one,
+				Vec3::one
+			)
+		);                                            // 発生処理
 		mEmitter.frequencyTime -= mEmitter.frequency; // 余計に過ぎた時間も加味して頻度計算する
 	}
 
 	// エミッターの形状を描画
 	switch (shapeType) {
-	case 0: // Sphere
-		DebugDraw::DrawSphere(
-			mEmitter.transform.translate, Quaternion::identity, mEmitter.size.x,
-			{1.0f, 0.0f, 0.0f, 1.0f}
-		);
-		break;
-	case 1: // Cube
-		DebugDraw::DrawBox(mEmitter.transform.translate, Quaternion::identity,
-		               mEmitter.size, {0.0f, 1.0f, 0.0f, 1.0f});
-		break;
-	default: break;
+		case 0: // Sphere
+			DebugDraw::DrawSphere(
+				mEmitter.transform.translate, Quaternion::identity,
+				mEmitter.size.x,
+				{1.0f, 0.0f, 0.0f, 1.0f}
+			);
+			break;
+		case 1: // Cube
+			DebugDraw::DrawBox(
+				mEmitter.transform.translate, Quaternion::identity,
+				mEmitter.size, {0.0f, 1.0f, 0.0f, 1.0f}
+			);
+			break;
+		default: break;
 	}
 }
 
@@ -299,7 +322,8 @@ void ParticleObject::Draw() const {
 	const D3D12_VERTEX_BUFFER_VIEW vbView = mParticleCommon->GetVertexBuffer()->
 		View();
 	mParticleCommon->GetD3D12()->GetCommandList()->IASetVertexBuffers(
-		0, 1, &vbView);
+		0, 1, &vbView
+	);
 
 	// 定数バッファの設定
 	mParticleCommon->GetD3D12()->GetCommandList()->
@@ -317,13 +341,15 @@ void ParticleObject::Draw() const {
 	mParticleCommon->GetD3D12()->GetCommandList()->
 	                 SetGraphicsRootDescriptorTable(
 		                 2, TexManager::GetInstance()->GetSrvHandleGPU(
-			                 mTextureFilePath)
+			                 mTextureFilePath
+		                 )
 	                 );
 
 	// インデックスバッファの設定
 	D3D12_INDEX_BUFFER_VIEW indexBufferView = mIndexBuffer->View();
 	mParticleCommon->GetD3D12()->GetCommandList()->IASetIndexBuffer(
-		&indexBufferView);
+		&indexBufferView
+	);
 	// 描画
 	mParticleCommon->GetD3D12()->GetCommandList()->DrawIndexedInstanced(
 		static_cast<UINT>(mParticleCommon->GetVertices().size()), mNumInstance,
@@ -333,15 +359,9 @@ void ParticleObject::Draw() const {
 
 /// @brief パーティクルオブジェクトをシャットダウンします
 void ParticleObject::Shutdown() {
-	if (mMaterialResource) {
-		mMaterialResource.reset();
-	}
-	if (mInstancingResource) {
-		mInstancingResource.reset();
-	}
-	if (mIndexBuffer) {
-		mIndexBuffer.reset();
-	}
+	if (mMaterialResource) { mMaterialResource.reset(); }
+	if (mInstancingResource) { mInstancingResource.reset(); }
+	if (mIndexBuffer) { mIndexBuffer.reset(); }
 }
 
 /// @brief 新しいパーティクルを作成します
@@ -388,7 +408,6 @@ Particle ParticleObject::MakeNewParticle(
 	particle.rotationSpeed   = 0.0f;
 	// 今回は回転させない // Random::FloatRange(-Math::pi, Math::pi);
 
-
 	// 生存時間
 	particle.lifeTime    = Random::FloatRange(0.1f, 1.0f);
 	particle.currentTime = 0.0f;
@@ -420,9 +439,10 @@ std::list<Particle> ParticleObject::Emit(
 		Vec3 position =
 			GeneratePosition(emitter.transform.translate, shapeType);
 		//Vec3 velocity = GenerateConeVelocity(coneAngle);
-		Particle particle = MakeNewParticle(position, velocity, Vec3::zero,
-		                                    gravity, startColor, endColor,
-		                                    startSize, endSize
+		Particle particle = MakeNewParticle(
+			position, velocity, Vec3::zero,
+			gravity, startColor, endColor,
+			startSize, endSize
 		);
 		particles.emplace_back(particle);
 	}
@@ -439,26 +459,30 @@ void ParticleObject::SetCamera(CameraComponent* newCamera) {
 /// @param emitterPosition エミッターの位置
 /// @param shapeType 形状タイプ
 /// @return 生成されたパーティクルの初期位置
-Vec3 ParticleObject::GeneratePosition(const Vec3& emitterPosition,
-                                      int         shapeType) const {
+Vec3 ParticleObject::GeneratePosition(
+	const Vec3& emitterPosition,
+	int         shapeType
+) const {
 	switch (shapeType) {
-	case 0: // Sphere（球）
-	{
-		// ランダムな方向
-		Vec3 direction = Random::Vec3Range(-Vec3::one * 0.01f,
-		                                   Vec3::one * 0.01f);
-		direction.Normalize();
-		// ランダムな半径
-		float radius = Random::FloatRange(0.0f, 0.01f); // サイズを考慮
-		return emitterPosition + direction * radius;
-	}
-	case 1: // Cube（立方体）
-	{
-		// -1.0fから1.0fの範囲でランダムな位置
-		Vec3 offset = Random::Vec3Range(-Vec3::one, Vec3::one);
-		return emitterPosition + offset * mEmitter.size; // サイズを考慮
-	}
-	default: return emitterPosition;
+		case 0: // Sphere（球）
+		{
+			// ランダムな方向
+			Vec3 direction = Random::Vec3Range(
+				-Vec3::one * 0.01f,
+				Vec3::one * 0.01f
+			);
+			direction.Normalize();
+			// ランダムな半径
+			float radius = Random::FloatRange(0.0f, 0.01f); // サイズを考慮
+			return emitterPosition + direction * radius;
+		}
+		case 1: // Cube（立方体）
+		{
+			// -1.0fから1.0fの範囲でランダムな位置
+			Vec3 offset = Random::Vec3Range(-Vec3::one, Vec3::one);
+			return emitterPosition + offset * mEmitter.size; // サイズを考慮
+		}
+		default: return emitterPosition;
 	}
 }
 
@@ -531,8 +555,12 @@ void ParticleObject::EmitParticlesAtPosition(
 	localEmitter.transform.translate = position;
 	localEmitter.count               = count;
 	localEmitter.size                = startSize; // エミッターのサイズを初期化
-	mParticles.splice(mParticles.end(),
-	                  Emit(localEmitter, shapeType, coneAngle, drag, gravity,
-	                       velocity, startColor, endColor,
-	                       startSize, endSize));
+	mParticles.splice(
+		mParticles.end(),
+		Emit(
+			localEmitter, shapeType, coneAngle, drag, gravity,
+			velocity, startColor, endColor,
+			startSize, endSize
+		)
+	);
 }

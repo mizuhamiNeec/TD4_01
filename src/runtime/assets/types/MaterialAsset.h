@@ -11,7 +11,7 @@ namespace Unnamed {
 		FLOAT,
 		FLOAT4
 	};
-	
+
 	/// @brief マテリアルパラメータの構造体
 	struct MaterialParam {
 		ParamType            type = ParamType::FLOAT4;

@@ -26,17 +26,21 @@ class ParticleObject {
 public:
 	~ParticleObject() = default;
 
-	void Init(ParticleManager*   particleCommon,
-	          const std::string& textureFilePath);
+	void Init(
+		ParticleManager*   particleCommon,
+		const std::string& textureFilePath
+	);
 	void Update(float deltaTime);
 	void Draw() const;
 
 	void Shutdown();
 
-	static Particle MakeNewParticle(const Vec3& pos, const Vec3& vel,
-	                                const Vec3& drag, const Vec3& gravity,
-	                                Vec4        startColor, Vec4 endColor, const
-	                                Vec3&       startSize, const Vec3& endSize);
+	static Particle MakeNewParticle(
+		const Vec3& pos, const Vec3&       vel,
+		const Vec3& drag, const Vec3&      gravity,
+		Vec4        startColor, Vec4       endColor, const
+		Vec3&       startSize, const Vec3& endSize
+	);
 
 	std::list<Particle> Emit(
 		const Emitter&        emitter, int      shapeType, float     coneAngle,
@@ -49,16 +53,16 @@ public:
 	Vec3 GeneratePosition(const Vec3& emitterPosition, int shapeType) const;
 	static Vec3 GenerateConeVelocity(float coneAngle);
 
-	void EmitParticlesAtPosition(const Vec3& position, int shapeType,
-	                             float coneAngle, const Vec3& drag,
-	                             const Vec3& gravity, const Vec3& velocity,
-	                             uint32_t count, Vec4 startColor, Vec4 endColor,
-	                             const Vec3& startSize, const
-	                             Vec3& endSize);
+	void EmitParticlesAtPosition(
+		const Vec3& position, int          shapeType,
+		float       coneAngle, const Vec3& drag,
+		const Vec3& gravity, const Vec3&   velocity,
+		uint32_t    count, Vec4            startColor, Vec4 endColor,
+		const Vec3& startSize, const
+		Vec3&       endSize
+	);
 
-	void SetBillboardType(const BillboardType type) {
-		mBillboardType = type;
-	}
+	void SetBillboardType(const BillboardType type) { mBillboardType = type; }
 
 	[[nodiscard]] BillboardType GetBillboardType() const {
 		return mBillboardType;

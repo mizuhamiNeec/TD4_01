@@ -15,7 +15,8 @@
 /// @param device D3D12デバイスへのポインタ
 /// @param srvMgr SRVマネージャーへのポインタ
 PPVignette::PPVignette(ID3D12Device* device, SrvManager* srvMgr)
-	: mDevice(device), mSrvMgr(srvMgr) {
+	: mDevice(device),
+	  mSrvMgr(srvMgr) {
 	assert(mDevice && mSrvMgr);
 	Init();
 }
@@ -48,7 +49,8 @@ void PPVignette::Init() {
 	HRESULT hr = mDevice->CreateCommittedResource(
 		&hp, D3D12_HEAP_FLAG_NONE, &cbDesc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr, IID_PPV_ARGS(&mParamsCb));
+		nullptr, IID_PPV_ARGS(&mParamsCb)
+	);
 	UASSERT(SUCCEEDED(hr) && "Failed to create constant buffer resource");
 }
 
@@ -57,12 +59,16 @@ void PPVignette::Init() {
 void PPVignette::Update(float) {
 #ifdef _DEBUG
 	if (ImGui::CollapsingHeader("Vignette", ImGuiTreeNodeFlags_DefaultOpen)) {
-		ImGui::DragFloat("Strength##Vignette", &mParams.vignetteStrength, 0.01f,
-		                 0.0f,
-		                 100.0f);
-		ImGui::DragFloat("Radius##Vignette", &mParams.vignetteRadius, 0.01f,
-		                 0.0f,
-		                 100.0f);
+		ImGui::DragFloat(
+			"Strength##Vignette", &mParams.vignetteStrength, 0.01f,
+			0.0f,
+			100.0f
+		);
+		ImGui::DragFloat(
+			"Radius##Vignette", &mParams.vignetteRadius, 0.01f,
+			0.0f,
+			100.0f
+		);
 	}
 #endif
 }
@@ -90,12 +96,15 @@ void PPVignette::Execute(const PostProcessContext& ctx) {
 	mSrvMgr->CreateSRVForTexture2D(
 		mSrvIndex, ctx.inputTexture,
 		ctx.inputTexture->GetDesc().Format,
-		ctx.inputTexture->GetDesc().MipLevels);
+		ctx.inputTexture->GetDesc().MipLevels
+	);
 
 	cmd->SetGraphicsRootDescriptorTable(
-		0, mSrvMgr->GetGPUDescriptorHandle(mSrvIndex));
+		0, mSrvMgr->GetGPUDescriptorHandle(mSrvIndex)
+	);
 	cmd->SetGraphicsRootConstantBufferView(
-		1, mParamsCb->GetGPUVirtualAddress());
+		1, mParamsCb->GetGPUVirtualAddress()
+	);
 
 	cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	cmd->DrawInstanced(3, 1, 0, 0);
@@ -104,9 +113,9 @@ void PPVignette::Execute(const PostProcessContext& ctx) {
 /// @brief ルートシグネチャを作成します
 void PPVignette::CreateRootSignature() {
 	D3D12_DESCRIPTOR_RANGE1 range = {
-		.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV,
-		.NumDescriptors = 1,
-		.BaseShaderRegister = 0,
+		.RangeType                         = D3D12_DESCRIPTOR_RANGE_TYPE_SRV,
+		.NumDescriptors                    = 1,
+		.BaseShaderRegister                = 0,
 		.OffsetInDescriptorsFromTableStart =
 		D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND
 	};
@@ -122,22 +131,22 @@ void PPVignette::CreateRootSignature() {
 	rp[1].ShaderVisibility          = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	D3D12_STATIC_SAMPLER_DESC sam = {
-		.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR,
-		.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
-		.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
-		.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
-		.ShaderRegister = 0,
+		.Filter           = D3D12_FILTER_MIN_MAG_MIP_LINEAR,
+		.AddressU         = D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
+		.AddressV         = D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
+		.AddressW         = D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
+		.ShaderRegister   = 0,
 		.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL
 	};
 
 	D3D12_VERSIONED_ROOT_SIGNATURE_DESC desc = {
-		.Version = D3D_ROOT_SIGNATURE_VERSION_1_1,
+		.Version  = D3D_ROOT_SIGNATURE_VERSION_1_1,
 		.Desc_1_1 = {
-			.NumParameters = 2,
-			.pParameters = rp,
+			.NumParameters     = 2,
+			.pParameters       = rp,
 			.NumStaticSamplers = 1,
-			.pStaticSamplers = &sam,
-			.Flags =
+			.pStaticSamplers   = &sam,
+			.Flags             =
 			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
 		}
 	};
@@ -146,7 +155,8 @@ void PPVignette::CreateRootSignature() {
 	D3D12SerializeVersionedRootSignature(&desc, &sig, &err);
 	mDevice->CreateRootSignature(
 		0, sig->GetBufferPointer(), sig->GetBufferSize(),
-		IID_PPV_ARGS(&mRootSig));
+		IID_PPV_ARGS(&mRootSig)
+	);
 }
 
 ///	@brief パイプラインステートを作成します

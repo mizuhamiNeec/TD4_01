@@ -12,6 +12,7 @@
 #include "runtime/render/utils/Frustum.h"
 
 namespace Unnamed {
+	class TransformComponent;
 	class UAssetManager;
 	class RenderResourceManager;
 	class ShaderLibrary;
@@ -43,9 +44,7 @@ namespace Unnamed {
 		void RenderWorld(const UWorld& world);
 		void EndFrame();
 
-		void SetView(const RenderView& view) {
-			mView = view;
-		}
+		void SetView(const RenderView& view) { mView = view; }
 
 		[[nodiscard]] FrameContext GetContext() const;
 
@@ -63,13 +62,12 @@ namespace Unnamed {
 		);
 		void OnAssetReloaded(AssetID id);
 
-	private:
 		struct FrameCBData {
 			Mat4  view;
 			Mat4  proj;
 			Mat4  viewProj;
 			Vec3  cameraPos;
-			float time;
+			float time = 0.0f;
 		};
 
 		struct ObjectCBData {

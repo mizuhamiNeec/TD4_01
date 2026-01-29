@@ -70,8 +70,10 @@ namespace Unnamed {
 		};
 
 		AssetID AllocateID();
-		AssetID FindOrCreateSlotByPath(const std::string& path,
-		                               UASSET_TYPE        type);
+		AssetID FindOrCreateSlotByPath(
+			const std::string& path,
+			UASSET_TYPE        type
+		);
 
 		void RebuildDependents(AssetID id);
 		void RebuildAllDependents();

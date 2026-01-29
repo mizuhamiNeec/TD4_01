@@ -146,11 +146,11 @@ void GameScene::Init() {
 	const auto run = mAudioManager->GetAudio(
 		"./content/parkour/sounds/bgm/Run.wav"
 	);
-	
-//#ifndef _DEBUG
+
+	//#ifndef _DEBUG
 	run->Play(true);
 	run->SetVolume(0.125f);
-//#endif
+	//#endif
 
 	mWind = mAudioManager->GetAudio(
 		"./content/parkour/sounds/amb/wind.wav"
@@ -260,7 +260,7 @@ void GameScene::Update(const float deltaTime) {
 #ifdef _DEBUG
 	// チェックポイントのデバッグ表示
 	if (!mCheckpointEntities.empty()) {
-		const Vec4 lineColor(0.0f, 1.0f, 0.0f, 1.0f); // 緑色
+		constexpr Vec4 lineColor(0.0f, 1.0f, 0.0f, 1.0f); // 緑色
 
 		// 順番に隣接するチェックポイント同士を結ぶ
 		for (size_t i = 0; i + 1 < mCheckpointEntities.size(); ++i) {
@@ -320,9 +320,7 @@ void GameScene::Render() {
 
 	if (mNextCheckpointArrowSprite) { mNextCheckpointArrowSprite->Draw(); }
 
-	if (mPendingReturnToTitle) {
-		mPendingReturnToTitle = false;
-	}
+	if (mPendingReturnToTitle) { mPendingReturnToTitle = false; }
 }
 
 /// @brief コンソール変数の登録
@@ -440,9 +438,9 @@ void GameScene::InitializePlayer() {
 	mEntPlayer = std::make_unique<Entity>("player");
 	mEntPlayer->GetTransform()->SetLocalPos(Vec3::up * kPlayerSpawnHeight);
 
-	const float widthHU     = 32.0f;
-	const float heightHU    = 72.0f;
-	const auto  halfExtents = Vec3(
+	constexpr float widthHU     = 32.0f;
+	constexpr float heightHU    = 72.0f;
+	const auto      halfExtents = Vec3(
 		Math::HtoM(widthHU) * 0.5f,
 		Math::HtoM(heightHU) * 0.5f,
 		Math::HtoM(widthHU) * 0.5f
@@ -938,7 +936,7 @@ void GameScene::UpdatePlayer(const float deltaTime) {
 	if (mMovementComponent && mWind) {
 		auto            velocity       = mMovementComponent->GetVelocity();
 		const float     speed          = Math::MtoH(velocity.Length());
-		const float     maxSpeed       = 3500.0f;
+		constexpr float maxSpeed       = 3500.0f;
 		constexpr float kWindThreshold = 500.0f;
 		static float    volume         = 0.0f;
 		const float     target         = speed >= kWindThreshold ?

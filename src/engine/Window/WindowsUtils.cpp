@@ -18,11 +18,7 @@ std::string WindowsUtils::GetWindowsUserName() {
 	if (GetUserNameA(buffer.data(), &bufferSize)) {
 		std::string userName(buffer.data());
 		// 空白をアンダースコアに置き換える
-		for (char& ch : userName) {
-			if (ch == ' ') {
-				ch = '_';
-			}
-		}
+		for (char& ch : userName) { if (ch == ' ') { ch = '_'; } }
 		return userName;
 	}
 	return std::string("Windowsから取得できませんでした。");
@@ -78,13 +74,17 @@ std::string WindowsUtils::GetGPUName() {
 
 	// ワイド文字列をマルチバイト文字列に変換
 	const int sizeNeeded = WideCharToMultiByte(
-		CP_UTF8, 0, desc.Description, -1, nullptr, 0, nullptr, nullptr);
+		CP_UTF8, 0, desc.Description, -1, nullptr, 0, nullptr, nullptr
+	);
 	std::string gpuName(sizeNeeded - 1, 0); // 終端の null 文字を除くために -1
-	WideCharToMultiByte(CP_UTF8, 0, desc.Description, -1, gpuName.data(),
-	                    sizeNeeded, nullptr, nullptr);
+	WideCharToMultiByte(
+		CP_UTF8, 0, desc.Description, -1, gpuName.data(),
+		sizeNeeded, nullptr, nullptr
+	);
 
 	const int vRam = static_cast<int>(desc.DedicatedVideoMemory / (static_cast<
-		unsigned long long>(1024) * 1024));
+			                                  unsigned long long>(1024) *
+		                                  1024));
 	std::string ret = gpuName + " " + std::to_string(vRam) + " MB";
 	return ret;
 }
@@ -105,9 +105,10 @@ std::string WindowsUtils::GetRamUsage() {
 	memoryStatus.dwLength = sizeof(memoryStatus);
 	GlobalMemoryStatusEx(&memoryStatus);
 	return std::to_string(
-			(memoryStatus.ullTotalPhys - memoryStatus.ullAvailPhys) / 1024 /
-			1024) +
-		"MB";
+		       (memoryStatus.ullTotalPhys - memoryStatus.ullAvailPhys) / 1024 /
+		       1024
+	       ) +
+	       "MB";
 }
 
 /// @brief HRESULTコードに対応するメッセージを取得します
@@ -129,14 +130,10 @@ std::string WindowsUtils::GetHresultMessage(const HRESULT hr) {
 	std::string message;
 	if (messageLength > 0) {
 		message = std::string(messageBuffer, messageLength);
-	} else {
-		message = "Unknown error code : " + std::to_string(hr);
-	}
+	} else { message = "Unknown error code : " + std::to_string(hr); }
 
 	// メモリ解放
-	if (messageBuffer) {
-		LocalFree(messageBuffer);
-	}
+	if (messageBuffer) { LocalFree(messageBuffer); }
 
 	return message;
 }
@@ -147,15 +144,21 @@ std::string WindowsUtils::GetHresultMessage(const HRESULT hr) {
 /// @param name 値の名前
 /// @param pData 取得したDWORD値の格納先ポインタ
 /// @return 成功したらtrueを返す
-bool WindowsUtils::RegistryGetDWord(void*       hKeyParent, const char* key,
-                                    const char* name, unsigned long*    pData) {
+bool WindowsUtils::RegistryGetDWord(
+	void*       hKeyParent, const char* key,
+	const char* name, unsigned long*    pData
+) {
 	DWORD len  = sizeof(DWORD);
 	HKEY  hKey = nullptr;
-	DWORD rc   = RegOpenKeyExA(static_cast<HKEY>(hKeyParent), key, 0, KEY_READ,
-	                         &hKey);
+	DWORD rc   = RegOpenKeyExA(
+		static_cast<HKEY>(hKeyParent), key, 0, KEY_READ,
+		&hKey
+	);
 	if (rc == ERROR_SUCCESS) {
-		rc = RegQueryValueExA(hKey, name, nullptr, nullptr,
-		                      reinterpret_cast<LPBYTE>(pData), &len);
+		rc = RegQueryValueExA(
+			hKey, name, nullptr, nullptr,
+			reinterpret_cast<LPBYTE>(pData), &len
+		);
 	}
 	RegCloseKey(hKey);
 	return rc == ERROR_SUCCESS;

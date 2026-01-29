@@ -16,14 +16,10 @@ namespace Unnamed {
 	static constexpr std::string_view kChannel = "MeshRendererComponent";
 
 	/// @brief メッシュレンダラーコンポーネントがアタッチされたときの処理
-	void MeshRendererComponent::OnAttached() {
-		BaseComponent::OnAttached();
-	}
+	void MeshRendererComponent::OnAttached() { BaseComponent::OnAttached(); }
 
 	/// @brief メッシュレンダラーコンポーネントがデタッチされたときの処理
-	void MeshRendererComponent::OnDetached() {
-		BaseComponent::OnDetached();
-	}
+	void MeshRendererComponent::OnDetached() { BaseComponent::OnDetached(); }
 
 	/// @brief シリアライズ
 	/// @param writer JSONライター
@@ -90,11 +86,11 @@ namespace Unnamed {
 	const MeshRendererComponent::WorldBoundsSphereCache& MeshRendererComponent::
 	WorldBoundsSphere() const noexcept { return mWorldBoundsSphere; }
 
-	void MeshRendererComponent::UpdateWorldBoundsCache(const Mat4& worldMat,
-		uint64_t worldRevision, const BoundsSphere& bounds) {
-		if (mWorldBoundsRevision == worldRevision) {
-			return;
-		}
+	void MeshRendererComponent::UpdateWorldBoundsCache(
+		const Mat4& worldMat,
+		uint64_t    worldRevision, const BoundsSphere& bounds
+	) {
+		if (mWorldBoundsRevision == worldRevision) { return; }
 
 		const Vec3 centerWS = TransformPointRowVec(worldMat, bounds.center);
 		float      radiusWS = bounds.radius * MaxScaleRowVec(worldMat);

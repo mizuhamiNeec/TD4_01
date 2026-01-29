@@ -10,19 +10,19 @@
 namespace Unnamed {
 	static const char* ResClassName(D3D_SHADER_INPUT_TYPE t) {
 		switch (t) {
-		case D3D_SIT_CBUFFER: return "CBV";
-		case D3D_SIT_TBUFFER: return "TB";
-		case D3D_SIT_TEXTURE: return "SRV";
-		case D3D_SIT_SAMPLER: return "SMP";
-		case D3D_SIT_UAV_RWTYPED: return "UAV";
-		case D3D_SIT_STRUCTURED: return "UAV(STR)";
-		case D3D_SIT_UAV_RWSTRUCTURED: return "UAV(RWSTR)";
-		case D3D_SIT_BYTEADDRESS: return "UAV(BY)";
-		case D3D_SIT_UAV_RWBYTEADDRESS: return "UAV(RWBY)";
-		case D3D_SIT_UAV_APPEND_STRUCTURED: return "UAV(APP)";
-		case D3D_SIT_UAV_CONSUME_STRUCTURED: return "UAV(CNS)";
-		case D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER: return "UAV(RWSTRC)";
-		default: return "?";
+			case D3D_SIT_CBUFFER: return "CBV";
+			case D3D_SIT_TBUFFER: return "TB";
+			case D3D_SIT_TEXTURE: return "SRV";
+			case D3D_SIT_SAMPLER: return "SMP";
+			case D3D_SIT_UAV_RWTYPED: return "UAV";
+			case D3D_SIT_STRUCTURED: return "UAV(STR)";
+			case D3D_SIT_UAV_RWSTRUCTURED: return "UAV(RWSTR)";
+			case D3D_SIT_BYTEADDRESS: return "UAV(BY)";
+			case D3D_SIT_UAV_RWBYTEADDRESS: return "UAV(RWBY)";
+			case D3D_SIT_UAV_APPEND_STRUCTURED: return "UAV(APP)";
+			case D3D_SIT_UAV_CONSUME_STRUCTURED: return "UAV(CNS)";
+			case D3D_SIT_UAV_RWSTRUCTURED_WITH_COUNTER: return "UAV(RWSTRC)";
+			default: return "?";
 		}
 	}
 
@@ -38,9 +38,7 @@ namespace Unnamed {
 					IID_PPV_ARGS(&refl)
 				)
 			)
-		) {
-			return;
-		}
+		) { return; }
 
 		D3D12_SHADER_DESC sd{};
 		refl->GetDesc(&sd);
@@ -68,30 +66,32 @@ namespace Unnamed {
 		refl->Release();
 	}
 
-	static bool RS_HasCBV_For(const D3D12_ROOT_SIGNATURE_DESC& rs, UINT reg,
-	                          UINT space, D3D12_SHADER_VISIBILITY stage) {
+	static bool RS_HasCBV_For(
+		const D3D12_ROOT_SIGNATURE_DESC& rs, UINT                       reg,
+		UINT                             space, D3D12_SHADER_VISIBILITY stage
+	) {
 		for (UINT i = 0; i < rs.NumParameters; ++i) {
 			auto& p = rs.pParameters[i];
 			if (!(p.ShaderVisibility == D3D12_SHADER_VISIBILITY_ALL || p.
-				ShaderVisibility == stage))
+			      ShaderVisibility == stage))
 				continue;
 			if (p.ParameterType == D3D12_ROOT_PARAMETER_TYPE_CBV) {
 				if (p.Descriptor.ShaderRegister == reg && p.Descriptor.
-					RegisterSpace == space)
+				    RegisterSpace == space)
 					return true;
 			} else if (p.ParameterType ==
-				D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE) {
+			           D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE) {
 				for (UINT r = 0; r < p.DescriptorTable.NumDescriptorRanges; ++
 				     r) {
 					auto& rg = p.DescriptorTable.pDescriptorRanges[r];
 					if (rg.RangeType == D3D12_DESCRIPTOR_RANGE_TYPE_CBV) {
 						const UINT end = (rg.NumDescriptors == static_cast<UINT>
-							                 (-1)) ?
+						                  (-1)) ?
 							                 0xffffffffu :
 							                 (rg.BaseShaderRegister + rg.
-								                 NumDescriptors);
+							                  NumDescriptors);
 						if (rg.RegisterSpace == space && reg >= rg.
-							BaseShaderRegister && reg < end)
+						    BaseShaderRegister && reg < end)
 							return true;
 					}
 				}
@@ -109,7 +109,8 @@ namespace Unnamed {
 		ID3D12ShaderReflection* refl = nullptr;
 		if (FAILED(
 			D3DReflect(bc.pShaderBytecode, bc.BytecodeLength, IID_PPV_ARGS(&refl
-			))))
+			))
+		))
 			return true;
 		D3D12_SHADER_DESC sd{};
 		refl->GetDesc(&sd);

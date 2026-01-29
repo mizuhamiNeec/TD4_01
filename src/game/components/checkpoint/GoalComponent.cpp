@@ -14,9 +14,7 @@ void GoalComponent::OnAttach(Entity& owner) {
 }
 
 void GoalComponent::Update(float) {
-	if (!mCollider) {
-		return;
-	}
+	if (!mCollider) { return; }
 
 	CheckPlayerCollision();
 
@@ -37,19 +35,16 @@ void GoalComponent::Update(float) {
 void GoalComponent::DrawInspectorImGui() {
 #ifdef _DEBUG
 	if (ImGui::CollapsingHeader(
-		"GoalComponent", ImGuiTreeNodeFlags_DefaultOpen)) {
+		"GoalComponent", ImGuiTreeNodeFlags_DefaultOpen
+	)) {
 		ImGui::Text("Reached: %s", mReached ? "Yes" : "No");
 
-		if (ImGui::Button("Reset")) {
-			Reset();
-		}
+		if (ImGui::Button("Reset")) { Reset(); }
 	}
 #endif
 }
 
-bool GoalComponent::IsReached() const {
-	return mReached;
-}
+bool GoalComponent::IsReached() const { return mReached; }
 
 void GoalComponent::Reset() {
 	mReached   = false;
@@ -59,15 +54,11 @@ void GoalComponent::Reset() {
 void GoalComponent::CheckPlayerCollision() {
 	// プレイヤーエンティティを取得
 	Entity* player = CheckpointManager::GetPlayer();
-	if (!player) {
-		return;
-	}
+	if (!player) { return; }
 
 	// プレイヤーのAABBコライダーを取得
 	auto* playerCollider = player->GetComponent<AABBCollider>();
-	if (!playerCollider) {
-		return;
-	}
+	if (!playerCollider) { return; }
 
 	// ワールド座標でのAABBを取得
 	const Unnamed::AABB playerWorldAABB = playerCollider->GetWorldAABB();
@@ -75,11 +66,11 @@ void GoalComponent::CheckPlayerCollision() {
 
 	// AABB同士の衝突判定（標準的なAABB交差テスト）
 	const bool isInside =
-		playerWorldAABB.min.x <= goalWorldAABB.max.x && 
+		playerWorldAABB.min.x <= goalWorldAABB.max.x &&
 		playerWorldAABB.max.x >= goalWorldAABB.min.x &&
-		playerWorldAABB.min.y <= goalWorldAABB.max.y && 
+		playerWorldAABB.min.y <= goalWorldAABB.max.y &&
 		playerWorldAABB.max.y >= goalWorldAABB.min.y &&
-		playerWorldAABB.min.z <= goalWorldAABB.max.z && 
+		playerWorldAABB.min.z <= goalWorldAABB.max.z &&
 		playerWorldAABB.max.z >= goalWorldAABB.min.z;
 
 	// 入った瞬間のみ判定

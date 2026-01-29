@@ -13,7 +13,7 @@ namespace Unnamed::Gui {
 		const float contentTop = selfRect.y + mPadding.top;
 		const float contentRight = selfRect.x + selfRect.width - mPadding.right;
 		const float contentBottom = selfRect.y + selfRect.height - mPadding.
-			bottom;
+		                            bottom;
 
 		const float contentWidth  = contentRight - contentLeft;
 		const float contentHeight = contentBottom - contentTop;
@@ -33,9 +33,7 @@ namespace Unnamed::Gui {
 
 		for (auto& pChild : GetChildren()) {
 			UiWidget* child = pChild.get();
-			if (!child || !child->IsVisible()) {
-				continue;
-			}
+			if (!child || !child->IsVisible()) { continue; }
 
 			const UiSizePolicy       policy     = child->GetSizePolicy();
 			const UiSizeConstraints& constraint = child->GetSizeConstraints();
@@ -45,8 +43,10 @@ namespace Unnamed::Gui {
 				preferred = 32.0f; // TODO: パラメータ化
 			}
 
-			float clamped = std::clamp(preferred, constraint.minHeight,
-			                           constraint.maxHeight);
+			float clamped = std::clamp(
+				preferred, constraint.minHeight,
+				constraint.maxHeight
+			);
 
 			ChildInfo info{};
 			info.widget = child;
@@ -75,7 +75,7 @@ namespace Unnamed::Gui {
 		float expandHeightEach = 0.0f;
 		if (expandCount > 0) {
 			expandHeightEach = remainingHeight / static_cast<float>(
-				expandCount);
+				                   expandCount);
 		}
 
 		// 子のローカル矩形を設定していく
@@ -95,8 +95,10 @@ namespace Unnamed::Gui {
 			} else {
 				float h = expandHeightEach;
 				// 制約で clamp
-				h = std::max(constraint.minHeight,
-				             std::min(h, constraint.maxHeight));
+				h = std::max(
+					constraint.minHeight,
+					std::min(h, constraint.maxHeight)
+				);
 				height = h;
 			}
 

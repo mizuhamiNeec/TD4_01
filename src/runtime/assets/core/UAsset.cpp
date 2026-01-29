@@ -1,4 +1,3 @@
 ﻿#include "UAsset.h"
 
-namespace Unnamed {
-}
+namespace Unnamed {}

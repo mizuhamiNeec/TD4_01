@@ -32,7 +32,7 @@ namespace Unnamed::Gui {
 		[[nodiscard]] float GetSpacing() const;
 
 	protected:
-		void OnSerialize(JsonWriter& writer) const;
+		void OnSerialize(JsonWriter& writer) const override;
 		void OnDeserialize(JsonReader& reader);
 
 		LayoutPadding mPadding;

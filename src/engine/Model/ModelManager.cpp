@@ -33,10 +33,8 @@ void ModelManager::LoadModel(const std::string& filePath) {
 		// 読み込み済みなら早期return
 		return;
 	}
-	
-	if (!mModelCommon) {
-		return;
-	}
+
+	if (!mModelCommon) { return; }
 
 	// モデルの生成とファイルの読み込み、初期化
 	auto model = std::make_unique<Model>();

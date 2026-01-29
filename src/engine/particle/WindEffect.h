@@ -11,8 +11,10 @@ class WindEffect {
 public:
 	~WindEffect();
 
-	void Init(ParticleManager*   particleManager,
-	          MovementComponent* playerMovement);
+	void Init(
+		ParticleManager*   particleManager,
+		MovementComponent* playerMovement
+	);
 	void Update(float deltaTime);
 	void Draw() const;
 

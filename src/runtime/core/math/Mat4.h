@@ -3,6 +3,8 @@
 #include <initializer_list>
 
 struct Quaternion;
+struct Vec3;
+struct Vec4;
 
 /// @brief 4x4行列構造体
 struct Mat4 final {

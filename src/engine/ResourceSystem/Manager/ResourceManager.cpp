@@ -23,21 +23,27 @@ ResourceManager::ResourceManager(D3D12* d3d12) :
 
 /// @brief 初期化
 void ResourceManager::Init() const {
-	Console::Print("ResourceManager を初期化しています...\n", kConTextColorWait,
-	               Channel::ResourceSystem);
+	Console::Print(
+		"ResourceManager を初期化しています...\n", kConTextColorWait,
+		Channel::ResourceSystem
+	);
 	// マネージャーを初期化
 	mSrvManager->Init(d3d12_);
 	TexManager::GetInstance()->Init(d3d12_, mSrvManager.get());
 	RootSignatureManager2::Init(d3d12_->GetDevice());
 	mShaderManager->Init();
 	mMaterialManager->Init();
-	mMeshManager->Init(d3d12_->GetDevice(),
-	                   mShaderManager.get(), mMaterialManager.get());
+	mMeshManager->Init(
+		d3d12_->GetDevice(),
+		mShaderManager.get(), mMaterialManager.get()
+	);
 
 	mAnimationManager->Init();
 
-	Console::Print("ResourceManager の初期化が完了しました\n", kConTextColorCompleted,
-	               Channel::ResourceSystem);
+	Console::Print(
+		"ResourceManager の初期化が完了しました\n", kConTextColorCompleted,
+		Channel::ResourceSystem
+	);
 }
 
 /// @brief 終了処理
@@ -76,9 +82,7 @@ void ResourceManager::Shutdown() {
 
 /// @brief SrvManagerを取得
 /// @return SrvManagerへのポインタ
-SrvManager* ResourceManager::GetSrvManager() const {
-	return mSrvManager.get();
-}
+SrvManager* ResourceManager::GetSrvManager() const { return mSrvManager.get(); }
 
 /// @brief TexManagerを取得
 /// @return TexManagerへのポインタ

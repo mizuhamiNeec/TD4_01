@@ -21,8 +21,7 @@ public:
 
 	void Execute(const PostProcessContext& context) override;
 
-	void Shutdown() {
-	}
+	void Shutdown() {}
 
 	// SRVインデックスを取得するメソッドを追加
 	uint32_t GetSrvIndex() const { return mSrvIndex; }

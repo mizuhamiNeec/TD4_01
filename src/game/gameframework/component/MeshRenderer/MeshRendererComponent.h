@@ -27,7 +27,6 @@ namespace Unnamed {
 
 		MeshHandle meshHandle = {}; // 共有メッシュのハンドル
 
-	public:
 		// MeshRendererComponent
 		[[nodiscard]] std::string_view GetComponentName() const override;
 

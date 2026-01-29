@@ -1,7 +1,7 @@
 #pragma once
+#include <functional>
 #include <memory>
 #include <string>
-#include <functional>
 
 #include <game/scene/base/BaseScene.h>
 
@@ -17,9 +17,7 @@ public:
 
 	std::shared_ptr<BaseScene> CreateScene(const std::string& name) {
 		auto it = mSceneCreators.find(name);
-		if (it != mSceneCreators.end()) {
-			return it->second();
-		}
+		if (it != mSceneCreators.end()) { return it->second(); }
 		return nullptr;
 	}
 

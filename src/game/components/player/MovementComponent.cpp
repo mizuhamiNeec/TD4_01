@@ -708,7 +708,7 @@ void MovementComponent::ResolvePenetration() {
 	if (!mUPhysicsEngine || !mCollider) return;
 
 	// 最大反復回数（コーナーなどで複数の壁に挟まれた場合用）
-	const int kMaxIterations = 4;
+	constexpr int kMaxIterations = 4;
 
 	for (int iter = 0; iter < kMaxIterations; ++iter) {
 		// 現在のハルで重なりをチェック
@@ -762,7 +762,7 @@ void MovementComponent::ResolvePenetration() {
 		// Y軸（上下）は、ステップアップなどで誤検知しやすいので、少し優先度を下げるか慎重に扱う
 		// ここでは純粋に最小の重なりを採用
 		float minOverlap = overlapX;
-		Vec3  pushDir    = Vec3(1, 0, 0); // X軸
+		auto  pushDir    = Vec3(1, 0, 0); // X軸
 
 		if (overlapY < minOverlap) {
 			minOverlap = overlapY;

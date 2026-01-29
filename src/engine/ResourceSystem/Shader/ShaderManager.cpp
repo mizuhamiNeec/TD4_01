@@ -8,17 +8,17 @@
 /// @param psPath ピクセルシェーダのパス
 /// @param gsPath ジオメトリシェーダのパス（省略可能）
 /// @return シェーダへのポインタ（失敗した場合はnullptr）
-Shader* ShaderManager::LoadShader(const std::string& name,
-                                  const std::string& vsPath,
-                                  const std::string& psPath,
-                                  const std::string& gsPath) {
+Shader* ShaderManager::LoadShader(
+	const std::string& name,
+	const std::string& vsPath,
+	const std::string& psPath,
+	const std::string& gsPath
+) {
 	// パスを結合してキーにする
 	std::string filePath = vsPath + ";" + psPath + ";" + gsPath;
 
 	// 既に読み込まれているシェーダがあればそれを返す
-	if (mShaders.contains(filePath)) {
-		return mShaders[filePath].get();
-	}
+	if (mShaders.contains(filePath)) { return mShaders[filePath].get(); }
 
 	// 新しいシェーダを作成
 	if (auto shader = std::make_unique<Shader>(name, vsPath, psPath, gsPath)) {
@@ -56,8 +56,10 @@ void ShaderManager::Init() {
 
 /// @brief 終了処理
 void ShaderManager::Shutdown() {
-	Console::Print("ShaderManager を終了しています...\n", kConTextColorWait,
-	               Channel::ResourceSystem);
+	Console::Print(
+		"ShaderManager を終了しています...\n", kConTextColorWait,
+		Channel::ResourceSystem
+	);
 
 	// 個々のシェーダーインスタンスをクリーンアップ
 	for (auto& [path, shader] : mShaders) {

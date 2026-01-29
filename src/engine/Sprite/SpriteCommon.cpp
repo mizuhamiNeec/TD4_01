@@ -11,29 +11,32 @@
 /// @param d3d12 D3D12クラスへのポインタ
 void SpriteCommon::Init(D3D12* d3d12) {
 	mD3d12 = d3d12;
-	Console::Print("SpriteCommon : SpriteCommonを初期化します。\n", kConTextColorWait,
-	               Channel::Engine);
+	Console::Print(
+		"SpriteCommon : SpriteCommonを初期化します。\n", kConTextColorWait,
+		Channel::Engine
+	);
 	CreateGraphicsPipeline();
-	Console::Print("SpriteCommon : SpriteCommonの初期化が完了しました。\n",
-	               kConTextColorCompleted, Channel::Engine);
+	Console::Print(
+		"SpriteCommon : SpriteCommonの初期化が完了しました。\n",
+		kConTextColorCompleted, Channel::Engine
+	);
 }
 
 /// @brief SpriteCommonをシャットダウンします
-void SpriteCommon::Shutdown() const {
-	mRootSignatureManager->Shutdown();
-}
+void SpriteCommon::Shutdown() const { mRootSignatureManager->Shutdown(); }
 
 /// @brief ルートシグネチャを作成します
 void SpriteCommon::CreateRootSignature() {
 	//  RootSignatureManagerのインスタンスを作成
 	mRootSignatureManager = std::make_unique<RootSignatureManager>(
-		mD3d12->GetDevice());
+		mD3d12->GetDevice()
+	);
 
 	D3D12_DESCRIPTOR_RANGE descriptorRange[1];
 	descriptorRange[0] = {
 		.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV, // SRVを使う
-		.NumDescriptors = 1,                          // 数は一つ
-		.BaseShaderRegister = 0,                      // 0から始まる
+		.NumDescriptors = 1, // 数は一つ
+		.BaseShaderRegister = 0, // 0から始まる
 		.OffsetInDescriptorsFromTableStart =
 		D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND // Offset
 	};
@@ -59,7 +62,8 @@ void SpriteCommon::CreateRootSignature() {
 		descriptorRange;
 	// Tableの中身の配列を指定
 	rootParameters[2].DescriptorTable.NumDescriptorRanges = _countof(
-		descriptorRange);
+		descriptorRange
+	);
 
 	rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // CBVを使う
 	rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
@@ -68,13 +72,13 @@ void SpriteCommon::CreateRootSignature() {
 
 	D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {
 		{
-			.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR,   // バイリニアフィルタ
-			.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP, // 0~1の範囲外をリピート
-			.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
-			.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
-			.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER, // 比較しない
-			.MaxLOD = D3D12_FLOAT32_MAX,                   // ありったけのMipmapを使う
-			.ShaderRegister = 0,                           // レジスタ番号0を使う
+			.Filter           = D3D12_FILTER_MIN_MAG_MIP_LINEAR, // バイリニアフィルタ
+			.AddressU         = D3D12_TEXTURE_ADDRESS_MODE_WRAP, // 0~1の範囲外をリピート
+			.AddressV         = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
+			.AddressW         = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
+			.ComparisonFunc   = D3D12_COMPARISON_FUNC_NEVER, // 比較しない
+			.MaxLOD           = D3D12_FLOAT32_MAX,           // ありったけのMipmapを使う
+			.ShaderRegister   = 0,                           // レジスタ番号0を使う
 			.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL
 			// PixelShaderで使う
 		}
@@ -87,8 +91,10 @@ void SpriteCommon::CreateRootSignature() {
 	);
 
 	if (mRootSignatureManager->Get("SpriteCommon")) {
-		Console::Print("SpriteCommon : ルートシグネチャの生成に成功.\n",
-		               kConTextColorCompleted, Channel::Engine);
+		Console::Print(
+			"SpriteCommon : ルートシグネチャの生成に成功.\n",
+			kConTextColorCompleted, Channel::Engine
+		);
 	}
 }
 
@@ -104,19 +110,24 @@ void SpriteCommon::CreateGraphicsPipeline() {
 	);
 	mPipelineState.SetInputLayout(Vertex::inputLayout);
 	mPipelineState.SetRootSignature(
-		mRootSignatureManager->Get("SpriteCommon"));
+		mRootSignatureManager->Get("SpriteCommon")
+	);
 
 	// シェーダーのファイルパスを設定
 	mPipelineState.SetVertexShader(
-		L"./content/core/shaders/SpriteCommon.VS.hlsl");
+		L"./content/core/shaders/SpriteCommon.VS.hlsl"
+	);
 	mPipelineState.SetPixelShader(
-		L"./content/core/shaders/SpriteCommon.PS.hlsl");
+		L"./content/core/shaders/SpriteCommon.PS.hlsl"
+	);
 	mPipelineState.SetBlendMode(kBlendModeNormal);
 	mPipelineState.Create(mD3d12->GetDevice());
 
 	if (mPipelineState.Get()) {
-		Console::Print("SpriteCommon : パイプラインステートの作成に成功.\n",
-		               kConTextColorCompleted, Channel::Engine);
+		Console::Print(
+			"SpriteCommon : パイプラインステートの作成に成功.\n",
+			kConTextColorCompleted, Channel::Engine
+		);
 	}
 }
 
@@ -124,7 +135,9 @@ void SpriteCommon::CreateGraphicsPipeline() {
 void SpriteCommon::Render() const {
 	mD3d12->GetCommandList()->SetPipelineState(mPipelineState.Get());
 	mD3d12->GetCommandList()->SetGraphicsRootSignature(
-		mRootSignatureManager->Get("SpriteCommon"));
+		mRootSignatureManager->Get("SpriteCommon")
+	);
 	mD3d12->GetCommandList()->IASetPrimitiveTopology(
-		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST
+	);
 }

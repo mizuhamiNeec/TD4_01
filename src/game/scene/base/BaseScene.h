@@ -91,7 +91,7 @@ protected:
 
 	ResourceManager* mResourceManager = nullptr;
 
-	AudioManager* mAudioManager = nullptr;
+	AudioManager*    mAudioManager    = nullptr;
 	SpriteCommon*    mSpriteCommon    = nullptr;
 	ParticleManager* mParticleManager = nullptr;
 	Object3DCommon*  mObject3DCommon  = nullptr;

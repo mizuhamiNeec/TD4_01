@@ -7,26 +7,18 @@
 
 /// @brief 閉じるべきかどうかを取得します
 /// @return 閉じるべきならtrue
-bool Win32Window::ShouldClose() const {
-	return mShouldClose;
-}
+bool Win32Window::ShouldClose() const { return mShouldClose; }
 
 /// @brief ウィンドウ情報を取得します
 /// @return ウィンドウ情報構造体
-IWindow::WindowCreateInfo Win32Window::GetInfo() const {
-	return mWindowInfo;
-}
+IWindow::WindowCreateInfo Win32Window::GetInfo() const { return mWindowInfo; }
 
 /// @brief ネイティブウィンドウハンドルを取得します
 /// @return ネイティブウィンドウハンドル
-void* Win32Window::GetNativeHandle() const {
-	return mHWnd;
-}
+void* Win32Window::GetNativeHandle() const { return mHWnd; }
 
 /// @brief ウィンドウを閉じるよう要求します
-void Win32Window::RequestClose() {
-	mShouldClose = true;
-}
+void Win32Window::RequestClose() { mShouldClose = true; }
 
 /// @brief ウィンドウタイトルを設定します
 /// @param title ウィンドウタイトルの文字列ビュー
@@ -53,11 +45,7 @@ void Win32Window::SetInactive(const bool flag) {
 }
 
 /// @brief デストラクタ
-Win32Window::~Win32Window() {
-	if (mHWnd) {
-		DestroyWindow(mHWnd);
-	}
-}
+Win32Window::~Win32Window() { if (mHWnd) { DestroyWindow(mHWnd); } }
 
 /// @brief ウィンドウを作成します
 /// @param hInstance インスタンスハンドル
@@ -109,9 +97,7 @@ bool Win32Window::Create(
 		this
 	);
 
-	if (!mHWnd) {
-		return false;
-	}
+	if (!mHWnd) { return false; }
 	SetImmersiveDarkMode(WindowsUtils::IsSystemDarkTheme());
 	ShowWindow(mHWnd, SW_SHOW);
 	UpdateWindow(mHWnd);

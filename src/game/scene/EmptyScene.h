@@ -46,7 +46,7 @@ public:
 private:
 	void BindUiCallbacks() const;
 
-	D3D12* mRenderer = nullptr;
-	bool   mGameLaunchQueued = false;
+	D3D12*                                    mRenderer         = nullptr;
+	bool                                      mGameLaunchQueued = false;
 	std::shared_ptr<Unnamed::Gui::UiDocument> mActiveDocument;
 };

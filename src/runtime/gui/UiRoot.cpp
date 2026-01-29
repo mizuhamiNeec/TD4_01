@@ -10,12 +10,12 @@ namespace Unnamed::Gui {
 	UiRoot::UiRoot() {
 		mRootWidget = std::make_unique<UiWidget>();
 		mRootRect   = {
-			.x = 0.0f, .y = 0.0f,
+			.x     = 0.0f, .y         = 0.0f,
 			.width = 1920.0f, .height = 1080.0f
 		};
 		mRootWidget->SetLocalRect(
 			{
-				.x = 0.0f, .y = 0.0f,
+				.x     = 0.0f, .y                 = 0.0f,
 				.width = mRootRect.width, .height = mRootRect.height
 			}
 		);
@@ -27,7 +27,7 @@ namespace Unnamed::Gui {
 		mRootRect = rect;
 		mRootWidget->SetLocalRect(
 			{
-				.x = 0.0f, .y = 0.0f,
+				.x     = 0.0f, .y                 = 0.0f,
 				.width = mRootRect.width, .height = mRootRect.height
 			}
 		);
@@ -39,7 +39,7 @@ namespace Unnamed::Gui {
 		mRootRect.height = height;
 		mRootWidget->SetLocalRect(
 			{
-				.x = 0.0f, .y = 0.0f,
+				.x     = 0.0f, .y                 = 0.0f,
 				.width = mRootRect.width, .height = mRootRect.height
 			}
 		);
@@ -66,10 +66,9 @@ namespace Unnamed::Gui {
 		mRootWidget->UpdateLayoutRecursive(mRootRect);
 	}
 
-	void UiRoot::BuildDrawCommands(std::vector<UiDrawCommand>& out
-	) const {
-		mRootWidget->BuildDrawCommands(out);
-	}
+	void UiRoot::BuildDrawCommands(
+		std::vector<UiDrawCommand>& out
+	) const { mRootWidget->BuildDrawCommands(out); }
 
 	UiWidget* UiRoot::GetRootWidget() const { return mRootWidget.get(); }
 
@@ -78,19 +77,13 @@ namespace Unnamed::Gui {
 		const bool  leftDown, const bool leftPressed, const bool leftReleased
 	) {
 		UiWidget* hitWidget = nullptr;
-		if (mRootWidget) {
-			hitWidget = mRootWidget->HitTest(mouseX, mouseY);
-		}
+		if (mRootWidget) { hitWidget = mRootWidget->HitTest(mouseX, mouseY); }
 
 		// Hover 状態の更新
 		if (hitWidget != mHoveredWidget) {
-			if (mHoveredWidget) {
-				mHoveredWidget->OnMouseLeave();
-			}
+			if (mHoveredWidget) { mHoveredWidget->OnMouseLeave(); }
 			mHoveredWidget = hitWidget;
-			if (mHoveredWidget) {
-				mHoveredWidget->OnMouseEnter();
-			}
+			if (mHoveredWidget) { mHoveredWidget->OnMouseEnter(); }
 		}
 
 		// マウス押下の開始
@@ -105,9 +98,7 @@ namespace Unnamed::Gui {
 				mPressedWidget->OnMouseUp();
 
 				// 押し始めたウィジェットの上で離されたら Click
-				if (mPressedWidget == hitWidget) {
-					mPressedWidget->OnClick();
-				}
+				if (mPressedWidget == hitWidget) { mPressedWidget->OnClick(); }
 			}
 			mPressedWidget = nullptr;
 		}

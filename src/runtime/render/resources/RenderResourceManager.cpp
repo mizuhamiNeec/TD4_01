@@ -1,8 +1,8 @@
 ﻿#include <core/unnamed/memory/MemUtil.h>
 
 #include <runtime/assets/core/UAssetManager.h>
-#include <runtime/assets/types/TextureAsset.h>
 #include <runtime/assets/types/MeshAsset.h>
+#include <runtime/assets/types/TextureAsset.h>
 #include <runtime/render/resources/RenderResourceManager.h>
 
 #include <engine/VertexFormats.h>
@@ -26,9 +26,11 @@ namespace Unnamed {
 
 	/// @brief コンストラクタ
 	RenderResourceManager::RenderResourceManager(
-		GraphicsDevice* gd, UAssetManager* am, UploadArena* arena)
-		: mGd(gd), mAssetManager(am), mArena(arena) {
-	}
+		GraphicsDevice* gd, UAssetManager* am, UploadArena* arena
+	)
+		: mGd(gd),
+		  mAssetManager(am),
+		  mArena(arena) {}
 
 	/// @brief テクスチャを取得または実体化する
 	/// @param asset テクスチャアセットID
@@ -42,10 +44,10 @@ namespace Unnamed {
 
 		// すでに実体化しているか確認
 		if (auto it = mAssetToTexture.find(asset); it != mAssetToTexture.
-			end()) {
+		                                           end()) {
 			auto h = it->second;
 			if (h.id < mTextures.size() && mTextures[h.id].alive && mTextures[h.
-				id].gen == h.gen) {
+				    id].gen == h.gen) {
 				mTextures[h.id].refs++;
 				return h;
 			}
@@ -79,7 +81,6 @@ namespace Unnamed {
 		texture.gen++;
 		texture.refs        = 1;
 		texture.sourceAsset = asset;
-
 
 		// リソースの作成
 		const uint32_t mipCount =
@@ -120,8 +121,10 @@ namespace Unnamed {
 		// 転送
 		if (texAsset->mips.empty()) {
 			const size_t rowPitch = static_cast<size_t>(w) * 4;
-			if (!UploadRGBA8_1Mip(texture, texAsset->bytes.data(), rowPitch, w,
-			                      h, commandList)) {
+			if (!UploadRGBA8_1Mip(
+				texture, texAsset->bytes.data(), rowPitch, w,
+				h, commandList
+			)) {
 				texture.alive = false;
 				mFreeTextureList.emplace_back(index);
 				return {};
@@ -142,7 +145,8 @@ namespace Unnamed {
 					D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT;
 				auto slice = mArena->Allocate(
 					static_cast<uint64_t>(fp.Footprint.RowPitch) * mip.height,
-					kAlign);
+					kAlign
+				);
 				if (!slice.cpu) {
 					// 読めなかったら保留してキューにぶち込む
 					for (int k = m; k >= 0; --k) {
@@ -154,7 +158,8 @@ namespace Unnamed {
 						p.height = mip2.height;
 						p.rowPitch = mip2.rowPitch;
 						p.data = std::make_shared<std::vector<uint8_t>>(
-							mip2.bytes);
+							mip2.bytes
+						);
 						mDeferredMipUploads.emplace_back(std::move(p));
 					}
 					break;
@@ -240,9 +245,7 @@ namespace Unnamed {
 	) {
 		std::scoped_lock lock(mMutex);
 
-		if (mDeferredMipUploads.empty()) {
-			return;
-		}
+		if (mDeferredMipUploads.empty()) { return; }
 
 		auto* dev = mGd->Device();
 
@@ -273,9 +276,7 @@ namespace Unnamed {
 			);
 
 			// 予算チェック
-			if (used + fp.Footprint.RowPitch * p.height > budget) {
-				break;
-			}
+			if (used + fp.Footprint.RowPitch * p.height > budget) { break; }
 
 			// Arena確保
 			constexpr uint64_t kAlign = D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT;
@@ -283,9 +284,7 @@ namespace Unnamed {
 				fp.Footprint.RowPitch * p.height,
 				kAlign
 			);
-			if (!slice.cpu) {
-				break;
-			}
+			if (!slice.cpu) { break; }
 
 			// 行コピー
 			auto dst = static_cast<uint8_t*>(slice.cpu);
@@ -341,17 +340,11 @@ namespace Unnamed {
 		const uint64_t      value
 	) {
 		std::scoped_lock lock(mMutex);
-		if (!handle.IsValid() || handle.id >= mTextures.size()) {
-			return;
-		}
+		if (!handle.IsValid() || handle.id >= mTextures.size()) { return; }
 		auto& texture = mTextures[handle.id];
-		if (!texture.alive || texture.gen != handle.gen) {
-			return;
-		}
+		if (!texture.alive || texture.gen != handle.gen) { return; }
 
-		if (texture.refs > 0) {
-			texture.refs--;
-		}
+		if (texture.refs > 0) { texture.refs--; }
 		if (texture.refs == 0) {
 			texture.retireFence = fence;
 			texture.retireValue = value;
@@ -363,19 +356,16 @@ namespace Unnamed {
 	/// @param handle テクスチャハンドル
 	/// @return GPUディスクリプタハンドル	
 	D3D12_GPU_DESCRIPTOR_HANDLE RenderResourceManager::GetSrvGPU(
-		const TextureHandle handle) const {
+		const TextureHandle handle
+	) const {
 		std::scoped_lock                   lock(mMutex);
 		static D3D12_GPU_DESCRIPTOR_HANDLE null = {};
-		if (!handle.IsValid() || handle.id >= mTextures.size()) {
-			return null;
-		}
+		if (!handle.IsValid() || handle.id >= mTextures.size()) { return null; }
 		const auto& texture = mTextures[handle.id];
 		if (
 			!texture.alive ||
 			texture.gen != handle.gen ||
-			texture.srvIndex == UINT32_MAX) {
-			return null;
-		}
+			texture.srvIndex == UINT32_MAX) { return null; }
 		return mGd->GetSrvAllocator()->GPUHandle(texture.srvIndex);
 	}
 
@@ -383,19 +373,16 @@ namespace Unnamed {
 	/// @param handle テクスチャハンドル
 	/// @return CPUディスクリプタハンドル
 	D3D12_CPU_DESCRIPTOR_HANDLE RenderResourceManager::GetSrvCPU(
-		const TextureHandle handle) const {
+		const TextureHandle handle
+	) const {
 		std::scoped_lock                   lock(mMutex);
 		static D3D12_CPU_DESCRIPTOR_HANDLE null = {};
-		if (!handle.IsValid() || handle.id >= mTextures.size()) {
-			return null;
-		}
+		if (!handle.IsValid() || handle.id >= mTextures.size()) { return null; }
 		const auto& texture = mTextures[handle.id];
 		if (
 			!texture.alive ||
 			texture.gen != handle.gen ||
-			texture.srvIndex == UINT32_MAX) {
-			return null;
-		}
+			texture.srvIndex == UINT32_MAX) { return null; }
 		return mGd->GetSrvAllocator()->CPUHandle(texture.srvIndex);
 	}
 
@@ -421,9 +408,7 @@ namespace Unnamed {
 		ID3D12Fence* fence, const uint64_t value
 	) {
 		std::scoped_lock lock(mMutex);
-		if (!fence || mUploadsThisFrame.empty()) {
-			return;
-		}
+		if (!fence || mUploadsThisFrame.empty()) { return; }
 		for (auto& u : mUploadsThisFrame) {
 			PendingUpload p;
 			p.resource = std::move(u);
@@ -467,7 +452,8 @@ namespace Unnamed {
 					}
 				}
 				mFreeTextureList.emplace_back(
-					static_cast<uint32_t>(&tex - mTextures.data()));
+					static_cast<uint32_t>(&tex - mTextures.data())
+				);
 			}
 		}
 
@@ -481,9 +467,7 @@ namespace Unnamed {
 					kChannel,
 					"Garbage collected an upload buffer"
 				);
-			} else {
-				++it;
-			}
+			} else { ++it; }
 		}
 	}
 
@@ -492,13 +476,9 @@ namespace Unnamed {
 	/// @return GPU参照カウント
 	uint32_t RenderResourceManager::GpuRefCount(TextureHandle handle) const {
 		std::scoped_lock lock(mMutex);
-		if (!handle.IsValid() || handle.id >= mTextures.size()) {
-			return 0;
-		}
+		if (!handle.IsValid() || handle.id >= mTextures.size()) { return 0; }
 		const auto& tex = mTextures[handle.id];
-		if (!tex.alive || tex.gen != handle.gen) {
-			return 0;
-		}
+		if (!tex.alive || tex.gen != handle.gen) { return 0; }
 		return tex.refs;
 	}
 
@@ -508,9 +488,7 @@ namespace Unnamed {
 		std::scoped_lock lock(mMutex);
 		size_t           total = 0;
 		for (auto& tex : mTextures) {
-			if (tex.alive) {
-				total += tex.vramBytes;
-			}
+			if (tex.alive) { total += tex.vramBytes; }
 		}
 		return total;
 	}
@@ -554,18 +532,14 @@ namespace Unnamed {
 	/// @param vb バインドする頂点バッファ
 	void RenderResourceManager::BindVertexBuffer(
 		ID3D12GraphicsCommandList* cmd, const GpuVB& vb
-	) const {
-		mGd->BindVertexBuffer(cmd, vb.handle, vb.stride, 0);
-	}
+	) const { mGd->BindVertexBuffer(cmd, vb.handle, vb.stride, 0); }
 
 	/// @brief インデックスバッファをバインドする
 	/// @param cmd コマンドリスト
 	/// @param ib バインドするインデックスバッファ
 	void RenderResourceManager::BindIndexBuffer(
 		ID3D12GraphicsCommandList* cmd, const GpuIB& ib
-	) const {
-		mGd->BindIndexBuffer(cmd, ib.handle, ib.format, 0);
-	}
+	) const { mGd->BindIndexBuffer(cmd, ib.handle, ib.format, 0); }
 
 	/// @brief RGBA8形式の単一ミップマップテクスチャをアップロードする
 	/// @param texture 作成されるテクスチャリソース
@@ -606,9 +580,7 @@ namespace Unnamed {
 					IID_PPV_ARGS(&texture.resource)
 				)
 			)
-		) {
-			return false;
-		}
+		) { return false; }
 
 		D3D12_PLACED_SUBRESOURCE_FOOTPRINT fp;
 		UINT                               numRows;
@@ -623,11 +595,11 @@ namespace Unnamed {
 		constexpr uint64_t kTexPlaceAlign =
 			D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT;
 		const auto slice = mArena->
-			Allocate(static_cast<uint64_t>(fp.Footprint.RowPitch) * h,
-			         kTexPlaceAlign);
-		if (!slice.cpu) {
-			return false;
-		}
+			Allocate(
+				static_cast<uint64_t>(fp.Footprint.RowPitch) * h,
+				kTexPlaceAlign
+			);
+		if (!slice.cpu) { return false; }
 
 		// マップと行コピー (RowPitch差を吸収)
 		const auto src = static_cast<const uint8_t*>(pixels);
@@ -679,7 +651,7 @@ namespace Unnamed {
 		if (auto it = mAssetToMesh.find(meshAsset); it != mAssetToMesh.end()) {
 			auto h = it->second;
 			if (h.id < mMeshes.size() && mMeshes[h.id].alive &&
-				mMeshes[h.id].gen == h.gen) {
+			    mMeshes[h.id].gen == h.gen) {
 				mMeshes[h.id].refs++;
 				return h;
 			}
@@ -689,7 +661,7 @@ namespace Unnamed {
 		// アセットデータ取得
 		const auto* meshData = mAssetManager->Get<MeshAssetData>(meshAsset);
 		if (!meshData || meshData->positions.empty() || meshData->indices.
-			empty()) {
+		    empty()) {
 			Warning(
 				kChannel,
 				"Failed to get mesh asset data. AssetID={}",
@@ -802,18 +774,12 @@ namespace Unnamed {
 	) {
 		std::scoped_lock lock(mMutex);
 
-		if (handle.id >= mMeshes.size()) {
-			return;
-		}
+		if (handle.id >= mMeshes.size()) { return; }
 
 		auto& gpuMesh = mMeshes[handle.id];
-		if (!gpuMesh.alive || gpuMesh.gen != handle.gen) {
-			return;
-		}
+		if (!gpuMesh.alive || gpuMesh.gen != handle.gen) { return; }
 
-		if (gpuMesh.refs > 0) {
-			gpuMesh.refs--;
-		}
+		if (gpuMesh.refs > 0) { gpuMesh.refs--; }
 
 		Msg(
 			kChannel,
@@ -823,9 +789,7 @@ namespace Unnamed {
 		);
 
 		// まだ参照がある場合は何もしない
-		if (gpuMesh.refs > 0) {
-			return;
-		}
+		if (gpuMesh.refs > 0) { return; }
 
 		// 参照が0になったらリタイア待ちに
 		if (fence) {
@@ -839,11 +803,7 @@ namespace Unnamed {
 			// マップから削除
 			for (auto it = mAssetToMesh.begin(); it != mAssetToMesh.end();) {
 				if (it->second.id == handle.id && it->second.gen == handle.
-					gen) {
-					it = mAssetToMesh.erase(it);
-				} else {
-					++it;
-				}
+				    gen) { it = mAssetToMesh.erase(it); } else { ++it; }
 			}
 
 			Msg(
@@ -857,18 +817,15 @@ namespace Unnamed {
 	/// @brief メッシュを取得する
 	/// @param handle メッシュハンドル
 	/// @return メッシュ、存在しない場合はnullptr
-	const MeshGPU*
-	RenderResourceManager::GetMesh(const MeshHandle handle) const {
+	const MeshGPU* RenderResourceManager::GetMesh(
+		const MeshHandle handle
+	) const {
 		std::scoped_lock lock(mMutex);
 
-		if (handle.id >= mMeshes.size()) {
-			return nullptr;
-		}
+		if (handle.id >= mMeshes.size()) { return nullptr; }
 
 		const auto& gpuMesh = mMeshes[handle.id];
-		if (!gpuMesh.alive || gpuMesh.gen != handle.gen) {
-			return nullptr;
-		}
+		if (!gpuMesh.alive || gpuMesh.gen != handle.gen) { return nullptr; }
 
 		return &gpuMesh.mesh;
 	}
@@ -876,18 +833,15 @@ namespace Unnamed {
 	/// @brief メッシュのGPU参照カウントを取得する
 	/// @param handle メッシュハンドル
 	/// @return GPU参照カウント
-	uint32_t
-	RenderResourceManager::MeshRefCount(const MeshHandle handle) const {
+	uint32_t RenderResourceManager::MeshRefCount(
+		const MeshHandle handle
+	) const {
 		std::scoped_lock lock(mMutex);
 
-		if (handle.id >= mMeshes.size()) {
-			return 0;
-		}
+		if (handle.id >= mMeshes.size()) { return 0; }
 
 		const auto& gpuMesh = mMeshes[handle.id];
-		if (!gpuMesh.alive || gpuMesh.gen != handle.gen) {
-			return 0;
-		}
+		if (!gpuMesh.alive || gpuMesh.gen != handle.gen) { return 0; }
 
 		return gpuMesh.refs;
 	}

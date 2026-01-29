@@ -4,9 +4,7 @@
 
 namespace Unnamed {
 	/// @brief デストラクタ
-	UEntity::~UEntity() {
-		UEntity::OnDestroy();
-	}
+	UEntity::~UEntity() { UEntity::OnDestroy(); }
 
 	/// @brief 登録開始時の処理
 	void UEntity::OnRegister() {
@@ -30,9 +28,7 @@ namespace Unnamed {
 	/// @param deltaTime 前フレームからの経過時間（秒）
 	void UEntity::PrePhysicsTick(const float deltaTime) {
 		for (const auto& component : mComponents) {
-			if (component->IsActive()) {
-				component->PrePhysicsTick(deltaTime);
-			}
+			if (component->IsActive()) { component->PrePhysicsTick(deltaTime); }
 		}
 	}
 
@@ -40,9 +36,7 @@ namespace Unnamed {
 	/// @param deltaTime 前フレームからの経過時間（秒）
 	void UEntity::Tick(const float deltaTime) {
 		for (const auto& component : mComponents) {
-			if (component->IsActive()) {
-				component->OnTick(deltaTime);
-			}
+			if (component->IsActive()) { component->OnTick(deltaTime); }
 		}
 	}
 
@@ -59,27 +53,21 @@ namespace Unnamed {
 	/// @brief 描画前の処理
 	void UEntity::OnPreRender() const {
 		for (const auto& component : mComponents) {
-			if (component->IsActive()) {
-				component->OnPreRender();
-			}
+			if (component->IsActive()) { component->OnPreRender(); }
 		}
 	}
 
 	/// @brief 描画処理
 	void UEntity::OnRender() const {
 		for (const auto& component : mComponents) {
-			if (component->IsActive()) {
-				component->OnRender();
-			}
+			if (component->IsActive()) { component->OnRender(); }
 		}
 	}
 
 	///	@brief 描画後の処理
 	void UEntity::OnPostRender() const {
 		for (const auto& component : mComponents) {
-			if (component->IsActive()) {
-				component->OnPostRender();
-			}
+			if (component->IsActive()) { component->OnPostRender(); }
 		}
 	}
 

@@ -60,7 +60,6 @@ namespace Unnamed {
 	private:
 		void MarkDirty(); // 変化が合った場合のみ行列を更新する
 
-	private:
 		Vec3       mLocalPos   = Vec3::zero;
 		Quaternion mLocalRot   = Quaternion::identity;
 		Vec3       mLocalScale = Vec3::one;

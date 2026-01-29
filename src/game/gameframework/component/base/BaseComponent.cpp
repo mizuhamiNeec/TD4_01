@@ -4,44 +4,34 @@ namespace Unnamed {
 	BaseComponent::BaseComponent() = default;
 
 	/// @brief エンティティに取り付けられた際に呼び出されます。
-	void BaseComponent::OnAttached() {
-	}
+	void BaseComponent::OnAttached() {}
 
 	/// @brief エンティティから取り外された際に呼び出されます。
-	void BaseComponent::OnDetached() {
-	}
+	void BaseComponent::OnDetached() {}
 
 	/// @brief 物理エンジンの更新前に呼び出されます。
-	void BaseComponent::PrePhysicsTick(float) {
-	}
+	void BaseComponent::PrePhysicsTick(float) {}
 
 	/// @brief 毎フレーム呼び出されます。
-	void BaseComponent::OnTick(float) {
-	}
+	void BaseComponent::OnTick(float) {}
 
 	/// @brief 物理エンジンの更新後に呼び出されます。
-	void BaseComponent::PostPhysicsTick(float) {
-	}
+	void BaseComponent::PostPhysicsTick(float) {}
 
 	/// @brief 描画前に呼び出されます。
-	void BaseComponent::OnPreRender() const {
-	}
+	void BaseComponent::OnPreRender() const {}
 
 	/// @brief 描画時に呼び出されます。
-	void BaseComponent::OnRender() const {
-	}
+	void BaseComponent::OnRender() const {}
 
 	/// @brief 描画後に呼び出されます。
-	void BaseComponent::OnPostRender() const {
-	}
+	void BaseComponent::OnPostRender() const {}
 
 	/// @brief エディタモードで毎フレーム呼び出されます。
-	void BaseComponent::OnEditorTick(float) {
-	}
+	void BaseComponent::OnEditorTick(float) {}
 
 	/// @brief エディタモードで描画時に呼び出されます。
-	void BaseComponent::OnEditorRender() const {
-	}
+	void BaseComponent::OnEditorRender() const {}
 
 	/// @brief 所有者を設定します。
 	/// @param owner このコンポーネントの所有者
@@ -55,9 +45,7 @@ namespace Unnamed {
 	}
 
 	/// @brief コンポーネントのGUIDを取得します。
-	uint64_t BaseComponent::GetId() const noexcept {
-		return mId;
-	}
+	uint64_t BaseComponent::GetId() const noexcept { return mId; }
 
 	/// @brief 所有者を取得します。
 	BaseEntity* BaseComponent::GetOwner() const {

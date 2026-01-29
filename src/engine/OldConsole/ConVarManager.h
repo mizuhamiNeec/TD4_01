@@ -45,8 +45,10 @@ void ConVarManager::RegisterConVar(
 	float              fMax
 ) {
 	std::lock_guard lock(mMutex);
-	auto conVar = std::make_unique<ConVar<T>>(name, defaultValue, helpString,
-	                                          flags, bMin, fMin, bMax, fMax);
+	auto            conVar = std::make_unique<ConVar<T>>(
+		name, defaultValue, helpString,
+		flags, bMin, fMin, bMax, fMax
+	);
 
 	ConVarCache::GetInstance().CacheConVar(name, conVar.get());
 	mConVars[name] = std::move(conVar);
@@ -58,9 +60,7 @@ T ConVarManager::GetConVarValue(const std::string& name) {
 	auto            it = mConVars.find(name);
 	if (it != mConVars.end()) {
 		auto* var = dynamic_cast<ConVar<T>*>(it->second.get());
-		if (var != nullptr) {
-			return var->GetValue();
-		}
+		if (var != nullptr) { return var->GetValue(); }
 	}
 	Console::Print("ConVar not found: " + name, kConTextColorError);
 	return 0;

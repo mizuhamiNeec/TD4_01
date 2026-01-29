@@ -27,10 +27,12 @@ public:
 	static void CheckMouseCursorLock();
 
 private:
-	static void UpdateMouseButtonState(USHORT             buttonFlags,
-	                                   const std::string& buttonName,
-	                                   USHORT             buttonDownFlag,
-	                                   USHORT             buttonUpFlag);
+	static void UpdateMouseButtonState(
+		USHORT             buttonFlags,
+		const std::string& buttonName,
+		USHORT             buttonDownFlag,
+		USHORT             buttonUpFlag
+	);
 
 	static std::string GetKeyName(UINT virtualKey);
 

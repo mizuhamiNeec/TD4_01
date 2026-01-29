@@ -51,7 +51,6 @@ namespace Unnamed {
 		/// @brief エンティティが破棄されるときに呼び出されます。
 		virtual void OnDestroy() = 0;
 
-	public:
 		/// @brief コンポーネントを追加します。
 		/// @tparam ComponentType 追加するコンポーネントの型
 		/// @tparam Args コンポーネントのコンストラクタに渡す引数の型
@@ -84,9 +83,7 @@ namespace Unnamed {
 			for (const auto& component : mComponents) {
 				if (
 					auto* casted = dynamic_cast<ComponentType*>(component.get())
-				) {
-					return casted;
-				}
+				) { return casted; }
 			}
 			return nullptr;
 		}
@@ -112,7 +109,8 @@ namespace Unnamed {
 			const auto it = std::ranges::find_if(
 				mComponents,
 				[component](
-				const std::unique_ptr<BaseComponent>& comp) {
+				const std::unique_ptr<BaseComponent>& comp
+			) {
 					return comp.get() == component;
 				}
 			);
@@ -126,9 +124,7 @@ namespace Unnamed {
 		/// @brief 所有しているコンポーネントのリストを取得します。
 		/// @return コンポーネントのリスト
 		[[nodiscard]] const std::vector<std::unique_ptr<BaseComponent>>&
-		GetComponents() const {
-			return mComponents;
-		}
+		GetComponents() const { return mComponents; }
 
 		[[nodiscard]] std::string_view GetName() const;
 		void                           SetName(std::string& name);

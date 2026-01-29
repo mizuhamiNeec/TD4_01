@@ -2,8 +2,8 @@
 
 #include "engine/Engine.h"
 #include "engine/Input/InputSystem.h"
-#include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/OldConsole/Console.h"
+#include "engine/unnamed/subsystem/console/Log.h"
 #include "runtime/gui/UiButton.h"
 #include "runtime/gui/UiDocumentManager.h"
 #include "runtime/gui/UiRoot.h"
@@ -182,30 +182,29 @@ void EmptyScene::Render() {
 	// }
 }
 
-void EmptyScene::Shutdown() {
-}
+void EmptyScene::Shutdown() {}
 
 
 void EmptyScene::BindUiCallbacks() const {
-	if (!mActiveDocument) {
-		return;
-	}
+	if (!mActiveDocument) { return; }
 
 	if (auto* widget = mActiveDocument->FindWidgetById(
-		std::string(kPlayButtonId))) {
-		if (auto* button = dynamic_cast<Unnamed::Gui::UiButton*>(widget)) {
-			button->SetOnClick([] {
-				// DO SOMETHING
-			});
+		std::string(kPlayButtonId)
+	)) {
+		if (auto* button = dynamic_cast<UiButton*>(widget)) {
+			button->SetOnClick(
+				[] {
+					// DO SOMETHING
+				}
+			);
 		}
 	}
 
 	if (auto* widget = mActiveDocument->FindWidgetById(
-		std::string(kQuitButtonId))) {
-		if (auto* button = dynamic_cast<Unnamed::Gui::UiButton*>(widget)) {
-			button->SetOnClick([] {
-				Console::SubmitCommand("quit");
-			});
+		std::string(kQuitButtonId)
+	)) {
+		if (auto* button = dynamic_cast<UiButton*>(widget)) {
+			button->SetOnClick([] { Console::SubmitCommand("quit"); });
 		}
 	}
 }

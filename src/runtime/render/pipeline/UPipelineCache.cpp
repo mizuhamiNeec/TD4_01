@@ -35,8 +35,7 @@ namespace Unnamed {
 	UPipelineCache::UPipelineCache(
 		GraphicsDevice* graphicsDevice, RootSignatureCache* rootSignatureCache
 	) : mGraphicsDevice(graphicsDevice),
-	    mRootSignatureCache(rootSignatureCache) {
-	}
+	    mRootSignatureCache(rootSignatureCache) {}
 
 	/// @brief パイプラインステートオブジェクトを取得または作成します
 	/// @param desc パイプラインステートの記述子
@@ -69,11 +68,11 @@ namespace Unnamed {
 		pso.pRootSignature = mRootSignatureCache->Get(desc.rootSignature);
 		pso.VS = {
 			.pShaderBytecode = desc.vs->blob->GetBufferPointer(),
-			.BytecodeLength = desc.vs->blob->GetBufferSize()
+			.BytecodeLength  = desc.vs->blob->GetBufferSize()
 		};
 		pso.PS = {
 			.pShaderBytecode = desc.ps->blob->GetBufferPointer(),
-			.BytecodeLength = desc.ps->blob->GetBufferSize()
+			.BytecodeLength  = desc.ps->blob->GetBufferSize()
 		};
 		//pso.GS                         = {desc.gs->GetBufferPointer(), desc.gs->GetBufferSize()};
 		pso.BlendState            = desc.blend;
@@ -94,12 +93,16 @@ namespace Unnamed {
 		auto& rsDesc = mRootSignatureCache->GetDesc(desc.rootSignature);
 		DumpRootSignatureDesc(rsDesc, "RS before PSO");
 		DumpShaderResources(pso.VS, "VS");
-		ValidateRSvsShader(rsDesc, pso.VS, D3D12_SHADER_VISIBILITY_VERTEX,
-		                   "VS");
+		ValidateRSvsShader(
+			rsDesc, pso.VS, D3D12_SHADER_VISIBILITY_VERTEX,
+			"VS"
+		);
 		if (pso.PS.pShaderBytecode) {
 			DumpShaderResources(pso.PS, "PS");
-			ValidateRSvsShader(rsDesc, pso.PS, D3D12_SHADER_VISIBILITY_PIXEL,
-			                   "PS");
+			ValidateRSvsShader(
+				rsDesc, pso.PS, D3D12_SHADER_VISIBILITY_PIXEL,
+				"PS"
+			);
 		}
 #endif
 
@@ -123,9 +126,7 @@ namespace Unnamed {
 	/// @param handle パイプラインステートオブジェクトのハンドル
 	/// @return パイプラインステートオブジェクトへのポインタ、存在しない場合はnullptr
 	ID3D12PipelineState* UPipelineCache::Get(const PsoHandle handle) const {
-		if (handle.id >= mEntries.size()) {
-			return nullptr;
-		}
+		if (handle.id >= mEntries.size()) { return nullptr; }
 		return mEntries[handle.id].pso.Get();
 	}
 

@@ -5,8 +5,10 @@
 /// @brief パーティクルエミッターを初期化します
 /// @param manager パーティクルマネージャーへのポインタ
 /// @param groupName パーティクルグループ名
-void ParticleEmitter::Init(ParticleManager*   manager,
-                           const std::string& groupName) {
+void ParticleEmitter::Init(
+	ParticleManager*   manager,
+	const std::string& groupName
+) {
 	mParticleManager = manager;
 	mGroupName       = groupName;
 }

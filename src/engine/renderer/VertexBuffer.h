@@ -2,26 +2,28 @@
 
 #include <cassert>
 #include <d3d12.h>
-#include <wrl.h>
 #include <vector>
+#include <wrl.h>
 
 /// @brief 頂点バッファクラス
 template <typename VertexType>
 class VertexBuffer {
 public:
-	VertexBuffer(const Microsoft::WRL::ComPtr<ID3D12Device>& device,
-	             size_t size,
-	             const VertexType* pInitData);
+	VertexBuffer(
+		const Microsoft::WRL::ComPtr<ID3D12Device>& device,
+		size_t                      size,
+		const VertexType*           pInitData
+	);
 	[[nodiscard]] D3D12_VERTEX_BUFFER_VIEW View() const;
 	void Update(const VertexType* pInitData, size_t size);
 	[[nodiscard]] size_t GetSize() const;
 	std::vector<VertexType> GetVertices() const;
 
 private:
-	Microsoft::WRL::ComPtr<ID3D12Device>   mDevice;
-	Microsoft::WRL::ComPtr<ID3D12Resource> mBuffer;
-	D3D12_VERTEX_BUFFER_VIEW               mView;
-	size_t                                 mSize = 0;
+	Microsoft::WRL::ComPtr<ID3D12Device>     mDevice;
+	Microsoft::WRL::ComPtr<ID3D12Resource>   mBuffer;
+	D3D12_VERTEX_BUFFER_VIEW mView;
+	size_t                   mSize = 0;
 };
 
 /// @brief コンストラクタ
@@ -31,8 +33,9 @@ private:
 template <typename VertexType>
 VertexBuffer<VertexType>::VertexBuffer(
 	const Microsoft::WRL::ComPtr<ID3D12Device>& device,
-	const size_t                                size,
-	const VertexType*                           pInitData) :
+	const size_t                size,
+	const VertexType*           pInitData
+) :
 	mDevice(device),
 	mSize(size) {
 	// リソース用のヒープを設定
@@ -104,9 +107,7 @@ void VertexBuffer<
 /// @brief 頂点バッファのサイズを取得します
 /// @return 頂点バッファのサイズ (バイト数)
 template <typename VertexType>
-size_t VertexBuffer<VertexType>::GetSize() const {
-	return mSize;
-}
+size_t VertexBuffer<VertexType>::GetSize() const { return mSize; }
 
 /// @brief 頂点バッファの内容を取得します
 /// @return 頂点データのベクター

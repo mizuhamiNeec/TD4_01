@@ -1,6 +1,6 @@
 ﻿#pragma once
-#include <engine/Components/Base/Component.h>
 #include <engine/Animation/Animation.h>
+#include <engine/Components/Base/Component.h>
 
 class SceneComponent;
 

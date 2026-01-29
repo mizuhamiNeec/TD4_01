@@ -13,9 +13,7 @@ bool Win32App::Init() {
 }
 
 /// @brief Win32アプリケーションクラスをシャットダウンします
-void Win32App::Shutdown() {
-	mWindowManager.Shutdown();
-}
+void Win32App::Shutdown() { mWindowManager.Shutdown(); }
 
 /// @brief イベントをポーリングします
 /// @return アプリケーションを終了する場合はtrue、続行する場合はfalse	
@@ -33,6 +31,4 @@ bool Win32App::PollEvents() {
 
 /// @brief ウィンドウマネージャーを取得します
 /// @return ウィンドウマネージャーへの参照
-WindowManager& Win32App::Windows() {
-	return mWindowManager;
-}
+WindowManager& Win32App::Windows() { return mWindowManager; }

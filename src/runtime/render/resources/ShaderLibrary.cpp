@@ -68,9 +68,7 @@ namespace Unnamed {
 
 		bool         hasName = virtualName != nullptr;
 		std::wstring wVirtualName;
-		if (hasName) {
-			wVirtualName = StrUtil::ToWString(virtualName);
-		}
+		if (hasName) { wVirtualName = StrUtil::ToWString(virtualName); }
 
 		std::array arguments = {
 			hasName ? wVirtualName.c_str() : L"Generated.hlsl", // 仮想ファイル名
@@ -129,7 +127,8 @@ namespace Unnamed {
 	/// @param assetManager アセットマネージャー
 	ShaderLibrary::ShaderLibrary(
 		GraphicsDevice* graphicsDevice, UAssetManager* assetManager
-	) : mGraphicsDevice(graphicsDevice), mAssetManager(assetManager) {
+	) : mGraphicsDevice(graphicsDevice),
+	    mAssetManager(assetManager) {
 		UASSERT(graphicsDevice);
 		UASSERT(assetManager);
 	}
@@ -140,9 +139,7 @@ namespace Unnamed {
 	const ShaderBlob* ShaderLibrary::GetOrCompile(
 		const ShaderVariantKey& key
 	) {
-		if (key.asset == kInvalidAssetID) {
-			return nullptr;
-		}
+		if (key.asset == kInvalidAssetID) { return nullptr; }
 
 		const size_t hash = Hash(key);
 		auto         it   = mCache.find(hash);
@@ -151,14 +148,10 @@ namespace Unnamed {
 		}
 
 		const auto* s = mAssetManager->Get<ShaderAssetData>(key.asset);
-		if (!s) {
-			return nullptr;
-		}
+		if (!s) { return nullptr; }
 
 		auto blob = CompileHLSL(s->hlsl, key);
-		if (!blob) {
-			return nullptr;
-		}
+		if (!blob) { return nullptr; }
 
 		Entry entry;
 		entry.hash            = hash;
@@ -195,9 +188,7 @@ namespace Unnamed {
 
 		// コンパイル
 		auto blob = CompileHLSL(hlsl, key);
-		if (!blob) {
-			return nullptr;
-		}
+		if (!blob) { return nullptr; }
 
 		Entry entry;
 		entry.hash            = h;
@@ -215,9 +206,7 @@ namespace Unnamed {
 		size_t                           h = hashUint64(key.asset);
 		HashCombine(h, hashString(key.entryPoint));
 		HashCombine(h, hashString(key.target));
-		for (auto& define : key.defines) {
-			HashCombine(h, hashString(define));
-		}
+		for (auto& define : key.defines) { HashCombine(h, hashString(define)); }
 		return h;
 	}
 }

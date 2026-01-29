@@ -18,9 +18,7 @@ void DebugHud::ShowFrameRate([[maybe_unused]] const float deltaTime) {
 #ifdef _DEBUG
 	const int flag = ConVarManager::GetConVar("cl_showfps")->GetValueAsInt();
 
-	if (flag == 0) {
-		return;
-	}
+	if (flag == 0) { return; }
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0.0f, 0.0f});
 
@@ -40,9 +38,7 @@ void DebugHud::ShowFrameRate([[maybe_unused]] const float deltaTime) {
 
 	std::string text;
 	float       fps;
-	if (flag == 1) {
-		fps = 1.0f / deltaTime;
-	}
+	if (flag == 1) { fps = 1.0f / deltaTime; }
 	if (flag == 2) {
 		const ImGuiIO io = ImGui::GetIO();
 		fps              = io.Framerate;
@@ -88,5 +84,4 @@ void DebugHud::ShowFrameRate([[maybe_unused]] const float deltaTime) {
 }
 
 /// @brief プレイヤー情報表示
-void DebugHud::ShowPlayerInfo() {
-}
+void DebugHud::ShowPlayerInfo() {}

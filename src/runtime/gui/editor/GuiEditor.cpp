@@ -20,19 +20,16 @@ namespace Unnamed::Gui {
 		ImGuiTreeNodeFlags flags =
 			ImGuiTreeNodeFlags_OpenOnArrow |
 			ImGuiTreeNodeFlags_SpanAvailWidth;
-		
-		if (widget->GetChildren().empty() && widget->GetReferenceChildren().empty()) {
+
+		if (widget->GetChildren().empty() && widget->GetReferenceChildren().
+		    empty()) {
 			flags |= ImGuiTreeNodeFlags_Leaf |
 				ImGuiTreeNodeFlags_NoTreePushOnOpen;
 		}
-		if (isSelected) {
-			flags |= ImGuiTreeNodeFlags_Selected;
-		}
+		if (isSelected) { flags |= ImGuiTreeNodeFlags_Selected; }
 
 		std::string label;
-		if (widget->GetName().empty()) {
-			label = "(unnamed)";
-		} else {
+		if (widget->GetName().empty()) { label = "(unnamed)"; } else {
 			label = std::string(widget->GetName());
 		}
 
@@ -49,18 +46,14 @@ namespace Unnamed::Gui {
 			// 所有している子を描画
 			if (!widget->GetChildren().empty()) {
 				for (const auto& child : widget->GetChildren()) {
-					if (child) {
-						DrawWidgetTreeNode(child.get());
-					}
+					if (child) { DrawWidgetTreeNode(child.get()); }
 				}
 			}
 
 			// 参照している子も描画
 			if (!widget->GetReferenceChildren().empty()) {
 				for (auto* child : widget->GetReferenceChildren()) {
-					if (child) {
-						DrawWidgetTreeNode(child);
-					}
+					if (child) { DrawWidgetTreeNode(child); }
 				}
 			}
 
@@ -77,9 +70,7 @@ namespace Unnamed::Gui {
 		}
 
 		UiWidget* rootWidget = uiRoot.GetRootWidget();
-		if (rootWidget) {
-			DrawWidgetTreeNode(rootWidget);
-		} else {
+		if (rootWidget) { DrawWidgetTreeNode(rootWidget); } else {
 			ImGui::TextUnformatted("No root widget.");
 		}
 
@@ -108,8 +99,10 @@ namespace Unnamed::Gui {
 			anchors.minX, anchors.minY, anchors.maxX, anchors.maxY
 		};
 
-		if (ImGui::SliderFloat4("Anchors (minX,minY,maxX,maxY)", anchorArray,
-		                        0.0f, 1.0f)) {
+		if (ImGui::SliderFloat4(
+			"Anchors (minX,minY,maxX,maxY)", anchorArray,
+			0.0f, 1.0f
+		)) {
 			anchors.minX = anchorArray[0];
 			anchors.minY = anchorArray[1];
 			anchors.maxX = anchorArray[2];
@@ -159,8 +152,8 @@ namespace Unnamed::Gui {
 	}
 
 	void DrawNameInspector(UiWidget* widget) {
-		std::string name = std::string(widget->GetName());
-		char        buffer[128]{};
+		auto name = std::string(widget->GetName());
+		char buffer[128]{};
 		std::snprintf(buffer, sizeof(buffer), "%s", name.c_str());
 
 		if (ImGui::InputText("Name", buffer, sizeof(buffer))) {
@@ -176,8 +169,10 @@ namespace Unnamed::Gui {
 		};
 		int horizontalPolicy = static_cast<int>(sizePolicy.horizontal);
 		int verticalPolicy   = static_cast<int>(sizePolicy.vertical);
-		if (ImGui::Combo("Horizontal Size Policy", &horizontalPolicy,
-		                 policies, IM_ARRAYSIZE(policies))) {
+		if (ImGui::Combo(
+			"Horizontal Size Policy", &horizontalPolicy,
+			policies, IM_ARRAYSIZE(policies)
+		)) {
 			sizePolicy.horizontal =
 				static_cast<UiSizePolicyAxis>(horizontalPolicy);
 			widget->SetSizePolicy(
@@ -185,8 +180,10 @@ namespace Unnamed::Gui {
 				sizePolicy.vertical
 			);
 		}
-		if (ImGui::Combo("Vertical Size Policy", &verticalPolicy,
-		                 policies, IM_ARRAYSIZE(policies))) {
+		if (ImGui::Combo(
+			"Vertical Size Policy", &verticalPolicy,
+			policies, IM_ARRAYSIZE(policies)
+		)) {
 			sizePolicy.vertical =
 				static_cast<UiSizePolicyAxis>(verticalPolicy);
 			widget->SetSizePolicy(
@@ -203,8 +200,10 @@ namespace Unnamed::Gui {
 			constraints.maxWidth, constraints.maxHeight
 		};
 
-		if (ImGui::DragFloat4("Size Constraints (minW,minH,maxW,maxH)",
-		                      constraintArray)) {
+		if (ImGui::DragFloat4(
+			"Size Constraints (minW,minH,maxW,maxH)",
+			constraintArray
+		)) {
 			constraints.minWidth  = constraintArray[0];
 			constraints.minHeight = constraintArray[1];
 			constraints.maxWidth  = constraintArray[2];
@@ -258,27 +257,33 @@ namespace Unnamed::Gui {
 			if (activeDocument) {
 				// UiRootからrootWidgetを取り戻してDocumentに設定
 				std::unique_ptr<UiWidget> tempRoot;
-				bool needsRestore = false;
-				
+				bool                      needsRestore = false;
+
 				if (screenStack && screenStack->GetUiRoot()) {
-					UiWidget* uiRootWidget = screenStack->GetUiRoot()->GetRootWidget();
+					UiWidget* uiRootWidget = screenStack->GetUiRoot()->
+						GetRootWidget();
 					// UiRootの最初の子がactiveDocumentのroot
 					if (uiRootWidget && !uiRootWidget->GetChildren().empty()) {
-						UiWidget* firstChild = uiRootWidget->GetChildren()[0].get();
+						UiWidget* firstChild = uiRootWidget->GetChildren()[0].
+							get();
 						if (firstChild) {
 							// 子を取り出してDocumentに設定
-							tempRoot = screenStack->GetUiRoot()->TakeChild(firstChild);
+							tempRoot = screenStack->GetUiRoot()->TakeChild(
+								firstChild
+							);
 							if (tempRoot) {
-								activeDocument->SetRootWidget(std::move(tempRoot));
+								activeDocument->SetRootWidget(
+									std::move(tempRoot)
+								);
 								needsRestore = true;
 							}
 						}
 					}
 				}
-				
+
 				// 保存実行
 				bool saveSuccess = activeDocument->Save(pathBuffer);
-				
+
 				// rootWidgetをUiRootに戻す
 				if (needsRestore) {
 					tempRoot = activeDocument->TakeRootWidget();
@@ -286,15 +291,15 @@ namespace Unnamed::Gui {
 						screenStack->GetUiRoot()->AddChild(std::move(tempRoot));
 					}
 				}
-				
+
 				if (saveSuccess) {
 					Msg(kChannelNone, "Document saved: {}", pathBuffer);
 				} else {
-					Error(kChannelNone, "Failed to save document: {}", pathBuffer);
+					Error(
+						kChannelNone, "Failed to save document: {}", pathBuffer
+					);
 				}
-			} else {
-				Warning(kChannelNone, "No active document to save");
-			}
+			} else { Warning(kChannelNone, "No active document to save"); }
 		}
 
 		// Load
@@ -306,7 +311,7 @@ namespace Unnamed::Gui {
 
 				// 選択状態をクリア
 				gSelectedWidget = nullptr;
-				
+
 				if (screenStack) {
 					screenStack->Clear();
 					auto screen = std::make_shared<UiScreen>(doc);
@@ -360,7 +365,7 @@ namespace Unnamed::Gui {
 			panel->SetPivot({0.0f, 0.0f});
 			parent->AddChild(std::move(panel));
 		}
-		
+
 		ImGui::SameLine();
 
 		// Button
@@ -373,7 +378,7 @@ namespace Unnamed::Gui {
 			button->SetPivot({0.0f, 0.0f});
 			parent->AddChild(std::move(button));
 		}
-		
+
 		// Layout 系
 		if (ImGui::Button("Add Vertical Layout")) {
 			auto layout = std::make_unique<UiVerticalLayout>();

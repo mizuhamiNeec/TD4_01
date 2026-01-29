@@ -58,9 +58,7 @@ void SkeletalMeshRenderer::OnAttach(Entity& owner) {
 	mBoneMatrices = mBoneMatricesConstantBuffer->GetPtr<BoneMatrices>();
 
 	// ボーン行列を単位行列で初期化
-	for (auto& bone : mBoneMatrices->bones) {
-		bone = Mat4::identity;
-	}
+	for (auto& bone : mBoneMatrices->bones) { bone = Mat4::identity; }
 
 	// TODO: 消す予定
 	{
@@ -140,16 +138,18 @@ void SkeletalMeshRenderer::Update(float deltaTime) {
 				mIsTransitioning      = false;
 				mNextAnimation        = nullptr;
 				mNextAnimationName.clear();
-				mNextAnimationTime    = 0.0f;
+				mNextAnimationTime = 0.0f;
 			} else {
 				// 遷移中は次のアニメーションの時間も進める
 				if (mNextAnimation) {
 					mNextAnimationTime += deltaTime * mAnimationSpeed;
-					
+
 					if (mNextAnimationLoop) {
 						// ループする場合は巻き戻す
-						mNextAnimationTime = std::fmod(mNextAnimationTime,
-						                               mNextAnimation->duration);
+						mNextAnimationTime = std::fmod(
+							mNextAnimationTime,
+							mNextAnimation->duration
+						);
 					} else if (mNextAnimationTime >= mNextAnimation->duration) {
 						// ループしない場合は最大値でクランプ
 						mNextAnimationTime = mNextAnimation->duration;
@@ -164,8 +164,10 @@ void SkeletalMeshRenderer::Update(float deltaTime) {
 
 			if (mIsLooping) {
 				// 最後まで行ったらリピート再生
-				mAnimationTime = std::fmod(mAnimationTime,
-				                           mCurrentAnimation->duration);
+				mAnimationTime = std::fmod(
+					mAnimationTime,
+					mCurrentAnimation->duration
+				);
 			} else if (mAnimationTime >= mCurrentAnimation->duration) {
 				// ループしない場合は停止
 				mAnimationTime = mCurrentAnimation->duration;
@@ -176,9 +178,7 @@ void SkeletalMeshRenderer::Update(float deltaTime) {
 			UpdateBoneMatrices();
 		}
 	}
-	if (mShowBoneDebug) {
-		DrawBoneDebug();
-	}
+	if (mShowBoneDebug) { DrawBoneDebug(); }
 }
 
 /// @brief 描画処理
@@ -186,8 +186,10 @@ void SkeletalMeshRenderer::Update(float deltaTime) {
 void SkeletalMeshRenderer::Render(ID3D12GraphicsCommandList* commandList) {
 	// メッシュが存在しない場合は描画をスキップ
 	if (!mSkeletalMesh) {
-		Console::Print("SkeletalMeshRenderer::Render - メッシュがnullです\n",
-		               kConTextColorError, Channel::RenderSystem);
+		Console::Print(
+			"SkeletalMeshRenderer::Render - メッシュがnullです\n",
+			kConTextColorError, Channel::RenderSystem
+		);
 		return;
 	}
 
@@ -218,44 +220,57 @@ void SkeletalMeshRenderer::Render(ID3D12GraphicsCommandList* commandList) {
 				// VSのb0レジスタにバインド
 				const UINT vsTransformRegister = material->GetShader()->
 					GetResourceRegister("gTransformationMatrix");
-				material->SetConstantBuffer(vsTransformRegister,
-				                            mTransformationMatrixConstantBuffer
-				                            ->GetResource());
+				material->SetConstantBuffer(
+					vsTransformRegister,
+					mTransformationMatrixConstantBuffer
+					->GetResource()
+				);
 			}
 
 			// ボーン変換行列をバインド (通常はb5)
 			const UINT boneMatricesRegister = material->GetShader()->
 				GetResourceRegister("gBoneMatrices");
 			if (boneMatricesRegister < 0xffffffff) {
-				material->SetConstantBuffer(boneMatricesRegister,
-				                            mBoneMatricesConstantBuffer->
-				                            GetResource());
+				material->SetConstantBuffer(
+					boneMatricesRegister,
+					mBoneMatricesConstantBuffer->
+					GetResource()
+				);
 			}
 
 			// PS用の各種パラメータ
 			const UINT materialRegister = material->GetShader()->
 			                                        GetResourceRegister(
-				                                        "gMaterial");
-			material->SetConstantBuffer(materialRegister,
-			                            mMatParamCBV->GetResource());
+				                                        "gMaterial"
+			                                        );
+			material->SetConstantBuffer(
+				materialRegister,
+				mMatParamCBV->GetResource()
+			);
 
 			const UINT dirLightRegister = material->GetShader()->
 			                                        GetResourceRegister(
-				                                        "gDirectionalLight");
+				                                        "gDirectionalLight"
+			                                        );
 			if (dirLightRegister < 0xffffffff) {
-				material->SetConstantBuffer(dirLightRegister,
-				                            mDirectionalLightCb->GetResource());
+				material->SetConstantBuffer(
+					dirLightRegister,
+					mDirectionalLightCb->GetResource()
+				);
 			}
 
 			const UINT cameraRegister = material->GetShader()->
 			                                      GetResourceRegister(
-				                                      "gCamera");
+				                                      "gCamera"
+			                                      );
 			if (cameraRegister < 0xffffffff) {
 				mCameraData->worldPosition = CameraManager::GetActiveCamera()->
 				                             GetViewMat().Inverse().
 				                             GetTranslate();
-				material->SetConstantBuffer(cameraRegister,
-				                            mCameraCb->GetResource());
+				material->SetConstantBuffer(
+					cameraRegister,
+					mCameraCb->GetResource()
+				);
 			}
 
 			// マテリアルのApply（すべてのテクスチャがディスクリプタテーブルでバインドされる）
@@ -296,8 +311,10 @@ void SkeletalMeshRenderer::Render(ID3D12GraphicsCommandList* commandList) {
 void SkeletalMeshRenderer::DrawInspectorImGui() {
 #ifdef _DEBUG
 	// 子クラスのインスペクターUIの描画
-	if (ImGui::CollapsingHeader("SkeletalMeshRenderer",
-	                            ImGuiTreeNodeFlags_DefaultOpen)) {
+	if (ImGui::CollapsingHeader(
+		"SkeletalMeshRenderer",
+		ImGuiTreeNodeFlags_DefaultOpen
+	)) {
 		if (mSkeletalMesh) {
 			ImGui::Checkbox("Show Bone Debug", &mShowBoneDebug);
 
@@ -309,61 +326,60 @@ void SkeletalMeshRenderer::DrawInspectorImGui() {
 				// アニメーション選択
 				const auto& animations = mSkeletalMesh->GetAnimations();
 				if (!animations.empty()) {
-					if (ImGui::BeginCombo("Animation",
-					                      mCurrentAnimationName.c_str())) {
+					if (ImGui::BeginCombo(
+						"Animation",
+						mCurrentAnimationName.c_str()
+					)) {
 						for (const auto& [animName, anim] : animations) {
 							bool isSelected = (mCurrentAnimationName ==
-								animName);
+							                   animName);
 							if (ImGui::Selectable(
-								animName.c_str(), isSelected)) {
-								PlayAnimation(animName, mIsLooping);
-							}
-							if (isSelected) {
-								ImGui::SetItemDefaultFocus();
-							}
+								animName.c_str(), isSelected
+							)) { PlayAnimation(animName, mIsLooping); }
+							if (isSelected) { ImGui::SetItemDefaultFocus(); }
 						}
 						ImGui::EndCombo();
 					}
 
 					// 再生制御
 					if (ImGui::Button(mIsPlaying ? "Pause" : "Play")) {
-						if (mIsPlaying) {
-							PauseAnimation();
-						} else {
+						if (mIsPlaying) { PauseAnimation(); } else {
 							ResumeAnimation();
 						}
 					}
 					ImGui::SameLine();
-					if (ImGui::Button("Stop")) {
-						StopAnimation();
-					}
+					if (ImGui::Button("Stop")) { StopAnimation(); }
 
 					// アニメーション設定
 					ImGui::Checkbox("Loop", &mIsLooping);
-					ImGui::DragFloat("Speed", &mAnimationSpeed, 0.1f, 0.1f,
-					                 5.0f);
+					ImGui::DragFloat(
+						"Speed", &mAnimationSpeed, 0.1f, 0.1f,
+						5.0f
+					);
 
 					if (mCurrentAnimation) {
-						ImGui::Text("Time: %.2f / %.2f", mAnimationTime,
-						            mCurrentAnimation->duration);
+						ImGui::Text(
+							"Time: %.2f / %.2f", mAnimationTime,
+							mCurrentAnimation->duration
+						);
 
 						// アニメーション時間スライダー
 						float normalizedTime = mCurrentAnimation->duration > 0 ?
 							                       mAnimationTime /
 							                       mCurrentAnimation->duration :
 							                       0.0f;
-						if (ImGui::SliderFloat("Progress", &normalizedTime,
-						                       0.0f,
-						                       1.0f)) {
+						if (ImGui::SliderFloat(
+							"Progress", &normalizedTime,
+							0.0f,
+							1.0f
+						)) {
 							mAnimationTime = normalizedTime * mCurrentAnimation
-								->
-								duration;
+							                 ->
+							                 duration;
 							UpdateBoneMatrices();
 						}
 					}
-				} else {
-					ImGui::Text("No animations available");
-				}
+				} else { ImGui::Text("No animations available"); }
 				ImGui::TreePop();
 			}
 
@@ -379,51 +395,77 @@ void SkeletalMeshRenderer::DrawInspectorImGui() {
 				ImGui::Separator();
 
 				ImGui::Text("DirectionalLight");
-				ImGui::ColorEdit4("Color##Directional",
-				                  &mDirectionalLightData->color.x);
-				if (ImGui::DragFloat3("Direction##Directional",
-				                      &mDirectionalLightData->direction.x,
-				                      0.01f)) {
-					mDirectionalLightData->direction.Normalize();
-				}
-				ImGui::DragFloat("Intensity##Directional",
-				                 &mDirectionalLightData->intensity, 0.01f);
+				ImGui::ColorEdit4(
+					"Color##Directional",
+					&mDirectionalLightData->color.x
+				);
+				if (ImGui::DragFloat3(
+					"Direction##Directional",
+					&mDirectionalLightData->direction.x,
+					0.01f
+				)) { mDirectionalLightData->direction.Normalize(); }
+				ImGui::DragFloat(
+					"Intensity##Directional",
+					&mDirectionalLightData->intensity, 0.01f
+				);
 
 				ImGui::Text("CameraForGPU");
-				ImGui::Text("World Position: %f, %f, %f",
-				            mCameraData->worldPosition.x,
-				            mCameraData->worldPosition.y,
-				            mCameraData->worldPosition.z);
+				ImGui::Text(
+					"World Position: %f, %f, %f",
+					mCameraData->worldPosition.x,
+					mCameraData->worldPosition.y,
+					mCameraData->worldPosition.z
+				);
 
 				ImGui::Text("PointLight");
 				ImGui::ColorEdit4("Color##Point", &mPointLightData->color.x);
-				ImGui::DragFloat3("Position##Point",
-				                  &mPointLightData->position.x,
-				                  0.01f);
-				ImGui::DragFloat("Intensity##Point",
-				                 &mPointLightData->intensity,
-				                 0.01f);
-				ImGui::DragFloat("Radius##Point", &mPointLightData->radius,
-				                 0.01f);
-				ImGui::DragFloat("Decay##Point", &mPointLightData->decay,
-				                 0.01f);
+				ImGui::DragFloat3(
+					"Position##Point",
+					&mPointLightData->position.x,
+					0.01f
+				);
+				ImGui::DragFloat(
+					"Intensity##Point",
+					&mPointLightData->intensity,
+					0.01f
+				);
+				ImGui::DragFloat(
+					"Radius##Point", &mPointLightData->radius,
+					0.01f
+				);
+				ImGui::DragFloat(
+					"Decay##Point", &mPointLightData->decay,
+					0.01f
+				);
 
 				ImGui::Text("SpotLight");
 				ImGui::ColorEdit4("Color##Spot", &mSpotLightData->color.x);
-				ImGui::DragFloat3("Position##Spot", &mSpotLightData->position.x,
-				                  0.01f);
-				ImGui::DragFloat("Intensity##Spot", &mSpotLightData->intensity,
-				                 0.01f);
-				ImGui::DragFloat3("Direction##Spot",
-				                  &mSpotLightData->direction.x,
-				                  0.01f);
-				ImGui::DragFloat("Distance##Spot", &mSpotLightData->distance,
-				                 0.01f);
+				ImGui::DragFloat3(
+					"Position##Spot", &mSpotLightData->position.x,
+					0.01f
+				);
+				ImGui::DragFloat(
+					"Intensity##Spot", &mSpotLightData->intensity,
+					0.01f
+				);
+				ImGui::DragFloat3(
+					"Direction##Spot",
+					&mSpotLightData->direction.x,
+					0.01f
+				);
+				ImGui::DragFloat(
+					"Distance##Spot", &mSpotLightData->distance,
+					0.01f
+				);
 				ImGui::DragFloat("Decay##Spot", &mSpotLightData->decay, 0.01f);
-				ImGui::DragFloat("CosAngle##Spot", &mSpotLightData->cosAngle,
-				                 0.01f);
-				ImGui::DragFloat("CosFalloff##Spot",
-				                 &mSpotLightData->cosFalloffStart, 0.01f);
+				ImGui::DragFloat(
+					"CosAngle##Spot", &mSpotLightData->cosAngle,
+					0.01f
+				);
+				ImGui::DragFloat(
+					"CosFalloff##Spot",
+					&mSpotLightData->cosFalloffStart, 0.01f
+				);
 
 				ImGui::TreePop();
 			}
@@ -435,12 +477,16 @@ void SkeletalMeshRenderer::DrawInspectorImGui() {
 			if (ImGui::TreeNode("Skeleton Info")) {
 				ImGui::Text("Bone Count: %zu", skeleton.bones.size());
 				for (size_t i = 0; i < skeleton.bones.size() && i < 10; ++i) {
-					ImGui::Text("Bone %zu: %s", i,
-					            skeleton.bones[i].name.c_str());
+					ImGui::Text(
+						"Bone %zu: %s", i,
+						skeleton.bones[i].name.c_str()
+					);
 				}
 				if (skeleton.bones.size() > 10) {
-					ImGui::Text("... and %zu more bones",
-					            skeleton.bones.size() - 10);
+					ImGui::Text(
+						"... and %zu more bones",
+						skeleton.bones.size() - 10
+					);
 				}
 				ImGui::TreePop();
 			}
@@ -455,7 +501,8 @@ void SkeletalMeshRenderer::DrawInspectorImGui() {
 				if (material) {
 					if (ImGui::TreeNode(
 						(subMesh->GetName() + " - " + material->GetFullName()).
-						c_str())) {
+						c_str()
+					)) {
 						// マテリアルのテクスチャ情報を表示
 						const auto& textures = material->GetTextures();
 						if (!textures.empty()) {
@@ -464,32 +511,35 @@ void SkeletalMeshRenderer::DrawInspectorImGui() {
 
 							for (const auto& [name, filePath] : textures) {
 								if (ImGui::TreeNode(
-									(name + ": " + filePath).c_str())) {
+									(name + ": " + filePath).c_str()
+								)) {
 									ImGui::Text("Slot名: %s", name.c_str());
 									ImGui::Text("ファイルパス: %s", filePath.c_str());
 
 									// テクスチャインデックス情報を表示
 									uint32_t textureIndex = texManager->
 										GetTextureIndexByFilePath(filePath);
-									ImGui::Text("テクスチャインデックス: %u",
-									            textureIndex);
+									ImGui::Text(
+										"テクスチャインデックス: %u",
+										textureIndex
+									);
 
 									// テクスチャのプレビューを表示
 									D3D12_GPU_DESCRIPTOR_HANDLE handle =
 										texManager->GetSrvHandleGPU(filePath);
 									if (handle.ptr != 0) {
 										ImGui::Text(
-											"GPU Handle: %llu", handle.ptr);
+											"GPU Handle: %llu", handle.ptr
+										);
 										ImGui::Image(
 											handle.ptr,
-											ImVec2(150, 150));
+											ImVec2(150, 150)
+										);
 									}
 									ImGui::TreePop();
 								}
 							}
-						} else {
-							ImGui::Text("テクスチャなし");
-						}
+						} else { ImGui::Text("テクスチャなし"); }
 						ImGui::TreePop();
 					}
 				}
@@ -524,9 +574,11 @@ void SkeletalMeshRenderer::SetSkeletalMesh(SkeletalMesh* skeletalMesh) {
 /// @param animationName 再生するアニメーションの名前
 /// @param loop ループ再生するかどうか
 /// @param forceRestart 既に同じアニメーションが再生中でも強制的に再開するか
-void SkeletalMeshRenderer::PlayAnimation(const std::string& animationName,
-                                         bool               loop,
-                                         bool               forceRestart) {
+void SkeletalMeshRenderer::PlayAnimation(
+	const std::string& animationName,
+	bool               loop,
+	bool               forceRestart
+) {
 	if (!mSkeletalMesh) return;
 
 	// 既に同じアニメーションが再生中の場合、forceRestartがfalseならスキップ
@@ -553,9 +605,10 @@ void SkeletalMeshRenderer::PlayAnimation(const std::string& animationName,
 			animationName
 		);
 	} else {
-		Error("SkeletalMeshRenderer",
-		      "アニメーションが見つかりません: {}",
-		      animationName
+		Error(
+			"SkeletalMeshRenderer",
+			"アニメーションが見つかりません: {}",
+			animationName
 		);
 	}
 }
@@ -567,14 +620,13 @@ void SkeletalMeshRenderer::PlayAnimation(const std::string& animationName,
 void SkeletalMeshRenderer::TransitionToAnimation(
 	const std::string& animationName,
 	float              transitionTime,
-	bool               loop) {
+	bool               loop
+) {
 	if (!mSkeletalMesh) return;
 
 	// 既に同じアニメーションが再生中または遷移先に設定されている場合はスキップ
 	if (mCurrentAnimationName == animationName || mNextAnimationName ==
-		animationName) {
-		return;
-	}
+	    animationName) { return; }
 
 	const Animation* animation = mSkeletalMesh->GetAnimation(animationName);
 	if (animation) {
@@ -582,21 +634,18 @@ void SkeletalMeshRenderer::TransitionToAnimation(
 		if (mIsTransitioning) {
 			// 現在のブレンド係数を計算
 			float currentBlendFactor = mTransitionDuration > 0.0f ?
-				                           mTransitionTime / mTransitionDuration :
+				                           mTransitionTime /
+				                           mTransitionDuration :
 				                           1.0f;
 			currentBlendFactor = std::clamp(currentBlendFactor, 0.0f, 1.0f);
-			
-			// 現在のアニメーションと次のアニメーションをブレンドした状態を
-			// 新しい「現在のアニメーション」として扱う
-			// ここでは簡略化のため、より進行している方を現在のアニメーションとする
+
 			if (currentBlendFactor > 0.5f && mNextAnimation) {
-				mCurrentAnimation = mNextAnimation;
+				mCurrentAnimation     = mNextAnimation;
 				mCurrentAnimationName = mNextAnimationName;
-				mAnimationTime = mNextAnimationTime; // 進行中の時間を引き継ぐ
+				mAnimationTime        = mNextAnimationTime; // 進行中の時間を引き継ぐ
 			}
-			// else: currentBlendFactor <= 0.5f の場合は現在のアニメーションをそのまま使用
 		}
-		
+
 		mNextAnimation      = animation;
 		mNextAnimationName  = animationName;
 		mNextAnimationLoop  = loop;
@@ -614,9 +663,10 @@ void SkeletalMeshRenderer::TransitionToAnimation(
 			transitionTime
 		);
 	} else {
-		Error("SkeletalMeshRenderer",
-		      "アニメーションが見つかりません: {}",
-		      animationName
+		Error(
+			"SkeletalMeshRenderer",
+			"アニメーションが見つかりません: {}",
+			animationName
 		);
 	}
 }
@@ -628,15 +678,11 @@ void SkeletalMeshRenderer::StopAnimation() {
 }
 
 /// @brief アニメーションを一時停止
-void SkeletalMeshRenderer::PauseAnimation() {
-	mIsPlaying = false;
-}
+void SkeletalMeshRenderer::PauseAnimation() { mIsPlaying = false; }
 
 /// @brief アニメーションを再開
 void SkeletalMeshRenderer::ResumeAnimation() {
-	if (mCurrentAnimation) {
-		mIsPlaying = true;
-	}
+	if (mCurrentAnimation) { mIsPlaying = true; }
 }
 
 /// @brief アニメーションの再生速度を設定
@@ -647,9 +693,7 @@ void SkeletalMeshRenderer::SetAnimationSpeed(float speed) {
 
 /// @brief アニメーションが再生中かどうかを取得
 /// @return 再生中ならtrue、停止中ならfalse
-bool SkeletalMeshRenderer::IsAnimationPlaying() const {
-	return mIsPlaying;
-}
+bool SkeletalMeshRenderer::IsAnimationPlaying() const { return mIsPlaying; }
 
 /// @brief 現在再生中のアニメーション名を取得
 /// @return アニメーション名
@@ -665,16 +709,13 @@ void SkeletalMeshRenderer::SetAnimationTime(const float t) {
 
 /// @brief アニメーションの現在の再生時間を取得
 /// @return 再生時間（秒）
-float SkeletalMeshRenderer::GetAnimationTime() const {
-	return mAnimationTime;
-}
+float SkeletalMeshRenderer::GetAnimationTime() const { return mAnimationTime; }
 
 /// @brief 変換行列をバインド
 /// @param commandList 描画コマンドリスト
 void SkeletalMeshRenderer::BindTransform(
-	ID3D12GraphicsCommandList* commandList) {
-	commandList;
-}
+	ID3D12GraphicsCommandList* commandList
+) { commandList; }
 
 /// @brief ボーン変換行列を更新
 void SkeletalMeshRenderer::UpdateBoneMatrices() {
@@ -707,9 +748,11 @@ void SkeletalMeshRenderer::UpdateBoneMatrices() {
 		);
 	} else {
 		// 通常の再生
-		CalculateNodeTransform(skeleton.rootNode, Mat4::identity,
-		                       mCurrentAnimation,
-		                       mAnimationTime);
+		CalculateNodeTransform(
+			skeleton.rootNode, Mat4::identity,
+			mCurrentAnimation,
+			mAnimationTime
+		);
 	}
 }
 
@@ -720,17 +763,22 @@ void SkeletalMeshRenderer::UpdateBoneMatrices() {
 /// @param animationTime アニメーションの現在の時間	
 void SkeletalMeshRenderer::CalculateNodeTransform(
 	const Node&      node, const Mat4&      parentTransform,
-	const Animation* animation, const float animationTime) {
+	const Animation* animation, const float animationTime
+) {
 	Mat4 nodeTransform = node.localMat;
 
 	// アニメーションデータがある場合は適用
 	if (animation && animation->nodeAnimations.contains(node.name)) {
 		const NodeAnimation& nodeAnim = animation->nodeAnimations.at(node.name);
 
-		Vec3 translation = CalculateValue(nodeAnim.translate.keyFrames,
-		                                  animationTime);
-		Quaternion rotation = CalculateValue(nodeAnim.rotate.keyFrames,
-		                                     animationTime);
+		Vec3 translation = CalculateValue(
+			nodeAnim.translate.keyFrames,
+			animationTime
+		);
+		Quaternion rotation = CalculateValue(
+			nodeAnim.rotate.keyFrames,
+			animationTime
+		);
 
 		Vec3 scale    = CalculateValue(nodeAnim.scale.keyFrames, animationTime);
 		nodeTransform = Mat4::Affine(
@@ -752,15 +800,18 @@ void SkeletalMeshRenderer::CalculateNodeTransform(
 			if (boneIndex < BoneMatrices::MAX_BONES) {
 				// 元の計算に戻す（補正なし）
 				mBoneMatrices->bones[boneIndex] = skeleton.
-					bones[boneIndex].offsetMatrix * globalTransform;
+				                                  bones[boneIndex].offsetMatrix
+				                                  * globalTransform;
 			}
 		}
 	}
 
 	// 子ノードを再帰的に処理
 	for (const Node& child : node.children) {
-		CalculateNodeTransform(child, globalTransform, animation,
-		                       animationTime);
+		CalculateNodeTransform(
+			child, globalTransform, animation,
+			animationTime
+		);
 	}
 }
 
@@ -791,9 +842,12 @@ void SkeletalMeshRenderer::CalculateNodeTransformBlended(
 
 	if (currentAnim && currentAnim->nodeAnimations.contains(node.name)) {
 		const NodeAnimation& nodeAnim = currentAnim->nodeAnimations.at(
-			node.name);
-		translationCurrent = CalculateValue(nodeAnim.translate.keyFrames,
-		                                    currentTime);
+			node.name
+		);
+		translationCurrent = CalculateValue(
+			nodeAnim.translate.keyFrames,
+			currentTime
+		);
 		rotationCurrent =
 			CalculateValue(nodeAnim.rotate.keyFrames, currentTime);
 		scaleCurrent = CalculateValue(nodeAnim.scale.keyFrames, currentTime);
@@ -816,7 +870,9 @@ void SkeletalMeshRenderer::CalculateNodeTransformBlended(
 	Vec3 translation = Math::Lerp(
 		translationCurrent, translationNext, Math::EaseOutBack(blendFactor)
 	);
-	Vec3 scale = Math::Lerp(scaleCurrent, scaleNext, Math::EaseOutBack(blendFactor));
+	Vec3 scale = Math::Lerp(
+		scaleCurrent, scaleNext, Math::EaseOutBack(blendFactor)
+	);
 
 	// 回転
 	Quaternion rotation = Quaternion::Slerp(
@@ -867,18 +923,26 @@ void SkeletalMeshRenderer::DrawBoneHierarchy(
 
 	// アニメーションデータがある場合は適用
 	if (mCurrentAnimation && mCurrentAnimation->nodeAnimations.contains(
-		node.name)) {
+		    node.name
+	    )) {
 		const NodeAnimation& nodeAnim = mCurrentAnimation->nodeAnimations.at(
-			node.name);
+			node.name
+		);
 
-		Vec3 translation = CalculateValue(nodeAnim.translate.keyFrames,
-		                                  mAnimationTime);
-		Quaternion rotation = CalculateValue(nodeAnim.rotate.keyFrames,
-		                                     mAnimationTime);
+		Vec3 translation = CalculateValue(
+			nodeAnim.translate.keyFrames,
+			mAnimationTime
+		);
+		Quaternion rotation = CalculateValue(
+			nodeAnim.rotate.keyFrames,
+			mAnimationTime
+		);
 		Vec3 scale = CalculateValue(nodeAnim.scale.keyFrames, mAnimationTime);
 
-		nodeTransform = Mat4::Affine(scale, rotation,
-		                             translation);
+		nodeTransform = Mat4::Affine(
+			scale, rotation,
+			translation
+		);
 	}
 
 	// 左手座標系かつ行ベクトルの場合、変換順序を修正
@@ -911,9 +975,7 @@ void SkeletalMeshRenderer::DrawBoneHierarchy(
 				float distance = (worldPos - cameraPos).Length();
 
 				// カメラとの距離が一定以下の場合は描画しない
-				if (distance < Math::HtoM(4.0f)) {
-					return;
-				}
+				if (distance < Math::HtoM(4.0f)) { return; }
 
 				bool  bIsOffscreen = false;
 				float outAngle     = 0.0f;
@@ -937,16 +999,17 @@ void SkeletalMeshRenderer::DrawBoneHierarchy(
 					ImGui::SetNextWindowPos(screenPos);
 					ImGui::SetNextWindowSize({screenSize.x, screenSize.y});
 					ImGui::SetNextWindowBgAlpha(0.0f); // 背景を透明にする
-					ImGui::Begin("##EntityName", nullptr,
-					             ImGuiWindowFlags_NoBackground |
-					             ImGuiWindowFlags_NoTitleBar |
-					             ImGuiWindowFlags_NoResize |
-					             ImGuiWindowFlags_NoMove |
-					             ImGuiWindowFlags_NoSavedSettings |
-					             ImGuiWindowFlags_NoDocking |
-					             ImGuiWindowFlags_NoFocusOnAppearing |
-					             ImGuiWindowFlags_NoInputs |
-					             ImGuiWindowFlags_NoNav
+					ImGui::Begin(
+						"##EntityName", nullptr,
+						ImGuiWindowFlags_NoBackground |
+						ImGuiWindowFlags_NoTitleBar |
+						ImGuiWindowFlags_NoResize |
+						ImGuiWindowFlags_NoMove |
+						ImGuiWindowFlags_NoSavedSettings |
+						ImGuiWindowFlags_NoDocking |
+						ImGuiWindowFlags_NoFocusOnAppearing |
+						ImGuiWindowFlags_NoInputs |
+						ImGuiWindowFlags_NoNav
 					);
 
 					ImVec2      textPos  = {scrPosition.x, scrPosition.y};
@@ -972,9 +1035,7 @@ void SkeletalMeshRenderer::DrawBoneHierarchy(
 		}
 
 		DebugDraw::DrawAxis(nodePos, globalTransform.ToQuaternion());
-	} else {
-		DebugDraw::DrawAxis(nodePos, globalTransform.ToQuaternion());
-	}
+	} else { DebugDraw::DrawAxis(nodePos, globalTransform.ToQuaternion()); }
 
 	for (const Node& child : node.children) {
 		DrawBoneHierarchy(child, globalTransform);

@@ -3,13 +3,13 @@
 #include <vector>
 
 #include <engine/platform/PlatformEventsImpl.h>
-#include <game/gameframework/world/UWorld.h>
 #include <engine/unnamed/subsystem/interface/ISubsystem.h>
 #include <engine/unnamed/subsystem/render/URenderSubsystem.h>
 #include <engine/unnamed/subsystem/window/Win32/Win32WindowSystem.h>
 #include <engine/unnamed/urenderer/GraphicsDevice.h>
 #include <engine/unnamed/urootsignaturecache/RootSignatureCache.h>
 #include <engine/unnamed/uuploadarena/UploadArena.h>
+#include <game/gameframework/world/UWorld.h>
 
 class TimeSystem;
 
@@ -38,7 +38,6 @@ namespace Unnamed {
 		/// @brief シャットダウン
 		void Shutdown() const;
 
-	private:
 		// Subsystems
 		std::vector<std::unique_ptr<ISubsystem>> mSubsystems;
 		ConsoleSystem*                           mConsole;

@@ -12,9 +12,7 @@ namespace ImGuiUtil {
 	/// @brief Vec4型をImVec4型に変換します。
 	/// @param vec 変換するVec4型のベクトル
 	/// @return 変換後のImVec4型のベクトル
-	ImVec4 ToImVec4(const Vec4& vec) {
-		return {vec.x, vec.y, vec.z, vec.w};
-	}
+	ImVec4 ToImVec4(const Vec4& vec) { return {vec.x, vec.y, vec.z, vec.w}; }
 
 	/// @brief ImGuiのダークテーマスタイルを設定します。
 	void StyleColorsDark() {
@@ -127,9 +125,7 @@ namespace ImGuiUtil {
 	}
 
 	/// @brief ImGuiのライトテーマスタイルを設定します。
-	void StyleColorsLight() {
-		ImGui::StyleColorsLight();
-	}
+	void StyleColorsLight() { ImGui::StyleColorsLight(); }
 
 	///	@brief Drag用のスタイルカラーをプッシュします。
 	/// @param bg 通常時の背景色
@@ -156,7 +152,8 @@ namespace ImGuiUtil {
 
 		if (ImGui::CollapsingHeader(
 			("Transform##" + transform.GetOwner()->GetName()).c_str(),
-			ImGuiTreeNodeFlags_DefaultOpen)) {
+			ImGuiTreeNodeFlags_DefaultOpen
+		)) {
 			// Position 編集
 			if (ImGuiWidgets::DragVec3(
 				"Position",
@@ -176,7 +173,8 @@ namespace ImGuiUtil {
 					eulerDegrees,
 					Vec3::zero,
 					vSpeed * 10.0f,
-					"%.3f")
+					"%.3f"
+				)
 			) {
 				// 編集された Euler 角を Quaternion に変換
 				localRot = Quaternion::EulerDegrees(eulerDegrees);
@@ -190,7 +188,8 @@ namespace ImGuiUtil {
 					localScale,
 					Vec3::one,
 					vSpeed,
-					"%.3f")
+					"%.3f"
+				)
 			) {
 				transform.SetLocalScale(localScale);
 				isEditing = true;
@@ -238,36 +237,40 @@ namespace ImGuiUtil {
 		// 色を送る
 		ImGui::PushID("X");
 		PushStyleColorForDrag(xBg, xBgHovered, xBgActive);
-		isEditing |= ImGui::DragFloat(("##X" + name).c_str(), &v.x, vSpeed,
-		                              0.0f,
-		                              0.0f, format);
+		isEditing |= ImGui::DragFloat(
+			("##X" + name).c_str(), &v.x, vSpeed,
+			0.0f,
+			0.0f, format
+		);
 		ImGui::PopStyleColor(components);
 		ImGui::PopID();
 		ImGui::SameLine(0, width);
 
 		ImGui::PushID("Y");
 		PushStyleColorForDrag(yBg, yBgHovered, yBgActive);
-		isEditing |= ImGui::DragFloat(("##Y" + name).c_str(), &v.y, vSpeed,
-		                              0.0f,
-		                              0.0f, format);
+		isEditing |= ImGui::DragFloat(
+			("##Y" + name).c_str(), &v.y, vSpeed,
+			0.0f,
+			0.0f, format
+		);
 		ImGui::PopStyleColor(components);
 		ImGui::PopID();
 		ImGui::SameLine(0, width);
 
 		ImGui::PushID("Z");
 		PushStyleColorForDrag(zBg, zBgHovered, zBgActive);
-		isEditing |= ImGui::DragFloat(("##Z" + name).c_str(), &v.z, vSpeed,
-		                              0.0f,
-		                              0.0f, format);
+		isEditing |= ImGui::DragFloat(
+			("##Z" + name).c_str(), &v.z, vSpeed,
+			0.0f,
+			0.0f, format
+		);
 		ImGui::PopStyleColor(components);
 		ImGui::PopID();
 		ImGui::SameLine(0, width);
 
 		ImGui::Text(name.c_str());
 
-		for (int i = 0; i < components; i++) {
-			ImGui::PopItemWidth();
-		}
+		for (int i = 0; i < components; i++) { ImGui::PopItemWidth(); }
 
 		return isEditing;
 	}

@@ -24,9 +24,7 @@ namespace Unnamed {
 		template <typename T, typename U>
 		ComPtr<T> QueryInterface(const ComPtr<U>& base) {
 			ComPtr<T> result;
-			if (base && SUCCEEDED(base.As(&result))) {
-				return result;
-			}
+			if (base && SUCCEEDED(base.As(&result))) { return result; }
 			return nullptr;
 		}
 	}
@@ -41,14 +39,14 @@ namespace Unnamed {
 		if (info.bEnableDebug) {
 			ComPtr<ID3D12Debug> debugController;
 			if (SUCCEEDED(
-				D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)))) {
-				Msg(kChannel, "D3D12 debug layer enabled.");
-			} else {
+				D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))
+			)) { Msg(kChannel, "D3D12 debug layer enabled."); } else {
 				Warning(kChannel, "D3D12 debug layer is not available.");
 			}
 
 			if (const auto debug1 = QueryInterface<ID3D12Debug1>(
-				debugController)) {
+				debugController
+			)) {
 				debug1->SetEnableGPUBasedValidation(true);
 				Msg(kChannel, "D3D12 GPU-based validation enabled.");
 			} else {
@@ -59,7 +57,8 @@ namespace Unnamed {
 			}
 
 			if (const auto debug3 = QueryInterface<ID3D12Debug3>(
-				debugController)) {
+				debugController
+			)) {
 				debug3->SetEnableSynchronizedCommandQueueValidation(true);
 				Msg(
 					kChannel,
@@ -73,7 +72,8 @@ namespace Unnamed {
 			}
 
 			if (const auto debug5 = QueryInterface<ID3D12Debug5>(
-				debugController)) {
+				debugController
+			)) {
 				debug5->SetEnableAutoName(true); // 自動で名前をつけてくれるらしい...まじすか!?
 				Msg(kChannel, "D3D12 automatic naming enabled.");
 			} else {
@@ -184,7 +184,8 @@ namespace Unnamed {
 
 			if (const auto factory7 = QueryInterface<IDXGIFactory7>(factory)) {
 				mAdapterChangeEvent = CreateEvent(
-					nullptr, FALSE, FALSE, nullptr);
+					nullptr, FALSE, FALSE, nullptr
+				);
 				if (!mAdapterChangeEvent) {
 					Msg(
 						kChannel,
@@ -429,9 +430,7 @@ namespace Unnamed {
 		const uint32_t waitIndex = (mBackBufferIndex + 1) % kFrameBufferCount;
 		WaitGPU(waitIndex);
 		for (const auto& frameContext : mFrameContexts) {
-			if (frameContext.event) {
-				CloseHandle(frameContext.event);
-			}
+			if (frameContext.event) { CloseHandle(frameContext.event); }
 		}
 		mBuffers.clear();
 	}
@@ -500,8 +499,8 @@ namespace Unnamed {
 		frameContext.commandList->RSSetScissorRects(1, &scissorRect);
 
 		return {
-			.cmd = frameContext.commandList.Get(),
-			.alloc = frameContext.commandAllocator.Get(),
+			.cmd       = frameContext.commandList.Get(),
+			.alloc     = frameContext.commandAllocator.Get(),
 			.backIndex = mBackBufferIndex
 		};
 	}
@@ -545,9 +544,7 @@ namespace Unnamed {
 	/// @return フレームごとのリソース
 	GraphicsDevice::PerFrame GraphicsDevice::GetFrameBuffer(
 		const uint32_t frameIndex
-	) const {
-		return mFrameContexts[frameIndex];
-	}
+	) const { return mFrameContexts[frameIndex]; }
 
 	/// @brief 即時コマンドリストの開始
 	/// @return フレームコンテキスト
@@ -569,8 +566,8 @@ namespace Unnamed {
 		);
 
 		return {
-			.cmd = frameContext.commandList.Get(),
-			.alloc = frameContext.commandAllocator.Get(),
+			.cmd       = frameContext.commandList.Get(),
+			.alloc     = frameContext.commandAllocator.Get(),
 			.backIndex = mBackBufferIndex
 		};
 	}
@@ -774,13 +771,17 @@ namespace Unnamed {
 		upload->Unmap(0, nullptr);
 
 		ComPtr<ID3D12CommandAllocator> tempAllocator;
-		THROW(mDevice->CreateCommandAllocator(
-			D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&tempAllocator)));
+		THROW(
+			mDevice->CreateCommandAllocator(
+				D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&tempAllocator))
+		);
 
 		ComPtr<ID3D12GraphicsCommandList> tempCmdList;
-		THROW(mDevice->CreateCommandList(
-			0, D3D12_COMMAND_LIST_TYPE_DIRECT, tempAllocator.Get(), nullptr,
-			IID_PPV_ARGS(&tempCmdList)));
+		THROW(
+			mDevice->CreateCommandList(
+				0, D3D12_COMMAND_LIST_TYPE_DIRECT, tempAllocator.Get(), nullptr,
+				IID_PPV_ARGS(&tempCmdList))
+		);
 
 		tempCmdList->CopyBufferRegion(
 			resource.Get(),
@@ -807,8 +808,10 @@ namespace Unnamed {
 
 		// フェンスを使ってGPUを待つ
 		ComPtr<ID3D12Fence> fence;
-		THROW(mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence
-		)));
+		THROW(
+			mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence
+			))
+		);
 		HANDLE evt = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 		UASSERT(evt && "Failed to create event for fence.");
 		constexpr UINT64 fenceValue = 1;

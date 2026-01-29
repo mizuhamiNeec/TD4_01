@@ -1,11 +1,11 @@
 #pragma once
-#include <json.hpp>
-#include <optional>
-#include <string_view>
-#include <string>
-#include <vector>
-#include <memory>
 #include <fstream>
+#include <json.hpp>
+#include <memory>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <vector>
 
 namespace Unnamed {
 	/// @brief JSON読み込みクラス
@@ -20,8 +20,8 @@ namespace Unnamed {
 		/// @param root JSONルートオブジェクト
 		explicit JsonReader(const nlohmann::json& root)
 			: mStorage(std::make_shared<nlohmann::json>(root)),
-			  mNode(mStorage.get()), mValid(true) {
-		}
+			  mNode(mStorage.get()),
+			  mValid(true) {}
 
 		/// @brief ファイルパスから読み込むコンストラクタ
 		/// @param path JSONファイルのパス
@@ -80,10 +80,8 @@ namespace Unnamed {
 		[[nodiscard]] float GetFloat() const {
 			if (!mNode) { return 0.f; }
 			if (mNode->is_number_float() || mNode->is_number_integer() || mNode
-				->
-				is_number_unsigned()) {
-				return mNode->get<float>();
-			}
+			    ->
+			    is_number_unsigned()) { return mNode->get<float>(); }
 			return 0.f;
 		}
 
@@ -100,13 +98,9 @@ namespace Unnamed {
 
 		[[nodiscard]] bool GetBool() const {
 			if (!mNode) { return false; }
-			if (mNode->is_boolean()) {
-				return mNode->get<bool>();
-			}
+			if (mNode->is_boolean()) { return mNode->get<bool>(); }
 			// フォールバック: 数値から判定
-			if (mNode->is_number()) {
-				return mNode->get<int>() != 0;
-			}
+			if (mNode->is_number()) { return mNode->get<int>() != 0; }
 			return false;
 		}
 
@@ -137,11 +131,13 @@ namespace Unnamed {
 		}
 
 	private:
-		JsonReader(std::shared_ptr<nlohmann::json> storage,
-		           const nlohmann::json*           node, const bool valid)
-			: mStorage(std::move(storage)), mNode(node),
-			  mValid(valid && node != nullptr) {
-		}
+		JsonReader(
+			std::shared_ptr<nlohmann::json> storage,
+			const nlohmann::json*           node, const bool valid
+		)
+			: mStorage(std::move(storage)),
+			  mNode(node),
+			  mValid(valid && node != nullptr) {}
 
 		std::shared_ptr<nlohmann::json> mStorage;
 		const nlohmann::json*           mNode{nullptr};

@@ -33,10 +33,10 @@ namespace UPhysics {
 			dir.Normalize();
 			const Unnamed::Ray ray = {
 				.origin = start,
-				.dir = dir,
+				.dir    = dir,
 				.invDir = 1.0f / dir,
-				.tMin = 0.0f,
-				.tMax = 1e30f
+				.tMin   = 0.0f,
+				.tMax   = 1e30f
 			};
 
 			DebugDraw::DrawAxis(
@@ -131,16 +131,20 @@ namespace UPhysics {
 
 			size_t triCount = triangles.size();
 
-			AddGlobalOffset(triIndices,
-			                static_cast<uint32_t>(mTriangles.size()));
+			AddGlobalOffset(
+				triIndices,
+				static_cast<uint32_t>(mTriangles.size())
+			);
 
-			mBVHs.emplace_back(RegisteredBVH{
-				.nodes = std::move(nodes),
-				.triIndices = std::move(triIndices),
-				.triStart = triStart,
-				.triCount = triCount,
-				.owner = entity
-			});
+			mBVHs.emplace_back(
+				RegisteredBVH{
+					.nodes      = std::move(nodes),
+					.triIndices = std::move(triIndices),
+					.triStart   = triStart,
+					.triCount   = triCount,
+					.owner      = entity
+				}
+			);
 
 			mTriangles.insert(
 				mTriangles.end(),
@@ -153,9 +157,7 @@ namespace UPhysics {
 	/// @brief エンティティの登録を解除する関数
 	/// @param entity 登録解除するエンティティ
 	void Engine::UnregisterEntity(const Entity* entity) {
-		if (mBVHs.empty()) {
-			return;
-		}
+		if (mBVHs.empty()) { return; }
 
 		struct DelRange {
 			size_t start, count;
@@ -165,21 +167,17 @@ namespace UPhysics {
 		std::erase_if(
 			mBVHs,
 			[&](const RegisteredBVH& bvh) {
-				if (bvh.owner != entity) {
-					return false;
-				}
+				if (bvh.owner != entity) { return false; }
 				ranges.emplace_back(bvh.triStart, bvh.triCount);
 				return true;
 			}
 		);
 
-		if (ranges.empty()) {
-			return;
-		}
+		if (ranges.empty()) { return; }
 
-		std::ranges::sort(ranges, [](auto& a, auto& b) {
-			return a.start > b.start;
-		});
+		std::ranges::sort(
+			ranges, [](auto& a, auto& b) { return a.start > b.start; }
+		);
 
 		for (auto& [start, count] : ranges) {
 			mTriangles.erase(
@@ -191,9 +189,7 @@ namespace UPhysics {
 				if (bvh.triStart > start) {
 					bvh.triStart -= count;
 					for (uint32_t& id : bvh.triIndices) {
-						if (id >= start) {
-							id -= static_cast<uint32_t>(count);
-						}
+						if (id >= start) { id -= static_cast<uint32_t>(count); }
 					}
 				}
 			}
@@ -208,8 +204,10 @@ namespace UPhysics {
 		UPhysics::RayCast cast;
 		cast.start  = ray.origin;
 		cast.invDir = ray.invDir;
-		return CastBVH(cast, ray.origin, ray.dir, ray.tMax, outHit, mBVHs,
-		               mTriangles);
+		return CastBVH(
+			cast, ray.origin, ray.dir, ray.tMax, outHit, mBVHs,
+			mTriangles
+		);
 	}
 
 	/// @brief ボックスキャストを行う関数
@@ -230,8 +228,7 @@ namespace UPhysics {
 		float dirLen = dirN.Length();
 		if (dirLen > 1e-6f) {
 			dirN /= dirLen;
-			if (fabs(len - dirLen) < 1e-4f)
-				len = dirLen;
+			if (fabs(len - dirLen) < 1e-4f) len = dirLen;
 		} else {
 			return false; // ゼロ方向なら衝突無し
 		}
@@ -279,9 +276,7 @@ namespace UPhysics {
 		const Unnamed::Box& box,
 		Hit*                outHit
 	) const {
-		if (mBVHs.empty() || mTriangles.empty()) {
-			return false;
-		}
+		if (mBVHs.empty() || mTriangles.empty()) { return false; }
 
 		// ブロードフェーズ：ボックスのAABBと各BVHのルートAABBの重なりをチェック
 		std::vector<const RegisteredBVH*> filtered;
@@ -293,18 +288,14 @@ namespace UPhysics {
 			const Unnamed::AABB& rootBounds = bvh.nodes[0].bounds;
 			// AABB同士の重なり判定
 			if (boxAABB.max.x >= rootBounds.min.x && boxAABB.min.x <= rootBounds
-				.max.x &&
-				boxAABB.max.y >= rootBounds.min.y && boxAABB.min.y <= rootBounds
-				.max.y &&
-				boxAABB.max.z >= rootBounds.min.z && boxAABB.min.z <= rootBounds
-				.max.z) {
-				filtered.emplace_back(&bvh);
-			}
+			    .max.x &&
+			    boxAABB.max.y >= rootBounds.min.y && boxAABB.min.y <= rootBounds
+			    .max.y &&
+			    boxAABB.max.z >= rootBounds.min.z && boxAABB.min.z <= rootBounds
+			    .max.z) { filtered.emplace_back(&bvh); }
 		}
 
-		if (filtered.empty()) {
-			return false;
-		}
+		if (filtered.empty()) { return false; }
 
 		// ナローフェーズ：詳細な重なり判定
 		float    minPenetration = FLT_MAX;
@@ -324,11 +315,13 @@ namespace UPhysics {
 
 				// ノードのAABBとボックスの重なり判定
 				if (!(boxAABB.max.x >= node.bounds.min.x && boxAABB.min.x <=
-					node.bounds.max.x &&
-					boxAABB.max.y >= node.bounds.min.y && boxAABB.min.y <= node.
-					bounds.max.y &&
-					boxAABB.max.z >= node.bounds.min.z && boxAABB.min.z <= node.
-					bounds.max.z)) {
+				      node.bounds.max.x &&
+				      boxAABB.max.y >= node.bounds.min.y && boxAABB.min.y <=
+				      node.
+				      bounds.max.y &&
+				      boxAABB.max.z >= node.bounds.min.z && boxAABB.min.z <=
+				      node.
+				      bounds.max.z)) {
 					continue; // 重なりなし
 				}
 
@@ -346,16 +339,19 @@ namespace UPhysics {
 						Vec3  separationAxis;
 						float penetrationDepth;
 						if (BoxVsTriangleOverlap(
-							box, tri, separationAxis, penetrationDepth)) {
+							box, tri, separationAxis, penetrationDepth
+						)) {
 							if (penetrationDepth < minPenetration) {
 								minPenetration = penetrationDepth;
 								hitTri = triIdx;
 								hitNormal = separationAxis; // already outward
 								hitPos = box.center + hitNormal * (std::min(
-									{
-										box.halfSize.x, box.halfSize.y,
-										box.halfSize.z
-									}) - penetrationDepth * 0.5f);
+									         {
+										         box.halfSize.x,
+										         box.halfSize.y,
+										         box.halfSize.z
+									         }
+								         ) - penetrationDepth * 0.5f);
 								hitEntity = bvh->owner;
 							}
 						}
@@ -404,13 +400,11 @@ namespace UPhysics {
 			const Unnamed::AABB& rootBounds = bvh.nodes[0].bounds;
 			// AABB同士の重なり判定
 			if (boxAABB.max.x >= rootBounds.min.x && boxAABB.min.x <= rootBounds
-				.max.x &&
-				boxAABB.max.y >= rootBounds.min.y && boxAABB.min.y <= rootBounds
-				.max.y &&
-				boxAABB.max.z >= rootBounds.min.z && boxAABB.min.z <= rootBounds
-				.max.z) {
-				filtered.emplace_back(&bvh);
-			}
+			    .max.x &&
+			    boxAABB.max.y >= rootBounds.min.y && boxAABB.min.y <= rootBounds
+			    .max.y &&
+			    boxAABB.max.z >= rootBounds.min.z && boxAABB.min.z <= rootBounds
+			    .max.z) { filtered.emplace_back(&bvh); }
 		}
 
 		if (filtered.empty()) {
@@ -430,11 +424,13 @@ namespace UPhysics {
 
 				// ノードのAABBとボックスの重なり判定
 				if (!(boxAABB.max.x >= node.bounds.min.x && boxAABB.min.x <=
-					node.bounds.max.x &&
-					boxAABB.max.y >= node.bounds.min.y && boxAABB.min.y <= node.
-					bounds.max.y &&
-					boxAABB.max.z >= node.bounds.min.z && boxAABB.min.z <= node.
-					bounds.max.z)) {
+				      node.bounds.max.x &&
+				      boxAABB.max.y >= node.bounds.min.y && boxAABB.min.y <=
+				      node.
+				      bounds.max.y &&
+				      boxAABB.max.z >= node.bounds.min.z && boxAABB.min.z <=
+				      node.
+				      bounds.max.z)) {
 					continue; // 重なりなし
 				}
 
@@ -446,22 +442,26 @@ namespace UPhysics {
 					// 葉ノード：三角形との詳細判定
 					uint32_t first = node.leftFirst;
 					for (uint32_t i = 0; i < node.primCount && hitCount <
-					     maxHits; ++i) {
+					                     maxHits; ++i) {
 						uint32_t triIdx = bvh->triIndices[first + i];
 						const Unnamed::Triangle& tri = mTriangles[triIdx];
 
 						Vec3  separationAxis;
 						float penetrationDepth;
 						if (BoxVsTriangleOverlap(
-							box, tri, separationAxis, penetrationDepth)) {
+							box, tri, separationAxis, penetrationDepth
+						)) {
 							Hit tmpHit;
 							tmpHit.t     = 1.0f;
 							tmpHit.depth = penetrationDepth;
 							tmpHit.pos   = box.center + separationAxis * (
-								std::min({
-									box.halfSize.x, box.halfSize.y,
-									box.halfSize.z
-								}) - penetrationDepth * 0.5f);
+								               std::min(
+									               {
+										               box.halfSize.x,
+										               box.halfSize.y,
+										               box.halfSize.z
+									               }
+								               ) - penetrationDepth * 0.5f);
 							tmpHit.normal    = separationAxis;
 							tmpHit.triIndex  = triIdx;
 							tmpHit.hitEntity = bvh->owner;
@@ -483,9 +483,5 @@ namespace UPhysics {
 	void Engine::AddGlobalOffset(
 		std::vector<uint32_t>& indices,
 		const uint32_t         base
-	) {
-		for (uint32_t& index : indices) {
-			index += base;
-		}
-	}
+	) { for (uint32_t& index : indices) { index += base; } }
 }

@@ -7,8 +7,10 @@
 /// @brief 定数バッファクラス
 class ConstantBuffer {
 public:
-	ConstantBuffer(const Microsoft::WRL::ComPtr<ID3D12Device>& device,
-	               size_t size, std::string name);
+	ConstantBuffer(
+		const Microsoft::WRL::ComPtr<ID3D12Device>& device,
+		size_t                                      size, std::string name
+	);
 	~ConstantBuffer();
 	D3D12_GPU_VIRTUAL_ADDRESS       GetAddress() const;
 	D3D12_CONSTANT_BUFFER_VIEW_DESC ViewDesc() const;
@@ -18,9 +20,7 @@ public:
 	ID3D12Resource* GetResource() const;
 
 	template <typename T>
-	T* GetPtr() {
-		return static_cast<T*>(GetPtr());
-	}
+	T* GetPtr() { return static_cast<T*>(GetPtr()); }
 
 private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> mBuffer;

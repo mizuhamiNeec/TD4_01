@@ -17,7 +17,8 @@ struct RootSignatureDesc {
 class RootSignatureManager2 {
 public:
 	static RootSignature2* GetOrCreateRootSignature(
-		const std::string& key, const RootSignatureDesc& desc);
+		const std::string& key, const RootSignatureDesc& desc
+	);
 	static void Init(ID3D12Device* device);
 	static void Shutdown();
 

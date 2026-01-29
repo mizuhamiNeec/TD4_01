@@ -1,9 +1,9 @@
 #pragma once
 
-#include <string>
-#include <vector>
-#include <unordered_map>
 #include <d3d12.h>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 class SrvManager;
 
@@ -22,7 +22,8 @@ public:
 	void Apply(
 		UINT                            rootParameterIndex,
 		SrvManager*                     srvManager,
-		const std::vector<std::string>& textureOrder);
+		const std::vector<std::string>& textureOrder
+	);
 
 private:
 	std::unordered_map<std::string, std::string> mTextureSlots;

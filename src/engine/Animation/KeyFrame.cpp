@@ -27,8 +27,8 @@ Vec3 CalculateValue(const std::vector<KeyframeVec3>& keyframes, float time) {
 			time <= keyframes[nextIndex].time
 		) {
 			float t = (time - keyframes[index].time) / (keyframes[nextIndex]
-				.
-				time - keyframes[index].time);
+				          .
+				          time - keyframes[index].time);
 			return Math::Lerp(
 				keyframes[index].value,
 				keyframes[nextIndex].value,
@@ -44,8 +44,10 @@ Vec3 CalculateValue(const std::vector<KeyframeVec3>& keyframes, float time) {
 /// @param keyframes キーフレームの配列
 /// @param time 時刻
 /// @return 計算された値
-Quaternion CalculateValue(const std::vector<KeyframeQuaternion>& keyframes,
-                          float                                  time) {
+Quaternion CalculateValue(
+	const std::vector<KeyframeQuaternion>& keyframes,
+	float                                  time
+) {
 	//assert(!keyframes.empty() && "Keyframes must not be empty");
 	if (keyframes.empty()) {
 		Console::Print(
@@ -66,8 +68,8 @@ Quaternion CalculateValue(const std::vector<KeyframeQuaternion>& keyframes,
 			time <= keyframes[nextIndex].time
 		) {
 			float t = (time - keyframes[index].time) / (keyframes[nextIndex]
-				.
-				time - keyframes[index].time);
+				          .
+				          time - keyframes[index].time);
 			return Quaternion::Slerp(
 				keyframes[index].value,
 				keyframes[nextIndex].value,

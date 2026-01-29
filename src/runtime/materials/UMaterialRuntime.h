@@ -81,8 +81,10 @@ namespace Unnamed {
 			const RenderResourceManager* renderResourceManager,
 			uint32_t                     backIndex
 		) const;
-		void Release(RenderResourceManager* renderResourceManager,
-		             ID3D12Fence*           fence, uint64_t value);
+		void Release(
+			RenderResourceManager* renderResourceManager,
+			ID3D12Fence*           fence, uint64_t value
+		);
 
 	private:
 		std::vector<WatchedFile> mWatchedFiles;
@@ -93,8 +95,10 @@ namespace Unnamed {
 
 		void ClearWatch();
 
-		void AddWatch(const UAssetManager* assetManager, AssetID id,
-		              WatchType            type);
+		void AddWatch(
+			const UAssetManager* assetManager, AssetID id,
+			WatchType            type
+		);
 
 		struct TextureSlot {
 			std::string   name;

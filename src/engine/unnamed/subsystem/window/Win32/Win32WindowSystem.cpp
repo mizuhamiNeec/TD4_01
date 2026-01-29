@@ -23,9 +23,7 @@ void Win32WindowSystem::Update(float) {
 	MSG msg;
 	while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
 		if (msg.message == WM_QUIT) {
-			for (const auto& w : mWindows) {
-				w->RequestClose();
-			}
+			for (const auto& w : mWindows) { w->RequestClose(); }
 		}
 		TranslateMessage(&msg);
 		DispatchMessageW(&msg);
@@ -42,9 +40,7 @@ void Win32WindowSystem::Shutdown() {
 /// @param events 登録するプラットフォームイベントインターフェース
 void Win32WindowSystem::RegisterPlatformEvent(
 	Unnamed::IPlatformEvents* events
-) {
-	mPlatformEvents = events;
-}
+) { mPlatformEvents = events; }
 
 /// @brief 新しいウィンドウを作成します
 /// @param windowInfo ウィンドウ情報
@@ -80,45 +76,31 @@ IWindow* Win32WindowSystem::CreateNewWindow(
 /// @brief 登録されているウィンドウのリストを取得します
 /// @return ウィンドウのリスト
 const std::vector<std::unique_ptr<IWindow>>&
-Win32WindowSystem::GetWindows() const {
-	return mWindows;
-}
+Win32WindowSystem::GetWindows() const { return mWindows; }
 
 /// @brief すべてのウィンドウが閉じられたかどうかを取得します
 /// @return すべてのウィンドウが閉じられたならtrue
 bool Win32WindowSystem::AllClosed() const {
-	if (mWindows.empty()) {
-		return true;
-	}
+	if (mWindows.empty()) { return true; }
 	if (
 		!std::ranges::all_of(
 			mWindows,
-			[](const auto& window) {
-				return window->ShouldClose();
-			}
+			[](const auto& window) { return window->ShouldClose(); }
 		)
-	) {
-		return false;
-	}
+	) { return false; }
 	return true;
 }
 
 void Win32WindowSystem::WishShutdown() {
-	for (const auto& w : mWindows) {
-		w->RequestClose();
-	}
+	for (const auto& w : mWindows) { w->RequestClose(); }
 }
 
 /// @brief ウィンドウが非アクティブかどうかを取得します
 /// @return ウィンドウが非アクティブならtrue
 bool Win32WindowSystem::IsInactiveWindow() {
-	if (mWindows.empty()) {
-		return true;
-	}
+	if (mWindows.empty()) { return true; }
 	for (auto& window : mWindows) {
-		if (window) {
-			return window->GetInfo().bIsInactive;
-		}
+		if (window) { return window->GetInfo().bIsInactive; }
 	}
 	return true;
 }
@@ -160,55 +142,51 @@ LRESULT Win32WindowSystem::WndProc(
 	}
 
 	switch (msg) {
-	case WM_NCCREATE: {
-		auto* cs      = reinterpret_cast<CREATESTRUCTW*>(lParam);
-		auto* created = static_cast<Win32Window*>(cs->lpCreateParams);
-		if (created) {
-			mHWndMap[hWnd] = created;
-			SetWindowLongPtrW(
-				hWnd,
-				GWLP_USERDATA,
-				reinterpret_cast<LONG_PTR>(created)
-			);
-		}
-		break;
-	}
-	case WM_SETTINGCHANGE: {
-		w->SetImmersiveDarkMode(WindowsUtils::IsSystemDarkTheme());
-		break;
-	}
-	case WM_ACTIVATE: {
-		w->SetInactive(LOWORD(wParam) == WA_INACTIVE);
-		break;
-	}
-	case WM_CLOSE: {
-		if (w) {
-			w->RequestClose();
-			DestroyWindow(hWnd);
-		}
-		return 0;
-	}
-	case WM_DESTROY: {
-		if (w) {
-			w->RequestClose();
-			mHWndMap.erase(hWnd);
-			if (mHWndMap.empty()) {
-				PostQuitMessage(0);
+		case WM_NCCREATE: {
+			auto* cs      = reinterpret_cast<CREATESTRUCTW*>(lParam);
+			auto* created = static_cast<Win32Window*>(cs->lpCreateParams);
+			if (created) {
+				mHWndMap[hWnd] = created;
+				SetWindowLongPtrW(
+					hWnd,
+					GWLP_USERDATA,
+					reinterpret_cast<LONG_PTR>(created)
+				);
 			}
+			break;
 		}
-		return 0;
-	}
-	case WM_SIZE: {
-		if (w) {
-			const auto width  = LOWORD(lParam);
-			const auto height = HIWORD(lParam);
-			if (width != 0 && height != 0) {
-				w->OnResize(width, height);
+		case WM_SETTINGCHANGE: {
+			w->SetImmersiveDarkMode(WindowsUtils::IsSystemDarkTheme());
+			break;
+		}
+		case WM_ACTIVATE: {
+			w->SetInactive(LOWORD(wParam) == WA_INACTIVE);
+			break;
+		}
+		case WM_CLOSE: {
+			if (w) {
+				w->RequestClose();
+				DestroyWindow(hWnd);
 			}
+			return 0;
 		}
-		break;
-	}
-	default: break;
+		case WM_DESTROY: {
+			if (w) {
+				w->RequestClose();
+				mHWndMap.erase(hWnd);
+				if (mHWndMap.empty()) { PostQuitMessage(0); }
+			}
+			return 0;
+		}
+		case WM_SIZE: {
+			if (w) {
+				const auto width  = LOWORD(lParam);
+				const auto height = HIWORD(lParam);
+				if (width != 0 && height != 0) { w->OnResize(width, height); }
+			}
+			break;
+		}
+		default: break;
 	}
 
 	return DefWindowProcW(hWnd, msg, wParam, lParam);
@@ -216,9 +194,7 @@ LRESULT Win32WindowSystem::WndProc(
 
 /// @brief ウィンドウクラスを一度だけ登録します
 void Win32WindowSystem::RegisterClassOnce() {
-	if (mRegistered) {
-		return;
-	}
+	if (mRegistered) { return; }
 
 	auto classNameW = Unnamed::StrUtil::ToWString(mClassName);
 

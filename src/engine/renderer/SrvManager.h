@@ -42,41 +42,57 @@ public:
 	void DeallocateTexture(uint32_t index); // DeallocateTexture2Dにリダイレクト
 
 	// 連続したスロットの返却
-	void DeallocateConsecutiveTexture2DSlots(uint32_t startIndex,
-	                                         uint32_t count);
-	void DeallocateConsecutiveTextureCubeSlots(uint32_t startIndex,
-	                                           uint32_t count);
+	void DeallocateConsecutiveTexture2DSlots(
+		uint32_t startIndex,
+		uint32_t count
+	);
+	void DeallocateConsecutiveTextureCubeSlots(
+		uint32_t startIndex,
+		uint32_t count
+	);
 
 	// 互換性のためのメソッド
 	void DeallocateConsecutiveTextureSlots(uint32_t startIndex, uint32_t count);
 	// DeallocateConsecutiveTexture2DSlotsにリダイレクト
 
 	ID3D12DescriptorHeap* GetDescriptorHeap() const;
-	void CreateSRVForTexture2D(uint32_t srvIndex, ID3D12Resource* pResource,
-	                           DXGI_FORMAT format, UINT mipLevels) const;
-	void CreateSRVForStructuredBuffer(uint32_t srvIndex,
-	                                  ID3D12Resource* pResource,
-	                                  UINT numElements,
-	                                  UINT structureByteStride) const;
-	void CreateSRVForTextureCube(uint32_t index,
-	                             Microsoft::WRL::ComPtr<ID3D12Resource>
-	                             resource,
-	                             DXGI_FORMAT format, UINT mipLevels);
-	void SetGraphicsRootDescriptorTable(UINT     rootParameterIndex,
-	                                    uint32_t srvIndex) const;
+	void                  CreateSRVForTexture2D(
+		uint32_t    srvIndex, ID3D12Resource* pResource,
+		DXGI_FORMAT format, UINT              mipLevels
+	) const;
+	void CreateSRVForStructuredBuffer(
+		uint32_t        srvIndex,
+		ID3D12Resource* pResource,
+		UINT            numElements,
+		UINT            structureByteStride
+	) const;
+	void CreateSRVForTextureCube(
+		uint32_t index,
+		Microsoft::WRL::ComPtr<ID3D12Resource>
+		resource,
+		DXGI_FORMAT format, UINT mipLevels
+	);
+	void SetGraphicsRootDescriptorTable(
+		UINT     rootParameterIndex,
+		uint32_t srvIndex
+	) const;
 
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(
-		std::uint32_t index) const;
+		std::uint32_t index
+	) const;
 	D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(uint32_t index) const;
 
 	// 連続したスロットの先頭インデックスからGPUハンドルを取得
 	D3D12_GPU_DESCRIPTOR_HANDLE GetConsecutiveGPUHandle(
-		uint32_t startIndex) const;
+		uint32_t startIndex
+	) const;
 
 	uint32_t GetIndexFromCPUHandle(
-		const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle) const;
+		const D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle
+	) const;
 	uint32_t GetIndexFromGPUHandle(
-		const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle) const;
+		const D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle
+	) const;
 
 
 	bool CanAllocate() const;

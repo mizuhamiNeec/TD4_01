@@ -122,8 +122,9 @@ namespace Unnamed {
 				memcpy(
 					mip.bytes.data() + y * mip.rowPitch,
 					im->pixels + y * im->rowPitch,
-					std::min(mip.rowPitch,
-					         static_cast<size_t>(im->rowPitch)
+					std::min(
+						mip.rowPitch,
+						static_cast<size_t>(im->rowPitch)
 					)
 				);
 			}

@@ -11,9 +11,7 @@
 namespace Unnamed {
 	/// @brief 位置を取得します。
 	/// @return 位置
-	Vec3 TransformComponent::Position() const noexcept {
-		return mLocalPos;
-	}
+	Vec3 TransformComponent::Position() const noexcept { return mLocalPos; }
 
 	/// @brief 回転を取得します。
 	/// @return 回転
@@ -23,15 +21,11 @@ namespace Unnamed {
 
 	/// @brief スケールを取得します。
 	/// @return スケール
-	Vec3 TransformComponent::Scale() const noexcept {
-		return mLocalScale;
-	}
+	Vec3 TransformComponent::Scale() const noexcept { return mLocalScale; }
 
 	/// @brief 親の TransformComponent を取得します。
 	/// @return 親の TransformComponent。親がいない場合は nullptr を返します。
-	TransformComponent* TransformComponent::Parent() const {
-		return mParent;
-	}
+	TransformComponent* TransformComponent::Parent() const { return mParent; }
 
 	/// @brief ワールド行列を取得します。
 	/// @return ワールド行列
@@ -79,24 +73,19 @@ namespace Unnamed {
 
 		// 新しい親を設定
 		mParent = newParent;
-		if (mParent) {
-			mParent->mChildren.emplace_back(this);
-		}
+		if (mParent) { mParent->mChildren.emplace_back(this); }
 
 		MarkDirty();
 	}
 
 	/// @brief コンポーネントがエンティティに取り付けられたときに呼び出されます。
-	void TransformComponent::OnAttached() {
-	}
+	void TransformComponent::OnAttached() {}
 
 	/// @brief コンポーネントがエンティティから取り外されたときに呼び出されます。
-	void TransformComponent::OnDetached() {
-	}
+	void TransformComponent::OnDetached() {}
 
 	/// @brief 物理演算の前に呼び出されます。
-	void TransformComponent::PrePhysicsTick(float) {
-	}
+	void TransformComponent::PrePhysicsTick(float) {}
 
 	/// @brief 毎フレーム呼び出されます。
 	void TransformComponent::OnTick(float) {
@@ -106,17 +95,17 @@ namespace Unnamed {
 				Mat4::FromQuaternion(mLocalRot) *
 				Mat4::Translate(mLocalPos);
 
-			if (mParent) {
-				mWorldMat = localMat * mParent->WorldMat();
-			} else {
+			if (mParent) { mWorldMat = localMat * mParent->WorldMat(); } else {
 				mWorldMat = localMat;
 			}
 
 			const Mat4 world     = mWorldMat;
 			const Mat4 worldInvT = world.Inverse().Transpose();
 
-			auto FillCols3 = [](float outCol0[4], float       outCol1[4],
-			                    float outCol2[4], const Mat4& m) {
+			auto FillCols3 = [](
+				float outCol0[4], float       outCol1[4],
+				float outCol2[4], const Mat4& m
+			) {
 				// col0
 				outCol0[0] = m.m[0][0];
 				outCol0[1] = m.m[1][0];
@@ -150,20 +139,16 @@ namespace Unnamed {
 	}
 
 	/// @brief 物理演算の後に呼び出されます。
-	void TransformComponent::PostPhysicsTick(float) {
-	}
+	void TransformComponent::PostPhysicsTick(float) {}
 
 	/// @brief レンダリングの前に呼び出されます。
-	void TransformComponent::OnPreRender() const {
-	}
+	void TransformComponent::OnPreRender() const {}
 
 	/// @brief レンダリング時に呼び出されます。
-	void TransformComponent::OnRender() const {
-	}
+	void TransformComponent::OnRender() const {}
 
 	/// @brief レンダリングの後に呼び出されます。
-	void TransformComponent::OnPostRender() const {
-	}
+	void TransformComponent::OnPostRender() const {}
 
 	/// @brief コンポーネントの状態をシリアライズします。
 	/// @param writer JSON ライター
@@ -199,25 +184,17 @@ namespace Unnamed {
 	/// @param reader JSON リーダー
 	void TransformComponent::Deserialize(const JsonReader& reader) {
 		if (
-			auto p = reader.Read<std::vector<float>>("pos");
-			p && p->size() == 3
-		) {
-			mLocalPos = {(*p)[0], (*p)[1], (*p)[2]};
-		}
+			auto p = reader.Read<std::vector<float>>("pos"); p && p->size() == 3
+		) { mLocalPos = {(*p)[0], (*p)[1], (*p)[2]}; }
 
 		if (
-			auto r = reader.Read<std::vector<float>>("rot");
-			r && r->size() == 4
-		) {
-			mLocalRot = {(*r)[0], (*r)[1], (*r)[2], (*r)[3]};
-		}
+			auto r = reader.Read<std::vector<float>>("rot"); r && r->size() == 4
+		) { mLocalRot = {(*r)[0], (*r)[1], (*r)[2], (*r)[3]}; }
 
 		if (
 			auto s = reader.Read<std::vector<float>>("scale");
 			s && s->size() == 3
-		) {
-			mLocalScale = {(*s)[0], (*s)[1], (*s)[2]};
-		}
+		) { mLocalScale = {(*s)[0], (*s)[1], (*s)[2]}; }
 
 		// if (
 		// 	auto parentId = reader.Read<uint64_t>("parentId");
@@ -253,9 +230,7 @@ namespace Unnamed {
 	/// @brief レンダー用のインスタンスキャッシュを取得します。
 	/// @return レンダー用のインスタンスキャッシュ
 	const TransformComponent::RenderInstanceCache&
-	TransformComponent::RenderCache() const noexcept {
-		return mRenderCache;
-	}
+	TransformComponent::RenderCache() const noexcept { return mRenderCache; }
 
 	/// @brief ワールドのリビジョン番号を取得します。
 	/// @return ワールドのリビジョン番号
@@ -266,8 +241,6 @@ namespace Unnamed {
 	/// @brief 自身と子孫の TransformComponent をすべてDirty状態にします。
 	void TransformComponent::MarkDirty() {
 		mIsDirty = true;
-		for (auto* child : mChildren) {
-			child->MarkDirty();
-		}
+		for (auto* child : mChildren) { child->MarkDirty(); }
 	}
 }

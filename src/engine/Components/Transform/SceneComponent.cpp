@@ -1,17 +1,14 @@
 #include "engine/Components/Transform/SceneComponent.h"
 
-#include <engine/ImGui/ImGuiUtil.h>
 #include <engine/Entity/Entity.h>
+#include <engine/ImGui/ImGuiUtil.h>
 
 /// @brief 更新処理
 /// @param deltaTime 前フレームからの経過時間（秒）
-void SceneComponent::Update([[maybe_unused]] float deltaTime) {
-}
+void SceneComponent::Update([[maybe_unused]] float deltaTime) {}
 
 /// @brief ローカル位置、回転、スケールの取得・設定
-const Vec3& SceneComponent::GetLocalPos() const {
-	return mPosition;
-}
+const Vec3& SceneComponent::GetLocalPos() const { return mPosition; }
 
 /// @brief ローカル位置の設定
 void SceneComponent::SetLocalPos(const Vec3& newPosition) {
@@ -20,9 +17,7 @@ void SceneComponent::SetLocalPos(const Vec3& newPosition) {
 }
 
 /// @brief ローカル回転の取得・設定
-const Quaternion& SceneComponent::GetLocalRot() const {
-	return mRotation;
-}
+const Quaternion& SceneComponent::GetLocalRot() const { return mRotation; }
 
 /// @brief ローカル回転の設定
 /// @param newRotation 新しいローカル回転 
@@ -33,9 +28,7 @@ void SceneComponent::SetLocalRot(const Quaternion& newRotation) {
 
 /// @brief ローカルスケールの取得・設定
 /// @return ローカルスケール
-const Vec3& SceneComponent::GetLocalScale() const {
-	return mScale;
-}
+const Vec3& SceneComponent::GetLocalScale() const { return mScale; }
 
 /// @brief ローカルスケールの設定
 /// @param newScale 新しいローカルスケール
@@ -144,9 +137,7 @@ void SceneComponent::SetWorldScale(const Vec3& newScale) {
 /// @brief ローカル変換行列の取得
 /// @return ローカル変換行列
 const Mat4& SceneComponent::GetLocalMat() const {
-	if (mIsDirty) {
-		RecalculateMat();
-	}
+	if (mIsDirty) { RecalculateMat(); }
 	return mLocalMat;
 }
 
@@ -181,15 +172,11 @@ void SceneComponent::MarkDirty() const {
 
 /// @brief 所有者エンティティの取得
 /// @return 所有者エンティティ
-Entity* SceneComponent::GetOwner() const {
-	return mOwner;
-}
+Entity* SceneComponent::GetOwner() const { return mOwner; }
 
 /// @brief 変換情報が変更されたかどうかを取得します。
 /// @return 変換情報が変更されたかどうか
-bool SceneComponent::IsDirty() const {
-	return mIsDirty;
-}
+bool SceneComponent::IsDirty() const { return mIsDirty; }
 
 /// @brief 変換情報の変更フラグを設定します。
 /// @param newIsDirty 新しい変更フラグの値

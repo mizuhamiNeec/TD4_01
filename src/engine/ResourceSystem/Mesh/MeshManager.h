@@ -14,8 +14,9 @@ class TexManager;
 /// @brief メッシュマネージャークラス
 class MeshManager {
 public:
-	void Init(ID3D12Device*    device, ShaderManager* shaderManager,
-	          MaterialManager* materialManager
+	void Init(
+		ID3D12Device*    device, ShaderManager* shaderManager,
+		MaterialManager* materialManager
 	);
 	void Shutdown();
 
@@ -33,26 +34,36 @@ public:
 	SubMesh* CreateSubMesh(const std::string& name);
 
 private:
-	void ProcessStaticMeshNode(const aiNode* node, const aiScene* scene,
-	                           StaticMesh*   staticMesh);
-	void ProcessSkeletalMeshNode(aiNode*       node, const aiScene* scene,
-	                             SkeletalMesh* skeletalMesh);
+	void ProcessStaticMeshNode(
+		const aiNode* node, const aiScene* scene,
+		StaticMesh*   staticMesh
+	);
+	void ProcessSkeletalMeshNode(
+		aiNode*       node, const aiScene* scene,
+		SkeletalMesh* skeletalMesh
+	);
 
-	SubMesh* ProcessMesh(const aiMesh* mesh, const aiScene* scene,
-	                     StaticMesh* staticMesh, const aiMatrix4x4& transform);
+	SubMesh* ProcessMesh(
+		const aiMesh* mesh, const aiScene*           scene,
+		StaticMesh*   staticMesh, const aiMatrix4x4& transform
+	);
 
 	// スケルタルメッシュ専用の処理関数
-	SubMesh* ProcessSkeletalMesh(const aiMesh*      mesh, const aiScene* scene,
-	                             SkeletalMesh*      skeletalMesh,
-	                             const aiMatrix4x4& transform);
+	SubMesh* ProcessSkeletalMesh(
+		const aiMesh*      mesh, const aiScene* scene,
+		SkeletalMesh*      skeletalMesh,
+		const aiMatrix4x4& transform
+	);
 
 	// スケルトン読み込み関数
 	static Skeleton LoadSkeleton(const aiScene* scene);
 	static Node     LoadNode(const aiNode* aiNode);
 
 	// アニメーション読み込み関数
-	static void LoadAnimations(const aiScene* scene,
-	                           SkeletalMesh*  skeletalMesh);
+	static void LoadAnimations(
+		const aiScene* scene,
+		SkeletalMesh*  skeletalMesh
+	);
 	static Animation LoadAnimation(const aiAnimation* aiAnim);
 
 	TexManager*      mTexManager      = nullptr;

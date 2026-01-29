@@ -12,9 +12,7 @@
 EditorWindow::EditorWindow() = default;
 
 /// @brief デストラクタ
-EditorWindow::~EditorWindow() {
-	CloseWindow(mHWnd);
-}
+EditorWindow::~EditorWindow() { CloseWindow(mHWnd); }
 
 /// @brief ウィンドウを作成する
 /// @param info ウィンドウ情報
@@ -37,7 +35,8 @@ bool EditorWindow::Create(const WindowInfo info) {
 	if (!RegisterClassEx(&wc)) {
 		Console::Print(
 			"Failed to register window class. Error: " + std::to_string(
-				GetLastError()) + "\n",
+				GetLastError()
+			) + "\n",
 			kConTextColorError
 		);
 		return false;
@@ -52,7 +51,7 @@ bool EditorWindow::Create(const WindowInfo info) {
 	mHWnd = CreateWindowEx(
 		mInfo.exStyle, // 拡張ウィンドウスタイル
 		wc.lpszClassName,
-		Unnamed::StrUtil::ToWString(mInfo.title).c_str(),              // ウィンドウタイトル
+		Unnamed::StrUtil::ToWString(mInfo.title).c_str(),     // ウィンドウタイトル
 		mInfo.style,                                          // ウィンドウスタイル
 		CW_USEDEFAULT, CW_USEDEFAULT,                         // ウィンドウの初期位置
 		wrc.right - wrc.left,                                 // ウィンドウの幅
@@ -64,8 +63,10 @@ bool EditorWindow::Create(const WindowInfo info) {
 	);
 
 	if (!mHWnd) {
-		Console::Print("Failed to create window.\n", kConTextColorError,
-		               Channel::Engine);
+		Console::Print(
+			"Failed to create window.\n", kConTextColorError,
+			Channel::Engine
+		);
 		return false;
 	}
 
@@ -75,8 +76,10 @@ bool EditorWindow::Create(const WindowInfo info) {
 	// このウィンドウにフォーカス
 	SetFocus(mHWnd);
 
-	Console::Print("Complete create MainWindow.\n", kConTextColorCompleted,
-	               Channel::Engine);
+	Console::Print(
+		"Complete create MainWindow.\n", kConTextColorCompleted,
+		Channel::Engine
+	);
 
 	return true;
 }
@@ -113,6 +116,4 @@ LRESULT EditorWindow::WindowProc(
 	const UINT   msg,
 	const WPARAM wParam,
 	const LPARAM lParam
-) {
-	return DefWindowProc(hWnd, msg, wParam, lParam);
-}
+) { return DefWindowProc(hWnd, msg, wParam, lParam); }

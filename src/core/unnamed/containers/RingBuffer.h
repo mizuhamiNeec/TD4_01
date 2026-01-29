@@ -12,8 +12,9 @@ namespace Unnamed {
 	class RingBuffer {
 	public:
 		/// @brief デフォルトコンストラクタ
-		RingBuffer() : mHead(0), mTail(0), mSize(0) {
-		}
+		RingBuffer() : mHead(0),
+		               mTail(0),
+		               mSize(0) {}
 
 		/// @brief バッファに要素を追加する
 		/// @param value 追加する要素
@@ -22,14 +23,12 @@ namespace Unnamed {
 		bool Push(const T& value) {
 			std::lock_guard lock(mMutex);
 
-			if (mSize == Capacity) {
-				mTail = (mTail + 1) % Capacity;
-			} else {
+			if (mSize == Capacity) { mTail = (mTail + 1) % Capacity; } else {
 				++mSize;
 			}
 
 			mBuffer[mHead] = value;
-			mHead = (mHead + 1) % Capacity;
+			mHead          = (mHead + 1) % Capacity;
 			return true;
 		}
 
@@ -38,11 +37,9 @@ namespace Unnamed {
 		/// @return 成功した場合true、バッファが空の場合false
 		bool Pop(T& out) {
 			std::lock_guard lock(mMutex);
-			if (mSize == 0) {
-				return false;
-			}
+			if (mSize == 0) { return false; }
 
-			out = mBuffer[mTail];
+			out   = mBuffer[mTail];
 			mTail = (mTail + 1) % Capacity;
 			--mSize;
 			return true;
@@ -81,9 +78,7 @@ namespace Unnamed {
 		/// @return 最後に書き込まれたインデックス
 		[[nodiscard]] std::optional<size_t> LastWrittenIndex() const {
 			std::lock_guard lock(mMutex);
-			if (mSize == 0) {
-				return std::nullopt;
-			}
+			if (mSize == 0) { return std::nullopt; }
 			return (mHead + Capacity - 1) % Capacity;
 		}
 
@@ -95,7 +90,9 @@ namespace Unnamed {
 			/// @param index 開始インデックス
 			/// @param count 反復回数
 			Iterator(const RingBuffer* buffer, size_t index, size_t count)
-	   : mBuffer(buffer), mIndex(index), mCount(count) {}
+				: mBuffer(buffer),
+				  mIndex(index),
+				  mCount(count) {}
 
 			const T& operator*() const { return mBuffer->mBuffer[mIndex]; }
 
@@ -105,7 +102,9 @@ namespace Unnamed {
 				return *this;
 			}
 
-			bool operator!=(const Iterator& other) const { return mCount != other.mCount; }
+			bool operator!=(const Iterator& other) const {
+				return mCount != other.mCount;
+			}
 
 			[[nodiscard]] size_t Index() const { return mIndex; }
 

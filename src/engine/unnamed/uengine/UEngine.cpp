@@ -64,9 +64,7 @@ namespace Unnamed {
 					"Subsystem initialized: {}",
 					subsystem->GetName()
 				);
-			} else {
-				UASSERT(false && "Failed to initialize subsystem");
-			}
+			} else { UASSERT(false && "Failed to initialize subsystem"); }
 		}
 
 		// サブシステムをメンバに持っておく
@@ -444,9 +442,11 @@ namespace Unnamed {
 
 			// クォータニオンを生成（回転順序: ヨー → ピッチ）
 			Quaternion yawRotation = Quaternion::AxisAngle(
-				Vec3::up, yaw * Math::deg2Rad);
+				Vec3::up, yaw * Math::deg2Rad
+			);
 			Quaternion pitchRotation = Quaternion::AxisAngle(
-				Vec3::right, pitch * Math::deg2Rad);
+				Vec3::right, pitch * Math::deg2Rad
+			);
 
 			// 回転を合成して設定
 			Quaternion finalRotation = yawRotation * pitchRotation;
@@ -513,9 +513,7 @@ namespace Unnamed {
 	void UEngine::Shutdown() const {
 		mPlatformEvents->RemoveListener(mInputSystem);
 
-		for (const auto& subsystem : mSubsystems) {
-			subsystem->Shutdown();
-		}
+		for (const auto& subsystem : mSubsystems) { subsystem->Shutdown(); }
 
 		mGraphicsDevice->Shutdown();
 

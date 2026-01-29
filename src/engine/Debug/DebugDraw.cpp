@@ -1,7 +1,7 @@
 #include "engine/Debug/DebugDraw.h"
 
-#include "engine/Camera/CameraManager.h"
 #include "engine/Engine.h"
+#include "engine/Camera/CameraManager.h"
 
 /// @brief 線を描画
 /// @param a 線の始点
@@ -15,9 +15,9 @@ void DebugDraw::DrawLine(const Vec3 a, const Vec3 b, const Vec4& color) {
 /// @param position レイの始点
 /// @param dir レイの方向と長さ
 /// @param color レイの色
-void DebugDraw::DrawRay(const Vec3& position, const Vec3& dir, const Vec4& color) {
-	mLine->AddLine(position, position + dir, color);
-}
+void DebugDraw::DrawRay(
+	const Vec3& position, const Vec3& dir, const Vec4& color
+) { mLine->AddLine(position, position + dir, color); }
 
 /// @brief 軸を描画
 /// @param position 軸の位置
@@ -30,9 +30,7 @@ void DebugDraw::DrawAxis(const Vec3& position, const Quaternion& orientation) {
 	float distance = (position - cameraPos).Length();
 
 	// カメラとの距離が一定以下の場合は軸を描画しない
-	if (distance < Math::HtoM(4.0f)) {
-		return;
-	}
+	if (distance < Math::HtoM(4.0f)) { return; }
 
 	// スクリーン上で一定の長さに見えるように、
 	// カメラからの距離に比例して実際の長さを調整
@@ -126,9 +124,7 @@ void DebugDraw::DrawArc(
 ) {
 	float arcSpan = Math::DeltaAngle(startAngle, endAngle);
 
-	if (arcSpan <= 0) {
-		arcSpan += 360.0f;
-	}
+	if (arcSpan <= 0) { arcSpan += 360.0f; }
 
 	float angleStep = (arcSpan / static_cast<float>(arcSegments)) *
 	                  Math::deg2Rad;
@@ -145,7 +141,7 @@ void DebugDraw::DrawArc(
 	for (int i = 0; i < arcSegments; i++) {
 		const float stepStart = angleStep * static_cast<float>(i) + stepOffset;
 		const float stepEnd   = angleStep * static_cast<float>(i + 1) +
-		                      stepOffset;
+		                        stepOffset;
 
 		lineStart.x = std::cos(stepStart);
 		lineStart.y = std::sin(stepStart);
@@ -164,20 +160,14 @@ void DebugDraw::DrawArc(
 		lineStart += position;
 		lineEnd   += position;
 
-		if (i == 0) {
-			arcStart = lineStart;
-		}
+		if (i == 0) { arcStart = lineStart; }
 
-		if (i == arcSegments - 1) {
-			arcEnd = lineEnd;
-		}
+		if (i == arcSegments - 1) { arcEnd = lineEnd; }
 
 		DrawLine(lineStart, lineEnd, color);
 	}
 
-	if (drawChord) {
-		DrawLine(arcStart, arcEnd, color);
-	}
+	if (drawChord) { DrawLine(arcStart, arcEnd, color); }
 	if (drawSector) {
 		DrawLine(arcStart, arcOrigin, color);
 		DrawLine(arcEnd, arcOrigin, color);
@@ -245,8 +235,10 @@ void DebugDraw::DrawQuad(
 /// @param orientation 四角形の向き
 /// @param extent 四角形の幅と高さ
 /// @param color 四角形の色
-void DebugDraw::DrawRect(const Vec3& position, const Quaternion& orientation,
-                     const Vec2& extent, const Vec4&         color) {
+void DebugDraw::DrawRect(
+	const Vec3& position, const Quaternion& orientation,
+	const Vec2& extent, const Vec4&         color
+) {
 	const Vec3 rightOffset = Vec3::right * extent.x * 0.5f;
 	const Vec3 upOffset    = Vec3::up * extent.y * 0.5f;
 
@@ -299,9 +291,7 @@ void DebugDraw::DrawSphere(
 	const Vec3& position, const Quaternion& orientation, float radius,
 	const Vec4& color, int                  segments
 ) {
-	if (radius <= 0) {
-		radius = 0.01f;
-	}
+	if (radius <= 0) { radius = 0.01f; }
 	segments = std::max(segments, 2);
 
 	const int doubleSegments = segments * 2;
@@ -312,7 +302,8 @@ void DebugDraw::DrawSphere(
 		DrawCircle(
 			position,
 			orientation * Quaternion::Euler(
-				0, meridianStep * static_cast<float>(i) * Math::deg2Rad, 0),
+				0, meridianStep * static_cast<float>(i) * Math::deg2Rad, 0
+			),
 			radius,
 			color,
 			doubleSegments
@@ -359,14 +350,22 @@ void DebugDraw::DrawBox(
 	DrawRect(position - offsetZ, orientation, {size.x, size.y}, color);
 	DrawRect(position + offsetZ, orientation, {size.x, size.y}, color);
 
-	DrawLine(position + (pointA - offsetZ), position + (pointA + offsetZ),
-	         color);
-	DrawLine(position + (pointB - offsetZ), position + (pointB + offsetZ),
-	         color);
-	DrawLine(position + (pointC - offsetZ), position + (pointC + offsetZ),
-	         color);
-	DrawLine(position + (pointD - offsetZ), position + (pointD + offsetZ),
-	         color);
+	DrawLine(
+		position + (pointA - offsetZ), position + (pointA + offsetZ),
+		color
+	);
+	DrawLine(
+		position + (pointB - offsetZ), position + (pointB + offsetZ),
+		color
+	);
+	DrawLine(
+		position + (pointC - offsetZ), position + (pointC + offsetZ),
+		color
+	);
+	DrawLine(
+		position + (pointD - offsetZ), position + (pointD + offsetZ),
+		color
+	);
 }
 
 /// @brief 円柱を描画
@@ -395,7 +394,8 @@ void DebugDraw::DrawCylinder(
 	const Vec3 topPosition  = basePosition + localUp * height;
 
 	const Quaternion circleOrientation = orientation * Quaternion::Euler(
-		                                     90.0f * Math::deg2Rad, 0, 0);
+		                                     90.0f * Math::deg2Rad, 0, 0
+	                                     );
 
 	const Vec3 pointA = basePosition + localRight * radius;
 	const Vec3 pointB = basePosition + localForward * radius;
@@ -426,7 +426,8 @@ void DebugDraw::DrawCapsule(
 	const float      rad            = std::clamp(radius, 0.0f, height * 0.5f);
 	const Vec3       localUp        = orientation * Vec3::up;
 	const Quaternion arcOrientation = orientation * Quaternion::Euler(
-		                                  0, 90.0f * Math::deg2Rad, 0);
+		                                  0, 90.0f * Math::deg2Rad, 0
+	                                  );
 
 	const Vec3 basePositionOffset = drawFromBase ?
 		                                Vec3::zero :
@@ -436,8 +437,10 @@ void DebugDraw::DrawCapsule(
 	DrawArc(180, 360, baseArcPosition, arcOrientation, rad, color);
 
 	const float cylinderHeight = height - rad * 2.0f;
-	DrawCylinder(baseArcPosition, orientation, cylinderHeight, rad, color,
-	             true);
+	DrawCylinder(
+		baseArcPosition, orientation, cylinderHeight, rad, color,
+		true
+	);
 
 	const Vec3 topArcPosition = baseArcPosition + localUp * cylinderHeight;
 
@@ -465,15 +468,19 @@ void DebugDraw::DrawCapsule(
 
 	// 始点での半球を描画
 	DrawArc(180, 360, start, orientation, radius, color);
-	DrawArc(180, 360, start,
-	        orientation * Quaternion::Euler(0, 90.0f * Math::deg2Rad, 0),
-	        radius, color);
+	DrawArc(
+		180, 360, start,
+		orientation * Quaternion::Euler(0, 90.0f * Math::deg2Rad, 0),
+		radius, color
+	);
 
 	// 終点での半球を描画
 	DrawArc(0, 180, end, orientation, radius, color);
-	DrawArc(0, 180, end,
-	        orientation * Quaternion::Euler(0, 90.0f * Math::deg2Rad, 0),
-	        radius, color);
+	DrawArc(
+		0, 180, end,
+		orientation * Quaternion::Euler(0, 90.0f * Math::deg2Rad, 0),
+		radius, color
+	);
 
 	// 中間の円柱部分を描画（両端の半球をつなぐ）
 	DrawCylinder(start, orientation, length, radius, color, true);
@@ -482,7 +489,9 @@ void DebugDraw::DrawCapsule(
 /// @brief 三角形を描画
 /// @param triangle 描画する三角形
 /// @param color 三角形の色
-void DebugDraw::DrawTriangle(const Unnamed::Triangle& triangle, const Vec4 color) {
+void DebugDraw::DrawTriangle(
+	const Unnamed::Triangle& triangle, const Vec4 color
+) {
 	DrawLine(triangle.v0, triangle.v1, color);
 	DrawLine(triangle.v1, triangle.v2, color);
 	DrawLine(triangle.v2, triangle.v0, color);
@@ -495,17 +504,12 @@ void DebugDraw::Init(LineCommon* lineCommon) {
 }
 
 /// @brief 毎フレーム更新
-void DebugDraw::Update() {
-}
+void DebugDraw::Update() {}
 
 /// @brief 描画
-void DebugDraw::Draw() {
-	mLine->Draw();
-}
+void DebugDraw::Draw() { mLine->Draw(); }
 
 /// @brief デバッグ描画の終了処理
-void DebugDraw::Shutdown() {
-	mLine.reset();
-}
+void DebugDraw::Shutdown() { mLine.reset(); }
 
 std::unique_ptr<Line> DebugDraw::mLine;

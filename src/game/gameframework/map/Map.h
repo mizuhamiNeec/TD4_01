@@ -10,11 +10,6 @@ namespace Unnamed {
 		void Update(float deltaTime);
 		void Shutdown();
 
-
-
-	private:
-
-	private:
 		std::vector<UEntity> mEntities;
 	};
 }

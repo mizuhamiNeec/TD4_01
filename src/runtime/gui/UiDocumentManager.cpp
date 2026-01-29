@@ -85,9 +85,7 @@ namespace Unnamed::Gui {
 		const std::string& path
 	) {
 		const auto it = mDocuments.find(path);
-		if (it != mDocuments.end()) {
-			return it->second;
-		}
+		if (it != mDocuments.end()) { return it->second; }
 		return nullptr;
 	}
 }

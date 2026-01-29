@@ -17,8 +17,10 @@
 /// @param modelCommon ModelCommonクラスへのポインタ
 /// @param directoryPath モデルファイルのディレクトリパス
 /// @param fileName モデルファイル名
-void Model::Init(ModelCommon* modelCommon, const std::string& directoryPath,
-                 const std::string& fileName) {
+void Model::Init(
+	ModelCommon*       modelCommon, const std::string& directoryPath,
+	const std::string& fileName
+) {
 	this->mModelCommon = modelCommon;
 
 	mModelData = LoadObjFile(directoryPath, fileName);
@@ -33,7 +35,8 @@ void Model::Init(ModelCommon* modelCommon, const std::string& directoryPath,
 	// マテリアル定数バッファ
 	mMaterialConstantBuffer = std::make_unique<ConstantBuffer>(
 		mModelCommon->GetD3D12()->GetDevice(), sizeof(Material),
-		"ModelMaterial");
+		"ModelMaterial"
+	);
 	mMaterialData                 = mMaterialConstantBuffer->GetPtr<Material>();
 	mMaterialData->color          = {1.0f, 1.0f, 1.0f, 1.0f}; // 白
 	mMaterialData->enableLighting = true;
@@ -57,10 +60,14 @@ void Model::ImGuiDraw() const {
 #ifdef _DEBUG
 	if (ImGui::Begin("Material Editor")) {
 		ImGui::ColorEdit4("Color", &mMaterialData->color.x); // 色の編集
-		ImGui::DragInt("Enable Lighting", &mMaterialData->enableLighting, 1, 0,
-		               1); // ライティングの有効化
-		ImGui::SliderFloat("Shininess", &mMaterialData->shininess, 0.0f,
-		                   128.0f); // シャイニネスの編集
+		ImGui::DragInt(
+			"Enable Lighting", &mMaterialData->enableLighting, 1, 0,
+			1
+		); // ライティングの有効化
+		ImGui::SliderFloat(
+			"Shininess", &mMaterialData->shininess, 0.0f,
+			128.0f
+		); // シャイニネスの編集
 		ImGui::ColorEdit3("Specular Color", &mMaterialData->specularColor.x);
 		// スペキュラカラーの編集
 	}
@@ -73,7 +80,8 @@ void Model::Draw() const {
 	// VertexBufferViewを設定
 	D3D12_VERTEX_BUFFER_VIEW vbView = mVertexBuffer->View();
 	mModelCommon->GetD3D12()->GetCommandList()->IASetVertexBuffers(
-		0, 1, &vbView);
+		0, 1, &vbView
+	);
 
 	// マテリアルの定数バッファの設定
 	mModelCommon->GetD3D12()->GetCommandList()->
@@ -88,15 +96,18 @@ void Model::Draw() const {
 
 	// 描画
 	mModelCommon->GetD3D12()->GetCommandList()->DrawInstanced(
-		static_cast<UINT>(mModelData.vertices.size()), 1, 0, 0);
+		static_cast<UINT>(mModelData.vertices.size()), 1, 0, 0
+	);
 }
 
 /// @brief マテリアルテンプレートファイル(.mtl)を読み込む
 /// @param directoryPath .mtlファイルのディレクトリパス
 /// @param filename .mtlファイル名
 /// @return 読み込んだマテリアルデータ
-MaterialData Model::LoadMaterialTemplateFile(const std::string& directoryPath,
-                                             const std::string& filename) {
+MaterialData Model::LoadMaterialTemplateFile(
+	const std::string& directoryPath,
+	const std::string& filename
+) {
 	MaterialData  materialData;                         // 構築するMaterialData
 	std::string   line;                                 // ファイルから読んだ1行を格納するもの
 	std::ifstream file(directoryPath + "/" + filename); // ファイルを開く
@@ -113,7 +124,7 @@ MaterialData Model::LoadMaterialTemplateFile(const std::string& directoryPath,
 			s >> textureFilename;
 			// 連結してファイルパスにする
 			materialData.textureFilePath = directoryPath + "/" +
-				textureFilename;
+			                               textureFilename;
 		}
 	}
 
@@ -124,8 +135,10 @@ MaterialData Model::LoadMaterialTemplateFile(const std::string& directoryPath,
 /// @param directoryPath .objファイルのディレクトリパス
 /// @param filename .objファイル名
 /// @return 読み込んだモデルデータ
-Model::ModelData Model::LoadObjFile(const std::string& directoryPath,
-                                    const std::string& filename) {
+Model::ModelData Model::LoadObjFile(
+	const std::string& directoryPath,
+	const std::string& filename
+) {
 	ModelData         modelData; // 構築するModelData
 	std::vector<Vec4> positions; // 位置
 	std::vector<Vec3> normals;   // 法線
@@ -184,7 +197,7 @@ Model::ModelData Model::LoadObjFile(const std::string& directoryPath,
 					              Vec3{0.0f, 0.0f, 0.0f};
 
 				position.x *= -1.0f;
-				normal.x *= -1.0f;
+				normal.x   *= -1.0f;
 				faceVertex = {position, texcoord, normal};
 			}
 			// 頂点を逆順で登録することで、周り順を逆にする
@@ -197,7 +210,8 @@ Model::ModelData Model::LoadObjFile(const std::string& directoryPath,
 			s >> materialFilename;
 			// 基本的にobjファイルと同一階層にmtlは存在させるので、ディレクトリ名とファイル名を渡す
 			modelData.material = LoadMaterialTemplateFile(
-				directoryPath, materialFilename);
+				directoryPath, materialFilename
+			);
 		}
 	}
 

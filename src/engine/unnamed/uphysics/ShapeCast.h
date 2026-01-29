@@ -6,7 +6,8 @@ namespace UPhysics {
 	struct ShapeCast {
 		virtual                             ~ShapeCast() = default;
 		[[nodiscard]] virtual Unnamed::AABB ExpandNode(
-			const Unnamed::AABB& nodeBounds) const = 0;
+			const Unnamed::AABB& nodeBounds
+		) const = 0;
 
 		virtual bool TestTriangle(
 			const Unnamed::Triangle& tri,

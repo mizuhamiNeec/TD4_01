@@ -29,11 +29,9 @@ namespace Unnamed {
 	/// @brief コンストラクタ
 	ConsoleUI::ConsoleUI(
 		ConsoleSystem* consoleSystem
-	) : mConsoleSystem(consoleSystem) {
-	}
+	) : mConsoleSystem(consoleSystem) {}
 
-	void ConsoleUI::Init() const {
-	}
+	void ConsoleUI::Init() const {}
 
 	/// @brief コンソールUIを表示します。
 	/// @details ImGuiのコンテキスト内で呼び出し
@@ -153,9 +151,7 @@ namespace Unnamed {
 	}
 
 	/// @brief コンソールが更新された際のイベント
-	void ConsoleUI::OnConsoleUpdate() {
-		mWishScrollToBottom = true;
-	}
+	void ConsoleUI::OnConsoleUpdate() { mWishScrollToBottom = true; }
 
 	/// @brief 入力テキストボックスを描画します。
 	void ConsoleUI::DrawInputText() {
@@ -185,16 +181,12 @@ namespace Unnamed {
 				kInputTextFlags,
 				reinterpret_cast<ImGuiInputTextCallback>(InputTextCallback)
 			)
-		) {
-			Submit();
-		}
+		) { Submit(); }
 	}
 
 	/// @brief 送信ボタンを描画します。
 	void ConsoleUI::DrawSubmitButton() {
-		if (ImGui::Button(kSubmitButtonText)) {
-			Submit();
-		}
+		if (ImGui::Button(kSubmitButtonText)) { Submit(); }
 	}
 
 	/// @brief コマンドが送信された際のイベント
@@ -211,15 +203,11 @@ namespace Unnamed {
 		if (
 			mWishScrollToBottom &&
 			ImGui::GetScrollY() >= ImGui::GetScrollMaxY()
-		) {
-			ImGui::SetScrollHereY(1.0f);
-		}
+		) { ImGui::SetScrollHereY(1.0f); }
 
 		if (ImGui::GetScrollY() < ImGui::GetScrollMaxY()) {
 			mWishScrollToBottom = false;
-		} else {
-			mWishScrollToBottom = true;
-		}
+		} else { mWishScrollToBottom = true; }
 	}
 
 	/// @brief コンソールログのテキストの色を設定します。
@@ -227,28 +215,36 @@ namespace Unnamed {
 	void ConsoleUI::PushTextColor(const ConsoleLogText& buffer) {
 		switch (buffer.level) {
 			case LogLevel::None: ImGui::PushStyleColor(
-					ImGuiCol_Text, ToImVec4(kConTextColor));
+					ImGuiCol_Text, ToImVec4(kConTextColor)
+				);
 				break;
 			case LogLevel::Info: ImGui::PushStyleColor(
-					ImGuiCol_Text, ToImVec4(kConTextColor));
+					ImGuiCol_Text, ToImVec4(kConTextColor)
+				);
 				break;
 			case LogLevel::Dev: ImGui::PushStyleColor(
-					ImGuiCol_Text, ToImVec4(kConTextColorDev));
+					ImGuiCol_Text, ToImVec4(kConTextColorDev)
+				);
 				break;
 			case LogLevel::Warning: ImGui::PushStyleColor(
-					ImGuiCol_Text, ToImVec4(kConTextColorWarn));
+					ImGuiCol_Text, ToImVec4(kConTextColorWarn)
+				);
 				break;
 			case LogLevel::Error: ImGui::PushStyleColor(
-					ImGuiCol_Text, ToImVec4(kConTextColorError));
+					ImGuiCol_Text, ToImVec4(kConTextColorError)
+				);
 				break;
 			case LogLevel::Fatal: ImGui::PushStyleColor(
-					ImGuiCol_Text, ToImVec4(kConTextColorFatal));
+					ImGuiCol_Text, ToImVec4(kConTextColorFatal)
+				);
 				break;
 			case LogLevel::Execute: ImGui::PushStyleColor(
-					ImGuiCol_Text, ToImVec4(kConTextColorExec));
+					ImGuiCol_Text, ToImVec4(kConTextColorExec)
+				);
 				break;
 			case LogLevel::Waiting: ImGui::PushStyleColor(
-					ImGuiCol_Text, ToImVec4(kConTextColorWait));
+					ImGuiCol_Text, ToImVec4(kConTextColorWait)
+				);
 				break;
 			case LogLevel::Success: ImGui::PushStyleColor(
 					ImGuiCol_Text, ToImVec4(kConTextColorSuccess)

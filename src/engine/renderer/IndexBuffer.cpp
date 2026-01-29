@@ -74,9 +74,7 @@ void IndexBuffer::Update(const void* pInitData, const size_t size) const {
 
 /// @brief インデックスバッファのサイズを取得します
 /// @return インデックスバッファのサイズ (バイト数)
-size_t IndexBuffer::GetSize() const {
-	return mSize;
-}
+size_t IndexBuffer::GetSize() const { return mSize; }
 
 /// @brief インデックスバッファの内容を取得します
 /// @return インデックスデータのベクターへの参照

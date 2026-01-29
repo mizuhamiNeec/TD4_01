@@ -13,7 +13,8 @@ namespace Unnamed {
 	/// @param name キー名の文字列
 	/// @return 対応するInputKey（存在しない場合はstd::nullopt）
 	std::optional<InputKey> KeyNameTable::FromString(
-		const std::string_view name) {
+		const std::string_view name
+	) {
 		const std::unordered_map<std::string, InputKey>& map = NameToKey();
 		const auto it = map.find(Normalize(name));
 		if (it == map.end()) {
@@ -43,9 +44,7 @@ namespace Unnamed {
 
 	/// @brief InputKeyからキー名へのマッピングを取得します
 	const std::unordered_map<InputKey, std::string_view, KeyHash>&
-	KeyNameTable::KeyToName() {
-		return sKeyToName;
-	}
+	KeyNameTable::KeyToName() { return sKeyToName; }
 
 	/// @brief 文字列を正規化します（小文字化）
 	/// @param str 正規化する文字列

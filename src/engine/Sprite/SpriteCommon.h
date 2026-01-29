@@ -1,8 +1,8 @@
 #pragma once
 
 #include <memory>
-#include "engine/renderer/RootSignatureManager.h"
 #include "engine/renderer/PipelineState.h"
+#include "engine/renderer/RootSignatureManager.h"
 
 class D3D12;
 
@@ -17,9 +17,7 @@ public:
 
 	void Render() const;
 
-	D3D12* GetD3D12() const {
-		return mD3d12;
-	}
+	D3D12* GetD3D12() const { return mD3d12; }
 
 private:
 	D3D12*                                mD3d12                = nullptr;

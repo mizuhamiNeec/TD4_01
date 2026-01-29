@@ -4,11 +4,10 @@
 #include <engine/ResourceSystem/RootSignature/RootSignatureManager2.h>
 
 RootSignature2* RootSignatureManager2::GetOrCreateRootSignature(
-	const std::string& key, const RootSignatureDesc& desc) {
+	const std::string& key, const RootSignatureDesc& desc
+) {
 	// 既に作成済みのルートシグネチャがあるか確認
-	if (mRootSignatures.contains(key)) {
-		return mRootSignatures[key].get();
-	}
+	if (mRootSignatures.contains(key)) { return mRootSignatures[key].get(); }
 
 	// なかったので作成
 	auto rootSignature = std::make_unique<RootSignature2>();
@@ -20,9 +19,7 @@ RootSignature2* RootSignatureManager2::GetOrCreateRootSignature(
 	return mRootSignatures[key].get();
 }
 
-void RootSignatureManager2::Init(ID3D12Device* device) {
-	mDevice = device;
-}
+void RootSignatureManager2::Init(ID3D12Device* device) { mDevice = device; }
 
 void RootSignatureManager2::Shutdown() {
 	// 各RootSignature2インスタンスが保持しているリソースを解放

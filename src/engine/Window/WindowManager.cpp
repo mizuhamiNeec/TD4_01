@@ -4,9 +4,7 @@
 OldWindowManager::OldWindowManager() = default;
 
 /// @brief デストラクタ
-OldWindowManager::~OldWindowManager() {
-	ClearWindows();
-}
+OldWindowManager::~OldWindowManager() { ClearWindows(); }
 
 /// @brief ウィンドウを追加する
 /// @param window ウィンドウポインタ
@@ -47,9 +45,7 @@ BaseWindow* OldWindowManager::GetMainWindow() {
 }
 
 /// @brief ウィンドウをすべてクリアする
-void OldWindowManager::ClearWindows() {
-	mWindows.clear();
-}
+void OldWindowManager::ClearWindows() { mWindows.clear(); }
 
 /// @brief ウィンドウリストを取得する
 /// @return ウィンドウリスト

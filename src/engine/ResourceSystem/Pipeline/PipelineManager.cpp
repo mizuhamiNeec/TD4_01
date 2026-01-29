@@ -11,7 +11,8 @@
 /// @param desc パイプラインステートの記述子
 /// @return 計算されたハッシュ値
 size_t PipelineManager::CalculatePSOHash(
-	const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc) {
+	const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc
+) {
 	constexpr std::hash<size_t> hasher;
 
 	// 各メンバのハッシュを組み合わせる
@@ -21,18 +22,23 @@ size_t PipelineManager::CalculatePSOHash(
 	if (desc.VS.pShaderBytecode) {
 		hash ^= hasher(
 			std::hash<size_t>{}(
-				reinterpret_cast<size_t>(desc.VS.pShaderBytecode))) << 1;
+				reinterpret_cast<size_t>(desc.VS.pShaderBytecode)
+			)
+		) << 1;
 		hash ^= hasher(desc.VS.BytecodeLength) << 1;
 	}
 	if (desc.PS.pShaderBytecode) {
 		hash ^= hasher(
 			std::hash<size_t>{}(
-				reinterpret_cast<size_t>(desc.PS.pShaderBytecode))) << 2;
+				reinterpret_cast<size_t>(desc.PS.pShaderBytecode)
+			)
+		) << 2;
 		hash ^= hasher(desc.PS.BytecodeLength) << 2;
 	}
 
 	hash ^= hasher(
-		static_cast<size_t>(desc.BlendState.RenderTarget[0].BlendEnable)) << 3;
+		static_cast<size_t>(desc.BlendState.RenderTarget[0].BlendEnable)
+	) << 3;
 	hash ^= hasher(static_cast<size_t>(desc.RasterizerState.FillMode)) << 4;
 	hash ^= hasher(static_cast<size_t>(desc.RasterizerState.CullMode)) << 5;
 	hash ^= hasher(static_cast<size_t>(desc.DepthStencilState.DepthEnable)) <<
@@ -64,9 +70,7 @@ ID3D12PipelineState* PipelineManager::GetOrCreatePipelineState(
 
 	// ハッシュ値で作成済みのPSOを検索
 	auto it = mPipelineStatesByHash.find(psoHash);
-	if (it != mPipelineStatesByHash.end()) {
-		return it->second.Get();
-	}
+	if (it != mPipelineStatesByHash.end()) { return it->second.Get(); }
 
 	// ルートシグネチャの確認
 	if (!desc.pRootSignature) {
@@ -100,11 +104,14 @@ ID3D12PipelineState* PipelineManager::GetOrCreatePipelineState(
 	// パイプラインステートの作成
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
 	HRESULT hr = device->CreateGraphicsPipelineState(
-		&desc, IID_PPV_ARGS(&pipelineState));
+		&desc, IID_PPV_ARGS(&pipelineState)
+	);
 	if (FAILED(hr)) {
 		Console::Print(
-			std::format("PSOの作成に失敗しました: {} (HRESULT: {:08X})\n", key,
-			            static_cast<unsigned int>(hr)),
+			std::format(
+				"PSOの作成に失敗しました: {} (HRESULT: {:08X})\n", key,
+				static_cast<unsigned int>(hr)
+			),
 			kConTextColorError,
 			Channel::RenderPipeline
 		);
@@ -128,8 +135,10 @@ ID3D12PipelineState* PipelineManager::GetOrCreatePipelineState(
 
 /// @brief シャットダウン
 void PipelineManager::Shutdown() {
-	Console::Print("Pipeline Manager を終了しています...\n", kConTextColorWait,
-	               Channel::ResourceSystem);
+	Console::Print(
+		"Pipeline Manager を終了しています...\n", kConTextColorWait,
+		Channel::ResourceSystem
+	);
 
 	// 各パイプラインステートを解放
 	for (auto& [key, pipelineState] : mPipelineStates) {

@@ -5,14 +5,10 @@
 
 namespace Unnamed {
 	/// @brief エンティティにアタッチされたときの処理。
-	void WorldInstanceComponent::OnAttached() {
-		BaseComponent::OnAttached();
-	}
+	void WorldInstanceComponent::OnAttached() { BaseComponent::OnAttached(); }
 
 	/// @brief エンティティからデタッチされたときの処理。
-	void WorldInstanceComponent::OnDetached() {
-		subWorld.reset();
-	}
+	void WorldInstanceComponent::OnDetached() { subWorld.reset(); }
 
 	/// @brief コンポーネントのシリアライズ処理。
 	/// @param writer シリアライズ先のJsonWriter。
@@ -24,9 +20,7 @@ namespace Unnamed {
 	/// @brief コンポーネントのデシリアライズ処理。
 	/// @param reader デシリアライズ元のJsonReader。
 	void WorldInstanceComponent::Deserialize(const JsonReader& reader) {
-		if (reader.Has("world")) {
-			worldPath = reader["world"].GetString();
-		}
+		if (reader.Has("world")) { worldPath = reader["world"].GetString(); }
 	}
 
 	/// @brief サブワールドをロードしてアタッチする。

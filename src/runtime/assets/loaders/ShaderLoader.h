@@ -1,14 +1,13 @@
 ﻿#pragma once
-#include <runtime/assets/loaders/interface/IAssetLoader.h>
 #include <runtime/assets/core/UAssetManager.h>
+#include <runtime/assets/loaders/interface/IAssetLoader.h>
 
 namespace Unnamed {
 	/// @brief シェーダーローダー
 	class ShaderLoader : public IAssetLoader {
 	public:
 		explicit ShaderLoader(UAssetManager* assetManager)
-			: mAssetManager(assetManager) {
-		}
+			: mAssetManager(assetManager) {}
 
 		bool CanLoad(
 			std::string_view path,

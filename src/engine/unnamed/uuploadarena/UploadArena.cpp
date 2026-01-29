@@ -40,14 +40,13 @@ namespace Unnamed {
 						mBuffer)
 				)
 			)
-		) {
-			return false;
-		}
+		) { return false; }
 
 		constexpr D3D12_RANGE noRead = {0, 0};
 		if (
 			FAILED(
-				mBuffer->Map(0, &noRead, reinterpret_cast<void**>(&mMapped)))
+				mBuffer->Map(0, &noRead, reinterpret_cast<void**>(&mMapped))
+			)
 		) {
 			mBuffer.Reset(); // TODO: いる?
 			return false;

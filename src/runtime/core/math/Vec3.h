@@ -25,8 +25,7 @@ struct Vec3 final {
 	/**
 	 * @brief デフォルトコンストラクタ
 	 */
-	constexpr Vec3() : Vec3(0.0f, 0.0f, 0.0f) {
-	}
+	constexpr Vec3() : Vec3(0.0f, 0.0f, 0.0f) {}
 
 	/**
 	 * @brief コンストラクタ
@@ -34,24 +33,25 @@ struct Vec3 final {
 	 * @param y Y成分
 	 * @param z Z成分
 	 */
-	constexpr
-	Vec3(const float x, const float y, const float z) : x(x), y(y), z(z) {
-	}
+	constexpr Vec3(const float x, const float y, const float z) : x(x),
+		y(y),
+		z(z) {}
 
 	/**
 	 * @brief スカラー値から初期化するコンストラクタ
 	 * @param scalar 全成分に設定する値
 	 */
-	explicit constexpr Vec3(const float scalar) : x(scalar), y(scalar),
-	                                              z(scalar) {
-	}
+	explicit constexpr Vec3(const float scalar) : x(scalar),
+	                                              y(scalar),
+	                                              z(scalar) {}
 
 	/**
 	 * @brief Vec2から変換するコンストラクタ
 	 * @param vec2 2次元ベクトル（z成分は0に設定）
 	 */
-	constexpr Vec3(const Vec2 vec2) : x(vec2.x), y(vec2.y), z(0.0f) {
-	}
+	constexpr Vec3(const Vec2 vec2) : x(vec2.x),
+	                                  y(vec2.y),
+	                                  z(0.0f) {}
 
 	/* ---------------- 関数類 ---------------- */
 	/**

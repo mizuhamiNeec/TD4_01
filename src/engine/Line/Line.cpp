@@ -46,11 +46,13 @@ Line::Line(LineCommon* lineCommon) {
 	mVertexBuffer = std::make_unique<VertexBuffer<LineVertex>>(
 		mLineCommon->GetRenderer()->GetDevice(),
 		vertexBufferSize,
-		nullptr);
+		nullptr
+	);
 	mIndexBuffer = std::make_unique<IndexBuffer>(
 		mLineCommon->GetRenderer()->GetDevice(),
 		indexBufferSize,
-		nullptr);
+		nullptr
+	);
 
 	mTransformationMatrixConstantBuffer = std::make_unique<ConstantBuffer>(
 		mLineCommon->GetRenderer()->GetDevice(), sizeof(TransformationMatrix),
@@ -87,15 +89,13 @@ void Line::AddLine(const Vec3 start, const Vec3 end, const Vec4& color) {
 /// @brief 頂点バッファとインデックスバッファを更新する
 void Line::UpdateBuffer() {
 	// 更新の必要がない、またはデータが空の場合は終了
-	if (!mIsDirty || mLineVertices.empty()) {
-		return;
-	}
+	if (!mIsDirty || mLineVertices.empty()) { return; }
 
 	// 必要なサイズを正確に計算
 	const size_t requiredVertexBufferSize = sizeof(LineVertex) * mLineVertices.
-		size();
+	                                        size();
 	const size_t requiredIndexBufferSize = sizeof(uint32_t) * mLineIndices.
-		size();
+	                                       size();
 
 	// バッファが不足している場合は再作成
 	if (mVertexBuffer->GetSize() < requiredVertexBufferSize) {
@@ -103,7 +103,8 @@ void Line::UpdateBuffer() {
 		mVertexBuffer = std::make_unique<VertexBuffer<LineVertex>>(
 			mLineCommon->GetRenderer()->GetDevice(),
 			requiredVertexBufferSize,
-			nullptr);
+			nullptr
+		);
 	}
 
 	if (mIndexBuffer->GetSize() < requiredIndexBufferSize) {
@@ -111,27 +112,28 @@ void Line::UpdateBuffer() {
 		mIndexBuffer = std::make_unique<IndexBuffer>(
 			mLineCommon->GetRenderer()->GetDevice(),
 			requiredIndexBufferSize,
-			nullptr);
+			nullptr
+		);
 	}
 
 	// バッファを更新
-	mVertexBuffer->Update(mLineVertices.data(),
-	                      mLineVertices.size() * sizeof(LineVertex));
-	mIndexBuffer->Update(mLineIndices.data(),
-	                     mLineIndices.size() * sizeof(uint32_t));
+	mVertexBuffer->Update(
+		mLineVertices.data(),
+		mLineVertices.size() * sizeof(LineVertex)
+	);
+	mIndexBuffer->Update(
+		mLineIndices.data(),
+		mLineIndices.size() * sizeof(uint32_t)
+	);
 
 	mIsDirty = false; // バッファは最新状態
 }
 
 /// @brief ラインを描画する
 void Line::Draw() {
-	if (mIsDirty) {
-		UpdateBuffer();
-	}
+	if (mIsDirty) { UpdateBuffer(); }
 
-	if (mLineVertices.empty() || mLineIndices.empty()) {
-		return;
-	}
+	if (mLineVertices.empty() || mLineIndices.empty()) { return; }
 
 	// ビュープロジェクション行列の設定
 	const Mat4& viewProjMat = CameraManager::GetActiveCamera()->
@@ -140,13 +142,15 @@ void Line::Draw() {
 
 	mLineCommon->GetRenderer()->GetCommandList()->
 	             SetGraphicsRootConstantBufferView(
-		             0, mTransformationMatrixConstantBuffer->GetAddress());
+		             0, mTransformationMatrixConstantBuffer->GetAddress()
+	             );
 
 	const D3D12_VERTEX_BUFFER_VIEW vbView = mVertexBuffer->View();
 	const D3D12_INDEX_BUFFER_VIEW  ibView = mIndexBuffer->View();
 
 	mLineCommon->GetRenderer()->GetCommandList()->IASetVertexBuffers(
-		0, 1, &vbView);
+		0, 1, &vbView
+	);
 	mLineCommon->GetRenderer()->GetCommandList()->IASetIndexBuffer(&ibView);
 
 	// パイプラインステートとルートシグネチャの設定

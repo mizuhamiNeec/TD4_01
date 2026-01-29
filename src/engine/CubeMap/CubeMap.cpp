@@ -12,7 +12,9 @@ CubeMap::CubeMap(
 	ID3D12Device*          device,
 	SrvManager*            srvManager,
 	const std::string_view path
-) : mVertexData({}), mDevice(device), mSrvManager(srvManager) {
+) : mVertexData({}),
+    mDevice(device),
+    mSrvManager(srvManager) {
 	mTexturePath = path;
 	Init();
 }
@@ -62,19 +64,22 @@ void CubeMap::Init() {
 	};
 
 	mVertexBuffer = std::make_unique<VertexBuffer<Vertex>>(
-		mDevice, sizeof(Vertex) * mVertexData.size(), mVertexData.data());
+		mDevice, sizeof(Vertex) * mVertexData.size(), mVertexData.data()
+	);
 	mIndexBuffer = std::make_unique<IndexBuffer>(
-		mDevice, sizeof(uint32_t) * mIndexData.size(), mIndexData.data());
-
+		mDevice, sizeof(uint32_t) * mIndexData.size(), mIndexData.data()
+	);
 
 	CreateRootSignature();
 	CreatePipelineStateObject();
 
 	mTransformationCb = std::make_unique<ConstantBuffer>(
-		mDevice, sizeof(TransformationMatrix), "CubeMap Transformation");
+		mDevice, sizeof(TransformationMatrix), "CubeMap Transformation"
+	);
 
 	mMaterialCb = std::make_unique<ConstantBuffer>(
-		mDevice, sizeof(Object3D::Material), "CubeMap Material");
+		mDevice, sizeof(Object3D::Material), "CubeMap Material"
+	);
 
 	// TransformationMatrixとMaterialの実体をメンバとして保持
 	mTransformationMatrixInstance = {};
@@ -133,9 +138,11 @@ void CubeMap::Render(ID3D12GraphicsCommandList* commandList) const {
 		0, TexManager::GetInstance()->GetSrvHandleGPU(mTexturePath)
 	); // t0
 	commandList->SetGraphicsRootConstantBufferView(
-		1, mTransformationCb->GetAddress()); // b0: TransformationMatrix
+		1, mTransformationCb->GetAddress()
+	); // b0: TransformationMatrix
 	commandList->SetGraphicsRootConstantBufferView(
-		2, mMaterialCb->GetAddress()); // b1: Material
+		2, mMaterialCb->GetAddress()
+	); // b1: Material
 
 	// 頂点・インデックスバッファのセット
 	const D3D12_VERTEX_BUFFER_VIEW vbView = mVertexBuffer->View();
@@ -208,12 +215,14 @@ void CubeMap::CreateRootSignature() {
 	ComPtr<ID3DBlob> errorBlob;
 
 	HRESULT hr = D3D12SerializeVersionedRootSignature(
-		&desc, &signatureBlob, &errorBlob);
+		&desc, &signatureBlob, &errorBlob
+	);
 	assert(SUCCEEDED(hr));
 
 	hr = mDevice->CreateRootSignature(
 		0, signatureBlob->GetBufferPointer(),
-		signatureBlob->GetBufferSize(), IID_PPV_ARGS(&mRootSignature));
+		signatureBlob->GetBufferSize(), IID_PPV_ARGS(&mRootSignature)
+	);
 
 	assert(SUCCEEDED(hr));
 }
@@ -221,7 +230,7 @@ void CubeMap::CreateRootSignature() {
 /// @brief パイプラインステートオブジェクトの作成
 void CubeMap::CreatePipelineStateObject() {
 	constexpr D3D12_DEPTH_STENCIL_DESC depthStencilDesc = {
-		.DepthEnable = true, // 比較はするのでDepth自体は有効
+		.DepthEnable    = true, // 比較はするのでDepth自体は有効
 		.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO,
 		// 全ピクセルがz=1に出力されるので、わざわざ書き込む必要がない
 		.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL, // 今までと同様に比較

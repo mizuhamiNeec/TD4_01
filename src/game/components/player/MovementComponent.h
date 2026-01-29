@@ -22,10 +22,10 @@ enum class MOVEMENT_STATE {
 namespace {
 	const char* ToString(const MOVEMENT_STATE e) {
 		switch (e) {
-		case MOVEMENT_STATE::GROUND: return "GROUND";
-		case MOVEMENT_STATE::AIR: return "AIR";
-		case MOVEMENT_STATE::WALL_RUN: return "WALL_RUN";
-		case MOVEMENT_STATE::SLIDE: return "SLIDE";
+			case MOVEMENT_STATE::GROUND: return "GROUND";
+			case MOVEMENT_STATE::AIR: return "AIR";
+			case MOVEMENT_STATE::WALL_RUN: return "WALL_RUN";
+			case MOVEMENT_STATE::SLIDE: return "SLIDE";
 		}
 		return "unknown";
 	}

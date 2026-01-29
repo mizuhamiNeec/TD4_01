@@ -11,9 +11,7 @@ namespace Unnamed {
 	/// @return ファイル内容の文字列（失敗した場合は空文字列を返す）
 	static std::string ReadTextFile(const std::string& path) {
 		const std::ifstream ifs(path, std::ios::binary);
-		if (!ifs) {
-			return {};
-		}
+		if (!ifs) { return {}; }
 		std::stringstream ss;
 		ss << ifs.rdbuf();
 		return ss.str();
@@ -78,7 +76,7 @@ namespace Unnamed {
 					const auto  name = it.key();
 					const auto& pobj = it.value();
 					if (pobj.contains("slot") && pobj["slot"].
-						is_number_integer()) {
+					    is_number_integer()) {
 						r.paramSlots[name] = pobj["slot"].get<int>();
 					}
 				}
@@ -90,9 +88,7 @@ namespace Unnamed {
 		// パワー! ヤー!
 		std::ostringstream ss;
 		ss << "#include \"" << input.abiInclude << "\"\n";
-		for (auto& d : input.defines) {
-			ss << "#define " << d << "\n";
-		}
+		for (auto& d : input.defines) { ss << "#define " << d << "\n"; }
 
 		ss << R"(
 struct VSIn { float3 pos:POSITION; float3 nrm:NORMAL; float2 uv:TEXCOORD0; };
@@ -135,12 +131,8 @@ float4 PSMain(VSOut i) : SV_Target {
 		out.resources = std::move(r);
 
 		uint64_t h = FNV1a64(out.hlsl.data(), out.hlsl.size());
-		if (!metaRaw.empty()) {
-			h ^= FNV1a64(metaRaw.data(), metaRaw.size());
-		}
-		for (auto& d : input.defines) {
-			h ^= FNV1a64(d.data(), d.size());
-		}
+		if (!metaRaw.empty()) { h ^= FNV1a64(metaRaw.data(), metaRaw.size()); }
+		for (auto& d : input.defines) { h ^= FNV1a64(d.data(), d.size()); }
 		out.hash = h;
 
 		return true;

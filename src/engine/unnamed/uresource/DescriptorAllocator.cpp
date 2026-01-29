@@ -14,7 +14,7 @@ namespace Unnamed {
 			const D3D12_DESCRIPTOR_HEAP_TYPE type
 		) {
 			return type == D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV ||
-				type == D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+			       type == D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
 		}
 	}
 
@@ -39,8 +39,8 @@ namespace Unnamed {
 		desc.NumDescriptors = numDescriptors;
 		desc.Type           = mType;
 		desc.Flags          = mShaderVisible ?
-			             D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE :
-			             D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+			                      D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE :
+			                      D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 		desc.NodeMask = 0;
 
 		UASSERT(
@@ -74,7 +74,8 @@ namespace Unnamed {
 	uint32_t DescriptorAllocator::Allocate() {
 		if (mFreeList.empty()) {
 			UASSERT(
-				false && "DescriptorAllocator: No free descriptors available.");
+				false && "DescriptorAllocator: No free descriptors available."
+			);
 			return UINT32_MAX; // すべてのデスクリプタが使用中
 		}
 		const uint32_t index = mFreeList.back();

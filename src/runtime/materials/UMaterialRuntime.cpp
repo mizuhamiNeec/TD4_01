@@ -57,19 +57,13 @@ namespace Unnamed {
 		if (
 			!assetManager || !shaderLibrary || !rootSignatureCache ||
 			!pipelineCache || !graphicsDevice
-		) {
-			return false;
-		}
-		if (materialAsset == kInvalidAssetID) {
-			return false;
-		}
+		) { return false; }
+		if (materialAsset == kInvalidAssetID) { return false; }
 
 		mGraphicsDevice = graphicsDevice;
 
 		const auto* m = assetManager->Get<MaterialAssetData>(materialAsset);
-		if (!m) {
-			return false;
-		}
+		if (!m) { return false; }
 
 		mNameToSlot.clear();
 		mExtraCache.fill(Vec4::zero);
@@ -81,31 +75,23 @@ namespace Unnamed {
 		) {
 			const auto& v = it->second;
 			mBaseColor    = Vec4{v[0], v[1], v[2], v[3]};
-		} else {
-			mBaseColor = Vec4::one;
-		}
+		} else { mBaseColor = Vec4::one; }
 
 		if (
 			auto it = m->floatParams.find("Metallic");
 			it != m->floatParams.end()
-		) {
-			mMetallic = it->second;
-		} else {
-			mMetallic = 0.0f;
-		}
+		) { mMetallic = it->second; } else { mMetallic = 0.0f; }
 
 		std::vector<std::pair<std::string, MaterialParam>> list;
 		for (auto& [name, p] : m->params) {
 			// 使っているパラメータなので無視
-			if (name == "BaseColor" || name == "Metallic") {
-				continue;
-			}
+			if (name == "BaseColor" || name == "Metallic") { continue; }
 			list.emplace_back(name, p);
 		}
 
-		std::ranges::sort(list, [](const auto& a, const auto& b) {
-			return a.first < b.first;
-		});
+		std::ranges::sort(
+			list, [](const auto& a, const auto& b) { return a.first < b.first; }
+		);
 
 		int slot = 0;
 		for (auto& [name, p] : list) {
@@ -114,9 +100,7 @@ namespace Unnamed {
 			}
 			mNameToSlot[name] = slot;
 			Vec4 v;
-			if (p.type == ParamType::FLOAT) {
-				v = {p.v[0], 0, 0, 0};
-			} else {
+			if (p.type == ParamType::FLOAT) { v = {p.v[0], 0, 0, 0}; } else {
 				v = {p.v[0], p.v[1], p.v[2], p.v[3]};
 			}
 			mExtraCache[slot] = v;
@@ -142,14 +126,14 @@ namespace Unnamed {
 			}
 
 			ShaderVariantKey vKeyVS = {
-				.asset = kInvalidAssetID, .defines = {},
+				.asset      = kInvalidAssetID, .defines = {},
 				.entryPoint = gen.vsEntry,
-				.target = "vs_6_0"
+				.target     = "vs_6_0"
 			};
 			ShaderVariantKey vKeyPS = {
-				.asset = kInvalidAssetID, .defines = {},
+				.asset      = kInvalidAssetID, .defines = {},
 				.entryPoint = gen.psEntry,
-				.target = "ps_6_0"
+				.target     = "ps_6_0"
 			};
 
 			vs = shaderLibrary->GetOrCompileFromString(
@@ -180,9 +164,7 @@ namespace Unnamed {
 			}
 		}
 
-		if (!vs || !ps) {
-			return false;
-		}
+		if (!vs || !ps) { return false; }
 
 		// ルートシグネチャ
 		RootSignatureDesc rs   = {};
@@ -222,9 +204,7 @@ namespace Unnamed {
 		rs.staticSamplers.emplace_back(s0);
 
 		root = rootSignatureCache->GetOrCreate(rs);
-		if (root.id == UINT32_MAX) {
-			return false;
-		}
+		if (root.id == UINT32_MAX) { return false; }
 
 		rootParams.srvTable    = 0;
 		rootParams.materialCB  = 1;
@@ -278,9 +258,7 @@ namespace Unnamed {
 		pd.vs = vs;
 		pd.ps = ps;
 		pso   = pipelineCache->GetOrCreate(pd);
-		if (pso.id == UINT32_MAX) {
-			return false;
-		}
+		if (pso.id == UINT32_MAX) { return false; }
 
 		// テクスチャスロットをCPUに保持
 		mTextureSlots.clear();
@@ -295,7 +273,7 @@ namespace Unnamed {
 		// 固定CB
 		if (!mCB) {
 			const UINT64 size = static_cast<UINT64>(mCBStride) *
-				mFramesInFlight;
+			                    mFramesInFlight;
 			D3D12_HEAP_PROPERTIES hp = {D3D12_HEAP_TYPE_UPLOAD};
 			D3D12_RESOURCE_DESC   rd = {};
 			rd.Dimension             = D3D12_RESOURCE_DIMENSION_BUFFER;
@@ -312,15 +290,11 @@ namespace Unnamed {
 				D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
 				IID_PPV_ARGS(&mCB)
 			);
-			if (FAILED(hr)) {
-				return false;
-			}
+			if (FAILED(hr)) { return false; }
 
 			D3D12_RANGE noRead = {0, 0};
 			hr = mCB->Map(0, &noRead, reinterpret_cast<void**>(&mCBMapped));
-			if (FAILED(hr)) {
-				return false;
-			}
+			if (FAILED(hr)) { return false; }
 		}
 
 		// ファイル監視
@@ -355,15 +329,14 @@ namespace Unnamed {
 		RenderResourceManager*     renderResourceManager,
 		ID3D12GraphicsCommandList* commandList
 	) {
-		if (!renderResourceManager || !commandList) {
-			return false;
-		}
+		if (!renderResourceManager || !commandList) { return false; }
 
 		// スロットの実体化
 		for (auto& slot : mTextureSlots) {
 			if (!slot.handle.IsValid() && slot.asset != kInvalidAssetID) {
 				slot.handle = renderResourceManager->AcquireTexture(
-					slot.asset, commandList);
+					slot.asset, commandList
+				);
 				// 失敗しても近いうちに読み込まれます。裁判も起こします。裁判所にも問答無用で来てもらいます。
 			}
 		}
@@ -388,13 +361,12 @@ namespace Unnamed {
 		ID3D12Fence*           fence,
 		const uint64_t         value
 	) {
-		if (!renderResourceManager) {
-			return;
-		}
+		if (!renderResourceManager) { return; }
 		for (auto& slot : mTextureSlots) {
 			if (slot.handle.IsValid()) {
 				renderResourceManager->ReleaseTexture(
-					slot.handle, fence, value);
+					slot.handle, fence, value
+				);
 				slot.handle = {};
 			}
 		}
@@ -406,9 +378,7 @@ namespace Unnamed {
 	uint32_t UMaterialRuntime::DetectChanges() {
 		uint32_t mask = RELOAD_NONE;
 		for (auto& w : mWatchedFiles) {
-			if (w.id == kInvalidAssetID || w.path.empty()) {
-				continue;
-			}
+			if (w.id == kInvalidAssetID || w.path.empty()) { continue; }
 			uint64_t    size  = 0;
 			std::time_t mtime = 0;
 
@@ -430,18 +400,15 @@ namespace Unnamed {
 				);
 
 				switch (w.type) {
-				case WatchType::MAT:
-					mask |= RELOAD_CPU | RELOAD_TEXTURE;
-					break;
-				case WatchType::PROGRAM_BODY:
-				case WatchType::PROGRAM_META:
-					mask |= RELOAD_CPU;
-					break;
+					case WatchType::MAT: mask |= RELOAD_CPU | RELOAD_TEXTURE;
+						break;
+					case WatchType::PROGRAM_BODY:
+					case WatchType::PROGRAM_META: mask |= RELOAD_CPU;
+						break;
 
-				case WatchType::TEXTURE:
-					mask |= RELOAD_TEXTURE;
-					break;
-				default: ;
+					case WatchType::TEXTURE: mask |= RELOAD_TEXTURE;
+						break;
+					default: ;
 				}
 
 				w.size  = size;
@@ -479,12 +446,10 @@ namespace Unnamed {
 		cb.BaseColor      = mBaseColor;
 		cb.Metallic       = mMetallic;
 
-		for (int i = 0; i < 14; ++i) {
-			cb.Extra[i] = mExtraCache[i];
-		}
+		for (int i = 0; i < 14; ++i) { cb.Extra[i] = mExtraCache[i]; }
 
 		const size_t offset = static_cast<size_t>(mCBStride) * (backIndex %
-			mFramesInFlight);
+			                      mFramesInFlight);
 		memcpy(mCBMapped + offset, &cb, sizeof(cb));
 
 		const auto gpuVA = mCB->GetGPUVirtualAddress() + offset;
@@ -525,14 +490,10 @@ namespace Unnamed {
 		const std::string& path, uint64_t& size, std::time_t& mtime
 	) {
 		std::error_code ec;
-		if (!std::filesystem::exists(path, ec)) {
-			return false;
-		}
+		if (!std::filesystem::exists(path, ec)) { return false; }
 		size    = std::filesystem::file_size(path);
 		auto ft = std::filesystem::last_write_time(path, ec);
-		if (ec) {
-			return false;
-		}
+		if (ec) { return false; }
 
 		const auto sctp = std::chrono::time_point_cast<
 			std::chrono::system_clock::duration>(
@@ -543,9 +504,7 @@ namespace Unnamed {
 	}
 
 	/// @brief 監視しているファイルをクリアします
-	void UMaterialRuntime::ClearWatch() {
-		mWatchedFiles.clear();
-	}
+	void UMaterialRuntime::ClearWatch() { mWatchedFiles.clear(); }
 
 	/// @brief ファイルの監視を追加します
 	/// @param assetManager アセットマネージャー
@@ -555,9 +514,7 @@ namespace Unnamed {
 		const UAssetManager* assetManager, const AssetID id,
 		const WatchType      type
 	) {
-		if (id == kInvalidAssetID) {
-			return;
-		}
+		if (id == kInvalidAssetID) { return; }
 
 		std::string p     = assetManager->Meta(id).sourcePath;
 		uint64_t    size  = 0;

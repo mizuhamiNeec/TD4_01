@@ -25,19 +25,18 @@ namespace Unnamed {
 	/// @return D3D12_DESCRIPTOR_RANGE_TYPE
 	static D3D12_DESCRIPTOR_RANGE_TYPE ToD3D(const RangeType type) {
 		switch (type) {
-		case RangeType::SRV: return D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-		case RangeType::UAV: return D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-		case RangeType::CBV: return D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-		case RangeType::SAMPLER: return D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
-		default: return D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+			case RangeType::SRV: return D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+			case RangeType::UAV: return D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+			case RangeType::CBV: return D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+			case RangeType::SAMPLER: return D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
+			default: return D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 		}
 	}
 
 	/// @brief コンストラクタ
 	/// @param graphicsDevice グラフィックスデバイス
 	RootSignatureCache::RootSignatureCache(GraphicsDevice* graphicsDevice) :
-		mGraphicsDevice(graphicsDevice) {
-	}
+		mGraphicsDevice(graphicsDevice) {}
 
 	/// @brief ルートシグネチャを取得または作成する
 	/// @param desc ルートシグネチャ記述子
@@ -58,51 +57,51 @@ namespace Unnamed {
 		for (auto& param : desc.params) {
 			D3D12_ROOT_PARAMETER rootParam;
 			switch (param.kind) {
-			case RootParamDesc::Kind::TABLE: {
-				auto& vr = rangesScratch.emplace_back();
-				vr.reserve(param.ranges.size());
-				for (auto& range : param.ranges) {
-					D3D12_DESCRIPTOR_RANGE descRange;
-					descRange.RangeType = ToD3D(range.type);
-					descRange.NumDescriptors = range.count;
-					descRange.BaseShaderRegister = range.baseRegister;
-					descRange.RegisterSpace = range.space;
-					descRange.OffsetInDescriptorsFromTableStart =
-						D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-					vr.push_back(descRange);
+				case RootParamDesc::Kind::TABLE: {
+					auto& vr = rangesScratch.emplace_back();
+					vr.reserve(param.ranges.size());
+					for (auto& range : param.ranges) {
+						D3D12_DESCRIPTOR_RANGE descRange;
+						descRange.RangeType = ToD3D(range.type);
+						descRange.NumDescriptors = range.count;
+						descRange.BaseShaderRegister = range.baseRegister;
+						descRange.RegisterSpace = range.space;
+						descRange.OffsetInDescriptorsFromTableStart =
+							D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+						vr.push_back(descRange);
+					}
+					rootParam.ParameterType =
+						D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+					rootParam.DescriptorTable.NumDescriptorRanges = static_cast<
+						UINT>(vr.size());
+					rootParam.DescriptorTable.pDescriptorRanges = vr.data();
+					rootParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 				}
-				rootParam.ParameterType =
-					D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-				rootParam.DescriptorTable.NumDescriptorRanges = static_cast<
-					UINT>(vr.size());
-				rootParam.DescriptorTable.pDescriptorRanges = vr.data();
-				rootParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-			}
-			break;
-			case RootParamDesc::Kind::ROOT_CBV: {
-				rootParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-				rootParam.Descriptor.ShaderRegister = param.cbvRegister;
-				rootParam.Descriptor.RegisterSpace = param.cbvSpace;
-				rootParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-			}
-			break;
-			case RootParamDesc::Kind::ROOT_SRV: {
-				rootParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
-				rootParam.Descriptor.ShaderRegister = param.srvRegister;
-				rootParam.Descriptor.RegisterSpace = param.srvSpace;
-				rootParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-			}
-			break;
-			case RootParamDesc::Kind::ROOT32_BIT_CONST: {
-				rootParam.ParameterType =
-					D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-				rootParam.Constants.Num32BitValues = param.num32Bit;
-				rootParam.Constants.ShaderRegister = param.constRegister;
-				rootParam.Constants.RegisterSpace = param.constSpace;
-				rootParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-			}
-			break;
-			default: ;
+				break;
+				case RootParamDesc::Kind::ROOT_CBV: {
+					rootParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+					rootParam.Descriptor.ShaderRegister = param.cbvRegister;
+					rootParam.Descriptor.RegisterSpace = param.cbvSpace;
+					rootParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+				}
+				break;
+				case RootParamDesc::Kind::ROOT_SRV: {
+					rootParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
+					rootParam.Descriptor.ShaderRegister = param.srvRegister;
+					rootParam.Descriptor.RegisterSpace = param.srvSpace;
+					rootParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+				}
+				break;
+				case RootParamDesc::Kind::ROOT32_BIT_CONST: {
+					rootParam.ParameterType =
+						D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+					rootParam.Constants.Num32BitValues = param.num32Bit;
+					rootParam.Constants.ShaderRegister = param.constRegister;
+					rootParam.Constants.RegisterSpace = param.constSpace;
+					rootParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+				}
+				break;
+				default: ;
 			}
 
 			rootParams.emplace_back(rootParam);
@@ -145,9 +144,7 @@ namespace Unnamed {
 		);
 
 		if (FAILED(hr)) {
-			if (error) {
-				Fatal(kChannel, "{}", error->GetBufferPointer());
-			}
+			if (error) { Fatal(kChannel, "{}", error->GetBufferPointer()); }
 			return {};
 		}
 
@@ -173,10 +170,9 @@ namespace Unnamed {
 	/// @param handle ルートシグネチャハンドル
 	/// @return ルートシグネチャ
 	ID3D12RootSignature* RootSignatureCache::Get(
-		const RootSignatureHandle handle) const {
-		if (handle.id >= mEntries.size()) {
-			return nullptr;
-		}
+		const RootSignatureHandle handle
+	) const {
+		if (handle.id >= mEntries.size()) { return nullptr; }
 		return mEntries[handle.id].rootSignature.Get();
 	}
 
@@ -184,9 +180,8 @@ namespace Unnamed {
 	/// @param rootSignature ルートシグネチャハンドル
 	/// @return ルートシグネチャ記述子
 	D3D12_ROOT_SIGNATURE_DESC& RootSignatureCache::GetDesc(
-		const RootSignatureHandle rootSignature) {
-		return mEntries[rootSignature.id].rootSignatureDesc;
-	}
+		const RootSignatureHandle rootSignature
+	) { return mEntries[rootSignature.id].rootSignatureDesc; }
 
 	/// @brief ルートシグネチャ記述子のハッシュ値を計算する
 	/// @param desc ルートシグネチャ記述子
@@ -198,7 +193,7 @@ namespace Unnamed {
 			HashCombine(h, hash(static_cast<uint64_t>(param.kind)));
 			HashCombine(h, hash(param.cbvRegister));
 			HashCombine(h, hash(param.cbvSpace));
-			
+
 			HashCombine(h, hash(param.srvRegister));
 			HashCombine(h, hash(param.srvSpace));
 

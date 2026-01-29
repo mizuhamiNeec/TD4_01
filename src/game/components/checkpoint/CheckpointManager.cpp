@@ -44,9 +44,7 @@ void CheckpointManager::UnregisterCheckpoint(CheckpointComponent* checkpoint) {
 	if (!checkpoint) { return; }
 
 	const int order = checkpoint->GetOrder();
-	if (sCheckpoints.find(order) != sCheckpoints.end()) {
-		sCheckpoints.erase(order);
-	}
+	if (sCheckpoints.contains(order)) { sCheckpoints.erase(order); }
 
 	if (sLastActivatedCheckpoint == checkpoint) {
 		sLastActivatedCheckpoint = nullptr;

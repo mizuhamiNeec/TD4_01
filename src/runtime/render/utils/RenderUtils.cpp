@@ -3,11 +3,11 @@
 namespace Unnamed {
 	Vec3 TransformPointRowVec(const Mat4& world, const Vec3& p) {
 		const float x = p.x * world.m[0][0] + p.y * world.m[1][0] + p.z * world.
-			m[2][0] + 1.0f * world.m[3][0];
+		                m[2][0] + 1.0f * world.m[3][0];
 		const float y = p.x * world.m[0][1] + p.y * world.m[1][1] + p.z * world.
-			m[2][1] + 1.0f * world.m[3][1];
+		                m[2][1] + 1.0f * world.m[3][1];
 		const float z = p.x * world.m[0][2] + p.y * world.m[1][2] + p.z * world.
-			m[2][2] + 1.0f * world.m[3][2];
+		                m[2][2] + 1.0f * world.m[3][2];
 		return Vec3(x, y, z);
 	}
 

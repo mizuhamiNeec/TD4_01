@@ -16,8 +16,7 @@ namespace Unnamed {
 	/// @brief コンストラクタ
 	/// @param assetManager アセットマネージャーへの参照
 	MaterialLoader::MaterialLoader(UAssetManager* assetManager)
-		: mAssetManager(assetManager) {
-	}
+		: mAssetManager(assetManager) {}
 
 	/// @brief 指定されたパスのファイルがロード可能かどうかを判定する
 	/// @param path ファイルパス
@@ -137,7 +136,8 @@ namespace Unnamed {
 			for (auto& [slot, val] : json["textures"].items()) {
 				auto    texPath = val.get<std::string>();
 				AssetID tid     = mAssetManager->LoadFromFile(
-					texPath, UASSET_TYPE::TEXTURE);
+					texPath, UASSET_TYPE::TEXTURE
+				);
 				m.textureSlots[slot] = tid;
 				result.dependencies.emplace_back(tid);
 			}

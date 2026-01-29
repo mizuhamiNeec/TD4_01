@@ -6,11 +6,11 @@
 
 #include <cassert>
 #include <d3d12.h>
-#include <dxgiformat.h>
-#include <winnt.h>
 #include <dxcapi.h>
+#include <dxgiformat.h>
 #include <format>
 #include <string>
+#include <winnt.h>
 
 #include <engine/OldConsole/Console.h>
 #include <runtime/core/Properties.h>
@@ -170,7 +170,7 @@ IDxcBlob* PipelineState::CompileShader(
 		L"-Zpr",          // メモリレイアウトは行優先
 	};
 #endif
-	
+
 	// 実際にShaderをコンパイルする
 	IDxcResult* shaderResult = nullptr;
 	hr                       = dxcCompiler->Compile(
@@ -304,19 +304,13 @@ void PipelineState::SetBlendMode(const BlendMode blendMode) {
 }
 
 /// @brief 現在のブレンドモードを取得
-BlendMode PipelineState::GetBlendMode() const {
-	return mCurrentBlendMode;
-}
+BlendMode PipelineState::GetBlendMode() const { return mCurrentBlendMode; }
 
 /// @brief パイプラインステートの取得
-ID3D12PipelineState* PipelineState::Get() const {
-	return mPipelineState.Get();
-}
+ID3D12PipelineState* PipelineState::Get() const { return mPipelineState.Get(); }
 
 /// @brief 深度書き込みマスクの設定
 /// @param depthWriteMask 深度書き込みマスク
 void PipelineState::SetDepthWriteMask(
 	const D3D12_DEPTH_WRITE_MASK depthWriteMask
-) {
-	mDesc.DepthStencilState.DepthWriteMask = depthWriteMask;
-}
+) { mDesc.DepthStencilState.DepthWriteMask = depthWriteMask; }

@@ -48,15 +48,12 @@ namespace Unnamed {
 			std::unique_ptr<UWorld> sub, TransformComponent* parentTransform
 		);
 
-		[[nodiscard]] const std::vector<ChildWorld>&
-		Children() const {
+		[[nodiscard]] const std::vector<ChildWorld>& Children() const {
 			return mChildren;
 		}
 
 		[[nodiscard]] const std::vector<std::unique_ptr<UEntity>>&
-		Entities() const {
-			return mEntities;
-		}
+		Entities() const { return mEntities; }
 
 		[[nodiscard]] const std::string& Name() const { return mName; }
 		void SetName(std::string& name) { mName = std::move(name); }

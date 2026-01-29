@@ -11,8 +11,7 @@
 namespace Unnamed {
 	/// @brief コンストラクタ
 	/// @param name ワールドの名前
-	UWorld::UWorld(std::string name) : mName(std::move(name)) {
-	}
+	UWorld::UWorld(std::string name) : mName(std::move(name)) {}
 
 	/// @brief デストラクタ
 	UWorld::~UWorld() = default;
@@ -45,9 +44,7 @@ namespace Unnamed {
 		}
 
 		for (auto& child : mChildren) {
-			if (child.world) {
-				child.world->PrePhysicsTick(deltaTime);
-			}
+			if (child.world) { child.world->PrePhysicsTick(deltaTime); }
 		}
 	}
 
@@ -60,9 +57,7 @@ namespace Unnamed {
 		}
 
 		for (auto& child : mChildren) {
-			if (child.world) {
-				child.world->Tick(deltaTime);
-			}
+			if (child.world) { child.world->Tick(deltaTime); }
 		}
 	}
 
@@ -73,9 +68,7 @@ namespace Unnamed {
 		}
 
 		for (auto& child : mChildren) {
-			if (child.world) {
-				child.world->PostPhysicsTick(deltaTime);
-			}
+			if (child.world) { child.world->PostPhysicsTick(deltaTime); }
 		}
 	}
 
@@ -174,9 +167,8 @@ namespace Unnamed {
 						auto           cobj = cs[k];
 						std::string    type = cobj["type"].GetString();
 						BaseComponent* comp = nullptr;
-						if (type == "Transform") {
-							comp = t;
-						} else if (type == "MeshRenderer") {
+						if (type == "Transform") { comp = t; } else if (
+							type == "MeshRenderer") {
 							comp =
 								e->GetOrAddComponent<MeshRendererComponent>();
 						} else if (type == "Camera") {
@@ -214,8 +206,10 @@ namespace Unnamed {
 	void UWorld::AddChildWorld(
 		std::unique_ptr<UWorld> sub, TransformComponent* parentTransform
 	) {
-		mChildren.emplace_back(ChildWorld{
-			.world = std::move(sub), .parentTransform = parentTransform
-		});
+		mChildren.emplace_back(
+			ChildWorld{
+				.world = std::move(sub), .parentTransform = parentTransform
+			}
+		);
 	}
 }

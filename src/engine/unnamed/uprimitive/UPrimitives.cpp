@@ -17,9 +17,7 @@ namespace Unnamed {
 
 	/// @brief AABBの中心を取得します
 	/// @return AABBの中心座標
-	Vec3 AABB::Center() const {
-		return (min + max) * 0.5f;
-	}
+	Vec3 AABB::Center() const { return (min + max) * 0.5f; }
 
 	/// @brief AABBの表面積を取得します
 	/// @return AABBの表面積
@@ -32,18 +30,12 @@ namespace Unnamed {
 	/// @return 最も長い軸のインデックス(0=x, 1=y, 2=z)
 	int AABB::LongestAxis() const {
 		const Vec3 d = max - min;
-		if (d.x >= d.y && d.x >= d.z) {
-			return 0;
-		}
-		if (d.y >= d.x && d.y >= d.z) {
-			return 1;
-		}
+		if (d.x >= d.y && d.x >= d.z) { return 0; }
+		if (d.y >= d.x && d.y >= d.z) { return 1; }
 		return 2;
 	}
 
 	/// @brief AABBのサイズを取得します
 	/// @return AABBのサイズベクトル
-	Vec3 AABB::Size() const {
-		return max - min;
-	}
+	Vec3 AABB::Size() const { return max - min; }
 }

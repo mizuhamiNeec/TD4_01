@@ -1,11 +1,11 @@
 #include <pch.h>
 #include <unordered_set>
 
+#include <engine/unnamed/subsystem/interface/ServiceLocator.h>
+#include <engine/unnamed/subsystem/render/URenderSubsystem.h>
 #include <game/gameframework/component/MeshRenderer/MeshRendererComponent.h>
 #include <game/gameframework/component/Transform/TransformComponent.h>
 #include <game/gameframework/world/UWorld.h>
-#include <engine/unnamed/subsystem/interface/ServiceLocator.h>
-#include <engine/unnamed/subsystem/render/URenderSubsystem.h>
 
 #include "engine/unnamed/uuploadarena/UploadArena.h"
 
@@ -22,8 +22,10 @@ namespace Unnamed {
 		/// @param view ビュー行列
 		/// @return ビュー空間での深度値
 		float ComputeViewDepth(const Mat4& world, const Mat4& view) {
-			const auto worldPos = Vec4(world.m[3][0], world.m[3][1],
-			                           world.m[3][2], 1.0f);
+			const auto worldPos = Vec4(
+				world.m[3][0], world.m[3][1],
+				world.m[3][2], 1.0f
+			);
 			const Vec4 viewPos = worldPos * view;
 			return viewPos.z;
 		}
@@ -59,9 +61,7 @@ namespace Unnamed {
 	bool URenderSubsystem::Init() {
 		if (mAssetManager) {
 			mAssetManager->RegisterReload(
-				[this](AssetID id) {
-					OnAssetReloaded(id);
-				}
+				[this](AssetID id) { OnAssetReloaded(id); }
 			);
 		}
 
@@ -89,13 +89,15 @@ namespace Unnamed {
 		mContext = mGraphicsDevice->BeginFrame();
 
 		const bool ok = mRenderResourceManager->GetUploadArena()->BeginFrame(
-			mContext.backIndex);
+			mContext.backIndex
+		);
 		if (!ok) {
 			auto fb = mGraphicsDevice->GetFrameBuffer(mContext.backIndex);
 			fb.fence->SetEventOnCompletion(fb.fenceValue, fb.event);
 			WaitForSingleObject(fb.event, INFINITE);
 			mRenderResourceManager->GetUploadArena()->BeginFrame(
-				mContext.backIndex);
+				mContext.backIndex
+			);
 		}
 
 		auto& [keep, fence, fenceValue] = mTransient[mContext.backIndex];
@@ -105,16 +107,16 @@ namespace Unnamed {
 
 		FrameCBData f;
 		f = {
-			.view = mView.view,
-			.proj = mView.proj,
-			.viewProj = mView.viewProj,
+			.view      = mView.view,
+			.proj      = mView.proj,
+			.viewProj  = mView.viewProj,
 			.cameraPos = mView.cameraPos,
-			.time = 0.0f
+			.time      = 0.0f
 		};
 		mFrameCBVA = UploadCB(&f, sizeof(f));
 
 		ObjectCBData dummyObj = {
-			.world = Mat4::identity,
+			.world                 = Mat4::identity,
 			.worldInverseTranspose = Mat4::identity,
 		};
 		mDummyObjectCBVA = UploadCB(&dummyObj, sizeof(dummyObj));
@@ -130,9 +132,7 @@ namespace Unnamed {
 		std::ranges::sort(
 			mItems,
 			[](const RenderItem& a, const RenderItem& b) {
-				if (a.psoId != b.psoId) {
-					return a.psoId < b.psoId;
-				}
+				if (a.psoId != b.psoId) { return a.psoId < b.psoId; }
 
 				if (a.materialKey != b.materialKey) {
 					return a.materialKey < b.materialKey;
@@ -199,7 +199,8 @@ namespace Unnamed {
 					)
 				) {
 					const MeshGPU* mesh = mRenderResourceManager->GetMesh(
-						mr->meshHandle);
+						mr->meshHandle
+					);
 					if (!mesh) { continue; }
 
 					const Mat4 worldMat = tr->WorldMat() * parent;
@@ -219,10 +220,9 @@ namespace Unnamed {
 
 					it.materialAsset = mr->materialAsset;
 					it.material      = EnsureMaterialGPU(
-						it.materialAsset, mContext.cmd);
-					if (!it.material) {
-						continue;
-					}
+						it.materialAsset, mContext.cmd
+					);
+					if (!it.material) { continue; }
 
 					it.depthVS = ComputeViewDepth(it.matWorld, mView.view);
 					it.psoId = it.material->pso.id;
@@ -293,8 +293,10 @@ namespace Unnamed {
 				);
 				lastMat = head.materialKey;
 			} else if (head.materialKey != lastMat) {
-				head.material->Apply(cmd, mRenderResourceManager,
-				                     mContext.backIndex);
+				head.material->Apply(
+					cmd, mRenderResourceManager,
+					mContext.backIndex
+				);
 				lastMat = head.materialKey;
 			}
 
@@ -313,9 +315,11 @@ namespace Unnamed {
 			const auto   slice = mRenderResourceManager->GetUploadArena()->
 				Allocate(bytes, 16);
 			if (!slice.cpu) {
-				Warning("Render",
-				        "UploadArena capacity exceeded (instances={}, bytes={})",
-				        instanceCount, bytes);
+				Warning(
+					"Render",
+					"UploadArena capacity exceeded (instances={}, bytes={})",
+					instanceCount, bytes
+				);
 				break;
 			}
 			auto* dst = reinterpret_cast<InstanceData*>(slice.cpu);
@@ -358,9 +362,7 @@ namespace Unnamed {
 					mesh->baseVertex,
 					0
 				);
-			} else {
-				cmd->DrawInstanced(3, instanceCount, 0, 0);
-			}
+			} else { cmd->DrawInstanced(3, instanceCount, 0, 0); }
 
 			i = j;
 		}
@@ -374,9 +376,7 @@ namespace Unnamed {
 		}
 
 		const auto& meta = mAssetManager->Meta(materialAsset);
-		if (meta.type != UASSET_TYPE::MATERIAL) {
-			return nullptr;
-		}
+		if (meta.type != UASSET_TYPE::MATERIAL) { return nullptr; }
 
 		auto& entry = mMaterialCache[materialAsset];
 
@@ -417,7 +417,7 @@ namespace Unnamed {
 
 		// テクスチャ、シェーダーが更新されたら、参照しているマテリアルを無効にする
 		if (meta.type == UASSET_TYPE::TEXTURE || meta.type ==
-			UASSET_TYPE::SHADER) {
+		    UASSET_TYPE::SHADER) {
 			// 参照元
 			const auto dependencies = mAssetManager->Dependencies(id);
 			for (const AssetID parent : dependencies) {
@@ -438,12 +438,15 @@ namespace Unnamed {
 	) const {
 		const size_t aligned = (bytes + 255) & ~static_cast<size_t>(255);
 		const auto   slice = mRenderResourceManager->GetUploadArena()->Allocate(
-			aligned, 256);
+			aligned, 256
+		);
 		if (!slice.cpu) {
 			// 足りないときのフォールバック（警告だけ出して早期 return でもOK）
-			Warning("Render",
-			        "UploadArena capacity exceeded (size={}, frame={})",
-			        aligned, mContext.backIndex);
+			Warning(
+				"Render",
+				"UploadArena capacity exceeded (size={}, frame={})",
+				aligned, mContext.backIndex
+			);
 			return 0;
 		}
 		std::memcpy(slice.cpu, src, bytes);

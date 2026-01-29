@@ -94,8 +94,10 @@ struct Quaternion {
 	 * @param z Z軸回転（度数法）
 	 * @return クォータニオン
 	 */
-	static Quaternion EulerDegrees(float x, float y,
-	                               float z);
+	static Quaternion EulerDegrees(
+		float x, float y,
+		float z
+	);
 
 	/**
 	 * @brief 軸と角度からクォータニオンを生成する
@@ -108,11 +110,13 @@ struct Quaternion {
 	/**
 	 * @brief 前方向と上方向から回転を生成する
 	 * @param forward 前方向ベクトル
-	 * @param up 上方向ベクトル（デフォルト: Vec3::up）
+	 * @param up 上方向ベクトル
 	 * @return クォータニオン
 	 */
-	static Quaternion LookRotation(const Vec3& forward,
-	                               const Vec3& up = Vec3::up);
+	static Quaternion LookRotation(
+		const Vec3& forward,
+		const Vec3& up
+	);
 
 	/**
 	 * @brief 線形補間を行う

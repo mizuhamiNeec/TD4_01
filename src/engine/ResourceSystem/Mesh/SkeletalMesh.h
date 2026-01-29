@@ -1,8 +1,8 @@
 ﻿#pragma once
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
-#include <map>
 
 #include <engine/ResourceSystem/Mesh/SubMesh.h>
 
@@ -43,8 +43,7 @@ public:
 	// アニメーション関連
 	void AddAnimation(const std::string& name, const Animation& animation);
 	[[nodiscard]] const Animation* GetAnimation(const std::string& name) const;
-	[[nodiscard]] const std::map<std::string, Animation>&
-	GetAnimations() const;
+	[[nodiscard]] const std::map<std::string, Animation>& GetAnimations() const;
 
 	void Render(ID3D12GraphicsCommandList* commandList) const;
 

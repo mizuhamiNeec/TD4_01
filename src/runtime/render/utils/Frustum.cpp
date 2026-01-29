@@ -54,9 +54,7 @@ namespace Unnamed {
 					return dist >= -radiusWS;
 				}
 			)
-		) {
-			return false;
-		}
+		) { return false; }
 		return true;
 	}
 }

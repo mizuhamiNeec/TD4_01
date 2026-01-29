@@ -61,18 +61,16 @@ namespace UPhysics {
 			std::vector<const RegisteredBVH*> filtered;
 			const Unnamed::Ray                broadRay = {
 				.origin = start,
-				.dir = dir,
+				.dir    = dir,
 				.invDir = Vec3::one / dir,
-				.tMin = 0.0f,
-				.tMax = length
+				.tMin   = 0.0f,
+				.tMax   = length
 			};
 			Vec3        dirNormalized = dir;
 			const float dirLenSq      = dirNormalized.SqrLength();
 			if (dirLenSq > 1e-12f) {
 				dirNormalized /= std::sqrt(dirLenSq);
-			} else {
-				dirNormalized = Vec3::zero;
-			}
+			} else { dirNormalized = Vec3::zero; }
 
 			for (const auto& bvh : bvhSet) {
 				Unnamed::AABB root = cast.ExpandNode(bvh.nodes[0].bounds);
@@ -105,7 +103,7 @@ namespace UPhysics {
 
 #ifdef _DEBUG
 					Vec3 center = (node.bounds.min + node.bounds.max) *
-						0.5f;
+					              0.5f;
 					const Vec3 size = node.bounds.max - node.bounds.min;
 					DebugDraw::DrawBox(
 						center,
@@ -166,9 +164,7 @@ namespace UPhysics {
 				const float nLenSq      = finalNormal.SqrLength();
 				if (nLenSq > 1e-12f) {
 					finalNormal /= std::sqrt(nLenSq);
-				} else {
-					finalNormal = Vec3::zero;
-				}
+				} else { finalNormal = Vec3::zero; }
 				const float hitDistance = bestTOI * length;
 				outHit->t               = hitDistance;
 				outHit->normal          = finalNormal;
@@ -185,8 +181,10 @@ namespace UPhysics {
 			return true;
 		}
 
-		static void AddGlobalOffset(std::vector<uint32_t>& indices,
-		                            uint32_t               base);
+		static void AddGlobalOffset(
+			std::vector<uint32_t>& indices,
+			uint32_t               base
+		);
 
 		std::vector<Unnamed::Triangle> mTriangles;
 		std::vector<FlatNode>          mNodes;

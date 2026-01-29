@@ -1,6 +1,6 @@
 #pragma once
-#include <runtime/core/math/Math.h>
 #include <engine/Components/Base/Component.h>
+#include <runtime/core/math/Math.h>
 
 /// @brief シーン上のオブジェクトの位置、回転、スケールを管理するコンポーネント
 class SceneComponent : public Component {
@@ -9,8 +9,7 @@ public:
 	                   mRotation(Quaternion::identity),
 	                   mScale(Vec3::one),
 	                   mLocalMat(Mat4::identity),
-	                   mIsDirty(true) {
-	}
+	                   mIsDirty(true) {}
 
 	void Update(float deltaTime) override;
 

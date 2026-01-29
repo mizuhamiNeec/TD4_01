@@ -9,7 +9,8 @@
 /// @param name バッファ名
 ConstantBuffer::ConstantBuffer(
 	const Microsoft::WRL::ComPtr<ID3D12Device>& device, const size_t size,
-	std::string                                 name) : mName(
+	std::string                                 name
+) : mName(
 	std::move(name)
 ) {
 	size_t align       = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT;
@@ -52,9 +53,7 @@ ConstantBuffer::ConstantBuffer(
 
 /// @brief デストラクタ
 ConstantBuffer::~ConstantBuffer() {
-	if (mBuffer) {
-		mBuffer->Unmap(0, nullptr);
-	}
+	if (mBuffer) { mBuffer->Unmap(0, nullptr); }
 }
 
 /// @brief バッファのGPU仮想アドレスを取得します
@@ -71,12 +70,8 @@ D3D12_CONSTANT_BUFFER_VIEW_DESC ConstantBuffer::ViewDesc() const {
 
 /// @brief バッファのCPU仮想アドレスを取得します
 /// @return CPU仮想アドレス
-void* ConstantBuffer::GetPtr() const {
-	return mMappedPtr;
-}
+void* ConstantBuffer::GetPtr() const { return mMappedPtr; }
 
 /// @brief バッファリソースを取得します
 /// @return バッファリソースへのポインタ
-ID3D12Resource* ConstantBuffer::GetResource() const {
-	return mBuffer.Get();
-}
+ID3D12Resource* ConstantBuffer::GetResource() const { return mBuffer.Get(); }

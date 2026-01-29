@@ -11,6 +11,8 @@ public:
 	void SetResizeCallback(ResizeCallback callback) override;
 
 protected:
-	LRESULT WindowProc(HWND   hWnd, UINT msg, WPARAM wParam,
-	                   LPARAM lParam) override;
+	LRESULT WindowProc(
+		HWND   hWnd, UINT msg, WPARAM wParam,
+		LPARAM lParam
+	) override;
 };

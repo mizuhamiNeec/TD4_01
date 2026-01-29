@@ -25,10 +25,12 @@ namespace Unnamed::Gui {
 		/// @param normal 通常時の色
 		/// @param hovered ホバー時の色
 		/// @param pressed 押下時の色
-		void SetColors(const Color& normal, const Color& hovered,
-		               const Color& pressed);
+		void SetColors(
+			const Color& normal, const Color& hovered,
+			const Color& pressed
+		);
 
-		char const* GetTypeName() const override { return "Button"; }
+		const char* GetTypeName() const override { return "Button"; }
 
 	protected:
 		/// @brief 描画コマンドを構築します。

@@ -5,18 +5,14 @@
 
 namespace Unnamed::StrUtil {
 	std::string ToString(const std::wstring& string) {
-		if (string.empty()) {
-			return {};
-		}
+		if (string.empty()) { return {}; }
 
 		const auto sizeNeeded = WideCharToMultiByte(
 			CP_UTF8, 0, string.data(), static_cast<int>(string.size()), nullptr,
 			0,
 			nullptr, nullptr
 		);
-		if (sizeNeeded == 0) {
-			return {};
-		}
+		if (sizeNeeded == 0) { return {}; }
 		std::string result(sizeNeeded, 0);
 		WideCharToMultiByte(
 			CP_UTF8, 0, string.data(), static_cast<int>(string.size()),
@@ -29,28 +25,28 @@ namespace Unnamed::StrUtil {
 
 	std::string ToString(const wchar_t* string) {
 		// WideCharToMultiByteを使用して、ワイド文字列をマルチバイト文字列に変換
-		int bufferSize = WideCharToMultiByte(CP_UTF8, 0, string, -1, nullptr, 0,
-		                                     nullptr, nullptr);
+		int bufferSize = WideCharToMultiByte(
+			CP_UTF8, 0, string, -1, nullptr, 0,
+			nullptr, nullptr
+		);
 		std::string ret(bufferSize - 1, 0);
-		WideCharToMultiByte(CP_UTF8, 0, string, -1, ret.data(), bufferSize,
-		                    nullptr,
-		                    nullptr);
+		WideCharToMultiByte(
+			CP_UTF8, 0, string, -1, ret.data(), bufferSize,
+			nullptr,
+			nullptr
+		);
 		return ret;
 	}
 
 
 	std::wstring ToWString(const std::string& string) {
-		if (string.empty()) {
-			return {};
-		}
+		if (string.empty()) { return {}; }
 
 		int sizeNeeded = MultiByteToWideChar(
 			CP_UTF8, 0, string.data(), static_cast<int>(string.size()), nullptr,
 			0
 		);
-		if (sizeNeeded == 0) {
-			return {};
-		}
+		if (sizeNeeded == 0) { return {}; }
 		std::wstring result(sizeNeeded, 0);
 		int          written = MultiByteToWideChar(
 			CP_UTF8, 0, string.data(), static_cast<int>(string.size()),
@@ -73,9 +69,7 @@ namespace Unnamed::StrUtil {
 	}
 
 	bool Equal(const std::string& str1, const std::string& str2) {
-		if (str1.size() != str2.size()) {
-			return false;
-		}
+		if (str1.size() != str2.size()) { return false; }
 		return std::equal(
 			str1.begin(),
 			str1.end(),
@@ -90,26 +84,20 @@ namespace Unnamed::StrUtil {
 		const std::vector<std::string>& args,
 		const char*                     delimiter
 	) {
-		if (args.empty()) {
-			return "";
-		}
+		if (args.empty()) { return ""; }
 
 		std::string result;
-		for (const auto& arg : args) {
-			result += arg + delimiter;
-		}
-		if (!result.empty()) {
-			result.pop_back();
-		}
+		for (const auto& arg : args) { result += arg + delimiter; }
+		if (!result.empty()) { result.pop_back(); }
 		return result;
 	}
 
 	std::string DescribeAxis(const int& i) {
 		switch (i) {
-		case 0: return "X";
-		case 1: return "Y";
-		case 2: return "Z";
-		default: return "Unknown";
+			case 0: return "X";
+			case 1: return "Y";
+			case 2: return "Z";
+			default: return "Unknown";
 		}
 	}
 
@@ -134,8 +122,7 @@ namespace Unnamed::StrUtil {
 			utf8String += static_cast<char>(0x80 | ((codePoint >> 12) & 0x3F));
 			utf8String += static_cast<char>(0x80 | ((codePoint >> 6) & 0x3F));
 			utf8String += static_cast<char>(0x80 | (codePoint & 0x3F));
-		} else {
-		}
+		} else {}
 
 		return utf8String;
 	}
@@ -165,9 +152,7 @@ namespace Unnamed::StrUtil {
 		try {
 			[[maybe_unused]] auto d = std::stof(str);
 			return true;
-		} catch (...) {
-			return false;
-		}
+		} catch (...) { return false; }
 	}
 
 	std::vector<std::string> SplitCommands(const std::string_view& command) {
@@ -181,14 +166,10 @@ namespace Unnamed::StrUtil {
 			} else if (ch == ';' && !inQuotes) {
 				result.emplace_back(current);
 				current.clear();
-			} else {
-				current += ch;
-			}
+			} else { current += ch; }
 		}
 
-		if (!current.empty()) {
-			result.emplace_back(current);
-		}
+		if (!current.empty()) { result.emplace_back(current); }
 
 		return result;
 	}
@@ -198,9 +179,7 @@ namespace Unnamed::StrUtil {
 		std::vector<std::string> tokens;
 		std::string              token;
 
-		while (stream >> token) {
-			tokens.emplace_back(token);
-		}
+		while (stream >> token) { tokens.emplace_back(token); }
 
 		return tokens;
 	}
@@ -224,25 +203,21 @@ namespace Unnamed::StrUtil {
 		std::vector<LinkSpan> result;
 		const auto            size = line.size();
 
-		auto IsSpace = [](unsigned char c) {
-			return std::isspace(c) != 0;
-		};
+		auto IsSpace = [](unsigned char c) { return std::isspace(c) != 0; };
 
 		auto IsTrailingPunct = [](char c) {
 			switch (c) {
-			case '.':
-			case ',':
-			case ';':
-			case ':':
-			case ')':
-			case ']':
-			case '}':
-			case '>':
-			case '"':
-			case '\'':
-				return true;
-			default:
-				return false;
+				case '.':
+				case ',':
+				case ';':
+				case ':':
+				case ')':
+				case ']':
+				case '}':
+				case '>':
+				case '"':
+				case '\'': return true;
+				default: return false;
 			}
 		};
 
@@ -250,7 +225,7 @@ namespace Unnamed::StrUtil {
 			const std::size_t pos, const std::string_view prefix
 		) {
 			return pos + prefix.size() <= size &&
-				std::string_view(line.data() + pos, prefix.size()) == prefix;
+			       std::string_view(line.data() + pos, prefix.size()) == prefix;
 		};
 
 		for (std::size_t i = 0; i < size; ++i) {
@@ -259,17 +234,14 @@ namespace Unnamed::StrUtil {
 
 			// ブラウザリンク
 			if (StartsWithAt(i, "http://") || StartsWithAt(i, "https://") ||
-				StartsWithAt(i, "file://")) {
+			    StartsWithAt(i, "file://")) {
 				span.begin    = i;
 				std::size_t j = i;
 				while (j < size && !IsSpace(
-					static_cast<unsigned char>(line[j]))) {
-					++j;
-				}
+					       static_cast<unsigned char>(line[j])
+				       )) { ++j; }
 				// 末尾の句読点などを削る
-				while (j > span.begin && IsTrailingPunct(line[j - 1])) {
-					--j;
-				}
+				while (j > span.begin && IsTrailingPunct(line[j - 1])) { --j; }
 				if (j > span.begin) {
 					span.end = j;
 					matched  = true;
@@ -277,18 +249,15 @@ namespace Unnamed::StrUtil {
 			}
 			// Windows 絶対パス: C:\ or D:/ など
 			else if (i + 2 < size &&
-				std::isalpha(static_cast<unsigned char>(line[i])) &&
-				line[i + 1] == ':' &&
-				(line[i + 2] == '\\' || line[i + 2] == '/')) {
+			         std::isalpha(static_cast<unsigned char>(line[i])) &&
+			         line[i + 1] == ':' &&
+			         (line[i + 2] == '\\' || line[i + 2] == '/')) {
 				span.begin    = i;
 				std::size_t j = i;
 				while (j < size && !IsSpace(
-					static_cast<unsigned char>(line[j]))) {
-					++j;
-				}
-				while (j > span.begin && IsTrailingPunct(line[j - 1])) {
-					--j;
-				}
+					       static_cast<unsigned char>(line[j])
+				       )) { ++j; }
+				while (j > span.begin && IsTrailingPunct(line[j - 1])) { --j; }
 				if (j > span.begin + 3) {
 					span.end = j;
 					matched  = true;
@@ -296,17 +265,14 @@ namespace Unnamed::StrUtil {
 			}
 			// 相対パス
 			else if (StartsWithAt(i, "./") || StartsWithAt(i, ".\\") ||
-				StartsWithAt(i, "../") || StartsWithAt(i, "..\\")
+			         StartsWithAt(i, "../") || StartsWithAt(i, "..\\")
 			) {
 				span.begin    = i;
 				std::size_t j = i;
 				while (j < size && !IsSpace(
-					static_cast<unsigned char>(line[j]))) {
-					++j;
-				}
-				while (j > span.begin && IsTrailingPunct(line[j - 1])) {
-					--j;
-				}
+					       static_cast<unsigned char>(line[j])
+				       )) { ++j; }
+				while (j > span.begin && IsTrailingPunct(line[j - 1])) { --j; }
 				if (j > span.begin + 2) {
 					span.end = j;
 					matched  = true;

@@ -1,9 +1,9 @@
 ﻿#include "RotatorComponent.h"
 
-#include <game/gameframework/component/Transform/TransformComponent.h>
-#include <game/gameframework/entity/base/BaseEntity.h>
 #include <core/unnamed/json/JsonReader.h>
 #include <core/unnamed/json/JsonWriter.h>
+#include <game/gameframework/component/Transform/TransformComponent.h>
+#include <game/gameframework/entity/base/BaseEntity.h>
 
 namespace Unnamed {
 	RotatorComponent::RotatorComponent() = default;
@@ -11,34 +11,24 @@ namespace Unnamed {
 	/// @brief エンティティに取り付けられた際に呼び出されます。
 	void RotatorComponent::OnAttached() {
 		// TransformComponentへの参照を取得
-		if (mOwner) {
-			mTransform = mOwner->GetComponent<TransformComponent>();
-		}
+		if (mOwner) { mTransform = mOwner->GetComponent<TransformComponent>(); }
 	}
 
 	/// @brief 毎フレーム呼び出され、回転を更新します。
 	void RotatorComponent::OnTick(float deltaTime) {
 		// 回転が無効、またはTransformComponentが無い場合は何もしない
-		if (!mRotationEnabled || !mTransform || !mIsActive) {
-			return;
-		}
+		if (!mRotationEnabled || !mTransform || !mIsActive) { return; }
 
 		// 回転速度を適用（度/秒からラジアン/秒に変換して適用）
 		Vec3 rotationDelta = Vec3::zero;
 
-		if (mPitchEnabled) {
-			rotationDelta.x = mRotationRate.x * deltaTime;
-		}
-		if (mYawEnabled) {
-			rotationDelta.y = mRotationRate.y * deltaTime;
-		}
-		if (mRollEnabled) {
-			rotationDelta.z = mRotationRate.z * deltaTime;
-		}
+		if (mPitchEnabled) { rotationDelta.x = mRotationRate.x * deltaTime; }
+		if (mYawEnabled) { rotationDelta.y = mRotationRate.y * deltaTime; }
+		if (mRollEnabled) { rotationDelta.z = mRotationRate.z * deltaTime; }
 
 		// 回転が実際にある場合のみ適用
 		if (rotationDelta.x != 0.0f || rotationDelta.y != 0.0f || rotationDelta.
-			z != 0.0f) {
+		    z != 0.0f) {
 			// 度からラジアンに変換して回転を適用
 			Vec3       rotationDeltaRad = rotationDelta * Math::deg2Rad;
 			Quaternion deltaRotation    = Quaternion::Euler(rotationDeltaRad);

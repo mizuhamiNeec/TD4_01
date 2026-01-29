@@ -75,10 +75,11 @@ namespace Unnamed {
 	/// @brief ルートシグネチャキャッシュクラス
 	class RootSignatureCache {
 	public:
-		explicit            RootSignatureCache(GraphicsDevice* graphicsDevice);
+		explicit RootSignatureCache(GraphicsDevice* graphicsDevice);
 		RootSignatureHandle GetOrCreate(const RootSignatureDesc& desc);
-		[[nodiscard]] ID3D12RootSignature*
-		Get(RootSignatureHandle handle) const;
+		[[nodiscard]] ID3D12RootSignature* Get(
+			RootSignatureHandle handle
+		) const;
 		D3D12_ROOT_SIGNATURE_DESC& GetDesc(RootSignatureHandle rootSignature);
 
 	private:

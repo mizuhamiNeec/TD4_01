@@ -7,7 +7,5 @@ namespace Unnamed {
 	class ConsoleScriptParser {
 	public:
 		ConsoleScriptParser(const std::string_view& path);
-
-	private:
 	};
 }

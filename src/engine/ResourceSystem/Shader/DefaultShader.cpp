@@ -19,8 +19,10 @@ const std::string DefaultShader::kDefaultSkinnedShaderName =
 /// @param shaderManager シェーダーマネージャーへのポインタ
 /// @return シェーダーポインタ
 Shader* DefaultShader::CreateDefaultShader(ShaderManager* shaderManager) {
-	return shaderManager->LoadShader(kDefaultShaderName, kDefaultVSPath,
-	                                 kDefaultPSPath);
+	return shaderManager->LoadShader(
+		kDefaultShaderName, kDefaultVSPath,
+		kDefaultPSPath
+	);
 }
 
 /// @brief デフォルトスキンドシェーダーを作成します

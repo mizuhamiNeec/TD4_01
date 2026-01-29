@@ -11,7 +11,7 @@ namespace UPhysics {
 		uint32_t      rightFirst;
 		uint16_t      primCount;
 	};
-	
+
 	/// @brief BVHビルダークラス
 	class BVHBuilder {
 	public:
@@ -23,8 +23,13 @@ namespace UPhysics {
 		);
 
 	private:
-		uint32_t Recurse(const uint32_t& start, const uint32_t& end, const int& depth);
-		void SAHSplit(const uint32_t& start, const uint32_t& end, const int& axis, uint32_t& outMid);
+		uint32_t Recurse(
+			const uint32_t& start, const uint32_t& end, const int& depth
+		);
+		void SAHSplit(
+			const uint32_t& start, const uint32_t& end, const int& axis,
+			uint32_t&       outMid
+		);
 
 		std::vector<TriInfo>  mTriInfos;
 		std::vector<uint32_t> mTriIndices;

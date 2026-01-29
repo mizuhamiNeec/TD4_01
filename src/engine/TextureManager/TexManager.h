@@ -31,7 +31,8 @@ public:
 
 	// SRVインデックスの開始番号
 	[[nodiscard]] uint32_t GetTextureIndexByFilePath(
-		const std::string& filePath) const;
+		const std::string& filePath
+	) const;
 
 	// テクスチャ番号からGPUハンドルを取得
 	D3D12_GPU_DESCRIPTOR_HANDLE GetSrvHandleGPU(const std::string& filePath);
@@ -42,14 +43,17 @@ public:
 
 	// テクスチャリソースを取得
 	Microsoft::WRL::ComPtr<ID3D12Resource> GetTextureResource(
-		const std::string& filePath) const;
+		const std::string& filePath
+	) const;
 
 	// テクスチャのSRVインデックスを取得（GetTextureIndexByFilePathのエイリアス）
 	uint32_t GetTextureSrvIndex(const std::string& filePath) const;
 
 	// テクスチャのSRVインデックスを更新（Material.cppで連続スロット再配置時に使用）
-	void UpdateTextureSrvIndex(const std::string& filePath,
-	                           uint32_t           newSrvIndex);
+	void UpdateTextureSrvIndex(
+		const std::string& filePath,
+		uint32_t           newSrvIndex
+	);
 
 private:
 	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> UploadTextureData(
@@ -57,11 +61,10 @@ private:
 		const DirectX::ScratchImage&                  mipImages
 	) const;
 	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(
-		const DirectX::TexMetadata& metadata) const;
+		const DirectX::TexMetadata& metadata
+	) const;
 
-	static std::string_view GetName() {
-		return "TexManager";
-	}
+	static std::string_view GetName() { return "TexManager"; }
 
 	// テクスチャデータ
 	std::unordered_map<std::string, TextureData> mTextureData;
@@ -71,10 +74,12 @@ private:
 
 	static D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(
 		ID3D12DescriptorHeap* descriptorHeap,
-		uint32_t              descriptorSize, uint32_t index);
+		uint32_t              descriptorSize, uint32_t index
+	);
 	static D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(
 		ID3D12DescriptorHeap* descriptorHeap,
-		uint32_t              descriptorSize, uint32_t index);
+		uint32_t              descriptorSize, uint32_t index
+	);
 
 	static TexManager* mInstance;
 

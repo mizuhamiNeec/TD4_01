@@ -3,8 +3,8 @@
 #include <d3d12.h>
 #include <string>
 #include <vector>
-#include <runtime/core/math/Math.h>
 #include <engine/Animation/Node.h>
+#include <runtime/core/math/Math.h>
 
 /// @brief 頂点構造体
 struct Vertex {

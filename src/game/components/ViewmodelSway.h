@@ -12,8 +12,7 @@ public:
 	 * @brief コンストラクタ
 	 * @param swayAmount 揺れの量
 	 */
-	ViewmodelSway(const float swayAmount = -0.025f) : mSwayAmount(swayAmount) {
-	}
+	ViewmodelSway(const float swayAmount = -0.025f) : mSwayAmount(swayAmount) {}
 
 	/**
 	 * @brief デストラクタ

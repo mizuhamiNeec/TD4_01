@@ -8,7 +8,7 @@ public:
 	GameTime();
 
 	void StartGame();
-	
+
 	void EndFrame();
 
 	// Getter

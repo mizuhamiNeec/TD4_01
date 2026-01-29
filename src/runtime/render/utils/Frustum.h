@@ -12,7 +12,9 @@ namespace Unnamed {
 
 		static Frustum FromViewProjRowVec(const Mat4& viewProj);
 
-		[[nodiscard]] bool TestSphere(const Vec3& centerWS,
-		                              float       radiusWS) const;
+		[[nodiscard]] bool TestSphere(
+			const Vec3& centerWS,
+			float       radiusWS
+		) const;
 	};
 }

@@ -13,8 +13,10 @@
 /// @brief ImGuiマネージャーのコンストラクタ
 /// @param renderer D3D12レンダラーへのポインタ
 /// @param srvManager SRVマネージャーへのポインタ
-ImGuiManager::ImGuiManager(D3D12*      renderer,
-                           SrvManager* srvManager) :
+ImGuiManager::ImGuiManager(
+	D3D12*      renderer,
+	SrvManager* srvManager
+) :
 	mRenderer(renderer),
 	mSrvManager(srvManager) {
 	IMGUI_CHECKVERSION();
@@ -60,9 +62,7 @@ ImGuiManager::ImGuiManager(D3D12*      renderer,
 	);
 
 	// テーマの設定
-	if (WindowsUtils::IsAppDarkTheme()) {
-		ImGuiUtil::StyleColorsDark();
-	} else {
+	if (WindowsUtils::IsAppDarkTheme()) { ImGuiUtil::StyleColorsDark(); } else {
 		ImGuiUtil::StyleColorsLight();
 	}
 
@@ -78,9 +78,11 @@ ImGuiManager::ImGuiManager(D3D12*      renderer,
 	init_info.UserData                = this;
 
 	auto AllocFn =
-		[](ImGui_ImplDX12_InitInfo*     info,
-		   D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle,
-		   D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle) {
+		[](
+		ImGui_ImplDX12_InitInfo*     info,
+		D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle,
+		D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle
+	) {
 		const auto mgr   = static_cast<ImGuiManager*>(info->UserData);
 		const auto index = mgr->GetSrvManager()->AllocateForTexture2D();
 		*cpuHandle       = mgr->GetSrvManager()->GetCPUDescriptorHandle(index);
@@ -88,9 +90,11 @@ ImGuiManager::ImGuiManager(D3D12*      renderer,
 	};
 
 	auto FreeFn =
-		[](ImGui_ImplDX12_InitInfo*    info,
-		   D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle,
-		   D3D12_GPU_DESCRIPTOR_HANDLE) {
+		[](
+		ImGui_ImplDX12_InitInfo*    info,
+		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle,
+		D3D12_GPU_DESCRIPTOR_HANDLE
+	) {
 		const auto mgr = static_cast<ImGuiManager*>(info->UserData);
 		auto cpuIndex = mgr->GetSrvManager()->GetIndexFromCPUHandle(cpuHandle);
 		mgr->GetSrvManager()->DeallocateTexture2D(cpuIndex);
@@ -98,7 +102,7 @@ ImGuiManager::ImGuiManager(D3D12*      renderer,
 
 	init_info.SrvDescriptorAllocFn = AllocFn;
 	init_info.SrvDescriptorFreeFn  = FreeFn;
-	
+
 	ImGui_ImplDX12_Init(&init_info);
 }
 
@@ -121,8 +125,10 @@ void ImGuiManager::EndFrame() {
 	mRenderer->GetCommandList()->SetDescriptorHeaps(1, &imGuiHeap);
 
 	// メインウィンドウのImGuiコンテンツを描画
-	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(),
-	                              mRenderer->GetCommandList());
+	ImGui_ImplDX12_RenderDrawData(
+		ImGui::GetDrawData(),
+		mRenderer->GetCommandList()
+	);
 
 	// マルチビューポートの更新前に、すべてのコマンドを確実にフラッシュする
 	mRenderer->GetCommandList()->Close();
@@ -352,7 +358,8 @@ const ImWchar* ImGuiManager::GetGlyphRangesJapanese() {
 		0xFFFD, 0xFFFD  // Invalid
 	};
 	static ImWchar full_ranges[IM_ARRAYSIZE(base_ranges) + IM_ARRAYSIZE(
-		accumulative_offsets_from_0x4E00) * 2 + 1] = {0};
+		                           accumulative_offsets_from_0x4E00
+	                           ) * 2 + 1] = {0};
 	return &full_ranges[0];
 }
 #endif

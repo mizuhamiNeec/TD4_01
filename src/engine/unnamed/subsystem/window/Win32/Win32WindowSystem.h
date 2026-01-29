@@ -26,8 +26,9 @@ public:
 	}
 
 	// Win32WindowSystem
-	IWindow*
-	CreateNewWindow(const IWindow::WindowCreateInfo& windowInfo) override;
+	IWindow* CreateNewWindow(
+		const IWindow::WindowCreateInfo& windowInfo
+	) override;
 	[[nodiscard]] const std::vector<std::unique_ptr<IWindow>>&
 	GetWindows() const override;
 	[[nodiscard]] bool AllClosed() const override;

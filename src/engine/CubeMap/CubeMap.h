@@ -7,6 +7,7 @@
 #include <engine/renderer/VertexBuffer.h>
 
 class SrvManager;
+class TexManager;
 
 /// @brief キューブマップクラス
 class CubeMap {
@@ -14,6 +15,7 @@ public:
 	CubeMap(
 		ID3D12Device*    device,
 		SrvManager*      srvManager,
+		TexManager*      texManager,
 		std::string_view path
 	);
 
@@ -47,4 +49,5 @@ private:
 	std::string          mTexturePath;
 
 	SrvManager* mSrvManager = nullptr;
+	TexManager* mTexManager = nullptr;
 };

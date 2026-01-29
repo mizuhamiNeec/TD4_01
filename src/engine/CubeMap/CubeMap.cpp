@@ -11,10 +11,12 @@
 CubeMap::CubeMap(
 	ID3D12Device*          device,
 	SrvManager*            srvManager,
+	TexManager*            texManager,
 	const std::string_view path
 ) : mVertexData({}),
     mDevice(device),
-    mSrvManager(srvManager) {
+    mSrvManager(srvManager),
+	mTexManager(texManager) {
 	mTexturePath = path;
 	Init();
 }
@@ -135,7 +137,7 @@ void CubeMap::Render(ID3D12GraphicsCommandList* commandList) const {
 
 	// ルートパラメータでSRVとCBVをバインド
 	commandList->SetGraphicsRootDescriptorTable(
-		0, TexManager::GetInstance()->GetSrvHandleGPU(mTexturePath)
+		0, mTexManager->GetSrvHandleGPU(mTexturePath)
 	); // t0
 	commandList->SetGraphicsRootConstantBufferView(
 		1, mTransformationCb->GetAddress()

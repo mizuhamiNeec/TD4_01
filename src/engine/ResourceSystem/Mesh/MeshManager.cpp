@@ -16,6 +16,7 @@
 #include <engine/OldConsole/Console.h>
 #include <engine/ResourceSystem/Material/MaterialManager.h>
 #include <engine/ResourceSystem/Mesh/MeshManager.h>
+#include <engine/EngineServices.h>
 #include <engine/ResourceSystem/Shader/DefaultShader.h>
 #include <engine/Engine.h>
 #include <engine/TextureManager/TexManager.h>
@@ -484,7 +485,11 @@ SubMesh* MeshManager::ProcessMesh(
 				std::filesystem::path fullTexturePath = modelDir / texPath;
 
 				// 旧TexManagerを使用してテクスチャを読み込み
-				Unnamed::Engine::GetTexManager()->LoadTexture(fullTexturePath.string());
+				if (auto* engine = Unnamed::EngineServices::Get()) {
+					if (auto* tex = engine->GetTexManagerInstance()) {
+						tex->LoadTexture(fullTexturePath.string());
+					}
+				}
 				material->SetTexture(
 					"gBaseColorTexture",
 					fullTexturePath.string()
@@ -500,10 +505,14 @@ SubMesh* MeshManager::ProcessMesh(
 
 		// 環境マップテクスチャの設定
 		// シェーダーがTexture2Dを期待している場合は、forceCubeMapをfalseにする
-		Unnamed::Engine::GetTexManager()->LoadTexture(
-			"./content/core/textures/wave.dds",
-			false
-		);
+		if (auto* engine = Unnamed::EngineServices::Get()) {
+			if (auto* tex = engine->GetTexManagerInstance()) {
+				tex->LoadTexture(
+					"./content/core/textures/wave.dds",
+					false
+				);
+			}
+		}
 		material->SetTexture(
 			"gEnvironmentTexture",
 			"./content/core/textures/wave.dds"
@@ -742,7 +751,11 @@ SubMesh* MeshManager::ProcessSkeletalMesh(
 			std::filesystem::path texPath(texturePathStr);
 			std::filesystem::path fullTexturePath = modelDir / texPath;
 
-			Unnamed::Engine::GetTexManager()->LoadTexture(fullTexturePath.string());
+			if (auto* engine = Unnamed::EngineServices::Get()) {
+				if (auto* tex = engine->GetTexManagerInstance()) {
+					tex->LoadTexture(fullTexturePath.string());
+				}
+			}
 			material->SetTexture(
 				"gBaseColorTexture",
 				fullTexturePath.string()
@@ -757,10 +770,14 @@ SubMesh* MeshManager::ProcessSkeletalMesh(
 	}
 
 	// 環境マップテクスチャの設定
-	Unnamed::Engine::GetTexManager()->LoadTexture(
-		"./content/core/textures/wave.dds",
-		true
-	);
+	if (auto* engine = Unnamed::EngineServices::Get()) {
+		if (auto* tex = engine->GetTexManagerInstance()) {
+			tex->LoadTexture(
+				"./content/core/textures/wave.dds",
+				true
+			);
+		}
+	}
 	material->SetTexture(
 		"gEnvironmentTexture",
 		"./content/core/textures/wave.dds"

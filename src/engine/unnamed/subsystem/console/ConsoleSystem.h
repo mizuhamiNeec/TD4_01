@@ -92,6 +92,9 @@ namespace Unnamed {
 		}
 
 	private:
+		void RegisterCommonCommands();
+
+	private:
 		RingBuffer<ConsoleLogText, kConsoleBufferSize> mLogBuffer;
 
 		std::unordered_map<std::string, UnnamedConCommandBase*> mConCommands;

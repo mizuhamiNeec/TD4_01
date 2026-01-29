@@ -15,7 +15,7 @@
 
 # --- Build results / intermediates ---
 [Bb]in/
-intermediate/
+[Ii]ntermediate/
 
 # Common build artifacts
 *.obj
@@ -60,6 +60,3 @@ imgui.ini
 # --- Repo-specific ---
 /ClassDiagram.cd
 .github/copilot-instructions.md
-
-# Unnamed: runtime/user configs
-*.cfg

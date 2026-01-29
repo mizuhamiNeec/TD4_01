@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 #include <memory>
 #include <optional>
 #include <string>
@@ -24,6 +25,8 @@
 #include <engine/unnamed/subsystem/time/TimeSystem.h>
 #include <engine/Window/WindowManager.h>
 
+#include <engine/state/IEngineModeState.h>
+
 #include <game/scene/GameScene.h>
 
 #include "editor/UEditor.h"
@@ -43,16 +46,11 @@ namespace Unnamed {
 
 		int Run();
 
-	public:
 		//DEPRECATED: 旧エンジンクラス
-		static AudioManager* GetAudioManager() {
-			return mAudioManager.get();
-		}
+		static AudioManager* GetAudioManager() { return mAudioManager.get(); }
 
 		// DEPRECATED: 旧エンジンクラス
-		static D3D12* GetRenderer() {
-			return mRenderer.get();
-		}
+		static D3D12* GetRenderer() { return mRenderer.get(); }
 
 		// DEPRECATED: 旧エンジンクラス
 		static ResourceManager* GetResourceManager() {
@@ -60,9 +58,7 @@ namespace Unnamed {
 		}
 
 		// DEPRECATED: 旧エンジンクラス
-		static SpriteCommon* GetSpriteCommon() {
-			return mSpriteCommon.get();
-		}
+		static SpriteCommon* GetSpriteCommon() { return mSpriteCommon.get(); }
 
 		// DEPRECATED: 旧エンジンクラス
 		static ParticleManager* GetParticleManager() {
@@ -70,24 +66,16 @@ namespace Unnamed {
 		}
 
 		// DEPRECATED: 旧エンジンクラス
-		static SrvManager* GetSrvManager() {
-			return mSrvManager.get();
-		}
+		static SrvManager* GetSrvManager() { return mSrvManager.get(); }
 
 		// DEPRECATED: 旧エンジンクラス
-		static SceneManager* GetSceneManager() {
-			return mSceneManager.get();
-		}
+		static SceneManager* GetSceneManager() { return mSceneManager.get(); }
 
 		// DEPRECATED: 旧エンジンクラス
-		static Vec2 GetViewportLT() {
-			return mViewportLT;
-		}
+		static Vec2 GetViewportLT() { return mViewportLT; }
 
 		// DEPRECATED: 旧エンジンクラス
-		static Vec2 GetViewportSize() {
-			return mViewportSize;
-		}
+		static Vec2 GetViewportSize() { return mViewportSize; }
 
 		// DEPRECATED: 旧エンジンクラス
 		static float blurStrength;
@@ -99,12 +87,57 @@ namespace Unnamed {
 		static void Quit(const std::vector<std::string>& args = {});
 		void        CheckEditorMode();
 
-	private:
-		bool Init();
-		void Tick();
-		void Shutdown() const;
+		/// @brief エディターインスタンスの取得
+		Editor* GetEditor() const { return mEditor.get(); }
+
+		/// @brief ポストプロセスエフェクト数の取得
+		std::size_t GetPostChainSize() const { return mPostChain.size(); }
+
+		/// @brief ポストプロセスエフェクトの取得
+		IPostProcess* GetPostProcessAt(int index) const {
+			if (index < 0 || static_cast<std::size_t>(index) >= mPostChain.
+			    size()) { return nullptr; }
+			return mPostChain[static_cast<std::size_t>(index)].get();
+		}
+
+		/// @brief シーンマネージャーインスタンスの取得
+		SceneManager* GetSceneManagerInstance() const {
+			return mSceneManager.get();
+		}
+
+		/// @brief ビューポートをメインウィンドウ全体へ設定
+		void SetViewportToMainWindow();
+
+		/// @brief ビューポート(左上座標/サイズ)をエディター UI の値で更新
+		void SetViewportFromEditor(float x, float y, float w, float h);
+
+		/// @brief 現在の PingPong テクスチャの SRV (GPU ptr)
+		uint64_t GetActivePingSrvGpuPtr() const {
+			return mPingRtv[mPingIndex].srvHandleGPU.ptr;
+		}
+
+		/// @brief 現在の PingPong テクスチャの RTV リソース記述子
+		D3D12_RESOURCE_DESC GetActivePingRtvDesc() const {
+			return mPingRtv[mPingIndex].rtv->GetDesc();
+		}
+
+		/// @brief エディター生成
+		void CreateEditor();
+
+		/// @brief エディター破棄
+		void DestroyEditor();
 
 	private:
+		/// @brief 初期化処理
+		bool Init();
+		/// @brief 更新処理
+		void Tick();
+		/// @brief 終了処理
+		void Shutdown() const;
+
+		/// @brief モード State を切り替える
+		void SetModeState(std::unique_ptr<IEngineModeState> state);
+
 		EngineConfig mConfig;
 
 		std::unique_ptr<ConsoleSystem> mConsoleSystem;
@@ -115,6 +148,7 @@ namespace Unnamed {
 
 		std::unique_ptr<OldWindowManager> mWindowManager;
 		std::unique_ptr<Editor> mEditor;
+		std::unique_ptr<IEngineModeState> mModeState;
 		std::unique_ptr<EntityLoader> mEntityLoader;
 		std::unique_ptr<Console> mConsole;
 		std::unique_ptr<CopyImagePass> mCopyImagePass;

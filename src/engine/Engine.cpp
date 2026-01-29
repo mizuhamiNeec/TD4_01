@@ -2,7 +2,7 @@
 
 #ifdef _DEBUG
 #include <imgui_internal.h>
-// ImGuizmoのインクルードはImGuiより後
+// ImGuizmoのインクルードはImGuiより後! いいね!?
 #include <ImGuizmo.h>
 #endif
 
@@ -10,6 +10,7 @@
 #include <engine/Camera/CameraManager.h>
 #include <engine/Debug/DebugDraw.h>
 #include <engine/Debug/DebugHud.h>
+#include <engine/ImGui/ImGuiWidgets.h>
 #include <engine/Input/InputSystem.h>
 #include <engine/OldConsole/ConCommand.h>
 #include <engine/OldConsole/ConVarManager.h>
@@ -18,15 +19,14 @@
 #include <engine/postprocess/PPRadialBlur.h>
 #include <engine/postprocess/PPVignette.h>
 #include <engine/renderer/SrvManager.h>
+#include <engine/TextureManager/TexManager.h>
 #include <engine/unnamed/subsystem/console/ConsoleScriptParser.h>
 #include <engine/unnamed/subsystem/console/ConsoleSystem.h>
 #include <engine/unnamed/subsystem/console/concommand/UnnamedConVar.h>
 #include <engine/unnamed/subsystem/interface/ServiceLocator.h>
 #include <engine/unnamed/subsystem/time/TimeSystem.h>
-#include <engine/TextureManager/TexManager.h>
 #include <engine/Window/MainWindow.h>
 #include <engine/Window/WindowsUtils.h>
-#include <engine/ImGui/ImGuiWidgets.h>
 
 #include <game/scene/EmptyScene.h>
 #include <game/scene/GameScene.h>
@@ -37,6 +37,9 @@
 
 #include "unnamed/subsystem/input/device/keyboard/KeyboardDevice.h"
 #include "unnamed/subsystem/input/device/mouse/MouseDevice.h"
+
+#include <engine/state/EditorModeState.h>
+#include <engine/state/GameModeState.h>
 
 namespace Unnamed {
 	static constexpr std::string_view kChannel = "Engine";
@@ -53,9 +56,7 @@ namespace Unnamed {
 			return EXIT_FAILURE;
 		}
 		while (!Win32App::PollEvents()) {
-			if (OldWindowManager::ProcessMessage()) {
-				break;
-			}
+			if (OldWindowManager::ProcessMessage()) { break; }
 			Tick();
 		}
 		Shutdown();
@@ -65,8 +66,7 @@ namespace Unnamed {
 	/// @brief 初期化
 	/// @return 成功したらtrueを返す
 	bool Engine::Init() {
-		if (mConfig.mode == ENGINE_MODE::EDITOR) {
-		}
+		if (mConfig.mode == ENGINE_MODE::EDITOR) {}
 
 #ifdef _DEBUG
 		ConVarManager::RegisterConVar<bool>(
@@ -292,6 +292,7 @@ namespace Unnamed {
 		// エディターの初期化
 		//---------------------------------------------------------------------
 		CheckEditorMode();
+		// Initialize mode state based on current editor mode flag
 
 		assert(SUCCEEDED(mRenderer->GetCommandList()->Close()));
 
@@ -316,7 +317,7 @@ namespace Unnamed {
 
 		mConsoleSystem->Update(deltaTime);
 
-		// 前のフレームとeditorModeが違う場合はエディターモードを切り替える
+		// 前のフレームとeditorModeが違う場合はStateを切り替える
 		static bool bPrevEditorMode = mIsEditorMode;
 		if (bPrevEditorMode != mIsEditorMode) {
 			CheckEditorMode();
@@ -324,146 +325,7 @@ namespace Unnamed {
 		}
 
 		/* ----------- 更新処理 ---------- */
-
-		if (mIsEditorMode) {
-#ifdef _DEBUG
-			mEditor->DrawMenuBars();
-
-			// DockSpace
-			{
-				const ImGuiViewport* viewport = ImGui::GetMainViewport();
-				ImGui::SetNextWindowPos(viewport->WorkPos);
-				ImGui::SetNextWindowSize(viewport->WorkSize);
-				ImGui::SetNextWindowViewport(viewport->ID);
-				ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-				ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-				ImGui::PushStyleVar(
-					ImGuiStyleVar_WindowPadding,
-					ImVec2(0.0f, 0.0f)
-				);
-
-				constexpr ImGuiDockNodeFlags dockSpaceFlags =
-					ImGuiDockNodeFlags_PassthruCentralNode;
-				constexpr ImGuiWindowFlags windowFlags =
-					ImGuiWindowFlags_NoTitleBar |
-					ImGuiWindowFlags_NoCollapse |
-					ImGuiWindowFlags_NoResize |
-					ImGuiWindowFlags_NoMove |
-					ImGuiWindowFlags_NoBringToFrontOnFocus |
-					ImGuiWindowFlags_NoNavFocus |
-					ImGuiWindowFlags_NoBackground;
-
-				ImGui::Begin("DockSpace", nullptr, windowFlags);
-
-				ImGui::PopStyleVar(3);
-
-				const ImGuiIO& io = ImGui::GetIO();
-				if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) {
-					const ImGuiID dockSpaceId = ImGui::GetID("MyDockSpace");
-					ImGui::DockSpace(
-						dockSpaceId, ImVec2(0.0f, 0.0f),
-						dockSpaceFlags
-					);
-				}
-
-				ImGui::End();
-			}
-
-			static auto tint = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-			static auto bg   = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
-
-			ImGuiWindowFlags windowFlags =
-				ImGuiWindowFlags_NoScrollbar |
-				ImGuiWindowFlags_NoScrollWithMouse;
-
-			if (ImGuizmo::IsUsing()) { windowFlags |= ImGuiWindowFlags_NoMove; }
-
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-			ImGui::Begin(
-				"ViewPort",
-				nullptr,
-				windowFlags
-			);
-			ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
-
-			ImVec2     avail = ImGui::GetContentRegionAvail();
-			const auto ptr   = mPingRtv[mPingIndex].srvHandleGPU.ptr;
-
-			static int prevW = 0, prevH = 0;
-			int        w     = static_cast<int>(avail.x);
-			int        h     = static_cast<int>(avail.y);
-			if ((w != prevW || h != prevH) && w > 0 && h > 0) {
-				prevW = w;
-				prevH = h;
-			}
-
-			if (ptr) {
-				// リソースからテクスチャの幅と高さを取得
-				auto        desc      = mPingRtv[mPingIndex].rtv->GetDesc();
-				const float texWidth  = static_cast<float>(desc.Width);
-				const float texHeight = static_cast<float>(desc.Height);
-
-				const float availAspect = avail.x / avail.y;
-				const float texAspect   = texWidth / texHeight;
-
-				ImVec2 drawSize = avail;
-				if (availAspect > texAspect) {
-					drawSize.x = avail.y * texAspect;
-				} else { drawSize.y = avail.x / texAspect; }
-
-				float titleBarHeight = ImGui::GetCurrentWindow()->
-					TitleBarHeight;
-
-				ImVec2 offset = {
-					(avail.x - drawSize.x) * 0.5f,
-					(avail.y - drawSize.y) * 0.5f + titleBarHeight
-				};
-				ImGui::SetCursorPos(offset);
-
-				ImVec2 viewportScreenPos = ImGui::GetCursorScreenPos();
-
-				ImGui::ImageWithBg(
-					ptr, // postProcessedRTV_のSRVを直接使用
-					drawSize,
-					ImVec2(0, 0), ImVec2(1, 1),
-					bg, tint
-				);
-
-				mViewportLT   = {viewportScreenPos.x, viewportScreenPos.y};
-				mViewportSize = {drawSize.x, drawSize.y};
-			}
-			ImGui::End();
-			ImGui::PopStyleVar();
-#endif
-
-			if (mEditor) {
-				mEditor->Update(mTimeSystem->GetGameTime()->DeltaTime<float>());
-			}
-
-#ifdef _DEBUG
-			ImGui::Begin("Post Process");
-			for (int i = 0; i < mPostChain.size(); ++i) {
-				if (i == 2) { continue; }
-				if (auto& postProcess = mPostChain[i]) {
-					postProcess->Update(
-						mTimeSystem->GetGameTime()->DeltaTime<float>()
-					);
-				}
-			}
-			ImGui::End();
-#endif
-		} else {
-			mSceneManager->Update(
-				mTimeSystem->GetGameTime()->ScaledDeltaTime<float>()
-			);
-			mViewportLT   = Vec2::zero;
-			mViewportSize = {
-				static_cast<float>(mWindowManager->GetMainWindow()->
-				                                   GetClientWidth()),
-				static_cast<float>(mWindowManager->GetMainWindow()->
-				                                   GetClientHeight())
-			};
-		}
+		if (mModeState) { mModeState->Update(*this, deltaTime); }
 
 		InputSystem::Update();
 
@@ -491,9 +353,7 @@ namespace Unnamed {
 			mOffscreenRtv.rtv->GetDesc().Height
 		);
 		mRenderer->BeginRenderPass(mOffscreenRenderPassTargets);
-		if (mIsEditorMode) { if (mEditor) { mEditor->Render(); } } else {
-			mSceneManager->Render();
-		}
+		if (mModeState) { mModeState->Render(*this); }
 
 #ifdef _DEBUG
 		mLineCommon->Render();
@@ -671,7 +531,6 @@ namespace Unnamed {
 
 		mResourceManager->Shutdown();
 		mResourceManager.reset();
-
 
 		mInputSystem->Shutdown();
 		mConsoleSystem->Shutdown();
@@ -899,13 +758,42 @@ namespace Unnamed {
 
 	/// @brief エディターモードの確認と切り替え
 	void Engine::CheckEditorMode() {
+		// フラグに応じて State を差し替える
 		if (mIsEditorMode) {
-			mEditor = std::make_unique<Editor>(
-				mSceneManager.get(),
-				mTimeSystem->GetGameTime()
-			);
-			mEditor->SetEntityLoader(mEntityLoader.get());
-		} else { mEditor.reset(); }
+			SetModeState(std::make_unique<EditorModeState>());
+		} else { SetModeState(std::make_unique<GameModeState>()); }
+	}
+
+	void Engine::SetModeState(std::unique_ptr<IEngineModeState> state) {
+		// 既存 State を終了し、新 State を開始
+		if (mModeState) { mModeState->OnExit(*this); }
+		mModeState = std::move(state);
+		if (mModeState) { mModeState->OnEnter(*this); }
+	}
+
+	void Engine::CreateEditor() {
+		if (mEditor) { return; }
+		mEditor = std::make_unique<Editor>(
+			mSceneManager.get(), mTimeSystem->GetGameTime()
+		);
+		mEditor->SetEntityLoader(mEntityLoader.get());
+	}
+
+	void Engine::DestroyEditor() { mEditor.reset(); }
+
+	void Engine::SetViewportToMainWindow() {
+		mViewportLT   = Vec2::zero;
+		mViewportSize = {
+			static_cast<float>(mWindowManager->GetMainWindow()->
+			                                   GetClientWidth()),
+			static_cast<float>(mWindowManager->GetMainWindow()->
+			                                   GetClientHeight())
+		};
+	}
+
+	void Engine::SetViewportFromEditor(float x, float y, float w, float h) {
+		mViewportLT   = {x, y};
+		mViewportSize = {w, h};
 	}
 
 	bool                             Engine::mWishShutdown    = false;

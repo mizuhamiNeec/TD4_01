@@ -11,10 +11,12 @@
 ResourceManager::ResourceManager(D3D12* d3d12) :
 	d3d12_(d3d12),
 	mSrvManager(nullptr),
+	mTexManager(nullptr),
 	mShaderManager(nullptr),
 	mMaterialManager(nullptr),
 	mMeshManager(nullptr) {
 	mSrvManager       = std::make_unique<SrvManager>();
+	mTexManager       = std::make_unique<TexManager>();
 	mShaderManager    = std::make_unique<ShaderManager>();
 	mMaterialManager  = std::make_unique<MaterialManager>();
 	mMeshManager      = std::make_unique<MeshManager>();
@@ -29,7 +31,7 @@ void ResourceManager::Init() const {
 	);
 	// マネージャーを初期化
 	mSrvManager->Init(d3d12_);
-	TexManager::GetInstance()->Init(d3d12_, mSrvManager.get());
+	mTexManager->Init(d3d12_, mSrvManager.get());
 	RootSignatureManager2::Init(d3d12_->GetDevice());
 	mShaderManager->Init();
 	mMaterialManager->Init();
@@ -75,7 +77,9 @@ void ResourceManager::Shutdown() {
 		mShaderManager.reset();
 	}
 
-	TexManager::Shutdown();
+	if (mTexManager) {
+		mTexManager.reset();
+	}
 
 	RootSignatureManager2::Shutdown();
 }
@@ -87,7 +91,7 @@ SrvManager* ResourceManager::GetSrvManager() const { return mSrvManager.get(); }
 /// @brief TexManagerを取得
 /// @return TexManagerへのポインタ
 TexManager* ResourceManager::GetTexManager() const {
-	return TexManager::GetInstance();
+	return mTexManager.get();
 }
 
 /// @brief MeshManagerを取得

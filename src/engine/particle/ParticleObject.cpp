@@ -9,6 +9,7 @@
 #include <engine/renderer/SrvManager.h>
 #include <engine/Engine.h>
 #include <engine/TextureManager/TexManager.h>
+#include <engine/EngineServices.h>
 
 #include <runtime/core/math/Math.h>
 
@@ -339,12 +340,14 @@ void ParticleObject::Draw() const {
 	                 );
 
 	// SRVのDescriptorTableの先頭を設定
-	mParticleCommon->GetD3D12()->GetCommandList()->
-	                 SetGraphicsRootDescriptorTable(
-		                 2, Unnamed::Engine::GetTexManager()->GetSrvHandleGPU(
-			                 mTextureFilePath
-		                 )
-	                 );
+	if (auto* engine = Unnamed::EngineServices::Get()) {
+		if (auto* tex = engine->GetTexManagerInstance()) {
+			mParticleCommon->GetD3D12()->GetCommandList()->
+			                 SetGraphicsRootDescriptorTable(
+				                 2, tex->GetSrvHandleGPU(mTextureFilePath)
+			                 );
+		}
+	}
 
 	// インデックスバッファの設定
 	D3D12_INDEX_BUFFER_VIEW indexBufferView = mIndexBuffer->View();

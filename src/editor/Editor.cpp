@@ -13,6 +13,7 @@
 #include <engine/Input/InputSystem.h>
 #include <engine/OldConsole/Console.h>
 #include <engine/OldConsole/ConVarManager.h>
+#include <engine/EngineServices.h>
 #include <engine/SceneManager/SceneManager.h>
 
 #include <runtime/core/Properties.h>
@@ -156,7 +157,8 @@ void Editor::Update([[maybe_unused]] const float deltaTime) {
 	if (mLoadFilePath) {
 		BaseScene* currentScene = mSceneManager->GetCurrentScene().get();
 		if (currentScene && mEntityLoader) {
-			auto resourceManager = Unnamed::Engine::GetResourceManager();
+			auto* engine = Unnamed::EngineServices::Get();
+			auto* resourceManager = engine ? engine->GetResourceManagerInstance() : nullptr;
 			if (resourceManager) {
 				mEntityLoader->LoadScene(
 					mLoadFilePath.value(), currentScene,
@@ -244,8 +246,9 @@ void Editor::Update([[maybe_unused]] const float deltaTime) {
 
 #ifdef _DEBUG
 	// ギズモの操作はエンティティの更新前に行う
-	Vec2 vLT   = Unnamed::Engine::GetViewportLT();
-	Vec2 vSize = Unnamed::Engine::GetViewportSize();
+	auto* engine = Unnamed::EngineServices::Get();
+	Vec2 vLT   = engine ? engine->GetViewportLTInstance() : Vec2{};
+	Vec2 vSize = engine ? engine->GetViewportSizeInstance() : Vec2{};
 	ImGuizmo::SetRect(
 		vLT.x, vLT.y,
 		vSize.x, vSize.y
@@ -340,8 +343,9 @@ void Editor::Update([[maybe_unused]] const float deltaTime) {
 		static bool  bOpenPopup = false; // ポップアップ表示フラグ
 		static float popupTimer = 0.0f;
 
-		auto   lt           = Unnamed::Engine::GetViewportLT();
-		auto   size         = Unnamed::Engine::GetViewportSize();
+		auto* engine2 = Unnamed::EngineServices::Get();
+		auto   lt           = engine2 ? engine2->GetViewportLTInstance() : Vec2{};
+		auto   size         = engine2 ? engine2->GetViewportSizeInstance() : Vec2{};
 		ImVec2 viewportPos  = {lt.x, lt.y};
 		ImVec2 viewportSize = {size.x, size.y};
 		auto   mousePos     = ImGui::GetMousePos();
@@ -538,7 +542,11 @@ void Editor::Update([[maybe_unused]] const float deltaTime) {
 void Editor::Render() const {
 	if (auto currentScene = mSceneManager->GetCurrentScene()) {
 		currentScene->Render();
-		mCameraEntity->Render(Unnamed::Engine::GetRenderer()->GetCommandList());
+		if (auto* engine3 = Unnamed::EngineServices::Get()) {
+			if (auto* r = engine3->GetRendererInstance()) {
+				mCameraEntity->Render(r->GetCommandList());
+			}
+		}
 	}
 }
 

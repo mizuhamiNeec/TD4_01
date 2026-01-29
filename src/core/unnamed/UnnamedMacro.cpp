@@ -1,8 +1,9 @@
 #include <pch.h>
-#include <cwchar>
+
+// MiniDump
 #include <DbgHelp.h>
 
-#pragma comment(lib, "DbgHelp.lib")
+#pragma comment(lib, "Dbghelp.lib")
 
 void CheckMemoryLeaksAndNotify() {
 	if (_CrtDumpMemoryLeaks()) {
@@ -67,9 +68,8 @@ int LogAssertionFailure(
 		// ブレーク
 		__debugbreak();
 		break;
-	case IDIGNORE:
-		break;
-	default: ;
+	case IDIGNORE: break;
+	default:;
 	}
 
 	return 0;
@@ -79,8 +79,10 @@ void WriteDump(EXCEPTION_POINTERS* ep) {
 	SYSTEMTIME st;
 	GetLocalTime(&st);
 	wchar_t filename[64];
-	swprintf_s(filename, 64, L"crash_%04d-%02d-%02d_%02d-%02d-%02d.dmp",
-	           st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+	swprintf_s(
+		filename, 64, L"crash_%04d-%02d-%02d_%02d-%02d-%02d.dmp",
+		st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond
+	);
 
 	HANDLE hFile = CreateFileW(
 		filename,
@@ -90,9 +92,9 @@ void WriteDump(EXCEPTION_POINTERS* ep) {
 
 	if (hFile != INVALID_HANDLE_VALUE) {
 		MINIDUMP_EXCEPTION_INFORMATION mei = {};
-		mei.ThreadId                       = GetCurrentThreadId();
-		mei.ExceptionPointers              = ep;
-		mei.ClientPointers                 = FALSE;
+		mei.ThreadId = GetCurrentThreadId();
+		mei.ExceptionPointers = ep;
+		mei.ClientPointers = FALSE;
 
 		MiniDumpWriteDump(
 			GetCurrentProcess(),
@@ -105,7 +107,8 @@ void WriteDump(EXCEPTION_POINTERS* ep) {
 		);
 
 		CloseHandle(hFile);
-	} else {
+	}
+	else {
 		Fatal(
 			"WriteDump",
 			"Failed to create dump file: {}",

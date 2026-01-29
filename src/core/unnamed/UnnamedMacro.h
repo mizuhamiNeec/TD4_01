@@ -8,8 +8,8 @@
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
-#include <Windows.h>
 #include <crtdbg.h>
+#include <Windows.h>
 #endif
 
 #define LeakChecker \

@@ -4,8 +4,9 @@
 
 #include <engine/Entity/Entity.h>
 #include <engine/ImGui/ImGuiManager.h>
+#include <engine/Platform/WindowManager.h>
+#include <engine/Engine.h>
 #include <engine/renderer/SrvManager.h>
-#include <engine/Window/WindowManager.h>
 #include <engine/Window/WindowsUtils.h>
 
 #include "ImGuiUtil.h"
@@ -65,7 +66,7 @@ ImGuiManager::ImGuiManager(
 	if (WindowsUtils::IsAppDarkTheme()) { ImGuiUtil::StyleColorsDark(); } else {
 		ImGuiUtil::StyleColorsLight();
 	}
-
+	
 	ImGui_ImplWin32_Init(OldWindowManager::GetMainWindow()->GetWindowHandle());
 
 	// ImGuiの初期化
@@ -154,29 +155,6 @@ void ImGuiManager::Shutdown() {
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
 	mSrvHeap.Reset();
-}
-
-/// @brief ImGuiのバックエンドを再作成します。
-void ImGuiManager::Recreate() const {
-	// 1. ImGuiのDX12/Win32バックエンドを完全にシャットダウン
-	ImGui_ImplDX12_Shutdown();
-	ImGui_ImplWin32_Shutdown();
-
-	// 2. Win32バックエンドを再初期化（ウィンドウハンドルを渡す）
-	ImGui_ImplWin32_Init(OldWindowManager::GetMainWindow()->GetWindowHandle());
-
-	// 3. DX12バックエンドを再初期化（ディスクリプタヒープ等を渡す）
-	ImGui_ImplDX12_InitInfo init_info = {};
-	init_info.Device = mRenderer->GetDevice();
-	init_info.NumFramesInFlight = kFrameBufferCount;
-	init_info.RTVFormat = kBufferFormat; // スワップチェーン用には非SRGBフォーマットを使用
-	init_info.SrvDescriptorHeap = mSrvManager->GetDescriptorHeap();
-	init_info.CommandQueue = mRenderer->GetCommandQueue();
-
-	ImGui_ImplDX12_Init(&init_info);
-
-	// 4. デバイスオブジェクト再作成
-	ImGui_ImplDX12_CreateDeviceObjects();
 }
 
 SrvManager* ImGuiManager::GetSrvManager() const { return mSrvManager; }

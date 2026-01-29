@@ -20,8 +20,7 @@ public:
 	static void NewFrame();
 	void        EndFrame();
 	void        Shutdown();
-	void        Recreate() const;
-
+	
 	SrvManager* GetSrvManager() const;
 
 private:

@@ -33,24 +33,12 @@ namespace Unnamed {
 	}
 
 	void ConsoleUI::Init() const {
-		static UnnamedConCommand clear(
-			"clear",
-			[&](const std::vector<std::string>&) {
-				mConsoleSystem->GetLogBuffer().Clear();
-				return true;
-			},
-			"Clears the console output."
-		);
 	}
 
 	/// @brief コンソールUIを表示します。
 	/// @details ImGuiのコンテキスト内で呼び出し
 	void ConsoleUI::Show() {
 		ImGui::Begin("Console##ConsoleUI", nullptr, kWindowFlags);
-
-		constexpr ImGuiChildFlags childFlags =
-			ImGuiChildFlags_ResizeX |
-			ImGuiChildFlags_FrameStyle;
 
 		// このウィンドウで使えるサイズを取得
 		const auto region = ImGui::GetWindowContentRegionMax();
@@ -59,48 +47,60 @@ namespace Unnamed {
 		const float childHeight = region.y -
 		                          ImGui::GetFrameHeightWithSpacing() * 2.0f;
 
-		ImGui::BeginChild(
-			"Output##ConsoleUI", {region.x * 0.5f, childHeight}, childFlags
-		);
-
 		static ConsoleLogText selection;
 
-		for (
-			auto it = mConsoleSystem->GetLogBuffer().begin();
-			it != mConsoleSystem->GetLogBuffer().end();
-			++it
+		if (
+			ImGui::BeginTable(
+				"Show##ConsoleUI", 1,
+				ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY |
+				ImGuiTableFlags_ScrollX | ImGuiTableFlags_SizingFixedFit,
+				{region.x, childHeight}
+			)
 		) {
-			const auto& buffer = *it;
-			std::string display;
-			if (!buffer.channel.empty()) {
-				display =
-					"[" + buffer.channel + "] " + // チャンネル名
-					buffer.message;               // メッセージ
-			} else {
-				display = buffer.message;
+			ImGui::TableSetupScrollFreeze(0, 1); // ヘッダーを固定
+			ImGui::TableSetupColumn(
+				"Log", ImGuiTableColumnFlags_WidthStretch
+			);
+			ImGui::TableHeadersRow();
+
+			// フィルタ後のインデックス用
+			int visibleIndex = 0;
+
+			for (
+				auto it = mConsoleSystem->GetLogBuffer().begin();
+				it != mConsoleSystem->GetLogBuffer().end();
+				++it
+			) {
+				const auto& buffer = *it;
+
+				std::string display = buffer.message;
+				display += "##" + std::to_string(it.Index()); // ユニーク ID 用
+
+				ImGui::TableNextRow();
+
+				// ログメッセージの列
+				ImGui::TableSetColumnIndex(0);
+
+				// テキストの色を設定
+				PushTextColor(buffer);
+
+				// セレクション用のユニーク ID は別で付与する
+				ImGui::PushID(static_cast<int>(it.Index()));
+				if (ImGui::Selectable(display.c_str(), false)) {
+					selection = buffer;
+				}
+				ImGui::PopID();
+
+				ImGui::PopStyleColor();
+
+				visibleIndex++;
 			}
 
-			display += "##" + std::to_string(it.Index()); // ユニーク ID 用
-
-			// テキストの色を設定
-			PushTextColor(buffer);
-
-			// セレクション用のユニーク ID は別で付与する
-			ImGui::PushID(static_cast<int>(it.Index()));
-			if (ImGui::Selectable(display.c_str(), false)) {
-				selection = buffer;
-			}
-			ImGui::PopID();
-
-			ImGui::PopStyleColor();
+			CheckScroll();
+			ImGui::EndTable();
 		}
 
-		CheckScroll();
-
-		ImGui::EndChild();
-
-		ImGui::SameLine();
-
+		ImGui::Begin("About");
 		ImGui::BeginChild(
 			"About##ConsoleUI", ImVec2(0, childHeight),
 			ImGuiChildFlags_AlwaysUseWindowPadding |
@@ -117,7 +117,7 @@ namespace Unnamed {
 
 		ImGui::TextWrapped(bufferInfo.data());
 		const std::string command = std::format(
-			"Rider.cmd --line {} --column {} {}",
+			"--line {} --column {} {}",
 			selection.location.line(),
 			selection.location.column(),
 			selection.location.file_name()
@@ -127,13 +127,21 @@ namespace Unnamed {
 		if (
 			ImGuiWidgets::IconButton(
 				StrUtil::ConvertToUtf8(kIconNANKABOX).c_str(),
-				"Open in Rider"
+				"Open in Rider", ImVec2(128.0f, 32.0f), 1.0f, ImGuiDir_Right
 			)
 		) {
-			system(command.c_str());
+			ShellExecuteW(
+				nullptr,
+				L"open",
+				L"Rider.cmd",
+				StrUtil::ToWString(command).c_str(),
+				nullptr,
+				SW_HIDE
+			);
 		}
 
 		ImGui::EndChild();
+		ImGui::End();
 
 		DrawInputText();
 

@@ -25,32 +25,52 @@ namespace Unnamed {
 		std::source_location location;
 	};
 
+	/// @brief コンソールコマンド実行フラグ
 	enum class EXEC_FLAG {
-		NONE,
-		SILENT,
-		FROM_ENGINE,
-		FROM_USER,
-		FROM_CONSOLE,
+		NONE         = 0,
+		SILENT       = 1 << 0,
+		FROM_ENGINE  = 1 << 1,
+		FROM_USER    = 1 << 2,
+		FROM_CONSOLE = 1 << 3,
 	};
 
+	/// @brief EXEC_FLAGのOR演算子オーバーロード
+	/// @param lhs 左辺
+	/// @param rhs 右辺
+	/// @return 演算結果
 	EXEC_FLAG operator|=(EXEC_FLAG& lhs, const EXEC_FLAG& rhs);
-	bool      operator&(EXEC_FLAG lhs, EXEC_FLAG rhs);
+
+	/// @brief EXEC_FLAGのAND演算子オーバーロード
+	/// @param lhs 左辺
+	/// @param rhs 右辺
+	/// @return 演算結果
+	bool operator&(EXEC_FLAG lhs, EXEC_FLAG rhs);
 
 	/// @brief コンソールシステムクラス
-	/// @details Source風コンソールシステム
+	/// @details Source風多機能コンソールシステム。文字列によるコマンド実行や変数管理を行います。
 	class ConsoleSystem final : public ISubsystem, public IConsole {
 	public:
+		/// @brief デストラクタ
 		~ConsoleSystem() override;
 
-		// ISubsystem
-		bool Init() override;                  /// @brief 初期化
-		void Update(float deltaTime) override; /// @brief 更新
-		void Shutdown() override;              /// @brief シャットダウン
+		// ---ISubsystem---
+
+		/// @brief コンソールシステムの初期化
+		/// @return 初期化成功ならtrue
+		bool Init() override;
+
+		/// @brief 更新
+		void Update(float deltaTime) override;
+
+		/// @brief シャットダウン
+		void Shutdown() override;
 
 		/// @brief サブシステム名を取得します
+		/// @return サブシステム名
 		[[nodiscard]] const std::string_view GetName() const override;
 
-		// IConsole
+		// ---IConsole---
+
 		/// @brief ログバッファを取得します
 		[[nodiscard]]
 		RingBuffer<ConsoleLogText, kConsoleBufferSize>& GetLogBuffer();
@@ -117,15 +137,17 @@ namespace Unnamed {
 		}
 
 	private:
-		/// @brief 一般のコマンドを登録します
+		/// @brief 一般コマンドを登録します
 		void RegisterCommonCommands();
 
+		// ログのリングバッファ
 		RingBuffer<ConsoleLogText, kConsoleBufferSize> mLogBuffer;
 
+		// 登録されているコマンドと変数のマップ
 		std::unordered_map<std::string, UnnamedConCommandBase*> mConCommands;
 		std::unordered_map<std::string, UnnamedConCommandBase*> mConVars;
 
-#ifdef _DEBUG // デバッグ時にはコンソールUIを有効化
+#ifdef _DEBUG // デバッグ時(ImGui有効化時)にはコンソールUIを有効化
 		std::unique_ptr<ConsoleUI> mConsoleUI;
 #endif
 	};

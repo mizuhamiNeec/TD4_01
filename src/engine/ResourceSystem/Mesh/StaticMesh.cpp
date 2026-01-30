@@ -22,8 +22,10 @@ std::vector<Unnamed::Triangle> StaticMesh::GetPolygons() const {
 	std::vector<Unnamed::Triangle> polygons;
 	for (const auto& subMesh : mSubMeshes) {
 		auto subMeshPolygons = subMesh->GetPolygons();
-		polygons.insert(polygons.end(), subMeshPolygons.begin(),
-		                subMeshPolygons.end());
+		polygons.insert(
+			polygons.end(), subMeshPolygons.begin(),
+			subMeshPolygons.end()
+		);
 	}
 	return polygons;
 }
@@ -31,15 +33,11 @@ std::vector<Unnamed::Triangle> StaticMesh::GetPolygons() const {
 /// @brief レンダリング
 /// @param commandList コマンドリスト
 void StaticMesh::Render(ID3D12GraphicsCommandList* commandList) const {
-	for (const auto& subMesh : mSubMeshes) {
-		subMesh->Render(commandList);
-	}
+	for (const auto& subMesh : mSubMeshes) { subMesh->Render(commandList); }
 }
 
 /// @brief リソースの解放
 void StaticMesh::ReleaseResource() {
-	for (auto& subMesh : mSubMeshes) {
-		subMesh->ReleaseResource();
-	}
+	for (auto& subMesh : mSubMeshes) { subMesh->ReleaseResource(); }
 	mSubMeshes.clear();
 }

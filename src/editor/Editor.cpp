@@ -5,19 +5,19 @@
 #include <engine/Engine.h>
 #include <engine/Camera/CameraManager.h>
 #include <engine/Components/Base/Component.h>
-#include <engine/Debug/Debug.h>
+#include <engine/Debug/DebugDraw.h>
 #include <engine/Entity/EntityLoader.h>
 #include <engine/ImGui/Icons.h>
 #include <engine/ImGui/ImGuiUtil.h>
 #include <engine/ImGui/ImGuiWidgets.h>
 #include <engine/Input/InputSystem.h>
-#include <engine/OldConsole/ConVarManager.h>
 #include <engine/OldConsole/Console.h>
+#include <engine/OldConsole/ConVarManager.h>
+#include <engine/EngineServices.h>
 #include <engine/SceneManager/SceneManager.h>
-#include <engine/Window/WindowManager.h>
 
-#include <runtime/core/math/Math.h>
 #include <runtime/core/Properties.h>
+#include <runtime/core/math/Math.h>
 
 #include "engine/unnamed/subsystem/console/concommand/UnnamedConVar.h"
 
@@ -31,7 +31,9 @@
 /// @param sceneManager シーンマネージャーへのポインタ
 /// @param gameTime ゲームタイムへのポインタ
 Editor::Editor(SceneManager* sceneManager, GameTime* gameTime)
-	: mSceneManager(sceneManager), mGameTime(gameTime) {
+	:
+	mSceneManager(sceneManager),
+	mGameTime(gameTime) {
 	mScene = mSceneManager->GetCurrentScene();
 	Init();
 }
@@ -39,20 +41,23 @@ Editor::Editor(SceneManager* sceneManager, GameTime* gameTime)
 /// @brief エディターの初期化
 void Editor::Init() {
 	// カメラの作成
-	mCameraEntity = std::make_unique<Entity>("editorCamera",
-	                                         EntityType::EditorOnly);
+	mCameraEntity = std::make_unique<Entity>(
+		"editorCamera",
+		EntityType::EditorOnly
+	);
 	mCameraEntity->GetTransform()->SetLocalPos(
-		Vec3::forward * -5.0f + Vec3::up * 2.0f);
+		Vec3::forward * -5.0f + Vec3::up * 2.0f
+	);
 	mCameraEntity->GetTransform()->SetLocalRot(
-		Quaternion::Euler(Vec3::right * 15.0f * Math::deg2Rad));
+		Quaternion::Euler(Vec3::right * 15.0f * Math::deg2Rad)
+	);
 
 	// 生ポインタを取得
 	CameraComponent* rawCameraPtr = mCameraEntity->AddComponent<
 		CameraComponent>();
 	// 生ポインタを std::shared_ptr に変換
 	auto camera = std::shared_ptr<CameraComponent>(
-		rawCameraPtr, [](CameraComponent*) {
-		}
+		rawCameraPtr, [](CameraComponent*) {}
 	);
 
 	// カメラを CameraManager に追加
@@ -84,37 +89,53 @@ void Editor::Init() {
 		imGuizmoStyle.ScaleLineCircleSize = 8.0f;
 
 		imGuizmoStyle.Colors[ImGuizmo::DIRECTION_X] = ImVec4(
-			0.78f, 0.12f, 0.12f, 1.0f);
+			0.78f, 0.12f, 0.12f, 1.0f
+		);
 		imGuizmoStyle.Colors[ImGuizmo::DIRECTION_Y] = ImVec4(
-			0.2f, 0.78f, 0.12f, 1.0f);
+			0.2f, 0.78f, 0.12f, 1.0f
+		);
 		imGuizmoStyle.Colors[ImGuizmo::DIRECTION_Z] = ImVec4(
-			0.12f, 0.43f, 0.78f, 1.0f);
+			0.12f, 0.43f, 0.78f, 1.0f
+		);
 		imGuizmoStyle.Colors[ImGuizmo::PLANE_X] = ImVec4(
-			0.666f, 0.000f, 0.000f, 0.380f);
+			0.666f, 0.000f, 0.000f, 0.380f
+		);
 		imGuizmoStyle.Colors[ImGuizmo::PLANE_Y] = ImVec4(
-			0.000f, 0.666f, 0.000f, 0.380f);
+			0.000f, 0.666f, 0.000f, 0.380f
+		);
 		imGuizmoStyle.Colors[ImGuizmo::PLANE_Z] = ImVec4(
-			0.000f, 0.000f, 0.666f, 0.380f);
+			0.000f, 0.000f, 0.666f, 0.380f
+		);
 		imGuizmoStyle.Colors[ImGuizmo::SELECTION] = ImVec4(
-			1.000f, 0.500f, 0.062f, 0.541f);
+			1.000f, 0.500f, 0.062f, 0.541f
+		);
 		imGuizmoStyle.Colors[ImGuizmo::INACTIVE] = ImVec4(
-			0.600f, 0.600f, 0.600f, 0.600f);
+			0.600f, 0.600f, 0.600f, 0.600f
+		);
 		imGuizmoStyle.Colors[ImGuizmo::TRANSLATION_LINE] = ImVec4(
-			0.666f, 0.666f, 0.666f, 0.666f);
+			0.666f, 0.666f, 0.666f, 0.666f
+		);
 		imGuizmoStyle.Colors[ImGuizmo::SCALE_LINE] = ImVec4(
-			0.250f, 0.250f, 0.250f, 1.000f);
+			0.250f, 0.250f, 0.250f, 1.000f
+		);
 		imGuizmoStyle.Colors[ImGuizmo::ROTATION_USING_BORDER] = ImVec4(
-			1.000f, 0.500f, 0.062f, 1.000f);
+			1.000f, 0.500f, 0.062f, 1.000f
+		);
 		imGuizmoStyle.Colors[ImGuizmo::ROTATION_USING_FILL] = ImVec4(
-			1.000f, 0.500f, 0.062f, 0.500f);
+			1.000f, 0.500f, 0.062f, 0.500f
+		);
 		imGuizmoStyle.Colors[ImGuizmo::HATCHED_AXIS_LINES] = ImVec4(
-			0.000f, 0.000f, 0.000f, 0.500f);
+			0.000f, 0.000f, 0.000f, 0.500f
+		);
 		imGuizmoStyle.Colors[ImGuizmo::TEXT] = ImVec4(
-			1.000f, 1.000f, 1.000f, 1.000f);
+			1.000f, 1.000f, 1.000f, 1.000f
+		);
 		imGuizmoStyle.Colors[ImGuizmo::TEXT] = ImVec4(
-			1.000f, 1.000f, 1.000f, 1.000f);
+			1.000f, 1.000f, 1.000f, 1.000f
+		);
 		imGuizmoStyle.Colors[ImGuizmo::TEXT_SHADOW] = ImVec4(
-			0.000f, 0.000f, 0.000f, 1.000f);
+			0.000f, 0.000f, 0.000f, 1.000f
+		);
 
 		ImGuizmo::GetStyle() = imGuizmoStyle;
 	}
@@ -136,11 +157,13 @@ void Editor::Update([[maybe_unused]] const float deltaTime) {
 	if (mLoadFilePath) {
 		BaseScene* currentScene = mSceneManager->GetCurrentScene().get();
 		if (currentScene && mEntityLoader) {
-			auto resourceManager = Unnamed::Engine::GetResourceManager();
+			auto* engine = Unnamed::EngineServices::Get();
+			auto* resourceManager = engine ? engine->GetResourceManagerInstance() : nullptr;
 			if (resourceManager) {
 				mEntityLoader->LoadScene(
 					mLoadFilePath.value(), currentScene,
-					resourceManager);
+					resourceManager
+				);
 				Msg(
 					"Editor",
 					"Scene imported from: {}",
@@ -188,18 +211,26 @@ void Editor::Update([[maybe_unused]] const float deltaTime) {
 	auto ed_gridminorcolor_b = dynamic_cast<Unnamed::UnnamedConVar<float>*>(
 		con->GetConVar("ed_gridminorcolor_b"));
 
-	auto gridColor = Vec4(ed_gridcolor_r->GetValue(),
-	                      ed_gridcolor_g->GetValue(),
-	                      ed_gridcolor_b->GetValue());
-	auto majorLineColor = Vec4(ed_gridmajorcolor_r->GetValue(),
-	                           ed_gridmajorcolor_g->GetValue(),
-	                           ed_gridmajorcolor_b->GetValue());
-	auto axisLineColor = Vec4(ed_gridaxiscolor_r->GetValue(),
-	                          ed_gridaxiscolor_g->GetValue(),
-	                          ed_gridaxiscolor_b->GetValue());
-	auto minorLineColor = Vec4(ed_gridminorcolor_r->GetValue(),
-	                           ed_gridminorcolor_g->GetValue(),
-	                           ed_gridminorcolor_b->GetValue());
+	auto gridColor = Vec4(
+		ed_gridcolor_r->GetValue(),
+		ed_gridcolor_g->GetValue(),
+		ed_gridcolor_b->GetValue()
+	);
+	auto majorLineColor = Vec4(
+		ed_gridmajorcolor_r->GetValue(),
+		ed_gridmajorcolor_g->GetValue(),
+		ed_gridmajorcolor_b->GetValue()
+	);
+	auto axisLineColor = Vec4(
+		ed_gridaxiscolor_r->GetValue(),
+		ed_gridaxiscolor_g->GetValue(),
+		ed_gridaxiscolor_b->GetValue()
+	);
+	auto minorLineColor = Vec4(
+		ed_gridminorcolor_r->GetValue(),
+		ed_gridminorcolor_g->GetValue(),
+		ed_gridminorcolor_b->GetValue()
+	);
 
 	// グリッドの表示
 	DrawGrid(
@@ -215,8 +246,9 @@ void Editor::Update([[maybe_unused]] const float deltaTime) {
 
 #ifdef _DEBUG
 	// ギズモの操作はエンティティの更新前に行う
-	Vec2 vLT   = Unnamed::Engine::GetViewportLT();
-	Vec2 vSize = Unnamed::Engine::GetViewportSize();
+	auto* engine = Unnamed::EngineServices::Get();
+	Vec2 vLT   = engine ? engine->GetViewportLTInstance() : Vec2{};
+	Vec2 vSize = engine ? engine->GetViewportSizeInstance() : Vec2{};
 	ImGuizmo::SetRect(
 		vLT.x, vLT.y,
 		vSize.x, vSize.y
@@ -237,9 +269,7 @@ void Editor::Update([[maybe_unused]] const float deltaTime) {
 			bIsWorldMode = !bIsWorldMode;
 		}
 
-		if (bIsWorldMode) {
-			mode = ImGuizmo::MODE::WORLD;
-		} else {
+		if (bIsWorldMode) { mode = ImGuizmo::MODE::WORLD; } else {
 			mode = ImGuizmo::MODE::LOCAL;
 		}
 
@@ -313,8 +343,9 @@ void Editor::Update([[maybe_unused]] const float deltaTime) {
 		static bool  bOpenPopup = false; // ポップアップ表示フラグ
 		static float popupTimer = 0.0f;
 
-		auto   lt           = Unnamed::Engine::GetViewportLT();
-		auto   size         = Unnamed::Engine::GetViewportSize();
+		auto* engine2 = Unnamed::EngineServices::Get();
+		auto   lt           = engine2 ? engine2->GetViewportLTInstance() : Vec2{};
+		auto   size         = engine2 ? engine2->GetViewportSizeInstance() : Vec2{};
 		ImVec2 viewportPos  = {lt.x, lt.y};
 		ImVec2 viewportSize = {size.x, size.y};
 		auto   mousePos     = ImGui::GetMousePos();
@@ -348,38 +379,32 @@ void Editor::Update([[maybe_unused]] const float deltaTime) {
 				rot_.y += delta.y * sensitivity * m_pitch * Math::deg2Rad;
 				rot_.x += delta.x * sensitivity * m_yaw * Math::deg2Rad;
 
-				rot_.y = std::clamp(rot_.y, min * Math::deg2Rad,
-				                    max * Math::deg2Rad);
+				rot_.y = std::clamp(
+					rot_.y, min * Math::deg2Rad,
+					max * Math::deg2Rad
+				);
 
 				mCameraEntity->GetTransform()->SetWorldRot(
 					Quaternion::Euler(
-						Vec3::up * rot_.x + Vec3::right * rot_.y));
+						Vec3::up * rot_.x + Vec3::right * rot_.y
+					)
+				);
 
 				Vec3 moveInput = {0.0f, 0.0f, 0.0f};
 
-				if (InputSystem::IsPressed("forward")) {
-					moveInput.z += 1.0f;
-				}
+				if (InputSystem::IsPressed("forward")) { moveInput.z += 1.0f; }
 
-				if (InputSystem::IsPressed("back")) {
-					moveInput.z -= 1.0f;
-				}
+				if (InputSystem::IsPressed("back")) { moveInput.z -= 1.0f; }
 
 				if (InputSystem::IsPressed("moveright")) {
 					moveInput.x += 1.0f;
 				}
 
-				if (InputSystem::IsPressed("moveleft")) {
-					moveInput.x -= 1.0f;
-				}
+				if (InputSystem::IsPressed("moveleft")) { moveInput.x -= 1.0f; }
 
-				if (InputSystem::IsPressed("moveup")) {
-					moveInput.y += 1.0f;
-				}
+				if (InputSystem::IsPressed("moveup")) { moveInput.y += 1.0f; }
 
-				if (InputSystem::IsPressed("movedown")) {
-					moveInput.y -= 1.0f;
-				}
+				if (InputSystem::IsPressed("movedown")) { moveInput.y -= 1.0f; }
 
 				moveInput.Normalize();
 
@@ -417,17 +442,20 @@ void Editor::Update([[maybe_unused]] const float deltaTime) {
 					moveSpd * mGameTime->ScaledDeltaTime<float>()
 				);
 			}
+			
 			// カーソルをウィンドウの中央にリセット
 			POINT centerCursorPos = {
 				static_cast<LONG>(OldWindowManager::GetMainWindow()->
-					GetClientWidth() /
-					2),
+				                  GetClientWidth() /
+				                  2),
 				static_cast<LONG>(OldWindowManager::GetMainWindow()->
-					GetClientHeight()
-					/ 2)
+				                  GetClientHeight()
+				                  / 2)
 			};
-			ClientToScreen(OldWindowManager::GetMainWindow()->GetWindowHandle(),
-			               &centerCursorPos); // クライアント座標をスクリーン座標に変換
+			ClientToScreen(
+				OldWindowManager::GetMainWindow()->GetWindowHandle(),
+				&centerCursorPos
+			); // クライアント座標をスクリーン座標に変換
 			SetCursorPos(centerCursorPos.x, centerCursorPos.y);
 
 			firstReset = false; // 初回リセット完了
@@ -477,14 +505,17 @@ void Editor::Update([[maybe_unused]] const float deltaTime) {
 			ImGui::SetCursorPos(
 				ImVec2(
 					(windowSize.x - ImGui::CalcTextSize(
-						(Unnamed::StrUtil::ConvertToUtf8(0xe9e4) + std::format(
-							" {:.2f}", moveSpd)).c_str()).x) * 0.5f,
+						 (Unnamed::StrUtil::ConvertToUtf8(0xe9e4) + std::format(
+							  " {:.2f}", moveSpd
+						  )).c_str()
+					 ).x) * 0.5f,
 					(windowSize.y - ImGui::GetFontSize()) * 0.5f
 				)
 			);
 			ImGui::Text(
 				(Unnamed::StrUtil::ConvertToUtf8(0xe9e4) + " %.2f").c_str(),
-				moveSpd);
+				moveSpd
+			);
 
 			// 一定時間経過後にポップアップをフェードアウトして閉じる
 			// ゲーム内ではないのでScaledDeltaTimeではなくDeltaTimeを使用
@@ -511,7 +542,11 @@ void Editor::Update([[maybe_unused]] const float deltaTime) {
 void Editor::Render() const {
 	if (auto currentScene = mSceneManager->GetCurrentScene()) {
 		currentScene->Render();
-		mCameraEntity->Render(Unnamed::Engine::GetRenderer()->GetCommandList());
+		if (auto* engine3 = Unnamed::EngineServices::Get()) {
+			if (auto* r = engine3->GetRendererInstance()) {
+				mCameraEntity->Render(r->GetCommandList());
+			}
+		}
 	}
 }
 
@@ -521,9 +556,7 @@ void Editor::SetEntityLoader(EntityLoader* entityLoader) {
 
 /// @brief ギズモ操作中かどうかを取得する
 /// @return ギズモ操作中であればtrue、そうでなければfalse
-bool Editor::IsManipulating() {
-	return mIsManipulating;
-}
+bool Editor::IsManipulating() { return mIsManipulating; }
 
 #ifdef _DEBUG
 /// @brief インスペクタウィンドウを描画します
@@ -538,9 +571,7 @@ void Editor::DrawInspector() const {
 			const auto& components = mSelectedEntity->GetComponents<
 				Component>();
 			for (const auto& component : components) {
-				if (component) {
-					component->DrawInspectorImGui();
-				}
+				if (component) { component->DrawInspectorImGui(); }
 			}
 		}
 	}
@@ -555,8 +586,11 @@ void Editor::DrawOutliner() {
 		}
 
 		static std::string buttonLabel = Unnamed::StrUtil::ConvertToUtf8(
-				kIconFilter) +
-			" " + Unnamed::StrUtil::ConvertToUtf8(kIconDropDown);
+			                                 kIconFilter
+		                                 ) +
+		                                 " " + Unnamed::StrUtil::ConvertToUtf8(
+			                                 kIconDropDown
+		                                 );
 
 		if (ImGui::Button(buttonLabel.c_str())) {
 			ImGui::OpenPopup("filterPopup");
@@ -577,7 +611,7 @@ void Editor::DrawOutliner() {
 			ImGui::EndPopup();
 		}
 
-		const ImGuiTableFlags tableFlags =
+		constexpr ImGuiTableFlags tableFlags =
 			ImGuiTableFlags_ScrollY |
 			ImGuiTableFlags_BordersV |
 			ImGuiTableFlags_BordersOuterH |
@@ -621,8 +655,8 @@ void Editor::DrawOutliner() {
 					ImGui::AlignTextToFramePadding();
 					bool nodeOpen = ImGui::TreeNodeEx(
 						(Unnamed::StrUtil::ConvertToUtf8(kIconEntity) +
-							" " +
-							entity->GetName())
+						 " " +
+						 entity->GetName())
 						.c_str(),
 						flags
 					);
@@ -647,9 +681,7 @@ void Editor::DrawOutliner() {
 									ImGui::EndPopup(); // ポップアップを閉じる
 
 									// TreeNodeExが開かれていた場合、TreePopを呼び出してバランスを取る
-									if (nodeOpen) {
-										ImGui::TreePop();
-									}
+									if (nodeOpen) { ImGui::TreePop(); }
 									ImGui::PopID();
 									// ImGui::PushID(entity) でプッシュしたIDをポップ
 									return; // 早期リターン
@@ -667,15 +699,14 @@ void Editor::DrawOutliner() {
 						bool visible = entity->IsVisible();
 
 						if (ImGuiWidgets::IconButton(
-							Unnamed::StrUtil::ConvertToUtf8(visible ?
-										kIconVisibility :
-										kIconVisibilityOff
+							Unnamed::StrUtil::ConvertToUtf8(
+								visible ?
+									kIconVisibility :
+									kIconVisibilityOff
 							).c_str(),
 							nullptr,
 							ImVec2(22.0f, 22.0f)
-						)) {
-							entity->SetVisible(!visible);
-						}
+						)) { entity->SetVisible(!visible); }
 					}
 
 					// Active チェックボックス
@@ -737,51 +768,62 @@ void Editor::DrawOutliner() {
 
 void Editor::DrawMainMenuBar() {
 	// メニューバーを少し高くする
-	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,
-	                    ImVec2(
-		                    0.0f, kTitleBarH * 0.5f -
-		                    ImGui::GetFontSize() * 0.5f));
-	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,
-	                    ImVec2(0.0f, kTitleBarH));
+	ImGui::PushStyleVar(
+		ImGuiStyleVar_FramePadding,
+		ImVec2(
+			0.0f, kTitleBarH * 0.5f -
+			      ImGui::GetFontSize() * 0.5f
+		)
+	);
+	ImGui::PushStyleVar(
+		ImGuiStyleVar_ItemSpacing,
+		ImVec2(0.0f, kTitleBarH)
+	);
 	if (ImGui::BeginMainMenuBar()) {
 		ImGui::PopStyleVar(2); // メニューバーのスタイルを元に戻す
 		// アイコンメニュー
-		ImGui::PushStyleColor(ImGuiCol_Text,
-		                      ImVec4(0.13f, 0.5f, 1.0f, 1.0f));
+		ImGui::PushStyleColor(
+			ImGuiCol_Text,
+			ImVec4(0.13f, 0.5f, 1.0f, 1.0f)
+		);
 
 		if (ImGuiWidgets::BeginMainMenu(
-			Unnamed::StrUtil::ConvertToUtf8(kIconArrowBack).c_str())) {
+			Unnamed::StrUtil::ConvertToUtf8(kIconArrowBack).c_str()
+		)) {
 			ImGui::PopStyleColor();
 			if (ImGui::MenuItemEx(
 				"About Unnamed",
-				nullptr)) {
-			}
+				nullptr
+			)) {}
 			ImGui::EndMenu();
-		} else {
-			ImGui::PopStyleColor();
-		}
+		} else { ImGui::PopStyleColor(); }
 
 		if (ImGuiWidgets::BeginMainMenu("File")) {
 			ImGui::BeginDisabled();
 			if (ImGui::MenuItemEx(
 				"Save",
-				Unnamed::StrUtil::ConvertToUtf8(kIconSave).c_str())) {
-			}
+				Unnamed::StrUtil::ConvertToUtf8(kIconSave).c_str()
+			)) {}
 
-			if (ImGui::MenuItemEx("Save As",
-			                      Unnamed::StrUtil::ConvertToUtf8(
-				                      kIconSaveAs).
-			                      c_str())) {
-			}
+			if (ImGui::MenuItemEx(
+				"Save As",
+				Unnamed::StrUtil::ConvertToUtf8(
+					kIconSaveAs
+				).
+				c_str()
+			)) {}
 			ImGui::EndDisabled();
 
 			ImGui::Separator();
 
-			if (ImGui::MenuItemEx("Import",
-			                      Unnamed::StrUtil::ConvertToUtf8(
-				                      kIconDownload)
-			                      .
-			                      c_str())) {
+			if (ImGui::MenuItemEx(
+				"Import",
+				Unnamed::StrUtil::ConvertToUtf8(
+					kIconDownload
+				)
+				.
+				c_str()
+			)) {
 				BaseScene* currentScene = mSceneManager->
 				                          GetCurrentScene().
 				                          get();
@@ -805,8 +847,8 @@ void Editor::DrawMainMenuBar() {
 					ofn.nMaxFile   = MAX_PATH;
 					ofn.lpstrTitle = "Import Scene From";
 					ofn.Flags      = OFN_PATHMUSTEXIST |
-						OFN_FILEMUSTEXIST |
-						OFN_NOCHANGEDIR;
+					                 OFN_FILEMUSTEXIST |
+					                 OFN_NOCHANGEDIR;
 					// ファイル/パス存在確認、カレントディレクトリ変更なし
 					ofn.lpstrDefExt = "scene";
 
@@ -821,10 +863,13 @@ void Editor::DrawMainMenuBar() {
 				}
 			}
 
-			if (ImGui::MenuItemEx("Export",
-			                      Unnamed::StrUtil::ConvertToUtf8(
-				                      kIconUpload).
-			                      c_str())) {
+			if (ImGui::MenuItemEx(
+				"Export",
+				Unnamed::StrUtil::ConvertToUtf8(
+					kIconUpload
+				).
+				c_str()
+			)) {
 				BaseScene* currentScene = mSceneManager->
 				                          GetCurrentScene().
 				                          get();
@@ -849,7 +894,7 @@ void Editor::DrawMainMenuBar() {
 					ofn.nMaxFile   = MAX_PATH;
 					ofn.lpstrTitle = "Export Scene As";
 					ofn.Flags      = OFN_OVERWRITEPROMPT |
-						OFN_NOCHANGEDIR;
+					                 OFN_NOCHANGEDIR;
 					// 上書き確認、カレントディレクトリ変更なし
 					ofn.lpstrDefExt = "scene";
 
@@ -879,10 +924,9 @@ void Editor::DrawMainMenuBar() {
 			ImGui::BeginDisabled();
 			if (ImGui::MenuItemEx(
 					"Exit",
-					Unnamed::StrUtil::ConvertToUtf8(kIconPower).c_str())
-			) {
-				Console::SubmitCommand("quit");
-			}
+					Unnamed::StrUtil::ConvertToUtf8(kIconPower).c_str()
+				)
+			) { Console::SubmitCommand("quit"); }
 			ImGui::EndDisabled();
 			ImGui::EndMenu();
 		}
@@ -891,8 +935,8 @@ void Editor::DrawMainMenuBar() {
 			ImGui::Separator();
 			if (ImGuiWidgets::MenuItemWithIcon(
 				Unnamed::StrUtil::ConvertToUtf8(kIconSettings).c_str(),
-				"Settings")) {
-			}
+				"Settings"
+			)) {}
 
 			ImGui::EndMenu();
 		}
@@ -1127,11 +1171,10 @@ void Editor::DrawStatusBar() {
 					if (ImGui::Selectable(items[n], isSelected)) {
 						itemCurrentIndex = n;
 						mAngleSnap       = std::stof(
-							items[itemCurrentIndex]);
+							items[itemCurrentIndex]
+						);
 					}
-					if (isSelected) {
-						ImGui::SetItemDefaultFocus();
-					}
+					if (isSelected) { ImGui::SetItemDefaultFocus(); }
 				}
 				ImGui::EndCombo();
 			}
@@ -1166,9 +1209,7 @@ void Editor::DrawStatusBar() {
 						// 選択された文字列を浮動小数点数に変換してgridSizeに設定
 						mGridSize = std::stof(items[itemCurrentIndex]);
 					}
-					if (isSelected) {
-						ImGui::SetItemDefaultFocus();
-					}
+					if (isSelected) { ImGui::SetItemDefaultFocus(); }
 				}
 				ImGui::EndCombo();
 			}
@@ -1179,7 +1220,8 @@ void Editor::DrawStatusBar() {
 				if (wheel != 0.0f) {
 					itemCurrentIndex -= static_cast<int>(wheel);
 					itemCurrentIndex = std::clamp(
-						itemCurrentIndex, 0, IM_ARRAYSIZE(items) - 1);
+						itemCurrentIndex, 0, IM_ARRAYSIZE(items) - 1
+					);
 					// 選択された文字列を浮動小数点数に変換してgridSize_に設定
 					mGridSize = std::stof(items[itemCurrentIndex]);
 				}
@@ -1188,7 +1230,6 @@ void Editor::DrawStatusBar() {
 			ImGui::PopID();
 			ImGui::PopItemWidth();
 		}
-
 
 		ImGui::End();
 	}
@@ -1222,29 +1263,35 @@ void Editor::DrawGrid(
 	const float cameraPosZ = cameraPosition.z;
 
 	// グリッドサイズの逆数を事前計算（除算を乗算に変換）
-	const float invGridSize      = 1.0f / gridSize;
-	const float invMajorInterval = 1.0f / majorInterval;
+	const float     invGridSize      = 1.0f / gridSize;
+	constexpr float invMajorInterval = 1.0f / majorInterval;
 
 	// 主要線と軸線を先に描画（range全体から探す）
 	// X軸方向の主要線
 	{
 		// 軸線（X=0）の描画
 		if (std::abs(0.0f) <= range) {
-			Debug::DrawLine(Vec3(0, 0, -range), Vec3(0, 0, range), axisColor);
+			DebugDraw::DrawLine(
+				Vec3(0, 0, -range), Vec3(0, 0, range), axisColor
+			);
 		}
 
 		// 1024間隔の主要線を描画
 		const int majorStartIdx = static_cast<int>(std::ceil(
-			-range * invMajorInterval));
+			-range * invMajorInterval
+		));
 		const int majorEndIdx = static_cast<int>(std::floor(
-			range * invMajorInterval));
+			range * invMajorInterval
+		));
 
 		for (int i = majorStartIdx; i <= majorEndIdx; ++i) {
 			if (i == 0) continue; // 軸線は既に描画済み
 			const float x = i * majorInterval;
 			if (std::abs(x) <= range) {
-				Debug::DrawLine(Vec3(x, 0, -range), Vec3(x, 0, range),
-				                majorColor);
+				DebugDraw::DrawLine(
+					Vec3(x, 0, -range), Vec3(x, 0, range),
+					majorColor
+				);
 			}
 		}
 	}
@@ -1253,21 +1300,27 @@ void Editor::DrawGrid(
 	{
 		// 軸線（Z=0）の描画
 		if (std::abs(0.0f) <= range) {
-			Debug::DrawLine(Vec3(-range, 0, 0), Vec3(range, 0, 0), axisColor);
+			DebugDraw::DrawLine(
+				Vec3(-range, 0, 0), Vec3(range, 0, 0), axisColor
+			);
 		}
 
 		// 1024間隔の主要線を描画
 		const int majorStartIdx = static_cast<int>(std::ceil(
-			-range * invMajorInterval));
+			-range * invMajorInterval
+		));
 		const int majorEndIdx = static_cast<int>(std::floor(
-			range * invMajorInterval));
+			range * invMajorInterval
+		));
 
 		for (int i = majorStartIdx; i <= majorEndIdx; ++i) {
 			if (i == 0) continue; // 軸線は既に描画済み
 			const float z = i * majorInterval;
 			if (std::abs(z) <= range) {
-				Debug::DrawLine(Vec3(-range, 0, z), Vec3(range, 0, z),
-				                majorColor);
+				DebugDraw::DrawLine(
+					Vec3(-range, 0, z), Vec3(range, 0, z),
+					majorColor
+				);
 			}
 		}
 	}
@@ -1293,12 +1346,13 @@ void Editor::DrawGrid(
 			// 主要線と軸線は既に描画済みなのでスキップ
 			const bool isAxis  = (i == 0);
 			const bool isMajor = !isAxis && (std::abs(
-				std::fmod(x, majorInterval)) < 0.01f);
+				                                 std::fmod(x, majorInterval)
+			                                 ) < 0.01f);
 			if (isAxis || isMajor) continue;
 
 			// 細線判定
 			const bool isMinor = (std::abs(std::fmod(x, minorInterval)) <
-				0.01f);
+			                      0.01f);
 
 			// 通常のグリッド線は近距離のみ描画判定
 			const float dx     = cameraPosX - x;
@@ -1315,7 +1369,7 @@ void Editor::DrawGrid(
 
 			// 有効な範囲の場合のみ描画
 			if (startZ < endZ && startZ <= range && endZ >= -range) {
-				Debug::DrawLine(
+				DebugDraw::DrawLine(
 					Vec3(x, 0, startZ),
 					Vec3(x, 0, endZ),
 					lineColor
@@ -1338,12 +1392,13 @@ void Editor::DrawGrid(
 			// 主要線と軸線は既に描画済みなのでスキップ
 			const bool isAxis  = (i == 0);
 			const bool isMajor = !isAxis && (std::abs(
-				std::fmod(z, majorInterval)) < 0.01f);
+				                                 std::fmod(z, majorInterval)
+			                                 ) < 0.01f);
 			if (isAxis || isMajor) continue;
 
 			// 細線判定
 			const bool isMinor = (std::abs(std::fmod(z, minorInterval)) <
-				0.01f);
+			                      0.01f);
 
 			// 通常のグリッド線は近距離のみ描画判定
 			const float dz     = cameraPosZ - z;
@@ -1360,7 +1415,7 @@ void Editor::DrawGrid(
 
 			// 有効な範囲の場合のみ描画
 			if (startX < endX && startX <= range && endX >= -range) {
-				Debug::DrawLine(
+				DebugDraw::DrawLine(
 					Vec3(startX, 0, z),
 					Vec3(endX, 0, z),
 					lineColor

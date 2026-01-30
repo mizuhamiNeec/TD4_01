@@ -11,8 +11,10 @@
 /// @brief サブメッシュクラス
 class SubMesh {
 public:
-	SubMesh(const Microsoft::WRL::ComPtr<ID3D12Device>& device,
-	        std::string                                 name);
+	SubMesh(
+		const Microsoft::WRL::ComPtr<ID3D12Device>& device,
+		std::string                                 name
+	);
 	~SubMesh();
 
 	void SetVertexBuffer(const std::vector<Vertex>& vertices);

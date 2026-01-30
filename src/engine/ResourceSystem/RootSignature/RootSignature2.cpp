@@ -9,9 +9,11 @@
 /// @param shaderRegister シェーダーレジスタ番号
 /// @param visibility シェーダーの可視性
 /// @param registerSpace レジスタスペース番号
-void RootSignature2::AddConstantBuffer(const UINT shaderRegister,
-                                       const D3D12_SHADER_VISIBILITY visibility,
-                                       const UINT registerSpace) {
+void RootSignature2::AddConstantBuffer(
+	const UINT                    shaderRegister,
+	const D3D12_SHADER_VISIBILITY visibility,
+	const UINT                    registerSpace
+) {
 	D3D12_ROOT_PARAMETER param;
 	param.ParameterType             = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	param.ShaderVisibility          = visibility;
@@ -23,8 +25,10 @@ void RootSignature2::AddConstantBuffer(const UINT shaderRegister,
 /// @brief シェーダーリソースビューを追加します
 /// @param shaderRegister シェーダーレジスタ番号
 /// @param registerSpace レジスタスペース番号
-void RootSignature2::AddShaderResourceView(const UINT shaderRegister,
-                                           const UINT registerSpace) {
+void RootSignature2::AddShaderResourceView(
+	const UINT shaderRegister,
+	const UINT registerSpace
+) {
 	D3D12_ROOT_PARAMETER param;
 	param.ParameterType             = D3D12_ROOT_PARAMETER_TYPE_SRV;
 	param.ShaderVisibility          = D3D12_SHADER_VISIBILITY_ALL;
@@ -36,8 +40,10 @@ void RootSignature2::AddShaderResourceView(const UINT shaderRegister,
 /// @brief アンオーダードアクセスビューを追加します
 /// @param shaderRegister シェーダーレジスタ番号
 /// @param registerSpace レジスタスペース番号	
-void RootSignature2::AddUnorderedAccessView(const UINT shaderRegister,
-                                            const UINT registerSpace) {
+void RootSignature2::AddUnorderedAccessView(
+	const UINT shaderRegister,
+	const UINT registerSpace
+) {
 	D3D12_ROOT_PARAMETER param;
 	param.ParameterType             = D3D12_ROOT_PARAMETER_TYPE_UAV;
 	param.ShaderVisibility          = D3D12_SHADER_VISIBILITY_ALL;
@@ -49,8 +55,10 @@ void RootSignature2::AddUnorderedAccessView(const UINT shaderRegister,
 /// @brief ディスクリプタテーブルを追加します
 /// @param ranges ディスクリプタ範囲の配列へのポインタ
 /// @param numRanges ディスクリプタ範囲の数
-void RootSignature2::AddDescriptorTable(const D3D12_DESCRIPTOR_RANGE* ranges,
-                                        const UINT numRanges) {
+void RootSignature2::AddDescriptorTable(
+	const D3D12_DESCRIPTOR_RANGE* ranges,
+	const UINT                    numRanges
+) {
 	D3D12_ROOT_PARAMETER param;
 	param.ParameterType    = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	param.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
@@ -67,9 +75,8 @@ void RootSignature2::AddDescriptorTable(const D3D12_DESCRIPTOR_RANGE* ranges,
 /// @brief スタティックサンプラーを追加します
 /// @param samplerDesc スタティックサンプラーの記述子
 void RootSignature2::AddStaticSampler(
-	const D3D12_STATIC_SAMPLER_DESC& samplerDesc) {
-	mStaticSamplers.emplace_back(samplerDesc);
-}
+	const D3D12_STATIC_SAMPLER_DESC& samplerDesc
+) { mStaticSamplers.emplace_back(samplerDesc); }
 
 /// @brief ルートパラメータを追加します
 /// @param param1 ルートパラメータの記述子 (D3D12_ROOT_PARAMETER1)
@@ -79,41 +86,44 @@ void RootSignature2::AddRootParameter(const D3D12_ROOT_PARAMETER1& param1) {
 	param.ShaderVisibility     = param1.ShaderVisibility;
 
 	switch (param1.ParameterType) {
-	case D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE: {
-		std::vector<D3D12_DESCRIPTOR_RANGE> ranges;
-		ranges.reserve(param1.DescriptorTable.NumDescriptorRanges);
+		case D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE: {
+			std::vector<D3D12_DESCRIPTOR_RANGE> ranges;
+			ranges.reserve(param1.DescriptorTable.NumDescriptorRanges);
 
-		// ディスクリプタレンジを変換
-		for (UINT i = 0; i < param1.DescriptorTable.NumDescriptorRanges; i++) {
-			const auto& range1 = param1.DescriptorTable.pDescriptorRanges[i];
-			D3D12_DESCRIPTOR_RANGE range = {};
-			range.RangeType = range1.RangeType;
-			range.NumDescriptors = range1.NumDescriptors;
-			range.BaseShaderRegister = range1.BaseShaderRegister;
-			range.RegisterSpace = range1.RegisterSpace;
-			range.OffsetInDescriptorsFromTableStart = range1.
-				OffsetInDescriptorsFromTableStart;
-			ranges.emplace_back(range);
+			// ディスクリプタレンジを変換
+			for (UINT i = 0; i < param1.DescriptorTable.NumDescriptorRanges; i
+			     ++) {
+				const auto& range1 = param1.DescriptorTable.pDescriptorRanges[
+					i];
+				D3D12_DESCRIPTOR_RANGE range = {};
+				range.RangeType = range1.RangeType;
+				range.NumDescriptors = range1.NumDescriptors;
+				range.BaseShaderRegister = range1.BaseShaderRegister;
+				range.RegisterSpace = range1.RegisterSpace;
+				range.OffsetInDescriptorsFromTableStart = range1.
+					OffsetInDescriptorsFromTableStart;
+				ranges.emplace_back(range);
+			}
+
+			mDescriptorTableRanges.emplace_back(std::move(ranges));
+			param.DescriptorTable.NumDescriptorRanges = param1.DescriptorTable.
+				NumDescriptorRanges;
+			param.DescriptorTable.pDescriptorRanges = mDescriptorTableRanges.
+				back().
+				data();
+			break;
 		}
-
-		mDescriptorTableRanges.emplace_back(std::move(ranges));
-		param.DescriptorTable.NumDescriptorRanges = param1.DescriptorTable.
-			NumDescriptorRanges;
-		param.DescriptorTable.pDescriptorRanges = mDescriptorTableRanges.back().
-			data();
-		break;
-	}
-	case D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS:
-		param.Constants.Num32BitValues = param1.Constants.Num32BitValues;
-		param.Constants.ShaderRegister = param1.Constants.ShaderRegister;
-		param.Constants.RegisterSpace  = param1.Constants.RegisterSpace;
-		break;
-	case D3D12_ROOT_PARAMETER_TYPE_CBV:
-	case D3D12_ROOT_PARAMETER_TYPE_SRV:
-	case D3D12_ROOT_PARAMETER_TYPE_UAV:
-		param.Descriptor.ShaderRegister = param1.Descriptor.ShaderRegister;
-		param.Descriptor.RegisterSpace = param1.Descriptor.RegisterSpace;
-		break;
+		case D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS
+		: param.Constants.Num32BitValues = param1.Constants.Num32BitValues;
+			param.Constants.ShaderRegister = param1.Constants.ShaderRegister;
+			param.Constants.RegisterSpace  = param1.Constants.RegisterSpace;
+			break;
+		case D3D12_ROOT_PARAMETER_TYPE_CBV:
+		case D3D12_ROOT_PARAMETER_TYPE_SRV:
+		case D3D12_ROOT_PARAMETER_TYPE_UAV
+		: param.Descriptor.ShaderRegister = param1.Descriptor.ShaderRegister;
+			param.Descriptor.RegisterSpace = param1.Descriptor.RegisterSpace;
+			break;
 	}
 
 	mRootParameters.emplace_back(param);
@@ -143,7 +153,8 @@ void RootSignature2::Init(ID3D12Device* device, const RootSignatureDesc& desc) {
 		if (errorBlob) {
 			Console::Print(
 				"ルートシグネチャのシリアライズに失敗しました: " + std::string(
-					static_cast<char*>(errorBlob->GetBufferPointer())),
+					static_cast<char*>(errorBlob->GetBufferPointer())
+				),
 				kConTextColorError,
 				Channel::ResourceSystem
 			);
@@ -181,8 +192,10 @@ void RootSignature2::Build(ID3D12Device* device) {
 	for (const auto& param : mRootParameters) {
 		std::stringstream ss;
 		ss << "Root Parameter Type: " << param.ParameterType << "\n";
-		Console::Print(ss.str(), kConTextColorCompleted,
-		               Channel::ResourceSystem);
+		Console::Print(
+			ss.str(), kConTextColorCompleted,
+			Channel::ResourceSystem
+		);
 	}
 
 	Microsoft::WRL::ComPtr<ID3DBlob> serializeRootSig;
@@ -231,9 +244,7 @@ void RootSignature2::Build(ID3D12Device* device) {
 /// @brief ルートシグネチャを取得します
 /// @return ルートシグネチャへのポインタ
 ID3D12RootSignature* RootSignature2::Get() const {
-	if (mRootSignature) {
-		return mRootSignature.Get();
-	}
+	if (mRootSignature) { return mRootSignature.Get(); }
 
 	Console::Print(
 		"ルートシグネチャが作成されていません\n",
@@ -252,9 +263,7 @@ bool RootSignature2::HasStaticSampler() const {
 
 /// @brief ルートシグネチャを解放します
 void RootSignature2::Release() {
-	if (mRootSignature) {
-		mRootSignature.Reset();
-	}
+	if (mRootSignature) { mRootSignature.Reset(); }
 
 	mRootParameters.clear();
 	mDescriptorTableRanges.clear();

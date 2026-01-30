@@ -1,10 +1,10 @@
 #pragma once
 
 #include <d3d12.h>
+#include <dxcapi.h>
 #include <string>
 #include <unordered_map>
 #include <wrl.h>
-#include <dxcapi.h>
 
 /// @brief シェーダーリソース情報構造体
 struct ResourceInfo {
@@ -34,7 +34,8 @@ public:
 	Microsoft::WRL::ComPtr<IDxcBlob> GetGeometryShaderBlob();
 
 	[[nodiscard]] UINT GetResourceRegister(
-		const std::string& resourceName) const;
+		const std::string& resourceName
+	) const;
 	[[nodiscard]] const std::unordered_map<std::string, ResourceInfo>&
 	GetResourceRegisterMap() const;
 	std::string GetName();
@@ -54,8 +55,10 @@ private:
 		const std::string& profile
 	);
 
-	void ReflectShaderBlob(const Microsoft::WRL::ComPtr<IDxcBlob>& shaderBlob,
-	                       ShaderType              shaderType);
+	void ReflectShaderBlob(
+		const Microsoft::WRL::ComPtr<IDxcBlob>& shaderBlob,
+		ShaderType                              shaderType
+	);
 	void ReflectShaderResources();
 
 	Microsoft::WRL::ComPtr<IDxcBlob> mVertexShaderBlob;

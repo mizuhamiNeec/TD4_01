@@ -16,15 +16,19 @@
 #include <engine/OldConsole/Console.h>
 #include <engine/ResourceSystem/Material/MaterialManager.h>
 #include <engine/ResourceSystem/Mesh/MeshManager.h>
+#include <engine/EngineServices.h>
 #include <engine/ResourceSystem/Shader/DefaultShader.h>
+#include <engine/Engine.h>
 #include <engine/TextureManager/TexManager.h>
 
 /// @brief 初期化
 /// @param device D3D12デバイスへのポインタ
 /// @param shaderManager シェーダマネージャーへのポインタ
 /// @param materialManager マテリアルマネージャーへのポインタ
-void MeshManager::Init(ID3D12Device*    device, ShaderManager* shaderManager,
-                       MaterialManager* materialManager) {
+void MeshManager::Init(
+	ID3D12Device*    device, ShaderManager* shaderManager,
+	MaterialManager* materialManager
+) {
 	Console::Print(
 		"MeshManager を初期化しています...\n",
 		kConTextColorGray,
@@ -83,26 +87,33 @@ bool MeshManager::LoadMeshFromFile(const std::string& filePath) {
 		aiProcess_ConvertToLeftHanded
 	);
 	if (!scene) {
-		Console::Print("メッシュの読み込みに失敗しました: " + filePath + "\n",
-		               kConTextColorError, Channel::ResourceSystem);
+		Console::Print(
+			"メッシュの読み込みに失敗しました: " + filePath + "\n",
+			kConTextColorError, Channel::ResourceSystem
+		);
 		Console::Print(
 			"エラーメッセージ: " + std::string(importer.GetErrorString()) + "\n",
-			kConTextColorError, Channel::ResourceSystem);
+			kConTextColorError, Channel::ResourceSystem
+		);
 		assert(scene); // 読み込み失敗
 		return false;
 	}
 
 	if (!scene->HasMeshes()) {
-		Console::Print("メッシュがありません: " + filePath + "\n", kConTextColorError,
-		               Channel::ResourceSystem);
+		Console::Print(
+			"メッシュがありません: " + filePath + "\n", kConTextColorError,
+			Channel::ResourceSystem
+		);
 		assert(scene->HasMeshes()); // メッシュがない場合はエラー
 	}
 
 	StaticMesh* staticMesh = CreateStaticMesh(filePath);
 	ProcessStaticMeshNode(scene->mRootNode, scene, staticMesh);
 
-	Console::Print("メッシュの読み込みに成功しました: " + filePath + "\n",
-	               kConTextColorCompleted, Channel::ResourceSystem);
+	Console::Print(
+		"メッシュの読み込みに成功しました: " + filePath + "\n",
+		kConTextColorCompleted, Channel::ResourceSystem
+	);
 	return true;
 }
 
@@ -110,37 +121,45 @@ bool MeshManager::LoadMeshFromFile(const std::string& filePath) {
 /// @param filePath ファイルパス
 /// @return 成功したらtrue、失敗したらfalse
 bool MeshManager::ReloadMeshFromFile(const std::string& filePath) {
-	Console::Print("メッシュをリロードしています: " + filePath + "\n",
-	               kConTextColorWarning, Channel::ResourceSystem);
+	Console::Print(
+		"メッシュをリロードしています: " + filePath + "\n",
+		kConTextColorWarning, Channel::ResourceSystem
+	);
 
 	// 既存のメッシュを削除
 	auto it = mStaticMeshes.find(filePath);
 	if (it != mStaticMeshes.end()) {
-		Console::Print("既存のメッシュを削除しました: " + filePath + "\n",
-		               kConTextColorWarning, Channel::ResourceSystem);
+		Console::Print(
+			"既存のメッシュを削除しました: " + filePath + "\n",
+			kConTextColorWarning, Channel::ResourceSystem
+		);
 		mStaticMeshes.erase(it);
 	}
 
 	// 関連するサブメッシュも削除（メッシュ名をキーとして検索）
 	for (auto subMeshIt = mSubMeshes.begin(); subMeshIt != mSubMeshes.end();) {
 		if (subMeshIt->first.find(filePath) != std::string::npos) {
-			Console::Print("関連するサブメッシュを削除しました: " + subMeshIt->first + "\n",
-			               kConTextColorWarning, Channel::ResourceSystem);
+			Console::Print(
+				"関連するサブメッシュを削除しました: " + subMeshIt->first + "\n",
+				kConTextColorWarning, Channel::ResourceSystem
+			);
 			subMeshIt = mSubMeshes.erase(subMeshIt);
-		} else {
-			++subMeshIt;
-		}
+		} else { ++subMeshIt; }
 	}
 
 	// 新しいメッシュを読み込み
 	bool result = LoadMeshFromFile(filePath);
 
 	if (result) {
-		Console::Print("メッシュのリロードに成功しました: " + filePath + "\n",
-		               kConTextColorCompleted, Channel::ResourceSystem);
+		Console::Print(
+			"メッシュのリロードに成功しました: " + filePath + "\n",
+			kConTextColorCompleted, Channel::ResourceSystem
+		);
 	} else {
-		Console::Print("メッシュのリロードに失敗しました: " + filePath + "\n",
-		               kConTextColorError, Channel::ResourceSystem);
+		Console::Print(
+			"メッシュのリロードに失敗しました: " + filePath + "\n",
+			kConTextColorError, Channel::ResourceSystem
+		);
 	}
 
 	return result;
@@ -159,9 +178,7 @@ StaticMesh* MeshManager::GetStaticMesh(const std::string& name) const {
 /// @return 作成されたスタティックメッシュへのポインタ
 StaticMesh* MeshManager::CreateStaticMesh(const std::string& name) {
 	const auto it = mStaticMeshes.find(name);
-	if (it != mStaticMeshes.end()) {
-		return it->second.get();
-	}
+	if (it != mStaticMeshes.end()) { return it->second.get(); }
 	auto       mesh     = std::make_unique<StaticMesh>(name);
 	const auto meshPtr  = mesh.get();
 	mStaticMeshes[name] = std::move(mesh);
@@ -182,17 +199,22 @@ bool MeshManager::LoadSkeletalMeshFromFile(const std::string& filePath) {
 	);
 
 	if (!scene) {
-		Console::Print("スケルタルメッシュの読み込みに失敗しました: " + filePath + "\n",
-		               kConTextColorError, Channel::ResourceSystem);
+		Console::Print(
+			"スケルタルメッシュの読み込みに失敗しました: " + filePath + "\n",
+			kConTextColorError, Channel::ResourceSystem
+		);
 		Console::Print(
 			"エラーメッセージ: " + std::string(importer.GetErrorString()) + "\n",
-			kConTextColorError, Channel::ResourceSystem);
+			kConTextColorError, Channel::ResourceSystem
+		);
 		return false;
 	}
 
 	if (!scene->HasMeshes()) {
-		Console::Print("メッシュがありません: " + filePath + "\n", kConTextColorError,
-		               Channel::ResourceSystem);
+		Console::Print(
+			"メッシュがありません: " + filePath + "\n", kConTextColorError,
+			Channel::ResourceSystem
+		);
 		return false;
 	}
 
@@ -208,12 +230,12 @@ bool MeshManager::LoadSkeletalMeshFromFile(const std::string& filePath) {
 	ProcessSkeletalMeshNode(scene->mRootNode, scene, skeletalMesh);
 
 	// アニメーションを読み込み
-	if (scene->HasAnimations()) {
-		LoadAnimations(scene, skeletalMesh);
-	}
+	if (scene->HasAnimations()) { LoadAnimations(scene, skeletalMesh); }
 
-	Console::Print("スケルタルメッシュの読み込みに成功しました: " + filePath + "\n",
-	               kConTextColorCompleted, Channel::ResourceSystem);
+	Console::Print(
+		"スケルタルメッシュの読み込みに成功しました: " + filePath + "\n",
+		kConTextColorCompleted, Channel::ResourceSystem
+	);
 	return true;
 }
 
@@ -231,9 +253,7 @@ SkeletalMesh* MeshManager::GetSkeletalMesh(const std::string& name) const {
 /// @return 作成されたスケルタルメッシュへのポインタ
 SkeletalMesh* MeshManager::CreateSkeletalMesh(const std::string& name) {
 	const auto it = mSkeletalMeshes.find(name);
-	if (it != mSkeletalMeshes.end()) {
-		return it->second.get();
-	}
+	if (it != mSkeletalMeshes.end()) { return it->second.get(); }
 	auto mesh             = std::make_unique<SkeletalMesh>(name);
 	auto meshPtr          = mesh.get();
 	mSkeletalMeshes[name] = std::move(mesh);
@@ -245,9 +265,7 @@ SkeletalMesh* MeshManager::CreateSkeletalMesh(const std::string& name) {
 /// @return 作成されたサブメッシュへのポインタ
 SubMesh* MeshManager::CreateSubMesh(const std::string& name) {
 	const auto it = mSubMeshes.find(name);
-	if (it != mSubMeshes.end()) {
-		return it->second.get();
-	}
+	if (it != mSubMeshes.end()) { return it->second.get(); }
 	auto subMesh     = std::make_unique<SubMesh>(mDevice, name);
 	auto subMeshPtr  = subMesh.get();
 	mSubMeshes[name] = std::move(subMesh);
@@ -258,12 +276,16 @@ SubMesh* MeshManager::CreateSubMesh(const std::string& name) {
 /// @param node ノード
 /// @param scene シーン
 /// @param staticMesh スタティックメッシュへのポインタ
-void MeshManager::ProcessStaticMeshNode(const aiNode*  node,
-                                        const aiScene* scene,
-                                        StaticMesh*    staticMesh) {
+void MeshManager::ProcessStaticMeshNode(
+	const aiNode*  node,
+	const aiScene* scene,
+	StaticMesh*    staticMesh
+) {
 	if (!node || !scene || !scene->mMeshes) {
-		Console::Print("無効なノードまたはシーン\n", kConTextColorError,
-		               Channel::ResourceSystem);
+		Console::Print(
+			"無効なノードまたはシーン\n", kConTextColorError,
+			Channel::ResourceSystem
+		);
 		return;
 	}
 
@@ -272,13 +294,16 @@ void MeshManager::ProcessStaticMeshNode(const aiNode*  node,
 
 	for (uint32_t meshIndex = 0; meshIndex < node->mNumMeshes; ++meshIndex) {
 		if (node->mMeshes[meshIndex] >= scene->mNumMeshes) {
-			Console::Print("メッシュインデックスが範囲外です\n", kConTextColorError,
-			               Channel::ResourceSystem);
+			Console::Print(
+				"メッシュインデックスが範囲外です\n", kConTextColorError,
+				Channel::ResourceSystem
+			);
 			continue;
 		}
 		const aiMesh* mesh    = scene->mMeshes[node->mMeshes[meshIndex]];
 		auto          subMesh = std::unique_ptr<SubMesh>(
-			ProcessMesh(mesh, scene, staticMesh, transform));
+			ProcessMesh(mesh, scene, staticMesh, transform)
+		);
 		staticMesh->AddSubMesh(std::move(subMesh));
 	}
 
@@ -306,8 +331,10 @@ void MeshManager::ProcessSkeletalMeshNode(
 	SkeletalMesh*  skeletalMesh
 ) {
 	if (!node || !scene || !scene->mMeshes) {
-		Console::Print("無効なノードまたはシーン\n", kConTextColorError,
-		               Channel::ResourceSystem);
+		Console::Print(
+			"無効なノードまたはシーン\n", kConTextColorError,
+			Channel::ResourceSystem
+		);
 		return;
 	}
 
@@ -316,20 +343,25 @@ void MeshManager::ProcessSkeletalMeshNode(
 
 	for (uint32_t meshIndex = 0; meshIndex < node->mNumMeshes; ++meshIndex) {
 		if (node->mMeshes[meshIndex] >= scene->mNumMeshes) {
-			Console::Print("メッシュインデックスが範囲外です\n", kConTextColorError,
-			               Channel::ResourceSystem);
+			Console::Print(
+				"メッシュインデックスが範囲外です\n", kConTextColorError,
+				Channel::ResourceSystem
+			);
 			continue;
 		}
 		const aiMesh* mesh    = scene->mMeshes[node->mMeshes[meshIndex]];
 		auto          subMesh = std::unique_ptr<SubMesh>(
-			ProcessSkeletalMesh(mesh, scene, skeletalMesh, transform));
+			ProcessSkeletalMesh(mesh, scene, skeletalMesh, transform)
+		);
 		skeletalMesh->AddSubMesh(std::move(subMesh));
 	}
 
 	for (uint32_t childIndex = 0; childIndex < node->mNumChildren; ++
 	     childIndex) {
-		ProcessSkeletalMeshNode(node->mChildren[childIndex], scene,
-		                        skeletalMesh);
+		ProcessSkeletalMeshNode(
+			node->mChildren[childIndex], scene,
+			skeletalMesh
+		);
 	}
 }
 
@@ -339,9 +371,11 @@ void MeshManager::ProcessSkeletalMeshNode(
 /// @param staticMesh スタティックメッシュへのポインタ
 /// @param transform ノードの変換行列
 /// @return 作成されたサブメッシュへのポインタ
-SubMesh* MeshManager::ProcessMesh(const aiMesh*      mesh, const aiScene* scene,
-                                  StaticMesh*        staticMesh,
-                                  const aiMatrix4x4& transform) {
+SubMesh* MeshManager::ProcessMesh(
+	const aiMesh*      mesh, const aiScene* scene,
+	StaticMesh*        staticMesh,
+	const aiMatrix4x4& transform
+) {
 	std::vector<Vertex>   vertices;
 	std::vector<uint32_t> indices;
 
@@ -350,32 +384,42 @@ SubMesh* MeshManager::ProcessMesh(const aiMesh*      mesh, const aiScene* scene,
 		Vertex vertex;
 
 		// 変換行列を頂点に適用
-		aiVector3D pos(mesh->mVertices[i].x, mesh->mVertices[i].y,
-		               mesh->mVertices[i].z);
+		aiVector3D pos(
+			mesh->mVertices[i].x, mesh->mVertices[i].y,
+			mesh->mVertices[i].z
+		);
 		aiVector3D transformedPos = transform * pos;
-		vertex.position           = Vec4(transformedPos.x, transformedPos.y,
-		                                 transformedPos.z, 1.0f);
+		vertex.position           = Vec4(
+			transformedPos.x, transformedPos.y,
+			transformedPos.z, 1.0f
+		);
 
 		// 法線にも回転を適用（スケールは除外）
 		aiMatrix3x3 normalMatrix(transform);
-		aiVector3D  normal(mesh->mNormals[i].x, mesh->mNormals[i].y,
-		                   mesh->mNormals[i].z);
+		aiVector3D  normal(
+			mesh->mNormals[i].x, mesh->mNormals[i].y,
+			mesh->mNormals[i].z
+		);
 		aiVector3D transformedNormal = normalMatrix * normal;
 		transformedNormal.Normalize();
-		vertex.normal = Vec3(transformedNormal.x, transformedNormal.y,
-		                     transformedNormal.z);
+		vertex.normal = Vec3(
+			transformedNormal.x, transformedNormal.y,
+			transformedNormal.z
+		);
 
 		if (mesh->mTextureCoords[0]) {
-			vertex.uv = Vec2(mesh->mTextureCoords[0][i].x,
-			                 mesh->mTextureCoords[0][i].y);
-		} else {
-			vertex.uv = Vec2::zero;
-		}
+			vertex.uv = Vec2(
+				mesh->mTextureCoords[0][i].x,
+				mesh->mTextureCoords[0][i].y
+			);
+		} else { vertex.uv = Vec2::zero; }
 		vertices.emplace_back(vertex);
 	}
 
-	Console::Print("頂点数: " + std::to_string(mesh->mNumVertices) + "\n",
-	               kConTextColorGray, Channel::ResourceSystem);
+	Console::Print(
+		"頂点数: " + std::to_string(mesh->mNumVertices) + "\n",
+		kConTextColorGray, Channel::ResourceSystem
+	);
 
 	// 面情報の取得
 	for (uint32_t faceIndex = 0; faceIndex < mesh->mNumFaces; ++faceIndex) {
@@ -386,8 +430,10 @@ SubMesh* MeshManager::ProcessMesh(const aiMesh*      mesh, const aiScene* scene,
 		}
 	}
 
-	Console::Print("三角面数: " + std::to_string(mesh->mNumFaces) + "\n",
-	               kConTextColorGray, Channel::ResourceSystem);
+	Console::Print(
+		"三角面数: " + std::to_string(mesh->mNumFaces) + "\n",
+		kConTextColorGray, Channel::ResourceSystem
+	);
 
 	// マテリアルの設定
 	Material* material = nullptr;
@@ -417,7 +463,8 @@ SubMesh* MeshManager::ProcessMesh(const aiMesh*      mesh, const aiScene* scene,
 		Console::Print(
 			std::format(
 				"MeshManager: マテリアル割り当て - メッシュ: {}, マテリアル: {} (フルネーム: {})\n",
-				meshName, materialName, material->GetFullName()),
+				meshName, materialName, material->GetFullName()
+			),
 			kConTextColorCompleted,
 			Channel::ResourceSystem
 		);
@@ -425,7 +472,7 @@ SubMesh* MeshManager::ProcessMesh(const aiMesh*      mesh, const aiScene* scene,
 		// テクスチャの設定
 		aiString texturePath;
 		if (aiMat->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) ==
-			AI_SUCCESS) {
+		    AI_SUCCESS) {
 			// モデルのディレクトリパスを取得
 			std::filesystem::path modelPath(staticMesh->GetName());
 			std::filesystem::path modelDir = modelPath.parent_path();
@@ -438,32 +485,44 @@ SubMesh* MeshManager::ProcessMesh(const aiMesh*      mesh, const aiScene* scene,
 				std::filesystem::path fullTexturePath = modelDir / texPath;
 
 				// 旧TexManagerを使用してテクスチャを読み込み
-				TexManager::GetInstance()->
-					LoadTexture(fullTexturePath.string());
-				material->SetTexture("gBaseColorTexture",
-				                     fullTexturePath.string());
+				if (auto* engine = Unnamed::EngineServices::Get()) {
+					if (auto* tex = engine->GetTexManagerInstance()) {
+						tex->LoadTexture(fullTexturePath.string());
+					}
+				}
+				material->SetTexture(
+					"gBaseColorTexture",
+					fullTexturePath.string()
+				);
 			}
 		} else {
 			// エラーテクスチャのパスを設定（必要に応じて実装）
-			material->SetTexture("gBaseColorTexture",
-			                     "./content/core/textures/uvChecker.png");
+			material->SetTexture(
+				"gBaseColorTexture",
+				"./content/core/textures/uvChecker.png"
+			);
 		}
 
 		// 環境マップテクスチャの設定
 		// シェーダーがTexture2Dを期待している場合は、forceCubeMapをfalseにする
-		TexManager::GetInstance()->LoadTexture(
-			"./content/core/textures/wave.dds",
-			false);
-		material->SetTexture("gEnvironmentTexture",
-		                     "./content/core/textures/wave.dds");
+		if (auto* engine = Unnamed::EngineServices::Get()) {
+			if (auto* tex = engine->GetTexManagerInstance()) {
+				tex->LoadTexture(
+					"./content/core/textures/wave.dds",
+					false
+				);
+			}
+		}
+		material->SetTexture(
+			"gEnvironmentTexture",
+			"./content/core/textures/wave.dds"
+		);
 	}
 
 	auto subMesh = std::make_unique<SubMesh>(mDevice, mesh->mName.C_Str());
 	subMesh->SetVertexBuffer(vertices);
 	subMesh->SetIndexBuffer(indices);
-	if (material) {
-		subMesh->SetMaterial(material);
-	}
+	if (material) { subMesh->SetMaterial(material); }
 	return subMesh.release();
 }
 
@@ -501,8 +560,10 @@ SubMesh* MeshManager::ProcessSkeletalMesh(
 			// スケルトンからボーンIDを取得
 			auto it = skeleton.boneMap.find(boneName);
 			if (it == skeleton.boneMap.end()) {
-				Console::Print("ボーンが見つかりません: " + boneName + "\n",
-				               kConTextColorWarning, Channel::ResourceSystem);
+				Console::Print(
+					"ボーンが見つかりません: " + boneName + "\n",
+					kConTextColorWarning, Channel::ResourceSystem
+				);
 				continue;
 			}
 
@@ -513,7 +574,8 @@ SubMesh* MeshManager::ProcessSkeletalMesh(
 				Console::Print(
 					"ボーンインデックスが範囲外です: " + std::to_string(globalBoneIndex) +
 					" (最大255)\n",
-					kConTextColorError, Channel::ResourceSystem);
+					kConTextColorError, Channel::ResourceSystem
+				);
 				continue;
 			}
 
@@ -524,8 +586,10 @@ SubMesh* MeshManager::ProcessSkeletalMesh(
 				uint32_t              vertexId = weight.mVertexId;
 
 				if (vertexId >= mesh->mNumVertices) {
-					Console::Print("頂点インデックスが範囲外です\n",
-					               kConTextColorError, Channel::ResourceSystem);
+					Console::Print(
+						"頂点インデックスが範囲外です\n",
+						kConTextColorError, Channel::ResourceSystem
+					);
 					continue;
 				}
 
@@ -544,36 +608,44 @@ SubMesh* MeshManager::ProcessSkeletalMesh(
 		SkinnedVertex vertex;
 
 		// 変換行列を頂点に適用
-		aiVector3D pos(mesh->mVertices[i].x, mesh->mVertices[i].y,
-		               mesh->mVertices[i].z);
+		aiVector3D pos(
+			mesh->mVertices[i].x, mesh->mVertices[i].y,
+			mesh->mVertices[i].z
+		);
 		aiVector3D transformedPos = transform * pos;
-		vertex.position           = Vec4(transformedPos.x, transformedPos.y,
-		                                 transformedPos.z, 1.0f);
+		vertex.position           = Vec4(
+			transformedPos.x, transformedPos.y,
+			transformedPos.z, 1.0f
+		);
 
 		// 法線にも回転を適用（スケールは除外）
 		aiMatrix3x3 normalMatrix(transform);
 		if (mesh->mNormals) {
-			aiVector3D normal(mesh->mNormals[i].x, mesh->mNormals[i].y,
-			                  mesh->mNormals[i].z);
+			aiVector3D normal(
+				mesh->mNormals[i].x, mesh->mNormals[i].y,
+				mesh->mNormals[i].z
+			);
 			aiVector3D transformedNormal = normalMatrix * normal;
 			transformedNormal.Normalize();
-			vertex.normal = Vec3(transformedNormal.x, transformedNormal.y,
-			                     transformedNormal.z);
-		} else {
-			vertex.normal = Vec3(0.0f, 1.0f, 0.0f);
-		}
+			vertex.normal = Vec3(
+				transformedNormal.x, transformedNormal.y,
+				transformedNormal.z
+			);
+		} else { vertex.normal = Vec3(0.0f, 1.0f, 0.0f); }
 
 		if (mesh->mTextureCoords[0]) {
-			vertex.uv = Vec2(mesh->mTextureCoords[0][i].x,
-			                 mesh->mTextureCoords[0][i].y);
-		} else {
-			vertex.uv = Vec2::zero;
-		}
+			vertex.uv = Vec2(
+				mesh->mTextureCoords[0][i].x,
+				mesh->mTextureCoords[0][i].y
+			);
+		} else { vertex.uv = Vec2::zero; }
 
 		// ボーンウェイトとインデックスを設定
 		const VertexBoneData& boneData = vertexBoneData[i];
-		vertex.boneWeights = Vec4(boneData.weights[0], boneData.weights[1],
-		                          boneData.weights[2], boneData.weights[3]);
+		vertex.boneWeights             = Vec4(
+			boneData.weights[0], boneData.weights[1],
+			boneData.weights[2], boneData.weights[3]
+		);
 		vertex.boneIndices[0] = boneData.indices[0];
 		vertex.boneIndices[1] = boneData.indices[1];
 		vertex.boneIndices[2] = boneData.indices[2];
@@ -581,7 +653,7 @@ SubMesh* MeshManager::ProcessSkeletalMesh(
 
 		// ウェイトの正規化
 		float totalWeight = vertex.boneWeights.x + vertex.boneWeights.y +
-			vertex.boneWeights.z + vertex.boneWeights.w;
+		                    vertex.boneWeights.z + vertex.boneWeights.w;
 		if (totalWeight > 0.0f) {
 			vertex.boneWeights = vertex.boneWeights / totalWeight;
 		} else {
@@ -603,15 +675,18 @@ SubMesh* MeshManager::ProcessSkeletalMesh(
 					i, vertex.boneWeights.x, vertex.boneWeights.y,
 					vertex.boneWeights.z, vertex.boneWeights.w,
 					vertex.boneIndices[0], vertex.boneIndices[1],
-					vertex.boneIndices[2], vertex.boneIndices[3]),
+					vertex.boneIndices[2], vertex.boneIndices[3]
+				),
 				kConTextColorGray,
 				Channel::ResourceSystem
 			);
 		}
 	}
 
-	Console::Print("スケルタルメッシュ頂点数: " + std::to_string(mesh->mNumVertices) + "\n",
-	               kConTextColorGray, Channel::ResourceSystem);
+	Console::Print(
+		"スケルタルメッシュ頂点数: " + std::to_string(mesh->mNumVertices) + "\n",
+		kConTextColorGray, Channel::ResourceSystem
+	);
 
 	// 面情報の取得
 	for (uint32_t faceIndex = 0; faceIndex < mesh->mNumFaces; ++faceIndex) {
@@ -623,8 +698,10 @@ SubMesh* MeshManager::ProcessSkeletalMesh(
 		}
 	}
 
-	Console::Print("スケルタルメッシュ三角面数: " + std::to_string(mesh->mNumFaces) + "\n",
-	               kConTextColorGray, Channel::ResourceSystem);
+	Console::Print(
+		"スケルタルメッシュ三角面数: " + std::to_string(mesh->mNumFaces) + "\n",
+		kConTextColorGray, Channel::ResourceSystem
+	);
 
 	// マテリアルの設定
 	Material*         material     = nullptr;
@@ -653,7 +730,8 @@ SubMesh* MeshManager::ProcessSkeletalMesh(
 	Console::Print(
 		std::format(
 			"MeshManager: スケルタルメッシュマテリアル割り当て - メッシュ: {}, マテリアル: {} (フルネーム: {})\n",
-			meshName, materialName, material->GetFullName()),
+			meshName, materialName, material->GetFullName()
+		),
 		kConTextColorCompleted,
 		Channel::ResourceSystem
 	);
@@ -661,7 +739,7 @@ SubMesh* MeshManager::ProcessSkeletalMesh(
 	// テクスチャの設定
 	aiString texturePath;
 	if (aiMat->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) ==
-		AI_SUCCESS) {
+	    AI_SUCCESS) {
 		// モデルのディレクトリパスを取得
 		std::filesystem::path modelPath(skeletalMesh->GetName());
 		std::filesystem::path modelDir = modelPath.parent_path();
@@ -673,20 +751,33 @@ SubMesh* MeshManager::ProcessSkeletalMesh(
 			std::filesystem::path texPath(texturePathStr);
 			std::filesystem::path fullTexturePath = modelDir / texPath;
 
-			TexManager::GetInstance()->
-				LoadTexture(fullTexturePath.string());
-			material->SetTexture("gBaseColorTexture",
-			                     fullTexturePath.string());
+			if (auto* engine = Unnamed::EngineServices::Get()) {
+				if (auto* tex = engine->GetTexManagerInstance()) {
+					tex->LoadTexture(fullTexturePath.string());
+				}
+			}
+			material->SetTexture(
+				"gBaseColorTexture",
+				fullTexturePath.string()
+			);
 		}
 	} else {
 		// エラーテクスチャのパスを設定（必要に応じて実装）
-		material->SetTexture("gBaseColorTexture",
-		                     "./content/core/textures/uvChecker.png");
+		material->SetTexture(
+			"gBaseColorTexture",
+			"./content/core/textures/uvChecker.png"
+		);
 	}
 
 	// 環境マップテクスチャの設定
-	TexManager::GetInstance()->LoadTexture("./content/core/textures/wave.dds",
-	                                       true);
+	if (auto* engine = Unnamed::EngineServices::Get()) {
+		if (auto* tex = engine->GetTexManagerInstance()) {
+			tex->LoadTexture(
+				"./content/core/textures/wave.dds",
+				true
+			);
+		}
+	}
 	material->SetTexture(
 		"gEnvironmentTexture",
 		"./content/core/textures/wave.dds"
@@ -695,9 +786,7 @@ SubMesh* MeshManager::ProcessSkeletalMesh(
 	auto subMesh = std::make_unique<SubMesh>(mDevice, mesh->mName.C_Str());
 	subMesh->SetSkinnedVertexBuffer(vertices);
 	subMesh->SetIndexBuffer(indices);
-	if (material) {
-		subMesh->SetMaterial(material);
-	}
+	if (material) { subMesh->SetMaterial(material); }
 	return subMesh.release();
 }
 
@@ -708,8 +797,10 @@ Skeleton MeshManager::LoadSkeleton(const aiScene* scene) {
 	Skeleton skeleton;
 
 	if (!scene->HasMeshes()) {
-		Console::Print("メッシュがありません\n", kConTextColorError,
-		               Channel::ResourceSystem);
+		Console::Print(
+			"メッシュがありません\n", kConTextColorError,
+			Channel::ResourceSystem
+		);
 		return skeleton;
 	}
 
@@ -720,9 +811,7 @@ Skeleton MeshManager::LoadSkeleton(const aiScene* scene) {
 	for (uint32_t meshIndex = 0; meshIndex < scene->mNumMeshes; ++meshIndex) {
 		const aiMesh* mesh = scene->mMeshes[meshIndex];
 
-		if (!mesh->HasBones()) {
-			continue;
-		}
+		if (!mesh->HasBones()) { continue; }
 
 		for (uint32_t i = 0; i < mesh->mNumBones; ++i) {
 			const aiBone* bone     = mesh->mBones[i];
@@ -753,8 +842,10 @@ Skeleton MeshManager::LoadSkeleton(const aiScene* scene) {
 				// 最初の数ボーンの情報をデバッグ出力
 				if (boneIndex < 3) {
 					Console::Print(
-						std::format("ボーン{}: {} (ID: {})\n", boneIndex, boneName,
-						            newBone.id),
+						std::format(
+							"ボーン{}: {} (ID: {})\n", boneIndex, boneName,
+							newBone.id
+						),
 						kConTextColorGray,
 						Channel::ResourceSystem
 					);
@@ -769,13 +860,12 @@ Skeleton MeshManager::LoadSkeleton(const aiScene* scene) {
 	skeleton.boneMatrices.resize(skeleton.bones.size(), Mat4::identity);
 
 	// ルートノードを読み込み
-	if (scene->mRootNode) {
-		skeleton.rootNode = LoadNode(scene->mRootNode);
-	}
+	if (scene->mRootNode) { skeleton.rootNode = LoadNode(scene->mRootNode); }
 
 	Console::Print(
 		"スケルトン読み込み完了: " + std::to_string(skeleton.bones.size()) + " ボーン\n",
-		kConTextColorCompleted, Channel::ResourceSystem);
+		kConTextColorCompleted, Channel::ResourceSystem
+	);
 
 	return skeleton;
 }
@@ -825,22 +915,24 @@ Node MeshManager::LoadNode(const aiNode* aiNode) {
 /// @brief アニメーションを読み込む
 /// @param scene Assimpのシーンデータ
 /// @param skeletalMesh スケルタルメッシュへのポインタ
-void MeshManager::LoadAnimations(const aiScene* scene,
-                                 SkeletalMesh*  skeletalMesh) {
+void MeshManager::LoadAnimations(
+	const aiScene* scene,
+	SkeletalMesh*  skeletalMesh
+) {
 	for (uint32_t i = 0; i < scene->mNumAnimations; ++i) {
 		const aiAnimation* aiAnim    = scene->mAnimations[i];
 		Animation          animation = LoadAnimation(aiAnim);
 
 		std::string animName = aiAnim->mName.C_Str();
-		if (animName.empty()) {
-			animName = "Animation_" + std::to_string(i);
-		}
+		if (animName.empty()) { animName = "Animation_" + std::to_string(i); }
 
 		skeletalMesh->AddAnimation(animName, animation);
 
-		Console::Print("アニメーション読み込み: " + animName +
-		               " (時間: " + std::to_string(animation.duration) + "秒)\n",
-		               kConTextColorCompleted, Channel::ResourceSystem);
+		Console::Print(
+			"アニメーション読み込み: " + animName +
+			" (時間: " + std::to_string(animation.duration) + "秒)\n",
+			kConTextColorCompleted, Channel::ResourceSystem
+		);
 	}
 }
 
@@ -850,7 +942,7 @@ void MeshManager::LoadAnimations(const aiScene* scene,
 Animation MeshManager::LoadAnimation(const aiAnimation* aiAnim) {
 	Animation animation;
 	animation.duration = static_cast<float>(aiAnim->mDuration / aiAnim->
-		mTicksPerSecond);
+	                                        mTicksPerSecond);
 
 	// 各ノードのアニメーションチャンネルを処理
 	for (uint32_t i = 0; i < aiAnim->mNumChannels; ++i) {
@@ -864,7 +956,7 @@ Animation MeshManager::LoadAnimation(const aiAnimation* aiAnim) {
 			const aiVectorKey& key = nodeAnim->mPositionKeys[j];
 			KeyframeVec3       keyframe;
 			keyframe.time = static_cast<float>(key.mTime / aiAnim->
-				mTicksPerSecond);
+			                                   mTicksPerSecond);
 			keyframe.value = Vec3(key.mValue.x, key.mValue.y, key.mValue.z);
 			nodeAnimation.translate.keyFrames.emplace_back(keyframe);
 		}
@@ -874,7 +966,7 @@ Animation MeshManager::LoadAnimation(const aiAnimation* aiAnim) {
 			const aiQuatKey&   key = nodeAnim->mRotationKeys[j];
 			KeyframeQuaternion keyframe;
 			keyframe.time = static_cast<float>(key.mTime / aiAnim->
-				mTicksPerSecond);
+			                                   mTicksPerSecond);
 			// 回転キーフレーム（デバッグ表示と同じ変換）
 			keyframe.value = Quaternion(
 				key.mValue.x,
@@ -890,7 +982,7 @@ Animation MeshManager::LoadAnimation(const aiAnimation* aiAnim) {
 			const aiVectorKey& key = nodeAnim->mScalingKeys[j];
 			KeyframeVec3       keyframe;
 			keyframe.time = static_cast<float>(key.mTime / aiAnim->
-				mTicksPerSecond);
+			                                   mTicksPerSecond);
 			keyframe.value = Vec3(key.mValue.x, key.mValue.y, key.mValue.z);
 			nodeAnimation.scale.keyFrames.emplace_back(keyframe);
 		}

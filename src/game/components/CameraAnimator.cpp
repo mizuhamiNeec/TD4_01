@@ -1,9 +1,9 @@
 #include "CameraAnimator.h"
-#include "player/MovementComponent.h"
-#include "CameraRotator.h"
+#include <cmath>
 #include <engine/Entity/Entity.h>
 #include <engine/ImGui/ImGuiUtil.h>
-#include <cmath>
+#include "CameraRotator.h"
+#include "player/MovementComponent.h"
 
 #include "engine/OldConsole/Console.h"
 
@@ -11,9 +11,7 @@ namespace {
 	/// @brief フェード関数
 	/// @param t 入力値
 	/// @return フェード後の値
-	float Fade(float t) {
-		return t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f);
-	}
+	float Fade(float t) { return t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f); }
 
 	/// @brief 勾配関数
 	/// @param hash ハッシュ値
@@ -59,15 +57,15 @@ namespace {
 
 /// @brief エンティティにアタッチされたときの処理
 /// @param owner 所有エンティティ
-void CameraAnimator::OnAttach(Entity& owner) {
-	Component::OnAttach(owner);
-}
+void CameraAnimator::OnAttach(Entity& owner) { Component::OnAttach(owner); }
 
 /// @brief 初期化
 /// @param movementComponent MovementComponentへのポインタ
 /// @param cameraRotator CameraRotatorへのポインタ
-void CameraAnimator::Init(MovementComponent* movementComponent,
-                          CameraRotator*     cameraRotator) {
+void CameraAnimator::Init(
+	MovementComponent* movementComponent,
+	CameraRotator*     cameraRotator
+) {
 	mMovement      = movementComponent;
 	mCameraRotator = cameraRotator;
 }
@@ -106,16 +104,22 @@ float CameraAnimator::PerlinNoise(float x, float y, float z) const {
 	return std::lerp(
 		std::lerp(
 			std::lerp(Grad(p[AA], x, y, z), Grad(p[BA], x - 1, y, z), u),
-			std::lerp(Grad(p[AB], x, y - 1, z), Grad(p[BB], x - 1, y - 1, z),
-			          u),
+			std::lerp(
+				Grad(p[AB], x, y - 1, z), Grad(p[BB], x - 1, y - 1, z),
+				u
+			),
 			v
 		),
 		std::lerp(
-			std::lerp(Grad(p[AA + 1], x, y, z - 1),
-			          Grad(p[BA + 1], x - 1, y, z - 1),
-			          u),
-			std::lerp(Grad(p[AB + 1], x, y - 1, z - 1),
-			          Grad(p[BB + 1], x - 1, y - 1, z - 1), u),
+			std::lerp(
+				Grad(p[AA + 1], x, y, z - 1),
+				Grad(p[BA + 1], x - 1, y, z - 1),
+				u
+			),
+			std::lerp(
+				Grad(p[AB + 1], x, y - 1, z - 1),
+				Grad(p[BB + 1], x - 1, y - 1, z - 1), u
+			),
 			v
 		),
 		w
@@ -144,14 +148,10 @@ void CameraAnimator::UpdateJumpAnimation(float dt) {
 	const bool isWallRunning = mMovement->IsWallRunning();
 
 	// ジャンプ開始検出（地上→空中、ウォールラン中を除く）
-	if (isInAir && !mWasInAir && !isWallRunning) {
-		mJumpAnimTime = 0.0f;
-	}
+	if (isInAir && !mWasInAir && !isWallRunning) { mJumpAnimTime = 0.0f; }
 
 	// ジャンプアニメーション進行
-	if (mJumpAnimTime < kJumpShakeDuration) {
-		mJumpAnimTime += dt;
-	}
+	if (mJumpAnimTime < kJumpShakeDuration) { mJumpAnimTime += dt; }
 
 	mWasInAir = isInAir;
 }
@@ -192,9 +192,7 @@ void CameraAnimator::UpdateSlideAnimation(float dt) {
 	}
 
 	// スライディング中はアニメーション時間を進める
-	if (isSliding) {
-		mSlideAnimTime += dt;
-	} else if (mSlideAnimTime > 0.0f) {
+	if (isSliding) { mSlideAnimTime += dt; } else if (mSlideAnimTime > 0.0f) {
 		// スライディング終了後は徐々に減衰
 		mSlideAnimTime = std::max(0.0f, mSlideAnimTime - dt * 3.0f);
 	}
@@ -224,9 +222,8 @@ void CameraAnimator::UpdateWallrunAnimation(float dt) {
 	}
 
 	// ウォールラン中はアニメーション時間を進める
-	if (isWallRunning) {
-		mWallrunAnimTime += dt;
-	} else if (mWallrunAnimTime > 0.0f) {
+	if (isWallRunning) { mWallrunAnimTime += dt; } else if (
+		mWallrunAnimTime > 0.0f) {
 		// ウォールラン終了後は徐々に減衰
 		mWallrunAnimTime = std::max(0.0f, mWallrunAnimTime - dt * 5.0f);
 	}
@@ -391,10 +388,10 @@ void CameraAnimator::ApplyShakeAndTilt(float dt) {
 	// 現在の値にスムーズに補間
 	float smoothFactor = 1.0f - std::exp(-dt * 10.0f);
 	mCurrentShake      = mCurrentShake * (1.0f - smoothFactor) + shake *
-		smoothFactor;
+	                     smoothFactor;
 	mCurrentRoll  = mCurrentRoll * (1.0f - smoothFactor) + roll * smoothFactor;
 	mCurrentPitch = mCurrentPitch * (1.0f - smoothFactor) + pitch *
-		smoothFactor;
+	                smoothFactor;
 
 	// トランスフォームに適用（シェイクのみ、回転はCameraRotatorに委譲）
 	auto* transform = mScene;
@@ -423,8 +420,10 @@ void CameraAnimator::DrawInspectorImGui() {
 	ImGui::Text("Wallrun Side: %.1f", mWallrunSide);
 	ImGui::Text("Landing Active: %s", mLandingActive ? "Yes" : "No");
 	ImGui::Separator();
-	ImGui::Text("Current Shake: %.3f, %.3f, %.3f", mCurrentShake.x,
-	            mCurrentShake.y, mCurrentShake.z);
+	ImGui::Text(
+		"Current Shake: %.3f, %.3f, %.3f", mCurrentShake.x,
+		mCurrentShake.y, mCurrentShake.z
+	);
 	ImGui::Text("Current Roll: %.2f°", mCurrentRoll);
 	ImGui::Text("Current Pitch: %.2f°", mCurrentPitch);
 #endif

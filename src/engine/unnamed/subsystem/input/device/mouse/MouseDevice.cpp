@@ -18,15 +18,12 @@ namespace Unnamed {
 	MouseDevice::~MouseDevice() = default;
 
 	/// @brief 更新処理
-	void MouseDevice::Update() {
-	}
+	void MouseDevice::Update() {}
 
 	/// @brief 生の入力を処理する
 	/// @param raw 生の入力データ
 	void MouseDevice::HandleRawInput(const RAWINPUT& raw) {
-		if (raw.header.dwType != RIM_TYPEMOUSE) {
-			return;
-		}
+		if (raw.header.dwType != RIM_TYPEMOUSE) { return; }
 		const auto& mouseData = raw.data.mouse;
 
 		// 第5ボタンまでの状態を取得 マウスの形をしたキーボードは知らん
@@ -67,7 +64,7 @@ namespace Unnamed {
 		// ホイール
 		if (mouseData.usButtonFlags & RI_MOUSE_WHEEL) {
 			const SHORT wheelData = static_cast<SHORT>(mouseData.usButtonData);
-			mWheelRemainder += wheelData;
+			mWheelRemainder       += wheelData;
 			if (wheelData > 0) {
 				mButtonStates[VM_WHEEL_UP]   = true;
 				mButtonStates[VM_WHEEL_DOWN] = false;
@@ -77,7 +74,7 @@ namespace Unnamed {
 			}
 			const int clicks = mWheelRemainder / WHEEL_DELTA;
 			if (clicks != 0) {
-				mWheelDelta += clicks;
+				mWheelDelta     += clicks;
 				mWheelRemainder -= clicks * WHEEL_DELTA;
 			}
 		}
@@ -87,9 +84,7 @@ namespace Unnamed {
 	/// @param key 入力キー
 	/// @return 押されているかどうか
 	bool MouseDevice::GetKeyState(const InputKey& key) const {
-		if (key.device != InputDeviceType::MOUSE) {
-			return false;
-		}
+		if (key.device != InputDeviceType::MOUSE) { return false; }
 		const auto it = mButtonStates.find(key.code);
 		return it != mButtonStates.end() ? it->second : false;
 	}
@@ -98,18 +93,10 @@ namespace Unnamed {
 	/// @param key 入力キー
 	/// @return アナログ値
 	float MouseDevice::GetAnalogValue(const InputKey& key) const {
-		if (key.device != InputDeviceType::MOUSE) {
-			return 0.0f;
-		}
-		if (key.code == VM_X) {
-			return static_cast<float>(mDeltaX);
-		}
-		if (key.code == VM_Y) {
-			return static_cast<float>(mDeltaY);
-		}
-		if (key.code == VM_WHEEL) {
-			return static_cast<float>(mWheelDelta);
-		}
+		if (key.device != InputDeviceType::MOUSE) { return 0.0f; }
+		if (key.code == VM_X) { return static_cast<float>(mDeltaX); }
+		if (key.code == VM_Y) { return static_cast<float>(mDeltaY); }
+		if (key.code == VM_WHEEL) { return static_cast<float>(mWheelDelta); }
 		return 0.0f;
 	}
 

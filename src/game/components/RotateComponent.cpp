@@ -13,24 +13,16 @@ void RotateComponent::OnAttach(Entity& owner) {
 }
 
 void RotateComponent::PrePhysics(float deltaTime) {
-	if (!mRotationEnabled || !mTransform) {
-		return;
-	}
+	if (!mRotationEnabled || !mTransform) { return; }
 
 	Vec3 rotationDelta = Vec3::zero;
 
-	if (mPitchEnabled) {
-		rotationDelta.x = mRotationRate.x * deltaTime;
-	}
-	if (mYawEnabled) {
-		rotationDelta.y = mRotationRate.y * deltaTime;
-	}
-	if (mRollEnabled) {
-		rotationDelta.z = mRotationRate.z * deltaTime;
-	}
+	if (mPitchEnabled) { rotationDelta.x = mRotationRate.x * deltaTime; }
+	if (mYawEnabled) { rotationDelta.y = mRotationRate.y * deltaTime; }
+	if (mRollEnabled) { rotationDelta.z = mRotationRate.z * deltaTime; }
 
 	if (rotationDelta.x != 0.0f || rotationDelta.y != 0.0f || rotationDelta.z !=
-		0.0f) {
+	    0.0f) {
 		Vec3       rotationDeltaRad = rotationDelta * Math::deg2Rad;
 		Quaternion deltaRotation    = Quaternion::Euler(rotationDeltaRad);
 
@@ -42,9 +34,7 @@ void RotateComponent::PrePhysics(float deltaTime) {
 	}
 }
 
-void RotateComponent::Update(float deltaTime) {
-	deltaTime;
-}
+void RotateComponent::Update(float deltaTime) { deltaTime; }
 
 void RotateComponent::DrawInspectorImGui() {
 #ifdef _DEBUG

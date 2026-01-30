@@ -6,7 +6,7 @@ namespace UPhysics {
 		const Unnamed::Ray& ray, const Unnamed::AABB& aabb,
 		float&              tMaxOut
 	);
-	
+
 	bool TriangleVsRay(
 		const Unnamed::Triangle& triangle, const Unnamed::Ray& ray,
 		float&                   tHit, Vec3&                   outNormal
@@ -48,8 +48,7 @@ namespace UPhysics {
 		float&                   outTOI,
 		Vec3&                    outNormal
 	);
-
-	// Overlap detection functions
+	
 	bool BoxVsTriangleOverlap(
 		const Unnamed::Box&      box,
 		const Unnamed::Triangle& tri,

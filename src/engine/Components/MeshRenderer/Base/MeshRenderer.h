@@ -8,8 +8,7 @@ public:
 	~MeshRenderer() override = default;
 
 	// 更新処理: 必要に応じてオーバーライドしてください
-	void Update([[maybe_unused]] float deltaTime) override {
-	}
+	void Update([[maybe_unused]] float deltaTime) override {}
 
 	// 描画処理: オーバーライドしやがれください
 	void Render(ID3D12GraphicsCommandList* commandList) override = 0;

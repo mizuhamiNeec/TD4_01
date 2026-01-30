@@ -18,5 +18,5 @@ public:
 
 protected:
 	LRESULT WindowProc(HWND   hWnd, UINT msg, WPARAM wParam,
-	                   LPARAM lParam) override;
+					   LPARAM lParam) override;
 };

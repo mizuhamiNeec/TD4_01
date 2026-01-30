@@ -1,20 +1,13 @@
 #include "AABBCollider.h"
 
-#include "engine/Debug/Debug.h"
+#include "engine/Debug/DebugDraw.h"
 #include "engine/ImGui/ImGuiWidgets.h"
 
 AABBCollider::AABBCollider(const Unnamed::AABB& aabb, const Vec3 offset)
-	: mAABB(aabb), mOffset(offset) {
-}
+	: mAABB(aabb),
+	  mOffset(offset) {}
 
-void AABBCollider::Update(float) {
-	// Debug::DrawBox(
-	// 	mOwner->GetTransform()->GetWorldPos() + mOffset,
-	// 	Quaternion::identity,
-	// 	mAABB.Size(),
-	// 	Vec4::red
-	// );
-}
+void AABBCollider::Update(float) {}
 
 void AABBCollider::DrawInspectorImGui() {
 #ifdef _DEBUG
@@ -34,13 +27,9 @@ void AABBCollider::CheckCollision(const ColliderComponent* other) const {
 	(void)other;
 }
 
-Unnamed::AABB& AABBCollider::AABB() {
-	return mAABB;
-}
+Unnamed::AABB& AABBCollider::AABB() { return mAABB; }
 
-Vec3& AABBCollider::Offset() {
-	return mOffset;
-}
+Vec3& AABBCollider::Offset() { return mOffset; }
 
 Unnamed::AABB AABBCollider::GetOffsetAABB() const {
 	return Unnamed::AABB(
@@ -50,10 +39,8 @@ Unnamed::AABB AABBCollider::GetOffsetAABB() const {
 }
 
 Unnamed::AABB AABBCollider::GetWorldAABB() const {
-	if (!mOwner) {
-		return mAABB;
-	}
-	
+	if (!mOwner) { return mAABB; }
+
 	const Vec3 worldPos = mOwner->GetTransform()->GetWorldPos();
 	return Unnamed::AABB(
 		worldPos + mOffset + mAABB.min,

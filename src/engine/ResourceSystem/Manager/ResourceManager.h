@@ -27,6 +27,7 @@ private:
 	D3D12* d3d12_;
 
 	std::unique_ptr<SrvManager>       mSrvManager;
+	std::unique_ptr<TexManager>       mTexManager;
 	std::unique_ptr<ShaderManager>    mShaderManager;
 	std::unique_ptr<MaterialManager>  mMaterialManager;
 	std::unique_ptr<MeshManager>      mMeshManager;

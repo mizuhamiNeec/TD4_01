@@ -8,7 +8,6 @@
 #include <engine/Input/InputSystem.h>
 #include <engine/OldConsole/ConCommand.h>
 #include <engine/OldConsole/Console.h>
-#include <engine/Window/WindowManager.h>
 
 //-----------------------------------------------------------------------------
 // Purpose: インプットシステムの初期化を行います
@@ -32,18 +31,24 @@ void InputSystem::Init() {
 	rid[1].hwndTarget  = nullptr;
 
 	if (!RegisterRawInputDevices(rid, 2, sizeof(RAWINPUTDEVICE))) {
-		MessageBox(nullptr, L"Failed to register raw input devices", L"Error",
-		           MB_OK);
-		Console::Print("Failed to register raw input devices\n",
-		               kConTextColorError, Channel::InputSystem);
+		MessageBox(
+			nullptr, L"Failed to register raw input devices", L"Error",
+			MB_OK
+		);
+		Console::Print(
+			"Failed to register raw input devices\n",
+			kConTextColorError, Channel::InputSystem
+		);
 	}
 
 	ConCommand::RegisterCommand(
 		"bind",
 		[](const std::vector<std::string>& args) {
 			if (args.size() < 2) {
-				Console::Print("Usage: bind <key> <command>\n",
-				               kConTextColorWarning, Channel::InputSystem);
+				Console::Print(
+					"Usage: bind <key> <command>\n",
+					kConTextColorWarning, Channel::InputSystem
+				);
 				return;
 			}
 			std::string key     = args[0];
@@ -57,8 +62,10 @@ void InputSystem::Init() {
 		"unbind",
 		[](const std::vector<std::string>& args) {
 			if (args.size() < 1) {
-				Console::Print("Usage: unbind <key>\n", kConTextColorWarning,
-				               Channel::InputSystem);
+				Console::Print(
+					"Usage: unbind <key>\n", kConTextColorWarning,
+					Channel::InputSystem
+				);
 				return;
 			}
 			std::string key = args[0];
@@ -109,15 +116,16 @@ void InputSystem::Update() {
  */
 void InputSystem::ProcessInput(const long lParam) {
 	UINT dwSize = 0;
-	GetRawInputData(reinterpret_cast<HRAWINPUT>(static_cast<LPARAM>(lParam)),
-	                RID_INPUT, nullptr, &dwSize, sizeof(RAWINPUTHEADER));
+	GetRawInputData(
+		reinterpret_cast<HRAWINPUT>(static_cast<LPARAM>(lParam)),
+		RID_INPUT, nullptr, &dwSize, sizeof(RAWINPUTHEADER)
+	);
 
 	auto lpb = std::make_unique<BYTE[]>(dwSize);
 	if (GetRawInputData(
-		reinterpret_cast<HRAWINPUT>(static_cast<LPARAM>(lParam)), RID_INPUT,
-		lpb.get(), &dwSize, sizeof(RAWINPUTHEADER)) != dwSize) {
-		return;
-	}
+		    reinterpret_cast<HRAWINPUT>(static_cast<LPARAM>(lParam)), RID_INPUT,
+		    lpb.get(), &dwSize, sizeof(RAWINPUTHEADER)
+	    ) != dwSize) { return; }
 
 	const auto* raw = reinterpret_cast<RAWINPUT*>(lpb.get());
 
@@ -230,9 +238,7 @@ Vec2 InputSystem::GetMouseDelta() {
 
 /// @brief マウスの位置を取得する
 /// @return マウスの位置（ピクセル）
-Vec2 InputSystem::GetMousePosition() {
-	return mMousePosition;
-}
+Vec2 InputSystem::GetMousePosition() { return mMousePosition; }
 
 /**
  * @brief コマンドがトリガーされたかを判定する
@@ -289,16 +295,12 @@ void InputSystem::BindKey(const std::string& key, const std::string& command) {
  * @brief キーのバインドを解除する
  * @param key キー名
  */
-void InputSystem::UnbindKey(const std::string& key) {
-	mKeyBindings.erase(key);
-}
+void InputSystem::UnbindKey(const std::string& key) { mKeyBindings.erase(key); }
 
 /**
  * @brief すべてのバインドを解除する
  */
-void InputSystem::UnbindAll() {
-	mKeyBindings.clear();
-}
+void InputSystem::UnbindAll() { mKeyBindings.clear(); }
 
 /**
  * @brief コマンドを実行する
@@ -360,42 +362,42 @@ void InputSystem::CheckMouseCursorLock() {
 	static int cursorCount = 0; // カーソル表示カウンタを追跡
 
 	if (mMouseLock) {
-		// カーソルをウィンドウの中央にリセット
-		const POINT centerCursorPos = {
-			static_cast<LONG>(OldWindowManager::GetMainWindow()->
-				GetClientWidth() /
-				2),
-			static_cast<LONG>(OldWindowManager::GetMainWindow()->
-				GetClientHeight() /
-				2)
-		};
-
-		if (OldWindowManager::GetMainWindow()->GetWindowHandle() ==
-			GetForegroundWindow()) {
-			RECT rect;
-			rect.left   = centerCursorPos.x;
-			rect.top    = centerCursorPos.y;
-			rect.right  = centerCursorPos.x + 1;
-			rect.bottom = centerCursorPos.y + 1;
-			ClientToScreen(OldWindowManager::GetMainWindow()->GetWindowHandle(),
-			               reinterpret_cast<LPPOINT>(&rect));
-			ClientToScreen(OldWindowManager::GetMainWindow()->GetWindowHandle(),
-			               reinterpret_cast<LPPOINT>(&rect) + 1);
-			ClipCursor(&rect);
-		}
+		// // カーソルをウィンドウの中央にリセット
+		// const POINT centerCursorPos = {
+		// 	static_cast<LONG>(OldWindowManager::GetMainWindow()->
+		// 	                  GetClientWidth() /
+		// 	                  2),
+		// 	static_cast<LONG>(OldWindowManager::GetMainWindow()->
+		// 	                  GetClientHeight() /
+		// 	                  2)
+		// };
+		//
+		// if (OldWindowManager::GetMainWindow()->GetWindowHandle() ==
+		//     GetForegroundWindow()) {
+		// 	RECT rect;
+		// 	rect.left   = centerCursorPos.x;
+		// 	rect.top    = centerCursorPos.y;
+		// 	rect.right  = centerCursorPos.x + 1;
+		// 	rect.bottom = centerCursorPos.y + 1;
+		// 	ClientToScreen(
+		// 		OldWindowManager::GetMainWindow()->GetWindowHandle(),
+		// 		reinterpret_cast<LPPOINT>(&rect)
+		// 	);
+		// 	ClientToScreen(
+		// 		OldWindowManager::GetMainWindow()->GetWindowHandle(),
+		// 		reinterpret_cast<LPPOINT>(&rect) + 1
+		// 	);
+		// 	ClipCursor(&rect);
+		// }
 
 		// カーソルを非表示にする
-		while (cursorCount >= 0) {
-			cursorCount = ShowCursor(FALSE);
-		}
+		while (cursorCount >= 0) { cursorCount = ShowCursor(FALSE); }
 		mCursorHidden = true;
 	} else {
 		ClipCursor(nullptr); // カーソルのクリッピングを解除
 
 		// カーソルを表示する
-		while (cursorCount < 0) {
-			cursorCount = ShowCursor(TRUE);
-		}
+		while (cursorCount < 0) { cursorCount = ShowCursor(TRUE); }
 		mCursorHidden = false;
 	}
 }
@@ -429,12 +431,14 @@ void InputSystem::UpdateMouseButtonState(
 
 std::string InputSystem::GetKeyName(const UINT virtualKey) {
 	char name[256];
-	if (GetKeyNameTextA(MapVirtualKey(virtualKey, MAPVK_VK_TO_VSC) << 16, name,
-	                    sizeof(name))) {
-		return std::string(name);
-	}
-	Console::Print(std::format("キーの名前を取得できませんでした: {}\n", virtualKey),
-	               kConTextColorError, Channel::InputSystem);
+	if (GetKeyNameTextA(
+		MapVirtualKey(virtualKey, MAPVK_VK_TO_VSC) << 16, name,
+		sizeof(name)
+	)) { return std::string(name); }
+	Console::Print(
+		std::format("キーの名前を取得できませんでした: {}\n", virtualKey),
+		kConTextColorError, Channel::InputSystem
+	);
 	return "Unknown";
 }
 

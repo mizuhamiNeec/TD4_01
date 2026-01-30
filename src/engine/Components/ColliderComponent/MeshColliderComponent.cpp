@@ -24,23 +24,25 @@ void MeshColliderComponent::OnAttach(Entity& owner) {
 
 /// @brief 毎フレームの更新処理
 /// @param deltaTime 前フレームからの経過時間
-void MeshColliderComponent::Update(float deltaTime) {
-	deltaTime;
-}
+void MeshColliderComponent::Update(float deltaTime) { deltaTime; }
 
 /// @brief ImGuiでインスペクターを描画する
 void MeshColliderComponent::DrawInspectorImGui() {
 #ifdef _DEBUG
-	if (ImGui::CollapsingHeader("MeshColliderComponent",
-	                            ImGuiTreeNodeFlags_DefaultOpen)) {
+	if (ImGui::CollapsingHeader(
+		"MeshColliderComponent",
+		ImGuiTreeNodeFlags_DefaultOpen
+	)) {
 		if (mMeshRenderer) {
-			ImGui::Text("StaticMeshRenderer: %s",
-			            mMeshRenderer->GetStaticMesh()->GetName().c_str());
-			ImGui::Text("PolyCount: %d",
-			            mMeshRenderer->GetStaticMesh()->GetPolygons().size());
-		} else {
-			ImGui::Text("StaticMeshRenderer: None");
-		}
+			ImGui::Text(
+				"StaticMeshRenderer: %s",
+				mMeshRenderer->GetStaticMesh()->GetName().c_str()
+			);
+			ImGui::Text(
+				"PolyCount: %d",
+				mMeshRenderer->GetStaticMesh()->GetPolygons().size()
+			);
+		} else { ImGui::Text("StaticMeshRenderer: None"); }
 		ImGui::Separator();
 	}
 #endif
@@ -51,9 +53,7 @@ void MeshColliderComponent::DrawInspectorImGui() {
 /// @return 衝突しているかどうか
 void MeshColliderComponent::CheckCollision(
 	const ColliderComponent* other
-) const {
-	(void)other;
-}
+) const { (void)other; }
 
 /// @brief 三角形リストを取得する
 /// @return 三角形リスト
@@ -64,18 +64,14 @@ std::vector<Unnamed::Triangle> MeshColliderComponent::GetTriangles() {
 /// @brief 静的メッシュを取得する
 /// @return 静的メッシュのポインタ
 StaticMesh* MeshColliderComponent::GetStaticMesh() const {
-	if (mMeshRenderer) {
-		return mMeshRenderer->GetStaticMesh();
-	}
+	if (mMeshRenderer) { return mMeshRenderer->GetStaticMesh(); }
 	return nullptr;
 }
 
 /// @brief 三角形リストを構築する
 void MeshColliderComponent::BuildTriangleList() {
 	auto* mesh = mMeshRenderer->GetStaticMesh();
-	if (!mesh) {
-		return;
-	}
+	if (!mesh) { return; }
 
 	mTriangles.clear();
 	mTriangles = mesh->GetPolygons();

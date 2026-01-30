@@ -6,8 +6,8 @@
 #include "engine/renderer/ConstantBuffer.h"
 
 #include "engine/renderer/IndexBuffer.h"
-#include "engine/renderer/VertexBuffer.h"
 #include "engine/renderer/Structs.h"
+#include "engine/renderer/VertexBuffer.h"
 
 // スプライトの頂点数
 constexpr uint32_t kSpriteVertexCount = 6;
@@ -99,7 +99,7 @@ private:
 	std::unique_ptr<IndexBuffer>          mIndexBuffer      = nullptr;
 	// バッファリソース内のデータを指すポインタ
 	Vertex*               mVertexData               = nullptr;
-	uint32_t*             mIndexData                 = nullptr;
+	uint32_t*             mIndexData                = nullptr;
 	Material*             mMaterialData             = nullptr;
 	TransformationMatrix* mTransformationMatrixData = nullptr;
 };

@@ -5,16 +5,13 @@
 namespace Unnamed::Gui {
 	static constexpr std::string_view kChannel = "UiScreen";
 
-	UiScreenStack::UiScreenStack(UiRoot* uiRoot) : mUiRoot(uiRoot) {
-	}
+	UiScreenStack::UiScreenStack(UiRoot* uiRoot) : mUiRoot(uiRoot) {}
 
 	void UiScreenStack::PushScreen(std::shared_ptr<UiScreen> screen) {
-		if (!screen || !mUiRoot)
-			return;
+		if (!screen || !mUiRoot) return;
 
 		UiDocument* doc = screen->GetDocument();
-		if (!doc)
-			return;
+		if (!doc) return;
 
 		UiWidget* documentRoot = doc->GetRootWidget();
 		if (!documentRoot) {
@@ -31,12 +28,10 @@ namespace Unnamed::Gui {
 	}
 
 	void UiScreenStack::PopScreen() {
-		if (mScreens.empty()) {
-			return;
-		}
+		if (mScreens.empty()) { return; }
 
 		auto screen = mScreens.back();
-        
+
 		// ★ 追加: UiRootから参照を外す
 		if (screen && mUiRoot && mUiRoot->GetRootWidget()) {
 			if (auto* doc = screen->GetDocument()) {
@@ -47,9 +42,7 @@ namespace Unnamed::Gui {
 		}
 
 		mScreens.pop_back();
-		if (screen) {
-			screen->OnHide();
-		}
+		if (screen) { screen->OnHide(); }
 
 		DevMsg(kChannel, "PopScreen: now {} screens\n", mScreens.size());
 	}
@@ -61,13 +54,15 @@ namespace Unnamed::Gui {
 				if (screen) {
 					if (auto* doc = screen->GetDocument()) {
 						if (auto* docRoot = doc->GetRootWidget()) {
-							mUiRoot->GetRootWidget()->RemoveChildReference(docRoot);
+							mUiRoot->GetRootWidget()->RemoveChildReference(
+								docRoot
+							);
 						}
 					}
 					screen->OnHide();
 				}
 			}
-            
+
 			// 注意: 元のコードにあった while(!GetChildren().empty()) ループは
 			// 「所有している子」を消すものなので、スクリーンスタックの用途（参照使用）とは
 			// 異なりますが、念のため残すか、参照のみなら削除しても構いません。
@@ -80,9 +75,7 @@ namespace Unnamed::Gui {
 
 	void UiScreenStack::Tick(float deltaTime) {
 		for (auto& screen : mScreens) {
-			if (screen) {
-				screen->OnUpdate(deltaTime);
-			}
+			if (screen) { screen->OnUpdate(deltaTime); }
 		}
 	}
 }

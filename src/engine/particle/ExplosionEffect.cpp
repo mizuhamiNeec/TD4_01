@@ -13,8 +13,10 @@ ExplosionEffect::~ExplosionEffect() {
 /// @brief 爆発エフェクトを初期化します
 /// @param particleManager パーティクルマネージャーへのポインタ
 /// @param texturePath パーティクルテクスチャのパス
-void ExplosionEffect::Init(ParticleManager*   particleManager,
-                           const std::string& texturePath) {
+void ExplosionEffect::Init(
+	ParticleManager*   particleManager,
+	const std::string& texturePath
+) {
 	mExplosionParticleObject = std::make_unique<ParticleObject>();
 	mExplosionParticleObject->Init(particleManager, texturePath);
 	mExplosionParticleObject->SetBillboardType(BillboardType::XZ);
@@ -25,10 +27,12 @@ void ExplosionEffect::Init(ParticleManager*   particleManager,
 /// @param normal 爆発の法線ベクトル
 /// @param particleCount 発生させるパーティクル数
 /// @param coneAngle パーティクルの放出角度
-void ExplosionEffect::TriggerExplosion(const Vec3& position,
-                                       const Vec3& normal,
-                                       uint32_t    particleCount,
-                                       float       coneAngle) {
+void ExplosionEffect::TriggerExplosion(
+	const Vec3& position,
+	const Vec3& normal,
+	uint32_t    particleCount,
+	float       coneAngle
+) {
 	for (uint32_t i = 0; i < particleCount; ++i) {
 		Vec3 randomDir = Random::Vec3Range(-Vec3::one, Vec3::one);
 		randomDir.Normalize();
@@ -57,7 +61,5 @@ void ExplosionEffect::Update(float deltaTime) const {
 
 /// @brief 爆発エフェクトを描画します
 void ExplosionEffect::Draw() const {
-	if (mExplosionParticleObject) {
-		mExplosionParticleObject->Draw();
-	}
+	if (mExplosionParticleObject) { mExplosionParticleObject->Draw(); }
 }

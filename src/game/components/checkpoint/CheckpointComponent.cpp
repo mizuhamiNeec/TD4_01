@@ -3,7 +3,7 @@
 #include <format>
 
 #include <engine/Components/ColliderComponent/AABBCollider.h>
-#include <engine/Debug/Debug.h>
+#include <engine/Debug/DebugDraw.h>
 #include <engine/Entity/Entity.h>
 #include <engine/ImGui/ImGuiWidgets.h>
 #include <game/components/checkpoint/CheckpointManager.h>
@@ -11,9 +11,10 @@
 #include "engine/OldConsole/Console.h"
 
 CheckpointComponent::CheckpointComponent(
-	const int order, const Vec3& respawnPosition)
-	: mOrder(order), mRespawnPosition(respawnPosition) {
-}
+	const int order, const Vec3& respawnPosition
+)
+	: mOrder(order),
+	  mRespawnPosition(respawnPosition) {}
 
 void CheckpointComponent::OnAttach(Entity& owner) {
 	Component::OnAttach(owner);
@@ -24,9 +25,7 @@ void CheckpointComponent::OnAttach(Entity& owner) {
 }
 
 void CheckpointComponent::Update(float) {
-	if (!mCollider) {
-		return;
-	}
+	if (!mCollider) { return; }
 
 	CheckPlayerCollision();
 
@@ -36,7 +35,7 @@ void CheckpointComponent::Update(float) {
 	const Vec3          center    = (worldAABB.min + worldAABB.max) * 0.5f;
 	const Vec3          size      = worldAABB.Size();
 
-	Debug::DrawBox(
+	DebugDraw::DrawBox(
 		center,
 		Quaternion::identity,
 		size,
@@ -44,33 +43,31 @@ void CheckpointComponent::Update(float) {
 	);
 
 	// リスポーン位置を表示
-	Debug::DrawSphere(mRespawnPosition, Quaternion::identity, 0.5f, Vec4::cyan);
+	DebugDraw::DrawSphere(
+		mRespawnPosition, Quaternion::identity, 0.5f, Vec4::cyan
+	);
 }
 
 void CheckpointComponent::DrawInspectorImGui() {
 #ifdef _DEBUG
 	if (ImGui::CollapsingHeader(
-		"CheckpointComponent", ImGuiTreeNodeFlags_DefaultOpen)) {
+		"CheckpointComponent", ImGuiTreeNodeFlags_DefaultOpen
+	)) {
 		ImGui::Text("Order: %d", mOrder);
 		ImGui::Text("Activated: %s", mActivated ? "Yes" : "No");
 		ImGui::SeparatorText("Respawn Position");
 		ImGuiWidgets::DragVec3(
-			"Position##Checkpoint", mRespawnPosition, Vec3::zero, 0.1f, "%.2f");
+			"Position##Checkpoint", mRespawnPosition, Vec3::zero, 0.1f, "%.2f"
+		);
 
-		if (ImGui::Button("Activate")) {
-			Activate();
-		}
+		if (ImGui::Button("Activate")) { Activate(); }
 		ImGui::SameLine();
-		if (ImGui::Button("Reset")) {
-			Reset();
-		}
+		if (ImGui::Button("Reset")) { Reset(); }
 	}
 #endif
 }
 
-bool CheckpointComponent::IsActivated() const {
-	return mActivated;
-}
+bool CheckpointComponent::IsActivated() const { return mActivated; }
 
 void CheckpointComponent::Activate() {
 	if (!mActivated) {
@@ -84,9 +81,7 @@ void CheckpointComponent::Reset() {
 	mWasInside = false;
 }
 
-int CheckpointComponent::GetOrder() const {
-	return mOrder;
-}
+int CheckpointComponent::GetOrder() const { return mOrder; }
 
 Vec3 CheckpointComponent::GetRespawnPosition() const {
 	return mRespawnPosition;
@@ -99,15 +94,11 @@ void CheckpointComponent::SetRespawnPosition(const Vec3& position) {
 void CheckpointComponent::CheckPlayerCollision() {
 	// プレイヤーエンティティを取得
 	Entity* player = CheckpointManager::GetPlayer();
-	if (!player) {
-		return;
-	}
+	if (!player) { return; }
 
 	// プレイヤーのAABBコライダーを取得
 	auto* playerCollider = player->GetComponent<AABBCollider>();
-	if (!playerCollider) {
-		return;
-	}
+	if (!playerCollider) { return; }
 
 	// ワールド座標でのAABBを取得
 	const Unnamed::AABB playerWorldAABB     = playerCollider->GetWorldAABB();
@@ -125,9 +116,7 @@ void CheckpointComponent::CheckPlayerCollision() {
 	// 入った瞬間のみ起動
 	if (isInside && !mWasInside && !mActivated) {
 		// CheckpointManagerを通じて順番をチェック
-		if (CheckpointManager::CanActivateCheckpoint(this)) {
-			Activate();
-		}
+		if (CheckpointManager::CanActivateCheckpoint(this)) { Activate(); }
 	}
 
 	mWasInside = isInside;

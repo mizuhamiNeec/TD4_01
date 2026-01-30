@@ -14,8 +14,8 @@ class EntityLoader;
 /// @brief エディタークラス
 class Editor {
 public:
-	explicit Editor(SceneManager* sceneManager, GameTime* gameTime);
-	void     Init();
+	Editor(SceneManager* sceneManager, GameTime* gameTime);
+	void Init();
 
 	void DrawMenuBars();
 	void Update(float deltaTime);

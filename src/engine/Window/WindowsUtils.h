@@ -13,9 +13,11 @@ public:
 	static std::string GetRamMax();
 	static std::string GetRamUsage();
 	static std::string GetHresultMessage(long hr);
-	static bool        RegistryGetDWord(void* hKeyParent, const char* key,
-	                                    const char*  name,
-	                                    unsigned long*    pData);
+	static bool        RegistryGetDWord(
+		void*          hKeyParent, const char* key,
+		const char*    name,
+		unsigned long* pData
+	);
 	static bool IsAppDarkTheme();
 	static bool IsSystemDarkTheme();
 };

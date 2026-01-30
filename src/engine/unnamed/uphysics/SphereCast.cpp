@@ -76,8 +76,9 @@ namespace UPhysics {
 	/// @brief ノードのAABBを拡張します
 	/// @param nodeBounds ノードのAABB
 	/// @return 拡張されたAABB
-	Unnamed::AABB
-	SphereCast::ExpandNode(const Unnamed::AABB& nodeBounds) const {
+	Unnamed::AABB SphereCast::ExpandNode(
+		const Unnamed::AABB& nodeBounds
+	) const {
 		const auto r = Vec3(radius);
 		// わずかなマージンを追加して数値誤差を防ぐ
 		constexpr auto margin = Vec3(1e-6f);
@@ -129,7 +130,8 @@ namespace UPhysics {
 			normal = (dist > 1e-8f) ?
 				         (v / dist) :
 				         ((triangle.v1 - triangle.v0).Cross(
-					         triangle.v2 - triangle.v0).Normalized());
+					         triangle.v2 - triangle.v0
+				         ).Normalized());
 			return true;
 		}
 		return false;
@@ -153,9 +155,7 @@ namespace UPhysics {
 		Vec3        impactCenter = start + dirNormalized * travel;
 		Vec3        n            = normal;
 		const float nLenSq       = n.SqrLength();
-		if (nLenSq > 1e-12f) {
-			n /= std::sqrt(nLenSq);
-		} else {
+		if (nLenSq > 1e-12f) { n /= std::sqrt(nLenSq); } else {
 			return impactCenter;
 		}
 		return impactCenter - n * radius;

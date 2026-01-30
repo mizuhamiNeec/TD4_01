@@ -1,7 +1,8 @@
 #include <engine/Engine.h>
 #include <engine/Camera/CameraManager.h>
-#include <engine/Debug/Debug.h>
+#include <engine/Debug/DebugDraw.h>
 #include <engine/Entity/Entity.h>
+#include <engine/EngineServices.h>
 #include <engine/OldConsole/ConVarManager.h>
 
 #include "engine/Debug/DebugHud.h"
@@ -22,9 +23,7 @@ Entity::~Entity() {
 }
 
 void Entity::PrePhysics(float deltaTime) const {
-	if (!mIsActive) {
-		return;
-	}
+	if (!mIsActive) { return; }
 
 	for (const auto& component : mComponents) {
 		if (component->IsEditorOnly() /* && !bIsInEditor*/) {
@@ -36,23 +35,20 @@ void Entity::PrePhysics(float deltaTime) const {
 	if (!GetChildren().empty()) {
 		// 子のエンティティの更新
 		for (const auto& child : mChildren) {
-			if (child) {
-				child->PrePhysics(deltaTime);
-			}
+			if (child) { child->PrePhysics(deltaTime); }
 		}
 	}
 }
 
 void Entity::Update(const float deltaTime) {
-	if (!mIsActive) {
-		return;
-	}
+	if (!mIsActive) { return; }
 
 	// 必須コンポーネントの更新
 	if (!mScene) {
 		Console::Print(
 			std::format("Entity '{}' has no TransformComponent!", GetName()),
-			Vec4(1, 0, 0, 1), Channel::General);
+			Vec4(1, 0, 0, 1), Channel::General
+		);
 		return;
 	}
 
@@ -67,10 +63,14 @@ void Entity::Update(const float deltaTime) {
 
 	if (ConVarManager::GetConVar("ent_axis")->GetValueAsBool()) {
 		Vec3 worldPos   = GetTransform()->GetWorldPos();
-		Vec2 screenSize = Unnamed::Engine::GetViewportSize();
+		Vec2 screenSize = Unnamed::EngineServices::Get() ?
+			               Unnamed::EngineServices::Get()->GetViewportSizeInstance() :
+			               Vec2{};
 
-		Debug::DrawAxis(worldPos,
-		                GetTransform()->GetWorldRot());
+		DebugDraw::DrawAxis(
+			worldPos,
+			GetTransform()->GetWorldRot()
+		);
 
 		Vec3 cameraPos = CameraManager::GetActiveCamera()->GetViewMat().
 			Inverse().GetTranslate();
@@ -79,9 +79,7 @@ void Entity::Update(const float deltaTime) {
 		float distance = (worldPos - cameraPos).Length();
 
 		// カメラとの距離が一定以下の場合は描画しない
-		if (distance < Math::HtoM(4.0f)) {
-			return;
-		}
+		if (distance < Math::HtoM(4.0f)) { return; }
 
 		bool  bIsOffscreen = false;
 		float outAngle     = 0.0f;
@@ -98,23 +96,24 @@ void Entity::Update(const float deltaTime) {
 		if (!bIsOffscreen) {
 #ifdef _DEBUG
 			//auto   viewport  = ImGui::GetMainViewport();
-			ImVec2 screenPos = {
-				Unnamed::Engine::GetViewportLT().x,
-				Unnamed::Engine::GetViewportLT().y
-			};
+			auto viewportLt = Unnamed::EngineServices::Get() ?
+			                    Unnamed::EngineServices::Get()->GetViewportLTInstance() :
+			                    Vec2{};
+			ImVec2 screenPos = { viewportLt.x, viewportLt.y };
 			ImGui::SetNextWindowPos(screenPos);
 			ImGui::SetNextWindowSize({screenSize.x, screenSize.y});
 			ImGui::SetNextWindowBgAlpha(0.0f); // 背景を透明にする
-			ImGui::Begin("##EntityName", nullptr,
-			             ImGuiWindowFlags_NoBackground |
-			             ImGuiWindowFlags_NoTitleBar |
-			             ImGuiWindowFlags_NoResize |
-			             ImGuiWindowFlags_NoMove |
-			             ImGuiWindowFlags_NoSavedSettings |
-			             ImGuiWindowFlags_NoDocking |
-			             ImGuiWindowFlags_NoFocusOnAppearing |
-			             ImGuiWindowFlags_NoInputs |
-			             ImGuiWindowFlags_NoNav
+			ImGui::Begin(
+				"##EntityName", nullptr,
+				ImGuiWindowFlags_NoBackground |
+				ImGuiWindowFlags_NoTitleBar |
+				ImGuiWindowFlags_NoResize |
+				ImGuiWindowFlags_NoMove |
+				ImGuiWindowFlags_NoSavedSettings |
+				ImGuiWindowFlags_NoDocking |
+				ImGuiWindowFlags_NoFocusOnAppearing |
+				ImGuiWindowFlags_NoInputs |
+				ImGuiWindowFlags_NoNav
 			);
 
 			ImVec2      textPos  = {scrPosition.x, scrPosition.y};
@@ -141,17 +140,13 @@ void Entity::Update(const float deltaTime) {
 	if (!GetChildren().empty()) {
 		// 子のエンティティの更新
 		for (const auto& child : mChildren) {
-			if (child) {
-				child->Update(deltaTime);
-			}
+			if (child) { child->Update(deltaTime); }
 		}
 	}
 }
 
 void Entity::PostPhysics(float deltaTime) const {
-	if (!mIsActive) {
-		return;
-	}
+	if (!mIsActive) { return; }
 
 	for (const auto& component : mComponents) {
 		if (component->IsEditorOnly() /* && !bIsInEditor*/) {
@@ -163,60 +158,38 @@ void Entity::PostPhysics(float deltaTime) const {
 	if (!GetChildren().empty()) {
 		// 子のエンティティの更新
 		for (const auto& child : mChildren) {
-			if (child) {
-				child->PostPhysics(deltaTime);
-			}
+			if (child) { child->PostPhysics(deltaTime); }
 		}
 	}
 }
 
 void Entity::Render(ID3D12GraphicsCommandList* commandList) const {
-	if (!mIsVisible) {
-		return;
-	}
+	if (!mIsVisible) { return; }
 
 	for (const auto& component : mComponents) {
-		if (!component) {
-			return;
-		}
+		if (!component) { return; }
 		if (component->IsEditorOnly() /* && !bIsInEditor*/) {
 			continue; // エディター専用のコンポーネントはゲーム中には描画しない
 		}
 		component->Render(commandList);
 	}
 	// 子エンティティの描画
-	for (const auto& child : mChildren) {
-		child->Render(commandList);
-	}
+	for (const auto& child : mChildren) { child->Render(commandList); }
 }
 
-EntityType Entity::GetType() const {
-	return mEntityType;
-}
+EntityType Entity::GetType() const { return mEntityType; }
 
-void Entity::SetType(const EntityType& type) {
-	mEntityType = type;
-}
+void Entity::SetType(const EntityType& type) { mEntityType = type; }
 
-SceneComponent* Entity::GetTransform() const {
-	return mScene.get();
-}
+SceneComponent* Entity::GetTransform() const { return mScene.get(); }
 
-bool Entity::IsActive() const {
-	return mIsActive;
-}
+bool Entity::IsActive() const { return mIsActive; }
 
-void Entity::SetActive(const bool active) {
-	mIsActive = active;
-}
+void Entity::SetActive(const bool active) { mIsActive = active; }
 
-bool Entity::IsVisible() const {
-	return mIsVisible;
-}
+bool Entity::IsVisible() const { return mIsVisible; }
 
-void Entity::SetVisible(const bool visible) {
-	mIsVisible = visible;
-}
+void Entity::SetVisible(const bool visible) { mIsVisible = visible; }
 
 void Entity::SetParent(Entity* newParent) {
 	// 循環参照チェック
@@ -225,7 +198,8 @@ void Entity::SetParent(Entity* newParent) {
 		if (check == this) {
 			Console::Print(
 				std::format("Entity '{}': Circular parenting detected!", mName),
-				Vec4(1, 0, 0, 1), Channel::General);
+				Vec4(1, 0, 0, 1), Channel::General
+			);
 			return;
 		}
 		check = check->mParent;
@@ -249,9 +223,7 @@ void Entity::SetParent(Entity* newParent) {
 	// 既存の親から削除
 	if (mParent) {
 		auto it = std::ranges::find(mParent->mChildren, this);
-		if (it != mParent->mChildren.end()) {
-			mParent->mChildren.erase(it);
-		}
+		if (it != mParent->mChildren.end()) { mParent->mChildren.erase(it); }
 	}
 
 	// 新しい親を設定
@@ -291,25 +263,17 @@ void Entity::SetParent(Entity* newParent) {
 
 		// 子のトランスフォーム更新
 		for (const auto* child : mChildren) {
-			if (child->mScene) {
-				child->mScene->MarkDirty();
-			}
+			if (child->mScene) { child->mScene->MarkDirty(); }
 		}
 	}
 
 	// 新しい親の子リストに追加
-	if (mParent) {
-		mParent->mChildren.emplace_back(this);
-	}
+	if (mParent) { mParent->mChildren.emplace_back(this); }
 }
 
-Entity* Entity::GetParent() const {
-	return mParent;
-}
+Entity* Entity::GetParent() const { return mParent; }
 
-const std::vector<Entity*>& Entity::GetChildren() const {
-	return mChildren;
-}
+const std::vector<Entity*>& Entity::GetChildren() const { return mChildren; }
 
 void Entity::AddChild(Entity* child) {
 	if (std::ranges::find(mChildren, child) == mChildren.end()) {
@@ -326,14 +290,8 @@ void Entity::RemoveChild(Entity* child) {
 	}
 }
 
-std::string& Entity::GetName() {
-	return mName;
-}
+std::string& Entity::GetName() { return mName; }
 
-void Entity::SetName(const std::string& name) {
-	mName = name;
-}
+void Entity::SetName(const std::string& name) { mName = name; }
 
-void Entity::RemoveAllComponents() {
-	mComponents.clear();
-}
+void Entity::RemoveAllComponents() { mComponents.clear(); }

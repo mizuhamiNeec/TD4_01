@@ -16,12 +16,13 @@ struct Vec4 final {
 	 * @param z Z成分（デフォルト: 0.0f）
 	 * @param w W成分（デフォルト: 0.0f）
 	 */
-	constexpr Vec4(const float x = 0.0f, const float y = 0.0f,
-	               const float z = 0.0f, const float w = 0.0f) : x(x),
-		y(y),
-		z(z),
-		w(w) {
-	}
+	constexpr Vec4(
+		const float x = 0.0f, const float y = 0.0f,
+		const float z = 0.0f, const float w = 0.0f
+	) : x(x),
+	    y(y),
+	    z(z),
+	    w(w) {}
 
 	/**
 	 * @brief Vec3とW成分から初期化するコンストラクタ
@@ -31,8 +32,7 @@ struct Vec4 final {
 	constexpr Vec4(const Vec3 vec3, const float w) : x(vec3.x),
 		y(vec3.y),
 		z(vec3.z),
-		w(w) {
-	}
+		w(w) {}
 
 	/**
 	 * @brief 初期化リストから生成するコンストラクタ

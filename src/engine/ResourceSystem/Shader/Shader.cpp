@@ -102,9 +102,7 @@ Microsoft::WRL::ComPtr<IDxcBlob> Shader::GetGeometryShaderBlob() {
 /// @return レジスタ番号。見つからなかった場合は0xffffffffを返す
 UINT Shader::GetResourceRegister(const std::string& resourceName) const {
 	auto it = mResourceRegisterMap.find(resourceName);
-	if (it != mResourceRegisterMap.end()) {
-		return it->second.bindPoint;
-	}
+	if (it != mResourceRegisterMap.end()) { return it->second.bindPoint; }
 
 	// リソースが見つからなかった
 	Console::Print(
@@ -118,23 +116,17 @@ UINT Shader::GetResourceRegister(const std::string& resourceName) const {
 
 /// @brief リソースのレジスタマップを取得します
 const std::unordered_map<std::string, ResourceInfo>&
-Shader::GetResourceRegisterMap() const {
-	return mResourceRegisterMap;
-}
+Shader::GetResourceRegisterMap() const { return mResourceRegisterMap; }
 
 /// @brief シェーダー名を取得します
-std::string Shader::GetName() {
-	return mName;
-}
+std::string Shader::GetName() { return mName; }
 
 /// @brief リソースパラメータのインデックスを取得します
 /// @param resourceName リソース名
 /// @return リソースパラメータのインデックス。見つからなかった場合はUINT_MAXを返す
 UINT Shader::GetResourceParameterIndex(const std::string& resourceName) {
 	auto it = mResourceParameterIndices.find(resourceName);
-	if (it != mResourceParameterIndices.end()) {
-		return it->second;
-	}
+	if (it != mResourceParameterIndices.end()) { return it->second; }
 
 	Console::Print(
 		"リソースが見つかりません: " + resourceName + "\n",
@@ -147,37 +139,25 @@ UINT Shader::GetResourceParameterIndex(const std::string& resourceName) {
 /// @brief リソースパラメータのインデックスを設定します
 /// @param resourceName リソース名
 /// @param index リソースパラメータのインデックス
-void Shader::SetResourceParameterIndex(const std::string& resourceName,
-                                       const UINT         index) {
-	mResourceParameterIndices[resourceName] = index;
-}
+void Shader::SetResourceParameterIndex(
+	const std::string& resourceName,
+	const UINT         index
+) { mResourceParameterIndices[resourceName] = index; }
 
 /// @brief シェーダーリソースを解放します
 void Shader::Release() {
-	if (mVertexShaderBlob) {
-		mVertexShaderBlob.Reset();
-	}
-	if (mPixelShaderBlob) {
-		mPixelShaderBlob.Reset();
-	}
-	if (mGeometryShaderBlob) {
-		mGeometryShaderBlob.Reset();
-	}
+	if (mVertexShaderBlob) { mVertexShaderBlob.Reset(); }
+	if (mPixelShaderBlob) { mPixelShaderBlob.Reset(); }
+	if (mGeometryShaderBlob) { mGeometryShaderBlob.Reset(); }
 
 	mResourceRegisterMap.clear();
 }
 
 /// @brief スタティックリソースを解放します
 void Shader::ReleaseStaticResources() {
-	if (mIncludeHandler) {
-		mIncludeHandler.Reset();
-	}
-	if (mDxcCompiler) {
-		mDxcCompiler.Reset();
-	}
-	if (mDxcUtils) {
-		mDxcUtils.Reset();
-	}
+	if (mIncludeHandler) { mIncludeHandler.Reset(); }
+	if (mDxcCompiler) { mDxcCompiler.Reset(); }
+	if (mDxcUtils) { mDxcUtils.Reset(); }
 }
 
 /// @brief シェーダーをコンパイルする
@@ -284,51 +264,67 @@ Microsoft::WRL::ComPtr<IDxcBlob> Shader::CompileShader(
 /// @param shaderType シェーダーステージの種類
 void Shader::ReflectShaderBlob(
 	const Microsoft::WRL::ComPtr<IDxcBlob>& shaderBlob,
-	ShaderType                              shaderType) {
+	ShaderType                              shaderType
+) {
 	if (!shaderBlob) {
-		Console::Print("shaderBlobがnullです\n", kConTextColorError,
-		               Channel::RenderSystem);
+		Console::Print(
+			"shaderBlobがnullです\n", kConTextColorError,
+			Channel::RenderSystem
+		);
 		return;
 	}
 
 	Microsoft::WRL::ComPtr<IDxcContainerReflection> containerReflection;
-	HRESULT hr = DxcCreateInstance(CLSID_DxcContainerReflection,
-	                               IID_PPV_ARGS(&containerReflection));
+	HRESULT                                         hr = DxcCreateInstance(
+		CLSID_DxcContainerReflection,
+		IID_PPV_ARGS(&containerReflection)
+	);
 	if (FAILED(hr)) {
-		Console::Print("DXCリフレクションの作成に失敗しました\n", kConTextColorError,
-		               Channel::RenderSystem);
+		Console::Print(
+			"DXCリフレクションの作成に失敗しました\n", kConTextColorError,
+			Channel::RenderSystem
+		);
 		return;
 	}
 
 	hr = containerReflection->Load(shaderBlob.Get());
 	if (FAILED(hr)) {
-		Console::Print("シェーダーバイナリの読み込みに失敗しました\n", kConTextColorError,
-		               Channel::RenderSystem);
+		Console::Print(
+			"シェーダーバイナリの読み込みに失敗しました\n", kConTextColorError,
+			Channel::RenderSystem
+		);
 		return;
 	}
 
 	UINT32 dxilPartIndex;
 	hr = containerReflection->FindFirstPartKind(DFCC_DXIL, &dxilPartIndex);
 	if (FAILED(hr)) {
-		Console::Print("DXILパートの検索に失敗しました\n", kConTextColorError,
-		               Channel::RenderSystem);
+		Console::Print(
+			"DXILパートの検索に失敗しました\n", kConTextColorError,
+			Channel::RenderSystem
+		);
 		return;
 	}
 
 	Microsoft::WRL::ComPtr<ID3D12ShaderReflection> reflector;
 	hr = containerReflection->GetPartReflection(
-		dxilPartIndex, IID_PPV_ARGS(&reflector));
+		dxilPartIndex, IID_PPV_ARGS(&reflector)
+	);
 	if (FAILED(hr)) {
-		Console::Print("シェーダーリフレクションの作成に失敗しました\n", kConTextColorError,
-		               Channel::RenderSystem);
+		Console::Print(
+			"シェーダーリフレクションの作成に失敗しました\n", kConTextColorError,
+			Channel::RenderSystem
+		);
 		return;
 	}
 
 	D3D12_SHADER_DESC shaderDesc;
 	hr = reflector->GetDesc(&shaderDesc);
 	if (FAILED(hr)) {
-		Console::Print("シェーダー記述子の取得に失敗しました\n", kConTextColorError,
-		               Channel::RenderSystem);
+		Console::Print(
+			"シェーダー記述子の取得に失敗しました\n", kConTextColorError,
+			Channel::RenderSystem
+		);
 		return;
 	}
 
@@ -346,18 +342,17 @@ void Shader::ReflectShaderBlob(
 
 			// シェーダーステージに応じたvisibilityを設定
 			switch (shaderType) {
-			case ShaderType::VertexShader:
-				info.visibility = D3D12_SHADER_VISIBILITY_VERTEX;
-				break;
-			case ShaderType::PixelShader:
-				info.visibility = D3D12_SHADER_VISIBILITY_PIXEL;
-				break;
-			case ShaderType::GeometryShader:
-				info.visibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
-				break;
-			default:
-				info.visibility = D3D12_SHADER_VISIBILITY_ALL;
-				break;
+				case ShaderType::VertexShader
+				: info.visibility = D3D12_SHADER_VISIBILITY_VERTEX;
+					break;
+				case ShaderType::PixelShader
+				: info.visibility = D3D12_SHADER_VISIBILITY_PIXEL;
+					break;
+				case ShaderType::GeometryShader
+				: info.visibility = D3D12_SHADER_VISIBILITY_GEOMETRY;
+					break;
+				default: info.visibility = D3D12_SHADER_VISIBILITY_ALL;
+					break;
 			}
 
 			// ステージごとのリソースマップに追加
@@ -383,7 +378,7 @@ void Shader::ReflectShaderBlob(
 		if (it != mResourceRegisterMap.end()) {
 			// 既存のリソースがある場合
 			if (it->second.type == info.type && it->second.bindPoint == info.
-				bindPoint) {
+			    bindPoint) {
 				// 同じリソースが別のステージで使用される場合
 				if (it->second.visibility != info.visibility) {
 					it->second.visibility = D3D12_SHADER_VISIBILITY_ALL;
@@ -418,8 +413,8 @@ std::vector<std::string> Shader::GetTextureSlots() const {
 	for (const auto& [resourceName, info] : mResourceRegisterMap) {
 		// テクスチャっぽいリソース名を抽出（baseColorTextureなど）
 		if (resourceName.find("Texture") != std::string::npos ||
-			resourceName.find("Map") != std::string::npos ||
-			info.type == D3D_SIT_TEXTURE) {
+		    resourceName.find("Map") != std::string::npos ||
+		    info.type == D3D_SIT_TEXTURE) {
 			textureSlots.emplace_back(resourceName);
 		}
 	}

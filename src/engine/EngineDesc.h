@@ -8,7 +8,5 @@ struct EngineDesc {
 	std::string name;
 	std::string version;
 
-	~EngineDesc() {
-		windowHandle = nullptr;
-	}
+	~EngineDesc() { windowHandle = nullptr; }
 };

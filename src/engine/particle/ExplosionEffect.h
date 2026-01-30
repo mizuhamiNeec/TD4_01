@@ -19,9 +19,11 @@ public:
 		mEndColor   = endColor;
 	}
 
-	void TriggerExplosion(const Vec3& position, const Vec3& normal,
-	                      uint32_t    particleCount = 50,
-	                      float       coneAngle     = 180.0f);
+	void TriggerExplosion(
+		const Vec3& position, const Vec3& normal,
+		uint32_t    particleCount = 50,
+		float       coneAngle     = 180.0f
+	);
 	void Update(float deltaTime) const;
 	void Draw() const;
 

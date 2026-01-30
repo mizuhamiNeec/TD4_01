@@ -19,8 +19,8 @@ namespace UPhysics {
 
 		for (int i = 0; i < 3; ++i) {
 			if (fabs(ray.dir[i]) < 1e-8f) {
-				if (ray.origin[i] < aabb.min[i] || ray.origin[i] > aabb.max[i])
-					return false;
+				if (ray.origin[i] < aabb.min[i] || ray.origin[i] > aabb.max[
+					    i]) return false;
 			} else {
 				const float invD = 1.0f / ray.dir[i];
 				float       t1   = (aabb.min[i] - ray.origin[i]) * invD;
@@ -28,8 +28,7 @@ namespace UPhysics {
 				if (t1 > t2) std::swap(t1, t2);
 				tMin    = t1 > tMin ? t1 : tMin;
 				tMaxOut = t2 < tMaxOut ? t2 : tMaxOut;
-				if (tMin > tMaxOut)
-					return false;
+				if (tMin > tMaxOut) return false;
 			}
 		}
 		return true;
@@ -51,22 +50,16 @@ namespace UPhysics {
 		const Vec3      p        = ray.dir.Cross(e2);
 		const float     det      = e1.Dot(p);
 
-		if (fabs(det) < kEpsilon) {
-			return false;
-		}
+		if (fabs(det) < kEpsilon) { return false; }
 		float invDet = 1.0f / det;
 
 		Vec3  s = ray.origin - triangle.v0;
 		float u = s.Dot(p) * invDet;
-		if (u < 0.0f || u > 1.0f) {
-			return false;
-		}
+		if (u < 0.0f || u > 1.0f) { return false; }
 
 		Vec3  q = s.Cross(e1);
 		float v = ray.dir.Dot(q) * invDet;
-		if (v < 0.0f || u + v > 1.0f) {
-			return false;
-		}
+		if (v < 0.0f || u + v > 1.0f) { return false; }
 
 		float t = e2.Dot(q) * invDet;
 		if (t < ray.tMin || t > tHit) {
@@ -209,9 +202,7 @@ namespace UPhysics {
 
 		/* 2-1 三角形法線（最優先軸） */
 		Vec3 triNormal = (tri.v1 - tri.v0).Cross(tri.v2 - tri.v0).Normalized();
-		if (triNormal.Dot(triNormal) > 1e-8f) {
-			axes[axisCount++] = triNormal;
-		}
+		if (triNormal.Dot(triNormal) > 1e-8f) { axes[axisCount++] = triNormal; }
 
 		/* 2-2 球と三角形のVoronoi領域に基づく軸選択 */
 		Vec3 edges[3] = {tri.v1 - tri.v0, tri.v2 - tri.v1, tri.v0 - tri.v2};
@@ -226,13 +217,11 @@ namespace UPhysics {
 			Vec3 edge2 = edges[i];           // 次のエッジ
 
 			bool inVertexRegion = (toVert.Dot(-edge1) >= 0) && (toVert.
-				Dot(edge2) >= 0);
+				                      Dot(edge2) >= 0);
 
 			if (inVertexRegion) {
 				float len = toVert.Length();
-				if (len > 1e-8f) {
-					axes[axisCount++] = toVert / len;
-				}
+				if (len > 1e-8f) { axes[axisCount++] = toVert / len; }
 			}
 		}
 
@@ -251,9 +240,7 @@ namespace UPhysics {
 				Vec3  toClosest    = C0 - closestPoint;
 				float len          = toClosest.Length();
 
-				if (len > 1e-8f) {
-					axes[axisCount++] = toClosest / len;
-				}
+				if (len > 1e-8f) { axes[axisCount++] = toClosest / len; }
 			}
 		}
 
@@ -334,9 +321,7 @@ namespace UPhysics {
 		Vec3 toTriCenter = triCenter - centerAtTOI;
 
 		// 法線が三角形の表面から球体中心を向くように調整
-		if (bestNrm.Dot(toTriCenter) > 0) {
-			bestNrm = -bestNrm;
-		}
+		if (bestNrm.Dot(toTriCenter) > 0) { bestNrm = -bestNrm; }
 
 		// 三角形法線との一貫性チェック（面接触時の安定性向上）
 		float normalAlignment = bestNrm.Dot(triNormal);
@@ -404,7 +389,8 @@ namespace UPhysics {
 		const Unnamed::Box&      box,
 		const Unnamed::Triangle& tri,
 		Vec3&                    outNormal,
-		float&                   outDepth) {
+		float&                   outDepth
+	) {
 		// 1) テストする軸 13 本
 		Vec3 axes[13];
 		int  axisCnt = 0;
@@ -443,8 +429,8 @@ namespace UPhysics {
 			// Box（中心 + half）の投影
 			float boxCenter = ax.Dot(box.center);
 			float boxExtent = std::abs(ax.x) * box.halfSize.x +
-				std::abs(ax.y) * box.halfSize.y +
-				std::abs(ax.z) * box.halfSize.z;
+			                  std::abs(ax.y) * box.halfSize.y +
+			                  std::abs(ax.z) * box.halfSize.z;
 			float boxMin = boxCenter - boxExtent;
 			float boxMax = boxCenter + boxExtent;
 

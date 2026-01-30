@@ -30,17 +30,17 @@ namespace Unnamed::Gui {
 
 	const char* ToString(const DIRTY_FLAGS e) {
 		switch (e) {
-		case DIRTY_FLAGS::NONE: return "NONE";
-		case DIRTY_FLAGS::LAYOUT: return "LAYOUT";
-		case DIRTY_FLAGS::STYLE: return "STYLE";
-		case DIRTY_FLAGS::DRAW: return "DRAW";
-		case DIRTY_FLAGS::ALL: return "ALL";
-		default: return "unknown";
+			case DIRTY_FLAGS::NONE: return "NONE";
+			case DIRTY_FLAGS::LAYOUT: return "LAYOUT";
+			case DIRTY_FLAGS::STYLE: return "STYLE";
+			case DIRTY_FLAGS::DRAW: return "DRAW";
+			case DIRTY_FLAGS::ALL: return "ALL";
+			default: return "unknown";
 		}
 	}
 
-	UiWidget::UiWidget() : mVisible(true), mEnabled(true) {
-	}
+	UiWidget::UiWidget() : mVisible(true),
+	                       mEnabled(true) {}
 
 	UiWidget::~UiWidget() = default;
 
@@ -101,12 +101,10 @@ namespace Unnamed::Gui {
 		if (!child) return;
 
 		for (auto it = mReferenceChildren.begin(); it != mReferenceChildren.
-		     end(); ++it) {
+		                                           end(); ++it) {
 			if (*it == child) {
 				// 親の参照を切るかは設計によりますが、通常はnullptrに戻します
-				if ((*it)->mParent == this) {
-					(*it)->mParent = nullptr;
-				}
+				if ((*it)->mParent == this) { (*it)->mParent = nullptr; }
 				mReferenceChildren.erase(it);
 				MarkDirty(DIRTY_FLAGS::LAYOUT | DIRTY_FLAGS::DRAW);
 				return;
@@ -146,9 +144,7 @@ namespace Unnamed::Gui {
 		MarkDirty(DIRTY_FLAGS::LAYOUT | DIRTY_FLAGS::DRAW);
 	}
 
-	const Pivot& UiWidget::GetPivot() const {
-		return mPivot;
-	}
+	const Pivot& UiWidget::GetPivot() const { return mPivot; }
 
 	void UiWidget::SetVisible(const bool visible) {
 		if (mVisible == visible) return;
@@ -156,18 +152,14 @@ namespace Unnamed::Gui {
 		MarkDirty(DIRTY_FLAGS::DRAW);
 	}
 
-	bool UiWidget::IsVisible() const {
-		return mVisible;
-	}
+	bool UiWidget::IsVisible() const { return mVisible; }
 
 	void UiWidget::SetEnabled(const bool enabled) {
 		if (mEnabled == enabled) return;
 		mEnabled = enabled;
 	}
 
-	bool UiWidget::IsEnabled() const {
-		return mEnabled;
-	}
+	bool UiWidget::IsEnabled() const { return mEnabled; }
 
 	void UiWidget::MarkDirty(const DIRTY_FLAGS flags) {
 		const DIRTY_FLAGS oldFlags = mDirtyFlags;
@@ -175,9 +167,7 @@ namespace Unnamed::Gui {
 		if (mDirtyFlags != oldFlags) { OnDirtyFlagAdded(flags); }
 	}
 
-	DIRTY_FLAGS UiWidget::GetDirtyFlags() const {
-		return mDirtyFlags;
-	}
+	DIRTY_FLAGS UiWidget::GetDirtyFlags() const { return mDirtyFlags; }
 
 	void UiWidget::ClearDirtyFlags(DIRTY_FLAGS flags) {
 		uint32_t       raw   = static_cast<uint32_t>(mDirtyFlags);
@@ -205,13 +195,9 @@ namespace Unnamed::Gui {
 		return mSizeConstraints;
 	}
 
-	float UiWidget::GetPreferredWidth() const {
-		return mLocalRect.width;
-	}
+	float UiWidget::GetPreferredWidth() const { return mLocalRect.width; }
 
-	float UiWidget::GetPreferredHeight() const {
-		return mLocalRect.height;
-	}
+	float UiWidget::GetPreferredHeight() const { return mLocalRect.height; }
 
 	void UiWidget::Tick(float) {
 		// DO SOMETHING
@@ -219,44 +205,34 @@ namespace Unnamed::Gui {
 
 	void UiWidget::UpdateLayoutRecursive(const Rect& parentGlobalRect) {
 		if (HasFlag(mDirtyFlags, DIRTY_FLAGS::LAYOUT) ||
-			HasFlag(mDirtyFlags, DIRTY_FLAGS::ALL)) {
+		    HasFlag(mDirtyFlags, DIRTY_FLAGS::ALL)) {
 			UpdateLayout(parentGlobalRect);
 			ClearDirtyFlags(DIRTY_FLAGS::LAYOUT);
 		}
 
 		// 所有している子
 		for (auto& child : mChildren) {
-			if (child) {
-				child->UpdateLayoutRecursive(mGlobalRect);
-			}
+			if (child) { child->UpdateLayoutRecursive(mGlobalRect); }
 		}
 
 		// 参照だけ持っている子（AddChildReferenceでぶら下げたやつ）
 		for (auto* refChild : mReferenceChildren) {
-			if (refChild) {
-				refChild->UpdateLayoutRecursive(mGlobalRect);
-			}
+			if (refChild) { refChild->UpdateLayoutRecursive(mGlobalRect); }
 		}
 	}
 
 	void UiWidget::BuildDrawCommands(std::vector<UiDrawCommand>& out) const {
 		// 自分が非表示なら何も描画しない（子も含めて）
-		if (!IsVisible()) {
-			return;
-		}
+		if (!IsVisible()) { return; }
 
 		// 所有している子
 		for (const auto& child : mChildren) {
-			if (child) {
-				child->BuildDrawCommands(out);
-			}
+			if (child) { child->BuildDrawCommands(out); }
 		}
 
 		// 参照だけ持っている子
 		for (auto* refChild : mReferenceChildren) {
-			if (refChild) {
-				refChild->BuildDrawCommands(out);
-			}
+			if (refChild) { refChild->BuildDrawCommands(out); }
 		}
 	}
 
@@ -283,9 +259,7 @@ namespace Unnamed::Gui {
 
 		// 所有している子
 		for (const auto& child : w->GetChildren()) {
-			if (child) {
-				DebugDrawUi(child.get());
-			}
+			if (child) { DebugDrawUi(child.get()); }
 		}
 
 		// 参照だけ持っている子も再帰
@@ -293,9 +267,7 @@ namespace Unnamed::Gui {
 		// UiWidget 内に追加するか、friend 的にアクセスできるようにする必要あり。
 		for (auto* refChild : w->mReferenceChildren) {
 			// 同じクラス内なのでアクセス可能
-			if (refChild) {
-				DebugDrawUi(refChild);
-			}
+			if (refChild) { DebugDrawUi(refChild); }
 		}
 #endif
 	}
@@ -306,20 +278,16 @@ namespace Unnamed::Gui {
 		// まず z-order 的に後ろの方から（所有子）
 		for (auto it = mChildren.rbegin(); it != mChildren.rend(); ++it) {
 			if (*it) {
-				if (UiWidget* hit = (*it)->HitTest(x, y)) {
-					return hit;
-				}
+				if (UiWidget* hit = (*it)->HitTest(x, y)) { return hit; }
 			}
 		}
 
 		// 次に参照子も逆順でチェック
 		for (auto it = mReferenceChildren.rbegin(); it != mReferenceChildren.
-		     rend(); ++it) {
+		                                            rend(); ++it) {
 			UiWidget* child = *it;
 			if (child) {
-				if (UiWidget* hit = child->HitTest(x, y)) {
-					return hit;
-				}
+				if (UiWidget* hit = child->HitTest(x, y)) { return hit; }
 			}
 		}
 
@@ -335,21 +303,13 @@ namespace Unnamed::Gui {
 
 	bool UiWidget::IsPressed() const { return mPressed; }
 
-	void UiWidget::OnMouseEnter() {
-		mHovered = true;
-	}
+	void UiWidget::OnMouseEnter() { mHovered = true; }
 
-	void UiWidget::OnMouseLeave() {
-		mHovered = false;
-	}
+	void UiWidget::OnMouseLeave() { mHovered = false; }
 
-	void UiWidget::OnMouseDown() {
-		mPressed = true;
-	}
+	void UiWidget::OnMouseDown() { mPressed = true; }
 
-	void UiWidget::OnMouseUp() {
-		mPressed = false;
-	}
+	void UiWidget::OnMouseUp() { mPressed = false; }
 
 	void UiWidget::OnClick() {
 		// DO SOMETHING
@@ -366,8 +326,10 @@ namespace Unnamed::Gui {
 		writer.Key("name");
 		writer.Write(std::string(GetName()));
 
-		DevMsg(kChannel, "Saving widget '{}': visible={}, enabled={}",
-		       GetName(), IsVisible(), IsEnabled());
+		DevMsg(
+			kChannel, "Saving widget '{}': visible={}, enabled={}",
+			GetName(), IsVisible(), IsEnabled()
+		);
 
 		writer.Key("visible");
 		writer.Write(IsVisible());
@@ -397,9 +359,7 @@ namespace Unnamed::Gui {
 		writer.Key("children");
 		writer.BeginArray();
 		for (const auto& child : GetChildren()) {
-			if (child) {
-				child->SaveToJson(writer);
-			}
+			if (child) { child->SaveToJson(writer); }
 		}
 		writer.EndArray();
 
@@ -410,15 +370,9 @@ namespace Unnamed::Gui {
 		if (!reader.Valid()) { return; }
 
 		// 基本情報
-		if (reader.Has("name")) {
-			SetName(reader["name"].GetString());
-		}
-		if (reader.Has("visible")) {
-			SetVisible(reader["visible"].GetBool());
-		}
-		if (reader.Has("enabled")) {
-			SetEnabled(reader["enabled"].GetBool());
-		}
+		if (reader.Has("name")) { SetName(reader["name"].GetString()); }
+		if (reader.Has("visible")) { SetVisible(reader["visible"].GetBool()); }
+		if (reader.Has("enabled")) { SetEnabled(reader["enabled"].GetBool()); }
 
 		// Rect
 		if (reader.Has("rect")) {
@@ -441,7 +395,8 @@ namespace Unnamed::Gui {
 		if (reader.Has("sizePolicy")) {
 			SetSizePolicy(
 				ReadSizePolicy(reader["sizePolicy"].GetArray()).horizontal,
-				ReadSizePolicy(reader["sizePolicy"].GetArray()).vertical);
+				ReadSizePolicy(reader["sizePolicy"].GetArray()).vertical
+			);
 		}
 		if (reader.Has("constraints")) {
 			SetSizeConstraints(ReadConstraints(reader["constraints"]));
@@ -456,17 +411,13 @@ namespace Unnamed::Gui {
 
 		// type 取得
 		std::string type = "Widget";
-		if (reader.Has("type")) {
-			type = reader["type"].GetString();
-		}
+		if (reader.Has("type")) { type = reader["type"].GetString(); }
 
 		std::unique_ptr<UiWidget> widget;
 
-		if (type == "Panel") {
-			widget = std::make_unique<UiPanel>();
-		} else if (type == "Button") {
-			widget = std::make_unique<UiButton>();
-		} else if (type == "VerticalLayout") {
+		if (type == "Panel") { widget = std::make_unique<UiPanel>(); } else if (
+			type == "Button") { widget = std::make_unique<UiButton>(); } else if
+		(type == "VerticalLayout") {
 			widget = std::make_unique<UiVerticalLayout>();
 		} else if (type == "HorizontalLayout") {
 			widget = std::make_unique<UiHorizontalLayout>();
@@ -484,9 +435,7 @@ namespace Unnamed::Gui {
 			for (size_t i = 0; i < count; ++i) {
 				JsonReader childNode   = children[i];
 				auto       childWidget = CreateFromJson(childNode);
-				if (childWidget) {
-					widget->AddChild(std::move(childWidget));
-				}
+				if (childWidget) { widget->AddChild(std::move(childWidget)); }
 			}
 		}
 
@@ -541,12 +490,8 @@ namespace Unnamed::Gui {
 		float finalX = x;
 		float finalY = y;
 
-		if (mAnchors.minX == mAnchors.maxX) {
-			finalX = x - w * mPivot.x;
-		}
-		if (mAnchors.minY == mAnchors.maxY) {
-			finalY = y - h * mPivot.y;
-		}
+		if (mAnchors.minX == mAnchors.maxX) { finalX = x - w * mPivot.x; }
+		if (mAnchors.minY == mAnchors.maxY) { finalY = y - h * mPivot.y; }
 
 		mGlobalRect.x      = finalX;
 		mGlobalRect.y      = finalY;
@@ -565,24 +510,16 @@ namespace Unnamed::Gui {
 		}
 	}
 
-	void UiWidget::OnSerialize(JsonWriter& writer) const {
-		(void)writer;
-	}
+	void UiWidget::OnSerialize(JsonWriter& writer) const { (void)writer; }
 
-	void UiWidget::OnDeserialize(const JsonReader& reader) {
-		(void)reader;
-	}
+	void UiWidget::OnDeserialize(const JsonReader& reader) { (void)reader; }
 
 	const std::vector<std::unique_ptr<UiWidget>>&
-	UiWidget::GetChildren() const {
-		return mChildren;
-	}
+	UiWidget::GetChildren() const { return mChildren; }
 
 	UiWidget* UiWidget::GetParent() const { return mParent; }
 
 	void UiWidget::SetName(const std::string_view& name) { mName = name; }
 
-	std::string_view UiWidget::GetName() const {
-		return mName;
-	}
+	std::string_view UiWidget::GetName() const { return mName; }
 }

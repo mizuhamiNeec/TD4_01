@@ -11,9 +11,12 @@
 /// @brief コンストラクタ
 /// @param device D3D12デバイスへのポインタ
 /// @param srvMgr SRVマネージャーへのポインタ
-PPChromaticAberration::PPChromaticAberration(ID3D12Device* device,
-                                             SrvManager*   srvMgr)
-	: mDevice(device), mSrvMgr(srvMgr) {
+PPChromaticAberration::PPChromaticAberration(
+	ID3D12Device* device,
+	SrvManager*   srvMgr
+)
+	: mDevice(device),
+	  mSrvMgr(srvMgr) {
 	assert(mDevice && mSrvMgr);
 	Init();
 }
@@ -43,7 +46,8 @@ void PPChromaticAberration::Init() {
 	mDevice->CreateCommittedResource(
 		&hp, D3D12_HEAP_FLAG_NONE, &cbDesc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr, IID_PPV_ARGS(&mParamsCb));
+		nullptr, IID_PPV_ARGS(&mParamsCb)
+	);
 }
 
 /// @brief 更新
@@ -56,10 +60,14 @@ void PPChromaticAberration::Update(float) {
 			ImGuiTreeNodeFlags_DefaultOpen
 		)
 	) {
-		ImGui::DragFloat("Strength##CA", &mParams.strength, 0.001f, 0.0f, 0.05f,
-		                 "%.4f");
-		ImGui::DragFloat("Blend##CA", &mParams.blend, 0.01f, 0.0f, 1.0f,
-		                 "%.2f");
+		ImGui::DragFloat(
+			"Strength##CA", &mParams.strength, 0.001f, 0.0f, 0.05f,
+			"%.4f"
+		);
+		ImGui::DragFloat(
+			"Blend##CA", &mParams.blend, 0.01f, 0.0f, 1.0f,
+			"%.2f"
+		);
 	}
 
 #endif
@@ -86,12 +94,15 @@ void PPChromaticAberration::Execute(const PostProcessContext& ctx) {
 	mSrvMgr->CreateSRVForTexture2D(
 		mSrvIndex, ctx.inputTexture,
 		ctx.inputTexture->GetDesc().Format,
-		ctx.inputTexture->GetDesc().MipLevels);
+		ctx.inputTexture->GetDesc().MipLevels
+	);
 
 	cmd->SetGraphicsRootDescriptorTable(
-		0, mSrvMgr->GetGPUDescriptorHandle(mSrvIndex));
+		0, mSrvMgr->GetGPUDescriptorHandle(mSrvIndex)
+	);
 	cmd->SetGraphicsRootConstantBufferView(
-		1, mParamsCb->GetGPUVirtualAddress());
+		1, mParamsCb->GetGPUVirtualAddress()
+	);
 
 	cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	cmd->DrawInstanced(3, 1, 0, 0);
@@ -100,9 +111,9 @@ void PPChromaticAberration::Execute(const PostProcessContext& ctx) {
 /// @brief ルートシグネチャを作成します
 void PPChromaticAberration::CreateRootSignature() {
 	D3D12_DESCRIPTOR_RANGE1 range = {
-		.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV,
-		.NumDescriptors = 1,
-		.BaseShaderRegister = 0,
+		.RangeType                         = D3D12_DESCRIPTOR_RANGE_TYPE_SRV,
+		.NumDescriptors                    = 1,
+		.BaseShaderRegister                = 0,
 		.OffsetInDescriptorsFromTableStart =
 		D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND
 	};
@@ -118,22 +129,22 @@ void PPChromaticAberration::CreateRootSignature() {
 	rp[1].ShaderVisibility          = D3D12_SHADER_VISIBILITY_PIXEL;
 
 	D3D12_STATIC_SAMPLER_DESC sam = {
-		.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR,
-		.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
-		.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
-		.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
-		.ShaderRegister = 0,
+		.Filter           = D3D12_FILTER_MIN_MAG_MIP_LINEAR,
+		.AddressU         = D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
+		.AddressV         = D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
+		.AddressW         = D3D12_TEXTURE_ADDRESS_MODE_CLAMP,
+		.ShaderRegister   = 0,
 		.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL
 	};
 
 	D3D12_VERSIONED_ROOT_SIGNATURE_DESC desc = {
-		.Version = D3D_ROOT_SIGNATURE_VERSION_1_1,
+		.Version  = D3D_ROOT_SIGNATURE_VERSION_1_1,
 		.Desc_1_1 = {
-			.NumParameters = 2,
-			.pParameters = rp,
+			.NumParameters     = 2,
+			.pParameters       = rp,
 			.NumStaticSamplers = 1,
-			.pStaticSamplers = &sam,
-			.Flags =
+			.pStaticSamplers   = &sam,
+			.Flags             =
 			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
 		}
 	};
@@ -142,7 +153,8 @@ void PPChromaticAberration::CreateRootSignature() {
 	D3D12SerializeVersionedRootSignature(&desc, &sig, &err);
 	mDevice->CreateRootSignature(
 		0, sig->GetBufferPointer(), sig->GetBufferSize(),
-		IID_PPV_ARGS(&mRootSig));
+		IID_PPV_ARGS(&mRootSig)
+	);
 }
 
 /// @brief パイプラインステートを作成します

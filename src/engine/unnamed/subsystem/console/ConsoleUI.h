@@ -18,6 +18,8 @@ namespace Unnamed {
 	public:
 		explicit ConsoleUI(ConsoleSystem* consoleSystem);
 
+		void Init() const;
+
 		void Show();
 		void OnConsoleUpdate();
 
@@ -32,12 +34,11 @@ namespace Unnamed {
 		static void PushTextColor(const struct ConsoleLogText& buffer);
 
 #ifdef _DEBUG
-		static int InputTextCallback(const ImGuiInputTextCallbackData* data);
+		static int InputTextCallback(ImGuiInputTextCallbackData* data);
 #endif
 
 		ConsoleSystem* mConsoleSystem;
 
-		bool mIsImGuiInitialized = false;
 		bool mWishScrollToBottom = false;
 
 		char mInputBuffer[256] = "";

@@ -22,10 +22,14 @@ Node ReadNode(const aiNode* node) {
 	aiQuaternion rotation;
 	node->mTransformation.Decompose(scaling, rotation, translation);
 
-	result.transform.translate = Vec3(translation.x, translation.y,
-	                                  translation.z);
-	result.transform.rotate = Quaternion(rotation.x, rotation.y, rotation.z,
-	                                     rotation.w);
+	result.transform.translate = Vec3(
+		translation.x, translation.y,
+		translation.z
+	);
+	result.transform.rotate = Quaternion(
+		rotation.x, rotation.y, rotation.z,
+		rotation.w
+	);
 	result.transform.scale = Vec3(scaling.x, scaling.y, scaling.z);
 
 	result.name = node->mName.C_Str();          // Node名を格納
@@ -34,9 +38,7 @@ Node ReadNode(const aiNode* node) {
 		uint32_t childIndex = 0;
 		childIndex < node->mNumChildren;
 		++childIndex
-	) {
-		result.children[childIndex] = ReadNode(node->mChildren[childIndex]);
-	}
+	) { result.children[childIndex] = ReadNode(node->mChildren[childIndex]); }
 
 	return result;
 }

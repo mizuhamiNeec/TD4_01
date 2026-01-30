@@ -19,20 +19,18 @@ void ConCommand::Init() {
 /// @param name コマンド名
 /// @param callback コマンドコールバック関数
 /// @param help コマンドのヘルプテキスト
-void ConCommand::RegisterCommand(const std::string&     name,
-                                 const CommandCallback& callback,
-                                 const std::string&     help) {
-	mCommands[name] = {callback, help};
-}
+void ConCommand::RegisterCommand(
+	const std::string&     name,
+	const CommandCallback& callback,
+	const std::string&     help
+) { mCommands[name] = {callback, help}; }
 
 /// @brief コンソールコマンドを実行します
 /// @param command コマンド文字列
 /// @return コマンドが見つかり実行された場合はtrue、そうでなければfalse
 bool ConCommand::ExecuteCommand(const std::string& command) {
 	auto tokens = TokenizeCommand(command);
-	if (tokens.empty()) {
-		return false;
-	}
+	if (tokens.empty()) { return false; }
 
 	const auto& cmdName = tokens[0];
 	auto        it      = mCommands.find(cmdName);
@@ -49,15 +47,15 @@ bool ConCommand::ExecuteCommand(const std::string& command) {
 /// @brief 登録されている全てのコマンドを取得します
 /// @return コマンド名とコールバック関数、ヘルプテキストのペアのマップ
 std::unordered_map<std::string, std::pair<CommandCallback, std::string>>
-ConCommand::GetCommands() {
-	return mCommands;
-}
+ConCommand::GetCommands() { return mCommands; }
 
 /// @brief ヘルプを表示します
 void ConCommand::Help() {
 	for (const auto& [commandName, commandData] : mCommands) {
-		Console::Print(" - " + commandName + " : " + commandData.second + "\n",
-		               kConFgColorDark, Channel::None);
+		Console::Print(
+			" - " + commandName + " : " + commandData.second + "\n",
+			kConFgColorDark, Channel::None
+		);
 	}
 }
 
@@ -69,9 +67,7 @@ ConCommand::TokenizeCommand(const std::string& command) {
 	std::istringstream       stream(command);
 	std::vector<std::string> tokens;
 	std::string              token;
-	while (stream >> token) {
-		tokens.emplace_back(token);
-	}
+	while (stream >> token) { tokens.emplace_back(token); }
 	return tokens;
 }
 

@@ -11,6 +11,8 @@
 #include <engine/renderer/Structs.h>
 #include <engine/renderer/VertexBuffer.h>
 
+#include <engine/TextureManager/TexManager.h>
+
 
 class SrvManager;
 class CameraComponent;
@@ -43,11 +45,14 @@ public:
 	void Render();
 
 	static std::vector<Vertex> GenerateRingVertices(
-		float innerRadius, float outerRadius, int segments);
+		float innerRadius, float outerRadius, int segments
+	);
 	static std::vector<uint32_t> GenerateRingIndices(int segments);
 
-	void RegisterMesh(ParticleMeshType meshType, std::vector<Vertex>& vertices,
-	                  const std::vector<uint32_t>& indices);
+	void RegisterMesh(
+		ParticleMeshType             meshType, std::vector<Vertex>& vertices,
+		const std::vector<uint32_t>& indices
+	);
 
 	MeshData& GetMeshData(ParticleMeshType type);
 
@@ -63,8 +68,10 @@ public:
 	const std::vector<Vertex>&     GetVertices();
 	const std::vector<uint32_t>&   GetIndices();
 
-	void CreateParticleGroup(const std::string& name,
-	                         const std::string& textureFilePath);
+	void CreateParticleGroup(
+		const std::string& name,
+		const std::string& textureFilePath
+	);
 
 private:
 	struct ParticleGroup {
@@ -86,6 +93,7 @@ private:
 	D3D12*                                mRenderer             = nullptr;
 	std::unique_ptr<RootSignatureManager> mRootSignatureManager = nullptr;
 	SrvManager*                           mSrvManager           = nullptr;
+	TexManager*                           mTexManager           = nullptr;
 	std::unique_ptr<PipelineState>        mPipelineState        = nullptr;
 	CameraComponent*                      mDefaultCamera        = nullptr;
 

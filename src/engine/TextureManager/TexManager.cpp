@@ -11,17 +11,6 @@
 #include <engine/TextureManager/TexManager.h>
 #include <runtime/core/Properties.h>
 
-TexManager* TexManager::mInstance = nullptr;
-
-/// @brief シングルトンインスタンスを取得します
-/// @return TexManagerのインスタンス
-TexManager* TexManager::GetInstance() {
-	if (mInstance == nullptr) {
-		mInstance = new TexManager;
-	}
-	return mInstance;
-}
-
 /// @brief テクスチャマネージャーを初期化します
 /// @param renderer D3D12レンダラーのポインタ
 /// @param srvManager Srvマネージャのポインタ
@@ -42,7 +31,8 @@ void TexManager::Init(D3D12* renderer, SrvManager* srvManager) {
 /// @param filePath
 /// @return テクスチャのメタデータ
 const DirectX::TexMetadata& TexManager::GetMetaData(
-	const std::string& filePath) const {
+	const std::string& filePath
+) const {
 	auto it = mTextureData.find(filePath);
 	assert(it != mTextureData.end()); // ファイルが存在することを確認
 	const TextureData& textureData = it->second;
@@ -53,7 +43,8 @@ const DirectX::TexMetadata& TexManager::GetMetaData(
 /// @param metadata テクスチャのメタデータ
 /// @return 作成されたテクスチャリソース
 Microsoft::WRL::ComPtr<ID3D12Resource> TexManager::CreateTextureResource(
-	const DirectX::TexMetadata& metadata) const {
+	const DirectX::TexMetadata& metadata
+) const {
 	// metadataをもとにResourceの設定
 	D3D12_RESOURCE_DESC resourceDesc = {};
 	resourceDesc.Width = static_cast<UINT>(metadata.width); // Textureの幅
@@ -93,43 +84,6 @@ Microsoft::WRL::ComPtr<ID3D12Resource> TexManager::CreateTextureResource(
 	return resource;
 }
 
-/// @brief CPUディスクリプタハンドルを取得します
-/// @param descriptorHeap ディスクリプタヒープ
-/// @param descriptorSize ディスクリプタサイズ
-/// @param index インデックス
-/// @return CPUディスクリプタハンドル
-D3D12_CPU_DESCRIPTOR_HANDLE TexManager::GetCPUDescriptorHandle(
-	ID3D12DescriptorHeap* descriptorHeap,
-	const uint32_t        descriptorSize,
-	const uint32_t        index
-) {
-	D3D12_CPU_DESCRIPTOR_HANDLE handleCPU = descriptorHeap->
-		GetCPUDescriptorHandleForHeapStart();
-	handleCPU.ptr += static_cast<unsigned long long>(descriptorSize) * index;
-	return handleCPU;
-}
-
-/// @brief GPUディスクリプタハンドルを取得します
-/// @param descriptorHeap ディスクリプタヒープ
-/// @param descriptorSize ディスクリプタサイズ
-/// @param index インデックス
-/// @return GPUディスクリプタハンドル
-D3D12_GPU_DESCRIPTOR_HANDLE TexManager::GetGPUDescriptorHandle(
-	ID3D12DescriptorHeap* descriptorHeap,
-	const uint32_t        descriptorSize,
-	const uint32_t        index
-) {
-	D3D12_GPU_DESCRIPTOR_HANDLE handleGPU = descriptorHeap->
-		GetGPUDescriptorHandleForHeapStart();
-	handleGPU.ptr += static_cast<unsigned long long>(descriptorSize) * index;
-	return handleGPU;
-}
-
-/// @brief テクスチャマネージャーを終了します
-void TexManager::Shutdown() {
-	delete mInstance;
-	mInstance = nullptr;
-}
 
 /// @brief テクスチャデータをアップロードします
 /// @param texture テクスチャリソース
@@ -143,13 +97,16 @@ Microsoft::WRL::ComPtr<ID3D12Resource> TexManager::UploadTextureData(
 	Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource = nullptr;
 
 	std::vector<D3D12_SUBRESOURCE_DATA> subResources;
-	DirectX::PrepareUpload(mRenderer->GetDevice(), mipImages.GetImages(),
-	                       mipImages.GetImageCount(),
-	                       mipImages.GetMetadata(), subResources);
+	DirectX::PrepareUpload(
+		mRenderer->GetDevice(), mipImages.GetImages(),
+		mipImages.GetImageCount(),
+		mipImages.GetMetadata(), subResources
+	);
 
 	const uint64_t intermediateSize = GetRequiredIntermediateSize(
 		texture.Get(), 0,
-		static_cast<UINT>(subResources.size()));
+		static_cast<UINT>(subResources.size())
+	);
 
 	// アップロード用のヒーププロパティ
 	D3D12_HEAP_PROPERTIES uploadHeapProperties = {};
@@ -175,17 +132,17 @@ Microsoft::WRL::ComPtr<ID3D12Resource> TexManager::UploadTextureData(
 		nullptr,
 		IID_PPV_ARGS(&intermediateResource)
 	);
-	if (FAILED(hr)) {
-		return nullptr;
-	}
+	if (FAILED(hr)) { return nullptr; }
 
 	// サブリソースの更新
-	UpdateSubresources(mRenderer->GetCommandList(),
-	                   texture.Get(),
-	                   intermediateResource.Get(),
-	                   0, 0,
-	                   static_cast<UINT>(subResources.size()),
-	                   subResources.data());
+	UpdateSubresources(
+		mRenderer->GetCommandList(),
+		texture.Get(),
+		intermediateResource.Get(),
+		0, 0,
+		static_cast<UINT>(subResources.size()),
+		subResources.data()
+	);
 
 	// リソースバリアの設定
 	D3D12_RESOURCE_BARRIER barrier;
@@ -216,7 +173,8 @@ void TexManager::LoadTexture(const std::string& filePath, bool forceCubeMap) {
 
 	// ファイル拡張子を取得して小文字に変換
 	std::string extension = filePath.substr(
-		filePath.find_last_of('.') + 1);
+		filePath.find_last_of('.') + 1
+	);
 	// 小文字に変換
 	DirectX::ScratchImage image     = {};
 	std::wstring          filePathW = Unnamed::StrUtil::ToWString(filePath);
@@ -228,24 +186,30 @@ void TexManager::LoadTexture(const std::string& filePath, bool forceCubeMap) {
 	if (extension == "dds") {
 		// DDSファイルの読み込み
 		DirectX::TexMetadata metadata;
-		hr = DirectX::GetMetadataFromDDSFile(filePathW.c_str(),
-		                                     DirectX::DDS_FLAGS_NONE, metadata);
+		hr = DirectX::GetMetadataFromDDSFile(
+			filePathW.c_str(),
+			DirectX::DDS_FLAGS_NONE, metadata
+		);
 
 		if (SUCCEEDED(hr)) {
 			// キューブマップかどうかをチェック
 			isCubeMap = isCubeMap || (metadata.miscFlags &
-				DirectX::TEX_MISC_TEXTURECUBE);
+			                          DirectX::TEX_MISC_TEXTURECUBE);
 
 			// メタデータを取得したら改めて読み込み（DDSはフラグなしで読み込み、後でSRGB変換）
-			hr = DirectX::LoadFromDDSFile(filePathW.c_str(),
-			                              DirectX::DDS_FLAGS_NONE, nullptr,
-			                              image);
+			hr = DirectX::LoadFromDDSFile(
+				filePathW.c_str(),
+				DirectX::DDS_FLAGS_NONE, nullptr,
+				image
+			);
 		}
 	} else {
 		// WICファイル（PNG, JPG, BMPなど）の読み込み
-		hr = DirectX::LoadFromWICFile(filePathW.c_str(),
-		                              DirectX::WIC_FLAGS_FORCE_SRGB, nullptr,
-		                              image);
+		hr = DirectX::LoadFromWICFile(
+			filePathW.c_str(),
+			DirectX::WIC_FLAGS_FORCE_SRGB, nullptr,
+			image
+		);
 	}
 
 	// 読み込み失敗時の処理
@@ -256,8 +220,10 @@ void TexManager::LoadTexture(const std::string& filePath, bool forceCubeMap) {
 			filePath, hr
 		);
 		// デフォルトテクスチャの読み込み
-		filePathW = Unnamed::StrUtil::ToWString("./content/core/textures/error.png");
-		hr        = DirectX::LoadFromWICFile(
+		filePathW = Unnamed::StrUtil::ToWString(
+			"./content/core/textures/error.png"
+		);
+		hr = DirectX::LoadFromWICFile(
 			filePathW.c_str(),
 			DirectX::WIC_FLAGS_FORCE_SRGB,
 			nullptr,
@@ -276,7 +242,7 @@ void TexManager::LoadTexture(const std::string& filePath, bool forceCubeMap) {
 
 	// フォーマットが変換可能で、かつSRGBでない場合は変換
 	if (targetFormat != srcMetadata.format && targetFormat !=
-		DXGI_FORMAT_UNKNOWN) {
+	    DXGI_FORMAT_UNKNOWN) {
 		hr = DirectX::Convert(
 			image.GetImages(),
 			image.GetImageCount(),
@@ -287,9 +253,7 @@ void TexManager::LoadTexture(const std::string& filePath, bool forceCubeMap) {
 			convertedImage
 		);
 
-		if (SUCCEEDED(hr)) {
-			image = std::move(convertedImage);
-		} else {
+		if (SUCCEEDED(hr)) { image = std::move(convertedImage); } else {
 			DevMsg(
 				GetName(),
 				"SRGB変換に失敗したため、元のフォーマットを使用します: {} (元: {}, 変換先: {})",
@@ -308,12 +272,14 @@ void TexManager::LoadTexture(const std::string& filePath, bool forceCubeMap) {
 		const DirectX::TexMetadata& metadata = image.GetMetadata();
 
 		if (metadata.width >= kMinTextureSizeForMipmap && metadata.height >=
-			kMinTextureSizeForMipmap) {
-			hr = DirectX::GenerateMipMaps(image.GetImages(),
-			                              image.GetImageCount(),
-			                              metadata,
-			                              DirectX::TEX_FILTER_SRGB, 0,
-			                              mipImages);
+		    kMinTextureSizeForMipmap) {
+			hr = DirectX::GenerateMipMaps(
+				image.GetImages(),
+				image.GetImageCount(),
+				metadata,
+				DirectX::TEX_FILTER_SRGB, 0,
+				mipImages
+			);
 			assert(SUCCEEDED(hr));
 		} else {
 			DevMsg(
@@ -334,7 +300,8 @@ void TexManager::LoadTexture(const std::string& filePath, bool forceCubeMap) {
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource =
 		UploadTextureData(
-			textureData.resource, mipImages);
+			textureData.resource, mipImages
+		);
 
 	// コマンドリストを閉じる
 	hr = mRenderer->GetCommandList()->Close();
@@ -367,14 +334,14 @@ void TexManager::LoadTexture(const std::string& filePath, bool forceCubeMap) {
 	// SRV確保（テクスチャタイプに応じて適切なAllocateを使用）
 	if (isCubeMap) {
 		textureData.srvIndex = mSrvManager->AllocateForTextureCube();
-	} else {
-		textureData.srvIndex = mSrvManager->AllocateForTexture2D();
-	}
+	} else { textureData.srvIndex = mSrvManager->AllocateForTexture2D(); }
 
 	textureData.srvHandleCPU = mSrvManager->GetCPUDescriptorHandle(
-		textureData.srvIndex);
+		textureData.srvIndex
+	);
 	textureData.srvHandleGPU = mSrvManager->GetGPUDescriptorHandle(
-		textureData.srvIndex);
+		textureData.srvIndex
+	);
 
 	// キューブマップの場合は専用のSRV作成メソッドを呼び出す
 	if (isCubeMap) {
@@ -393,14 +360,17 @@ void TexManager::LoadTexture(const std::string& filePath, bool forceCubeMap) {
 		);
 	}
 
-	textureData.resource->SetName(Unnamed::StrUtil::ToWString(filePath).c_str());
+	textureData.resource->SetName(
+		Unnamed::StrUtil::ToWString(filePath).c_str()
+	);
 }
 
 /// @brief ファイルパスからテクスチャデータを取得します
 /// @param filePath テクスチャファイルのパス
 /// @return テクスチャデータへのポインタ（存在しない場合はnullptr）
 TexManager::TextureData* TexManager::GetTextureData(
-	const std::string& filePath) {
+	const std::string& filePath
+) {
 	// ファイルパスを完全な相対パスに変換
 	std::string normalizedPath = filePath;
 	try {
@@ -415,7 +385,8 @@ TexManager::TextureData* TexManager::GetTextureData(
 		} else {
 			// 絶対パスの場合は、カレントディレクトリからの相対パスに変換
 			normalizedPath = std::filesystem::relative(
-				path, std::filesystem::current_path()).string();
+				path, std::filesystem::current_path()
+			).string();
 		}
 
 		// パスの区切り文字を統一（Windowsの場合も/に統一）
@@ -437,15 +408,11 @@ TexManager::TextureData* TexManager::GetTextureData(
 
 	// 正規化されたパスでテクスチャを検索
 	auto it = mTextureData.find(normalizedPath);
-	if (it != mTextureData.end()) {
-		return &it->second;
-	}
+	if (it != mTextureData.end()) { return &it->second; }
 
 	// 元のパスでも検索
 	it = mTextureData.find(filePath);
-	if (it != mTextureData.end()) {
-		return &it->second;
-	}
+	if (it != mTextureData.end()) { return &it->second; }
 
 	Error(
 		GetName(),
@@ -461,12 +428,11 @@ TexManager::TextureData* TexManager::GetTextureData(
 /// @param filePath テクスチャファイルのパス
 /// @return テクスチャのインデックス
 uint32_t TexManager::GetTextureIndexByFilePath(
-	const std::string& filePath) const {
+	const std::string& filePath
+) const {
 	// 1. まず完全なパスで検索
 	auto it = mTextureData.find(filePath);
-	if (it != mTextureData.end()) {
-		return it->second.srvIndex;
-	}
+	if (it != mTextureData.end()) { return it->second.srvIndex; }
 
 	// 2. ファイル名のみで検索（パスの違いを無視）
 	std::string filename  = filePath;
@@ -495,7 +461,7 @@ uint32_t TexManager::GetTextureIndexByFilePath(
 	// パスが正規化されている可能性があるので、部分一致でチェック
 	for (const auto& [path, data] : mTextureData) {
 		if (path.find(filePath) != std::string::npos || filePath.find(path) !=
-			std::string::npos) {
+		    std::string::npos) {
 			DevMsg(
 				GetName(),
 				"GetTextureIndexByFilePath: 部分一致で見つかりました: {} -> {} (インデックス {})",
@@ -532,9 +498,7 @@ uint32_t TexManager::GetTextureIndexByFilePath(
 
 	// 再検索
 	it = mTextureData.find(filePath);
-	if (it != mTextureData.end()) {
-		return it->second.srvIndex;
-	}
+	if (it != mTextureData.end()) { return it->second.srvIndex; }
 
 	// それでも見つからない場合は0を返す
 	return 0;
@@ -544,7 +508,8 @@ uint32_t TexManager::GetTextureIndexByFilePath(
 /// @param filePath
 /// @return GPUディスクリプタハンドル
 D3D12_GPU_DESCRIPTOR_HANDLE TexManager::GetSrvHandleGPU(
-	const std::string& filePath) {
+	const std::string& filePath
+) {
 	// ファイル名のみで検索（パスの違いを無視）- GetTextureIndexByFilePathと同様のロジック
 	std::string filename  = filePath;
 	size_t      lastSlash = filePath.find_last_of("/\\");
@@ -554,9 +519,7 @@ D3D12_GPU_DESCRIPTOR_HANDLE TexManager::GetSrvHandleGPU(
 
 	// まず完全一致で検索
 	auto it = mTextureData.find(filePath);
-	if (it != mTextureData.end()) {
-		return it->second.srvHandleGPU;
-	}
+	if (it != mTextureData.end()) { return it->second.srvHandleGPU; }
 
 	// ファイル名で検索
 	for (auto& [path, data] : mTextureData) {
@@ -579,7 +542,7 @@ D3D12_GPU_DESCRIPTOR_HANDLE TexManager::GetSrvHandleGPU(
 	// パスが正規化されている可能性があるので、部分一致でチェック
 	for (auto& [path, data] : mTextureData) {
 		if (path.find(filePath) != std::string::npos || filePath.find(path) !=
-			std::string::npos) {
+		    std::string::npos) {
 			DevMsg(
 				GetName(),
 				"GetSrvHandleGPU: 部分一致で見つかりました: {} -> {}",
@@ -608,12 +571,11 @@ uint32_t TexManager::GetLoadedTextureCount() const {
 /// @param filePath テクスチャファイルのパス
 /// @return テクスチャリソース
 Microsoft::WRL::ComPtr<ID3D12Resource> TexManager::GetTextureResource(
-	const std::string& filePath) const {
+	const std::string& filePath
+) const {
 	// まず完全なパスで検索
 	auto it = mTextureData.find(filePath);
-	if (it != mTextureData.end()) {
-		return it->second.resource;
-	}
+	if (it != mTextureData.end()) { return it->second.resource; }
 
 	// ファイル名のみで検索（パスの違いを無視）
 	std::string filename  = filePath;
@@ -630,9 +592,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> TexManager::GetTextureResource(
 			currentFilename = path.substr(currentLastSlash + 1);
 		}
 
-		if (currentFilename == filename) {
-			return data.resource;
-		}
+		if (currentFilename == filename) { return data.resource; }
 	}
 
 	Error(
@@ -658,9 +618,7 @@ void TexManager::UpdateTextureSrvIndex(
 	const uint32_t     newSrvIndex
 ) {
 	auto it = mTextureData.find(filePath);
-	if (it != mTextureData.end()) {
-		it->second.srvIndex = newSrvIndex;
-	} else {
+	if (it != mTextureData.end()) { it->second.srvIndex = newSrvIndex; } else {
 		Error(
 			GetName(),
 			"UpdateTextureSrvIndex: テクスチャが見つかりません: {}",

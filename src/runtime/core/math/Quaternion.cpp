@@ -9,16 +9,16 @@ Quaternion::Quaternion() :
 	x(0),
 	y(0),
 	z(0),
-	w(1) {
-}
+	w(1) {}
 
-Quaternion::Quaternion(const float x, const float y, const float z,
-                       const float w) :
+Quaternion::Quaternion(
+	const float x, const float y, const float z,
+	const float w
+) :
 	x(x),
 	y(y),
 	z(z),
-	w(w) {
-}
+	w(w) {}
 
 Quaternion::Quaternion(const Vec3& axis, const float angleRad) {
 	const float halfAngle    = angleRad * 0.5f;
@@ -44,16 +44,12 @@ Quaternion Quaternion::Normalized() const {
 	return {x / magnitude, y / magnitude, z / magnitude, w / magnitude};
 }
 
-Quaternion Quaternion::Conjugate() const {
-	return {-x, -y, -z, w};
-}
+Quaternion Quaternion::Conjugate() const { return {-x, -y, -z, w}; }
 
 Quaternion Quaternion::Inverse() const {
 	float normSquared = x * x + y * y + z * z + w * w;
 
-	if (normSquared < 1e-6f) {
-		return identity;
-	}
+	if (normSquared < 1e-6f) { return identity; }
 
 	float invNormSquared = 1.0f / normSquared;
 	return Quaternion(
@@ -105,9 +101,7 @@ Quaternion Quaternion::EulerDegrees(const Vec3& eulerDeg) {
 
 Quaternion Quaternion::EulerDegrees(
 	const float x, const float y, const float z
-) {
-	return Euler(x * Math::deg2Rad, y * Math::deg2Rad, z * Math::deg2Rad);
-}
+) { return Euler(x * Math::deg2Rad, y * Math::deg2Rad, z * Math::deg2Rad); }
 
 Quaternion Quaternion::AxisAngle(const Vec3& axis, const float angleDeg) {
 	const float angleRad = angleDeg;
@@ -179,8 +173,9 @@ Quaternion Quaternion::Lerp(const Quaternion& a, const Quaternion& b, float t) {
 	return result.Normalized();
 }
 
-Quaternion
-Quaternion::Slerp(const Quaternion& a, const Quaternion& b, float t) {
+Quaternion Quaternion::Slerp(
+	const Quaternion& a, const Quaternion& b, float t
+) {
 	t = std::clamp(t, 0.0f, 1.0f);
 
 	// a と b の内積を計算
@@ -206,21 +201,15 @@ Quaternion::Slerp(const Quaternion& a, const Quaternion& b, float t) {
 	}
 
 	// t が 0 または 1 の場合は早期リターン
-	if (t == 0.0f) {
-		return a;
-	}
-	if (t == 1.0f) {
-		return b;
-	}
+	if (t == 0.0f) { return a; }
+	if (t == 1.0f) { return b; }
 
 	// Slerp の計算
 	float scale0 = std::sin((1.0f - t) * angle) / sinAngle;
 	float scale1 = std::sin(t * angle) / sinAngle;
 
 	// dot が負の場合、反転する
-	if (dot < 0.0f) {
-		scale1 = -scale1;
-	}
+	if (dot < 0.0f) { scale1 = -scale1; }
 
 	// 最終的な Quaternion を計算し、正規化
 	return Quaternion(
@@ -243,9 +232,7 @@ Vec3 Quaternion::ToEulerAngles() const {
 	const float sinP = 2 * (w * y - z * x);
 	if (std::abs(sinP) >= 1) {
 		euler.y = std::copysign(Math::pi * 0.5f, sinP);
-	} else {
-		euler.y = std::asin(sinP);
-	}
+	} else { euler.y = std::asin(sinP); }
 
 	// Yaw
 	const float sinYCosP = 2 * (w * z + x * y);
@@ -261,9 +248,7 @@ Vec3 Quaternion::ToEulerDegrees() const {
 
 Vec3 Quaternion::GetAxis() const {
 	const float scale = std::sqrt(1.0f - w * w);
-	if (scale < 1e-6f) {
-		return Vec3::up;
-	}
+	if (scale < 1e-6f) { return Vec3::up; }
 	return {x / scale, y / scale, z / scale};
 }
 
@@ -290,9 +275,7 @@ float Quaternion::GetAngle() const {
 	return 2.0f * std::acos(std::clamp(w, -1.0f, 1.0f));
 }
 
-float Quaternion::GetAngleDegrees() const {
-	return GetAngle() * Math::rad2Deg;
-}
+float Quaternion::GetAngleDegrees() const { return GetAngle() * Math::rad2Deg; }
 
 Quaternion Quaternion::operator*(const Quaternion& other) const {
 	return {

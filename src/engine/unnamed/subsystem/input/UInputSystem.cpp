@@ -8,6 +8,8 @@
 #include <engine/unnamed/subsystem/input/device/mouse/MouseDevice.h>
 #include <engine/unnamed/subsystem/interface/ServiceLocator.h>
 
+#include "engine/unnamed/subsystem/console/concommand/UnnamedConCommand.h"
+
 namespace Unnamed {
 	static constexpr std::string_view kChannel = "InputSystem";
 
@@ -16,14 +18,45 @@ namespace Unnamed {
 	/// @brief 初期化
 	bool UInputSystem::Init() {
 		ServiceLocator::Register<UInputSystem>(this);
+
+		// 組み込みコマンドの登録
+		static UnnamedConCommand bind(
+			"bind",
+			[&](const std::vector<std::string>& args) {
+				if (args.empty()) { return false; }
+
+				const auto key = KeyNameTable::FromString(args[0]);
+				if (key.has_value()) {
+					BindAction(
+						args[1],
+						{
+							.device = key->device,
+							.code   = key->code
+						}
+					);
+				}
+
+				return true;
+			},
+			"Bind a key to a command."
+		);
+
+		static UnnamedConCommand unbind(
+			"unbind",
+			[&](const std::vector<std::string>& args) {
+				if (args.empty()) { return false; }
+				Unbind(args[0]);
+				return true;
+			},
+			"Unbind a key from a command."
+		);
+
 		return true;
 	}
 
 	/// @brief 更新
 	void UInputSystem::Update(float) {
-		for (const auto& inputDevice : mDevices) {
-			inputDevice->Update();
-		}
+		for (const auto& inputDevice : mDevices) { inputDevice->Update(); }
 
 		//-------------------------------------------------------------------------
 		// 軸入力は毎フレームリセットする
@@ -63,7 +96,8 @@ namespace Unnamed {
 				// 一時マップに存在しなければ初期化
 				if (!tempActionStates.contains(target)) {
 					tempActionStates[target] = std::make_tuple(
-						false, false, false);
+						false, false, false
+					);
 				}
 
 				// 状態を論理ORで更新
@@ -109,8 +143,8 @@ namespace Unnamed {
 		// 一時マップから最終アクション状態を更新
 		for (const auto& [action, states] : tempActionStates) {
 			mActionStates[action] = {
-				.bIsPressed = std::get<0>(states),
-				.bIsHeld = std::get<1>(states),
+				.bIsPressed  = std::get<0>(states),
+				.bIsHeld     = std::get<1>(states),
 				.bIsReleased = std::get<2>(states)
 			};
 		}
@@ -158,44 +192,41 @@ namespace Unnamed {
 		LPARAM                lParam
 	) {
 		switch (msg) {
-		case WM_ACTIVATE:
-			// ウィンドウが非アクティブになったら入力をリセット
-			if (LOWORD(wParam) == WA_INACTIVE) {
-				ResetInputStates();
-			}
-			break;
+			case WM_ACTIVATE:
+				// ウィンドウが非アクティブになったら入力をリセット
+				if (LOWORD(wParam) == WA_INACTIVE) { ResetInputStates(); }
+				break;
 
-		case WM_INPUT: {
-			// RAW Inputを受け取る
-			UINT size = 0;
-			GetRawInputData(
-				reinterpret_cast<HRAWINPUT>(lParam), // NOLINT(performance-no-int-to-ptr)
-				RID_INPUT,
-				nullptr,
-				&size,
-				sizeof(RAWINPUTHEADER)
-			);
-
-			std::vector<uint8_t> buffer(size);
-
-			if (
+			case WM_INPUT: {
+				// RAW Inputを受け取る
+				UINT size = 0;
 				GetRawInputData(
 					reinterpret_cast<HRAWINPUT>(lParam), // NOLINT(performance-no-int-to-ptr)
 					RID_INPUT,
-					buffer.data(),
+					nullptr,
 					&size,
 					sizeof(RAWINPUTHEADER)
-				) == size
-			) {
-				const RAWINPUT* raw = reinterpret_cast<RAWINPUT*>(buffer.
-					data());
-				OnRawInput(*raw);
-			}
-			break;
-		}
+				);
 
-		default:
-			break;
+				std::vector<uint8_t> buffer(size);
+
+				if (
+					GetRawInputData(
+						reinterpret_cast<HRAWINPUT>(lParam), // NOLINT(performance-no-int-to-ptr)
+						RID_INPUT,
+						buffer.data(),
+						&size,
+						sizeof(RAWINPUTHEADER)
+					) == size
+				) {
+					const RAWINPUT* raw = reinterpret_cast<RAWINPUT*>(buffer.
+						data());
+					OnRawInput(*raw);
+				}
+				break;
+			}
+
+			default: break;
 		}
 
 		return false;
@@ -205,9 +236,7 @@ namespace Unnamed {
 	/// @param device 登録する入力デバイスの共有ポインタ
 	void UInputSystem::RegisterDevice(
 		const std::shared_ptr<BaseInputDevice>& device
-	) {
-		mDevices.emplace_back(device);
-	}
+	) { mDevices.emplace_back(device); }
 
 	/// @brief アクションをキーにバインドします
 	/// @param action アクション名
@@ -279,6 +308,17 @@ namespace Unnamed {
 			"BindAxis2D: {}, key = {}, axis = {}, scale = {}",
 			axis, KeyNameTable::ToString(key),
 			static_cast<int>(axisType), scale
+		);
+	}
+
+	void UInputSystem::Unbind(const std::string& action) {
+		std::erase_if(
+			mBindings,
+			[&action](const InputBinding& binding) {
+				return binding.type ==
+				       BINDING_TYPE::ACTION &&
+				       binding.target == action;
+			}
 		);
 	}
 
@@ -399,9 +439,7 @@ namespace Unnamed {
 			auto& [bIsPressed, bIsHeld, bIsReleased] :
 			mActionStates | std::views::values
 		) {
-			if (bIsHeld) {
-				bIsReleased = true;
-			}
+			if (bIsHeld) { bIsReleased = true; }
 
 			bIsPressed = false;
 			bIsHeld    = false;
@@ -416,9 +454,7 @@ namespace Unnamed {
 		}
 
 		// デバイス状態のリセット
-		for (auto& device : mDevices) {
-			device.get()->ResetStates();
-		}
+		for (auto& device : mDevices) { device.get()->ResetStates(); }
 	}
 
 	/// @brief RAW Inputの処理
@@ -476,14 +512,13 @@ namespace Unnamed {
 				static_cast<LONG>(
 					MapVirtualKeyA(
 						virtualKey,
-						MAPVK_VK_TO_VSC)
+						MAPVK_VK_TO_VSC
+					)
 				) << 16,
 				name,
 				sizeof(name)
 			)
-		) {
-			return name;
-		}
+		) { return name; }
 		Warning(
 			kChannel,
 			"キーの名前を取得できませんでした: {}",

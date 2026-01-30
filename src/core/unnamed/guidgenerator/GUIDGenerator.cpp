@@ -5,7 +5,7 @@
 
 namespace Unnamed {
 	constexpr uint64_t kGuidRandom64MsbMask = 0x8000'0000'0000'0000ULL;
-	
+
 	/// @brief GuidGeneratorのコンストラクタ
 	/// @param m 生成モード
 	/// @details シーケンシャルモードの場合、乱数生成器を初期化します
@@ -23,12 +23,9 @@ namespace Unnamed {
 	/// @details シーケンシャルモードでは連番、ランダムモードでは乱数を生成します
 	uint64_t GuidGenerator::Alloc() {
 		switch (mMode) {
-		case MODE::SEQUENTIAL:
-			return ++mCounter;
-		case MODE::RANDOM64:
-			return mDist64(mRng) | kGuidRandom64MsbMask;
-		default:
-			return ++mCounter;
+			case MODE::SEQUENTIAL: return ++mCounter;
+			case MODE::RANDOM64: return mDist64(mRng) | kGuidRandom64MsbMask;
+			default: return ++mCounter;
 		}
 	}
 }

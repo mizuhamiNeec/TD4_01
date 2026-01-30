@@ -13,7 +13,8 @@ namespace Unnamed {
 	/// @param name キー名の文字列
 	/// @return 対応するInputKey（存在しない場合はstd::nullopt）
 	std::optional<InputKey> KeyNameTable::FromString(
-		const std::string_view name) {
+		const std::string_view name
+	) {
 		const std::unordered_map<std::string, InputKey>& map = NameToKey();
 		const auto it = map.find(Normalize(name));
 		if (it == map.end()) {
@@ -43,9 +44,7 @@ namespace Unnamed {
 
 	/// @brief InputKeyからキー名へのマッピングを取得します
 	const std::unordered_map<InputKey, std::string_view, KeyHash>&
-	KeyNameTable::KeyToName() {
-		return sKeyToName;
-	}
+	KeyNameTable::KeyToName() { return sKeyToName; }
 
 	/// @brief 文字列を正規化します（小文字化）
 	/// @param str 正規化する文字列
@@ -69,21 +68,6 @@ namespace Unnamed {
 		//---------------------------------------------------------------------
 		// キーボード
 		//---------------------------------------------------------------------
-		// ファンクションキー
-		KEY("f1", KEYBOARD, VK_F1),
-		KEY("f2", KEYBOARD, VK_F2),
-		KEY("f3", KEYBOARD, VK_F3),
-		KEY("f4", KEYBOARD, VK_F4),
-		KEY("f5", KEYBOARD, VK_F5),
-		KEY("f6", KEYBOARD, VK_F6),
-		KEY("f7", KEYBOARD, VK_F7),
-		KEY("f8", KEYBOARD, VK_F8),
-		KEY("f9", KEYBOARD, VK_F9),
-		KEY("f10", KEYBOARD, VK_F10),
-		KEY("f11", KEYBOARD, VK_F11),
-		KEY("f12", KEYBOARD, VK_F12),
-		// F13以降は一般的ではないッ!
-
 		// 数字キー
 		KEY("0", KEYBOARD, 0x30), // 0
 		KEY("1", KEYBOARD, 0x31), // 1
@@ -124,12 +108,29 @@ namespace Unnamed {
 		KEY("y", KEYBOARD, 0x59), // Y
 		KEY("z", KEYBOARD, 0x5A), // Z
 
+		//---------------------------------------------------------------------
 		// System, Modifier, Other
+		//---------------------------------------------------------------------
+
+		// ファンクションキー
+		KEY("f1", KEYBOARD, VK_F1),
+		KEY("f2", KEYBOARD, VK_F2),
+		KEY("f3", KEYBOARD, VK_F3),
+		KEY("f4", KEYBOARD, VK_F4),
+		KEY("f5", KEYBOARD, VK_F5),
+		KEY("f6", KEYBOARD, VK_F6),
+		KEY("f7", KEYBOARD, VK_F7),
+		KEY("f8", KEYBOARD, VK_F8),
+		KEY("f9", KEYBOARD, VK_F9),
+		KEY("f10", KEYBOARD, VK_F10),
+		KEY("f11", KEYBOARD, VK_F11),
+		KEY("f12", KEYBOARD, VK_F12),
+		// F13以降は一般的ではないッ!
 
 		// 特殊キー ( ※は非推奨 キーボードによっては存在しないキー・特殊な人のキーボード
 		KEY("escape", KEYBOARD, VK_ESCAPE),
 		KEY("tab", KEYBOARD, VK_TAB),
-		KEY("capslock", KEYBOARD, VK_CAPITAL),  // CapsLock(※
+		KEY("capslock", KEYBOARD, VK_CAPITAL),  // CapsLock(※ やめてクレメンス
 		KEY("shift", KEYBOARD, VK_LSHIFT),      // 左シフト
 		KEY("rshift", KEYBOARD, VK_RSHIFT),     // 右シフト
 		KEY("ctrl", KEYBOARD, VK_LCONTROL),     // 左コントロール
@@ -180,20 +181,19 @@ namespace Unnamed {
 		//---------------------------------------------------------------------
 		// マウス
 		//---------------------------------------------------------------------
-		KEY("mouse1", MOUSE, VK_LBUTTON),           // 左ボタン
-		KEY("mouse2", MOUSE, VK_RBUTTON),           // 右ボタン
-		KEY("mouse3", MOUSE, VK_MBUTTON),           // 中央ボタン
-		KEY("mouse4", MOUSE, VK_XBUTTON1),          // サイドボタン1 手前
-		KEY("mouse5", MOUSE, VK_XBUTTON2),          // サイドボタン2 奥
-		KEY("mousewheelup", MOUSE, VM_WHEEL_UP),    // ホイール上
-		KEY("mousewheeldown", MOUSE, VM_WHEEL_DOWN) // ホイール下
+		KEY("mwheeldown", MOUSE, VM_WHEEL_DOWN), // ホイール下
+		KEY("mwheelup", MOUSE, VM_WHEEL_UP),     // ホイール上
+		KEY("mouse1", MOUSE, VK_LBUTTON),        // 左ボタン
+		KEY("mouse2", MOUSE, VK_RBUTTON),        // 右ボタン
+		KEY("mouse3", MOUSE, VK_MBUTTON),        // 中央ボタン
+		KEY("mouse4", MOUSE, VK_XBUTTON1),       // サイドボタン1 手前
+		KEY("mouse5", MOUSE, VK_XBUTTON2),       // サイドボタン2 奥
 	};
 
 	const std::unordered_map<InputKey, std::string_view, KeyHash>
 	KeyNameTable::sKeyToName = [] {
 		std::unordered_map<InputKey, std::string_view, KeyHash> rev;
-		for (const auto& [name, key] : sNameToKey)
-			rev.emplace(key, name);
+		for (const auto& [name, key] : sNameToKey) rev.emplace(key, name);
 		return rev;
 	}();
 }

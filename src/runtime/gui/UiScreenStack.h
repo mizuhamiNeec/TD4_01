@@ -15,8 +15,10 @@ namespace Unnamed::Gui {
 		void Clear();
 
 		void Tick(float deltaTime);
-		
-		[[nodiscard]] const std::vector<std::shared_ptr<UiScreen>>& GetScreens() const { return mScreens; }
+
+		[[nodiscard]] const std::vector<std::shared_ptr<UiScreen>>&
+		GetScreens() const { return mScreens; }
+
 		[[nodiscard]] UiRoot* GetUiRoot() const { return mUiRoot; }
 
 	private:

@@ -38,8 +38,7 @@ void CopyImagePass::Init() {
 
 /// @brief 更新
 /// @param deltaTime 前回フレームからの経過時間（秒）
-void CopyImagePass::Update([[maybe_unused]] const float deltaTime) {
-}
+void CopyImagePass::Update([[maybe_unused]] const float deltaTime) {}
 
 /// @brief 実行
 /// @param context ポストプロセスコンテキスト
@@ -83,16 +82,20 @@ void CopyImagePass::Execute(const PostProcessContext& context) {
 
 	static bool loggedOnce = false;
 	if (!loggedOnce) {
-		Console::Print(std::format(
-			               "CopyImagePass: srvIdx={}, format={}, handle=0x{:x}\n",
-			               mSrvIndex, static_cast<int>(srcFormat),
-			               gpuHandle.ptr), kConTextColorGray);
+		Console::Print(
+			std::format(
+				"CopyImagePass: srvIdx={}, format={}, handle=0x{:x}\n",
+				mSrvIndex, static_cast<int>(srcFormat),
+				gpuHandle.ptr
+			), kConTextColorGray
+		);
 		loggedOnce = true;
 	}
 
 	// 3. SRVをルートテーブルにバインド
 	commandList->SetGraphicsRootDescriptorTable(
-		0, gpuHandle); // SRV
+		0, gpuHandle
+	); // SRV
 
 	// フルスクリーン三角形の頂点バッファ: ここは外部でセットでも可
 	commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -153,7 +156,8 @@ void CopyImagePass::CreateRootSignature() {
 	ComPtr<ID3DBlob> errorBlob;
 
 	HRESULT hr = D3D12SerializeVersionedRootSignature(
-		&desc, &signatureBlob, &errorBlob);
+		&desc, &signatureBlob, &errorBlob
+	);
 	assert(SUCCEEDED(hr));
 
 	hr = mDevice->CreateRootSignature(

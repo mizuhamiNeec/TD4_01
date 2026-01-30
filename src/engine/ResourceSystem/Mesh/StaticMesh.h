@@ -11,8 +11,7 @@ struct AABB;
 /// @brief 静的メッシュクラス
 class StaticMesh {
 public:
-	StaticMesh(std::string name) : mName(std::move(name)) {
-	}
+	StaticMesh(std::string name) : mName(std::move(name)) {}
 
 	~StaticMesh() = default;
 

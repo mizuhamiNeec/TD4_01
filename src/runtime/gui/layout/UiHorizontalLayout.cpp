@@ -9,10 +9,11 @@ namespace Unnamed::Gui {
 
 		const Rect& selfRect = GetGlobalRect();
 
-		const float contentLeft   = selfRect.x + mPadding.left;
-		const float contentTop    = selfRect.y + mPadding.top;
-		const float contentRight  = selfRect.x + selfRect.width - mPadding.right;
-		const float contentBottom = selfRect.y + selfRect.height - mPadding.bottom;
+		const float contentLeft = selfRect.x + mPadding.left;
+		const float contentTop = selfRect.y + mPadding.top;
+		const float contentRight = selfRect.x + selfRect.width - mPadding.right;
+		const float contentBottom =
+			selfRect.y + selfRect.height - mPadding.bottom;
 
 		const float contentWidth  = contentRight - contentLeft;
 		const float contentHeight = contentBottom - contentTop;
@@ -32,9 +33,7 @@ namespace Unnamed::Gui {
 
 		for (auto& pChild : GetChildren()) {
 			UiWidget* child = pChild.get();
-			if (!child || !child->IsVisible()) {
-				continue;
-			}
+			if (!child || !child->IsVisible()) { continue; }
 
 			const UiSizePolicy       policy     = child->GetSizePolicy();
 			const UiSizeConstraints& constraint = child->GetSizeConstraints();
@@ -44,8 +43,10 @@ namespace Unnamed::Gui {
 				preferred = 64.0f; // TODO: パラメータ化
 			}
 
-			float clamped = std::clamp(preferred, constraint.minWidth,
-			                           constraint.maxWidth);
+			float clamped = std::clamp(
+				preferred, constraint.minWidth,
+				constraint.maxWidth
+			);
 
 			ChildInfo info{};
 			info.widget = child;
@@ -82,7 +83,7 @@ namespace Unnamed::Gui {
 		for (auto& info : childrenInfo) {
 			UiWidget* child = info.widget;
 
-			Rect  childLocal = child->GetLocalRect();
+			Rect childLocal = child->GetLocalRect();
 
 			const UiSizePolicy       policy     = child->GetSizePolicy();
 			const UiSizeConstraints& constraint = child->GetSizeConstraints();
@@ -93,8 +94,10 @@ namespace Unnamed::Gui {
 			} else {
 				float w = expandWidthEach;
 				// 制約で clamp
-				w = std::max(constraint.minWidth,
-				             std::min(w, constraint.maxWidth));
+				w = std::max(
+					constraint.minWidth,
+					std::min(w, constraint.maxWidth)
+				);
 				width = w;
 			}
 

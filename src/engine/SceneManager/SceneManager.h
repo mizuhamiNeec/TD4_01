@@ -9,7 +9,7 @@ public:
 
 	void ChangeScene(const std::string& name);
 
-	void Update(const float deltaTime) const;
+	void Update(float deltaTime) const;
 
 	void Render() const;
 

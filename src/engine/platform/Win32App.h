@@ -12,7 +12,7 @@ public:
 	void Shutdown();
 
 	static bool PollEvents();
-	
+
 	WindowManager& Windows();
 
 private:

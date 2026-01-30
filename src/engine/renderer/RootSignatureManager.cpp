@@ -1,12 +1,13 @@
 #include <format>
 
-#include <engine/renderer/RootSignatureManager.h>
 #include <engine/OldConsole/Console.h>
+#include <engine/renderer/RootSignatureManager.h>
 
 /// @brief コンストラクタ
 /// @param device D3D12デバイスへのポインタ
-RootSignatureManager::RootSignatureManager(ID3D12Device* device): mDevice(device) {
-}
+RootSignatureManager::RootSignatureManager(ID3D12Device* device) : mDevice(
+	device
+) {}
 
 /// @brief ルートシグネチャを作成します
 /// @param name ルートシグネチャの名前
@@ -50,19 +51,17 @@ bool RootSignatureManager::CreateRootSignature(
 		0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(),
 		IID_PPV_ARGS(&rootSignature)
 	);
-	if (FAILED(hr)) {
-		return false;
-	}
+	if (FAILED(hr)) { return false; }
 
 	mRootSignatures[name] = rootSignature;
 
-	Console::Print(std::format("Complete Create RootSignature : {}\n", name),
-	               kConTextColorCompleted, Channel::Engine);
+	Console::Print(
+		std::format("Complete Create RootSignature : {}\n", name),
+		kConTextColorCompleted, Channel::Engine
+	);
 
 	return true;
 }
 
 /// @brief 終了処理を行います
-void RootSignatureManager::Shutdown() {
-	mRootSignatures.clear();
-}
+void RootSignatureManager::Shutdown() { mRootSignatures.clear(); }

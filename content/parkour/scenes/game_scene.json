@@ -1,0 +1,161 @@
+{
+  "version": 1,
+  "entities": [
+    {
+      "name": "camera",
+      "transform": {
+        "pos": [0.0, 0.0, 0.0],
+        "rot": [0.0, 0.0, 0.0, 1.0],
+        "scale": [1.0, 1.0, 1.0]
+      },
+      "components": [
+        { "type": "CameraComponent", "data": {} }
+      ]
+    },
+    {
+      "name": "player",
+      "transform": {
+        "pos": [0.0, 2.0, 0.0],
+        "rot": [0.0, 0.0, 0.0, 1.0],
+        "scale": [1.0, 1.0, 1.0]
+      },
+      "components": [
+        {
+          "type": "AABBCollider",
+          "data": {
+            "aabb": {
+              "min": [ -0.25, 0.0, -0.25 ],
+              "max": [ 0.25, 1.00, 0.25 ]
+            },
+            "offset": [0.0, 0.0, 0.0]
+          }
+        },
+        {
+          "type": "MovementComponent",
+          "data": {
+            "widthHU": 32.0,
+            "heightHU": 72.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "worldMesh",
+      "transform": {
+        "pos": [0.0, 0.0, 0.0],
+        "rot": [0.0, 0.0, 0.0, 1.0],
+        "scale": [1.0, 1.0, 1.0]
+      },
+      "components": [
+        {
+          "type": "StaticMeshRenderer",
+          "data": {
+            "meshPath": "./content/parkour/models/map/sp_city.obj"
+          }
+        },
+        { "type": "MeshColliderComponent", "data": {} }
+      ]
+    },
+    {
+      "name": "fan",
+      "transform": {
+        "pos": [0.0, -16.0, 0.0],
+        "rot": [0.0, 0.0, 0.0, 1.0],
+        "scale": [1.0, 1.0, 1.0]
+      },
+      "components": [
+        {
+          "type": "StaticMeshRenderer",
+          "data": {
+            "meshPath": "./content/core/models/fan.obj"
+          }
+        },
+        { "type": "RotateComponent", "data": {} }
+      ]
+    },
+    {
+      "name": "Checkpoint1",
+      "transform": {
+        "pos": [26.010, 1.626, -4.865],
+        "rot": [0.0, 0.0, 0.0, 1.0],
+        "scale": [1.0, 1.0, 1.0]
+      },
+      "components": [
+        {
+          "type": "AABBCollider",
+          "data": {
+            "aabb": {
+              "min": [-0.08, 0.0, -0.64],
+              "max": [ 0.08, 5.33,  0.64]
+            },
+            "offset": [0.0, 0.0, 0.0]
+          }
+        },
+        {
+          "type": "CheckpointComponent",
+          "data": { "index": 0, "respawnPos": [26.01, 1.63, -4.86] }
+        }
+      ]
+    },
+    {
+      "name": "Checkpoint2",
+      "transform": {
+        "pos": [149.555, 8.128, 40.640],
+        "rot": [0.0, 0.0, 0.0, 1.0],
+        "scale": [1.0, 1.0, 1.0]
+      },
+      "components": [
+        {
+          "type": "AABBCollider",
+          "data": {
+            "aabb": { "min": [-0.08, 0.0, -0.64], "max": [0.08, 3.56, 0.64] },
+            "offset": [0.0, 0.0, 0.0]
+          }
+        },
+        {
+          "type": "CheckpointComponent",
+          "data": { "index": 1, "respawnPos": [149.555, 8.128, 40.640] }
+        }
+      ]
+    },
+    {
+      "name": "Checkpoint3",
+      "transform": {
+        "pos": [162.560, 1.626, 177.190],
+        "rot": [0.0, 0.0, 0.0, 1.0],
+        "scale": [1.0, 1.0, 1.0]
+      },
+      "components": [
+        {
+          "type": "AABBCollider",
+          "data": {
+            "aabb": { "min": [-5.12, 0.0, -0.08], "max": [5.12, 35.56, 0.08] },
+            "offset": [0.0, 0.0, 0.0]
+          }
+        },
+        {
+          "type": "CheckpointComponent",
+          "data": { "index": 2, "respawnPos": [162.560, 4.0, 177.190] }
+        }
+      ]
+    },
+    {
+      "name": "Goal",
+      "transform": {
+        "pos": [-216.205, -183.693, 152.806],
+        "rot": [0.0, 0.0, 0.0, 1.0],
+        "scale": [1.0, 1.0, 1.0]
+      },
+      "components": [
+        {
+          "type": "AABBCollider",
+          "data": {
+            "aabb": { "min": [-0.32, 0.0, -4.48], "max": [0.32, 53.33, 4.48] },
+            "offset": [0.0, 0.0, 0.0]
+          }
+        },
+        { "type": "GoalComponent", "data": {} }
+      ]
+    }
+  ]
+}

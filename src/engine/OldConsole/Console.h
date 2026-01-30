@@ -112,8 +112,10 @@ public:
 		const std::string& message, const Vec4& color = kConFgColorDark,
 		const Channel&     channel                    = Channel::General
 	);
-	static void PrintNullptr(const std::string& message,
-	                         const Channel&     channel);
+	static void PrintNullptr(
+		const std::string& message,
+		const Channel&     channel
+	);
 
 	static std::string ToString(Channel channel);
 
@@ -130,8 +132,10 @@ private:
 #ifdef _DEBUG
 	static void UpdateSuggestions(const std::string& input);
 	static void ShowSuggestPopup();
-	static void SuggestPopup(SuggestPopupState& state, const ImVec2& pos,
-	                         const ImVec2&      size, bool&          isFocused);
+	static void SuggestPopup(
+		SuggestPopupState& state, const ImVec2& pos,
+		const ImVec2&      size, bool&          isFocused
+	);
 	static int InputTextCallback(ImGuiInputTextCallbackData* data);
 #endif
 
@@ -164,9 +168,11 @@ private:
 
 	static void AddCommandHistory(const std::string& command);
 
-	static void UpdateRepeatCount(const std::string& message, bool hasNewLine,
-	                              const Channel&     channel,
-	                              const Vec4&        color = kConFgColorDark);
+	static void UpdateRepeatCount(
+		const std::string& message, bool hasNewLine,
+		const Channel&     channel,
+		const Vec4&        color = kConFgColorDark
+	);
 
 	static void CheckScroll();
 	static void CheckLineCountAsync();
@@ -193,7 +199,7 @@ private:
 	static std::thread                       mConsoleThread;
 	static bool                              mStopThread;
 	bool                                     mConsoleUpdate = false;
-
+	
 #ifdef _DEBUG
 	// コンソール
 	static bool                     mShowConsole; // コンソールを表示するか?

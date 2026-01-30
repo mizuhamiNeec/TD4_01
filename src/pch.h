@@ -20,9 +20,9 @@
 //-----------------------------------------------------------------------------
 // Unnamed
 //-----------------------------------------------------------------------------
-#include <engine/unnamed/subsystem/console/Log.h>
 #include <core/unnamed/UnnamedMacro.h>
 #include <core/unnamed/string/StrUtil.h>
+#include <engine/unnamed/subsystem/console/Log.h>
 
 //-----------------------------------------------------------------------------
 // STD

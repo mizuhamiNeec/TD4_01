@@ -1,7 +1,7 @@
 ﻿#pragma once
 
-#include <d3d12.h>
 #include <cstdint>
+#include <d3d12.h>
 
 /// @brief ポストプロセスコンテキスト構造体
 struct PostProcessContext {
@@ -18,8 +18,7 @@ class IPostProcess {
 public:
 	virtual ~IPostProcess() = default;
 
-	virtual void Update(float) {
-	}
+	virtual void Update(float) {}
 
 	virtual void Execute(const PostProcessContext& context) = 0;
 };

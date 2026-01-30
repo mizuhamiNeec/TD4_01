@@ -23,7 +23,8 @@ namespace Unnamed {
 		if (cur->is_object()) {
 			if (!mPendingKey.has_value()) {
 				throw std::runtime_error(
-					"Key() must be called before beginning a container inside an object");
+					"Key() must be called before beginning a container inside an object"
+				);
 			}
 			(*cur)[*mPendingKey] = std::move(value);
 			auto& ref            = (*cur)[*mPendingKey];
@@ -38,7 +39,8 @@ namespace Unnamed {
 			return;
 		}
 		throw std::runtime_error(
-			"Current JSON container is neither object nor array");
+			"Current JSON container is neither object nor array"
+		);
 	}
 
 	JsonWriter::JsonWriter(std::string path) : mRoot(nullptr),
@@ -57,11 +59,13 @@ namespace Unnamed {
 		auto* cur = Current();
 		if (!cur->is_object()) {
 			throw std::runtime_error(
-				"Top of stack is not an object in EndObject()");
+				"Top of stack is not an object in EndObject()"
+			);
 		}
 		if (mPendingKey.has_value()) {
 			throw std::runtime_error(
-				"Pending key without value before EndObject()");
+				"Pending key without value before EndObject()"
+			);
 		}
 		mStack.pop_back();
 		mStringCache.clear();
@@ -78,7 +82,8 @@ namespace Unnamed {
 		auto* cur = Current();
 		if (!cur->is_array()) {
 			throw std::runtime_error(
-				"Top of stack is not an array in EndArray()");
+				"Top of stack is not an array in EndArray()"
+			);
 		}
 		mStack.pop_back();
 		mStringCache.clear();
@@ -91,7 +96,8 @@ namespace Unnamed {
 		}
 		if (!cur->is_object()) {
 			throw std::runtime_error(
-				"Key() called when current container is not an object");
+				"Key() called when current container is not an object"
+			);
 		}
 		if (mPendingKey.has_value()) {
 			throw std::runtime_error("Previous key still pending a value");
@@ -100,9 +106,7 @@ namespace Unnamed {
 	}
 
 	bool JsonWriter::Save() const {
-		if (mPath.empty()) {
-			throw std::runtime_error("Save path is empty");
-		}
+		if (mPath.empty()) { throw std::runtime_error("Save path is empty"); }
 
 		std::filesystem::path filePath(mPath);
 		if (filePath.has_parent_path()) {
@@ -112,7 +116,8 @@ namespace Unnamed {
 		std::ofstream ofs(mPath, std::ios::binary);
 		if (!ofs) {
 			throw std::runtime_error(
-				"Failed to open file for writing: " + mPath);
+				"Failed to open file for writing: " + mPath
+			);
 		}
 		ofs << ToString();
 		Msg(kChannelNone, "{}", ToString());
@@ -121,9 +126,7 @@ namespace Unnamed {
 	}
 
 	std::string_view JsonWriter::ToString() const {
-		if (mStringCache.empty()) {
-			mStringCache = mRoot.dump(4);
-		}
+		if (mStringCache.empty()) { mStringCache = mRoot.dump(4); }
 		return mStringCache;
 	}
 }

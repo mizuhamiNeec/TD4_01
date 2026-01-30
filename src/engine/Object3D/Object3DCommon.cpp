@@ -1,8 +1,8 @@
 #include "Object3DCommon.h"
 
 #include "engine/OldConsole/Console.h"
-#include "engine/renderer/Structs.h"
 #include "engine/renderer/RootSignatureManager.h"
+#include "engine/renderer/Structs.h"
 
 #include "engine/Camera/CameraManager.h"
 
@@ -13,26 +13,27 @@
 void Object3DCommon::Init(D3D12* d3d12) {
 	this->mD3d12 = d3d12;
 	CreateGraphicsPipeline();
-	Console::Print("Object3DCommon : Object3dの初期化が完了しました。\n",
-	               kConTextColorCompleted);
+	Console::Print(
+		"Object3DCommon : Object3dの初期化が完了しました。\n",
+		kConTextColorCompleted
+	);
 }
 
 /// @brief Object3DCommonをシャットダウンします
-void Object3DCommon::Shutdown() const {
-	mRootSignatureManager->Shutdown();
-}
+void Object3DCommon::Shutdown() const { mRootSignatureManager->Shutdown(); }
 
 /// @brief ルートシグネチャを作成します
 void Object3DCommon::CreateRootSignature() {
 	// RootSignatureManagerのインスタンスを作成
 	mRootSignatureManager = std::make_unique<RootSignatureManager>(
-		mD3d12->GetDevice());
+		mD3d12->GetDevice()
+	);
 
 	D3D12_DESCRIPTOR_RANGE descriptorRange[1];
 	descriptorRange[0] = {
 		.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV, // SRVを使う
-		.NumDescriptors = 1,                          // 数は一つ
-		.BaseShaderRegister = 0,                      // 0から始まる
+		.NumDescriptors = 1, // 数は一つ
+		.BaseShaderRegister = 0, // 0から始まる
 		.OffsetInDescriptorsFromTableStart =
 		D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND // Offset
 	};
@@ -60,7 +61,8 @@ void Object3DCommon::CreateRootSignature() {
 	rootParameters[2].DescriptorTable.pDescriptorRanges = descriptorRange;
 	// Tableの中身の配列を指定
 	rootParameters[2].DescriptorTable.NumDescriptorRanges = _countof(
-		descriptorRange);
+		descriptorRange
+	);
 
 	// ピクセルシェーダー : 指向性ライト
 	rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV; // CBVを使う
@@ -88,24 +90,26 @@ void Object3DCommon::CreateRootSignature() {
 
 	D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {
 		{
-			.Filter = D3D12_FILTER_ANISOTROPIC,          // 異方性フィルタ
-			.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP, // 0~1の範囲外をリピート
-			.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
-			.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
-			.MipLODBias = 0.0f,
-			.MaxAnisotropy = 16,                           // 異方性フィルタリングの最大サンプル数
-			.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER, // 比較しない
-			.MinLOD = 0.0f,
-			.MaxLOD = D3D12_FLOAT32_MAX,                      // ありったけのMipmapを使う
-			.ShaderRegister = 0,                              // レジスタ番号0を使う
+			.Filter           = D3D12_FILTER_ANISOTROPIC, // 異方性フィルタ
+			.AddressU         = D3D12_TEXTURE_ADDRESS_MODE_WRAP, // 0~1の範囲外をリピート
+			.AddressV         = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
+			.AddressW         = D3D12_TEXTURE_ADDRESS_MODE_WRAP,
+			.MipLODBias       = 0.0f,
+			.MaxAnisotropy    = 16, // 異方性フィルタリングの最大サンプル数
+			.ComparisonFunc   = D3D12_COMPARISON_FUNC_NEVER, // 比較しない
+			.MinLOD           = 0.0f,
+			.MaxLOD           = D3D12_FLOAT32_MAX,            // ありったけのMipmapを使う
+			.ShaderRegister   = 0,                            // レジスタ番号0を使う
 			.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL // PixelShaderで使う
 		},
 	};
 
 	// ルートシグネチャを作成
-	mRootSignatureManager->CreateRootSignature("Object3d", rootParameters,
-	                                           staticSamplers,
-	                                           _countof(staticSamplers));
+	mRootSignatureManager->CreateRootSignature(
+		"Object3d", rootParameters,
+		staticSamplers,
+		_countof(staticSamplers)
+	);
 }
 
 /// @brief グラフィックスパイプラインを作成します
@@ -113,8 +117,10 @@ void Object3DCommon::CreateGraphicsPipeline() {
 	CreateRootSignature();
 
 	// パイプラインステートを作成
-	mPipelineState = PipelineState(D3D12_CULL_MODE_BACK, D3D12_FILL_MODE_SOLID,
-	                               D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE);
+	mPipelineState = PipelineState(
+		D3D12_CULL_MODE_BACK, D3D12_FILL_MODE_SOLID,
+		D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE
+	);
 	mPipelineState.SetInputLayout(Vertex::inputLayout);
 	mPipelineState.SetRootSignature(mRootSignatureManager->Get("Object3d"));
 
@@ -131,15 +137,15 @@ void Object3DCommon::CreateGraphicsPipeline() {
 void Object3DCommon::Render() const {
 	mD3d12->GetCommandList()->SetPipelineState(mPipelineState.Get());
 	mD3d12->GetCommandList()->SetGraphicsRootSignature(
-		mRootSignatureManager->Get("Object3d"));
+		mRootSignatureManager->Get("Object3d")
+	);
 	mD3d12->GetCommandList()->IASetPrimitiveTopology(
-		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST
+	);
 }
 
 /// @brief D3D12レンダラーへのポインタを取得します
-D3D12* Object3DCommon::GetD3D12() const {
-	return mD3d12;
-}
+D3D12* Object3DCommon::GetD3D12() const { return mD3d12; }
 
 /// @brief デフォルトカメラを取得します
 CameraComponent* Object3DCommon::GetDefaultCamera() {

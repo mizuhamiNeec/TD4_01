@@ -1,92 +1,71 @@
 #include <pch.h>
 //-----------------------------------------------------------------------------
 #include <iostream>
+#include <ranges>
 
-#include <engine/OldConsole/Console.h>
 #include <engine/unnamed/subsystem/console/ConsoleSystem.h>
+#include <engine/unnamed/subsystem/console/ConVarWriter.h>
 #include <engine/unnamed/subsystem/console/Log.h>
 #include <engine/unnamed/subsystem/console/builtin/BuiltInCommands.h>
 #include <engine/unnamed/subsystem/console/builtin/BuiltInConVars.h>
 #include <engine/unnamed/subsystem/console/concommand/UnnamedConCommand.h>
 #include <engine/unnamed/subsystem/console/concommand/UnnamedConVar.h>
 #include <engine/unnamed/subsystem/console/concommand/base/UnnamedConCommandBase.h>
-#include <engine/unnamed/subsystem/console/concommand/base/UnnamedConVarBase.h>
 #include <engine/unnamed/subsystem/interface/ServiceLocator.h>
 #include <engine/unnamed/subsystem/time/SystemClock.h>
 
-#include "ConsoleScriptParser.h"
-#include "ConVarWriter.h"
-
 namespace Unnamed {
-	static constexpr std::string_view kChannel     = "Console";
+	// ユーザー設定ファイルのパス
 	static constexpr std::string_view kUserCfgPath =
 		"./content/core/cfg/user.cfg";
 
-	/// @brief EXEC_FLAGのOR演算子オーバーロード
-	/// @param lhs 左辺
-	/// @param rhs 右辺
-	/// @return 演算結果
 	EXEC_FLAG operator|=(EXEC_FLAG& lhs, const EXEC_FLAG& rhs) {
 		lhs = static_cast<EXEC_FLAG>(static_cast<int>(lhs) | static_cast<int>(
-			rhs));
+			                             rhs));
 		return lhs;
 	}
 
-	/// @brief EXEC_FLAGのAND演算子オーバーロード
-	/// @param lhs 左辺
-	/// @param rhs 右辺
-	/// @return 演算結果
 	bool operator&(EXEC_FLAG lhs, EXEC_FLAG rhs) {
 		return (static_cast<int>(lhs) & static_cast<int>(rhs)) != 0;
 	}
 
-	/// @brief コンソールシステムのデストラクタ
 	ConsoleSystem::~ConsoleSystem() = default;
-
-	/// @brief コンソールシステムの初期化
-	/// @return 初期化成功ならtrue
+	
 	bool ConsoleSystem::Init() {
 		ServiceLocator::Register<ConsoleSystem>(this);
+
 #ifdef _DEBUG
 		mConsoleUI = std::make_unique<ConsoleUI>(this);
+		mConsoleUI->Init();
 #endif
+
+		RegisterCommonCommands();
 
 		RegisterBuiltInCommands();
 		RegisterBuiltInConVars();
-		ConsoleScriptParser parser(kUserCfgPath);
+
+		// ユーザー設定ファイルを実行
+		ExecuteCommand("exec " + std::string(kUserCfgPath));
 
 		return true;
 	}
-
-	/// @brief コンソールシステムの更新
-	/// @param deltaTime 前フレームからの経過時間（秒）
+	
 	void ConsoleSystem::Update(float) {
 #ifdef _DEBUG
 		mConsoleUI->Show();
 #endif
 	}
-
-	/// @brief コンソールシステムのシャットダウン
+	
 	void ConsoleSystem::Shutdown() {
-		ConVarWriter writer(kUserCfgPath);
+		// ユーザー設定ファイルに変数を書き込む
+		[[maybe_unused]] ConVarWriter writer(kUserCfgPath);
 	}
-
-	/// @brief コンソールシステムの名前を取得します
-	/// @return コンソールシステムの名前
-	const std::string_view ConsoleSystem::GetName() const {
-		return "Console";
-	}
+	
+	const std::string_view ConsoleSystem::GetName() const { return "Console"; }
 
 	RingBuffer<ConsoleLogText, kConsoleBufferSize>&
-	ConsoleSystem::GetLogBuffer() {
-		return mLogBuffer;
-	}
-
-	/// @brief コンソールにログを出力します
-	/// @param level ログレベル
-	/// @param channel チャンネル名
-	/// @param message メッセージ
-	/// @param location ソースコードの位置情報
+	ConsoleSystem::GetLogBuffer() { return mLogBuffer; }
+	
 	void ConsoleSystem::Print(
 		const LogLevel             level,
 		const std::string_view     channel,
@@ -105,9 +84,7 @@ namespace Unnamed {
 		std::string out;
 		if (!logText.channel.empty()) {
 			out = "[" + logText.channel + "] " + logText.message;
-		} else {
-			out = logText.message;
-		}
+		} else { out = logText.message; }
 
 		// コンソールの出力
 		std::cout << out << "\n";
@@ -120,26 +97,145 @@ namespace Unnamed {
 		mConsoleUI->OnConsoleUpdate();
 #endif
 	}
-
-	/// @brief コンソールコマンドを登録します
-	/// @param conCommand 登録するコマンドへのポインタ
+	
 	void ConsoleSystem::RegisterConCommand(UnnamedConCommandBase* conCommand) {
 		mConCommands[std::string(conCommand->GetName())] = conCommand;
 	}
-
-	/// @brief コンソール変数を登録します
-	/// @param conVar 登録する変数へのポインタ
-	void ConsoleSystem::RegisterConVar(UnnamedConVarBase* conVar) {
+	
+	void ConsoleSystem::RegisterConVar(UnnamedConCommandBase* conVar) {
 		mConVars[std::string(conVar->GetName())] = conVar;
 	}
-
-	/// @brief コンソールにコマンドを送信します。
-	/// @param command コマンド文字列
-	/// @param flag フラグ
+	
 	void ConsoleSystem::ExecuteCommand(
 		const std::string& command,
 		const EXEC_FLAG    flag
 	) {
+		const auto setVarFromArgs = [&](
+			UnnamedConCommandBase* var, const std::vector<std::string>& args
+		) {
+			switch (GetConVarType(var)) {
+				case CVAR_TYPE::BOOL: {
+					if (
+						auto* cBool = dynamic_cast<UnnamedConVar<bool>*>(var)
+					) { cBool->SetValue(StrUtil::CheckBoolString(args[0])); }
+					break;
+				}
+				case CVAR_TYPE::INT: {
+					if (
+						auto* ci = dynamic_cast<UnnamedConVar<int>*>(var)
+					) { ci->SetValue(std::stoi(args[0])); }
+					break;
+				}
+				case CVAR_TYPE::FLOAT: {
+					if (
+						auto* cf = dynamic_cast<UnnamedConVar<float>*>(var)
+					) { cf->SetValue(std::stof(args[0])); }
+					break;
+				}
+				case CVAR_TYPE::DOUBLE: {
+					if (
+						auto* cd = dynamic_cast<UnnamedConVar<double>*>(var)
+					) { cd->SetValue(std::stod(args[0])); }
+					break;
+				}
+				case CVAR_TYPE::STRING: {
+					if (
+						auto* cs =
+							dynamic_cast<UnnamedConVar<std::string>*>(var)
+					) {
+						std::string combined;
+						for (size_t i = 0; i < args.size(); ++i) {
+							combined += args[i];
+							if (i + 1 < args.size()) { combined += " "; }
+						}
+						cs->SetValue(combined);
+					}
+					break;
+				}
+				case CVAR_TYPE::VEC3: {
+					if (args.size() >= 3) {
+						if (
+							auto* cv3 = dynamic_cast<UnnamedConVar<Vec3>*>(var)
+						) {
+							bool ok = true;
+							for (const auto& arg : args | std::views::take(3)) {
+								ok &= StrUtil::IsFloat(arg);
+							}
+							if (ok) {
+								cv3->SetValue(
+									Vec3(
+										std::stof(args[0]),
+										std::stof(args[1]),
+										std::stof(args[2])
+									)
+								);
+							}
+						}
+					}
+					break;
+				}
+				case CVAR_TYPE::NONE:
+				default: {
+					SpecialMsg(
+						LogLevel::Error, "", "Unknown variable type for '{}'.",
+						var->GetName()
+					);
+					break;
+				}
+			}
+		};
+
+		const auto getVarValueString = [&](
+			UnnamedConCommandBase* var
+		) -> std::string {
+			switch (GetConVarType(var)) {
+				case CVAR_TYPE::BOOL: {
+					if (
+						const auto* cBool =
+							dynamic_cast<UnnamedConVar<bool>*>(var)
+					) { return cBool->GetValue() ? "true" : "false"; }
+					break;
+				}
+				case CVAR_TYPE::INT: {
+					if (
+						const auto* ci = dynamic_cast<UnnamedConVar<int>*>(var)
+					) { return std::to_string(ci->GetValue()); }
+					break;
+				}
+				case CVAR_TYPE::FLOAT: {
+					if (
+						const auto* cf =
+							dynamic_cast<UnnamedConVar<float>*>(var)
+					) { return std::to_string(cf->GetValue()); }
+					break;
+				}
+				case CVAR_TYPE::DOUBLE: {
+					if (
+						const auto* cd = dynamic_cast<UnnamedConVar<double>*>(
+							var)
+					) { return std::to_string(cd->GetValue()); }
+					break;
+				}
+				case CVAR_TYPE::STRING: {
+					if (
+						const auto* cs =
+							dynamic_cast<UnnamedConVar<std::string>*>(var)
+					) { return cs->GetValue(); }
+					break;
+				}
+				case CVAR_TYPE::VEC3: {
+					if (
+						const auto* cv3 =
+							dynamic_cast<UnnamedConVar<Vec3>*>(var)
+					) { return cv3->GetValue().ToString(); }
+					break;
+				}
+				case CVAR_TYPE::NONE:
+				default: break;
+			}
+			return {};
+		};
+
 		// 空なので何もしない
 		if (command.empty()) {
 			SpecialMsg(
@@ -153,10 +249,10 @@ namespace Unnamed {
 		std::string trimmed = StrUtil::TrimSpaces(std::string(command));
 
 		// コマンドを区切る
-		auto commands = StrUtil::SplitCommands(trimmed);
+		const auto commands = StrUtil::SplitCommands(trimmed);
 
 		if (flag & EXEC_FLAG::SILENT) {
-			// TODO 
+			// サイレントモードの場合は表示しない
 		} else {
 			// 送信内容をコンソールに表示
 			SpecialMsg(
@@ -171,28 +267,34 @@ namespace Unnamed {
 		}
 
 		for (const auto& singleCommand : commands) {
-			if (singleCommand.empty()) {
-				continue;
-			}
+			if (singleCommand.empty()) { continue; }
 
 			std::vector<std::string> tokens = StrUtil::Tokenize(singleCommand);
-			const std::vector        args(tokens.begin() + 1, tokens.end());
+			if (tokens.empty()) { continue; }
+			const std::vector<std::string> args(tokens.begin() + 1, tokens.end());
 
 			const bool foundCommand = mConCommands.contains(tokens[0]);
 			const bool foundVar     = mConVars.contains(tokens[0]);
 
 			// コマンドの場合
 			if (foundCommand) {
-				const auto* cmd = reinterpret_cast<UnnamedConCommand*>(
-					mConCommands[tokens[0]]
-				);
+				auto* base = mConCommands[tokens[0]];
+				if (!base || !base->IsCommand()) {
+					SpecialMsg(
+						LogLevel::Error,
+						"",
+						"'{}' is not recognized as a command.",
+						tokens[0]
+					);
+					break;
+				}
+
+				auto* cmd = static_cast<UnnamedConCommand*>(base);
 
 				// コールバックを実行
 				if (cmd->onExecute(args)) {
 					// 実行が完了したら完了時のコールバックを呼ぶ
-					if (cmd->onComplete) {
-						cmd->onComplete();
-					}
+					if (cmd->onComplete) { cmd->onComplete(); }
 				} else {
 					// 失敗したらとりあえず説明を出しておく
 					SpecialMsg(
@@ -203,120 +305,61 @@ namespace Unnamed {
 						cmd->GetDescription()
 					);
 				}
+
+				break;
 			}
 
 			// 変数の場合
 			if (foundVar) {
 				auto* var = mConVars[tokens[0]];
 
-				// CVarの形を取得
-				auto cvarType = GetConVarType(var);
-
-				// 引数がある場合は値を設定
-				if (!args.empty()) {
-					switch (cvarType) {
-					case CVAR_TYPE::BOOL:
-						if (auto* cBool = dynamic_cast<UnnamedConVar<bool>*>(
-							var)) {
-							cBool->SetValue(
-								StrUtil::CheckBoolString(args[0])
-							);
-						}
-						break;
-					case CVAR_TYPE::INT:
-						if (
-							auto* ci = dynamic_cast<UnnamedConVar<int>*>(var)
-						) {
-							ci->SetValue(std::stoi(args[0]));
-						}
-						break;
-					case CVAR_TYPE::FLOAT:
-						if (
-							auto* cf = dynamic_cast<UnnamedConVar<float>*>(var)
-						) {
-							cf->SetValue(std::stof(args[0]));
-						}
-						break;
-					case CVAR_TYPE::DOUBLE:
-						if (
-							auto* cd = dynamic_cast<UnnamedConVar<double>*>(var)
-						) {
-							cd->SetValue(std::stod(args[0]));
-						}
-						break;
-					case CVAR_TYPE::STRING:
-						if (
-							auto* cs = dynamic_cast<UnnamedConVar<std::string>*>
-								(var)
-						) {
-							// 空白対応
-							std::string combined;
-							for (size_t i = 0; i < args.size(); ++i) {
-								combined += args[i];
-								if (i != args.size() - 1) {
-									combined += " ";
-								}
-							}
-							cs->SetValue(combined);
-						}
-						break;
-					case CVAR_TYPE::VEC3:
-						// Vec3の場合は3つの引数が必要
-						if (args.size() >= 3) {
-							if (
-								auto* cv3 = dynamic_cast<UnnamedConVar<Vec3>*>(
-									var)
-							) {
-								bool ok = false;
-								// 各引数が数字に変換できるか確認
-								for (const auto& arg : args) {
-									ok &= StrUtil::IsFloat(arg);
-								}
-
-								if (ok) {
-									cv3->SetValue(
-										Vec3(
-											std::stof(args[0]),
-											std::stof(args[1]),
-											std::stof(args[2])
-										)
-									);
-								}
-							}
-						}
-						break;
-					}
+				// 引数がある場合は値を設定 / 無い場合は表示
+				if (!args.empty()) { setVarFromArgs(var, args); } else {
+					const auto        cvarType = GetConVarType(var);
+					const std::string type     = ToString(cvarType);
+					const std::string value    = getVarValueString(var);
+					SpecialMsg(
+						LogLevel::Info,
+						"",
+						"{} = [{}] {}: {}",
+						var->GetName(),
+						type,
+						value,
+						var->GetDescription()
+					);
 				}
-
-				// if (var->onExecute(args)) {
-				// }
+			} else {
+				// 謎な場合
+				SpecialMsg(
+					LogLevel::Error,
+					"",
+					"'{}' is not recognized as a command or variable.",
+					tokens[0]
+				);
 			}
 		}
 	}
 
-	std::unordered_map<std::string, UnnamedConVarBase*>
-	ConsoleSystem::GetConVars() {
-		return mConVars;
-	}
+	std::unordered_map<std::string, UnnamedConCommandBase*>
+	ConsoleSystem::GetConVars() { return mConVars; }
 
-	UnnamedConVarBase* ConsoleSystem::GetConVar(std::string_view name) {
+	UnnamedConCommandBase*
+	ConsoleSystem::GetConVar(const std::string_view name) {
 		return mConVars.contains(name.data()) ?
 			       mConVars[std::string(name)] :
 			       nullptr;
 	}
 
-	CVAR_TYPE ConsoleSystem::GetConVarType(UnnamedConVarBase* var) {
+	CVAR_TYPE ConsoleSystem::GetConVarType(UnnamedConCommandBase* var) {
 		auto type = CVAR_TYPE::NONE;
 
-		if (dynamic_cast<UnnamedConVar<bool>*>(var)) {
-			type = CVAR_TYPE::BOOL;
-		} else if (dynamic_cast<UnnamedConVar<int>*>(var)) {
-			type = CVAR_TYPE::INT;
-		} else if (dynamic_cast<UnnamedConVar<float>*>(var)) {
-			type = CVAR_TYPE::FLOAT;
-		} else if (dynamic_cast<UnnamedConVar<double>*>(var)) {
-			type = CVAR_TYPE::DOUBLE;
-		} else if (dynamic_cast<UnnamedConVar<std::string>*>(var)) {
+		if (dynamic_cast<UnnamedConVar<bool>*>(
+			var)) { type = CVAR_TYPE::BOOL; } else if (dynamic_cast<
+			UnnamedConVar<int>*>(var)) { type = CVAR_TYPE::INT; } else if (
+			dynamic_cast<UnnamedConVar<float>*>(
+				var)) { type = CVAR_TYPE::FLOAT; } else if (dynamic_cast<
+			UnnamedConVar<double>*>(var)) { type = CVAR_TYPE::DOUBLE; } else if
+		(dynamic_cast<UnnamedConVar<std::string>*>(var)) {
 			type = CVAR_TYPE::STRING;
 		} else if (dynamic_cast<UnnamedConVar<Vec3>*>(var)) {
 			type = CVAR_TYPE::VEC3;
@@ -325,30 +368,59 @@ namespace Unnamed {
 		return type;
 	}
 
-	/// @brief コンソール変数の型を取得します
-	/// @return 変数の型
-	void ConsoleSystem::Test() {
-		for (auto conVar : mConVars) {
-			DevMsg(kChannel, "ConVar: {}", conVar.first);
+	void ConsoleSystem::RegisterCommonCommands() {
+		// ヘルプコマンド
+		static UnnamedConCommand help(
+			"help",
+			[&](const std::vector<std::string>& args) {
+				// 引数がある場合はそのコマンド・変数の説明を表示する
+				if (!args.empty()) {
+					SpecialMsg(
+						LogLevel::Info,
+						"",
+						"{} : {}",
+						args[0],
+						mConCommands.contains(args[0]) ?
+						mConCommands[args[0]]->GetDescription() :
+						mConVars.contains(args[0]) ?
+						mConVars[args[0]]->GetDescription() :
+						"Command or variable not found."
+					);
+				} else {
+					// 引数が無い場合は全てのコマンド・変数の一覧を表示する
+					for (const auto& command :
+					     mConCommands | std::views::values) {
+						SpecialMsg(
+							LogLevel::Info,
+							"",
+							"{} : {}",
+							command->GetName(),
+							command->GetDescription()
+						);
+					}
+					for (const auto& var : mConVars | std::views::values) {
+						SpecialMsg(
+							LogLevel::Info,
+							"",
+							"{} : {}",
+							var->GetName(),
+							var->GetDescription()
+						);
+					}
+				}
+				return true;
+			},
+			"Display help information for commands and variables."
+		);
 
-			if (auto* cbool = dynamic_cast<UnnamedConVar<bool>*>(conVar.
-				second)) {
-				DevMsg(kChannel, "Value: {}", static_cast<bool>(*cbool));
-			} else if (auto* cint = dynamic_cast<UnnamedConVar<int>*>(
-				conVar.second)) {
-				DevMsg(kChannel, "Value: {}", static_cast<int>(*cint));
-			} else if (auto* cfloat = dynamic_cast<UnnamedConVar<float>*>(conVar
-				.second)) {
-				DevMsg(kChannel, "Value: {}", static_cast<float>(*cfloat));
-			} else if (auto* convarDouble = dynamic_cast<UnnamedConVar<double>*>
-				(conVar.second)) {
-				DevMsg(kChannel, "Value: {}",
-				       static_cast<double>(*convarDouble));
-			} else if (auto* convarString = dynamic_cast<UnnamedConVar<
-				std::string>*>(conVar.second)) {
-				DevMsg(kChannel, "Value: {}",
-				       static_cast<std::string>(*convarString));
-			}
-		}
+		// コンソール出力をクリアするコマンド
+		static UnnamedConCommand clear(
+			"clear",
+			[&](const std::vector<std::string>&) {
+				GetLogBuffer().Clear();
+				return true;
+			},
+			"Clears the console output."
+		);
 	}
 }

@@ -11,8 +11,7 @@
 class StaticMeshRenderer;
 
 /// @brief デストラクタ
-EntityLoader::~EntityLoader() {
-}
+EntityLoader::~EntityLoader() {}
 
 /// @brief エンティティに変換を適用する
 /// @param e エンティティ
@@ -29,9 +28,7 @@ void EntityLoader::ApplyTransform(
 /// @brief Blender座標系からエンジン座標系への変換
 /// @param v Blender座標系の位置ベクトル
 /// @return エンジン座標系の位置ベクトル
-static Vec3 ToEnginePos(const Vec3& v) {
-	return {v.x, v.z, v.y};
-}
+static Vec3 ToEnginePos(const Vec3& v) { return {v.x, v.z, v.y}; }
 
 /// @brief Blender座標系からエンジン座標系への変換
 /// @param q Blender座標系のクォータニオン
@@ -74,9 +71,7 @@ Entity* EntityLoader::LoadNode(
 	ResourceManager* resourceManager
 ) {
 	Entity* e = scene->CreateEntity(j.value("name", "Unnamed"));
-	if (parent) {
-		parent->AddChild(e);
-	}
+	if (parent) { parent->AddChild(e); }
 
 	const auto& tf = j.at("transform");
 
@@ -157,16 +152,12 @@ void EntityLoader::SaveScene(
 
 	for (auto* e : scene->GetEntities()) {
 		if (e->GetParent() == nullptr) {
-			if (e->GetName() == "editorCamera") {
-				continue;
-			}
+			if (e->GetName() == "editorCamera") { continue; }
 			rootEntities.emplace_back(e);
 		}
 	}
 
-	for (auto* e : rootEntities) {
-		root["objects"].emplace_back(SaveNode(e));
-	}
+	for (auto* e : rootEntities) { root["objects"].emplace_back(SaveNode(e)); }
 
 	std::ofstream(path) << root.dump(4);
 }

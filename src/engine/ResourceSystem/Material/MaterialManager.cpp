@@ -10,19 +10,21 @@
 /// @param name マテリアル名
 /// @param shader シェーダーポインタ
 /// @return マテリアルポインタ
-Material* MaterialManager::GetOrCreateMaterial(const std::string& name,
-                                               Shader*            shader) {
-	return GetOrCreateMaterial(name, shader, "");
-}
+Material* MaterialManager::GetOrCreateMaterial(
+	const std::string& name,
+	Shader*            shader
+) { return GetOrCreateMaterial(name, shader, ""); }
 
 /// @brief マテリアル取得または作成（メッシュ名あり）
 /// @param name マテリアル名
 /// @param shader シェーダーポインタ
 /// @param meshName メッシュ名
 /// @return マテリアルポインタ
-Material* MaterialManager::GetOrCreateMaterial(const std::string& name,
-                                               Shader*            shader,
-                                               const std::string& meshName) {
+Material* MaterialManager::GetOrCreateMaterial(
+	const std::string& name,
+	Shader*            shader,
+	const std::string& meshName
+) {
 	// キーを生成: メッシュ名がある場合は「メッシュ名_マテリアル名」、ない場合はマテリアル名のみ
 	std::string key = GenerateMaterialKey(name, meshName);
 
@@ -40,9 +42,7 @@ Material* MaterialManager::GetOrCreateMaterial(const std::string& name,
 	auto material = std::make_unique<Material>(name, shader);
 
 	// メッシュ名が指定されている場合は設定
-	if (!meshName.empty()) {
-		material->SetMeshName(meshName);
-	}
+	if (!meshName.empty()) { material->SetMeshName(meshName); }
 
 	mMaterials[key] = std::move(material);
 
@@ -66,8 +66,10 @@ Material* MaterialManager::GetMaterial(const std::string& name) {
 /// @param name マテリアル名
 /// @param meshName メッシュ名
 /// @return マテリアルポインタ
-Material* MaterialManager::GetMaterial(const std::string& name,
-                                       const std::string& meshName) {
+Material* MaterialManager::GetMaterial(
+	const std::string& name,
+	const std::string& meshName
+) {
 	std::string key = GenerateMaterialKey(name, meshName);
 	auto        it  = mMaterials.find(key);
 	return it != mMaterials.end() ? it->second.get() : nullptr;
@@ -78,10 +80,9 @@ Material* MaterialManager::GetMaterial(const std::string& name,
 /// @param meshName メッシュ名
 /// @return 生成されたマテリアルキー
 std::string MaterialManager::GenerateMaterialKey(
-	const std::string& materialName, const std::string& meshName) const {
-	if (meshName.empty()) {
-		return materialName;
-	}
+	const std::string& materialName, const std::string& meshName
+) const {
+	if (meshName.empty()) { return materialName; }
 	return meshName + "_" + materialName;
 }
 

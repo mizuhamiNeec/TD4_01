@@ -24,9 +24,7 @@ void AnimationManager::Shutdown() {
 /// @return アニメーション
 Animation AnimationManager::GetAnimation(const std::string& name) const {
 	auto it = mAnimations.find(name);
-	if (it != mAnimations.end()) {
-		return it->second;
-	}
+	if (it != mAnimations.end()) { return it->second; }
 	Console::Print(
 		std::format("アニメーションが見つかりませんでした: {}", name)
 	);
@@ -39,9 +37,7 @@ Animation AnimationManager::GetAnimation(const std::string& name) const {
 Animation AnimationManager::LoadAnimationFile(const std::string& filePath) {
 	// キャッシュしているものがあったらそれを返す
 	auto it = mAnimations.find(filePath);
-	if (it != mAnimations.end()) {
-		return it->second;
-	}
+	if (it != mAnimations.end()) { return it->second; }
 
 	// キャッシュに無い場合は新たに読み込む
 	Animation        animation;
@@ -62,7 +58,8 @@ Animation AnimationManager::LoadAnimationFile(const std::string& filePath) {
 /// @param filePath ファイルパス
 /// @return アニメーションリスト
 std::vector<Animation> AnimationManager::LoadAllAnimationsFromFile(
-	const std::string& filePath) {
+	const std::string& filePath
+) {
 	std::vector<Animation> animations;
 
 	Assimp::Importer importer;
@@ -80,7 +77,8 @@ std::vector<Animation> AnimationManager::LoadAllAnimationsFromFile(
 
 		// アニメーションに名前をつける
 		std::string animationKey = filePath + "::" + std::string(
-			animationAssimp->mName.C_Str());
+			                           animationAssimp->mName.C_Str()
+		                           );
 		animationNames.emplace_back(animationAssimp->mName.C_Str());
 
 		// キャッシュに保存
@@ -98,15 +96,15 @@ std::vector<Animation> AnimationManager::LoadAllAnimationsFromFile(
 /// @param filePath ファイルパス
 /// @param animationName アニメーション名
 /// @return アニメーション
-Animation AnimationManager::LoadAnimationByName(const std::string& filePath,
-                                                const std::string&
-                                                animationName) {
+Animation AnimationManager::LoadAnimationByName(
+	const std::string& filePath,
+	const std::string&
+	animationName
+) {
 	// キャッシュを確認
 	const std::string animationKey = filePath + "::" + animationName;
 	auto              it           = mAnimations.find(animationKey);
-	if (it != mAnimations.end()) {
-		return it->second;
-	}
+	if (it != mAnimations.end()) { return it->second; }
 
 	Assimp::Importer importer;
 	const aiScene*   aScene = importer.ReadFile(filePath.c_str(), 0);
@@ -127,8 +125,10 @@ Animation AnimationManager::LoadAnimationByName(const std::string& filePath,
 	}
 
 	Console::Print(
-		std::format("指定されたアニメーションが見つかりませんでした: {} in {}", animationName,
-		            filePath)
+		std::format(
+			"指定されたアニメーションが見つかりませんでした: {} in {}", animationName,
+			filePath
+		)
 	);
 	return {};
 }
@@ -137,20 +137,17 @@ Animation AnimationManager::LoadAnimationByName(const std::string& filePath,
 /// @param filePath ファイルパス
 /// @return アニメーション名リスト
 std::vector<std::string> AnimationManager::GetAnimationNamesFromFile(
-	const std::string& filePath) {
+	const std::string& filePath
+) {
 	// キャッシュを確認
 	auto it = mFileAnimationNames.find(filePath);
-	if (it != mFileAnimationNames.end()) {
-		return it->second;
-	}
+	if (it != mFileAnimationNames.end()) { return it->second; }
 
 	std::vector<std::string> animationNames;
 
 	Assimp::Importer importer;
 	const aiScene*   aScene = importer.ReadFile(filePath.c_str(), 0);
-	if (!aScene || aScene->mNumAnimations == 0) {
-		return animationNames;
-	}
+	if (!aScene || aScene->mNumAnimations == 0) { return animationNames; }
 
 	for (uint32_t animIndex = 0; animIndex < aScene->mNumAnimations; ++
 	     animIndex) {
@@ -169,7 +166,8 @@ std::vector<std::string> AnimationManager::GetAnimationNamesFromFile(
 /// @param animationAssimp Assimpのアニメーションデータ
 /// @return アニメーション
 Animation AnimationManager::LoadSingleAnimation(
-	const aiAnimation* animationAssimp) {
+	const aiAnimation* animationAssimp
+) {
 	Animation animation;
 	animation.duration = static_cast<float>(
 		animationAssimp->mDuration / animationAssimp->mTicksPerSecond
@@ -198,7 +196,7 @@ Animation AnimationManager::LoadSingleAnimation(
 				keyIndex];
 			Keyframe<Vec3> keyframe;
 			keyframe.time = static_cast<float>(keyAssimp.mTime / animationAssimp
-				->mTicksPerSecond); // 秒に変換
+			                                   ->mTicksPerSecond); // 秒に変換
 			keyframe.value = {
 				-keyAssimp.mValue.x,
 				keyAssimp.mValue.y,
@@ -215,7 +213,8 @@ Animation AnimationManager::LoadSingleAnimation(
 				keyIndex];
 			Keyframe<Quaternion> keyframe;
 			keyframe.time = static_cast<float>(keyAssimp.mTime /
-				animationAssimp->mTicksPerSecond);
+			                                   animationAssimp->
+			                                   mTicksPerSecond);
 			keyframe.value = {
 				keyAssimp.mValue.x,
 				-keyAssimp.mValue.y,
@@ -233,7 +232,8 @@ Animation AnimationManager::LoadSingleAnimation(
 				keyIndex];
 			Keyframe<Vec3> keyframe;
 			keyframe.time = static_cast<float>(keyAssimp.mTime /
-				animationAssimp->mTicksPerSecond);
+			                                   animationAssimp->
+			                                   mTicksPerSecond);
 			keyframe.value = {
 				keyAssimp.mValue.x,
 				keyAssimp.mValue.y,

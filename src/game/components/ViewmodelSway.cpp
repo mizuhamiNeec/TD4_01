@@ -9,16 +9,14 @@
 
 ViewmodelSway::~ViewmodelSway() = default;
 
-void ViewmodelSway::OnAttach(Entity& owner) {
-	Component::OnAttach(owner);
-}
+void ViewmodelSway::OnAttach(Entity& owner) { Component::OnAttach(owner); }
 
 void ViewmodelSway::Update([[maybe_unused]] const float deltaTime) {
 	// マウスの移動量を取得
 	Vec2 delta = InputSystem::GetMouseDelta();
 
 	mPitch += delta.y * mSwayAmount * deltaTime;
-	mYaw += delta.x * mSwayAmount * deltaTime;
+	mYaw   += delta.x * mSwayAmount * deltaTime;
 
 	mPitch = std::lerp(mPitch, 0.0f, mAttenuation * deltaTime); // ピッチの減衰
 	mYaw   = std::lerp(mYaw, 0.0f, mAttenuation * deltaTime);   // ヨーの減衰
@@ -33,9 +31,12 @@ void ViewmodelSway::Update([[maybe_unused]] const float deltaTime) {
 	// クォータニオンに変換してセット
 	mScene->SetLocalRot(finalRotation);
 	mScene->SetLocalPos(
-		Math::Lerp(mScene->GetLocalPos(),
-		           Vec3::zero,
-		           (mAttenuation * 0.5f) * deltaTime)); // 武器の位置調整
+		Math::Lerp(
+			mScene->GetLocalPos(),
+			Vec3::zero,
+			(mAttenuation * 0.5f) * deltaTime
+		)
+	); // 武器の位置調整
 }
 
 void ViewmodelSway::Render(ID3D12GraphicsCommandList* commandList) {
@@ -45,7 +46,8 @@ void ViewmodelSway::Render(ID3D12GraphicsCommandList* commandList) {
 void ViewmodelSway::DrawInspectorImGui() {
 #ifdef _DEBUG
 	if (ImGui::CollapsingHeader(
-		"Viewmodel Sway", ImGuiTreeNodeFlags_DefaultOpen)) {
+		"Viewmodel Sway", ImGuiTreeNodeFlags_DefaultOpen
+	)) {
 		ImGui::Text("Pitch: %.2f, Yaw: %.2f", mPitch, mYaw);
 
 		ImGui::DragFloat("SwayAmount", &mSwayAmount, 0.01f);
@@ -54,6 +56,4 @@ void ViewmodelSway::DrawInspectorImGui() {
 #endif
 }
 
-Entity* ViewmodelSway::GetOwner() const {
-	return Component::GetOwner();
-}
+Entity* ViewmodelSway::GetOwner() const { return Component::GetOwner(); }

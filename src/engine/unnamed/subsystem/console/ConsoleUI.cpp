@@ -7,6 +7,8 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
+#include "concommand/UnnamedConCommand.h"
+
 #include "engine/ImGui/Icons.h"
 #include "engine/ImGui/ImGuiWidgets.h"
 
@@ -17,7 +19,7 @@ namespace Unnamed {
 		ImGuiWindowFlags_NoScrollWithMouse |
 		ImGuiWindowFlags_NoScrollbar;
 
-	static constexpr ImGuiInputTextFlags kInputTextFlags =
+	static const ImGuiInputTextFlags kInputTextFlags =
 		ImGuiInputTextFlags_EnterReturnsTrue |
 		ImGuiInputTextFlags_CallbackCompletion |
 		ImGuiInputTextFlags_CallbackHistory |
@@ -27,44 +29,41 @@ namespace Unnamed {
 	/// @brief コンストラクタ
 	ConsoleUI::ConsoleUI(
 		ConsoleSystem* consoleSystem
-	) : mConsoleSystem(consoleSystem) {
-#ifdef _DEBUG
-		bool isNewArg = false;
-		for (int i = 1; i < __argc; ++i) {
-			// wWinMainの場合は__wargvらしい  へぇー(x512)
-			if (__wargv[i] && std::wcscmp(__wargv[i], L"-new") == 0) {
-				isNewArg = true;
-				break;
-			}
-		}
-		mIsImGuiInitialized = !isNewArg;
-#else
-		mIsImGuiInitialized = false;
-#endif
-	}
+	) : mConsoleSystem(consoleSystem) {}
+
+	void ConsoleUI::Init() const {}
 
 	/// @brief コンソールUIを表示します。
 	/// @details ImGuiのコンテキスト内で呼び出し
 	void ConsoleUI::Show() {
-		if (mIsImGuiInitialized) {
-			ImGui::Begin("Console##ConsoleUI", nullptr, kWindowFlags);
+		ImGui::Begin("Console##ConsoleUI", nullptr, kWindowFlags);
 
-			constexpr ImGuiChildFlags childFlags =
-				ImGuiChildFlags_ResizeX |
-				ImGuiChildFlags_FrameStyle;
+		// このウィンドウで使えるサイズを取得
+		const auto region = ImGui::GetWindowContentRegionMax();
 
-			// このウィンドウで使えるサイズを取得
-			const auto region = ImGui::GetWindowContentRegionMax();
+		// 子ウィンドウの高さを計算
+		const float childHeight = region.y -
+		                          ImGui::GetFrameHeightWithSpacing() * 2.0f;
 
-			// 子ウィンドウの高さを計算
-			const float childHeight = region.y -
-				ImGui::GetFrameHeightWithSpacing() * 2.0f;
+		static ConsoleLogText selection;
+		static bool           hasSelection = false;
 
-			ImGui::BeginChild(
-				"Output##ConsoleUI", {region.x * 0.5f, childHeight}, childFlags
+		if (
+			ImGui::BeginTable(
+				"Show##ConsoleUI", 1,
+				ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY |
+				ImGuiTableFlags_ScrollX | ImGuiTableFlags_SizingFixedFit,
+				{region.x, childHeight}
+			)
+		) {
+			ImGui::TableSetupScrollFreeze(0, 1); // ヘッダーを固定
+			ImGui::TableSetupColumn(
+				"Log", ImGuiTableColumnFlags_WidthStretch
 			);
+			ImGui::TableHeadersRow();
 
-			static ConsoleLogText selection;
+			// フィルタ後のインデックス用
+			int visibleIndex = 0;
 
 			for (
 				auto it = mConsoleSystem->GetLogBuffer().begin();
@@ -72,16 +71,14 @@ namespace Unnamed {
 				++it
 			) {
 				const auto& buffer = *it;
-				std::string display;
-				if (!buffer.channel.empty()) {
-					display =
-						"[" + buffer.channel + "] " + // チャンネル名
-						buffer.message;               // メッセージ
-				} else {
-					display = buffer.message;
-				}
 
+				std::string display = buffer.message;
 				display += "##" + std::to_string(it.Index()); // ユニーク ID 用
+
+				ImGui::TableNextRow();
+
+				// ログメッセージの列
+				ImGui::TableSetColumnIndex(0);
 
 				// テキストの色を設定
 				PushTextColor(buffer);
@@ -90,66 +87,75 @@ namespace Unnamed {
 				ImGui::PushID(static_cast<int>(it.Index()));
 				if (ImGui::Selectable(display.c_str(), false)) {
 					selection = buffer;
+					hasSelection = true;
 				}
 				ImGui::PopID();
 
 				ImGui::PopStyleColor();
+
+				visibleIndex++;
 			}
 
 			CheckScroll();
+			ImGui::EndTable();
+		}
 
-			ImGui::EndChild();
+		ImGui::Begin("About");
+		ImGui::BeginChild(
+			"About##ConsoleUI", ImVec2(0, childHeight),
+			ImGuiChildFlags_AlwaysUseWindowPadding |
+			ImGuiChildFlags_FrameStyle
+		);
 
-			ImGui::SameLine();
+		const std::string bufferInfo = hasSelection ? std::format(
+			"File: {}\nLine: {}\nColumn: {}\nFunc: {}",
+			selection.location.file_name(),
+			selection.location.line(),
+			selection.location.column(),
+			selection.location.function_name()
+		) : "(no selection)";
 
-			ImGui::BeginChild(
-				"About##ConsoleUI", ImVec2(0, childHeight),
-				ImGuiChildFlags_AlwaysUseWindowPadding |
-				ImGuiChildFlags_FrameStyle
-			);
+		ImGui::TextWrapped(bufferInfo.data());
+		const std::string command = hasSelection ? std::format(
+			"--line {} --column {} {}",
+			selection.location.line(),
+			selection.location.column(),
+			selection.location.file_name()
+		) : std::string{};
 
-			const std::string bufferInfo = std::format(
-				"File: {}\nLine: {}\nColumn: {}\nFunc: {}",
-				selection.location.file_name(),
-				selection.location.line(),
-				selection.location.column(),
-				selection.location.function_name()
-			);
-
-			ImGui::TextWrapped(bufferInfo.data());
-			const std::string command = std::format(
-				"Rider.cmd --line {} --column {} {}",
-				selection.location.line(),
-				selection.location.column(),
-				selection.location.file_name()
-			);
-
+		if (hasSelection) {
 			ImGui::Text(command.c_str());
 			if (
 				ImGuiWidgets::IconButton(
 					StrUtil::ConvertToUtf8(kIconNANKABOX).c_str(),
-					"Open in Rider"
+					"Open in Rider", ImVec2(128.0f, 32.0f), 1.0f, ImGuiDir_Right
 				)
 			) {
-				system(command.c_str());
+				ShellExecuteW(
+					nullptr,
+					L"open",
+					L"Rider.cmd",
+					StrUtil::ToWString(command).c_str(),
+					nullptr,
+					SW_HIDE
+				);
 			}
-
-			ImGui::EndChild();
-
-			DrawInputText();
-
-			ImGui::SameLine();
-
-			DrawSubmitButton();
-
-			ImGui::End();
 		}
+
+		ImGui::EndChild();
+		ImGui::End();
+
+		DrawInputText();
+
+		ImGui::SameLine();
+
+		DrawSubmitButton();
+
+		ImGui::End();
 	}
 
 	/// @brief コンソールが更新された際のイベント
-	void ConsoleUI::OnConsoleUpdate() {
-		mWishScrollToBottom = true;
-	}
+	void ConsoleUI::OnConsoleUpdate() { mWishScrollToBottom = true; }
 
 	/// @brief 入力テキストボックスを描画します。
 	void ConsoleUI::DrawInputText() {
@@ -177,18 +183,15 @@ namespace Unnamed {
 				IM_ARRAYSIZE(mInputBuffer),
 				size,
 				kInputTextFlags,
-				reinterpret_cast<ImGuiInputTextCallback>(InputTextCallback)
+				InputTextCallback,
+				this
 			)
-		) {
-			Submit();
-		}
+		) { Submit(); }
 	}
 
 	/// @brief 送信ボタンを描画します。
 	void ConsoleUI::DrawSubmitButton() {
-		if (ImGui::Button(kSubmitButtonText)) {
-			Submit();
-		}
+		if (ImGui::Button(kSubmitButtonText)) { Submit(); }
 	}
 
 	/// @brief コマンドが送信された際のイベント
@@ -205,72 +208,77 @@ namespace Unnamed {
 		if (
 			mWishScrollToBottom &&
 			ImGui::GetScrollY() >= ImGui::GetScrollMaxY()
-		) {
-			ImGui::SetScrollHereY(1.0f);
-		}
+		) { ImGui::SetScrollHereY(1.0f); }
 
 		if (ImGui::GetScrollY() < ImGui::GetScrollMaxY()) {
 			mWishScrollToBottom = false;
-		} else {
-			mWishScrollToBottom = true;
-		}
+		} else { mWishScrollToBottom = true; }
 	}
 
 	/// @brief コンソールログのテキストの色を設定します。
 	/// @param buffer コンソールログのテキスト情報
 	void ConsoleUI::PushTextColor(const ConsoleLogText& buffer) {
 		switch (buffer.level) {
-		case LogLevel::None:
-			ImGui::PushStyleColor(ImGuiCol_Text, ToImVec4(kConTextColor));
-			break;
-		case LogLevel::Info:
-			ImGui::PushStyleColor(ImGuiCol_Text, ToImVec4(kConTextColor));
-			break;
-		case LogLevel::Dev:
-			ImGui::PushStyleColor(ImGuiCol_Text, ToImVec4(kConTextColorDev));
-			break;
-		case LogLevel::Warning:
-			ImGui::PushStyleColor(ImGuiCol_Text, ToImVec4(kConTextColorWarn));
-			break;
-		case LogLevel::Error:
-			ImGui::PushStyleColor(ImGuiCol_Text, ToImVec4(kConTextColorError));
-			break;
-		case LogLevel::Fatal:
-			ImGui::PushStyleColor(ImGuiCol_Text, ToImVec4(kConTextColorFatal));
-			break;
-		case LogLevel::Execute:
-			ImGui::PushStyleColor(ImGuiCol_Text, ToImVec4(kConTextColorExec));
-			break;
-		case LogLevel::Waiting:
-			ImGui::PushStyleColor(ImGuiCol_Text, ToImVec4(kConTextColorWait));
-			break;
-		case LogLevel::Success:
-			ImGui::PushStyleColor(
-				ImGuiCol_Text, ToImVec4(kConTextColorSuccess)
-			);
-			break;
+			case LogLevel::None: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColor)
+				);
+				break;
+			case LogLevel::Info: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColor)
+				);
+				break;
+			case LogLevel::Dev: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColorDev)
+				);
+				break;
+			case LogLevel::Warning: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColorWarn)
+				);
+				break;
+			case LogLevel::Error: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColorError)
+				);
+				break;
+			case LogLevel::Fatal: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColorFatal)
+				);
+				break;
+			case LogLevel::Execute: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColorExec)
+				);
+				break;
+			case LogLevel::Waiting: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColorWait)
+				);
+				break;
+			case LogLevel::Success: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColorSuccess)
+				);
+				break;
 		}
 	}
 
 	/// @brief インプットテキストからのコールバック
-	int ConsoleUI::InputTextCallback(const ImGuiInputTextCallbackData* data) {
+	int ConsoleUI::InputTextCallback(ImGuiInputTextCallbackData* data) {
 		switch (data->EventFlag) {
-		case ImGuiInputTextFlags_CallbackCompletion: {
-			Msg("callback", "completion");
-		}
-		break;
-
-		case ImGuiInputTextFlags_CallbackHistory:
-			Msg("callback", "history");
+			case ImGuiInputTextFlags_CallbackCompletion: {
+				Msg("callback", "completion");
+			}
 			break;
 
-		case ImGuiInputTextFlags_CallbackEdit:
-			Msg("callback", "edit");
-			break;
+			case ImGuiInputTextFlags_CallbackHistory:
+				Msg("callback", "history");
+				break;
 
-		case ImGuiInputTextFlags_CallbackResize:
+			case ImGuiInputTextFlags_CallbackEdit:
+				Msg("callback", "edit");
+				break;
+
+			case ImGuiInputTextFlags_CallbackResize: {
+
+			}
 			break;
-		default: ;
+			default: ;
 		}
 		return 0;
 	}

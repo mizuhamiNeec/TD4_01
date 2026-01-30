@@ -4,8 +4,8 @@
 #include <imgui.h>
 #else
 #endif
-#include <wrl/client.h>
 #include <d3d12.h>
+#include <wrl/client.h>
 
 class SrvManager;
 class D3D12;
@@ -20,8 +20,7 @@ public:
 	static void NewFrame();
 	void        EndFrame();
 	void        Shutdown();
-	void        Recreate() const;
-
+	
 	SrvManager* GetSrvManager() const;
 
 private:

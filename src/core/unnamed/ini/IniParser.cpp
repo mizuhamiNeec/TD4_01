@@ -8,16 +8,17 @@ namespace Unnamed {
 	/// @param filePath INIファイルのパス
 	/// @return セクション名とキー・値のペアのマップ
 	std::unordered_map<std::string, std::unordered_map<
-		                   std::string, std::string>>
-	IniParser::ParseIniFile(
+		                   std::string, std::string>> IniParser::ParseIniFile(
 		const std::string& filePath
 	) {
 		std::unordered_map<std::string, std::unordered_map<
 			                   std::string, std::string>> iniData;
 		std::ifstream                                     inputFile(filePath);
 		if (!inputFile.is_open()) {
-			Console::Print("ファイルを開けませんでした: " + filePath + "\n",
-			               kConTextColorError);
+			Console::Print(
+				"ファイルを開けませんでした: " + filePath + "\n",
+				kConTextColorError
+			);
 			return iniData;
 		}
 
@@ -26,9 +27,7 @@ namespace Unnamed {
 		while (std::getline(inputFile, line)) {
 			// コメント、空行は無視
 			line = StrUtil::TrimSpaces(line);
-			if (line.empty() || line[0] == ';') {
-				continue;
-			}
+			if (line.empty() || line[0] == ';') { continue; }
 
 			// セクションの判定
 			if (line.front() == '[' && line.back() == ']') {
@@ -42,7 +41,8 @@ namespace Unnamed {
 				std::string key =
 					StrUtil::TrimSpaces(line.substr(0, equalsPos));
 				std::string value = StrUtil::TrimSpaces(
-					line.substr(equalsPos + 1));
+					line.substr(equalsPos + 1)
+				);
 				iniData[currentSection][key] = value;
 			}
 		}

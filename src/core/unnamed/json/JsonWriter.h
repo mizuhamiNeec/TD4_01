@@ -63,7 +63,8 @@ namespace Unnamed {
 			if (cur->is_object()) {
 				if (!mPendingKey.has_value()) {
 					throw std::runtime_error(
-						"Key() must be called before writing a value inside an object");
+						"Key() must be called before writing a value inside an object"
+					);
 				}
 				(*cur)[*mPendingKey] = value;
 				mPendingKey.reset();
@@ -74,7 +75,8 @@ namespace Unnamed {
 				return;
 			}
 			throw std::runtime_error(
-				"Current JSON container is neither object nor array");
+				"Current JSON container is neither object nor array"
+			);
 		}
 
 		/// @brief ファイルに保存する

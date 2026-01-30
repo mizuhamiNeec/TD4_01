@@ -3,14 +3,15 @@
 #include <fstream>
 #include <json.hpp>
 
+#include <engine/Camera/CameraManager.h>
 #include <engine/Components/Camera/CameraComponent.h>
 #include <engine/OldConsole/Console.h>
-#include <engine/Camera/CameraManager.h>
 
 using json = nlohmann::json;
 
 std::unique_ptr<WeaponData> WeaponData::LoadFromJson(
-	const std::string& jsonPath) {
+	const std::string& jsonPath
+) {
 	std::ifstream file(jsonPath);
 	json          j;
 	file >> j;
@@ -30,14 +31,11 @@ std::unique_ptr<WeaponData> WeaponData::LoadFromJson(
 //-----------------------------------------------------------------------------
 // HitscanModule
 //-----------------------------------------------------------------------------
-void HitscanModule::Execute([[maybe_unused]] Entity& entity) {
-}
+void HitscanModule::Execute([[maybe_unused]] Entity& entity) {}
 
-void HitscanModule::Update([[maybe_unused]] const float& deltaTime) {
-}
+void HitscanModule::Update([[maybe_unused]] const float& deltaTime) {}
 
-void HitscanModule::DrawInspectorImGui() {
-}
+void HitscanModule::DrawInspectorImGui() {}
 
 namespace {
 	std::unique_ptr<IWeaponModule> CreateModule(const WeaponData& d) {
@@ -45,8 +43,10 @@ namespace {
 			return std::make_unique<HitscanModule>(d);
 		}
 		// ここに他のモジュールの作成処理を追加
-		Console::Print("Unknown weapon module: " + d.primaryModule,
-		               Vec4::red, Channel::Game);
+		Console::Print(
+			"Unknown weapon module: " + d.primaryModule,
+			Vec4::red, Channel::Game
+		);
 		return nullptr;
 	}
 }
@@ -54,15 +54,16 @@ namespace {
 //-----------------------------------------------------------------------------
 // WeaponComponent
 //-----------------------------------------------------------------------------
-WeaponComponent::~WeaponComponent() {
-}
+WeaponComponent::~WeaponComponent() {}
 
 WeaponComponent::WeaponComponent(const std::string& weaponJsonPath) :
 	mWeaponData(WeaponData::LoadFromJson(weaponJsonPath)) {
 	if (!mWeaponData) {
-		Console::Print("WeaponComponent: Failed to load weapon data from "
-		               "JSON file: " + weaponJsonPath,
-		               Vec4::red, Channel::Game);
+		Console::Print(
+			"WeaponComponent: Failed to load weapon data from "
+			"JSON file: " + weaponJsonPath,
+			Vec4::red, Channel::Game
+		);
 		return;
 	}
 
@@ -71,9 +72,7 @@ WeaponComponent::WeaponComponent(const std::string& weaponJsonPath) :
 	mCurrentClip   = mWeaponData->clipSize;
 }
 
-void WeaponComponent::OnAttach(Entity& owner) {
-	Component::OnAttach(owner);
-}
+void WeaponComponent::OnAttach(Entity& owner) { Component::OnAttach(owner); }
 
 void WeaponComponent::Update([[maybe_unused]] float deltaTime) {
 	mFiredThisFrame = false; // 今フレームで発射したかどうかをリセット
@@ -120,14 +119,12 @@ void WeaponComponent::PullTrigger() {
 	}
 }
 
-void WeaponComponent::ReleaseTrigger() {
-	mTriggerHeld = false;
-}
+void WeaponComponent::ReleaseTrigger() { mTriggerHeld = false; }
 
 void WeaponComponent::Reload() {
 	if (mIsReloading ||
-		mCurrentAmmo <= 0 ||
-		mCurrentClip == mWeaponData->clipSize) {
+	    mCurrentAmmo <= 0 ||
+	    mCurrentClip == mWeaponData->clipSize) {
 		// すでにリロード中、または弾薬がない、またはクリップが満タンの場合は何もしない
 		return;
 	}
@@ -140,8 +137,8 @@ void WeaponComponent::Reload() {
 
 bool WeaponComponent::CanFire() const {
 	return (mCurrentClip > 0) &&
-		(mTimeSinceShot >= mWeaponData->fireRate) &&
-		!mIsReloading;
+	       (mTimeSinceShot >= mWeaponData->fireRate) &&
+	       !mIsReloading;
 }
 
 Vec3 WeaponComponent::GetHitPosition() const {
@@ -152,14 +149,10 @@ Vec3 WeaponComponent::GetHitNormal() const {
 	return dynamic_cast<HitscanModule*>(mPrimaryModule.get())->GetHitNormal();
 }
 
-bool WeaponComponent::HasFiredThisFrame() const {
-	return mFiredThisFrame;
-}
+bool WeaponComponent::HasFiredThisFrame() const { return mFiredThisFrame; }
 
-Entity* WeaponComponent::GetOwner() const {
-	return Component::GetOwner();
-}
+Entity* WeaponComponent::GetOwner() const { return Component::GetOwner(); }
 
 void WeaponComponent::LoadFromJson(
-	[[maybe_unused]] const std::string& jsonPath) {
-}
+	[[maybe_unused]] const std::string& jsonPath
+) {}

@@ -24,13 +24,13 @@ public:
 	/// @brief コンストラクタ
 	/// @param name エンティティ名
 	/// @param type エンティティの種類（デフォルト: RuntimeOnly）
-	explicit Entity(std::string       name,
-	                const EntityType& type = EntityType::RuntimeOnly) :
+	explicit Entity(
+		std::string       name,
+		const EntityType& type = EntityType::RuntimeOnly
+	) :
 		mScene(std::make_unique<SceneComponent>()),
 		mEntityType(type),
-		mName(std::move(name)) {
-		mScene->OnAttach(*this);
-	}
+		mName(std::move(name)) { mScene->OnAttach(*this); }
 
 	/// @brief デストラクタ
 	~Entity();
@@ -157,8 +157,10 @@ private:
 
 template <typename T, typename... Args>
 T* Entity::AddComponent(Args&&... args) {
-	static_assert(std::is_base_of_v<Component, T>,
-	              "T must derive from Component");
+	static_assert(
+		std::is_base_of_v<Component, T>,
+		"T must derive from Component"
+	);
 	auto component = std::make_unique<T>(std::forward<Args>(args)...);
 	T*   rawPtr    = component.get();
 	mComponents.emplace_back(std::move(component));
@@ -178,8 +180,10 @@ T* Entity::GetComponent() {
 
 template <typename T>
 std::vector<T*> Entity::GetComponents() {
-	static_assert(std::is_base_of_v<Component, T>,
-	              "T must derive from Component");
+	static_assert(
+		std::is_base_of_v<Component, T>,
+		"T must derive from Component"
+	);
 	std::vector<T*> result;
 	for (const auto& component : mComponents) {
 		if (auto castedComponent = dynamic_cast<T*>(component.get())) {
@@ -191,20 +195,22 @@ std::vector<T*> Entity::GetComponents() {
 
 template <typename T>
 bool Entity::HasComponent() const {
-	static_assert(std::is_base_of_v<Component, T>,
-	              "T must derive from Component");
+	static_assert(
+		std::is_base_of_v<Component, T>,
+		"T must derive from Component"
+	);
 	for (const auto& component : mComponents) {
-		if (dynamic_cast<T*>(component.get())) {
-			return true;
-		}
+		if (dynamic_cast<T*>(component.get())) { return true; }
 	}
 	return false;
 }
 
 template <typename T>
 bool Entity::RemoveComponent() {
-	static_assert(std::is_base_of_v<Component, T>,
-	              "T must derive from Component");
+	static_assert(
+		std::is_base_of_v<Component, T>,
+		"T must derive from Component"
+	);
 	for (auto it = mComponents.begin(); it != mComponents.end(); ++it) {
 		if (auto* castedComponent = dynamic_cast<T*>(it->get())) {
 			// コンポーネントを削除する前にOnDetachを呼ぶ

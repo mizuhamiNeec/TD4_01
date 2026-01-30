@@ -1,7 +1,7 @@
 ﻿#include <pch.h>
 
-#include <engine/unnamed/subsystem/console/concommand/base/UnnamedConCommandBase.h>
 #include <engine/unnamed/subsystem/console/ConsoleFlags.h>
+#include <engine/unnamed/subsystem/console/concommand/base/UnnamedConCommandBase.h>
 
 namespace Unnamed {
 	/// @brief FCVAR列挙型を文字列に変換します。
@@ -9,20 +9,20 @@ namespace Unnamed {
 	/// @return 変換された文字列
 	const char* ToString(FCVAR e) {
 		switch (e) {
-		case FCVAR::NONE: return "NONE";
-		case FCVAR::UNREGISTERED: return "UNREGISTERED";
-		case FCVAR::DEVELOPMENTONLY: return "DEVELOPMENTONLY";
-		case FCVAR::HIDDEN: return "HIDDEN";
-		case FCVAR::PROTECTED: return "PROTECTED";
-		case FCVAR::ARCHIVE: return "ARCHIVE";
-		case FCVAR::NOTIFY: return "NOTIFY";
-		case FCVAR::USERINFO: return "USERINFO";
-		case FCVAR::CHEAT: return "CHEAT";
-		case FCVAR::PRINTABLEONLY: return "PRINTABLEONLY";
-		case FCVAR::UNLOGGED: return "UNLOGGED";
-		case FCVAR::REPLICATED: return "REPLICATED";
-		case FCVAR::NOT_CONNECTED: return "NOT_CONNECTED";
-		default: return "unknown";
+			case FCVAR::NONE: return "NONE";
+			case FCVAR::UNREGISTERED: return "UNREGISTERED";
+			case FCVAR::DEVELOPMENTONLY: return "DEVELOPMENTONLY";
+			case FCVAR::HIDDEN: return "HIDDEN";
+			case FCVAR::PROTECTED: return "PROTECTED";
+			case FCVAR::ARCHIVE: return "ARCHIVE";
+			case FCVAR::NOTIFY: return "NOTIFY";
+			case FCVAR::USERINFO: return "USERINFO";
+			case FCVAR::CHEAT: return "CHEAT";
+			case FCVAR::PRINTABLEONLY: return "PRINTABLEONLY";
+			case FCVAR::UNLOGGED: return "UNLOGGED";
+			case FCVAR::REPLICATED: return "REPLICATED";
+			case FCVAR::NOT_CONNECTED: return "NOT_CONNECTED";
+			default: return "unknown";
 		}
 	}
 
@@ -51,16 +51,14 @@ namespace Unnamed {
 
 	/// @brief フラグを追加します。
 	/// @param flag 追加するフラグ
-	void UnnamedConCommandBase::AddFlag(const FCVAR& flag) {
-		mFlags |= flag;
-	}
+	void UnnamedConCommandBase::AddFlag(const FCVAR& flag) { mFlags |= flag; }
 
 	/// @brief フラグを削除します。
 	/// @param flag 削除するフラグ 
 	void UnnamedConCommandBase::RemoveFlag(const FCVAR& flag) {
 		if (HasFlags(flag)) {
 			mFlags = static_cast<FCVAR>(static_cast<int>(mFlags) & ~static_cast<
-				int>(flag));
+				                            int>(flag));
 		} else {
 			Warning(
 				"ConCommand",
@@ -72,9 +70,7 @@ namespace Unnamed {
 
 	/// @brief 名前を取得します。
 	/// @return 名前
-	std::string_view UnnamedConCommandBase::GetName() const {
-		return mName;
-	}
+	std::string_view UnnamedConCommandBase::GetName() const { return mName; }
 
 	/// @brief 説明を取得します。
 	/// @return 説明

@@ -20,11 +20,9 @@ namespace Unnamed {
 		static std::optional<InputKey> FromString(std::string_view);
 		static std::string_view        ToString(const InputKey& key);
 
-		static const std::unordered_map<std::string, InputKey>&
-		NameToKey();
+		static const std::unordered_map<std::string, InputKey>& NameToKey();
 		static const std::unordered_map<
-			InputKey, std::string_view, KeyHash>&
-		KeyToName();
+			InputKey, std::string_view, KeyHash>& KeyToName();
 
 	private:
 		static std::string Normalize(std::string_view str);

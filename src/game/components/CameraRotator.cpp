@@ -7,8 +7,7 @@
 /**
  * @brief デストラクタ
  */
-CameraRotator::~CameraRotator() {
-}
+CameraRotator::~CameraRotator() {}
 
 /**
  * @brief エンティティにアタッチされた際の初期化処理
@@ -49,18 +48,21 @@ void CameraRotator::Update([[maybe_unused]] float deltaTime) {
 		GetValueAsFloat();
 
 	mPitch += delta.y * sensitivity * m_pitch;
-	mYaw += delta.x * sensitivity * m_yaw;
+	mYaw   += delta.x * sensitivity * m_yaw;
 
 	// ピッチをクランプ（上下回転の制限）
 	mPitch = std::clamp(mPitch, -cl_pitchup, cl_pitchdown);
 
 	// クォータニオンを生成（回転順序: ヨー → ピッチ → ロール）
 	Quaternion yawRotation = Quaternion::AxisAngle(
-		Vec3::up, mYaw * Math::deg2Rad);
+		Vec3::up, mYaw * Math::deg2Rad
+	);
 	Quaternion pitchRotation = Quaternion::AxisAngle(
-		Vec3::right, (mPitch + mAnimationPitchOffset) * Math::deg2Rad);
+		Vec3::right, (mPitch + mAnimationPitchOffset) * Math::deg2Rad
+	);
 	Quaternion rollRotation = Quaternion::AxisAngle(
-		Vec3::forward, mAnimationRollOffset * Math::deg2Rad);
+		Vec3::forward, mAnimationRollOffset * Math::deg2Rad
+	);
 
 	// 回転を合成して設定（アニメーションオフセットを含む）
 	Quaternion finalRotation = yawRotation * pitchRotation * rollRotation;
@@ -73,8 +75,10 @@ void CameraRotator::Update([[maybe_unused]] float deltaTime) {
  */
 void CameraRotator::DrawInspectorImGui() {
 #ifdef _DEBUG
-	if (ImGui::CollapsingHeader("Camera Rotator",
-	                            ImGuiTreeNodeFlags_DefaultOpen)) {
+	if (ImGui::CollapsingHeader(
+		"Camera Rotator",
+		ImGuiTreeNodeFlags_DefaultOpen
+	)) {
 		ImGui::Text("Pitch: %.2f", mPitch);
 		ImGui::Text("Yaw: %.2f", mYaw);
 	}

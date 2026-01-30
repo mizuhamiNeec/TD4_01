@@ -197,7 +197,8 @@ namespace Unnamed::Gui {
 		virtual void LoadFromJson(const JsonReader& reader);
 
 		static std::unique_ptr<UiWidget> CreateFromJson(
-			const JsonReader& reader);
+			const JsonReader& reader
+		);
 
 	protected:
 		/// @brief レイアウトを更新します。

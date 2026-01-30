@@ -7,9 +7,7 @@ namespace Unnamed::Gui {
 
 	UiPanel::~UiPanel() = default;
 
-	void UiPanel::SetBackgroundColor(const Color& c) {
-		mBackgroundColor = c;
-	}
+	void UiPanel::SetBackgroundColor(const Color& c) { mBackgroundColor = c; }
 
 	const Color& UiPanel::GetBackgroundColor() const {
 		return mBackgroundColor;
@@ -17,18 +15,12 @@ namespace Unnamed::Gui {
 
 	void UiPanel::SetCornerRadius(const float r) { mCornerRadius = r; }
 
-	float UiPanel::GetCornerRadius() const {
-		return mCornerRadius;
-	}
+	float UiPanel::GetCornerRadius() const { return mCornerRadius; }
 
-	const char* UiPanel::GetTypeName() const {
-		return "Panel";
-	}
+	const char* UiPanel::GetTypeName() const { return "Panel"; }
 
 	void UiPanel::BuildDrawCommands(std::vector<UiDrawCommand>& out) const {
-		if (!IsVisible()) {
-			return;
-		}
+		if (!IsVisible()) { return; }
 
 		// 背景を描画
 		const Rect& r = GetGlobalRect();

@@ -68,9 +68,7 @@ namespace UPhysics {
 		SAHSplit(start, end, axis, mid);
 
 		// 分割失敗
-		if (mid == start || mid == end) {
-			mid = (start + end) / 2;
-		}
+		if (mid == start || mid == end) { mid = (start + end) / 2; }
 
 		// 子を深度優先でプッシュ
 		const uint32_t left  = Recurse(start, mid, depth + 1);
@@ -112,8 +110,10 @@ namespace UPhysics {
 		// バケツに三角形を振り分け
 		for (uint32_t i = start; i < end; ++i) {
 			const float c = (&mTriInfos[mTriIndices[i]].center.x)[axis];
-			const int   b = std::min(kBucket - 1,
-			                       static_cast<int>((c - minC) * scale));
+			const int   b = std::min(
+				kBucket - 1,
+				static_cast<int>((c - minC) * scale)
+			);
 			buckets[b].bounds.Expand(mTriInfos[mTriIndices[i]].bounds);
 			buckets[b].count++;
 		}
@@ -143,28 +143,32 @@ namespace UPhysics {
 		}
 		for (int i = 0; i < kBucket - 1; ++i) {
 			cost[i] = 0.125f +
-				(leftCount[i] ?
-					 left[i].SurfaceArea() * static_cast<float>(leftCount[i]) :
-					 0.0f) +
-				(rightCount[i] ?
-					 right[i].SurfaceArea() * static_cast<float>(rightCount[
-						 i]) :
-					 0.0f);
+			          (leftCount[i] ?
+				           left[i].SurfaceArea() * static_cast<float>(leftCount[
+					           i]) :
+				           0.0f) +
+			          (rightCount[i] ?
+				           right[i].SurfaceArea() * static_cast<float>(
+					           rightCount[
+						           i]) :
+				           0.0f);
 		}
 
 		// 最小コストのバケツを選択
 		const int best = static_cast<int>(std::min_element(
-				cost, cost + kBucket - 1) -
-			cost);
+			                                  cost, cost + kBucket - 1
+		                                  ) -
+		                                  cost);
 		const float splitPos = minC + static_cast<float>(best + 1) / scale;
 
 		const size_t midRaw = std::partition(
-			mTriIndices.begin() + start,
-			mTriIndices.begin() + end,
-			[&](const uint32_t index) {
-				return (&mTriInfos[index].center.x)[axis] < splitPos;
-			}
-		) - mTriIndices.begin();
+			                      mTriIndices.begin() + start,
+			                      mTriIndices.begin() + end,
+			                      [&](const uint32_t index) {
+				                      return (&mTriInfos[index].center.x)[axis]
+				                             < splitPos;
+			                      }
+		                      ) - mTriIndices.begin();
 		outMid = static_cast<uint32_t>(midRaw);
 	}
 }

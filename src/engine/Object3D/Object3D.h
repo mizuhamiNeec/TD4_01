@@ -1,9 +1,9 @@
 #pragma once
 
-#include <runtime/core/math/Math.h>
-#include <engine/renderer/Structs.h>
 #include <engine/Model/Model.h>
 #include <engine/Model/ModelCommon.h>
+#include <engine/renderer/Structs.h>
+#include <runtime/core/math/Math.h>
 
 #include <memory>
 
@@ -48,9 +48,7 @@ public:
 	void SetModel(Model* model);
 	void SetModel(const std::string& filePath);
 
-	void SetCamera(CameraComponent* camera) {
-		this->mCamera = camera;
-	}
+	void SetCamera(CameraComponent* camera) { this->mCamera = camera; }
 
 	void SetScale(const Vec3& scale);
 	void SetRot(const Vec3& newRot);

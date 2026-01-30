@@ -6,14 +6,10 @@
 /// @param callback コールバック関数
 void ColliderComponent::RegisterOnOverlapBeginCallback(
 	const OnOverlapBegin& callback
-) {
-	mOnOverlapBeginCallbacks.emplace_back(callback);
-}
+) { mOnOverlapBeginCallbacks.emplace_back(callback); }
 
 /// @brief オーバーラップ終了コールバックを登録します。
 /// @param callback コールバック関数
 void ColliderComponent::RegisterOnOverlapEndCallback(
 	const OnOverlapEnd& callback
-) {
-	mOnOverlapEndCallbacks.emplace_back(callback);
-}
+) { mOnOverlapEndCallbacks.emplace_back(callback); }

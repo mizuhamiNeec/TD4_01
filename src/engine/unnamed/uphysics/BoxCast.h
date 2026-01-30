@@ -5,8 +5,9 @@ namespace UPhysics {
 	/// @brief ボックスキャスト構造体
 	struct BoxCast final : ShapeCast {
 		[[nodiscard]] Unnamed::AABB ExpandNode(
-			const Unnamed::AABB& nodeBounds) const override;
-		
+			const Unnamed::AABB& nodeBounds
+		) const override;
+
 		bool TestTriangle(
 			const Unnamed::Triangle& triangle,
 			const Vec3&              dir,

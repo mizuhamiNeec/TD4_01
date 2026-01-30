@@ -15,7 +15,7 @@ template <>
 struct std::hash<Unnamed::InputKey> {
 	size_t operator()(const Unnamed::InputKey& key) const noexcept {
 		return hash<uint32_t>()(static_cast<uint32_t>(key.device)) ^ hash<
-			uint32_t>()(key.code << 1);
+			       uint32_t>()(key.code << 1);
 	}
 };
 
@@ -88,6 +88,8 @@ namespace Unnamed {
 			const INPUT_AXIS&  axisType,
 			const float&       scale = 1.0f
 		);
+
+		void Unbind(const std::string& action);
 
 		void HandleConsoleAction(
 			const std::string& action, const bool& bPressed

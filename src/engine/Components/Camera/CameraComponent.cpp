@@ -1,6 +1,6 @@
-#include <engine/Components/Camera/CameraComponent.h>
 #include <engine/Camera/CameraManager.h>
-#include <engine/Debug/Debug.h>
+#include <engine/Components/Camera/CameraComponent.h>
+#include <engine/Debug/DebugDraw.h>
 #include <engine/Entity/Entity.h>
 #include <engine/ImGui/ImGuiManager.h>
 
@@ -44,8 +44,8 @@ void CameraComponent::Update([[maybe_unused]] float deltaTime) {
 /// @brief 描画処理を行います
 /// @param commandList 描画コマンドリスト
 void CameraComponent::Render(
-	[[maybe_unused]] ID3D12GraphicsCommandList* commandList) {
-}
+	[[maybe_unused]] ID3D12GraphicsCommandList* commandList
+) {}
 
 /// @brief インスペクターにImGuiウィジェットを描画します
 void CameraComponent::DrawInspectorImGui() {
@@ -62,10 +62,10 @@ void CameraComponent::DrawInspectorImGui() {
 		}
 
 		float fovTmp = mFov * Math::rad2Deg;
-		if (ImGui::DragFloat("FOV##cam", &fovTmp, 0.1f, kFovMin * Math::rad2Deg,
-		                     kFovMax * Math::rad2Deg, "%.2f [deg]")) {
-			SetFovVertical(fovTmp * Math::deg2Rad);
-		}
+		if (ImGui::DragFloat(
+			"FOV##cam", &fovTmp, 0.1f, kFovMin * Math::rad2Deg,
+			kFovMax * Math::rad2Deg, "%.2f [deg]"
+		)) { SetFovVertical(fovTmp * Math::deg2Rad); }
 
 		ImGui::DragFloat("ZNear##cam", &mZNear, 0.1f);
 		ImGui::DragFloat("ZFar##cam", &mZFar, 0.1f);
@@ -76,9 +76,7 @@ void CameraComponent::DrawInspectorImGui() {
 
 /// @brief 垂直視野角を取得します
 /// @return 垂直視野角[ラジアン]
-float CameraComponent::GetFovVertical() const {
-	return mFov;
-}
+float CameraComponent::GetFovVertical() const { return mFov; }
 
 /// @brief 垂直視野角を設定します
 /// @param newFovVertical 新しい垂直視野角[ラジアン]
@@ -88,51 +86,35 @@ void CameraComponent::SetFovVertical(const float newFovVertical) {
 
 /// @brief ニアクリップ距離を取得します
 /// @return ニアクリップ距離
-float CameraComponent::GetZNear() const {
-	return mZNear;
-}
+float CameraComponent::GetZNear() const { return mZNear; }
 
 /// @brief ニアクリップ距離を設定します
 /// @param newNearZ 新しいニアクリップ距離
-void CameraComponent::SetNearZ(const float newNearZ) {
-	mZNear = newNearZ;
-}
+void CameraComponent::SetNearZ(const float newNearZ) { mZNear = newNearZ; }
 
 /// @brief ファークリップ距離を取得します
 /// @return ファークリップ距離
-float CameraComponent::GetZFar() const {
-	return mZFar;
-}
+float CameraComponent::GetZFar() const { return mZFar; }
 
 /// @brief ファークリップ距離を設定します
 /// @param newFarZ 新しいファークリップ距離
-void CameraComponent::SetFarZ(const float newFarZ) {
-	mZFar = newFarZ;
-}
+void CameraComponent::SetFarZ(const float newFarZ) { mZFar = newFarZ; }
 
 /// @brief ビュー・プロジェクション行列を取得します
 /// @return ビュー・プロジェクション行列
-Mat4 CameraComponent::GetViewProjMat() {
-	return mViewProjMat;
-}
+Mat4 CameraComponent::GetViewProjMat() { return mViewProjMat; }
 
 /// @brief ビューマトリックスを取得します
 /// @return ビューマトリックス
-Mat4 CameraComponent::GetViewMat() {
-	return mViewMat;
-}
+Mat4 CameraComponent::GetViewMat() { return mViewMat; }
 
 /// @brief プロジェクションマトリックスを取得します
 /// @return プロジェクションマトリックス
-Mat4 CameraComponent::GetProjMat() {
-	return mProjMat;
-}
+Mat4 CameraComponent::GetProjMat() { return mProjMat; }
 
 /// @brief アスペクト比を取得します
 /// @return アスペクト比
-float CameraComponent::GetAspectRatio() {
-	return mAspectRatio;
-}
+float CameraComponent::GetAspectRatio() { return mAspectRatio; }
 
 /// @brief アスペクト比を設定します
 /// @param newAspectRatio 新しいアスペクト比
@@ -142,6 +124,4 @@ void CameraComponent::SetAspectRatio(const float newAspectRatio) {
 
 /// @brief ビューマトリックスを設定します
 /// @param mat4 新しいビューマトリックス
-void CameraComponent::SetViewMat(const Mat4& mat4) {
-	mViewMat = mat4;
-}
+void CameraComponent::SetViewMat(const Mat4& mat4) { mViewMat = mat4; }

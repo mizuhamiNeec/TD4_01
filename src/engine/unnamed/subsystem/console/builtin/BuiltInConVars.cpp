@@ -7,7 +7,6 @@ namespace Unnamed {
 		EngineConVar();
 		ClientConVar();
 		ServerConVar();
-		UserConVar();
 
 #ifdef _DEBUG
 		EditorConVar();
@@ -19,22 +18,6 @@ namespace Unnamed {
 			"im_configpath",
 			"./content/core/settings/imconfig.json",
 			FCVAR::NONE, "Path to ImGui config file."
-		);
-
-		static UnnamedConVar cl_showpos(
-			"cl_showpos", 0, FCVAR::NONE,
-			"Draw current position at top of screen (1 = meter, 2 = hammer)"
-		);
-
-		static UnnamedConVar cl_showfps(
-			"cl_showfps",
-#ifdef _DEBUG
-			2,
-#else
-			0,
-#endif
-			FCVAR::NONE,
-			"Draw fps meter (1 = fps, 2 = smooth)"
 		);
 	}
 
@@ -92,19 +75,73 @@ namespace Unnamed {
 		);
 	}
 
-	void UserConVar() {
-		// Game
+	void ClientConVar() {
+		static UnnamedConVar<std::string> name(
+			"name", "unnamed", FCVAR::NONE,
+			"Current user name."
+		);
+
+		static UnnamedConVar cl_showpos(
+			"cl_showpos",
+#ifdef _DEBUG
+			1,
+#else
+			0,
+#endif
+			FCVAR::CHEAT,
+			"Draw current position at top of screen (1 = meter, 2 = hammer)"
+		);
+
+		static UnnamedConVar cl_showfps(
+			"cl_showfps",
+#ifdef _DEBUG
+			2,
+#else
+			0,
+#endif
+			FCVAR::NONE,
+			"Draw fps meter (1 = fps, 2 = smooth)"
+		);
+
+		//---------------------------------------------------------------------
+		// Camera 
+		//---------------------------------------------------------------------
 		static UnnamedConVar sensitivity(
 			"sensitivity", 1.0f, FCVAR::ARCHIVE,
 			"Mouse sensitivity."
 		);
-
+		static UnnamedConVar cl_pitchdown(
+			"cl_pitchdown", 89.0f, FCVAR::CHEAT,
+			"Maximum downward pitch angle."
+		);
+		static UnnamedConVar cl_pitchup(
+			"cl_pitchup", 89.0f, FCVAR::CHEAT,
+			"Maximum upward pitch angle."
+		);
 		static UnnamedConVar cl_fov(
 			"cl_fov", 90.0f, FCVAR::ARCHIVE,
 			"Player Camera field of view."
 		);
+		static UnnamedConVar cl_maxfov(
+			"cl_maxfov", 179.9f, FCVAR::CHEAT,
+			"Maximum allowed field of view."
+		);
+		static UnnamedConVar cl_minfov(
+			"cl_minfov", 0.1f, FCVAR::CHEAT,
+			"Minimum allowed field of view."
+		);
 
+		//---------------------------------------------------------------------
+		// Map 
+		//---------------------------------------------------------------------
+		static UnnamedConVar r_mapextents(
+			"r_mapextents", 16384.0f, FCVAR::CHEAT,
+			"Set the max dimension for the map."
+		);
+
+		//---------------------------------------------------------------------
 		// Graphics
+		//---------------------------------------------------------------------
 		static UnnamedConVar fps_max(
 			"fps_max", 0, FCVAR::ARCHIVE,
 			"Frame rate limiter. 0 = unlimited."
@@ -113,28 +150,6 @@ namespace Unnamed {
 		static UnnamedConVar r_vsync(
 			"r_vsync", false, FCVAR::ARCHIVE,
 			"Vertical sync"
-		);
-
-		static UnnamedConVar r_gamma(
-			"r_gamma", 2.2f, FCVAR::ARCHIVE,
-			"Gamma correction value."
-		);
-	}
-
-	void ClientConVar() {
-		static UnnamedConVar cl_pitchdown(
-			"cl_pitchdown", 89.0f, FCVAR::CHEAT,
-			"Maximum downward pitch angle."
-		);
-
-		static UnnamedConVar cl_pitchup(
-			"cl_pitchup", 89.0f, FCVAR::CHEAT,
-			"Maximum upward pitch angle."
-		);
-
-		static UnnamedConVar r_mapextents(
-			"r_mapextents", 16384.0f, FCVAR::CHEAT,
-			"Set the max dimension for the map."
 		);
 	}
 

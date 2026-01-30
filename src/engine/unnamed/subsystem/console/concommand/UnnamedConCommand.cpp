@@ -19,11 +19,11 @@ namespace Unnamed {
 		const std::string_view& description,
 		const FCVAR&            flags,
 		OnComplete              onComplete
-	) : UnnamedConVarBase(name, description, flags),
+	) : UnnamedConCommandBase(name, description, flags),
 	    onExecute(std::move(callback)),
-	    onComplete(std::move(onComplete)) {
-		RegisterSelf();
-	}
+	    onComplete(std::move(onComplete)) { RegisterSelf(); }
+
+	bool UnnamedConCommand::IsCommand() const { return true; }
 
 	/// @brief 自身をコンソールシステムに登録します
 	void UnnamedConCommand::RegisterSelf() {

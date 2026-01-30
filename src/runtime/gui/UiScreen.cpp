@@ -2,22 +2,16 @@
 
 namespace Unnamed::Gui {
 	UiScreen::UiScreen(std::shared_ptr<UiDocument> document) : mDocument(
-		std::move(document)) {
-	}
+		std::move(document)
+	) {}
 
 	UiScreen::~UiScreen() = default;
 
-	UiDocument* UiScreen::GetDocument() const {
-		return mDocument.get();
-	}
+	UiDocument* UiScreen::GetDocument() const { return mDocument.get(); }
 
-	void UiScreen::OnShow() {
-	}
+	void UiScreen::OnShow() {}
 
-	void UiScreen::OnHide() {
-	}
+	void UiScreen::OnHide() {}
 
-	void UiScreen::OnUpdate(const float deltaTime) {
-		(void)deltaTime;
-	}
+	void UiScreen::OnUpdate(const float deltaTime) { (void)deltaTime; }
 }

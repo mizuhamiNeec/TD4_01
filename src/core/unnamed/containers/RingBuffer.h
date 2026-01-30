@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include <mutex>
+#include <optional>
 
 namespace Unnamed {
 	/// @brief スレッドセーフなリングバッファクラス
@@ -11,8 +12,9 @@ namespace Unnamed {
 	class RingBuffer {
 	public:
 		/// @brief デフォルトコンストラクタ
-		RingBuffer() : mHead(0), mTail(0), mSize(0) {
-		}
+		RingBuffer() : mHead(0),
+		               mTail(0),
+		               mSize(0) {}
 
 		/// @brief バッファに要素を追加する
 		/// @param value 追加する要素
@@ -20,11 +22,11 @@ namespace Unnamed {
 		/// @details バッファが満杯の場合、最も古い要素を上書きします
 		bool Push(const T& value) {
 			std::lock_guard lock(mMutex);
-			if (mSize == Capacity) {
-				mTail = (mTail + 1) % Capacity;
-			} else {
+
+			if (mSize == Capacity) { mTail = (mTail + 1) % Capacity; } else {
 				++mSize;
 			}
+
 			mBuffer[mHead] = value;
 			mHead          = (mHead + 1) % Capacity;
 			return true;
@@ -35,31 +37,48 @@ namespace Unnamed {
 		/// @return 成功した場合true、バッファが空の場合false
 		bool Pop(T& out) {
 			std::lock_guard lock(mMutex);
-			if (mSize == 0) {
-				return false;
-			}
+			if (mSize == 0) { return false; }
+
 			out   = mBuffer[mTail];
 			mTail = (mTail + 1) % Capacity;
 			--mSize;
 			return true;
 		}
 
+		/// @brief バッファをクリアする
+		void Clear() {
+			std::lock_guard lock(mMutex);
+			mHead = 0;
+			mTail = 0;
+			mSize = 0;
+		}
+
 		/// @brief 現在のバッファサイズを取得する
 		/// @return バッファ内の要素数
-		[[nodiscard]] size_t Size() const { return mSize; }
+		[[nodiscard]] size_t Size() const {
+			std::lock_guard lock(mMutex);
+			return mSize;
+		}
 
 		/// @brief バッファが空かどうかを判定する
 		/// @return 空の場合true
-		[[nodiscard]] bool Empty() const { return mSize == 0; }
+		[[nodiscard]] bool Empty() const {
+			std::lock_guard lock(mMutex);
+			return mSize == 0;
+		}
 
 		/// @brief バッファが満杯かどうかを判定する
 		/// @return 満杯の場合true
-		[[nodiscard]] bool Full() const { return mSize == Capacity; }
+		[[nodiscard]] bool Full() const {
+			std::lock_guard lock(mMutex);
+			return mSize == Capacity;
+		}
 
 		/// @brief 最後に書き込まれた要素のインデックスを取得する
 		/// @return 最後に書き込まれたインデックス
-		[[nodiscard]] size_t LastWrittenIndex() const {
+		[[nodiscard]] std::optional<size_t> LastWrittenIndex() const {
 			std::lock_guard lock(mMutex);
+			if (mSize == 0) { return std::nullopt; }
 			return (mHead + Capacity - 1) % Capacity;
 		}
 
@@ -70,14 +89,12 @@ namespace Unnamed {
 			/// @param buffer 対象のリングバッファ
 			/// @param index 開始インデックス
 			/// @param count 反復回数
-			Iterator(
-				const RingBuffer* buffer, const size_t index, const size_t count
-			) : mBuffer(buffer), mIndex(index), mCount(count) {
-			}
+			Iterator(const RingBuffer* buffer, size_t index, size_t count)
+				: mBuffer(buffer),
+				  mIndex(index),
+				  mCount(count) {}
 
-			const T& operator*() const {
-				return mBuffer->mBuffer[mIndex];
-			}
+			const T& operator*() const { return mBuffer->mBuffer[mIndex]; }
 
 			Iterator& operator++() {
 				mIndex = (mIndex + 1) % Capacity;
@@ -89,9 +106,7 @@ namespace Unnamed {
 				return mCount != other.mCount;
 			}
 
-			[[nodiscard]] size_t Index() const {
-				return mIndex;
-			}
+			[[nodiscard]] size_t Index() const { return mIndex; }
 
 		private:
 			const RingBuffer* mBuffer;

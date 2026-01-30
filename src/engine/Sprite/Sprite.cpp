@@ -1,9 +1,11 @@
 #include "engine/Sprite/Sprite.h"
 
-#include "engine/Sprite/SpriteCommon.h"
 #include "engine/OldConsole/Console.h"
+#include "engine/Sprite/SpriteCommon.h"
 
 #include "engine/renderer/D3D12.h"
+#include "engine/Engine.h"
+#include "engine/EngineServices.h"
 #include "engine/TextureManager/TexManager.h"
 #include "engine/Window/WindowManager.h"
 
@@ -13,20 +15,22 @@ Sprite::~Sprite() = default;
 /// @brief スプライトの初期化
 /// @param spriteCommon スプライト共通情報へのポインタ
 /// @param textureFilePath テクスチャファイルパス
-void Sprite::Init(SpriteCommon*      spriteCommon,
-                  const std::string& textureFilePath) {
+void Sprite::Init(
+	SpriteCommon*      spriteCommon,
+	const std::string& textureFilePath
+) {
 	this->mSpriteCommon    = spriteCommon;
 	this->mTextureFilePath = textureFilePath;
 
 	// 各トランスフォームに初期値を設定
 	mTransform = {
-		.scale = {1.0f, 1.0f, 1.0f},
-		.rotate = {0.0f, 0.0f, 0.0f},
+		.scale     = {1.0f, 1.0f, 1.0f},
+		.rotate    = {0.0f, 0.0f, 0.0f},
 		.translate = {0.0f, 0.0f, 0.0f}
 	};
 	mUvTransform = {
-		.scale = {1.0f, 1.0f, 1.0f},
-		.rotate = {0.0f, 0.0f, 0.0f},
+		.scale     = {1.0f, 1.0f, 1.0f},
+		.rotate    = {0.0f, 0.0f, 0.0f},
 		.translate = {0.0f, 0.0f, 0.0f}
 	};
 
@@ -64,7 +68,8 @@ void Sprite::Init(SpriteCommon*      spriteCommon,
 
 	// インデックスバッファの作成
 	mIndexBuffer = std::make_unique<IndexBuffer>(
-		mSpriteCommon->GetD3D12()->GetDevice(), sizeof(mIndices), mIndices);
+		mSpriteCommon->GetD3D12()->GetDevice(), sizeof(mIndices), mIndices
+	);
 
 	// 頂点バッファの作成
 	mVertexBuffer = std::make_unique<VertexBuffer<Vertex>>(
@@ -75,7 +80,8 @@ void Sprite::Init(SpriteCommon*      spriteCommon,
 	// 定数バッファ
 	mMaterialResource = std::make_unique<ConstantBuffer>(
 		mSpriteCommon->GetD3D12()->GetDevice(), sizeof(Material),
-		"SpriteMaterial");
+		"SpriteMaterial"
+	);
 	mMaterialData                 = mMaterialResource->GetPtr<Material>();
 	mMaterialData->color          = {1.0f, 1.0f, 1.0f, 1.0f};
 	mMaterialData->enableLighting = false;
@@ -91,8 +97,10 @@ void Sprite::Init(SpriteCommon*      spriteCommon,
 
 	AdjustTextureSize();
 
-	Console::Print("スプライトの初期化に成功しました。\n", kConTextColorCompleted,
-	               Channel::Engine);
+	Console::Print(
+		"スプライトの初期化に成功しました。\n", kConTextColorCompleted,
+		Channel::Engine
+	);
 }
 
 /// @brief スプライトの頂点情報を更新
@@ -133,21 +141,26 @@ void Sprite::Update() {
 /// @brief スプライトの描画
 void Sprite::Draw() const {
 	{
-		mVertexBuffer->Update(mVertices.data(),
-		                      sizeof(Vertex) * mVertices.size());
+		mVertexBuffer->Update(
+			mVertices.data(),
+			sizeof(Vertex) * mVertices.size()
+		);
 		mIndexBuffer->Update(mIndices, sizeof(uint16_t) * kSpriteVertexCount);
 
 		// uvTransformから行列を作成
 		Mat4 uvTransformMat = Mat4::Scale(mUvTransform.scale);
 		uvTransformMat = uvTransformMat * Mat4::RotateZ(mUvTransform.rotate.z);
 		uvTransformMat = uvTransformMat * Mat4::Translate(
-			mUvTransform.translate);
+			                 mUvTransform.translate
+		                 );
 		// 設定
 		mMaterialData->uvTransform = uvTransformMat;
 
 		// 各種行列を作成
-		const Mat4 worldMat = Mat4::Affine(mTransform.scale, mTransform.rotate,
-		                                   mTransform.translate);
+		const Mat4 worldMat = Mat4::Affine(
+			mTransform.scale, mTransform.rotate,
+			mTransform.translate
+		);
 		const Mat4 viewMat = Mat4::identity;
 		const Mat4 projMat = Mat4::MakeOrthographicMat(
 			0.0f,
@@ -171,31 +184,41 @@ void Sprite::Draw() const {
 	// 頂点バッファの設定
 	const D3D12_VERTEX_BUFFER_VIEW vbView = mVertexBuffer->View();
 	mSpriteCommon->GetD3D12()->GetCommandList()->IASetVertexBuffers(
-		0, 1, &vbView);
+		0, 1, &vbView
+	);
 
 	// 定数バッファの設定
 	mSpriteCommon->GetD3D12()->GetCommandList()->
 	               SetGraphicsRootConstantBufferView(
-		               0, mMaterialResource->GetAddress());
+		               0, mMaterialResource->GetAddress()
+	               );
 	mSpriteCommon->GetD3D12()->GetCommandList()->
 	               SetGraphicsRootConstantBufferView(
-		               1, mTransformation->GetAddress());
+		               1, mTransformation->GetAddress()
+	               );
 
 	// テクスチャのSRVを設定
-	mSpriteCommon->GetD3D12()->GetCommandList()->
-	               SetGraphicsRootDescriptorTable(
-		               2, TexManager::GetInstance()->GetSrvHandleGPU(
-			               mTextureFilePath)
-	               );
+	if (auto* engine = Unnamed::EngineServices::Get()) {
+		if (auto* texManager = engine->GetTexManagerInstance()) {
+		mSpriteCommon->GetD3D12()->GetCommandList()->
+		               SetGraphicsRootDescriptorTable(
+			               2, texManager->GetSrvHandleGPU(
+				               mTextureFilePath
+			               )
+		               );
+		}
+	}
 
 	// インデックスバッファの設定
 	const D3D12_INDEX_BUFFER_VIEW indexBufferView = mIndexBuffer->View();
 	mSpriteCommon->GetD3D12()->GetCommandList()->IASetIndexBuffer(
-		&indexBufferView);
+		&indexBufferView
+	);
 
 	// 描画
 	mSpriteCommon->GetD3D12()->GetCommandList()->DrawIndexedInstanced(
-		6, 1, 0, 0, 0);
+		6, 1, 0, 0, 0
+	);
 }
 
 /// @brief スプライトのテクスチャを変更
@@ -206,49 +229,31 @@ void Sprite::ChangeTexture(const std::string& textureFilePath) {
 }
 
 /// @brief 座標の取得
-Vec3 Sprite::GetPos() const {
-	return mTransform.translate;
-}
+Vec3 Sprite::GetPos() const { return mTransform.translate; }
 
 /// @brief 回転の取得
-Vec3 Sprite::GetRot() const {
-	return mTransform.rotate;
-}
+Vec3 Sprite::GetRot() const { return mTransform.rotate; }
 
 /// @brief サイズの取得
-Vec3 Sprite::GetSize() const {
-	return mTransform.scale;
-}
+Vec3 Sprite::GetSize() const { return mTransform.scale; }
 
 /// @brief アンカーポイントの取得
-Vec2 Sprite::GetAnchorPoint() const {
-	return mAnchorPoint;
-}
+Vec2 Sprite::GetAnchorPoint() const { return mAnchorPoint; }
 
 /// @brief 色の取得
-Vec4 Sprite::GetColor() const {
-	return mMaterialData->color;
-}
+Vec4 Sprite::GetColor() const { return mMaterialData->color; }
 
 /// @brief テクスチャの左上座標の取得
-Vec2 Sprite::GetTextureLeftTop() const {
-	return mTextureLeftTop;
-}
+Vec2 Sprite::GetTextureLeftTop() const { return mTextureLeftTop; }
 
 /// @brief テクスチャサイズの取得
-Vec2 Sprite::GetTextureSize() const {
-	return mTextureSize;
-}
+Vec2 Sprite::GetTextureSize() const { return mTextureSize; }
 
 /// @brief X反転しているか取得
-bool Sprite::GetIsFlipX() const {
-	return mIsFlipX;
-}
+bool Sprite::GetIsFlipX() const { return mIsFlipX; }
 
 /// @brief Y反転しているか取得
-bool Sprite::GetIsFlipY() const {
-	return mIsFlipY;
-}
+bool Sprite::GetIsFlipY() const { return mIsFlipY; }
 
 /// @brief UV座標の取得
 Vec2 Sprite::GetUvPos() {
@@ -261,27 +266,19 @@ Vec2 Sprite::GetUvSize() {
 }
 
 /// @brief UV回転の取得
-float Sprite::GetUvRot() const {
-	return mUvTransform.rotate.z;
-}
+float Sprite::GetUvRot() const { return mUvTransform.rotate.z; }
 
 /// @brief 座標の設定
 /// @param newPos 新しい座標
-void Sprite::SetPos(const Vec3& newPos) {
-	mTransform.translate = newPos;
-}
+void Sprite::SetPos(const Vec3& newPos) { mTransform.translate = newPos; }
 
 /// @brief 回転の設定
 /// @param newRot 新しい回転
-void Sprite::SetRot(const Vec3& newRot) {
-	mTransform.rotate = newRot;
-}
+void Sprite::SetRot(const Vec3& newRot) { mTransform.rotate = newRot; }
 
 /// @brief サイズの設定
 /// @param newSize 新しいサイズ
-void Sprite::SetSize(const Vec3& newSize) {
-	mTransform.scale = newSize;
-}
+void Sprite::SetSize(const Vec3& newSize) { mTransform.scale = newSize; }
 
 /// @brief アンカーポイントの設定
 /// @param anchorPoint 新しいアンカーポイント
@@ -291,21 +288,15 @@ void Sprite::SetAnchorPoint(const Vec2& anchorPoint) {
 
 /// @brief 色の設定
 /// @param color 新しい色
-void Sprite::SetColor(const Vec4 color) const {
-	mMaterialData->color = color;
-}
+void Sprite::SetColor(const Vec4 color) const { mMaterialData->color = color; }
 
 /// @brief X反転の設定
 /// @param isFlipX X反転フラグ
-void Sprite::SetIsFlipX(const bool isFlipX) {
-	mIsFlipX = isFlipX;
-}
+void Sprite::SetIsFlipX(const bool isFlipX) { mIsFlipX = isFlipX; }
 
 /// @brief Y反転の設定
 /// @param isFlipY Y反転フラグ
-void Sprite::SetIsFlipY(const bool isFlipY) {
-	mIsFlipY = isFlipY;
-}
+void Sprite::SetIsFlipY(const bool isFlipY) { mIsFlipY = isFlipY; }
 
 /// @brief テクスチャの左上座標の設定
 /// @param newTextureLeftTop 新しいテクスチャ左上座標
@@ -322,31 +313,33 @@ void Sprite::SetTextureSize(const Vec2& newTextureSize) {
 /// @brief UV座標の設定
 /// @param newPos 新しいUV座標
 void Sprite::SetUvPos(const Vec2& newPos) {
-	for (uint32_t i = 0; i < 2; ++i) {
-		mUvTransform.translate[i] = newPos[i];
-	}
+	for (uint32_t i = 0; i < 2; ++i) { mUvTransform.translate[i] = newPos[i]; }
 }
 
 /// @brief UVサイズの設定
 /// @param newSize 新しいUVサイズ
 void Sprite::SetUvSize(const Vec2& newSize) {
-	for (uint32_t i = 0; i < 2; ++i) {
-		mUvTransform.scale[i] = newSize[i];
-	}
+	for (uint32_t i = 0; i < 2; ++i) { mUvTransform.scale[i] = newSize[i]; }
 }
 
 /// @brief UV回転の設定
 /// @param newRot 新しいUV回転
-void Sprite::SetUvRot(const float newRot) {
-	mUvTransform.rotate.z = newRot;
-}
+void Sprite::SetUvRot(const float newRot) { mUvTransform.rotate.z = newRot; }
 
 /// @brief テクスチャサイズに合わせてスプライトのサイズを調整
 void Sprite::AdjustTextureSize() {
-	mTextureSize = {
-		static_cast<float>(TexManager::GetInstance()->GetMetaData(mTextureFilePath).width),
-		static_cast<float>(TexManager::GetInstance()->GetMetaData(mTextureFilePath).height)
-	};
+	if (auto* engine = Unnamed::EngineServices::Get()) {
+		auto* texManager = engine->GetTexManagerInstance();
+		if (!texManager) { return; }
+		mTextureSize = {
+			static_cast<float>(texManager->GetMetaData(
+				mTextureFilePath
+			).width),
+			static_cast<float>(texManager->GetMetaData(
+				mTextureFilePath
+			).height)
+		};
+	}
 
 	mTransform.scale.x = mTextureSize.x;
 	mTransform.scale.y = mTextureSize.y;

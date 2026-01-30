@@ -1,7 +1,7 @@
-﻿#include <runtime/core/math/Math.h>
-#include <algorithm>
+﻿#include <algorithm>
 #include <cmath>
 #include <stdexcept>
+#include <runtime/core/math/Math.h>
 
 const Vec2 Vec2::zero(0.0f, 0.0f);
 const Vec2 Vec2::one(1.0f, 1.0f);
@@ -12,54 +12,38 @@ const Vec2 Vec2::down(0.0f, -1.0f);
 
 float& Vec2::operator[](const uint32_t index) {
 	switch (index) {
-	case 0: return x;
-	case 1: return y;
-	default: throw std::out_of_range("Vec2 添字演算子");
+		case 0: return x;
+		case 1: return y;
+		default: throw std::out_of_range("Vec2 添字演算子");
 	}
 }
 
 const float& Vec2::operator[](const uint32_t index) const {
 	switch (index) {
-	case 0: return x;
-	case 1: return y;
-	default: throw std::out_of_range("Vec2 添字演算子");
+		case 0: return x;
+		case 1: return y;
+		default: throw std::out_of_range("Vec2 添字演算子");
 	}
 }
 
-Vec2 Vec2::operator-() const {
-	return {-x, -y};
-}
+Vec2 Vec2::operator-() const { return {-x, -y}; }
 
-Vec2 Vec2::operator+(const Vec2& rhs) const {
-	return {x + rhs.x, y + rhs.y};
-}
+Vec2 Vec2::operator+(const Vec2& rhs) const { return {x + rhs.x, y + rhs.y}; }
 
-Vec2 Vec2::operator-(const Vec2& rhs) const {
-	return {x - rhs.x, y - rhs.y};
-}
+Vec2 Vec2::operator-(const Vec2& rhs) const { return {x - rhs.x, y - rhs.y}; }
 
-Vec2 Vec2::operator*(const float rhs) const {
-	return {x * rhs, y * rhs};
-}
+Vec2 Vec2::operator*(const float rhs) const { return {x * rhs, y * rhs}; }
 
 Vec2 Vec2::operator/(const float rhs) const {
-	if (rhs == 0.0f) {
-		throw std::invalid_argument("ゼロ除算!!");
-	}
+	if (rhs == 0.0f) { throw std::invalid_argument("ゼロ除算!!"); }
 	return {x / rhs, y / rhs};
 }
 
-Vec2 Vec2::operator+(const float& rhs) const {
-	return {x + rhs, y + rhs};
-}
+Vec2 Vec2::operator+(const float& rhs) const { return {x + rhs, y + rhs}; }
 
-Vec2 Vec2::operator-(const float& rhs) const {
-	return {x - rhs, y - rhs};
-}
+Vec2 Vec2::operator-(const float& rhs) const { return {x - rhs, y - rhs}; }
 
-Vec2 Vec2::operator*(const Vec2& rhs) const {
-	return {x * rhs.x, y * rhs.y};
-}
+Vec2 Vec2::operator*(const Vec2& rhs) const { return {x * rhs.x, y * rhs.y}; }
 
 Vec2 Vec2::operator/(const Vec2& rhs) const {
 	if (rhs.x == 0.0f || rhs.y == 0.0f) {
@@ -110,15 +94,11 @@ Vec2 operator/(const float lhs, const Vec2& rhs) {
 
 float Vec2::Length() const {
 	const float sqrLength = SqrLength();
-	if (sqrLength > 0.0f) {
-		return std::sqrt(sqrLength);
-	}
+	if (sqrLength > 0.0f) { return std::sqrt(sqrLength); }
 	return 0.0f;
 }
 
-float Vec2::SqrLength() const {
-	return x * x + y * y;
-}
+float Vec2::SqrLength() const { return x * x + y * y; }
 
 float Vec2::Distance(const Vec2& other) const {
 	const float distX = other.x - x;
@@ -126,13 +106,9 @@ float Vec2::Distance(const Vec2& other) const {
 	return std::sqrt(distX * distX + distY * distY);
 }
 
-float Vec2::Dot(const Vec2& other) const {
-	return x * other.x + y * other.y;
-}
+float Vec2::Dot(const Vec2& other) const { return x * other.x + y * other.y; }
 
-float Vec2::Cross(const Vec2& other) const {
-	return x * other.y - y * other.x;
-}
+float Vec2::Cross(const Vec2& other) const { return x * other.y - y * other.x; }
 
 bool Vec2::IsZero(const float tolerance) const {
 	return std::fabs(x) < tolerance && std::fabs(y) < tolerance;
@@ -148,9 +124,7 @@ void Vec2::Normalize() {
 
 Vec2 Vec2::Normalized() const {
 	float len = Length();
-	if (len > 0) {
-		return {x / len, y / len};
-	}
+	if (len > 0) { return {x / len, y / len}; }
 	return zero;
 }
 
@@ -166,9 +140,7 @@ Vec2 Vec2::ClampLength(const float min, const float max) {
 		return {x * scale, y * scale};
 	}
 	if (sqrLength < min * min) {
-		if (sqrLength == 0.0f) {
-			return zero;
-		}
+		if (sqrLength == 0.0f) { return zero; }
 		const float scale = min / std::sqrt(sqrLength);
 		return {x * scale, y * scale};
 	}

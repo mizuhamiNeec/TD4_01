@@ -13,9 +13,7 @@ std::mutex      Random::mtx_;                                  // mutexも定義
 // 指定された範囲の乱数を生成します
 //-----------------------------------------------------------------------------
 int Random::IntRange(const int& min, const int& max) {
-	if (min == max) {
-		return min;
-	}
+	if (min == max) { return min; }
 	int                                validMin = std::min(min, max);
 	int                                validMax = std::max(min, max);
 	std::uniform_int_distribution<int> distribution(validMin, validMax);
@@ -27,9 +25,7 @@ int Random::IntRange(const int& min, const int& max) {
 // 指定された範囲の乱数を生成します
 //-----------------------------------------------------------------------------
 float Random::FloatRange(const float& min, const float& max) {
-	if (min == max) {
-		return min;
-	}
+	if (min == max) { return min; }
 	float                                 validMin = std::min(min, max);
 	float                                 validMax = std::max(min, max);
 	std::uniform_real_distribution<float> distribution(validMin, validMax);

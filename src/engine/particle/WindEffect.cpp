@@ -2,7 +2,7 @@
 
 #include "engine/Camera/CameraManager.h"
 #include "engine/Components/Camera/CameraComponent.h"
-#include "engine/Debug/Debug.h"
+#include "engine/Debug/DebugDraw.h"
 #include "engine/Entity/Entity.h"
 #include "engine/particle/ParticleManager.h"
 #include "engine/particle/ParticleObject.h"
@@ -22,8 +22,10 @@ WindEffect::~WindEffect() {
 /// @brief 風エフェクトを初期化します
 /// @param particleManager パーティクルマネージャーへのポインタ
 /// @param playerMovement プレイヤーの移動コンポーネントへのポインタ
-void WindEffect::Init([[maybe_unused]] ParticleManager* particleManager,
-                      MovementComponent*                playerMovement) {
+void WindEffect::Init(
+	[[maybe_unused]] ParticleManager* particleManager,
+	MovementComponent*                playerMovement
+) {
 	mPlayerMovement = playerMovement;
 
 	// 風パーティクル用のオブジェクト初期化
@@ -34,9 +36,7 @@ void WindEffect::Init([[maybe_unused]] ParticleManager* particleManager,
 /// @brief 風エフェクトを更新します
 /// @param deltaTime 前のフレームからの経過時間	
 void WindEffect::Update([[maybe_unused]] const float deltaTime) {
-	if (!mPlayerMovement || !mWindParticle) {
-		return;
-	}
+	if (!mPlayerMovement || !mWindParticle) { return; }
 
 	// プレイヤーの速度ベクトル
 	const Vec3  playerVelocity = mPlayerMovement->GetVelocity();
@@ -47,9 +47,11 @@ void WindEffect::Update([[maybe_unused]] const float deltaTime) {
 		// 速度に基づいてエミッション率を計算
 		const float speedFactor = (std::min)(
 			(playerSpeed - mSpeedThreshold) / (mMaxEffectSpeed -
-				mSpeedThreshold), 1.0f);
+			                                   mSpeedThreshold), 1.0f
+		);
 		const float currentEmissionRate = mMinEmissionRate + speedFactor * (
-			mMaxEmissionRate - mMinEmissionRate);
+			                                  mMaxEmissionRate -
+			                                  mMinEmissionRate);
 
 		// エミッションタイマーを更新
 		mEmissionTimer += deltaTime;
@@ -69,7 +71,7 @@ void WindEffect::Update([[maybe_unused]] const float deltaTime) {
 
 			// 速度に応じてパーティクルの速さを変更
 			const float particleSpeed = mMinSpeed + speedFactor * (mMaxSpeed -
-				mMinSpeed);
+				                            mMinSpeed);
 
 			// 放出するパーティクルの数（速度が速いほど多く）
 			const uint32_t particleCount = static_cast<uint32_t>(1 + speedFactor
@@ -97,19 +99,13 @@ void WindEffect::Update([[maybe_unused]] const float deltaTime) {
 }
 
 /// @brief 風エフェクトを描画します
-void WindEffect::Draw() const {
-	if (mWindParticle) {
-		mWindParticle->Draw();
-	}
-}
+void WindEffect::Draw() const { if (mWindParticle) { mWindParticle->Draw(); } }
 
 /// @brief プレイヤーの進行方向に基づいてランダムな位置を取得します
 /// @return ランダムな位置ベクター
 Vec3 WindEffect::GetRandomPositionInPlayerDirection() const {
 	auto camera = CameraManager::GetActiveCamera();
-	if (!camera || !mPlayerMovement) {
-		return Vec3::zero;
-	}
+	if (!camera || !mPlayerMovement) { return Vec3::zero; }
 
 	// アスペクト比取得
 	const float aspectRatio = camera->GetAspectRatio();
@@ -130,7 +126,8 @@ Vec3 WindEffect::GetRandomPositionInPlayerDirection() const {
 
 	// ランダムな位置を進行方向側に生成
 	const float randomAngle = Random::FloatRange(
-		0.0f, std::numbers::pi_v<float> * 2.0f);
+		0.0f, std::numbers::pi_v<float> * 2.0f
+	);
 	const float randomDistance = Random::FloatRange(6.0f, 24.0f);
 	const float randomHeight   = Random::FloatRange(-4.0f, 8.0f);
 
@@ -138,13 +135,14 @@ Vec3 WindEffect::GetRandomPositionInPlayerDirection() const {
 	const float horizontalScale = aspectRatio;
 
 	const Vec3 randomPos = playerPos +
-		moveDir * randomDistance +
-		right * std::cos(randomAngle) * randomDistance * 0.5f * horizontalScale
-		+
-		up * std::sin(randomAngle) * randomDistance * 0.5f +
-		up * randomHeight;
+	                       moveDir * randomDistance +
+	                       right * std::cos(randomAngle) * randomDistance * 0.5f
+	                       * horizontalScale
+	                       +
+	                       up * std::sin(randomAngle) * randomDistance * 0.5f +
+	                       up * randomHeight;
 
-	Debug::DrawAxis(randomPos, Quaternion::identity);
+	DebugDraw::DrawAxis(randomPos, Quaternion::identity);
 
 	return randomPos;
 }

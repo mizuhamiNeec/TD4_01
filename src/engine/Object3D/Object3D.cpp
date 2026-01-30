@@ -85,20 +85,24 @@ void Object3D::Update() {
 	ImGui::Begin("Object3D");
 	//ImGuiManager::EditTransform(mTransform, 0.01f);
 	if (ImGui::CollapsingHeader("Directional Light")) {
-		if (ImGui::DragFloat3("dir##light", &mDirectionalLightData->direction.x,
-		                      0.01f)) {
-			mDirectionalLightData->direction.Normalize();
-		}
+		if (ImGui::DragFloat3(
+			"dir##light", &mDirectionalLightData->direction.x,
+			0.01f
+		)) { mDirectionalLightData->direction.Normalize(); }
 		ImGui::ColorEdit4("color##light", &mDirectionalLightData->color.x);
-		ImGui::DragFloat("intensity##light", &mDirectionalLightData->intensity,
-		                 0.01f);
+		ImGui::DragFloat(
+			"intensity##light", &mDirectionalLightData->intensity,
+			0.01f
+		);
 	}
 
 	if (ImGui::CollapsingHeader("Point")) {
 		ImGui::DragFloat3("pos##point", &mPointLightData->position.x, 0.01f);
 		ImGui::ColorEdit4("color##point", &mPointLightData->color.x);
-		ImGui::DragFloat("intensity##point", &mPointLightData->intensity,
-		                 0.01f);
+		ImGui::DragFloat(
+			"intensity##point", &mPointLightData->intensity,
+			0.01f
+		);
 		ImGui::DragFloat("radius##point", &mPointLightData->radius, 0.01f);
 		ImGui::DragFloat("decay##point", &mPointLightData->decay, 0.01f);
 	}
@@ -107,15 +111,17 @@ void Object3D::Update() {
 		ImGui::ColorEdit4("color##spot", &mSpotLightData->color.x);
 		ImGui::DragFloat3("pos##spot", &mSpotLightData->position.x, 0.01f);
 		ImGui::DragFloat("intensity##spot", &mSpotLightData->intensity, 0.01f);
-		if (ImGui::DragFloat3("direction##spot", &mSpotLightData->direction.x,
-		                      0.01f)) {
-			mSpotLightData->direction.Normalize();
-		}
+		if (ImGui::DragFloat3(
+			"direction##spot", &mSpotLightData->direction.x,
+			0.01f
+		)) { mSpotLightData->direction.Normalize(); }
 		ImGui::DragFloat("distance##spot", &mSpotLightData->distance, 0.01f);
 		ImGui::DragFloat("decay##spot", &mSpotLightData->decay, 0.01f);
 		ImGui::DragFloat("cosAngle##spot", &mSpotLightData->cosAngle, 0.01f);
-		ImGui::DragFloat("cosFalloff##spot", &mSpotLightData->cosFalloffStart,
-		                 0.01f);
+		ImGui::DragFloat(
+			"cosFalloff##spot", &mSpotLightData->cosFalloffStart,
+			0.01f
+		);
 	}
 	ImGui::End();
 
@@ -174,16 +180,12 @@ void Object3D::Draw() const {
 	                 );
 
 	// 3Dモデルが割り当てられていれば描画する
-	if (mModel) {
-		mModel->Draw();
-	}
+	if (mModel) { mModel->Draw(); }
 }
 
 /// @brief モデルをセットする
 /// @param model モデルへのポインタ
-void Object3D::SetModel(Model* model) {
-	this->mModel = model;
-}
+void Object3D::SetModel(Model* model) { this->mModel = model; }
 
 /// @brief モデルをセットする
 /// @param filePath モデルファイルのパス
@@ -194,36 +196,24 @@ void Object3D::SetModel(const std::string& filePath) {
 
 /// @brief スケールをセットする
 /// @param scale スケールベクトル
-void Object3D::SetScale(const Vec3& scale) {
-	mTransform.scale = scale;
-}
+void Object3D::SetScale(const Vec3& scale) { mTransform.scale = scale; }
 
 /// @brief 回転をセットする
 /// @param newRot 回転ベクトル（オイラー角、ラジアン）
-void Object3D::SetRot(const Vec3& newRot) {
-	mTransform.rotate = newRot;
-}
+void Object3D::SetRot(const Vec3& newRot) { mTransform.rotate = newRot; }
 
 /// @brief 位置をセットする
 /// @param newPos 位置ベクトル
-void Object3D::SetPos(const Vec3& newPos) {
-	mTransform.translate = newPos;
-}
+void Object3D::SetPos(const Vec3& newPos) { mTransform.translate = newPos; }
 
 /// @brief スケールを取得する
 /// @return スケールベクトルの参照
-const Vec3& Object3D::GetScale() const {
-	return mTransform.scale;
-}
+const Vec3& Object3D::GetScale() const { return mTransform.scale; }
 
 /// @brief 回転を取得する
 /// @return 回転ベクトルの参照
-const Vec3& Object3D::GetRot() const {
-	return mTransform.rotate;
-}
+const Vec3& Object3D::GetRot() const { return mTransform.rotate; }
 
 /// @brief 位置を取得する
 /// @return 位置ベクトルの参照
-const Vec3& Object3D::GetPos() const {
-	return mTransform.translate;
-}
+const Vec3& Object3D::GetPos() const { return mTransform.translate; }

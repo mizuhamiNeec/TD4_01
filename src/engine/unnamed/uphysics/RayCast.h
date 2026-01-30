@@ -5,7 +5,8 @@ namespace UPhysics {
 	/// @brief レイキャスト構造体
 	struct RayCast final : ShapeCast {
 		[[nodiscard]] Unnamed::AABB ExpandNode(
-			const Unnamed::AABB& nodeBounds) const override;
+			const Unnamed::AABB& nodeBounds
+		) const override;
 
 		bool TestTriangle(
 			const Unnamed::Triangle& tri,

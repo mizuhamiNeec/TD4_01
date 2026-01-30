@@ -2,14 +2,15 @@
 #include <d3d12.h>
 #include <string>
 
-#include <wrl/client.h>
 #include <unordered_map>
+#include <wrl/client.h>
 
 /// @brief パイプラインマネージャークラス
 class PipelineManager {
 public:
 	static size_t CalculatePSOHash(
-		const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc);
+		const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc
+	);
 
 	static ID3D12PipelineState* GetOrCreatePipelineState(
 		ID3D12Device*      device,

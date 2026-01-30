@@ -1,4 +1,4 @@
-﻿#include "BuiltInCommands.h"
+#include "BuiltInCommands.h"
 
 #include <engine/unnamed/subsystem/console/ConsoleSystem.h>
 #include <engine/unnamed/subsystem/console/concommand/UnnamedConCommand.h>
@@ -6,7 +6,6 @@
 #include <engine/unnamed/subsystem/interface/ServiceLocator.h>
 
 #include "engine/unnamed/subsystem/console/ConsoleScriptParser.h"
-#include "engine/unnamed/subsystem/window/Win32/Win32WindowSystem.h"
 
 namespace Unnamed {
 	void RegisterBuiltInCommands() {
@@ -111,15 +110,6 @@ namespace Unnamed {
 				return true;
 			},
 			"Usage: toggle <cvar> <value 1> <value 2> <value 3> ..."
-		);
-
-		static UnnamedConCommand quit(
-			"quit",
-			[](const std::vector<std::string>&) {
-				Win32WindowSystem::WishShutdown();
-				return true;
-			},
-			"Quit the engine."
 		);
 
 		static UnnamedConCommand exec(

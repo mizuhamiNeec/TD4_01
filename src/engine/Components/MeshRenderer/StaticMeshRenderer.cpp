@@ -5,6 +5,8 @@
 #include <engine/ResourceSystem/Shader/Shader.h>
 #include <engine/TextureManager/TexManager.h>
 
+#include "engine/EngineServices.h"
+
 struct MatParam {
 	Vec4  baseColor;
 	float metallic;
@@ -27,8 +29,10 @@ void StaticMeshRenderer::OnAttach(Entity& owner) {
 	MeshRenderer::OnAttach(owner);
 	mScene = mOwner->GetTransform();
 
+	auto* engine = Unnamed::EngineServices::Get();
+
 	mTransformationMatrixConstantBuffer = std::make_unique<ConstantBuffer>(
-		Unnamed::Engine::GetRenderer()->GetDevice(),
+		engine->GetRendererInstance()->GetDevice(),
 		sizeof(TransformationMatrix),
 		"StaticMeshTransformation"
 	);
@@ -40,7 +44,7 @@ void StaticMeshRenderer::OnAttach(Entity& owner) {
 
 	{
 		mMatParamCBV = std::make_unique<ConstantBuffer>(
-			Unnamed::Engine::GetRenderer()->GetDevice(),
+			engine->GetRendererInstance()->GetDevice(),
 			sizeof(MatParam),
 			"MatParam"
 		);
@@ -53,7 +57,7 @@ void StaticMeshRenderer::OnAttach(Entity& owner) {
 	}
 
 	mDirectionalLightCb = std::make_unique<ConstantBuffer>(
-		Unnamed::Engine::GetRenderer()->GetDevice(),
+		engine->GetRendererInstance()->GetDevice(),
 		sizeof(DirectionalLight),
 		"DirectionalLight"
 	);
@@ -63,7 +67,7 @@ void StaticMeshRenderer::OnAttach(Entity& owner) {
 	mDirectionalLightData->intensity = 8.0f;
 
 	mCameraCb = std::make_unique<ConstantBuffer>(
-		Unnamed::Engine::GetRenderer()->GetDevice(),
+		engine->GetRendererInstance()->GetDevice(),
 		sizeof(CameraForGPU),
 		"Camera"
 	);
@@ -71,7 +75,7 @@ void StaticMeshRenderer::OnAttach(Entity& owner) {
 	mCameraData->worldPosition = Vec3::zero;
 
 	mPointLightCb = std::make_unique<ConstantBuffer>(
-		Unnamed::Engine::GetRenderer()->GetDevice(),
+		engine->GetRendererInstance()->GetDevice(),
 		sizeof(PointLight),
 		"PointLight"
 	);
@@ -83,7 +87,7 @@ void StaticMeshRenderer::OnAttach(Entity& owner) {
 	mPointLightData->decay     = 1.0f;
 
 	mSpotLightCb = std::make_unique<ConstantBuffer>(
-		Unnamed::Engine::GetRenderer()->GetDevice(),
+		engine->GetRendererInstance()->GetDevice(),
 		sizeof(SpotLight),
 		"SpotLight"
 	);
@@ -316,7 +320,8 @@ void StaticMeshRenderer::DrawInspectorImGui() {
 						const auto& textures = material->GetTextures();
 						if (!textures.empty()) {
 							ImGui::Text("Textures:");
-							auto* texManager = Unnamed::Engine::GetTexManager();
+							auto  engine     = Unnamed::EngineServices::Get();
+							auto* texManager = engine->GetTexManagerInstance();
 							if (!texManager) {
 								ImGui::Text("TexManager is null");
 								ImGui::TreePop();

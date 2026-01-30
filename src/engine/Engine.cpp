@@ -31,7 +31,6 @@
 #include <engine/unnamed/subsystem/interface/ServiceLocator.h>
 #include <engine/unnamed/subsystem/time/TimeSystem.h>
 #include <engine/Window/WindowsUtils.h>
-#include <game/scene/EmptyScene.h>
 #include <game/scene/GameScene.h>
 
 #include "Platform/Win32App.h"
@@ -239,7 +238,6 @@ namespace Unnamed {
 		mSceneManager = std::make_shared<SceneManager>(*mSceneFactory);
 		// ゲームシーンを登録
 		mSceneFactory->RegisterScene<GameScene>("GameScene");
-		mSceneFactory->RegisterScene<EmptyScene>("EmptyScene");
 		// シーンの初期化
 		mSceneManager->ChangeScene("GameScene");
 
@@ -247,7 +245,6 @@ namespace Unnamed {
 		// エディターの初期化
 		//---------------------------------------------------------------------
 		CheckEditorMode();
-		// Initialize mode state based on current editor mode flag
 
 		assert(SUCCEEDED(mRenderer->GetCommandList()->Close()));
 

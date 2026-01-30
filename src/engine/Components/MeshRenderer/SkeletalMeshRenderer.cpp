@@ -5,6 +5,7 @@
 #include <engine/Components/MeshRenderer/SkeletalMeshRenderer.h>
 
 #include "engine/Engine.h"
+#include "engine/EngineServices.h"
 #include "engine/Camera/CameraManager.h"
 #include "engine/Debug/DebugDraw.h"
 #include "engine/Debug/DebugHud.h"
@@ -37,9 +38,11 @@ void SkeletalMeshRenderer::OnAttach(Entity& owner) {
 	MeshRenderer::OnAttach(owner);
 	mScene = mOwner->GetTransform();
 
+	auto* engine = Unnamed::EngineServices::Get();
+	
 	// 変換行列用の定数バッファ
 	mTransformationMatrixConstantBuffer = std::make_unique<ConstantBuffer>(
-		Unnamed::Engine::GetRenderer()->GetDevice(),
+		engine->GetRendererInstance()->GetDevice(),
 		sizeof(TransformationMatrix),
 		"SkeletalMeshTransformation"
 	);
@@ -51,7 +54,7 @@ void SkeletalMeshRenderer::OnAttach(Entity& owner) {
 
 	// ボーン変換行列用の定数バッファ
 	mBoneMatricesConstantBuffer = std::make_unique<ConstantBuffer>(
-		Unnamed::Engine::GetRenderer()->GetDevice(),
+		engine->GetRendererInstance()->GetDevice(),
 		sizeof(BoneMatrices),
 		"BoneMatrices"
 	);
@@ -63,7 +66,7 @@ void SkeletalMeshRenderer::OnAttach(Entity& owner) {
 	// TODO: 消す予定
 	{
 		mMatParamCBV = std::make_unique<ConstantBuffer>(
-			Unnamed::Engine::GetRenderer()->GetDevice(),
+			engine->GetRendererInstance()->GetDevice(),
 			sizeof(MatParam),
 			"MatParam"
 		);
@@ -76,7 +79,7 @@ void SkeletalMeshRenderer::OnAttach(Entity& owner) {
 	}
 
 	mDirectionalLightCb = std::make_unique<ConstantBuffer>(
-		Unnamed::Engine::GetRenderer()->GetDevice(),
+		engine->GetRendererInstance()->GetDevice(),
 		sizeof(DirectionalLight),
 		"DirectionalLight"
 	);
@@ -86,7 +89,7 @@ void SkeletalMeshRenderer::OnAttach(Entity& owner) {
 	mDirectionalLightData->intensity = 8.0f;
 
 	mCameraCb = std::make_unique<ConstantBuffer>(
-		Unnamed::Engine::GetRenderer()->GetDevice(),
+		engine->GetRendererInstance()->GetDevice(),
 		sizeof(CameraForGPU),
 		"Camera"
 	);
@@ -94,7 +97,7 @@ void SkeletalMeshRenderer::OnAttach(Entity& owner) {
 	mCameraData->worldPosition = Vec3::zero;
 
 	mPointLightCb = std::make_unique<ConstantBuffer>(
-		Unnamed::Engine::GetRenderer()->GetDevice(),
+		engine->GetRendererInstance()->GetDevice(),
 		sizeof(PointLight),
 		"PointLight"
 	);
@@ -106,7 +109,7 @@ void SkeletalMeshRenderer::OnAttach(Entity& owner) {
 	mPointLightData->decay     = 1.0f;
 
 	mSpotLightCb = std::make_unique<ConstantBuffer>(
-		Unnamed::Engine::GetRenderer()->GetDevice(),
+		engine->GetRendererInstance()->GetDevice(),
 		sizeof(SpotLight),
 		"SpotLight"
 	);
@@ -507,7 +510,7 @@ void SkeletalMeshRenderer::DrawInspectorImGui() {
 						const auto& textures = material->GetTextures();
 						if (!textures.empty()) {
 							ImGui::Text("Textures:");
-							auto* texManager = Unnamed::Engine::GetTexManager();
+							auto* texManager = Unnamed::EngineServices::Get()->GetTexManagerInstance();
 							if (!texManager) {
 								ImGui::Text("TexManager is null");
 								ImGui::TreePop();
@@ -970,7 +973,7 @@ void SkeletalMeshRenderer::DrawBoneHierarchy(
 			DebugDraw::DrawLine(parentPos, nodePos, {0.8f, 0.8f, 0.2f, 1.0f});
 			{
 				const Vec3 worldPos   = nodePos;
-				Vec2       screenSize = Unnamed::Engine::GetViewportSize();
+				Vec2       screenSize = Unnamed::EngineServices::Get()->GetViewportSizeInstance();
 
 				const Vec3 cameraPos = CameraManager::GetActiveCamera()->
 				                       GetViewMat().

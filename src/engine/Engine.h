@@ -104,9 +104,6 @@ namespace Unnamed {
 		/// @brief 終了処理
 		void Shutdown() const;
 
-		// @brief 終了要求があるかどうか
-		bool ShouldQuit();
-
 		/// @brief モード State を切り替える
 		void SetModeState(std::unique_ptr<IEngineModeState> state);
 

@@ -104,7 +104,6 @@ namespace Unnamed {
 			return false;
 		}
 
-		// 配列ラッパを返す (UWorld::LoadFromJson では GetArray() の戻りに対し [i] / GetFloat を呼ぶ)
 		[[nodiscard]] JsonReader GetArray() const { return *this; }
 
 		template <typename T>

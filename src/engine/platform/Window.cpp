@@ -1,122 +1,65 @@
-﻿#include <pch.h>
+﻿#include "Window.h"
 
-#include <engine/platform/Window.h>
+namespace Unnamed {
+	Window::Window(const WindowId id, WindowDesc desc, const HWND hwnd) :
+		mHwnd(hwnd),
+		mDesc(std::move(desc)),
+		mId(id) {}
 
-/// @brief コンストラクタ
-Window::Window(
-	const WindowDesc& desc, const HINSTANCE hInstance,
-	const uint32_t    wndId
-) : mWndId(wndId) {
-	// 一回だけウィンドウを登録する
-	static bool bRegistered = false;
-	if (!bRegistered) {
-		WNDCLASSEXW wc = {};
+	WindowId Window::GetId() const { return mId; }
 
-		wc.cbSize        = sizeof(WNDCLASSEXW);
-		wc.hCursor       = LoadCursor(nullptr, IDC_ARROW);
-		wc.hInstance     = hInstance;
-		wc.lpszClassName = kClassName;
-		wc.lpfnWndProc   = &Window::WndProc;
-		wc.style         = CS_HREDRAW | CS_VREDRAW;
-		RegisterClassExW(&wc);
-		bRegistered = true;
+	HWND Window::GetHwnd() const { return mHwnd; }
+
+	WindowDesc Window::GetDesc() const { return mDesc; }
+
+	bool Window::ShouldClose() const { return mShouldClose; }
+
+	bool Window::IsMinimized() const { return mMinimized; }
+
+	std::optional<WindowResizeEvent> Window::ConsumeResizeEvent() {
+		if (!mHasPendingResize) return std::nullopt;
+
+		mDesc.width  = mPendingResize.width;
+		mDesc.height = mPendingResize.height;
+
+		mHasPendingResize = false;
+		return mPendingResize;
 	}
 
-	RECT rect = {
-		0, 0, static_cast<LONG>(desc.width), static_cast<LONG>(desc.height)
-	};
-	AdjustWindowRect(&rect, desc.style, FALSE);
+	LRESULT Window::HandleMessage(
+		const HWND   hwnd, const UINT     msg,
+		const WPARAM wParam, const LPARAM lParam
+	) {
+		switch (msg) {
+			case WM_CLOSE: {
+				MarkCloseRequested();
+				DestroyWindow(hwnd);
+				return 0;
+			}
 
-	mHWnd = CreateWindowExW(
-		0,
-		kClassName,
-		Unnamed::StrUtil::ToWString(desc.title).c_str(),
-		desc.style,
-		CW_USEDEFAULT, CW_USEDEFAULT,
-		rect.right - rect.left,
-		rect.bottom - rect.top,
-		nullptr,
-		nullptr,
-		hInstance, this
-	);
+			case WM_DESTROY: {
+				MarkCloseRequested();
+				return 0;
+			}
 
-	if (!mHWnd) {
-		throw std::runtime_error("Failed to create window.");
+			case WM_SIZE: {
+				const int32_t width  = LOWORD(lParam);
+				const int32_t height = HIWORD(lParam);
+
+				if (wParam == SIZE_MINIMIZED) { mMinimized = true; } else {
+					mMinimized            = false;
+					mHasPendingResize     = true;
+					mPendingResize.width  = width;
+					mPendingResize.height = height;
+				}
+				return 0;
+			}
+
+			default: break;
+		}
+
+		return DefWindowProc(hwnd, msg, wParam, lParam);
 	}
+
+	void Window::MarkCloseRequested() { mShouldClose = true; }
 }
-
-/// @brief デストラクタ
-Window::~Window() {
-	if (mHWnd) {
-		DestroyWindow(mHWnd);
-		mHWnd = nullptr;
-		UnregisterClassW(kClassName, GetModuleHandleW(nullptr));
-	}
-}
-
-/// @brief ウィンドウハンドルを取得します
-/// @return ウィンドウハンドル
-HWND Window::GetHWnd() const { return mHWnd; }
-
-/// @brief ウィンドウIDを取得します
-/// @return ウィンドウID
-uint32_t Window::GetID() const { return mWndId; }
-
-/// @brief ウィンドウを表示します
-/// @param cmdShow 表示コマンド
-void Window::Show(const int cmdShow) const {
-	ShowWindow(mHWnd, cmdShow);
-	UpdateWindow(mHWnd);
-}
-
-/// @brief ウィンドウプロシージャ
-/// @param hWnd ウィンドウハンドル
-/// @param msg メッセージ
-/// @param wParam メッセージの追加情報1
-/// @param lParam メッセージの追加情報2
-/// @return 処理結果
-LRESULT Window::WndProc(
-	const HWND   hWnd, const UINT     msg,
-	const WPARAM wParam, const LPARAM lParam
-) {
-	if (msg == WM_NCCREATE) {
-		auto createStruct = reinterpret_cast<CREATESTRUCTW*>(lParam);
-		SetWindowLongPtrW(
-			hWnd, GWLP_USERDATA,
-			reinterpret_cast<LONG_PTR>(createStruct->lpCreateParams)
-		);
-	}
-
-	//	これでウィンドウのポインタを取得できるらしい! やったね!
-	// Window* self = reinterpret_cast<Window*>(
-	// 	GetWindowLongPtrW(
-	// 		hWnd, GWLP_USERDATA
-	// 	)
-	// );
-
-	switch (msg) {
-	case WM_CLOSE: {
-		DestroyWindow(hWnd);
-		return 0;
-	}
-
-	case WM_DESTROY: {
-		PostQuitMessage(0);
-		return 0;
-	}
-
-	case WM_PAINT: {
-		break;
-	}
-	case WM_SIZE: {
-		break;
-	}
-
-	// TODO: メッセージを他のサブシステムに横流しする
-	default: ;
-	}
-
-	return DefWindowProcW(hWnd, msg, wParam, lParam);
-}
-
-constexpr const wchar_t* Window::kClassName;

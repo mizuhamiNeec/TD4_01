@@ -21,8 +21,9 @@ namespace {
 		std::string out;
 
 		// レベル・チャンネルが空の場合はチャンネル名を出力しない
-		if (level != Unnamed::LogLevel::None && !Unnamed::kChannelNone.
-		    empty()) {
+		if (
+			level != Unnamed::LogLevel::None && !Unnamed::kChannelNone.empty()
+		) {
 			out =
 				"[" +
 				std::string(channel) +

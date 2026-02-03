@@ -163,31 +163,5 @@ namespace Unnamed {
 			"sv_maxvelocity", 3500.0f, FCVAR::NONE,
 			"Maximum speed any ballistically moving object is allowed to attain per axis."
 		);
-
-		static UnnamedConVar sv_accelerate(
-			"sv_accelerate", 10.0f, FCVAR::NONE,
-			"Linear acceleration amount (old value is 5.6)"
-		);
-
-		static UnnamedConVar sv_airaccelerate("sv_airaccelerate", 12.0f);
-
-		static UnnamedConVar sv_maxspeed(
-			"sv_maxspeed", 320.0f, FCVAR::NONE,
-			"Maximum speed a player can move."
-		);
-
-		static UnnamedConVar sv_stopspeed(
-			"sv_stopspeed", 100.0f, FCVAR::NONE,
-			"Minimum stopping speed when on ground."
-		);
-
-		static UnnamedConVar sv_friction(
-			"sv_friction", 4.0f, FCVAR::NONE, "World friction."
-		);
-
-		static UnnamedConVar sv_stepsize(
-			"sv_stepsize", 18.0f, FCVAR::NONE,
-			"Maximum step height."
-		);
 	}
 }

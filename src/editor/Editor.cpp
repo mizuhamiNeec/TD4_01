@@ -157,8 +157,10 @@ void Editor::Update([[maybe_unused]] const float deltaTime) {
 	if (mLoadFilePath) {
 		BaseScene* currentScene = mSceneManager->GetCurrentScene().get();
 		if (currentScene && mEntityLoader) {
-			auto* engine = Unnamed::EngineServices::Get();
-			auto* resourceManager = engine ? engine->GetResourceManagerInstance() : nullptr;
+			auto* engine          = Unnamed::EngineServices::Get();
+			auto* resourceManager = engine ?
+				                        engine->GetResourceManagerInstance() :
+				                        nullptr;
 			if (resourceManager) {
 				mEntityLoader->LoadScene(
 					mLoadFilePath.value(), currentScene,
@@ -247,8 +249,8 @@ void Editor::Update([[maybe_unused]] const float deltaTime) {
 #ifdef _DEBUG
 	// ギズモの操作はエンティティの更新前に行う
 	auto* engine = Unnamed::EngineServices::Get();
-	Vec2 vLT   = engine ? engine->GetViewportLTInstance() : Vec2{};
-	Vec2 vSize = engine ? engine->GetViewportSizeInstance() : Vec2{};
+	Vec2  vLT    = engine ? engine->GetViewportLTInstance() : Vec2{};
+	Vec2  vSize  = engine ? engine->GetViewportSizeInstance() : Vec2{};
 	ImGuizmo::SetRect(
 		vLT.x, vLT.y,
 		vSize.x, vSize.y
@@ -343,12 +345,12 @@ void Editor::Update([[maybe_unused]] const float deltaTime) {
 		static bool  bOpenPopup = false; // ポップアップ表示フラグ
 		static float popupTimer = 0.0f;
 
-		auto* engine2 = Unnamed::EngineServices::Get();
-		auto   lt           = engine2 ? engine2->GetViewportLTInstance() : Vec2{};
-		auto   size         = engine2 ? engine2->GetViewportSizeInstance() : Vec2{};
-		ImVec2 viewportPos  = {lt.x, lt.y};
+		auto*  engine2 = Unnamed::EngineServices::Get();
+		auto   lt = engine2 ? engine2->GetViewportLTInstance() : Vec2{};
+		auto   size = engine2 ? engine2->GetViewportSizeInstance() : Vec2{};
+		ImVec2 viewportPos = {lt.x, lt.y};
 		ImVec2 viewportSize = {size.x, size.y};
-		auto   mousePos     = ImGui::GetMousePos();
+		auto   mousePos = ImGui::GetMousePos();
 
 		bool bIsInsideViewport =
 			mousePos.x >= viewportPos.x &&
@@ -442,21 +444,22 @@ void Editor::Update([[maybe_unused]] const float deltaTime) {
 					moveSpd * mGameTime->ScaledDeltaTime<float>()
 				);
 			}
-			
-			// カーソルをウィンドウの中央にリセット
-			POINT centerCursorPos = {
-				static_cast<LONG>(OldWindowManager::GetMainWindow()->
-				                  GetClientWidth() /
-				                  2),
-				static_cast<LONG>(OldWindowManager::GetMainWindow()->
-				                  GetClientHeight()
-				                  / 2)
-			};
-			ClientToScreen(
-				OldWindowManager::GetMainWindow()->GetWindowHandle(),
-				&centerCursorPos
-			); // クライアント座標をスクリーン座標に変換
-			SetCursorPos(centerCursorPos.x, centerCursorPos.y);
+
+			// TODO: 直す
+			// // カーソルをウィンドウの中央にリセット
+			// POINT centerCursorPos = {
+			// 	static_cast<LONG>(OldWindowManager::GetMainWindow()->
+			// 	                  GetClientWidth() /
+			// 	                  2),
+			// 	static_cast<LONG>(OldWindowManager::GetMainWindow()->
+			// 	                  GetClientHeight()
+			// 	                  / 2)
+			// };
+			// ClientToScreen(
+			// 	OldWindowManager::GetMainWindow()->GetWindowHandle(),
+			// 	&centerCursorPos
+			// ); // クライアント座標をスクリーン座標に変換
+			// SetCursorPos(centerCursorPos.x, centerCursorPos.y);
 
 			firstReset = false; // 初回リセット完了
 		} else {
@@ -835,11 +838,12 @@ void Editor::DrawMainMenuBar() {
 					ofn.lStructSize = sizeof(OPENFILENAMEA);
 
 					HWND hwndOwner = nullptr;
-					if (OldWindowManager::GetMainWindow()) {
-						hwndOwner =
-							OldWindowManager::GetMainWindow()->
-							GetWindowHandle();
-					}
+					// TODO: 直す
+					// if (OldWindowManager::GetMainWindow()) {
+					// 	hwndOwner =
+					// 		OldWindowManager::GetMainWindow()->
+					// 		GetWindowHandle();
+					// }
 					ofn.hwndOwner   = hwndOwner;
 					ofn.lpstrFilter =
 						"Scene Files (*.scene)\0*.scene\0All Files (*.*)\0*.*\0";
@@ -882,11 +886,12 @@ void Editor::DrawMainMenuBar() {
 					ofn.lStructSize = sizeof(OPENFILENAMEA);
 
 					HWND hwndOwner = nullptr;
-					if (OldWindowManager::GetMainWindow()) {
-						hwndOwner =
-							OldWindowManager::GetMainWindow()->
-							GetWindowHandle();
-					}
+					// TODO: 直す
+					// if (OldWindowManager::GetMainWindow()) {
+					// 	hwndOwner =
+					// 		OldWindowManager::GetMainWindow()->
+					// 		GetWindowHandle();
+					// }
 					ofn.hwndOwner   = hwndOwner;
 					ofn.lpstrFilter =
 						"Scene Files (*.scene)\0*.scene\0All Files (*.*)\0*.*\0";

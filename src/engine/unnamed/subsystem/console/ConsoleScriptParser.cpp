@@ -2,7 +2,7 @@
 
 #include <fstream>
 
-#include <core/unnamed/string/StrUtil.h>
+#include <core/string/StrUtil.h>
 
 #include <engine/OldConsole/Console.h>
 #include <engine/unnamed/subsystem/console/Log.h>

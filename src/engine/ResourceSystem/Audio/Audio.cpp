@@ -8,9 +8,14 @@
 /// @brief コンストラクタ
 Audio::Audio() { mAudioBuffer = {}; }
 
+void Audio::InvalidateVoice() noexcept {
+	mVoiceValid  = false;
+	mSourceVoice = nullptr;
+}
+
 /// @brief デストラクタ
 Audio::~Audio() {
-	if (mSourceVoice) {
+	if (mVoiceValid && mSourceVoice) {
 		mSourceVoice->Stop();
 		mSourceVoice->DestroyVoice();
 		mSourceVoice = nullptr;

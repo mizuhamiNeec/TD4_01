@@ -4,7 +4,7 @@
 #include <source_location>
 #include <unordered_map>
 
-#include <core/unnamed/containers/RingBuffer.h>
+#include <core/containers/RingBuffer.h>
 
 #include <engine/unnamed/subsystem/console/ConsoleUI.h>
 #include <engine/unnamed/subsystem/console/concommand/base/UnnamedConCommandBase.h>
@@ -130,8 +130,6 @@ namespace Unnamed {
 
 			auto* base = GetConVar(name);
 			if (!base) { return nullptr; }
-
-			if (GetConVarType(base) != TVar::kType) { return nullptr; }
 
 			return static_cast<TVar*>(base);
 		}

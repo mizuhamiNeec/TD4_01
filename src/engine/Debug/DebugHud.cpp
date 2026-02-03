@@ -6,6 +6,9 @@
 #include <engine/Engine.h>
 #include <engine/EngineServices.h>
 
+#include "engine/unnamed/subsystem/console/ConsoleSystem.h"
+#include "engine/unnamed/subsystem/console/concommand/UnnamedConVar.h"
+
 /// @brief 更新処理
 /// @param deltaTime 前フレームからの経過時間（秒）
 void DebugHud::Update(const float deltaTime) {
@@ -17,9 +20,14 @@ void DebugHud::Update(const float deltaTime) {
 /// @param deltaTime 前フレームからの経過時間（秒）
 void DebugHud::ShowFrameRate([[maybe_unused]] const float deltaTime) {
 #ifdef _DEBUG
-	const int flag = ConVarManager::GetConVar("cl_showfps")->GetValueAsInt();
+	const auto console = ServiceLocator::Get<Unnamed::ConsoleSystem>();
+	const auto var     = console->GetConVarAs<Unnamed::UnnamedConVar<int>>(
+		"cl_showfps"
+	);
+	const int flag = var->GetValue();
 
-	if (flag == 0) { return; }
+	// 変数がnullまたは0なら表示しない
+	if (var == nullptr || flag == 0) { return; }
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0.0f, 0.0f});
 
@@ -34,9 +42,10 @@ void DebugHud::ShowFrameRate([[maybe_unused]] const float deltaTime) {
 		ImGuiWindowFlags_NoNav;
 
 	const auto viewportLt = Unnamed::EngineServices::Get() ?
-		                       Unnamed::EngineServices::Get()->GetViewportLTInstance() :
-		                       Vec2{};
-	const auto windowPos  = ImVec2(viewportLt.x, viewportLt.y + 128.0f);
+		                        Unnamed::EngineServices::Get()->
+		                        GetViewportLTInstance() :
+		                        Vec2{};
+	const auto windowPos = ImVec2(viewportLt.x, viewportLt.y + 128.0f);
 	ImGui::SetNextWindowPos(windowPos, ImGuiCond_Always);
 
 	std::string text;

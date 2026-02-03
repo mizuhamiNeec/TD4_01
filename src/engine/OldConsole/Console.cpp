@@ -7,18 +7,18 @@
 #include <format>
 #include <fstream>
 
-#include <core/unnamed/ini/IniParser.h>
+#include <core/ini/IniParser.h>
+
 #include <engine/ImGui/Icons.h>
 #include <engine/ImGui/ImGuiManager.h>
 #include <engine/ImGui/ImGuiUtil.h>
+#include <engine/ImGui/ImGuiWidgets.h>
 #include <engine/Input/InputSystem.h>
 #include <engine/OldConsole/ConCommand.h>
 #include <engine/OldConsole/Console.h>
 #include <engine/OldConsole/ConVarManager.h>
+#include <engine/Platform/WindowsUtils.h>
 #include <engine/unnamed/subsystem/time/SystemClock.h>
-#include <engine/Window/WindowsUtils.h>
-
-#include "engine/ImGui/ImGuiWidgets.h"
 
 using SetThreadDescriptionFunc = HRESULT(WINAPI*)(HANDLE, PCWSTR);
 
@@ -389,15 +389,13 @@ void Console::Print(
 	if (message.empty()) { return; }
 
 	// ログへの書き込み
-	if (ConVarManager::GetConVar("verbose")->GetValueAsBool()) {
-		std::string channelStr = (channel != Channel::None) ?
-			                         "[" + ToString(channel) + "] " :
-			                         "";
-		OutputDebugString(
-			Unnamed::StrUtil::ToWString(channelStr + message).c_str()
-		);
-		LogToFileAsync(channelStr + message);
-	}
+	std::string channelStr = (channel != Channel::None) ?
+		                         "[" + ToString(channel) + "] " :
+		                         "";
+	OutputDebugString(
+		Unnamed::StrUtil::ToWString(channelStr + message).c_str()
+	);
+	LogToFileAsync(channelStr + message);
 
 	// タスクキューに追加
 	{

@@ -3,11 +3,11 @@
 #include "engine/OldConsole/Console.h"
 #include "engine/Sprite/SpriteCommon.h"
 
-#include "engine/renderer/D3D12.h"
 #include "engine/Engine.h"
 #include "engine/EngineServices.h"
+#include "engine/Viewport.h"
+#include "engine/renderer/D3D12.h"
 #include "engine/TextureManager/TexManager.h"
-#include "engine/Window/WindowManager.h"
 
 /// @brief スプライトのインデックスデータ
 Sprite::~Sprite() = default;
@@ -139,7 +139,7 @@ void Sprite::Update() {
 }
 
 /// @brief スプライトの描画
-void Sprite::Draw() const {
+void Sprite::Draw(Unnamed::Viewport viewport) const {
 	{
 		mVertexBuffer->Update(
 			mVertices.data(),
@@ -165,10 +165,8 @@ void Sprite::Draw() const {
 		const Mat4 projMat = Mat4::MakeOrthographicMat(
 			0.0f,
 			0.0f,
-			static_cast<float>(OldWindowManager::GetMainWindow()->
-				GetClientWidth()),
-			static_cast<float>(OldWindowManager::GetMainWindow()->
-				GetClientHeight()),
+			static_cast<float>(viewport.width),
+			static_cast<float>(viewport.height),
 			0.0f,
 			100.0f
 		);
@@ -200,12 +198,12 @@ void Sprite::Draw() const {
 	// テクスチャのSRVを設定
 	if (auto* engine = Unnamed::EngineServices::Get()) {
 		if (auto* texManager = engine->GetTexManagerInstance()) {
-		mSpriteCommon->GetD3D12()->GetCommandList()->
-		               SetGraphicsRootDescriptorTable(
-			               2, texManager->GetSrvHandleGPU(
-				               mTextureFilePath
-			               )
-		               );
+			mSpriteCommon->GetD3D12()->GetCommandList()->
+			               SetGraphicsRootDescriptorTable(
+				               2, texManager->GetSrvHandleGPU(
+					               mTextureFilePath
+				               )
+			               );
 		}
 	}
 

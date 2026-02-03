@@ -139,9 +139,7 @@ void GameScene::Render() {
 
 	if (mExplosionEffect) { mExplosionEffect->Draw(); }
 
-	if (mSpriteCommon) { mSpriteCommon->Render(); }
-
-	if (mNextCheckpointArrowSprite) { mNextCheckpointArrowSprite->Draw(); }
+	// if (mNextCheckpointArrowSprite) { mNextCheckpointArrowSprite->Draw(TODO); }
 }
 
 /// @brief コンソール変数の登録

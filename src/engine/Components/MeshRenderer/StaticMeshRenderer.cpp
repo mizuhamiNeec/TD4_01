@@ -6,6 +6,7 @@
 #include <engine/TextureManager/TexManager.h>
 
 #include "engine/EngineServices.h"
+#include "engine/Components/Camera/CameraComponent.h"
 
 struct MatParam {
 	Vec4  baseColor;

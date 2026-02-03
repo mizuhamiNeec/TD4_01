@@ -3,6 +3,7 @@
 
 #include <runtime/core/math/Math.h>
 
+#include "engine/Viewport.h"
 #include "engine/renderer/ConstantBuffer.h"
 
 #include "engine/renderer/IndexBuffer.h"
@@ -21,7 +22,7 @@ public:
 
 	void Init(SpriteCommon* spriteCommon, const std::string& textureFilePath);
 	void Update();
-	void Draw() const;
+	void Draw(Unnamed::Viewport viewport) const;
 
 	void ChangeTexture(const std::string& textureFilePath);
 

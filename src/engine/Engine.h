@@ -1,13 +1,6 @@
 #pragma once
-#include <cstddef>
 #include <memory>
-#include <optional>
-#include <string>
-#include <vector>
-#include <editor/Editor.h>
 #include <engine/EngineConfig.h>
-#include <engine/CopyImagePass/CopyImagePass.h>
-#include <engine/Entity/EntityLoader.h>
 #include <engine/ImGui/ImGuiManager.h>
 #include <engine/Line/LineCommon.h>
 #include <engine/Model/ModelCommon.h>
@@ -19,14 +12,14 @@
 #include <engine/renderer/D3D12.h>
 #include <engine/renderer/RenderTargets.h>
 #include <engine/ResourceSystem/Manager/ResourceManager.h>
-#include <engine/SceneManager/SceneFactory.h>
-#include <engine/SceneManager/SceneManager.h>
 #include <engine/Sprite/SpriteCommon.h>
-#include <engine/state/IEngineModeState.h>
 #include <engine/unnamed/subsystem/input/UInputSystem.h>
 #include <engine/unnamed/subsystem/time/TimeSystem.h>
-#include <engine/Window/WindowManager.h>
 #include <game/scene/GameScene.h>
+
+#include "Platform/WindowManager.h"
+
+#include "runtime/world/UWorld.h"
 
 class AudioManager;
 
@@ -39,29 +32,57 @@ namespace Unnamed {
 
 		int Run();
 
-		[[nodiscard]] AudioManager* GetAudioManagerInstance() const { return mAudioManager.get(); }
-		[[nodiscard]] D3D12* GetRendererInstance() const { return mRenderer.get(); }
-		[[nodiscard]] ResourceManager* GetResourceManagerInstance() const { return mResourceManager.get(); }
-		[[nodiscard]] SpriteCommon* GetSpriteCommonInstance() const { return mSpriteCommon.get(); }
-		[[nodiscard]] ParticleManager* GetParticleManagerInstance() const { return mParticleManager.get(); }
-		[[nodiscard]] SrvManager* GetSrvManagerInstance() const { return mSrvManager.get(); }
-		[[nodiscard]] TexManager* GetTexManagerInstance() const {
-			return mResourceManager ? mResourceManager->GetTexManager() : nullptr;
+		[[nodiscard]]
+		AudioManager* GetAudioManagerInstance() const {
+			return mAudioManager.get();
 		}
-		[[nodiscard]] SceneManager* GetSceneManagerInstance() const { return mSceneManager.get(); }
-		[[nodiscard]] Vec2 GetViewportLTInstance() const { return mViewportLT; }
-		[[nodiscard]] Vec2 GetViewportSizeInstance() const { return mViewportSize; }
-		[[nodiscard]] float& GetBlurStrengthInstance() { return mBlurStrength; }
+
+		[[nodiscard]]
+		D3D12* GetRendererInstance() const { return mRenderer.get(); }
+
+		[[nodiscard]]
+		ResourceManager* GetResourceManagerInstance() const {
+			return mResourceManager.get();
+		}
+
+		[[nodiscard]]
+		SpriteCommon* GetSpriteCommonInstance() const {
+			return mSpriteCommon.get();
+		}
+
+		[[nodiscard]]
+		ParticleManager* GetParticleManagerInstance() const {
+			return mParticleManager.get();
+		}
+
+		[[nodiscard]]
+		SrvManager* GetSrvManagerInstance() const {
+			return mResourceManager->GetSrvManager();
+		}
+
+		[[nodiscard]]
+		TexManager* GetTexManagerInstance() const {
+			return mResourceManager ?
+				       mResourceManager->GetTexManager() :
+				       nullptr;
+		}
+
+		[[nodiscard]]
+		Vec2 GetViewportLTInstance() const { return mViewportLT; }
+
+		[[nodiscard]]
+		Vec2 GetViewportSizeInstance() const { return mViewportSize; }
+
+		[[nodiscard]]
+		float& GetBlurStrengthInstance() { return mBlurStrength; }
 
 		void OnResize(uint32_t width, uint32_t height);
 		void ResizeOffscreenRenderTextures(uint32_t width, uint32_t height);
 
-		static void RegisterConsoleCommandsAndVariables();
-		static void Quit(const std::vector<std::string>& args = {});
-		void        CheckEditorMode();
+		void RegisterConsoleCommandsAndVariables();
 
 		/// @brief エディターインスタンスの取得
-		Editor* GetEditor() const { return mEditor.get(); }
+		//Editor* GetEditor() const { return mEditor.get(); }
 
 		/// @brief ポストプロセスエフェクト数の取得
 		std::size_t GetPostChainSize() const {
@@ -90,63 +111,87 @@ namespace Unnamed {
 			return mPostProcessPipeline.GetActivePingRtvDesc();
 		}
 
-		/// @brief エディター生成
-		void CreateEditor();
-
-		/// @brief エディター破棄
-		void DestroyEditor();
-
 	private:
 		/// @brief 初期化処理
 		bool Init();
 		/// @brief 更新処理
 		void Tick();
 		/// @brief 終了処理
-		void Shutdown() const;
+		void Shutdown();
 
-		/// @brief モード State を切り替える
-		void SetModeState(std::unique_ptr<IEngineModeState> state);
+		/// @brief ワールドを切り替えます。
+		/// @tparam TWorld 切り替えるワールドの型
+		/// @tparam Args コンストラクタに渡す引数の型
+		/// @param args コンストラクタに渡す引数
+		/// @return 切り替えたワールドの参照
+		template <class TWorld, class... Args>
+		TWorld& SwitchWorld(Args&&... args) {
+			static_assert(std::is_base_of_v<UWorld, TWorld>);
 
+			if (mWorld) {
+				mWorld->Shutdown();
+				mWorld.reset();
+			}
+
+			auto newWorld = std::make_unique<TWorld>(
+				std::forward<Args>(args)...
+			);
+			TWorld* raw = newWorld.get();
+
+			mWorld = std::move(newWorld);
+
+			mWorld->Initialize();
+			return *raw;
+		}
+
+		/// @brief 現在のワールドを取得します。
+		/// @return 現在のワールドの参照
+		UWorld* GetWorld() const { return mWorld.get(); }
+
+	private:
 		EngineConfig mConfig;
 
+		// 基幹システム
 		std::unique_ptr<ConsoleSystem> mConsoleSystem;
 		std::unique_ptr<TimeSystem>    mTimeSystem;
+
+		// 基本システム
+		std::unique_ptr<WindowManager> mWindowManager;
 		std::unique_ptr<UInputSystem>  mInputSystem;
 
-		std::unique_ptr<OldWindowManager> mWindowManager;
-		std::unique_ptr<Editor> mEditor;
-		std::unique_ptr<IEngineModeState> mModeState;
-		std::unique_ptr<EntityLoader>     mEntityLoader;
-		std::unique_ptr<Console>          mConsole;
-		PostProcessPipeline               mPostProcessPipeline;
-		RenderTargets                     mRenderTargets;
-		bool                              bSwapchainPassBegun = false;
+		std::unique_ptr<UWorld> mWorld;
 
-		static std::unique_ptr<SrvManager>      mSrvManager;
-		static std::unique_ptr<ResourceManager> mResourceManager;
+		std::unique_ptr<Console> mConsole;
+		PostProcessPipeline      mPostProcessPipeline;
+		RenderTargets            mRenderTargets;
+		bool                     mSwapchainPassBegun = false;
 
-		static std::unique_ptr<D3D12> mRenderer;
+
+		std::unique_ptr<ResourceManager> mResourceManager;
+
+		std::unique_ptr<D3D12> mRenderer;
 
 #ifdef _DEBUG
 		std::unique_ptr<ImGuiManager> mImGuiManager;
 #endif
 
-		static std::unique_ptr<ParticleManager> mParticleManager;
+		std::unique_ptr<ParticleManager> mParticleManager;
+		std::unique_ptr<SpriteCommon>    mSpriteCommon;
+		std::unique_ptr<Object3DCommon>  mObject3DCommon;
+		std::unique_ptr<ModelCommon>     mModelCommon;
+		std::unique_ptr<LineCommon>      mLineCommon;
+		std::unique_ptr<AudioManager>    mAudioManager;
 
-		static std::unique_ptr<SpriteCommon> mSpriteCommon;
-		std::unique_ptr<Object3DCommon>      mObject3DCommon;
-		std::unique_ptr<ModelCommon>         mModelCommon;
-		std::unique_ptr<LineCommon>          mLineCommon;
-		std::unique_ptr<SceneFactory>        mSceneFactory;
-		static std::unique_ptr<AudioManager> mAudioManager;
+		Vec2 mViewportLT;
+		Vec2 mViewportSize;
 
-		static std::shared_ptr<SceneManager> mSceneManager;
-		static std::optional<std::string>    mPendingSceneChange;
+#ifdef _DEBUG
+		bool mIsEditorMode = true;
+#else
+		bool mIsEditorMode = false;
+#endif
 
-		static Vec2 mViewportLT;
-		static Vec2 mViewportSize;
-		static bool mIsEditorMode;
-		static bool mWishShutdown;
+		bool mWishShutdown = false;
 
 		float mBlurStrength = 0.0f;
 	};

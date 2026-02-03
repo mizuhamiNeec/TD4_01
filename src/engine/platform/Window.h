@@ -1,38 +1,68 @@
 ﻿#pragma once
-#include <string>
 #include <cstdint>
+#include <optional>
+#include <string>
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
 #include <Windows.h>
 
-/// @brief ウィンドウの説明構造体
-struct WindowDesc {
-	std::string title;
-	uint32_t    width  = 1280;
-	uint32_t    height = 720;
-	DWORD       style  = WS_OVERLAPPEDWINDOW;
-};
+#include "engine/EngineConfig.h"
 
-/// @brief ウィンドウクラス
-class Window {
-public:
-	Window(const WindowDesc& desc, HINSTANCE hInstance, uint32_t wndId);
-	~Window();
+namespace Unnamed {
+	struct WindowId {
+		uint32_t value = 0;
 
-	[[nodiscard]] HWND     GetHWnd() const;
-	[[nodiscard]] uint32_t GetID() const;
+		friend bool operator==(const WindowId a, const WindowId b) {
+			return a.value == b.value;
+		}
 
-	void Show(int cmdShow = SW_SHOWDEFAULT) const;
+		friend bool operator!=(const WindowId a, const WindowId b) {
+			return !(a == b);
+		}
+	};
 
-private:
-	static LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-	static constexpr auto   kClassName = L"WindowClass";
+	struct WindowDesc {
+		std::string title     = "Unnamed Window";
+		int32_t     width     = 1280;
+		int32_t     height    = 720;
+		WINDOW_MODE mode      = WINDOW_MODE::WINDOWED;
+		bool        resizable = true;
+		bool        visible   = true;
+	};
 
-	HWND     mHWnd;
-	uint32_t mWndId;
-};
+	struct WindowResizeEvent {
+		int32_t width  = 0;
+		int32_t height = 0;
+	};
+
+	class Window final {
+	public:
+		Window(WindowId id, WindowDesc desc, HWND hwnd);
+
+		[[nodiscard]] WindowId GetId() const;
+		[[nodiscard]] HWND     GetHwnd() const;
+
+		[[nodiscard]] WindowDesc GetDesc() const;
+
+		[[nodiscard]] bool ShouldClose() const;
+		[[nodiscard]] bool IsMinimized() const;
+
+		std::optional<WindowResizeEvent> ConsumeResizeEvent();
+
+		LRESULT HandleMessage(
+			HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
+		);
+
+	private:
+		void MarkCloseRequested();
+
+	private:
+		HWND              mHwnd          = nullptr;
+		WindowDesc        mDesc          = {};
+		WindowResizeEvent mPendingResize = {};
+		WindowId          mId            = {};
+
+		bool mShouldClose      = false;
+		bool mMinimized        = false;
+		bool mHasPendingResize = false;
+	};
+}

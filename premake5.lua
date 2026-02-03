@@ -20,11 +20,14 @@ function CommonSettings()
     language "C++"
     cppdialect "C++23"
     architecture(ARCHITECTURE)
-    flags { "MultiProcessorCompile" }
+
+    -- flags { "MultiProcessorCompile" } -- 廃止
+    multiprocessorcompile "On"
+
     debugdir (ROOT_DIR)
-    characterset "Unicode" -- 文字セットをUnicodeに指定
+    characterset "Unicode"
     filter "system:windows"
-        buildoptions { "/utf-8" } -- UTF-8でソースを扱う
+        buildoptions { "/utf-8" }
     filter {}
 end
 
@@ -118,12 +121,13 @@ group "Engine"
         }
 	
 		filter { "files:content/**.hlsl" }
-			flags { "ExcludeFromBuild" }
-			
-		filter { "files:content/**.hlsli" }
-			flags { "ExcludeFromBuild" }
-			
-		filter {}
+            -- flags { "ExcludeFromBuild" } -- 廃止
+            excludefrombuild "On"
+        
+        filter { "files:content/**.hlsli" }
+            -- flags { "ExcludeFromBuild" } -- 廃止
+            excludefrombuild "On"
+        filter {}
 	
 		excludes {
 			"src/thirdparty/**",

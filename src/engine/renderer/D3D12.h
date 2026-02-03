@@ -7,7 +7,8 @@
 #include <wrl/client.h>
 
 #include <runtime/core/Properties.h>
-#include "engine/Window/Base/BaseWindow.h"
+
+#include "engine/Platform/Window.h"
 
 class SrvManager;
 
@@ -47,7 +48,7 @@ struct RenderPassTargets {
 /// @brief D3D12レンダラークラス
 class D3D12 {
 public: // メンバ関数
-	D3D12(BaseWindow* window);
+	D3D12(HWND hwnd, const Unnamed::WindowDesc& windowDesc);
 	~D3D12();
 
 	void Init();
@@ -107,8 +108,9 @@ private:
 	D3DResourceLeakChecker mD3dResourceLeakChecker;
 
 	// 持ってきたやつ
-	SrvManager* mSrvManager = nullptr;
-	BaseWindow* mWindow     = nullptr;
+	HWND                mHwnd = nullptr;
+	Unnamed::WindowDesc mWindowDesc;
+	SrvManager*         mSrvManager = nullptr;
 
 	// メンバ変数
 	// 1. デバイス・ファクトリ・スワップチェーン

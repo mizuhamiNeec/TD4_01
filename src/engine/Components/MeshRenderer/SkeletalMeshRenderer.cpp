@@ -7,6 +7,7 @@
 #include "engine/Engine.h"
 #include "engine/EngineServices.h"
 #include "engine/Camera/CameraManager.h"
+#include "engine/Components/Camera/CameraComponent.h"
 #include "engine/Debug/DebugDraw.h"
 #include "engine/Debug/DebugHud.h"
 #include "engine/Entity/Entity.h"

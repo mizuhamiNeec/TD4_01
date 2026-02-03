@@ -5,6 +5,7 @@
 #include <engine/EngineServices.h>
 #include <engine/OldConsole/ConVarManager.h>
 
+#include "engine/Components/Camera/CameraComponent.h"
 #include "engine/Debug/DebugHud.h"
 #include "engine/ImGui/ImGuiUtil.h"
 

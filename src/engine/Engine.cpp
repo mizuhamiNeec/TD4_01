@@ -14,53 +14,60 @@
 #include <engine/Input/InputSystem.h>
 #include <engine/OldConsole/ConCommand.h>
 #include <engine/OldConsole/ConVarManager.h>
-#include <engine/Platform/Window.h>
+#include <engine/Platform/WindowsUtils.h>
 #include <engine/postprocess/PostProcessPipeline.h>
 #include <engine/postprocess/PPBloom.h>
 #include <engine/postprocess/PPChromaticAberration.h>
 #include <engine/postprocess/PPRadialBlur.h>
 #include <engine/postprocess/PPVignette.h>
 #include <engine/ResourceSystem/Audio/AudioManager.h>
-#include <engine/state/EditorModeState.h>
-#include <engine/state/GameModeState.h>
 #include <engine/unnamed/subsystem/console/ConsoleScriptParser.h>
 #include <engine/unnamed/subsystem/console/ConsoleSystem.h>
+#include <engine/unnamed/subsystem/console/concommand/UnnamedConCommand.h>
 #include <engine/unnamed/subsystem/console/concommand/UnnamedConVar.h>
 #include <engine/unnamed/subsystem/input/device/keyboard/KeyboardDevice.h>
 #include <engine/unnamed/subsystem/input/device/mouse/MouseDevice.h>
 #include <engine/unnamed/subsystem/interface/ServiceLocator.h>
 #include <engine/unnamed/subsystem/time/TimeSystem.h>
-#include <engine/Window/WindowsUtils.h>
-#include <game/scene/GameScene.h>
-
-#include "Platform/Win32App.h"
-
-#include "Window/MainWindow.h"
 
 namespace Unnamed {
-	static constexpr std::string_view kChannel = "Engine";
-
 	/// @brief コンストラクタ
 	Engine::Engine() = default;
 
 	/// @brief デストラクタ
 	Engine::~Engine() = default;
 
-
 	int Engine::Run() {
 		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF); // リークチェック
 		[[maybe_unused]] HRESULT hr = CoInitializeEx(
 			nullptr, COINIT_MULTITHREADED
 		);
-		if (!Init()) {
-			UASSERT(false && "Failed to initialize Engine");
-			return EXIT_FAILURE;
-		}
-		while (!Win32App::PollEvents()) {
-			if (OldWindowManager::ProcessMessage()) { break; }
+		timeBeginPeriod(1); // システムタイマーの分解能を上げる
+
+		// 初期化
+		if (!Init()) { UASSERT(false && "Failed to initialize Engine"); }
+
+		// メインループ
+		while (true) {
+			mWindowManager->ProcessMessage();
+
+			// ウィンドウのリサイズ処理
+			for (const WindowId id : mWindowManager->GetAllWindowIds()) {
+				Window* wnd = mWindowManager->FindWindowById(id);
+				if (!wnd) { continue; }
+				if (const auto resize = wnd->ConsumeResizeEvent()) {
+					OnResize(resize->width, resize->height);
+				}
+			}
+
+			if (mWindowManager->ShouldQuit() || mWishShutdown) { break; }
+
 			Tick();
 		}
+
+		// シャットダウン
 		Shutdown();
+		timeEndPeriod(1);
 		CoUninitialize();
 		return EXIT_SUCCESS;
 	}
@@ -69,15 +76,32 @@ namespace Unnamed {
 	/// @return 成功したらtrueを返す
 	bool Engine::Init() {
 		ServiceLocator::Register<Engine>(this);
+
+		mConfig = {
 #ifdef _DEBUG
-		ConVarManager::RegisterConVar<bool>(
-			"verbose", true, "Enable verbose logging"
-		);
+			.mode = ENGINE_MODE::EDITOR,
 #else
-		ConVarManager::RegisterConVar<bool>(
-			"verbose", false, "Enable verbose logging"
-		);
+			.mode = ENGINE_MODE::GAME,
 #endif
+			.window = {
+				.title     = "Unnamed Engine",
+				.width     = 1280,
+				.height    = 720,
+				.mode      = WINDOW_MODE::WINDOWED,
+				.resizable = true
+			},
+		};
+
+		// WindowManagerの初期化メインウィンドウ作成
+		mWindowManager = std::make_unique<WindowManager>();
+		if (!mWindowManager->Init(mConfig.window)) { return false; }
+
+		// メインウィンドウのID取得
+		const auto id = mWindowManager->GetMainWindowId();
+		// メインウィンドウのポインタ取得
+		const auto window = mWindowManager->FindWindowById(id);
+		// HWND取得
+		auto hwnd = window->GetHwnd();
 
 		// ConsoleSystemの初期化
 		mConsoleSystem = std::make_unique<ConsoleSystem>();
@@ -87,51 +111,16 @@ namespace Unnamed {
 		mTimeSystem = std::make_unique<TimeSystem>();
 		if (!mTimeSystem->Init()) { return false; }
 
-		// メインウィンドウの作成
-		auto gameWindow = std::make_unique<MainWindow>();
-
-		// ウィンドウ情報の設定
-		WindowInfo gameWindowInfo = {
-			.title     = "GameWindow",
-			.width     = kClientWidth,
-			.height    = kClientHeight,
-			.style     = WS_OVERLAPPEDWINDOW,
-			.exStyle   = 0,
-			.hInstance = GetModuleHandle(nullptr),
-			.className = "gameWindowClassName"
-		};
-
-		// ウィンドウの作成
-		if (gameWindow->Create(gameWindowInfo)) {
-			mWindowManager->AddWindow(std::move(gameWindow));
-		} else {
-			Fatal("Engine", "Failed to create main window.");
-			throw std::runtime_error("Failed to create main window.");
-		}
-
 		// InputSystemの初期化
 		mInputSystem = std::make_unique<UInputSystem>();
 		if (!mInputSystem->Init()) { return false; }
 		// デバイス登録
-		const auto keyboardDevice = std::make_shared<KeyboardDevice>(
-			mWindowManager->GetMainWindow()->GetWindowHandle()
-		);
-		const auto mouseDevice = std::make_shared<MouseDevice>(
-			mWindowManager->GetMainWindow()->GetWindowHandle()
-		);
+		const auto keyboardDevice = std::make_shared<KeyboardDevice>(hwnd);
+		const auto mouseDevice    = std::make_shared<MouseDevice>(hwnd);
 		mInputSystem->RegisterDevice(keyboardDevice);
 		mInputSystem->RegisterDevice(mouseDevice);
 
-		mRenderer = std::make_unique<D3D12>(mWindowManager->GetMainWindow());
-
-		mWindowManager->GetMainWindow()->SetResizeCallback(
-			[this](
-			[[maybe_unused]] const uint32_t width,
-			[[maybe_unused]] const uint32_t height
-		) {
-				OnResize(width, height);
-			}
-		);
+		mRenderer = std::make_unique<D3D12>(hwnd, window->GetDesc());
 
 		InputSystem::Init();
 
@@ -139,10 +128,11 @@ namespace Unnamed {
 
 		// 各マネージャーの初期化
 		mResourceManager = std::make_unique<ResourceManager>(mRenderer.get());
-		mSrvManager      = std::make_unique<SrvManager>();
-		mSrvManager->Init(mRenderer.get());
+
 		mResourceManager->Init();
-		mRenderer->SetShaderResourceViewManager(mSrvManager.get());
+		mRenderer->SetShaderResourceViewManager(
+			mResourceManager->GetSrvManager()
+		);
 		mRenderer->Init();
 
 		mAudioManager = std::make_unique<AudioManager>();
@@ -150,10 +140,10 @@ namespace Unnamed {
 
 #ifdef _DEBUG
 		// ImGuiFontテクスチャ用にSRVを確保
-		mSrvManager->AllocateForTexture2D();
+		mResourceManager->GetSrvManager()->AllocateForTexture2D();
 		// ImGuiManagerの初期化
 		mImGuiManager = std::make_unique<ImGuiManager>(
-			mRenderer.get(), mSrvManager.get()
+			hwnd, mRenderer.get(), mResourceManager->GetSrvManager()
 		);
 #endif
 
@@ -161,15 +151,10 @@ namespace Unnamed {
 		mConsole = std::make_unique<Console>();
 
 #pragma region PostProcessInit
-		auto* wndMgr = mWindowManager->GetMainWindow();
-
-		const uint32_t kClWidth  = wndMgr->GetClientWidth();
-		const uint32_t kClHeight = wndMgr->GetClientHeight();
-
 		mRenderTargets.Init(
 			mRenderer.get(),
-			kClWidth,
-			kClHeight,
+			window->GetDesc().width,
+			window->GetDesc().height,
 			kOffscreenClearColor,
 			kBufferFormat,
 			DXGI_FORMAT_D32_FLOAT
@@ -177,9 +162,9 @@ namespace Unnamed {
 
 		mPostProcessPipeline.Init(
 			mRenderer.get(),
-			mSrvManager.get(),
-			kClWidth,
-			kClHeight,
+			mResourceManager->GetSrvManager(),
+			window->GetDesc().width,
+			window->GetDesc().height,
 			reinterpret_cast<const float*>(&kOffscreenClearColor),
 			kBufferFormat,
 			DXGI_FORMAT_D32_FLOAT
@@ -187,25 +172,25 @@ namespace Unnamed {
 
 		mPostProcessPipeline.AddPass(
 			std::make_unique<PPBloom>(
-				mRenderer->GetDevice(), mSrvManager.get()
+				mRenderer->GetDevice(), mResourceManager->GetSrvManager()
 			)
 		);
 
 		mPostProcessPipeline.AddPass(
 			std::make_unique<PPVignette>(
-				mRenderer->GetDevice(), mSrvManager.get()
+				mRenderer->GetDevice(), mResourceManager->GetSrvManager()
 			)
 		);
 
 		mPostProcessPipeline.AddPass(
 			std::make_unique<PPChromaticAberration>(
-				mRenderer->GetDevice(), mSrvManager.get()
+				mRenderer->GetDevice(), mResourceManager->GetSrvManager()
 			)
 		);
 
 		mPostProcessPipeline.AddPass(
 			std::make_unique<PPRadialBlur>(
-				mRenderer->GetDevice(), mSrvManager.get()
+				mRenderer->GetDevice(), mResourceManager->GetSrvManager()
 			)
 		);
 #pragma endregion
@@ -216,7 +201,9 @@ namespace Unnamed {
 
 		// パーティクル
 		mParticleManager = std::make_unique<ParticleManager>();
-		mParticleManager->Init(mRenderer.get(), mSrvManager.get());
+		mParticleManager->Init(
+			mRenderer.get(), mResourceManager->GetSrvManager()
+		);
 
 		// ライン
 		mLineCommon = std::make_unique<LineCommon>();
@@ -230,27 +217,19 @@ namespace Unnamed {
 
 		Console::SubmitCommand("neofetch");
 
-		// エンティティローダーの作成
-		mEntityLoader = std::make_unique<EntityLoader>();
-
-		// シーンマネージャ/ファクトリーの作成
-		mSceneFactory = std::make_unique<SceneFactory>();
-		mSceneManager = std::make_shared<SceneManager>(*mSceneFactory);
-		// ゲームシーンを登録
-		mSceneFactory->RegisterScene<GameScene>("GameScene");
-		// シーンの初期化
-		mSceneManager->ChangeScene("GameScene");
-
 		//---------------------------------------------------------------------
 		// エディターの初期化
 		//---------------------------------------------------------------------
-		CheckEditorMode();
 
 		assert(SUCCEEDED(mRenderer->GetCommandList()->Close()));
 
 		mConsoleSystem->ExecuteCommand(
 			"exec ./content/core/cfg/config_default.cfg"
 		);
+
+		// ワールドの作成とシーンの読み込み
+		SwitchWorld<UWorld>();
+		mWorld->LoadSceneFromFile("./content/core/scenes/sandbox.json");
 
 		return true;
 	}
@@ -267,15 +246,7 @@ namespace Unnamed {
 		ImGuizmo::BeginFrame();
 #endif
 
-		// 前のフレームとeditorModeが違う場合はStateを切り替える
-		static bool bPrevEditorMode = mIsEditorMode;
-		if (bPrevEditorMode != mIsEditorMode) {
-			CheckEditorMode();
-			bPrevEditorMode = mIsEditorMode;
-		}
-
 		/* ----------- 更新処理 ---------- */
-		if (mModeState) { mModeState->Update(*this, deltaTime); }
 
 		mConsoleSystem->Update(deltaTime);
 
@@ -284,14 +255,14 @@ namespace Unnamed {
 #ifdef _DEBUG
 		Console::Update();
 		DebugHud::Update(mTimeSystem->GetGameTime()->ScaledDeltaTime<float>());
-#endif
-
-#ifdef _DEBUG
 		DebugDraw::Update();
 #endif
+
 		CameraManager::Update(
 			mTimeSystem->GetGameTime()->ScaledDeltaTime<float>()
 		);
+
+		if (mWorld) { mWorld->Tick(deltaTime); }
 
 		auto offscreenTargets        = mRenderTargets.GetOffscreenPassTargets();
 		offscreenTargets.bClearColor =
@@ -313,7 +284,7 @@ namespace Unnamed {
 		DebugDraw::Draw();
 #endif
 
-		if (mModeState) { mModeState->Render(*this); }
+		//if (mModeState) { mModeState->Render(*this); }
 
 		// 先にバリアを設定
 		D3D12_RESOURCE_BARRIER barrier = {};
@@ -335,13 +306,17 @@ namespace Unnamed {
 		uint32_t                    finalW;
 		uint32_t                    finalH;
 		if (!mIsEditorMode) {
-			if (!bSwapchainPassBegun) {
+			if (!mSwapchainPassBegun) {
 				mRenderer->BeginSwapChainRenderPass();
-				bSwapchainPassBegun = true;
+				mSwapchainPassBegun = true;
 			}
 			finalOutRtv = mRenderer->GetSwapChainRenderTargetView();
-			finalW      = OldWindowManager::GetMainWindow()->GetClientWidth();
-			finalH      = OldWindowManager::GetMainWindow()->GetClientHeight();
+			auto window = mWindowManager->FindWindowById(
+				mWindowManager->GetMainWindowId()
+			);
+			auto desc = window->GetDesc();
+			finalW    = desc.width;
+			finalH    = desc.height;
 		} else {
 			finalOutRtv = mRenderTargets.GetPostProcessedRtv().rtvHandle;
 			finalW = static_cast<uint32_t>(mRenderTargets.GetOffscreenRtv().rtv
@@ -357,17 +332,18 @@ namespace Unnamed {
 			finalH
 		);
 
-		if (mIsEditorMode && mSrvManager) {
+		if (mIsEditorMode && mResourceManager->GetSrvManager()) {
 			auto& postRtv = mRenderTargets.GetPostProcessedRtv();
-			mSrvManager->CreateSRVForTexture2D(
+			mResourceManager->GetSrvManager()->CreateSRVForTexture2D(
 				postRtv.srvIndex,
 				postRtv.rtv.Get(),
 				postRtv.rtv->GetDesc().Format,
 				1
 			);
-			postRtv.srvHandleGPU = mSrvManager->GetGPUDescriptorHandle(
-				postRtv.srvIndex
-			);
+			postRtv.srvHandleGPU = mResourceManager->GetSrvManager()->
+				GetGPUDescriptorHandle(
+					postRtv.srvIndex
+				);
 		}
 
 		//---------------------------------------------------------------------
@@ -404,12 +380,10 @@ namespace Unnamed {
 	}
 
 	/// @brief シャットダウン
-	void Engine::Shutdown() const {
+	void Engine::Shutdown() {
 		mRenderer->WaitPreviousFrame();
 
 		DebugDraw::Shutdown();
-
-		// TexManager は ResourceManager が破棄します
 
 		mParticleManager->Shutdown();
 		mParticleManager.reset();
@@ -426,7 +400,7 @@ namespace Unnamed {
 		mInputSystem->Shutdown();
 		mConsoleSystem->Shutdown();
 		mTimeSystem->Shutdown();
-		
+
 		SpecialMsg(
 			LogLevel::Success,
 			"Engine",
@@ -460,143 +434,34 @@ namespace Unnamed {
 	/// @brief コンソールコマンドと変数の登録
 	void Engine::RegisterConsoleCommandsAndVariables() {
 		// コンソールコマンドを登録
-		ConCommand::RegisterCommand("exit", Quit, "Exit the engine.");
-		ConCommand::RegisterCommand("quit", Quit, "Exit the engine.");
+		static UnnamedConCommand quit(
+			"quit",
+			[this](const std::vector<std::string>&) {
+				mWishShutdown = true;
+				return true;
+			},
+			"Quit the engine."
+		);
 
 #ifdef _DEBUG
-		ConCommand::RegisterCommand(
+		static UnnamedConCommand toggleeditor(
 			"toggleeditor",
-			[]([[maybe_unused]] const std::vector<std::string>& args) {
-				Engine::mIsEditorMode = !Engine::mIsEditorMode;
+			[this](const std::vector<std::string>&) {
+				mIsEditorMode = !mIsEditorMode;
 				Warning(
 					"Engine",
 					"Editor mode is now {}",
-					std::to_string(Engine::mIsEditorMode)
+					std::to_string(mIsEditorMode)
 				);
+				return true;
 			},
 			"Toggle editor mode."
 		);
 #endif
 
 		// コンソール変数を登録
-		ConVarManager::RegisterConVar(
-			"cl_showpos", 2,
-			"Draw current position at top of screen (1 = meter, 2 = hammer)"
+		mConsoleSystem->ExecuteCommand(
+			"name " + WindowsUtils::GetWindowsUserName(), EXEC_FLAG::SILENT
 		);
-		ConVarManager::RegisterConVar(
-			"cl_showfps", 2,
-			"Draw fps meter (1 = fps, 2 = smooth)"
-		);
-		ConVarManager::RegisterConVar(
-			"fps_max", kDefaultFpsMax,
-			"Frame rate limiter"
-		);
-		ConVarManager::RegisterConVar<std::string>(
-			"name", "unnamed",
-			"Current user name",
-			ConVarFlags::ConVarFlags_Notify
-		);
-		Console::SubmitCommand(
-			"name " + WindowsUtils::GetWindowsUserName(), true
-		);
-		ConVarManager::RegisterConVar(
-			"sensitivity", 2.0f,
-			"Mouse sensitivity."
-		);
-		// World
-		ConVarManager::RegisterConVar("sv_gravity", 1000.0f, "World gravity.");
-		ConVarManager::RegisterConVar(
-			"sv_maxvelocity", 3500.0f,
-			"Maximum speed any ballistically moving object is allowed to attain per axis."
-		);
-
-		// Player
-		ConVarManager::RegisterConVar(
-			"sv_accelerate", 20.0f,
-			"Linear acceleration amount (old value is 5.6)"
-		);
-		ConVarManager::RegisterConVar("sv_airaccelerate", 12.0f);
-		ConVarManager::RegisterConVar(
-			"sv_maxspeed", 320.0f,
-			"Maximum speed a player can move."
-		);
-		ConVarManager::RegisterConVar(
-			"sv_stopspeed", 100.0f,
-			"Minimum stopping speed when on ground."
-		);
-		ConVarManager::RegisterConVar("sv_friction", 8.0f, "World friction.");
-		ConVarManager::RegisterConVar(
-			"sv_stepsize", 18.0f,
-			"Maximum step height."
-		);
-
-		// デバッグ用にエンティティのaxisを表示するかのコンソール変数
-		ConVarManager::RegisterConVar("ent_axis", 0, "Show entity axis");
 	}
-
-	/// @brief エンジン終了コマンド
-	/// @param args 引数
-	void Engine::Quit([[maybe_unused]] const std::vector<std::string>& args) {
-		mWishShutdown = true;
-	}
-
-	/// @brief エディターモードの確認と切り替え
-	void Engine::CheckEditorMode() {
-		// フラグに応じて State を差し替える
-		if (mIsEditorMode) {
-			SetModeState(std::make_unique<EditorModeState>());
-		} else { SetModeState(std::make_unique<GameModeState>()); }
-	}
-
-	void Engine::SetModeState(std::unique_ptr<IEngineModeState> state) {
-		// 既存 State を終了し、新 State を開始
-		if (mModeState) { mModeState->OnExit(*this); }
-		mModeState = std::move(state);
-		if (mModeState) { mModeState->OnEnter(*this); }
-	}
-
-	void Engine::CreateEditor() {
-		if (mEditor) { return; }
-		mEditor = std::make_unique<Editor>(
-			mSceneManager.get(), mTimeSystem->GetGameTime()
-		);
-		mEditor->SetEntityLoader(mEntityLoader.get());
-	}
-
-	void Engine::DestroyEditor() { mEditor.reset(); }
-
-	void Engine::SetViewportToMainWindow() {
-		mViewportLT = Vec2::zero;
-		mViewportSize = {
-			static_cast<float>(mWindowManager->GetMainWindow()->
-											   GetClientWidth()),
-			static_cast<float>(mWindowManager->GetMainWindow()->
-											   GetClientHeight())
-		};
-	}
-
-	void Engine::SetViewportFromEditor(float x, float y, float w, float h) {
-		mViewportLT = { x, y };
-		mViewportSize = { w, h };
-	}
-
-	bool                             Engine::mWishShutdown    = false;
-	std::unique_ptr<AudioManager>    Engine::mAudioManager    = nullptr;
-	std::unique_ptr<D3D12>           Engine::mRenderer        = nullptr;
-	std::unique_ptr<ResourceManager> Engine::mResourceManager = nullptr;
-	std::unique_ptr<ParticleManager> Engine::mParticleManager = nullptr;
-	std::unique_ptr<SrvManager>      Engine::mSrvManager      = nullptr;
-	std::unique_ptr<SpriteCommon>    Engine::mSpriteCommon    = nullptr;
-	std::shared_ptr<SceneManager>    Engine::mSceneManager    = nullptr;
-
-	Vec2 Engine::mViewportLT = Vec2::zero;
-	Vec2 Engine::mViewportSize = Vec2::zero;
-
-	std::optional<std::string> Engine::mPendingSceneChange = std::nullopt;
-
-#ifdef _DEBUG
-	bool Engine::mIsEditorMode = true;
-#else
-	bool Engine::mIsEditorMode = false;
-#endif
 }

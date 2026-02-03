@@ -3,6 +3,8 @@
 // 不可能だという点に目をつぶればよぉ～～～
 //-----------------------------------------------------------------------------
 
+#include <ranges>
+
 #include <engine/Engine.h>
 #include <engine/EngineServices.h>
 #include <engine/OldConsole/Console.h>

@@ -22,8 +22,6 @@ namespace Unnamed {
 			int32_t     height    = 720;
 			WINDOW_MODE mode      = WINDOW_MODE::WINDOWED;
 			bool        resizable = true;
-
-			bool dpiAware = true; // DPI認識を有効にするか?
 		} window;
 	};
 }

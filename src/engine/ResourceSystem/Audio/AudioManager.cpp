@@ -8,7 +8,9 @@
 AudioManager::AudioManager() {}
 
 /// @brief デストラクタ
-AudioManager::~AudioManager() {}
+AudioManager::~AudioManager() {
+	Shutdown();
+}
 
 /// @brief 初期化
 /// @return 成功したらtrue、失敗したらfalse
@@ -40,7 +42,27 @@ bool AudioManager::Init() {
 }
 
 /// @brief シャットダウン
-void AudioManager::Shutdown() {}
+void AudioManager::Shutdown() {
+	// すでにShutdown済みか?
+	if (!mXAudio2 && !mAsterVoice && mAudioCache.empty()) { return; }
+
+	// 外部参照が残っていても安全になるよう、まず全AudioのVoiceを無効化
+	for (auto& audio : mAudioCache | std::views::values) {
+		if (audio) { audio->InvalidateVoice(); }
+	}
+
+	// SourceVoice を保持しているAudioを先に破棄（shared_ptrを解放）
+	mAudioCache.clear();
+
+	// MasteringVoice を破棄
+	if (mAsterVoice) {
+		mAsterVoice->DestroyVoice();
+		mAsterVoice = nullptr;
+	}
+
+	// XAudio2 を破棄
+	mXAudio2.Reset();
+}
 
 /// @brief 音声を取得します
 /// @param filePath 音声ファイルのパス

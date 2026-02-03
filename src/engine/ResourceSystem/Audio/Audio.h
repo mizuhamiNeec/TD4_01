@@ -17,6 +17,8 @@ public:
 	void SetVolume(float volume) const;
 	void SetPitch(float pitch) const;
 
+	void InvalidateVoice() noexcept;
+
 private:
 	// チャンクヘッダ
 	struct ChunkHeader {
@@ -48,4 +50,5 @@ private:
 	XAUDIO2_BUFFER       mAudioBuffer = {};
 	SoundData            mAudioData;
 	bool                 mIsPlaying = false;
+	bool                 mVoiceValid = true;
 };

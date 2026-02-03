@@ -1,26 +1,69 @@
 #pragma once
+#include <cstdint>
+#include <memory>
+#include <optional>
 #include <unordered_map>
+#include <vector>
 
-#include <engine/platform/Window.h>
+#include "Window.h"
 
-struct WindowDesc;
+#include "engine/EngineConfig.h"
 
-/// @class WindowManager
-/// @brief 複数ウィンドウを管理します。
-class WindowManager {
-public:
-	explicit WindowManager(HINSTANCE hInstance);
+namespace Unnamed {
+	class WindowManager final {
+	public:
+		WindowManager();
+		~WindowManager();
 
-	void Shutdown();
+		bool Init(const EngineConfig::Window& mainWindowConfig);
+		void Shutdown();
 
-	Window& CreateNewWindow(const WindowDesc& desc);
-	void    DestroyWindow(uint32_t windowId);
+		/// @brief メッセージポンプを実行する
+		void ProcessMessage();
 
-	std::unordered_map<uint32_t, Window>&         GetWindows();
-	std::optional<std::reference_wrapper<Window>> Get(uint32_t windowId);
+		/// @brief 終了すべきかどうかを返す
+		[[nodiscard]] bool ShouldQuit() const;
 
-private:
-	HINSTANCE                            mHInstance;
-	std::atomic<uint32_t>                mNextWindowId = {1};
-	std::unordered_map<uint32_t, Window> mWindows;
-};
+		/// @brief メインウィンドウのIDを取得する
+		[[nodiscard]] WindowId GetMainWindowId() const;
+
+		/// @brief 新しいウィンドウを作成する
+		/// @param desc ウィンドウの説明
+		/// @return 作成したウィンドウのID。失敗した場合はstd::nulloptを返す
+		std::optional<WindowId> CreateNewWindow(const WindowDesc& desc);
+
+		/// @brief ウィンドウを破棄する
+		/// @param id 破棄するウィンドウのID
+		void DestroyWindow(WindowId id);
+
+		/// @brief IDからウィンドウを探す
+		[[nodiscard]]
+		Window* FindWindowById(WindowId id);
+
+		/// @brief IDからウィンドウを探す (const版)
+		[[nodiscard]] const Window* FindWindowById(WindowId id) const;
+
+		/// @brief すべてのウィンドウIDを取得する
+		[[nodiscard]] std::vector<WindowId> GetAllWindowIds() const;
+
+	private:
+		bool                    EnsureWindowClassRegistered();
+		std::optional<HWND>     CreateNativeWindow(const WindowDesc& desc);
+		static LRESULT CALLBACK StaticWndProc(
+			HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
+		);
+
+		/// @brief ウィンドウのダークモード設定を変更する
+		/// @param hwnd ウィンドウハンドル
+		/// @param isSystemDarkTheme ダークテーマを使用するかどうか
+		static void SetUseImmersiveDarkMode(HWND hwnd, bool isSystemDarkTheme);
+
+	private:
+		WindowId mMainWindowId = {};
+		uint32_t mNextWindowId = 1;
+		std::unordered_map<uint32_t, std::unique_ptr<Window>> mWindows;
+
+		bool mInitialized           = false;
+		bool mWindowClassRegistered = false;
+	};
+}

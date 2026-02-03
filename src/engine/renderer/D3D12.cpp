@@ -17,6 +17,8 @@
 #include <engine/renderer/D3D12.h>
 #include <engine/renderer/SrvManager.h>
 
+#include "engine/Platform/Window.h"
+
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "dxguid.lib")
@@ -27,8 +29,11 @@ using namespace Microsoft::WRL;
 constexpr auto kClearColorSwapChain = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
 /// @brief コンストラクタ
-/// @param window ウィンドウへのポインタ
-D3D12::D3D12(BaseWindow* window) : mWindow(window) {
+/// @param hwnd ウィンドウハンドル
+/// @param windowDesc ウィンドウの説明
+D3D12::D3D12(const HWND hwnd, const Unnamed::WindowDesc& windowDesc)
+	: mHwnd(hwnd),
+	  mWindowDesc(windowDesc) {
 #ifdef _DEBUG
 	//EnableDebugLayer();
 #endif
@@ -45,7 +50,7 @@ D3D12::D3D12(BaseWindow* window) : mWindow(window) {
 	CreateDSV();
 
 	mDefaultDepthStencilTexture = CreateDepthStencilTexture(
-		mWindow->GetClientWidth(), mWindow->GetClientHeight()
+		mWindowDesc.width, mWindowDesc.height
 	);
 
 	CreateCommandAllocator();
@@ -198,8 +203,7 @@ void D3D12::ClearColorAndDepth() {
 	}
 
 	SetViewportAndScissor(
-		mWindow->GetClientWidth(),
-		mWindow->GetClientHeight()
+		mWindowDesc.width, mWindowDesc.height
 	);
 }
 
@@ -601,8 +605,8 @@ void D3D12::CreateCommandQueue() {
 void D3D12::CreateSwapChain() {
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
 	swapChainDesc.BufferCount           = kFrameBufferCount;
-	swapChainDesc.Width                 = mWindow->GetClientWidth();
-	swapChainDesc.Height                = mWindow->GetClientHeight();
+	swapChainDesc.Width                 = mWindowDesc.width;
+	swapChainDesc.Height                = mWindowDesc.height;
 	swapChainDesc.Format                = kBufferFormat; // 色の形式
 	swapChainDesc.BufferUsage           = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	// レンダーターゲットとして利用
@@ -610,7 +614,7 @@ void D3D12::CreateSwapChain() {
 	swapChainDesc.SampleDesc.Count = 1; // マルチサンプルしない
 	swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
-	if (mWindow->GetWindowHandle()) {
+	if (mHwnd) {
 		swapChainDesc.Scaling   = DXGI_SCALING_STRETCH;   // 画面サイズに合わせて伸縮
 		swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE; // アルファモードは無視
 		Console::Print("Window Mode\n", kConFgColorDark);
@@ -622,7 +626,7 @@ void D3D12::CreateSwapChain() {
 
 	const HRESULT hr = mDxgiFactory->CreateSwapChainForHwnd(
 		mCommandQueue.Get(),
-		mWindow->GetWindowHandle(),
+		mHwnd,
 		&swapChainDesc,
 		nullptr,
 		nullptr,
@@ -787,16 +791,16 @@ void D3D12::SetViewportAndScissor() {
 	// Viewport
 	mViewport.TopLeftX = 0;
 	mViewport.TopLeftY = 0;
-	mViewport.Width    = static_cast<FLOAT>(mWindow->GetClientWidth());
-	mViewport.Height   = static_cast<FLOAT>(mWindow->GetClientHeight());
+	mViewport.Width    = static_cast<FLOAT>(mWindowDesc.width);
+	mViewport.Height   = static_cast<FLOAT>(mWindowDesc.height);
 	mViewport.MinDepth = 0.0f;
 	mViewport.MaxDepth = 1.0f;
 
 	// ScissorRect
 	mScissorRect.left   = 0;
 	mScissorRect.top    = 0;
-	mScissorRect.right  = static_cast<LONG>(mWindow->GetClientWidth());
-	mScissorRect.bottom = static_cast<LONG>(mWindow->GetClientHeight());
+	mScissorRect.right  = static_cast<LONG>(mWindowDesc.width);
+	mScissorRect.bottom = static_cast<LONG>(mWindowDesc.height);
 }
 
 /// @brief デバイスが失われた場合の処理を行います

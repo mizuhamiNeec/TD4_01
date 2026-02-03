@@ -2,6 +2,7 @@
 
 #include "engine/Engine.h"
 #include "engine/Camera/CameraManager.h"
+#include "engine/Components/Camera/CameraComponent.h"
 
 /// @brief 線を描画
 /// @param a 線の始点

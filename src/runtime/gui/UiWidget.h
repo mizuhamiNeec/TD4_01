@@ -7,8 +7,8 @@
 #include "Rect.h"
 #include "UiDrawCommand.h"
 
-#include "core/unnamed/json/JsonReader.h"
-#include "core/unnamed/json/JsonWriter.h"
+#include "core/json/JsonReader.h"
+#include "core/json/JsonWriter.h"
 
 namespace Unnamed::Gui {
 	/// @brief ウィジェットのダーティフラグ

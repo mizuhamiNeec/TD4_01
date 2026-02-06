@@ -18,26 +18,46 @@ namespace Unnamed {
 	public:
 		explicit ConsoleUI(ConsoleSystem* consoleSystem);
 
-		void Init() const;
+		/// @brief 初期化
+		void Init();
 
+		/// @brief コンソールUIを表示します
 		void Show();
+
+		/// @brief コンソールが更新された際のイベント
 		void OnConsoleUpdate();
 
 	private:
-		void DrawInputText();
-		void DrawSubmitButton();
+		/// @brief メニューバーを表示します
+		void ShowMenuBar();
+		
+		/// @brief 入力欄と送信ボタンを描画します
+		void DrawInputTextAndSubmitButton();
 
+		/// @brief コンソールのコンテキストメニューを表示します
+		void ShowContextMenu() const;
+
+		/// @brief 入力されたコマンドを送信します
 		void Submit();
 
+		/// @brief スクロール状態をチェックし、自動スクロールを行います
 		void CheckScroll();
 
+		/// @brief コンソールログのテキストの色を設定します。
+		/// @param buffer コンソールログのテキスト情報
 		static void PushTextColor(const struct ConsoleLogText& buffer);
+
 
 #ifdef _DEBUG
 		static int InputTextCallback(ImGuiInputTextCallbackData* data);
 #endif
 
-		ConsoleSystem* mConsoleSystem;
+		size_t FilteredToActualIndex(int filteredIndex);
+
+	private:
+		ConsoleSystem* mConsoleSystem; // コンソールシステムへのポインタ
+
+		bool mShowConsole = true;
 
 		bool mWishScrollToBottom = false;
 

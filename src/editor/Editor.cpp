@@ -1113,7 +1113,7 @@ void Editor::DrawSideBar() {
 					ImGuiDir_None
 				);
 				ImGuiWidgets::IconButton(
-					Unnamed::StrUtil::ConvertToUtf8(kIconNANKABOX).c_str(), "",
+					Unnamed::StrUtil::ConvertToUtf8(kIconBox).c_str(), "",
 					toolbarIconSize,
 					iconScale,
 					ImGuiDir_None

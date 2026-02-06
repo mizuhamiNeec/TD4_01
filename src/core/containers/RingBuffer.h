@@ -82,6 +82,38 @@ namespace Unnamed {
 			return (mHead + Capacity - 1) % Capacity;
 		}
 
+		/// @brief 論理インデックス(0..Size-1, 古い→新しい順)で要素参照
+		/// @details operator[] は範囲外アクセス時の挙動は未定義です（std::vector と同様）
+		[[nodiscard]] const T& operator[](const size_t logicalIndex) const {
+			std::lock_guard lock(mMutex);
+			const size_t physicalIndex = (mTail + logicalIndex) % Capacity;
+			return mBuffer[physicalIndex];
+		}
+
+		/// @brief 論理インデックス(0..Size-1, 古い→新しい順)で要素参照
+		/// @details operator[] は範囲外アクセス時の挙動は未定義です（std::vector と同様）
+		[[nodiscard]] T& operator[](const size_t logicalIndex) {
+			std::lock_guard lock(mMutex);
+			const size_t physicalIndex = (mTail + logicalIndex) % Capacity;
+			return mBuffer[physicalIndex];
+		}
+
+		/// @brief 範囲チェック付き参照（範囲外なら std::nullopt）
+		[[nodiscard]] std::optional<std::reference_wrapper<const T>> At(const size_t logicalIndex) const {
+			std::lock_guard lock(mMutex);
+			if (logicalIndex >= mSize) { return std::nullopt; }
+			const size_t physicalIndex = (mTail + logicalIndex) % Capacity;
+			return std::cref(mBuffer[physicalIndex]);
+		}
+
+		/// @brief 範囲チェック付き参照（範囲外なら std::nullopt）
+		[[nodiscard]] std::optional<std::reference_wrapper<T>> At(const size_t logicalIndex) {
+			std::lock_guard lock(mMutex);
+			if (logicalIndex >= mSize) { return std::nullopt; }
+			const size_t physicalIndex = (mTail + logicalIndex) % Capacity;
+			return std::ref(mBuffer[physicalIndex]);
+		}
+
 		/// @brief リングバッファのイテレータクラス
 		class Iterator {
 		public:

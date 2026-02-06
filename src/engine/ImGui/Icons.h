@@ -15,6 +15,8 @@ constexpr uint32_t kIconTimer = 0xE425; // タイマー
 
 constexpr uint32_t kIconReset = 0xE166; // リセット
 
+constexpr uint32_t kIconInfo = 0xE88E;
+
 // セーブ
 constexpr uint32_t kIconSave   = 0xE161; // セーブ
 constexpr uint32_t kIconSaveAs = 0xEB60; // 名前を付けて保存
@@ -46,7 +48,7 @@ constexpr uint32_t kIconRotate = 0xE042; // 回転
 constexpr uint32_t kIconScale  = 0xF707; // 拡縮
 constexpr uint32_t kIconPivot  = 0xE147; // 原点
 
-constexpr uint32_t kIconNANKABOX = 0xF720; // ボックス TODO: 本家から名称を持ってこよう
+constexpr uint32_t kIconBox = 0xF720; // ボックス
 constexpr uint32_t kIconTexture  = 0xE421; // テクスチャ
 
 constexpr uint32_t kIconFilter   = 0xEF4F; // フィルター

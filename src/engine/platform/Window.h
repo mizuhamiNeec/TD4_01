@@ -51,6 +51,8 @@ namespace Unnamed {
 		LRESULT HandleMessage(
 			HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 		);
+		
+		void ToggleFullscreen();
 
 	private:
 		void MarkCloseRequested();

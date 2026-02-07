@@ -33,7 +33,6 @@ namespace Unnamed {
 		switch (msg) {
 			case WM_CLOSE: {
 				MarkCloseRequested();
-				DestroyWindow(hwnd);
 				return 0;
 			}
 
@@ -59,6 +58,42 @@ namespace Unnamed {
 		}
 
 		return DefWindowProc(hwnd, msg, wParam, lParam);
+	}
+
+	void Window::ToggleFullscreen() {
+		// フルスクリーン切り替え
+		const HWND hwnd = GetHwnd();
+		if (
+			const DWORD style = GetWindowLong(hwnd, GWL_STYLE);
+			style & WS_OVERLAPPEDWINDOW
+		) {
+			MONITORINFO mi = {sizeof(mi)};
+			if (GetMonitorInfo(
+				MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY), &mi
+			)) {
+				SetWindowLong(hwnd, GWL_STYLE, style & ~WS_OVERLAPPEDWINDOW);
+				SetWindowPos(
+					hwnd,
+					HWND_TOP,
+					mi.rcMonitor.left,
+					mi.rcMonitor.top,
+					mi.rcMonitor.right - mi.rcMonitor.left,
+					mi.rcMonitor.bottom - mi.rcMonitor.top,
+					SWP_NOOWNERZORDER | SWP_FRAMECHANGED
+				);
+			}
+		} else {
+			SetWindowLong(hwnd, GWL_STYLE, style | WS_OVERLAPPEDWINDOW);
+			SetWindowPos(
+				hwnd,
+				HWND_NOTOPMOST,
+				100,
+				100,
+				mDesc.width,
+				mDesc.height,
+				SWP_NOOWNERZORDER | SWP_FRAMECHANGED
+			);
+		}
 	}
 
 	void Window::MarkCloseRequested() { mShouldClose = true; }

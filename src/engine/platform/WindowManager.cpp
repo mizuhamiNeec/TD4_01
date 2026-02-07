@@ -274,7 +274,7 @@ namespace Unnamed {
 		if (msg == WM_SYSKEYDOWN || msg == WM_SYSKEYUP) {
 			if (wParam == VK_F4 && (lParam & (1 << 29))) {
 				// Alt + F4
-				::DestroyWindow(hwnd);
+				PostMessageW(hwnd, WM_CLOSE, 0, 0);
 				return 0;
 			}
 			return 0;
@@ -293,6 +293,33 @@ namespace Unnamed {
 			return DefWindowProcW(hwnd, msg, wParam, lParam);
 		}
 
+		// WM_NCDESTROY は最終破棄
+		if (msg == WM_NCDESTROY) {
+			auto* manager = reinterpret_cast<WindowManager*>(GetWindowLongPtrW(
+				hwnd, GWLP_USERDATA
+			));
+			SetWindowLongPtrW(hwnd, GWLP_USERDATA, 0);
+
+			if (manager) {
+				WindowId targetId{};
+				for (const auto& wnd : manager->mWindows | std::views::values) {
+					if (wnd && wnd->GetHwnd() == hwnd) {
+						targetId = wnd->GetId();
+						break;
+					}
+				}
+
+				if (targetId.value != 0) {
+					// メイン以外はここで確実に破棄。
+					if (targetId != manager->mMainWindowId) {
+						manager->mWindows.erase(targetId.value);
+					} else { PostQuitMessage(0); }
+				}
+			}
+
+			return DefWindowProcW(hwnd, msg, wParam, lParam);
+		}
+
 		auto* manager = reinterpret_cast<WindowManager*>(GetWindowLongPtrW(
 			hwnd, GWLP_USERDATA
 		));
@@ -308,22 +335,11 @@ namespace Unnamed {
 		}
 
 		if (target) {
-			const LRESULT result = target->HandleMessage(
+			const WindowId targetId = target->GetId();
+			const LRESULT  result   = target->HandleMessage(
 				hwnd, msg, wParam, lParam
 			);
-
-			if (msg == WM_DESTROY) {
-				const WindowId id = target->GetId();
-				if (id != manager->mMainWindowId) {
-					manager->mWindows.erase(id.value);
-				}
-			}
-
-			if (msg == WM_DESTROY) {
-				if (target->GetId() == manager->mMainWindowId) {
-					PostQuitMessage(0);
-				}
-			}
+			(void)targetId;
 
 			return result;
 		}

@@ -15,8 +15,10 @@
 #include <engine/unnamed/subsystem/time/SystemClock.h>
 
 namespace Unnamed {
+	static constexpr std::string_view kChannelConsole = "Console";
+	
 	// ユーザー設定ファイルのパス
-	static constexpr std::string_view kUserCfgPath =
+	static constexpr std::string_view kUserCfgPath    =
 		"./content/core/cfg/user.cfg";
 
 	EXEC_FLAG operator|=(EXEC_FLAG& lhs, const EXEC_FLAG& rhs) {
@@ -30,7 +32,7 @@ namespace Unnamed {
 	}
 
 	ConsoleSystem::~ConsoleSystem() = default;
-	
+
 	bool ConsoleSystem::Init() {
 		ServiceLocator::Register<ConsoleSystem>(this);
 
@@ -49,23 +51,23 @@ namespace Unnamed {
 
 		return true;
 	}
-	
+
 	void ConsoleSystem::Update(float) {
 #ifdef _DEBUG
 		mConsoleUI->Show();
 #endif
 	}
-	
+
 	void ConsoleSystem::Shutdown() {
 		// ユーザー設定ファイルに変数を書き込む
 		[[maybe_unused]] ConVarWriter writer(kUserCfgPath);
 	}
-	
+
 	const std::string_view ConsoleSystem::GetName() const { return "Console"; }
 
 	RingBuffer<ConsoleLogText, kConsoleBufferSize>&
 	ConsoleSystem::GetLogBuffer() { return mLogBuffer; }
-	
+
 	void ConsoleSystem::Print(
 		const LogLevel             level,
 		const std::string_view     channel,
@@ -97,15 +99,15 @@ namespace Unnamed {
 		mConsoleUI->OnConsoleUpdate();
 #endif
 	}
-	
+
 	void ConsoleSystem::RegisterConCommand(UnnamedConCommandBase* conCommand) {
 		mConCommands[std::string(conCommand->GetName())] = conCommand;
 	}
-	
+
 	void ConsoleSystem::RegisterConVar(UnnamedConCommandBase* conVar) {
 		mConVars[std::string(conVar->GetName())] = conVar;
 	}
-	
+
 	void ConsoleSystem::ExecuteCommand(
 		const std::string& command,
 		const EXEC_FLAG    flag
@@ -257,7 +259,7 @@ namespace Unnamed {
 			// 送信内容をコンソールに表示
 			SpecialMsg(
 				LogLevel::Execute,
-				"",
+				kChannelConsole,
 				"> {}",
 				trimmed
 			);
@@ -271,7 +273,9 @@ namespace Unnamed {
 
 			std::vector<std::string> tokens = StrUtil::Tokenize(singleCommand);
 			if (tokens.empty()) { continue; }
-			const std::vector<std::string> args(tokens.begin() + 1, tokens.end());
+			const std::vector<std::string> args(
+				tokens.begin() + 1, tokens.end()
+			);
 
 			const bool foundCommand = mConCommands.contains(tokens[0]);
 			const bool foundVar     = mConVars.contains(tokens[0]);

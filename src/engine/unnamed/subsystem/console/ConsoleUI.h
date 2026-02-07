@@ -4,15 +4,6 @@
 namespace Unnamed {
 	class ConsoleSystem;
 
-	constexpr Vec4 kConTextColor        = {0.71f, 0.71f, 0.72f, 1.0f};
-	constexpr Vec4 kConTextColorDev     = {0.25f, 0.71f, 0.25f, 1.0f};
-	constexpr Vec4 kConTextColorWarn    = {0.93f, 0.79f, 0.09f, 1.0f};
-	constexpr Vec4 kConTextColorError   = {0.71f, 0.25f, 0.25f, 1.0f};
-	constexpr Vec4 kConTextColorFatal   = {0.71f, 0.0f, 0.0f, 1.0f};
-	constexpr Vec4 kConTextColorExec    = {0.8f, 1.0f, 1.0f, 1.0f};
-	constexpr Vec4 kConTextColorWait    = {0.93f, 0.79f, 0.09f, 1.0f};
-	constexpr Vec4 kConTextColorSuccess = {0.48f, 0.76f, 0.26f, 1.0f};
-
 	/// @brief コンソールUIクラス
 	class ConsoleUI {
 	public:
@@ -29,7 +20,7 @@ namespace Unnamed {
 
 	private:
 		/// @brief メニューバーを表示します
-		void ShowMenuBar();
+		void ShowMenuBar() const;
 		
 		/// @brief 入力欄と送信ボタンを描画します
 		void DrawInputTextAndSubmitButton();
@@ -47,12 +38,32 @@ namespace Unnamed {
 		/// @param buffer コンソールログのテキスト情報
 		static void PushTextColor(const struct ConsoleLogText& buffer);
 
+		/// @brief 指定されたファイルパスと行番号で外部エディタを開きます
+		/// @param file ファイルパス
+		/// @param line 行番号
+		/// @param column 列番号
+		void OpenSourceFile(const std::string& file, int line, int column) const;
+
 
 #ifdef _DEBUG
 		static int InputTextCallback(ImGuiInputTextCallbackData* data);
 #endif
 
 		size_t FilteredToActualIndex(int filteredIndex);
+		
+		// --- Show() 分割 ---
+		/// @brief ログテーブル（ヘッダ+行）を描画します
+		void DrawLogTable(const ImVec2& childSize);
+		/// @brief ログ行を描画します（フィルタ/選択/右クリックも含む）
+		void DrawLogRows(int& visibleIndex, bool& requestOpenContextMenu);
+		/// @brief 1行分の描画と入力処理を行います。描画した場合は true
+		bool DrawLogRow(size_t actualIndex, int visibleIndex, bool& requestOpenContextMenu);
+		/// @brief 選択中ログをクリップボードへコピーします（1要素=1行）
+		void CopySelectedToClipboard() const;
+		/// @brief Ctrl+C のコピー処理
+		void HandleCopyShortcut() const;
+		/// @brief 右クリックで開くコンテキストメニューを要求します
+		static void OpenConsoleContextMenuPopup();
 
 	private:
 		ConsoleSystem* mConsoleSystem; // コンソールシステムへのポインタ

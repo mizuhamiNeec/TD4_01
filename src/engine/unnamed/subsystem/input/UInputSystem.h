@@ -8,7 +8,7 @@
 #include <engine/unnamed/subsystem/input/device/base/BaseInputDevice.h>
 #include <engine/unnamed/subsystem/interface/ISubsystem.h>
 
-#include <runtime/core/math/Math.h>
+#include <core/math/Math.h>
 
 /// @brief 入力キー構造体
 template <>
@@ -41,7 +41,7 @@ namespace Unnamed {
 		Vec2 value = Vec2::zero;
 	};
 
-	enum class BINDING_TYPE :uint8_t {
+	enum class BINDING_TYPE : uint8_t {
 		ACTION,
 		AXIS_1D,
 		AXIS_2D
@@ -74,14 +74,51 @@ namespace Unnamed {
 
 		//---------------------------------------------------------------------
 
+		/// @brief マウスカーソルのロックと表示状態をチェックします
+		/// @param hWnd ウィンドウハンドル
+		void CheckMouseCursorLockAndVisibility(HWND hWnd) const;
+
+		/// @brief 入力デバイスを登録します
+		/// @param device 登録する入力デバイスの共有ポインタ
 		void RegisterDevice(const std::shared_ptr<BaseInputDevice>& device);
 
+		/// @brief コマンドをキーにバインドします
+		/// @param key バインドするキー
+		/// @param command バインドするコマンド文字列
+		void BindCommand(const InputKey& key, const std::string& command);
+
+		/// @brief キーからバインドされているコマンドを解除します
+		/// @param key バインドを解除するキー
+		void UnbindCommand(const InputKey& key);
+
+		/// @brief すべてのコマンドバインドを解除します
+		void UnbindAllCommands();
+
+		/// @brief キーにバインドされているコマンドを取得します
+		/// @param key キー
+		/// @return バインドされているコマンド文字列（存在しない場合は空文字列）
+		[[nodiscard]] std::string GetBoundCommand(const InputKey& key) const;
+
+		/// @brief アクションまたは軸にキーをバインドします
+		/// @param action バインドするアクションまたは軸の名前
+		/// @param key バインドするキー
 		void BindAction(const std::string& action, const InputKey& key);
+
+		/// @brief 1D軸にキーをバインドします
+		/// @param axis バインドする軸の名前
+		/// @param key バインドするキー
+		/// @param scale スケール値（デフォルトは1.0f）
 		void BindAxis1D(
 			const std::string& axis,
 			const InputKey&    key,
 			float              scale = 1.0f
 		);
+
+		/// @brief 2D軸にキーをバインドします
+		/// @param axis バインドする軸の名前
+		/// @param key バインドするキー
+		/// @param axisType 軸のタイプ（XまたはY）
+		/// @param scale スケール値（デフォルトは1.0f）
 		void BindAxis2D(
 			const std::string& axis,
 			const InputKey&    key,
@@ -89,42 +126,102 @@ namespace Unnamed {
 			const float&       scale = 1.0f
 		);
 
+		/// @brief アクションまたは軸からすべてのバインドを解除します
+		/// @param action バインドを解除するアクションまたは軸の名前
 		void Unbind(const std::string& action);
 
+		/// @brief コンソールからのアクション入力を処理します
+		/// @param action アクション名
+		/// @param bPressed 押下状態（trueなら押下、falseなら解放）
 		void HandleConsoleAction(
 			const std::string& action, const bool& bPressed
 		);
 
+		/// @brief 指定したアクションの状態を取得します
+		/// @param action 取得するアクションの名前
+		/// @return 押下状態、保持状態、解放状態
 		[[nodiscard]] bool IsPressed(const std::string& action) const;
+
+		/// @brief 指定したアクションの状態を取得します
+		/// @param action 取得するアクションの名前
+		/// @return 押下状態、保持状態、解放状態
 		[[nodiscard]] bool IsHeld(const std::string& action) const;
+
+		/// @brief 指定したアクションの状態を取得します
+		/// @param action 取得するアクションの名前
+		/// @return 押下状態、保持状態、解放状態
 		[[nodiscard]] bool IsReleased(const std::string& action) const;
 
+		/// @brief 指定した1D軸の値を取得します
+		/// @param axis 取得する軸の名前
+		/// @return 軸の値
 		[[nodiscard]] float Axis1D(const std::string& axis) const;
-		[[nodiscard]] Vec2  Axis2D(const std::string& axis) const;
+
+		/// @brief 指定した2D軸の値を取得します
+		/// @param axis 取得する軸の名前
+		/// @return 軸の値
+		[[nodiscard]] Vec2 Axis2D(const std::string& axis) const;
+
+		/// @brief マウスカーソルがロックされているかどうかを取得します
+		/// @return ロックされているならtrue
+		[[nodiscard]] bool IsMouseCursorLocked() const;
+
+		/// @brief マウスカーソルのロック状態を設定します
+		/// @param locked ロックするならtrue、解除するならfalse
+		void SetMouseCursorLocked(const bool& locked);
+
+		/// @brief マウスカーソルが表示されているかどうかを取得します
+		/// @return 表示されているならtrue
+		[[nodiscard]] bool IsMouseCursorVisible() const;
+
+		/// @brief マウスカーソルの表示状態を設定します
+		/// @param visible 表示するならtrue、非表示にするならfalse
+		void SetMouseCursorVisible(const bool& visible);
+
+		/// @brief マウスカーソルのロック位置を設定します
+		/// @param position ロック位置のスクリーン座標
+		void SetMouseCursorLockScreenPosition(const Vec2& position);
 
 	private:
+		/// @brief 入力状態をリセットします
 		void ResetInputStates();
 
-		void OnRawInput(const RAWINPUT& rawInput);
+		/// @brief RAWINPUTメッセージを処理します
+		/// @param rawInput RAWINPUT構造体
+		void OnRawInput(const RAWINPUT& rawInput) const;
 
-		[[nodiscard]] bool GetHardwareKeyState(
-			const InputKey& key
-		) const;
-		[[nodiscard]] float GetAnalogValue(
-			const InputKey& key
-		) const;
+		/// @brief ハードウェアキーの現在の状態を取得します
+		/// @param key 取得するキー
+		/// @return 押下されているならtrue
+		[[nodiscard]] bool GetHardwareKeyState(const InputKey& key) const;
 
+		/// @brief アナログ値を取得します
+		/// @param key 取得するキー
+		/// @return アナログ値
+		[[nodiscard]] float GetAnalogValue(const InputKey& key) const;
+
+		/// @brief 仮想キーコードからキー名を取得します
+		/// @param virtualKey 仮想キーコード
+		/// @return キー名の文字列
 		static std::string GetKeyName(const UINT& virtualKey);
+
+		/// @brief コマンドバインドを押下/解放に応じて実行します
+		void ProcessCommandBinds();
 
 		std::unordered_map<std::string, InputActionState> mActionStates;
 		std::unordered_map<std::string, InputAxisState1D> mAxisStates1D;
 		std::unordered_map<std::string, InputAxisState2D> mAxisStates2D;
 
-		std::vector<InputBinding>           mBindings;
-		std::unordered_map<InputKey, bool>  mCurrentKeyStates;
-		std::unordered_map<InputKey, bool>  mPreviousKeyStates;
-		std::unordered_map<InputKey, float> mAnalogValues;
+		std::vector<InputBinding>                 mBindings;
+		std::unordered_map<InputKey, bool>        mCurrentKeyStates;
+		std::unordered_map<InputKey, bool>        mPreviousKeyStates;
+		std::unordered_map<InputKey, float>       mAnalogValues;
+		std::unordered_map<InputKey, std::string> mCommandBinds;
 
 		std::vector<std::shared_ptr<BaseInputDevice>> mDevices;
+
+		Vec2 mMouseCursorLockScrPos = Vec2::zero; // マウスカーソルのロック位置（スクリーン座標）
+		bool mMouseCursorLocked     = false;      // マウスカーソルがロックされているかどうか
+		bool mMouseCursorVisible    = false;      // マウスカーソルが表示されているかどうか
 	};
 }

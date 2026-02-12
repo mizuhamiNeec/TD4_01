@@ -1,3 +1,5 @@
+#include <Windows.h>
+
 #include <dwmapi.h>
 #include <dxgi.h>
 #include <intrin.h>
@@ -41,7 +43,7 @@ std::string WindowsUtils::GetWindowsVersion() {
 	// RtlGetVersion を動的取得して、実際の Windows バージョンを取得する
 	using RtlGetVersionFn = LONG(WINAPI*)(PRTL_OSVERSIONINFOW);
 
-	HMODULE ntdll = GetModuleHandleW(L"ntdll.dll");
+	const HMODULE ntdll = GetModuleHandleW(L"ntdll.dll");
 	if (!ntdll) { return "Windows"; }
 
 	const auto rtlGetVersion = reinterpret_cast<RtlGetVersionFn>(
@@ -54,15 +56,15 @@ std::string WindowsUtils::GetWindowsVersion() {
 	if (rtlGetVersion(&osvi) != 0) { return "Windows"; }
 
 	// Windows 11 は major=10, minor=0 で、build >= 22000 で判定するのが一般的らしい
-	const bool isWindows11 = (osvi.dwMajorVersion == 10 && osvi.dwMinorVersion
-	                          == 0 &&
-	                          osvi.dwBuildNumber >= 22000);
+	const bool isWindows11 = osvi.dwMajorVersion == 10 && osvi.dwMinorVersion
+	                         == 0 &&
+	                         osvi.dwBuildNumber >= 22000;
 
 	std::string name = isWindows11 ? "Windows 11" : "Windows";
 
 	// 参考情報として build も付与
 	name += " (Build " + std::to_string(
-		static_cast<unsigned long>(osvi.dwBuildNumber)
+		osvi.dwBuildNumber
 	) + ")";
 	return name;
 }
@@ -214,4 +216,276 @@ bool WindowsUtils::IsSystemDarkTheme() {
 		&lightMode
 	);
 	return lightMode == 0;
+}
+
+WindowsUtils::ProcessResult WindowsUtils::RunProcessCapture(
+	const std::wstring& application,
+	const std::wstring& arguments,
+	const std::wstring& workingDirectory,
+	unsigned long       timeoutMs
+) {
+	ProcessResult result{};
+
+	SECURITY_ATTRIBUTES sa{};
+	sa.nLength              = sizeof(sa);
+	sa.bInheritHandle       = TRUE;
+	sa.lpSecurityDescriptor = nullptr;
+
+	HANDLE outRead = nullptr, outWrite = nullptr;
+	if (!CreatePipe(&outRead, &outWrite, &sa, 0)) {
+		result.win32Error = GetLastError();
+		return result;
+	}
+	if (!SetHandleInformation(outRead, HANDLE_FLAG_INHERIT, 0)) {
+		result.win32Error = GetLastError();
+		CloseHandle(outRead);
+		CloseHandle(outWrite);
+		return result;
+	}
+
+	STARTUPINFOW si{};
+	si.cb        = sizeof(si);
+	si.dwFlags   = STARTF_USESTDHANDLES;
+	si.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+	// stderr も同じパイプにまとめる（簡易＆デッドロック回避）
+	si.hStdOutput = outWrite;
+	si.hStdError  = outWrite;
+
+	PROCESS_INFORMATION pi{};
+
+	// CreateProcessW はコマンドラインを書き換える可能性があるので可変バッファを渡す
+	// applicationName は null にし、cmdLine にフルコマンドラインを渡す（パス探索に任せる）
+	std::wstring cmdLine;
+	if (!application.empty()) {
+		cmdLine = L"\"" + application + L"\"";
+		if (!arguments.empty()) {
+			cmdLine += L" ";
+			cmdLine += arguments;
+		}
+	} else { cmdLine = arguments; }
+	std::vector<wchar_t> cmdBuf(cmdLine.begin(), cmdLine.end());
+	cmdBuf.push_back(L'\0');
+
+	const wchar_t* workDirPtr = workingDirectory.empty() ?
+		                            nullptr :
+		                            workingDirectory.c_str();
+
+	BOOL ok = CreateProcessW(
+		nullptr,
+		cmdBuf.data(),
+		nullptr,
+		nullptr,
+		TRUE,
+		CREATE_NO_WINDOW,
+		nullptr,
+		workDirPtr,
+		&si,
+		&pi
+	);
+
+	// 親側で書き込み端を閉じる（EOF を受け取れるように）
+	CloseHandle(outWrite);
+
+	if (!ok) {
+		result.win32Error = GetLastError();
+		CloseHandle(outRead);
+		return result;
+	}
+
+	auto readAll = [](const HANDLE h) -> std::string {
+		std::string out;
+		char        buf[4096];
+		DWORD       read = 0;
+		while (true) {
+			const BOOL r = ReadFile(h, buf, sizeof(buf), &read, nullptr);
+			if (!r || read == 0) { break; }
+			out.append(buf, buf + read);
+		}
+		return out;
+	};
+
+	DWORD wait = WAIT_OBJECT_0;
+	if (timeoutMs > 0) {
+		wait = WaitForSingleObject(pi.hProcess, timeoutMs);
+		if (wait == WAIT_TIMEOUT) { result.timedOut = true; }
+	} else { WaitForSingleObject(pi.hProcess, INFINITE); }
+
+	if (!result.timedOut) {
+		// stderr も同じパイプにしているので全部 stdoutText に入れる
+		result.stdoutText = readAll(outRead);
+	}
+
+	GetExitCodeProcess(pi.hProcess, &result.exitCode);
+
+	CloseHandle(outRead);
+	CloseHandle(pi.hThread);
+	CloseHandle(pi.hProcess);
+
+	return result;
+}
+
+WindowsUtils::ProcessResult WindowsUtils::RunCmdCapture(
+	const std::wstring& cmd,
+	const std::wstring& workingDirectory,
+	const unsigned long timeoutMs
+) {
+	// /S は "cmd" の引用符処理を正しくするため
+	// /C は実行後に終了
+	const std::wstring args = L"/S /C \"" + cmd + L"\"";
+	return RunProcessCapture(L"cmd.exe", args, workingDirectory, timeoutMs);
+}
+
+WindowsUtils::ProcessResult WindowsUtils::RunPowerShellFileCapture(
+	const std::wstring& scriptPath,
+	const std::wstring& arguments,
+	const std::wstring& workingDirectory,
+	const unsigned long timeoutMs
+) {
+	// 実運用で詰まりやすい ExecutionPolicy を Bypass にし、プロファイル読み込みも切る
+	std::wstring args =
+		L"-NoProfile -ExecutionPolicy Bypass -File \"" + scriptPath + L"\"";
+	if (!arguments.empty()) {
+		args += L" ";
+		args += arguments;
+	}
+	return RunProcessCapture(
+		L"powershell.exe", args, workingDirectory, timeoutMs
+	);
+}
+
+static std::string WideToUtf8(const std::wstring_view w) {
+	if (w.empty()) { return {}; }
+	const int len = WideCharToMultiByte(
+		CP_UTF8, 0, w.data(), static_cast<int>(w.size()), nullptr, 0, nullptr,
+		nullptr
+	);
+	std::string out(len, '\0');
+	WideCharToMultiByte(
+		CP_UTF8, 0, w.data(), static_cast<int>(w.size()), out.data(), len,
+		nullptr, nullptr
+	);
+	return out;
+}
+
+std::string WindowsUtils::ConvertCP932ToUtf8(const std::string& s) {
+	if (s.empty()) { return {}; }
+	// CP932 -> UTF-16
+	const int wlen = MultiByteToWideChar(
+		932 /*CP932*/, 0, s.data(), static_cast<int>(s.size()), nullptr, 0
+	);
+	std::wstring w(wlen, L'\0');
+	MultiByteToWideChar(
+		932, 0, s.data(), static_cast<int>(s.size()), w.data(), wlen
+	);
+	// UTF-16 -> UTF-8
+	return WideToUtf8(w);
+}
+
+bool WindowsUtils::StartProcessCapture(
+	const std::wstring& application,
+	const std::wstring& arguments,
+	ProcessHandle&      outHandle,
+	const std::wstring& workingDirectory
+) {
+	CloseProcessHandle(outHandle);
+
+	SECURITY_ATTRIBUTES sa{};
+	sa.nLength        = sizeof(sa);
+	sa.bInheritHandle = TRUE;
+
+	HANDLE readPipe  = nullptr;
+	HANDLE writePipe = nullptr;
+	if (!CreatePipe(&readPipe, &writePipe, &sa, 0)) { return false; }
+	if (!SetHandleInformation(readPipe, HANDLE_FLAG_INHERIT, 0)) {
+		CloseHandle(readPipe);
+		CloseHandle(writePipe);
+		return false;
+	}
+
+	STARTUPINFOW si{};
+	si.cb         = sizeof(si);
+	si.dwFlags    = STARTF_USESTDHANDLES;
+	si.hStdInput  = GetStdHandle(STD_INPUT_HANDLE);
+	si.hStdOutput = writePipe;
+	si.hStdError  = writePipe;
+
+	PROCESS_INFORMATION pi{};
+
+	std::wstring cmdLine = L"\"" + application + L"\"";
+	if (!arguments.empty()) {
+		cmdLine += L" ";
+		cmdLine += arguments;
+	}
+	std::vector<wchar_t> cmdBuf(cmdLine.begin(), cmdLine.end());
+	cmdBuf.push_back(L'\0');
+
+	const wchar_t* workDirPtr = workingDirectory.empty() ?
+		                            nullptr :
+		                            workingDirectory.c_str();
+
+	const BOOL ok = CreateProcessW(
+		nullptr,
+		cmdBuf.data(),
+		nullptr,
+		nullptr,
+		TRUE,
+		CREATE_NO_WINDOW,
+		nullptr,
+		workDirPtr,
+		&si,
+		&pi
+	);
+
+	CloseHandle(writePipe); // 親は書き込み端を閉じる
+	if (!ok) {
+		CloseHandle(readPipe);
+		return false;
+	}
+
+	outHandle.hProcess  = pi.hProcess;
+	outHandle.hThread   = pi.hThread;
+	outHandle.hReadPipe = readPipe;
+	return true;
+}
+
+bool WindowsUtils::PollProcessOutput(
+	const ProcessHandle& handle, std::string& outChunk
+) {
+	outChunk.clear();
+	if (!handle.hReadPipe) { return false; }
+
+	DWORD avail = 0;
+	if (!PeekNamedPipe(
+		handle.hReadPipe, nullptr, 0, nullptr, &avail, nullptr
+	)) { return false; }
+	if (avail == 0) { return false; }
+
+	std::string buf;
+	buf.resize(std::min<DWORD>(avail, 4096));
+	DWORD read = 0;
+	if (!ReadFile(
+		    handle.hReadPipe, buf.data(), static_cast<DWORD>(buf.size()), &read,
+		    nullptr
+	    ) || read == 0) { return false; }
+	buf.resize(read);
+	outChunk = std::move(buf);
+	return true;
+}
+
+bool WindowsUtils::TryGetProcessExitCode(
+	const ProcessHandle& handle, unsigned long& exitCode
+) {
+	if (!handle.hProcess) { return false; }
+	DWORD code = STILL_ACTIVE;
+	if (!GetExitCodeProcess(handle.hProcess, &code)) { return false; }
+	if (code == STILL_ACTIVE) { return false; }
+	exitCode = code;
+	return true;
+}
+
+void WindowsUtils::CloseProcessHandle(ProcessHandle& handle) {
+	if (handle.hReadPipe) { CloseHandle(handle.hReadPipe); }
+	if (handle.hThread) { CloseHandle(handle.hThread); }
+	if (handle.hProcess) { CloseHandle(handle.hProcess); }
+	handle = {};
 }

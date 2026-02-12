@@ -1,5 +1,5 @@
 #pragma once
-#include <runtime/core/math/Math.h>
+#include <core/math/Math.h>
 
 class GameTime;
 

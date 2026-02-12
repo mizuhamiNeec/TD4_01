@@ -1,11 +1,10 @@
 #include <engine/Debug/DebugHud.h>
-#include <engine/ImGui/ImGuiManager.h>
 #include <engine/ImGui/ImGuiUtil.h>
-#include <engine/OldConsole/ConVarManager.h>
 
 #include <engine/Engine.h>
 #include <engine/EngineServices.h>
 
+#include "engine/OldConsole/Console.h"
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
 #include "engine/unnamed/subsystem/console/concommand/UnnamedConVar.h"
 

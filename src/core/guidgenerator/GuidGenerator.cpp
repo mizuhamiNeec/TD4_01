@@ -13,11 +13,9 @@ namespace Unnamed {
 		uint64_t MakeThreadSeed() {
 			std::random_device rd;
 			uint64_t           seed = 0;
-			seed                    ^= (static_cast<uint64_t>(rd()) << 32);
-			seed                    ^= static_cast<uint64_t>(rd());
-			seed                    ^= static_cast<uint64_t>(
-				std::hash<std::thread::id>{}(std::this_thread::get_id())
-			);
+			seed ^= static_cast<uint64_t>(rd()) << 32;
+			seed ^= static_cast<uint64_t>(rd());
+			seed ^= std::hash<std::thread::id>{}(std::this_thread::get_id());
 			return seed;
 		}
 

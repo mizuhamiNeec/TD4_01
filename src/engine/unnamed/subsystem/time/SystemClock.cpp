@@ -29,12 +29,12 @@ double SystemClock::UpTime() {
 std::string SystemClock::ToString(const TimePoint& tp) {
 	using namespace std::chrono;
 
-	std::time_t tt = SysClock::to_time_t(tp);
-	std::tm     tm = {};
+	const std::time_t tt = SysClock::to_time_t(tp);
+	std::tm           tm = {};
 
 	localtime_s(&tm, &tt);
 
-	auto millis =
+	const auto millis =
 		duration_cast<milliseconds>(tp.time_since_epoch()).count() % 1000;
 
 	std::ostringstream oss;
@@ -46,9 +46,9 @@ std::string SystemClock::ToString(const TimePoint& tp) {
 /// @brief TimePointをstd::tm構造体に変換します
 /// @param tp 変換するTimePoint
 /// @return 変換されたstd::tm構造体
-static std::tm ToTm(SystemClock::TimePoint tp) {
-	std::time_t tt = SystemClock::SysClock::to_time_t(tp);
-	std::tm     tm = {};
+static std::tm ToTm(const SystemClock::TimePoint tp) {
+	const std::time_t tt = SystemClock::SysClock::to_time_t(tp);
+	std::tm           tm = {};
 	localtime_s(&tm, &tt);
 
 	return tm;

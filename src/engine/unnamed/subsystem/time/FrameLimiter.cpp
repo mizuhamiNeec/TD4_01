@@ -3,10 +3,27 @@
 #include <engine/unnamed/subsystem/time/FrameLimiter.h>
 #include <engine/unnamed/subsystem/time/GameTime.h>
 
+#include "engine/unnamed/subsystem/console/ConsoleSystem.h"
+#include "engine/unnamed/subsystem/console/concommand/UnnamedConVar.h"
+#include "engine/unnamed/subsystem/interface/ServiceLocator.h"
+
 /// @brief コンストラクタ
 /// @param gameTime ゲームタイムクラスへのポインタ
 FrameLimiter::FrameLimiter(GameTime* gameTime) :
-	mGameTime(gameTime) { SetTargetFPS(kDefaultFpsMax); }
+	mGameTime(gameTime) {
+	mConsoleSystem    = ServiceLocator::Get<Unnamed::ConsoleSystem>();
+	const auto fpsmax = mConsoleSystem->GetConVarAs<Unnamed::UnnamedConVar<
+		double>>("fps_max");
+
+	if (fpsmax) {
+		SetTargetFPS(fpsmax->GetValue());
+		DevMsg(
+			"FrameLimiter",
+			"Initial target FPS set to {}\n",
+			fpsmax->GetValue()
+		);
+	} else { SetTargetFPS(0.0); }
+}
 
 /// @brief 目標FPSを設定します
 /// @param targetFPS 目標FPS
@@ -51,6 +68,7 @@ void FrameLimiter::Limit() {
 
 /// @brief コンソール変数の値をチェックして目標FPSを更新します
 void FrameLimiter::CheckConVarValue() {
-	constexpr double targetFPS = 10000; // TODO: コンソール変数に置き換え
-	SetTargetFPS(targetFPS);
+	const auto fpsmax = mConsoleSystem->GetConVarAs<Unnamed::UnnamedConVar<
+		double>>("fps_max");
+	SetTargetFPS(fpsmax->GetValue());
 }

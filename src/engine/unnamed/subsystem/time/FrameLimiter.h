@@ -1,6 +1,10 @@
 ﻿#pragma once
 #include <chrono>
 
+namespace Unnamed {
+	class ConsoleSystem;
+}
+
 class GameTime;
 
 /// @brief フレームレートリミッタークラス
@@ -19,7 +23,8 @@ private:
 	using Clock     = std::chrono::steady_clock;
 	using TimePoint = Clock::time_point;
 
-	GameTime* mGameTime = nullptr;
+	GameTime*               mGameTime      = nullptr;
+	Unnamed::ConsoleSystem* mConsoleSystem = nullptr;
 
 	Clock::duration   mTargetFrameDuration;
 	Clock::time_point mFrameStart;

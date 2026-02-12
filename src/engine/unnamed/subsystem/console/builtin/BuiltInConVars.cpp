@@ -143,7 +143,7 @@ namespace Unnamed {
 		// Graphics
 		//---------------------------------------------------------------------
 		static UnnamedConVar fps_max(
-			"fps_max", 0, FCVAR::ARCHIVE,
+			"fps_max", 360.0, FCVAR::ARCHIVE,
 			"Frame rate limiter. 0 = unlimited."
 		);
 

@@ -26,9 +26,9 @@ namespace UPhysics {
 #ifdef _DEBUG
 		const auto camera = CameraManager::GetActiveCamera();
 		if (camera) {
-			Mat4 invView = camera->GetViewMat().Inverse();
-			Vec3 start   = invView.GetTranslate();
-			Vec3 dir     = invView.GetForward();
+			Mat4       invView = camera->GetViewMat().Inverse();
+			const Vec3 start   = invView.GetTranslate();
+			Vec3       dir     = invView.GetForward();
 
 			dir.Normalize();
 			const Unnamed::Ray ray = {
@@ -69,7 +69,7 @@ namespace UPhysics {
 	/// @details メッシュコライダーを持ったエンティティを登録します
 	/// @param entity 登録するエンティティ(旧)
 	void Engine::RegisterEntity(Entity* entity) {
-		auto meshCollider = entity->GetComponent<MeshColliderComponent>();
+		const auto meshCollider = entity->GetComponent<MeshColliderComponent>();
 		if (!meshCollider) {
 			Warning(
 				"UPhysics",
@@ -125,11 +125,11 @@ namespace UPhysics {
 			std::vector<FlatNode> nodes;
 			std::vector<uint32_t> triIndices;
 
-			size_t triStart = mTriangles.size();
+			const size_t triStart = mTriangles.size();
 
 			bvhBuilder.Build(triangles, nodes, triIndices);
 
-			size_t triCount = triangles.size();
+			const size_t triCount = triangles.size();
 
 			AddGlobalOffset(
 				triIndices,
@@ -225,7 +225,7 @@ namespace UPhysics {
 		Vec3  dirN = dir;
 		float len  = length;
 
-		float dirLen = dirN.Length();
+		const float dirLen = dirN.Length();
 		if (dirLen > 1e-6f) {
 			dirN /= dirLen;
 			if (fabs(len - dirLen) < 1e-4f) len = dirLen;
@@ -256,7 +256,7 @@ namespace UPhysics {
 	/// @return 衝突した場合trueを返す
 	bool Engine::SphereCast(
 		const Vec3& start,
-		float       radius,
+		const float radius,
 		const Vec3& dir,
 		const float length,
 		Hit*        outHit
@@ -331,9 +331,9 @@ namespace UPhysics {
 					stack[sp++] = node.rightFirst;
 				} else {
 					// 葉ノード：三角形との詳細判定
-					uint32_t first = node.leftFirst;
+					const uint32_t first = node.leftFirst;
 					for (uint32_t i = 0; i < node.primCount; ++i) {
-						uint32_t triIdx = bvh->triIndices[first + i];
+						const uint32_t triIdx = bvh->triIndices[first + i];
 						const Unnamed::Triangle& tri = mTriangles[triIdx];
 
 						Vec3  separationAxis;
@@ -383,7 +383,7 @@ namespace UPhysics {
 	int Engine::BoxOverlap(
 		const Unnamed::Box& box,
 		Hit*                outHits,
-		int                 maxHits
+		const int           maxHits
 	) const {
 		int hitCount = 0;
 		if (mBVHs.empty() || mTriangles.empty() || maxHits <= 0) {
@@ -440,10 +440,10 @@ namespace UPhysics {
 					stack[sp++] = node.rightFirst;
 				} else {
 					// 葉ノード：三角形との詳細判定
-					uint32_t first = node.leftFirst;
+					const uint32_t first = node.leftFirst;
 					for (uint32_t i = 0; i < node.primCount && hitCount <
 					                     maxHits; ++i) {
-						uint32_t triIdx = bvh->triIndices[first + i];
+						const uint32_t triIdx = bvh->triIndices[first + i];
 						const Unnamed::Triangle& tri = mTriangles[triIdx];
 
 						Vec3  separationAxis;

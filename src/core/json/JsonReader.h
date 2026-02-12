@@ -1,12 +1,12 @@
 #pragma once
 #include <fstream>
 #include <json.hpp>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
-#include <limits>
 
 namespace Unnamed {
 	/// @brief JSON読み込みクラス
@@ -134,7 +134,7 @@ namespace Unnamed {
 					size_t             idx = 0;
 					unsigned long long v = std::stoull(s, &idx, 10);
 					if (idx != s.size()) { return std::nullopt; }
-					return static_cast<uint64_t>(v);
+					return v;
 				}
 			} catch (...) { return std::nullopt; }
 			return std::nullopt;

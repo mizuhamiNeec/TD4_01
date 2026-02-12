@@ -5,6 +5,8 @@ class D3D12;
 /// @brief モデル共通クラス
 class ModelCommon {
 public:
+	~ModelCommon() = default;
+
 	void Init(D3D12* d3d12);
 
 	D3D12* GetD3D12() const { return mD3d12; }

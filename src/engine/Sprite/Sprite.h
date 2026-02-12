@@ -1,14 +1,17 @@
 #pragma once
 #include <memory>
 
-#include <runtime/core/math/Math.h>
+#include <core/math/Math.h>
 
-#include "engine/Viewport.h"
-#include "engine/renderer/ConstantBuffer.h"
-
-#include "engine/renderer/IndexBuffer.h"
 #include "engine/renderer/Structs.h"
 #include "engine/renderer/VertexBuffer.h"
+
+class IndexBuffer;
+class ConstantBuffer;
+
+namespace Unnamed {
+	struct Viewport;
+}
 
 // スプライトの頂点数
 constexpr uint32_t kSpriteVertexCount = 6;

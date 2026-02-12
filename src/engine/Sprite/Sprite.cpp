@@ -6,7 +6,9 @@
 #include "engine/Engine.h"
 #include "engine/EngineServices.h"
 #include "engine/Viewport.h"
+#include "engine/renderer/ConstantBuffer.h"
 #include "engine/renderer/D3D12.h"
+#include "engine/renderer/IndexBuffer.h"
 #include "engine/TextureManager/TexManager.h"
 
 /// @brief スプライトのインデックスデータ
@@ -139,7 +141,7 @@ void Sprite::Update() {
 }
 
 /// @brief スプライトの描画
-void Sprite::Draw(Unnamed::Viewport viewport) const {
+void Sprite::Draw(const Unnamed::Viewport viewport) const {
 	{
 		mVertexBuffer->Update(
 			mVertices.data(),
@@ -196,7 +198,7 @@ void Sprite::Draw(Unnamed::Viewport viewport) const {
 	               );
 
 	// テクスチャのSRVを設定
-	if (auto* engine = Unnamed::EngineServices::Get()) {
+	if (const auto* engine = Unnamed::EngineServices::Get()) {
 		if (auto* texManager = engine->GetTexManagerInstance()) {
 			mSpriteCommon->GetD3D12()->GetCommandList()->
 			               SetGraphicsRootDescriptorTable(
@@ -326,8 +328,8 @@ void Sprite::SetUvRot(const float newRot) { mUvTransform.rotate.z = newRot; }
 
 /// @brief テクスチャサイズに合わせてスプライトのサイズを調整
 void Sprite::AdjustTextureSize() {
-	if (auto* engine = Unnamed::EngineServices::Get()) {
-		auto* texManager = engine->GetTexManagerInstance();
+	if (const auto* engine = Unnamed::EngineServices::Get()) {
+		const auto* texManager = engine->GetTexManagerInstance();
 		if (!texManager) { return; }
 		mTextureSize = {
 			static_cast<float>(texManager->GetMetaData(

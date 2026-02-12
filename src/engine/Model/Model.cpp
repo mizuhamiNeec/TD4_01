@@ -5,7 +5,6 @@
 #include <engine/Model/Model.h>
 #include <engine/Model/ModelCommon.h>
 #include <engine/renderer/ConstantBuffer.h>
-#include <engine/renderer/VertexBuffer.h>
 
 #include "engine/renderer/D3D12.h"
 
@@ -78,7 +77,7 @@ void Model::ImGuiDraw() const {
 /// @brief モデルを描画する
 void Model::Draw() const {
 	// VertexBufferViewを設定
-	D3D12_VERTEX_BUFFER_VIEW vbView = mVertexBuffer->View();
+	const D3D12_VERTEX_BUFFER_VIEW vbView = mVertexBuffer->View();
 	mModelCommon->GetD3D12()->GetCommandList()->IASetVertexBuffers(
 		0, 1, &vbView
 	);

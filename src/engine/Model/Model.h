@@ -4,7 +4,7 @@
 
 #include <engine/renderer/Structs.h>
 
-#include <engine/renderer/VertexBuffer.h>
+#include "engine/renderer/VertexBuffer.h"
 
 class ConstantBuffer;
 class ModelCommon;

@@ -86,7 +86,7 @@ namespace Unnamed {
 		/// @details operator[] は範囲外アクセス時の挙動は未定義です（std::vector と同様）
 		[[nodiscard]] const T& operator[](const size_t logicalIndex) const {
 			std::lock_guard lock(mMutex);
-			const size_t physicalIndex = (mTail + logicalIndex) % Capacity;
+			const size_t    physicalIndex = (mTail + logicalIndex) % Capacity;
 			return mBuffer[physicalIndex];
 		}
 
@@ -94,12 +94,14 @@ namespace Unnamed {
 		/// @details operator[] は範囲外アクセス時の挙動は未定義です（std::vector と同様）
 		[[nodiscard]] T& operator[](const size_t logicalIndex) {
 			std::lock_guard lock(mMutex);
-			const size_t physicalIndex = (mTail + logicalIndex) % Capacity;
+			const size_t    physicalIndex = (mTail + logicalIndex) % Capacity;
 			return mBuffer[physicalIndex];
 		}
 
 		/// @brief 範囲チェック付き参照（範囲外なら std::nullopt）
-		[[nodiscard]] std::optional<std::reference_wrapper<const T>> At(const size_t logicalIndex) const {
+		[[nodiscard]] std::optional<std::reference_wrapper<const T>> At(
+			const size_t logicalIndex
+		) const {
 			std::lock_guard lock(mMutex);
 			if (logicalIndex >= mSize) { return std::nullopt; }
 			const size_t physicalIndex = (mTail + logicalIndex) % Capacity;
@@ -107,7 +109,9 @@ namespace Unnamed {
 		}
 
 		/// @brief 範囲チェック付き参照（範囲外なら std::nullopt）
-		[[nodiscard]] std::optional<std::reference_wrapper<T>> At(const size_t logicalIndex) {
+		[[nodiscard]] std::optional<std::reference_wrapper<T>> At(
+			const size_t logicalIndex
+		) {
 			std::lock_guard lock(mMutex);
 			if (logicalIndex >= mSize) { return std::nullopt; }
 			const size_t physicalIndex = (mTail + logicalIndex) % Capacity;
@@ -121,7 +125,9 @@ namespace Unnamed {
 			/// @param buffer 対象のリングバッファ
 			/// @param index 開始インデックス
 			/// @param count 反復回数
-			Iterator(const RingBuffer* buffer, size_t index, size_t count)
+			Iterator(
+				const RingBuffer* buffer, const size_t index, const size_t count
+			)
 				: mBuffer(buffer),
 				  mIndex(index),
 				  mCount(count) {}

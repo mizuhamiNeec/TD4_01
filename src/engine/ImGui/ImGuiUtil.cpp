@@ -1,12 +1,12 @@
 #ifdef _DEBUG
 #include <imgui_internal.h>
 
+#include <core/math/Math.h>
+
 #include <engine/Components/Transform/SceneComponent.h>
 #include <engine/Entity/Entity.h>
 #include <engine/ImGui/ImGuiUtil.h>
 #include <engine/ImGui/ImGuiWidgets.h>
-
-#include <runtime/core/math/Math.h>
 
 namespace ImGuiUtil {
 	/// @brief Vec4型をImVec4型に変換します。
@@ -143,7 +143,7 @@ namespace ImGuiUtil {
 	/// @param transform 編集するTransformコンポーネントへの参照
 	/// @param vSpeed ドラッグ操作の速度
 	bool EditTransform(
-		SceneComponent& transform, float vSpeed
+		SceneComponent& transform, const float vSpeed
 	) {
 		bool       isEditing  = false;
 		Vec3       localPos   = transform.GetLocalPos();
@@ -205,7 +205,7 @@ namespace ImGuiUtil {
 	/// @param format 表示フォーマット
 	/// @return 編集された場合はtrueを返す
 	bool DragVec3(
-		const std::string& name, Vec3& v, float vSpeed,
+		const std::string& name, Vec3& v, const float vSpeed,
 		const char*        format
 	) {
 		// 編集中かどうか

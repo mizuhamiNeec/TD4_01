@@ -6,10 +6,10 @@
 #include <filesystem>
 #include <format>
 
+#include <engine/Properties.h>
 #include <engine/renderer/D3D12.h>
 #include <engine/renderer/SrvManager.h>
 #include <engine/TextureManager/TexManager.h>
-#include <runtime/core/Properties.h>
 
 /// @brief テクスチャマネージャーを初期化します
 /// @param renderer D3D12レンダラーのポインタ
@@ -33,7 +33,7 @@ void TexManager::Init(D3D12* renderer, SrvManager* srvManager) {
 const DirectX::TexMetadata& TexManager::GetMetaData(
 	const std::string& filePath
 ) const {
-	auto it = mTextureData.find(filePath);
+	const auto it = mTextureData.find(filePath);
 	assert(it != mTextureData.end()); // ファイルが存在することを確認
 	const TextureData& textureData = it->second;
 	return textureData.metadata;
@@ -124,7 +124,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> TexManager::UploadTextureData(
 	uploadResourceDesc.Layout              = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
 	// 中間リソースの作成
-	HRESULT hr = mRenderer->GetDevice()->CreateCommittedResource(
+	const HRESULT hr = mRenderer->GetDevice()->CreateCommittedResource(
 		&uploadHeapProperties,
 		D3D12_HEAP_FLAG_NONE,
 		&uploadResourceDesc,
@@ -193,8 +193,8 @@ void TexManager::LoadTexture(const std::string& filePath, bool forceCubeMap) {
 
 		if (SUCCEEDED(hr)) {
 			// キューブマップかどうかをチェック
-			isCubeMap = isCubeMap || (metadata.miscFlags &
-			                          DirectX::TEX_MISC_TEXTURECUBE);
+			isCubeMap = isCubeMap || metadata.miscFlags &
+			            DirectX::TEX_MISC_TEXTURECUBE;
 
 			// メタデータを取得したら改めて読み込み（DDSはフラグなしで読み込み、後でSRGB変換）
 			hr = DirectX::LoadFromDDSFile(
@@ -435,15 +435,15 @@ uint32_t TexManager::GetTextureIndexByFilePath(
 	if (it != mTextureData.end()) { return it->second.srvIndex; }
 
 	// 2. ファイル名のみで検索（パスの違いを無視）
-	std::string filename  = filePath;
-	size_t      lastSlash = filePath.find_last_of("/\\");
+	std::string  filename  = filePath;
+	const size_t lastSlash = filePath.find_last_of("/\\");
 	if (lastSlash != std::string::npos) {
 		filename = filePath.substr(lastSlash + 1);
 	}
 
 	for (const auto& [path, data] : mTextureData) {
-		std::string currentFilename  = path;
-		size_t      currentLastSlash = path.find_last_of("/\\");
+		std::string  currentFilename  = path;
+		const size_t currentLastSlash = path.find_last_of("/\\");
 		if (currentLastSlash != std::string::npos) {
 			currentFilename = path.substr(currentLastSlash + 1);
 		}
@@ -511,20 +511,20 @@ D3D12_GPU_DESCRIPTOR_HANDLE TexManager::GetSrvHandleGPU(
 	const std::string& filePath
 ) {
 	// ファイル名のみで検索（パスの違いを無視）- GetTextureIndexByFilePathと同様のロジック
-	std::string filename  = filePath;
-	size_t      lastSlash = filePath.find_last_of("/\\");
+	std::string  filename  = filePath;
+	const size_t lastSlash = filePath.find_last_of("/\\");
 	if (lastSlash != std::string::npos) {
 		filename = filePath.substr(lastSlash + 1);
 	}
 
 	// まず完全一致で検索
-	auto it = mTextureData.find(filePath);
+	const auto it = mTextureData.find(filePath);
 	if (it != mTextureData.end()) { return it->second.srvHandleGPU; }
 
 	// ファイル名で検索
 	for (auto& [path, data] : mTextureData) {
-		std::string currentFilename  = path;
-		size_t      currentLastSlash = path.find_last_of("/\\");
+		std::string  currentFilename  = path;
+		const size_t currentLastSlash = path.find_last_of("/\\");
 		if (currentLastSlash != std::string::npos) {
 			currentFilename = path.substr(currentLastSlash + 1);
 		}
@@ -574,20 +574,20 @@ Microsoft::WRL::ComPtr<ID3D12Resource> TexManager::GetTextureResource(
 	const std::string& filePath
 ) const {
 	// まず完全なパスで検索
-	auto it = mTextureData.find(filePath);
+	const auto it = mTextureData.find(filePath);
 	if (it != mTextureData.end()) { return it->second.resource; }
 
 	// ファイル名のみで検索（パスの違いを無視）
-	std::string filename  = filePath;
-	size_t      lastSlash = filePath.find_last_of("/\\");
+	std::string  filename  = filePath;
+	const size_t lastSlash = filePath.find_last_of("/\\");
 	if (lastSlash != std::string::npos) {
 		filename = filePath.substr(lastSlash + 1);
 	}
 
 	// ファイル名で検索
 	for (const auto& [path, data] : mTextureData) {
-		std::string currentFilename  = path;
-		size_t      currentLastSlash = path.find_last_of("/\\");
+		std::string  currentFilename  = path;
+		const size_t currentLastSlash = path.find_last_of("/\\");
 		if (currentLastSlash != std::string::npos) {
 			currentFilename = path.substr(currentLastSlash + 1);
 		}
@@ -617,7 +617,7 @@ void TexManager::UpdateTextureSrvIndex(
 	const std::string& filePath,
 	const uint32_t     newSrvIndex
 ) {
-	auto it = mTextureData.find(filePath);
+	const auto it = mTextureData.find(filePath);
 	if (it != mTextureData.end()) { it->second.srvIndex = newSrvIndex; } else {
 		Error(
 			GetName(),

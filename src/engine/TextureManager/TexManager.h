@@ -6,8 +6,6 @@
 
 #include <unordered_map>
 
-#include <wrl/client.h>
-
 class SrvManager;
 class D3D12;
 

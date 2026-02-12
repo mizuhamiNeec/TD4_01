@@ -56,7 +56,7 @@ namespace Unnamed {
 		if (mStack.empty()) {
 			throw std::runtime_error("EndObject() called with empty stack");
 		}
-		auto* cur = Current();
+		const auto* cur = Current();
 		if (!cur->is_object()) {
 			throw std::runtime_error(
 				"Top of stack is not an object in EndObject()"
@@ -79,7 +79,7 @@ namespace Unnamed {
 		if (mStack.empty()) {
 			throw std::runtime_error("EndArray() called with empty stack");
 		}
-		auto* cur = Current();
+		const auto* cur = Current();
 		if (!cur->is_array()) {
 			throw std::runtime_error(
 				"Top of stack is not an array in EndArray()"
@@ -90,7 +90,7 @@ namespace Unnamed {
 	}
 
 	void JsonWriter::Key(const std::string& key) const {
-		auto* cur = Current();
+		const auto* cur = Current();
 		if (!cur) {
 			throw std::runtime_error("Key() called with no active container");
 		}
@@ -108,7 +108,7 @@ namespace Unnamed {
 	bool JsonWriter::Save() const {
 		if (mPath.empty()) { throw std::runtime_error("Save path is empty"); }
 
-		std::filesystem::path filePath(mPath);
+		const std::filesystem::path filePath(mPath);
 		if (filePath.has_parent_path()) {
 			std::filesystem::create_directories(filePath.parent_path());
 		}

@@ -1,11 +1,11 @@
 #pragma once
 
-#include <engine/Model/Model.h>
-#include <engine/Model/ModelCommon.h>
-#include <engine/renderer/Structs.h>
-#include <runtime/core/math/Math.h>
-
 #include <memory>
+
+#include <core/math/Math.h>
+
+#include <engine/Model/Model.h>
+#include <engine/renderer/Structs.h>
 
 class Model;
 class Camera;

@@ -131,7 +131,7 @@ void Object3D::Update() {
 
 /// @brief Object3Dクラスの描画
 void Object3D::Draw() const {
-	Mat4 worldMat = Mat4::Affine(
+	const Mat4 worldMat = Mat4::Affine(
 		mTransform.scale,
 		mTransform.rotate,
 		mTransform.translate
@@ -139,7 +139,7 @@ void Object3D::Draw() const {
 
 	const Mat4& viewProjMat = CameraManager::GetActiveCamera()->
 		GetViewProjMat();
-	Mat4 worldViewProjMat = worldMat * viewProjMat;
+	const Mat4 worldViewProjMat = worldMat * viewProjMat;
 
 	mTransformationMatrixData->wvp                   = worldViewProjMat;
 	mTransformationMatrixData->world                 = worldMat;

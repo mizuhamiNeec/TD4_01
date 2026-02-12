@@ -1,7 +1,8 @@
 #pragma once
+#include <core/math/Math.h>
+
 #include <engine/Components/base/Component.h>
-#include <runtime/core/math/Math.h>
-#include <runtime/physics/core/UPhysics.h>
+#include <engine/physics/core/UPhysics.h>
 
 namespace Unnamed {
 	class ConsoleSystem;

@@ -1,7 +1,5 @@
 #include "CheckpointManager.h"
 
-#include <algorithm>
-
 #include <engine/Entity/Entity.h>
 #include <engine/unnamed/subsystem/console/Log.h>
 #include <game/components/checkpoint/CheckpointComponent.h>
@@ -40,7 +38,9 @@ void CheckpointManager::RegisterCheckpoint(CheckpointComponent* checkpoint) {
 	sCheckpoints[order] = checkpoint;
 }
 
-void CheckpointManager::UnregisterCheckpoint(CheckpointComponent* checkpoint) {
+void CheckpointManager::UnregisterCheckpoint(
+	const CheckpointComponent* checkpoint
+) {
 	if (!checkpoint) { return; }
 
 	const int order = checkpoint->GetOrder();
@@ -59,7 +59,9 @@ void CheckpointManager::ResetAllCheckpoints() {
 	sNextExpectedOrder       = 0;
 }
 
-bool CheckpointManager::CanActivateCheckpoint(CheckpointComponent* checkpoint) {
+bool CheckpointManager::CanActivateCheckpoint(
+	const CheckpointComponent* checkpoint
+) {
 	if (!checkpoint) { return false; }
 
 	// 既に起動されている場合は不可
@@ -142,7 +144,7 @@ int CheckpointManager::GetTotalCheckpointCount() {
 }
 
 CheckpointComponent* CheckpointManager::GetNextCheckpoint() {
-	auto it = sCheckpoints.find(sNextExpectedOrder);
+	const auto it = sCheckpoints.find(sNextExpectedOrder);
 	if (it != sCheckpoints.end()) { return it->second; }
 	return nullptr;
 }

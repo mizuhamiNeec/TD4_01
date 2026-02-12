@@ -34,7 +34,7 @@ void CameraRotator::OnAttach(Entity& owner) {
  * @details マウス入力に基づいてカメラの向きを更新し、アニメーションオフセットを適用します
  */
 void CameraRotator::Update([[maybe_unused]] float deltaTime) {
-	Vec2 delta = InputSystem::GetMouseDelta();
+	const Vec2 delta = InputSystem::GetMouseDelta();
 
 	// 感度と回転値を計算
 	const float sensitivity = ConVarManager::GetConVar("sensitivity")->
@@ -54,18 +54,18 @@ void CameraRotator::Update([[maybe_unused]] float deltaTime) {
 	mPitch = std::clamp(mPitch, -cl_pitchup, cl_pitchdown);
 
 	// クォータニオンを生成（回転順序: ヨー → ピッチ → ロール）
-	Quaternion yawRotation = Quaternion::AxisAngle(
+	const Quaternion yawRotation = Quaternion::AxisAngle(
 		Vec3::up, mYaw * Math::deg2Rad
 	);
-	Quaternion pitchRotation = Quaternion::AxisAngle(
+	const Quaternion pitchRotation = Quaternion::AxisAngle(
 		Vec3::right, (mPitch + mAnimationPitchOffset) * Math::deg2Rad
 	);
-	Quaternion rollRotation = Quaternion::AxisAngle(
+	const Quaternion rollRotation = Quaternion::AxisAngle(
 		Vec3::forward, mAnimationRollOffset * Math::deg2Rad
 	);
 
 	// 回転を合成して設定（アニメーションオフセットを含む）
-	Quaternion finalRotation = yawRotation * pitchRotation * rollRotation;
+	const Quaternion finalRotation = yawRotation * pitchRotation * rollRotation;
 	mScene->SetLocalRot(finalRotation);
 }
 

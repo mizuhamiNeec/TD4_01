@@ -46,11 +46,15 @@ public:
 	 * @brief アニメーションによるピッチオフセットを設定する
 	 * @param pitch ピッチオフセット（度数法）
 	 */
-	void SetAnimationPitchOffset(float pitch) { mAnimationPitchOffset = pitch; }
+	void SetAnimationPitchOffset(const float pitch) {
+		mAnimationPitchOffset = pitch;
+	}
 
 	/**
 	 * @brief アニメーションによるロールオフセットを設定する
 	 * @param roll ロールオフセット（度数法）
 	 */
-	void SetAnimationRollOffset(float roll) { mAnimationRollOffset = roll; }
+	void SetAnimationRollOffset(const float roll) {
+		mAnimationRollOffset = roll;
+	}
 };

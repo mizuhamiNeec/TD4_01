@@ -11,7 +11,9 @@ namespace {
 	/// @brief フェード関数
 	/// @param t 入力値
 	/// @return フェード後の値
-	float Fade(float t) { return t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f); }
+	float Fade(const float t) {
+		return t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f);
+	}
 
 	/// @brief 勾配関数
 	/// @param hash ハッシュ値
@@ -19,10 +21,10 @@ namespace {
 	/// @param y y座標
 	/// @param z z座標
 	/// @return 勾配値
-	float Grad(int hash, float x, float y, float z) {
-		int   h = hash & 15;
-		float u = h < 8 ? x : y;
-		float v = h < 4 ? y : h == 12 || h == 14 ? x : z;
+	float Grad(const int hash, const float x, const float y, const float z) {
+		const int   h = hash & 15;
+		const float u = h < 8 ? x : y;
+		const float v = h < 4 ? y : h == 12 || h == 14 ? x : z;
 		return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
 	}
 
@@ -76,17 +78,17 @@ void CameraAnimator::Init(
 /// @param z z座標
 /// @return ノイズ値
 float CameraAnimator::PerlinNoise(float x, float y, float z) const {
-	int X = static_cast<int>(std::floor(x)) & 255;
-	int Y = static_cast<int>(std::floor(y)) & 255;
-	int Z = static_cast<int>(std::floor(z)) & 255;
+	const int X = static_cast<int>(std::floor(x)) & 255;
+	const int Y = static_cast<int>(std::floor(y)) & 255;
+	const int Z = static_cast<int>(std::floor(z)) & 255;
 
 	x -= std::floor(x);
 	y -= std::floor(y);
 	z -= std::floor(z);
 
-	float u = Fade(x);
-	float v = Fade(y);
-	float w = Fade(z);
+	const float u = Fade(x);
+	const float v = Fade(y);
+	const float w = Fade(z);
 
 	int p[512];
 	for (int i = 0; i < 256; i++) {
@@ -94,12 +96,12 @@ float CameraAnimator::PerlinNoise(float x, float y, float z) const {
 		p[256 + i] = kPermutation[i];
 	}
 
-	int A  = p[X] + Y;
-	int AA = p[A] + Z;
-	int AB = p[A + 1] + Z;
-	int B  = p[X + 1] + Y;
-	int BA = p[B] + Z;
-	int BB = p[B + 1] + Z;
+	const int A  = p[X] + Y;
+	const int AA = p[A] + Z;
+	const int AB = p[A + 1] + Z;
+	const int B  = p[X + 1] + Y;
+	const int BA = p[B] + Z;
+	const int BB = p[B + 1] + Z;
 
 	return std::lerp(
 		std::lerp(
@@ -128,7 +130,7 @@ float CameraAnimator::PerlinNoise(float x, float y, float z) const {
 
 /// @brief 更新
 /// @param dt デルタタイム
-void CameraAnimator::Update(float dt) {
+void CameraAnimator::Update(const float dt) {
 	if (!mMovement) return;
 
 	UpdateJumpAnimation(dt);
@@ -141,7 +143,7 @@ void CameraAnimator::Update(float dt) {
 
 /// @brief ジャンプアニメーションの更新
 /// @param dt デルタタイム
-void CameraAnimator::UpdateJumpAnimation(float dt) {
+void CameraAnimator::UpdateJumpAnimation(const float dt) {
 	if (!mMovement) return;
 
 	const bool isInAir       = !mMovement->IsGrounded();
@@ -158,7 +160,7 @@ void CameraAnimator::UpdateJumpAnimation(float dt) {
 
 /// @brief ダブルジャンプアニメーションの更新
 /// @param dt デルタタイム
-void CameraAnimator::UpdateDoubleJumpAnimation(float dt) {
+void CameraAnimator::UpdateDoubleJumpAnimation(const float dt) {
 	if (!mMovement) return;
 
 	const bool hasDoubleJump = mMovement->HasDoubleJump();
@@ -178,7 +180,7 @@ void CameraAnimator::UpdateDoubleJumpAnimation(float dt) {
 
 /// @brief スライドアニメーションの更新
 /// @param dt デルタタイム
-void CameraAnimator::UpdateSlideAnimation(float dt) {
+void CameraAnimator::UpdateSlideAnimation(const float dt) {
 	if (!mMovement) return;
 
 	const bool isSliding = mMovement->IsSliding();
@@ -202,7 +204,7 @@ void CameraAnimator::UpdateSlideAnimation(float dt) {
 
 /// @brief ウォールランアニメーションの更新
 /// @param dt デルタタイム
-void CameraAnimator::UpdateWallrunAnimation(float dt) {
+void CameraAnimator::UpdateWallrunAnimation(const float dt) {
 	if (!mMovement) return;
 
 	const bool isWallRunning = mMovement->IsWallRunning();
@@ -212,12 +214,12 @@ void CameraAnimator::UpdateWallrunAnimation(float dt) {
 		mWallrunAnimTime = 0.0f;
 
 		// 壁が左右どちらにあるか判定
-		Vec3 wallNormal = mMovement->GetWallRunNormal();
-		Vec3 velocity   = mMovement->GetVelocity();
-		velocity.y      = 0;
+		const Vec3 wallNormal = mMovement->GetWallRunNormal();
+		Vec3       velocity   = mMovement->GetVelocity();
+		velocity.y            = 0;
 		if (!velocity.IsZero()) {
-			Vec3 right   = velocity.Cross(Vec3::up).Normalized();
-			mWallrunSide = wallNormal.Dot(right) > 0 ? 1.0f : -1.0f;
+			const Vec3 right = velocity.Cross(Vec3::up).Normalized();
+			mWallrunSide     = wallNormal.Dot(right) > 0 ? 1.0f : -1.0f;
 		}
 	}
 
@@ -233,13 +235,15 @@ void CameraAnimator::UpdateWallrunAnimation(float dt) {
 
 /// @brief 着地アニメーションの更新
 /// @param dt デルタタイム
-void CameraAnimator::UpdateLandingAnimation(float dt) {
+void CameraAnimator::UpdateLandingAnimation(const float dt) {
 	if (!mMovement) return;
 
 	// Movementコンポーネントから着地検出を取得（吸着処理を考慮した正確な検出）
 	if (mMovement->JustLanded()) {
 		// 着地時の垂直速度を取得
-		float verticalSpeed = std::abs(mMovement->GetLastLandingVelocityY());
+		const float verticalSpeed = std::abs(
+			mMovement->GetLastLandingVelocityY()
+		);
 
 		// 落下速度が十分にある場合のみ着地アニメーション
 		if (verticalSpeed > kLandingMinSpeed) {
@@ -260,7 +264,7 @@ void CameraAnimator::UpdateLandingAnimation(float dt) {
 
 /// @brief シェイクと傾きを適用する
 /// @param dt デルタタイム
-void CameraAnimator::ApplyShakeAndTilt(float dt) {
+void CameraAnimator::ApplyShakeAndTilt(const float dt) {
 	if (!mScene) return;
 
 	// ノイズ時間を更新
@@ -272,38 +276,38 @@ void CameraAnimator::ApplyShakeAndTilt(float dt) {
 
 	// === ジャンプシェイク＆ピッチ（パーリンノイズベース） ===
 	if (mJumpAnimTime < kJumpShakeDuration) {
-		float t         = mJumpAnimTime / kJumpShakeDuration;
-		float intensity = (1.0f - t) * kJumpShakeAmount;
+		const float t         = mJumpAnimTime / kJumpShakeDuration;
+		const float intensity = (1.0f - t) * kJumpShakeAmount;
 
 		// パーリンノイズを使用した自然なシェイク
-		float noiseX = PerlinNoise(mNoiseTime * 10.0f, 0.0f, 0.0f);
-		float noiseY = PerlinNoise(0.0f, mNoiseTime * 10.0f, 0.0f);
+		const float noiseX = PerlinNoise(mNoiseTime * 10.0f, 0.0f, 0.0f);
+		const float noiseY = PerlinNoise(0.0f, mNoiseTime * 10.0f, 0.0f);
 
 		shake.x += noiseX * intensity;
 		shake.y += noiseY * intensity;
 
 		// ジャンプ時のピッチ（上を向く）
 		// 最初の30%で上を向き、残り70%で戻る
-		float pitchT = t * 3.33f; // 0.3秒で1.0になる
+		const float pitchT = t * 3.33f; // 0.3秒で1.0になる
 		if (pitchT < 1.0f) {
 			// 上を向く（ピッチ減少）
 			pitch -= kJumpPitchAmount * pitchT;
 		} else {
 			// 戻る（ピッチ増加）
-			float returnT = (pitchT - 1.0f) / 2.33f; // 残りの時間で正規化
-			pitch         -= kJumpPitchAmount * (1.0f - returnT);
+			const float returnT = (pitchT - 1.0f) / 2.33f; // 残りの時間で正規化
+			pitch               -= kJumpPitchAmount * (1.0f - returnT);
 		}
 	}
 
 	// === ダブルジャンプシェイク＆ピッチ（パーリンノイズベース） ===
 	if (mDoubleJumpAnimTime < kDoubleJumpShakeDuration) {
-		float t         = mDoubleJumpAnimTime / kDoubleJumpShakeDuration;
-		float intensity = (1.0f - t) * kDoubleJumpShakeAmount;
+		const float t         = mDoubleJumpAnimTime / kDoubleJumpShakeDuration;
+		const float intensity = (1.0f - t) * kDoubleJumpShakeAmount;
 
 		// より速いノイズで強いシェイク
-		float noiseX = PerlinNoise(mNoiseTime * 15.0f, 0.0f, 0.0f);
-		float noiseY = PerlinNoise(0.0f, mNoiseTime * 15.0f, 0.0f);
-		float noiseZ = PerlinNoise(0.0f, 0.0f, mNoiseTime * 12.0f);
+		const float noiseX = PerlinNoise(mNoiseTime * 15.0f, 0.0f, 0.0f);
+		const float noiseY = PerlinNoise(0.0f, mNoiseTime * 15.0f, 0.0f);
+		const float noiseZ = PerlinNoise(0.0f, 0.0f, mNoiseTime * 12.0f);
 
 		shake.x += noiseX * intensity;
 		shake.y += noiseY * intensity;
@@ -311,30 +315,30 @@ void CameraAnimator::ApplyShakeAndTilt(float dt) {
 
 		// ダブルジャンプ時のピッチ（さらに上を向く）
 		// 最初の40%で上を向き、残り60%で戻る
-		float pitchT = t * 2.5f; // 0.4秒で1.0になる
+		const float pitchT = t * 2.5f; // 0.4秒で1.0になる
 		if (pitchT < 1.0f) {
 			// 上を向く（ピッチ減少）
 			pitch -= kDoubleJumpPitchAmount * pitchT;
 		} else {
 			// 戻る（ピッチ増加）
-			float returnT = (pitchT - 1.0f) / 1.5f; // 残りの時間で正規化
-			pitch         -= kDoubleJumpPitchAmount * (1.0f - returnT);
+			const float returnT = (pitchT - 1.0f) / 1.5f; // 残りの時間で正規化
+			pitch               -= kDoubleJumpPitchAmount * (1.0f - returnT);
 		}
 	}
 
 	// === スライディング傾き＆シェイク（パーリンノイズベース） ===
 	if (mSlideAnimTime > 0.0f) {
 		// スライド中の傾き（進行方向に合わせた微妙な傾き）
-		float slideT     = std::min(1.0f, mSlideAnimTime * 2.0f);
-		float targetRoll = kSlideRollAmount * slideT;
-		roll             += targetRoll;
+		const float slideT     = std::min(1.0f, mSlideAnimTime * 2.0f);
+		const float targetRoll = kSlideRollAmount * slideT;
+		roll                   += targetRoll;
 
 		// スライド中の振動（速度に応じて、パーリンノイズ使用）
-		float speedFactor = std::min(1.0f, mSlideEntrySpeed / 10.0f);
-		float intensity   = kSlideShakeAmount * speedFactor;
+		const float speedFactor = std::min(1.0f, mSlideEntrySpeed / 10.0f);
+		const float intensity   = kSlideShakeAmount * speedFactor;
 
-		float noiseX = PerlinNoise(mNoiseTime * 20.0f, 0.0f, 0.0f);
-		float noiseY = PerlinNoise(0.0f, mNoiseTime * 20.0f, 0.0f);
+		const float noiseX = PerlinNoise(mNoiseTime * 20.0f, 0.0f, 0.0f);
+		const float noiseY = PerlinNoise(0.0f, mNoiseTime * 20.0f, 0.0f);
 
 		shake.x += noiseX * intensity;
 		shake.y += noiseY * intensity * 0.5f;
@@ -350,10 +354,10 @@ void CameraAnimator::ApplyShakeAndTilt(float dt) {
 		);
 
 		// ウォールラン中の振動
-		float intensity = kWallrunShakeAmount;
+		constexpr float intensity = kWallrunShakeAmount;
 
-		float noiseX = PerlinNoise(mNoiseTime * 12.0f, 0.0f, 0.0f);
-		float noiseY = PerlinNoise(0.0f, mNoiseTime * 12.0f, 0.0f);
+		const float noiseX = PerlinNoise(mNoiseTime * 12.0f, 0.0f, 0.0f);
+		const float noiseY = PerlinNoise(0.0f, mNoiseTime * 12.0f, 0.0f);
 
 		shake.x += noiseX * intensity * mWallrunSide;
 		shake.y += noiseY * intensity;
@@ -361,12 +365,13 @@ void CameraAnimator::ApplyShakeAndTilt(float dt) {
 
 	// === 着地シェイク＆ピッチ（パーリンノイズベース） ===
 	if (mLandingActive) {
-		float t         = mLandingAnimTime / kLandingShakeDuration;
-		float intensity = (1.0f - t) * kLandingShakeAmount * mLandingIntensity;
+		const float t         = mLandingAnimTime / kLandingShakeDuration;
+		const float intensity = (1.0f - t) * kLandingShakeAmount *
+		                        mLandingIntensity;
 
 		// パーリンノイズベースの着地シェイク
-		float noiseX = PerlinNoise(mNoiseTime * 25.0f, 0.0f, 0.0f);
-		float noiseY = PerlinNoise(0.0f, mNoiseTime * 25.0f, 0.0f);
+		const float noiseX = PerlinNoise(mNoiseTime * 25.0f, 0.0f, 0.0f);
+		const float noiseY = PerlinNoise(0.0f, mNoiseTime * 25.0f, 0.0f);
 
 		// 着地時は下方向へのバイアスをかけたシェイク
 		shake.x += noiseX * intensity * 0.5f;
@@ -374,7 +379,7 @@ void CameraAnimator::ApplyShakeAndTilt(float dt) {
 
 		// 着地時のピッチ（下を向いて戻る）
 		// 最初の50%で下を向き、残り50%で戻る
-		float pitchT = t * 2.0f;
+		const float pitchT = t * 2.0f;
 		if (pitchT < 1.0f) {
 			// 下を向く（ピッチ増加）
 			pitch += kLandingPitchAmount * pitchT * mLandingIntensity;
@@ -386,9 +391,9 @@ void CameraAnimator::ApplyShakeAndTilt(float dt) {
 
 	// === シェイク、ロール、ピッチを適用 ===
 	// 現在の値にスムーズに補間
-	float smoothFactor = 1.0f - std::exp(-dt * 10.0f);
-	mCurrentShake      = mCurrentShake * (1.0f - smoothFactor) + shake *
-	                     smoothFactor;
+	const float smoothFactor = 1.0f - std::exp(-dt * 10.0f);
+	mCurrentShake            = mCurrentShake * (1.0f - smoothFactor) + shake *
+	                           smoothFactor;
 	mCurrentRoll  = mCurrentRoll * (1.0f - smoothFactor) + roll * smoothFactor;
 	mCurrentPitch = mCurrentPitch * (1.0f - smoothFactor) + pitch *
 	                smoothFactor;

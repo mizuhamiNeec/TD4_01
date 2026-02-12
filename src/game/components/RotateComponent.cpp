@@ -1,18 +1,17 @@
 #include "RotateComponent.h"
 
+#include <core/math/Quaternion.h>
+
 #include <engine/Components/Transform/SceneComponent.h>
+#include <engine/Entity/Entity.h>
 #include <engine/ImGui/ImGuiWidgets.h>
-
-#include <runtime/core/math/Quaternion.h>
-
-#include "engine/Entity/Entity.h"
 
 void RotateComponent::OnAttach(Entity& owner) {
 	Component::OnAttach(owner);
 	mTransform = mOwner->GetTransform();
 }
 
-void RotateComponent::PrePhysics(float deltaTime) {
+void RotateComponent::PrePhysics(const float deltaTime) {
 	if (!mRotationEnabled || !mTransform) { return; }
 
 	Vec3 rotationDelta = Vec3::zero;
@@ -23,18 +22,18 @@ void RotateComponent::PrePhysics(float deltaTime) {
 
 	if (rotationDelta.x != 0.0f || rotationDelta.y != 0.0f || rotationDelta.z !=
 	    0.0f) {
-		Vec3       rotationDeltaRad = rotationDelta * Math::deg2Rad;
-		Quaternion deltaRotation    = Quaternion::Euler(rotationDeltaRad);
+		const Vec3       rotationDeltaRad = rotationDelta * Math::deg2Rad;
+		const Quaternion deltaRotation    = Quaternion::Euler(rotationDeltaRad);
 
-		Quaternion currentRotation = mTransform->GetLocalRot();
-		Quaternion newRotation     = currentRotation * deltaRotation;
+		const Quaternion currentRotation = mTransform->GetLocalRot();
+		Quaternion       newRotation     = currentRotation * deltaRotation;
 		newRotation.Normalize();
 
 		mTransform->SetLocalRot(newRotation);
 	}
 }
 
-void RotateComponent::Update(float deltaTime) { deltaTime; }
+void RotateComponent::Update(const float deltaTime) { deltaTime; }
 
 void RotateComponent::DrawInspectorImGui() {
 #ifdef _DEBUG

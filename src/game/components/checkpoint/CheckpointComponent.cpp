@@ -97,7 +97,7 @@ void CheckpointComponent::CheckPlayerCollision() {
 	if (!player) { return; }
 
 	// プレイヤーのAABBコライダーを取得
-	auto* playerCollider = player->GetComponent<AABBCollider>();
+	const auto* playerCollider = player->GetComponent<AABBCollider>();
 	if (!playerCollider) { return; }
 
 	// ワールド座標でのAABBを取得

@@ -3,7 +3,6 @@
 #include <fstream>
 #include <json.hpp>
 
-#include <engine/Camera/CameraManager.h>
 #include <engine/Components/Camera/CameraComponent.h>
 #include <engine/OldConsole/Console.h>
 
@@ -74,17 +73,17 @@ WeaponComponent::WeaponComponent(const std::string& weaponJsonPath) :
 
 void WeaponComponent::OnAttach(Entity& owner) { Component::OnAttach(owner); }
 
-void WeaponComponent::Update([[maybe_unused]] float deltaTime) {
+void WeaponComponent::Update([[maybe_unused]] const float deltaTime) {
 	mFiredThisFrame = false; // 今フレームで発射したかどうかをリセット
 
 	if (mIsReloading) {
 		mReloadTimer += deltaTime;
 		if (mReloadTimer >= 0.0f) {
-			int need     = mWeaponData->clipSize - mCurrentClip;
-			int load     = (std::min)(need, mCurrentAmmo);
-			mCurrentClip += load;
-			mCurrentAmmo -= load;
-			mIsReloading = false;
+			const int need = mWeaponData->clipSize - mCurrentClip;
+			const int load = (std::min)(need, mCurrentAmmo);
+			mCurrentClip   += load;
+			mCurrentAmmo   -= load;
+			mIsReloading   = false;
 			Console::Print(
 				"Reloaded!\n"
 			);
@@ -136,8 +135,8 @@ void WeaponComponent::Reload() {
 }
 
 bool WeaponComponent::CanFire() const {
-	return (mCurrentClip > 0) &&
-	       (mTimeSinceShot >= mWeaponData->fireRate) &&
+	return mCurrentClip > 0 &&
+	       mTimeSinceShot >= mWeaponData->fireRate &&
 	       !mIsReloading;
 }
 

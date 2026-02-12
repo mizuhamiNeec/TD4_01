@@ -3,7 +3,6 @@
 #include <engine/Components/ColliderComponent/AABBCollider.h>
 #include <engine/Debug/DebugDraw.h>
 #include <engine/Entity/Entity.h>
-#include <engine/unnamed/subsystem/console/Log.h>
 #include <game/components/checkpoint/CheckpointManager.h>
 
 #include "engine/OldConsole/Console.h"
@@ -57,7 +56,7 @@ void GoalComponent::CheckPlayerCollision() {
 	if (!player) { return; }
 
 	// プレイヤーのAABBコライダーを取得
-	auto* playerCollider = player->GetComponent<AABBCollider>();
+	const auto* playerCollider = player->GetComponent<AABBCollider>();
 	if (!playerCollider) { return; }
 
 	// ワールド座標でのAABBを取得

@@ -13,7 +13,7 @@ void ViewmodelSway::OnAttach(Entity& owner) { Component::OnAttach(owner); }
 
 void ViewmodelSway::Update([[maybe_unused]] const float deltaTime) {
 	// マウスの移動量を取得
-	Vec2 delta = InputSystem::GetMouseDelta();
+	const Vec2 delta = InputSystem::GetMouseDelta();
 
 	mPitch += delta.y * mSwayAmount * deltaTime;
 	mYaw   += delta.x * mSwayAmount * deltaTime;
@@ -34,7 +34,7 @@ void ViewmodelSway::Update([[maybe_unused]] const float deltaTime) {
 		Math::Lerp(
 			mScene->GetLocalPos(),
 			Vec3::zero,
-			(mAttenuation * 0.5f) * deltaTime
+			mAttenuation * 0.5f * deltaTime
 		)
 	); // 武器の位置調整
 }

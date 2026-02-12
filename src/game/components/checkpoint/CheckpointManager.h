@@ -1,8 +1,5 @@
 #pragma once
 #include <map>
-#include <vector>
-
-#include <runtime/core/math/Math.h>
 
 class CheckpointComponent;
 class Entity;
@@ -29,7 +26,7 @@ public:
 	static void RegisterCheckpoint(CheckpointComponent* checkpoint);
 
 	/// @brief チェックポイントの登録を解除
-	static void UnregisterCheckpoint(CheckpointComponent* checkpoint);
+	static void UnregisterCheckpoint(const CheckpointComponent* checkpoint);
 
 	/// @brief 全チェックポイントをリセット
 	static void ResetAllCheckpoints();
@@ -37,7 +34,7 @@ public:
 	/// @brief チェックポイントが起動可能か（順番チェック）
 	/// @param checkpoint チェックする対象のチェックポイント
 	/// @return 起動可能ならtrue
-	static bool CanActivateCheckpoint(CheckpointComponent* checkpoint);
+	static bool CanActivateCheckpoint(const CheckpointComponent* checkpoint);
 
 	/// @brief チェックポイントが起動された時の処理
 	static void OnCheckpointActivated(CheckpointComponent* checkpoint);

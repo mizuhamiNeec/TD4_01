@@ -1,7 +1,7 @@
 #pragma once
-#include "engine/Components/base/Component.h"
+#include "core/math/Vec3.h"
 
-#include "runtime/core/math/Vec3.h"
+#include "engine/Components/base/Component.h"
 
 class RotateComponent : public Component {
 public:
@@ -30,7 +30,7 @@ public:
 
 	void SetYawEnabled(const bool enabled) { mYawEnabled = enabled; }
 
-	void SetRollEnabled(bool enabled) { mRollEnabled = enabled; }
+	void SetRollEnabled(const bool enabled) { mRollEnabled = enabled; }
 
 private:
 	Vec3 mRotationRate = Vec3::zero; // 回転速度（度/秒）
@@ -40,5 +40,5 @@ private:
 	bool mYawEnabled      = true; // Y軸（ヨー）回転を有効にするか
 	bool mRollEnabled     = true; // Z軸（ロール）回転を有効にするか
 
-	class SceneComponent* mTransform = nullptr;
+	SceneComponent* mTransform = nullptr;
 };

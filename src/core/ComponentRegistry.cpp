@@ -10,7 +10,7 @@ namespace Unnamed {
 		if (stableName.empty() || createFn == nullptr) { return false; }
 
 		std::string key(stableName);
-		auto        it = mEntries.find(key);
+		const auto  it = mEntries.find(key);
 		if (it != mEntries.end()) {
 			Warning(
 				"ComponentRegistry",
@@ -43,11 +43,11 @@ namespace Unnamed {
 	) const { return Find(stableName) != nullptr; }
 
 	const ComponentRegistry::Entry* ComponentRegistry::Find(
-		std::string_view stableName
+		const std::string_view stableName
 	) const {
 		if (stableName.empty()) { return nullptr; }
 
-		auto it = mEntries.find(std::string(stableName));
+		const auto it = mEntries.find(std::string(stableName));
 		if (it == mEntries.end()) return nullptr;
 		return &it->second;
 	}
@@ -61,8 +61,9 @@ namespace Unnamed {
 
 	namespace detail {
 		AutoComponentRegister::AutoComponentRegister(
-			std::string_view stableName, std::string_view displayName,
-			ComponentRegistry::CreateFn createFn
+			const std::string_view            stableName,
+			const std::string_view            displayName,
+			const ComponentRegistry::CreateFn createFn
 		) {
 			ComponentRegistry::Get().Register(
 				stableName, createFn, displayName

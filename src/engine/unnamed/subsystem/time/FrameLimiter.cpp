@@ -1,7 +1,7 @@
+#include <engine/Properties.h>
 #include <engine/OldConsole/ConVarManager.h>
 #include <engine/unnamed/subsystem/time/FrameLimiter.h>
 #include <engine/unnamed/subsystem/time/GameTime.h>
-#include <runtime/core/Properties.h>
 
 /// @brief コンストラクタ
 /// @param gameTime ゲームタイムクラスへのポインタ
@@ -31,13 +31,13 @@ void FrameLimiter::Limit() {
 
 	using namespace std::chrono;
 
-	auto now = Clock::now();
+	const auto now = Clock::now();
 
-	auto elapsed = now - mFrameStart;
+	const auto elapsed = now - mFrameStart;
 
 	if (elapsed >= mTargetFrameDuration) { return; }
 
-	auto remaining = mTargetFrameDuration - elapsed;
+	const auto remaining = mTargetFrameDuration - elapsed;
 
 	// 大まかにスリープする
 	constexpr auto spinThreshold = milliseconds(10);
@@ -51,6 +51,6 @@ void FrameLimiter::Limit() {
 
 /// @brief コンソール変数の値をチェックして目標FPSを更新します
 void FrameLimiter::CheckConVarValue() {
-	double targetFPS = 10000; // TODO: コンソール変数に置き換え
+	constexpr double targetFPS = 10000; // TODO: コンソール変数に置き換え
 	SetTargetFPS(targetFPS);
 }

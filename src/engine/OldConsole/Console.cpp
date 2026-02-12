@@ -17,7 +17,7 @@
 #include <engine/OldConsole/ConCommand.h>
 #include <engine/OldConsole/Console.h>
 #include <engine/OldConsole/ConVarManager.h>
-#include <engine/Platform/WindowsUtils.h>
+#include <engine/platform/WindowsUtils.h>
 #include <engine/unnamed/subsystem/time/SystemClock.h>
 
 using SetThreadDescriptionFunc = HRESULT(WINAPI*)(HANDLE, PCWSTR);
@@ -41,7 +41,7 @@ Console::Console() {
 		if (mLogFile.is_open()) {
 			// ヘッダーを書き込む
 			const auto now = SystemClock::GetDateTime(SystemClock::StartTime());
-			std::string header = std::format(
+			const std::string header = std::format(
 				"//-----------------------------------------------------------------------------\n"
 				"// BuildDate: {}-{}\n"
 				"// Engine: {} Ver. {}\n"
@@ -103,7 +103,7 @@ void Console::Update() {
 		{0xFFFF, 0xFFFF}
 	);
 
-	bool bWindowOpen = ImGui::Begin(
+	const bool bWindowOpen = ImGui::Begin(
 		(Unnamed::StrUtil::ConvertToUtf8(kIconTerminal) + " コンソール").c_str(),
 		&mShowConsole, consoleWindowFlags
 	);
@@ -219,7 +219,7 @@ void Console::SubmitCommand(
 	}
 
 	// セミコロンでコマンドを区切る
-	std::vector<std::string> commands = SplitCommands(trimmedCommand);
+	const std::vector<std::string> commands = SplitCommands(trimmedCommand);
 
 	if (bSilent) { AddCommandHistory(trimmedCommand); } else {
 		Print(
@@ -243,13 +243,13 @@ void Console::SubmitCommand(
 		if (!found && !tokens.empty()) {
 			// +-プレフィックスの処理
 			if (tokens[0][0] == '+' || tokens[0][0] == '-') {
-				bool isDown = (tokens[0][0] == '+');
+				const bool isDown = tokens[0][0] == '+';
 				InputSystem::ExecuteCommand(tokens[0], isDown);
 				found = true;
 			}
 		}
 
-		for (auto conVar : ConVarManager::GetAllConVars()) {
+		for (const auto conVar : ConVarManager::GetAllConVars()) {
 			// 変数が存在する場合
 			if (Unnamed::StrUtil::Equal(conVar->GetName(), tokens[0])) {
 				found = true;
@@ -328,8 +328,8 @@ void Console::SubmitCommand(
 							} else if (conVar->GetTypeAsString() == "bool") {
 								try {
 									// 入力が数値として解釈できる場合
-									int value = std::stoi(tokens[i]);
-									tokens[i] = (value == 0) ? "false" : "true";
+									const int value = std::stoi(tokens[i]);
+									tokens[i] = value == 0 ? "false" : "true";
 								} catch (...) {
 									// 数値に変換できなかった場合
 									if (tokens[i] == "true" || tokens[i] ==
@@ -389,9 +389,9 @@ void Console::Print(
 	if (message.empty()) { return; }
 
 	// ログへの書き込み
-	std::string channelStr = (channel != Channel::None) ?
-		                         "[" + ToString(channel) + "] " :
-		                         "";
+	const std::string channelStr = channel != Channel::None ?
+		                               "[" + ToString(channel) + "] " :
+		                               "";
 	OutputDebugString(
 		Unnamed::StrUtil::ToWString(channelStr + message).c_str()
 	);
@@ -402,13 +402,14 @@ void Console::Print(
 		std::lock_guard lock(mMutex);
 		mTaskQueue.emplace(
 			[message, color, channel] {
-				std::string msg = message;
+				const std::string msg = message;
 				const bool hasNewLine = !msg.empty() && msg.back() == '\n';
 				const std::string baseMsg = hasNewLine ?
 					                            msg.substr(0, msg.size() - 1) :
 					                            msg;
 
 #ifdef _DEBUG
+				std::lock_guard lock(mMutex);
 				if (!mConsoleTexts.empty()) {
 					const std::string lastMsg = mConsoleTexts.back().text;
 					const bool        lastHasNewLine =
@@ -417,13 +418,13 @@ void Console::Print(
 					const std::string lastBaseMsg = lastHasNewLine ?
 						                                lastMsg.substr(
 							                                0, lastMsg.size() -
-								                                1
+							                                1
 						                                ) :
 						                                lastMsg;
 
 					const size_t      bracketPos = lastBaseMsg.find(" [x");
 					const std::string lastBaseMsgWithoutCount =
-						(bracketPos != std::string::npos) ?
+						bracketPos != std::string::npos ?
 							lastBaseMsg.substr(0, bracketPos) :
 							lastBaseMsg;
 
@@ -493,6 +494,7 @@ void Console::ToggleConsole(
 /// @param args コマンド引数
 void Console::Clear([[maybe_unused]] const std::vector<std::string>& args) {
 #ifdef _DEBUG
+	std::lock_guard lock(mMutex);
 	mConsoleTexts.clear();         // コンソールのテキストをクリア
 	mConsoleTexts.shrink_to_fit(); // 開放
 	mHistory.clear();              // コマンド履歴をクリア
@@ -511,7 +513,7 @@ void Console::Clear([[maybe_unused]] const std::vector<std::string>& args) {
 void Console::Help([[maybe_unused]] const std::vector<std::string>& args) {
 #ifdef _DEBUG
 	ConCommand::Help();
-	for (auto conVar : ConVarManager::GetAllConVars()) {
+	for (const auto conVar : ConVarManager::GetAllConVars()) {
 		Print(
 			" - " + conVar->GetName() + " : " + conVar->GetHelp() + "\n",
 			kConFgColorDark, Channel::None
@@ -523,7 +525,7 @@ void Console::Help([[maybe_unused]] const std::vector<std::string>& args) {
 /// @brief システム情報を表示します
 /// @param args コマンド引数
 void Console::NeoFetch([[maybe_unused]] const std::vector<std::string>& args) {
-	std::vector<std::string> asciiArt = {
+	const std::vector<std::string> asciiArt = {
 		"                   <<<<<<<<                  ",
 		"                 <<<<<<<<                    ",
 		"              <<<<<<<<                       ",
@@ -599,10 +601,10 @@ void Console::NeoFetch([[maybe_unused]] const std::vector<std::string>& args) {
 	// 結合処理
 	for (size_t i = 0; i < maxRows; ++i) {
 		constexpr size_t padding  = 5;
-		std::string      leftPart = (i < asciiArt.size()) ?
+		std::string      leftPart = i < asciiArt.size() ?
 			                            asciiArt[i] :
 			                            std::string(asciiWidth, ' ');
-		std::string rightPart = (i < info.size()) ? info[i] : "";
+		std::string rightPart = i < info.size() ? info[i] : "";
 		combined.emplace_back(leftPart + std::string(padding, ' ') + rightPart);
 	}
 
@@ -668,13 +670,13 @@ void Console::ShowSuggestPopup() {
 	if (mSuggestions.empty()) { return; }
 
 	// ポップアップの位置とサイズを計算
-	ImVec2 cursorScreenPos = ImGui::GetCursorScreenPos();
-	ImVec2 inputTextSize   = ImGui::GetItemRectSize();
-	auto   popupPos        = ImVec2(
+	const ImVec2 cursorScreenPos = ImGui::GetCursorScreenPos();
+	const ImVec2 inputTextSize   = ImGui::GetItemRectSize();
+	const auto   popupPos        = ImVec2(
 		cursorScreenPos.x,
 		cursorScreenPos.y + inputTextSize.y
 	);
-	auto popupSize = ImVec2(
+	const auto popupSize = ImVec2(
 		inputTextSize.x,
 		ImGui::GetTextLineHeight() * (std::min)(
 			mSuggestions.size(),
@@ -722,7 +724,7 @@ void Console::SuggestPopup(
 	// 角丸をなくす
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
 
-	ImGuiWindowFlags flags =
+	constexpr ImGuiWindowFlags flags =
 		ImGuiWindowFlags_NoTitleBar |          // タイトルバーなし
 		ImGuiWindowFlags_NoResize |            // リサイズしない
 		ImGuiWindowFlags_NoMove |              // 移動しない
@@ -735,10 +737,10 @@ void Console::SuggestPopup(
 	ImGui::SetKeyboardFocusHere();
 
 	for (size_t i = 0; i < kConsoleSuggestLineCount; ++i) {
-		size_t test = ConVarManager::GetAllConVars().size();
+		const size_t test = ConVarManager::GetAllConVars().size();
 		if (test <= i) { break; }
 
-		bool isIndexActive = state.activeIndex == static_cast<int>(i);
+		const bool isIndexActive = state.activeIndex == static_cast<int>(i);
 		if (isIndexActive) {
 			ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1, 0, 0, 1));
 		}
@@ -871,9 +873,9 @@ void Console::ShowConsoleText() {
 	}
 
 	// 入力フィールドとボタンの高さを取得
-	float inputTextHeight = ImGui::GetFrameHeightWithSpacing();
+	const float inputTextHeight = ImGui::GetFrameHeightWithSpacing();
 	// 子ウィンドウの高さを調整
-	auto childSize = ImVec2(
+	const auto childSize = ImVec2(
 		0, -inputTextHeight - ImGui::GetStyle().ItemSpacing.y
 	);
 
@@ -946,15 +948,15 @@ void Console::ShowConsoleText() {
 						);
 					}
 				} else {
-					Vec4 color = mDisplayState.buffer[i].color;
-					Vec3 col   = {color.x, color.y, color.z};
-					col        *= 0.5f;
+					const Vec4 color = mDisplayState.buffer[i].color;
+					Vec3       col   = {color.x, color.y, color.z};
+					col              *= 0.5f;
 					ImGui::PushStyleColor(
 						ImGuiCol_Text,
 						ImGuiUtil::ToImVec4(Vec4(col, 1.0f))
 					);
 				}
-				bool isSelected = mDisplayState.selected[i];
+				const bool isSelected = mDisplayState.selected[i];
 				if (ImGui::Selectable(
 					(mDisplayState.buffer[i].text + "##" + std::to_string(i)).
 					c_str(), isSelected
@@ -972,7 +974,7 @@ void Console::ShowConsoleText() {
 							mLastSelectedIndex, visibleIndex
 						);
 						for (int j = start; j <= end; ++j) {
-							size_t actualIndex = FilteredToActualIndex(j);
+							const size_t actualIndex = FilteredToActualIndex(j);
 							if (actualIndex != SIZE_MAX) {
 								mDisplayState.selected[actualIndex] = true;
 							}
@@ -1035,7 +1037,7 @@ void Console::ShowConsoleBody() {
 	size.x -= buttonWidth + ImGui::GetStyle().ItemSpacing.x;
 
 	ImGui::SetNextItemWidth(size.x);
-	ImGuiInputTextFlags inputTextFlags =
+	constexpr ImGuiInputTextFlags inputTextFlags =
 		ImGuiInputTextFlags_EnterReturnsTrue |
 		ImGuiInputTextFlags_EscapeClearsAll |
 		ImGuiInputTextFlags_CallbackAlways |
@@ -1128,7 +1130,7 @@ void Console::ShowAbout() {
 		("About " + std::string(ENGINE_NAME) + " Console").c_str()
 	);
 
-	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+	const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
 	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 	ImGui::SetNextWindowSize({280.0f, 230.0f}, ImGuiCond_FirstUseEver);
 
@@ -1162,14 +1164,16 @@ void Console::ShowAbout() {
 		ImGui::Spacing();
 		ImGui::Spacing();
 		// ボタンサイズとウィンドウサイズを取得
-		auto   buttonSize     = ImVec2(74.0f, 24.0f);
-		ImVec2 windowSize     = ImGui::GetWindowSize(); // ウィンドウ全体のサイズ
-		ImVec2 cursorStartPos = ImGui::GetCursorPos();  // 現在のカーソル位置
+		constexpr auto buttonSize     = ImVec2(74.0f, 24.0f);
+		const ImVec2   windowSize     = ImGui::GetWindowSize(); // ウィンドウ全体のサイズ
+		const ImVec2   cursorStartPos = ImGui::GetCursorPos();  // 現在のカーソル位置
 
 		// ボタンを中央に配置
-		float buttonPosX = (windowSize.x - buttonSize.x) * 0.5f; // 中央揃えのX座標
-		float buttonPosY = cursorStartPos.y + ImGui::GetContentRegionAvail().y -
-		                   buttonSize.y; // 下端からの位置調整
+		const float buttonPosX = (windowSize.x - buttonSize.x) * 0.5f;
+		// 中央揃えのX座標
+		const float buttonPosY =
+			cursorStartPos.y + ImGui::GetContentRegionAvail().y -
+			buttonSize.y; // 下端からの位置調整
 		ImGui::SetCursorPos(ImVec2(buttonPosX, buttonPosY));
 
 		if (ImGui::Button("OK", buttonSize)) {
@@ -1228,8 +1232,8 @@ void Console::ShowConVarHelper() {
 				ImGuiComboFlags_WidthFitPreview
 			)) {
 				for (uint32_t n = 0; n < mPages.size(); n++) {
-					const bool isSelected = (static_cast<int>(
-						                         mSelectedPageIndex) == n);
+					const bool isSelected = static_cast<int>(
+						                        mSelectedPageIndex) == n;
 					if (ImGui::Selectable(mPages[n].name.c_str(), isSelected)) {
 						mSelectedPageIndex = n;
 					}
@@ -1315,8 +1319,9 @@ void Console::ShowConVarHelper() {
 			const auto& grid = mPages[mSelectedPageIndex].grid;
 
 			// グリッド要素の数を正しく保つ
-			size_t expectedSize = static_cast<size_t>(grid.width) * grid.height;
-			auto&  elements     = mPages[mSelectedPageIndex].elements;
+			const size_t expectedSize =
+				static_cast<size_t>(grid.width) * grid.height;
+			auto& elements = mPages[mSelectedPageIndex].elements;
 			if (elements.size() != expectedSize) {
 				elements.resize(expectedSize);
 			}
@@ -1329,8 +1334,8 @@ void Console::ShowConVarHelper() {
 				ImGuiTableFlags_NoPadOuterX
 			)) {
 				// 列幅を均等に設定
-				float columnWidth = ImGui::GetContentRegionAvail().x /
-				                    static_cast<float>(grid.width);
+				const float columnWidth = ImGui::GetContentRegionAvail().x /
+				                          static_cast<float>(grid.width);
 				for (uint32_t i = 0; i < grid.width; ++i) {
 					ImGui::TableSetupColumn(
 						"", ImGuiTableColumnFlags_WidthFixed, columnWidth
@@ -1350,7 +1355,7 @@ void Console::ShowConVarHelper() {
 						ImGui::TableSetColumnIndex(col);
 
 						// セルのインデックスを計算
-						size_t       cellIndex = row * grid.width + col;
+						const size_t cellIndex = row * grid.width + col;
 						GridElement& element   = elements[cellIndex];
 
 						// セルの内容を表示
@@ -1518,9 +1523,10 @@ void Console::RearrangeGridElements(
 	     row) {
 		for (uint32_t col = 0; col < mPages[mSelectedPageIndex].grid.width; ++
 		     col) {
-			uint32_t oldIndex = row * mPages[mSelectedPageIndex].grid.width +
-			                    col;
-			uint32_t newIndex = row * newWidth + col;
+			const uint32_t oldIndex =
+				row * mPages[mSelectedPageIndex].grid.width +
+				col;
+			const uint32_t newIndex = row * newWidth + col;
 
 			if (row < newHeight && col < newWidth && oldIndex < elements.size()
 			    && newIndex < newElements.size()) {
@@ -1721,7 +1727,7 @@ void Console::ExportPage() {
 			// 各要素の設定を書き込む
 			for (uint32_t row = 0; row < page.grid.height; ++row) {
 				for (uint32_t col = 0; col < page.grid.width; ++col) {
-					size_t index = row * page.grid.width + col;
+					const size_t index = row * page.grid.width + col;
 					if (index >= page.elements.size()) { continue; }
 
 					const GridElement& element = page.elements[index];
@@ -1796,13 +1802,17 @@ std::string Console::FormatColorForIni(const Vec4& color) {
 	for (int i = 0; i < 4; ++i) {
 		float component = i == 0 ?
 			                  color.x :
-			                  (i == 1 ? color.y : (i == 2 ? color.z : color.w));
-		uint32_t val = *reinterpret_cast<const uint32_t*>(&component);
+			                  i == 1 ?
+			                  color.y :
+			                  i == 2 ?
+			                  color.z :
+			                  color.w;
+		const uint32_t val = *reinterpret_cast<const uint32_t*>(&component);
 
 		bytes[i * 4]     = static_cast<uint8_t>(val & 0xFF);
-		bytes[i * 4 + 1] = static_cast<uint8_t>((val >> 8) & 0xFF);
-		bytes[i * 4 + 2] = static_cast<uint8_t>((val >> 16) & 0xFF);
-		bytes[i * 4 + 3] = static_cast<uint8_t>((val >> 24) & 0xFF);
+		bytes[i * 4 + 1] = static_cast<uint8_t>(val >> 8 & 0xFF);
+		bytes[i * 4 + 2] = static_cast<uint8_t>(val >> 16 & 0xFF);
+		bytes[i * 4 + 3] = static_cast<uint8_t>(val >> 24 & 0xFF);
 	}
 
 	// バイト配列をエスケープシーケンスを使って文字列に変換
@@ -1835,8 +1845,8 @@ std::vector<std::string> Console::TokenizeKey(const std::string& key) {
 /// @return 変換されたVec4の色
 Vec4 Console::ParseColor(const std::string& color) {
 	// 1. 括弧内の内容を取得
-	size_t start = color.find('(');
-	size_t end   = color.rfind(')');
+	const size_t start = color.find('(');
+	const size_t end   = color.rfind(')');
 	if (start == std::string::npos || end == std::string::npos || end <=
 	    start) {
 		Print(
@@ -1845,7 +1855,7 @@ Vec4 Console::ParseColor(const std::string& color) {
 		);
 		return Vec4(0.0f, 0.0f, 0.0f, 1.0f); // デフォルトの色を返す
 	}
-	std::string content = color.substr(start + 1, end - start - 1);
+	const std::string content = color.substr(start + 1, end - start - 1);
 
 	// 2. エスケープシーケンスを展開してバイト配列を取得
 	std::vector<uint8_t> bytes;
@@ -1853,7 +1863,7 @@ Vec4 Console::ParseColor(const std::string& color) {
 		if (content[i] == '\\') {
 			i++;
 			if (i >= content.size()) break;
-			char c = content[i];
+			const char c = content[i];
 			if (c == 'x') {
 				// 16進数エスケープ (\xHH)
 				if (i + 2 < content.size()) {
@@ -1917,9 +1927,9 @@ Vec4 Console::ParseColor(const std::string& color) {
 	float components[4];
 	for (int i = 0; i < 4; ++i) {
 		uint32_t val = static_cast<uint32_t>(bytes[i * 4]) |
-		               (static_cast<uint32_t>(bytes[i * 4 + 1]) << 8) |
-		               (static_cast<uint32_t>(bytes[i * 4 + 2]) << 16) |
-		               (static_cast<uint32_t>(bytes[i * 4 + 3]) << 24);
+		               static_cast<uint32_t>(bytes[i * 4 + 1]) << 8 |
+		               static_cast<uint32_t>(bytes[i * 4 + 2]) << 16 |
+		               static_cast<uint32_t>(bytes[i * 4 + 3]) << 24;
 		components[i] = *reinterpret_cast<float*>(&val);
 	}
 
@@ -1932,12 +1942,12 @@ void Console::ShowElementEditPopup() {
 	if (!mShowElementPopup) { return; }
 
 	// フルスクリーンポップアップの設定
-	ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize |
-	                         ImGuiWindowFlags_NoMove;
+	constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoResize |
+	                                   ImGuiWindowFlags_NoMove;
 
 	// ビューポート中心に表示
-	auto   size   = ImVec2(400, 200);
-	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+	constexpr auto size   = ImVec2(400, 200);
+	const ImVec2   center = ImGui::GetMainViewport()->GetCenter();
 	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 	ImGui::SetNextWindowSize(size);
 
@@ -2049,6 +2059,7 @@ void Console::PrintTypeError(const std::string& type) {
 /// @param command 追加するコマンド文字列
 void Console::AddCommandHistory([[maybe_unused]] const std::string& command) {
 #ifdef _DEBUG
+	std::lock_guard lock(mMutex);
 	mConsoleTexts.emplace_back(
 		Text(
 			"> " + command + "\n",
@@ -2075,7 +2086,7 @@ void Console::UpdateRepeatCount(
 
 	const auto repeatCount = mRepeatCounts.back();
 	// 改行を含めない形式でメッセージを作成し、必要な場合のみ最後に追加
-	auto formattedMessage = std::format(
+	const auto formattedMessage = std::format(
 		"{} [x{}]{}", message, repeatCount,
 		hasNewLine ? "\n" : ""
 	);
@@ -2203,7 +2214,7 @@ std::vector<std::string> Console::SplitCommands(const std::string& command) {
 	std::vector<std::string> result;
 	std::string              current;
 	bool                     inQuotes = false;
-	for (char ch : command) {
+	for (const char ch : command) {
 		if (ch == '"') {
 			inQuotes = !inQuotes;
 			current  += ch;
@@ -2316,10 +2327,11 @@ void Console::StartConsoleThread() {
 	mConsoleThread = std::thread(&Console::ConsoleUpdateAsync, this);
 
 	// スレッドのハンドルを取得
-	HANDLE hThread = mConsoleThread.native_handle();
+	const HANDLE hThread = mConsoleThread.native_handle();
 
-	HMODULE hKernel32            = GetModuleHandleW(L"kernel32.dll");
-	auto    setThreadDescription = reinterpret_cast<SetThreadDescriptionFunc>(
+	const HMODULE hKernel32 = GetModuleHandleW(L"kernel32.dll");
+	const auto setThreadDescription = reinterpret_cast<SetThreadDescriptionFunc>
+	(
 		GetProcAddress(hKernel32, "SetThreadDescription")
 	);
 

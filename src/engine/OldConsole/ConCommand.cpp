@@ -33,7 +33,7 @@ bool ConCommand::ExecuteCommand(const std::string& command) {
 	if (tokens.empty()) { return false; }
 
 	const auto& cmdName = tokens[0];
-	auto        it      = mCommands.find(cmdName);
+	const auto  it      = mCommands.find(cmdName);
 	if (it != mCommands.end()) {
 		const auto&       callback = it->second.first;
 		const std::vector args(tokens.begin() + 1, tokens.end());

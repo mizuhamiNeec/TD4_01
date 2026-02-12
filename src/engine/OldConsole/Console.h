@@ -10,7 +10,7 @@
 #include <thread>
 #include <vector>
 
-#include <runtime/core/math/Math.h>
+#include <core/math/Vec4.h>
 
 constexpr auto kConBgColorDark = Vec4(0.2f, 0.2f, 0.2f, 0.5f);    // ダークモードの背景色
 constexpr auto kConFgColorDark = Vec4(0.71f, 0.71f, 0.72f, 1.0f); // ダークモードの前景色
@@ -199,7 +199,7 @@ private:
 	static std::thread                       mConsoleThread;
 	static bool                              mStopThread;
 	bool                                     mConsoleUpdate = false;
-	
+
 #ifdef _DEBUG
 	// コンソール
 	static bool                     mShowConsole; // コンソールを表示するか?

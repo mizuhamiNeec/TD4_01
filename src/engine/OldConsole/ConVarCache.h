@@ -24,7 +24,7 @@ public:
 	/// @param name コンソール変数の名前
 	/// @return コンソール変数のポインタ、存在しない場合はnullptr
 	IConVar* GetCachedConVar(const std::string& name) {
-		auto it = mCachedConVars.find(name);
+		const auto it = mCachedConVars.find(name);
 		return it != mCachedConVars.end() ? it->second : nullptr;
 	}
 

@@ -142,16 +142,15 @@ public:
 		constexpr (std::is_same_v<
 			T, std::string>) { SetValue(valueStr); } else if constexpr (
 			std::is_same_v<T, Vec3>) {
-			float x, y, z;
 			try {
 				// スペースで区切られた3つの数値を取得
 				std::istringstream iss(valueStr);
 				std::string        xStr, yStr, zStr;
 
 				if (iss >> xStr >> yStr >> zStr) {
-					x = std::stof(xStr);
-					y = std::stof(yStr);
-					z = std::stof(zStr);
+					const float x = std::stof(xStr);
+					const float y = std::stof(yStr);
+					const float z = std::stof(zStr);
 					SetValue(Vec3(x, y, z));
 				} else {
 					throw std::runtime_error(

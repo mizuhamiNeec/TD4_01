@@ -57,7 +57,7 @@ void ConVarManager::RegisterConVar(
 template <typename T>
 T ConVarManager::GetConVarValue(const std::string& name) {
 	std::lock_guard lock(mMutex);
-	auto            it = mConVars.find(name);
+	const auto      it = mConVars.find(name);
 	if (it != mConVars.end()) {
 		auto* var = dynamic_cast<ConVar<T>*>(it->second.get());
 		if (var != nullptr) { return var->GetValue(); }

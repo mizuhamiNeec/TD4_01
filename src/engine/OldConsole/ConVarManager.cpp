@@ -9,14 +9,14 @@ std::mutex ConVarManager::mMutex;
 /// @return コンソール変数のポインタ、存在しない場合はnullptr
 IConVar* ConVarManager::GetConVar(const std::string& name) {
 	std::lock_guard lock(mMutex);
-	auto            it = mConVars.find(name);
+	const auto      it = mConVars.find(name);
 	return it != mConVars.end() ? it->second.get() : nullptr;
 }
 
 /// @brief コンソール変数の値をトグル（切り替え）します
 /// @param name コンソール変数の名前
 void ConVarManager::ToggleConVar(const std::string& name) {
-	auto it = mConVars.find(name);
+	const auto it = mConVars.find(name);
 	if (it != mConVars.end()) {
 		it->second->Toggle();
 		return;

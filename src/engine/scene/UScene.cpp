@@ -21,8 +21,8 @@ namespace Unnamed {
 		return *raw;
 	}
 
-	void UScene::DestroyEntity(EntityId id) {
-		auto it = mEntityById.find(id);
+	void UScene::DestroyEntity(const EntityId id) {
+		const auto it = mEntityById.find(id);
 		if (it == mEntityById.end()) { return; }
 
 		UEntity* target = it->second;
@@ -43,12 +43,12 @@ namespace Unnamed {
 
 	UEntity* UScene::FindEntity(const EntityId id) {
 		const auto it = mEntityById.find(id);
-		return (it != mEntityById.end()) ? it->second : nullptr;
+		return it != mEntityById.end() ? it->second : nullptr;
 	}
 
 	const UEntity* UScene::FindEntity(const EntityId id) const {
 		const auto it = mEntityById.find(id);
-		return (it != mEntityById.end()) ? it->second : nullptr;
+		return it != mEntityById.end() ? it->second : nullptr;
 	}
 
 	size_t UScene::GetEntityCount() const { return mEntities.size(); }
@@ -57,11 +57,11 @@ namespace Unnamed {
 		return mEntities;
 	}
 
-	void UScene::Serialize(JsonWriter& writer) const {
+	void UScene::Serialize(const JsonWriter& writer) const {
 		writer; // 未実装
 	}
 
-	void UScene::Deserialize(JsonReader& reader) {
+	void UScene::Deserialize(const JsonReader& reader) {
 		reader; // 未実装
 	}
 

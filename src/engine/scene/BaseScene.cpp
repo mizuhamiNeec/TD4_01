@@ -12,7 +12,7 @@ void BaseScene::RemoveEntity(Entity* entity) {
 	entity->SetParent(nullptr);
 	entity->RemoveAllComponents();
 
-	for (auto child : entity->GetChildren()) { RemoveEntity(child); }
+	for (const auto child : entity->GetChildren()) { RemoveEntity(child); }
 
 	mEntities.erase(
 		std::ranges::remove(mEntities, entity).begin(),

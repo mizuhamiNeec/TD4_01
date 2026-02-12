@@ -1,4 +1,4 @@
-#include <engine/SceneManager/SceneManager.h>
+#include <engine/scene/SceneManager.h>
 
 /// @brief コンストラクタ
 /// @param factory シーンファクトリーへの参照
@@ -7,7 +7,8 @@ SceneManager::SceneManager(SceneFactory& factory) : mFactory(factory) {}
 /// @brief シーンを変更します
 /// @param name シーン名
 void SceneManager::ChangeScene(const std::string& name) {
-	if (std::shared_ptr<BaseScene> newScene = mFactory.CreateScene(name)) {
+	if (const std::shared_ptr<BaseScene> newScene = mFactory.
+		CreateScene(name)) {
 		if (mCurrentScene) { mCurrentScene->Shutdown(); }
 		mCurrentScene = newScene;
 		mCurrentScene->Init();

@@ -10,10 +10,14 @@ namespace Unnamed {
 
 	class USceneSerializer {
 	public:
-		static bool LoadFromFile(UScene& scene, const std::string& path, GuidGenerator& guidGen);
+		static bool LoadFromFile(
+			UScene& scene, const std::string& path, GuidGenerator& guidGen
+		);
 		static bool SaveToFile(const UScene& scene, const std::string& path);
 
-		static bool Deserialize(UScene& scene, const JsonReader& root, GuidGenerator& guidGen);
+		static bool Deserialize(
+			UScene& scene, const JsonReader& root, GuidGenerator& guidGen
+		);
 		static void Serialize(const UScene& scene, JsonWriter& writer);
 	};
 }

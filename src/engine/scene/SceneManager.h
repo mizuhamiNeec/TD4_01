@@ -1,6 +1,6 @@
 #pragma once
 
-#include <engine/SceneManager/SceneFactory.h>
+#include <engine/scene/SceneFactory.h>
 
 /// @brief シーンマネージャークラス
 class SceneManager {

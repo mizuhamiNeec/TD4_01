@@ -3,7 +3,7 @@
 #include <memory>
 #include <string>
 
-#include <game/scene/base/BaseScene.h>
+#include <engine/scene/BaseScene.h>
 
 /// @brief シーンファクトリークラス
 class SceneFactory {
@@ -16,7 +16,7 @@ public:
 	}
 
 	std::shared_ptr<BaseScene> CreateScene(const std::string& name) {
-		auto it = mSceneCreators.find(name);
+		const auto it = mSceneCreators.find(name);
 		if (it != mSceneCreators.end()) { return it->second(); }
 		return nullptr;
 	}

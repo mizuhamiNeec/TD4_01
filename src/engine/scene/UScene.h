@@ -58,11 +58,11 @@ namespace Unnamed {
 
 		/// @brief シーンをシリアライズします。
 		/// @param writer JSONライター
-		void Serialize(JsonWriter& writer) const;
+		void Serialize(const JsonWriter& writer) const;
 
 		/// @brief シーンをデシリアライズします。
 		/// @param reader JSONリーダー
-		void Deserialize(JsonReader& reader);
+		void Deserialize(const JsonReader& reader);
 
 		/// @brief シーンがロードされた後に呼び出されます。
 		void OnPostLoad();

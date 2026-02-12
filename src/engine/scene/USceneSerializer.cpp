@@ -16,7 +16,7 @@ namespace Unnamed {
 	bool USceneSerializer::LoadFromFile(
 		UScene& scene, const std::string& path, GuidGenerator& guidGen
 	) {
-		JsonReader root(path);
+		const JsonReader root(path);
 		if (!root.Valid()) {
 			Error(kChannel, "Failed to open scene: {}", path);
 			return false;
@@ -73,7 +73,7 @@ namespace Unnamed {
 			const bool isEditorOnly = ReadBoolOr(e, "isEditorOnly", false);
 			const bool entityActive = ReadBoolOr(e, "active", true);
 
-			uint64_t finalGuid = guid != 0 ? guid : guidGen.Alloc();
+			const uint64_t finalGuid = guid != 0 ? guid : guidGen.Alloc();
 
 			UEntity& entity = scene.CreateEntity(name, finalGuid, isEditorOnly);
 			entity.SetActive(entityActive);
@@ -104,7 +104,7 @@ namespace Unnamed {
 					comp->SetGuid(compGuid);
 				} else {
 					// GUIDがない場合は仮のGUIDを割り当て
-					comp->SetGuid(static_cast<uint64_t>(0x200000 + ci));
+					comp->SetGuid(0x200000 + ci);
 				}
 
 				comp->SetActive(ReadBoolOr(c, "active", true));
@@ -146,7 +146,7 @@ namespace Unnamed {
 			writer.Write(std::string(e.GetName()));
 
 			writer.Key("guid");
-			writer.Write(static_cast<uint64_t>(e.GetGuid()));
+			writer.Write(e.GetGuid());
 
 			writer.Key("isEditorOnly");
 			writer.Write(e.IsEditorOnly());
@@ -165,7 +165,7 @@ namespace Unnamed {
 					writer.Write(std::string(c.GetStableName()));
 
 					writer.Key("guid");
-					writer.Write(static_cast<uint64_t>(c.GetGuid()));
+					writer.Write(c.GetGuid());
 
 					writer.Key("active");
 					writer.Write(c.IsActive());

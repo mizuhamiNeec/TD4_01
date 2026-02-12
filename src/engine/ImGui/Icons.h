@@ -2,7 +2,7 @@
 #include <cstdint>
 
 // ---- System / Window --------------------------------------------------------
-constexpr uint32_t kIconPower    = 0xE8AC;
+constexpr uint32_t kIconPower    = 0xE8AC; // 電源
 constexpr uint32_t kIconSettings = 0xE8B8; // 設定
 constexpr uint32_t kIconReset    = 0xE166; // リセット
 constexpr uint32_t kIconClose    = 0xE5CD; // 閉じる

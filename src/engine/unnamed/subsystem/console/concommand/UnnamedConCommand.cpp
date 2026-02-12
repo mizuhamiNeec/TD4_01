@@ -37,13 +37,5 @@ namespace Unnamed {
 			return;
 		}
 		console->RegisterConCommand(this);
-
-		DevMsg(
-			"ConCommand",
-			"Name: {}\n"
-			"Description: {}\n",
-			GetName(),
-			GetDescription()
-		);
 	}
 }

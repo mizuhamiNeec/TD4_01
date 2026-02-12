@@ -5,6 +5,8 @@
 #include <engine/unnamed/subsystem/console/concommand/base/UnnamedConCommandBase.h>
 #include <engine/unnamed/subsystem/interface/ServiceLocator.h>
 
+#include "core/math/Vec3.h"
+
 namespace Unnamed {
 	/// @brief 名前なしコンソール変数クラス
 	template <typename T>
@@ -95,9 +97,7 @@ namespace Unnamed {
 	    mValue(defaultValue),
 	    mDefaultValue(defaultValue),
 	    mMinValue(T()),
-	    mMaxValue(T()),
-	    mHasMinValue(false),
-	    mHasMaxValue(false) { RegisterSelf(); }
+	    mMaxValue(T()) { RegisterSelf(); }
 
 	/// @brief 名前なしコンソール変数クラスの実装
 	/// @param name 変数名
@@ -115,9 +115,7 @@ namespace Unnamed {
 	    mValue(defaultValue),
 	    mDefaultValue(defaultValue),
 	    mMinValue(T()),
-	    mMaxValue(T()),
-	    mHasMinValue(false),
-	    mHasMaxValue(false) { RegisterSelf(); }
+	    mMaxValue(T()) { RegisterSelf(); }
 
 	/// @brief 名前なしコンソール変数クラスの実装
 	/// @param name 変数名
@@ -163,9 +161,7 @@ namespace Unnamed {
 	    mValue(defaultValue),
 	    mDefaultValue(defaultValue),
 	    mMinValue(T()),
-	    mMaxValue(T()),
-	    mHasMinValue(false),
-	    mHasMaxValue(false) { RegisterSelf(); }
+	    mMaxValue(T()) { RegisterSelf(); }
 
 	/// @brief 名前なしコンソール変数クラスの実装
 	/// @param name 変数名
@@ -224,20 +220,6 @@ namespace Unnamed {
 			return;
 		}
 		console->RegisterConVar(this);
-
-		DevMsg(
-			"ConVar",
-			"Name: {}\n"
-			"Value: {}\n"
-			"DefaultValue: {}\n"
-			"MinValue: {}\n"
-			"MaxValue: {}\n",
-			GetName(),
-			mValue,
-			mDefaultValue,
-			mMinValue,
-			mMaxValue
-		);
 	}
 
 	enum class CVAR_TYPE {

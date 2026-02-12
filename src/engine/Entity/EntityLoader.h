@@ -1,7 +1,7 @@
 ﻿#pragma once
-#include <runtime/core/math/Math.h>
-
 #include <json.hpp>
+
+#include <core/math/Math.h>
 
 class ResourceManager;
 using json = nlohmann::json;

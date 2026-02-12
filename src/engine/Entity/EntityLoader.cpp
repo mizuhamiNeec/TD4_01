@@ -5,7 +5,7 @@
 #include <engine/Entity/EntityLoader.h>
 #include <engine/ResourceSystem/Manager/ResourceManager.h>
 
-#include "game/scene/base/BaseScene.h"
+#include <engine/scene/BaseScene.h>
 
 
 class StaticMeshRenderer;
@@ -80,7 +80,7 @@ Entity* EntityLoader::LoadNode(
 	t.pos = {tf["translation"][0], tf["translation"][1], tf["translation"][2]};
 	//t.rot = {tf["rotation"][0], tf["rotation"][1], tf["rotation"][2]};
 
-	Quaternion q = {
+	const Quaternion q = {
 		tf["rotation_quaternion"][0],
 		tf["rotation_quaternion"][1],
 		tf["rotation_quaternion"][2],
@@ -186,7 +186,7 @@ json EntityLoader::SaveNode(
 		{"scaling", {scl.x, scl.y, scl.z}}
 	};
 
-	if (auto m = e->GetComponent<StaticMeshRenderer>()) {
+	if (const auto m = e->GetComponent<StaticMeshRenderer>()) {
 		if (m->GetStaticMesh()) {
 			j["file_name"] = m->GetStaticMesh()->GetName();
 		}

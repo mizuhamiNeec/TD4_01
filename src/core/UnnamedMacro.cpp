@@ -40,7 +40,7 @@ int LogAssertionFailure(
 		func
 	);
 
-	auto messageW = Unnamed::StrUtil::ToWString(message);
+	const auto messageW = Unnamed::StrUtil::ToWString(message);
 
 	int result;
 #ifdef _DEBUG
@@ -60,16 +60,16 @@ int LogAssertionFailure(
 #endif
 
 	switch (result) {
-	case IDABORT:
-		// プロセス終了
-		ExitProcess(1);
-		break;
-	case IDRETRY:
-		// ブレーク
-		__debugbreak();
-		break;
-	case IDIGNORE: break;
-	default:;
+		case IDABORT:
+			// プロセス終了
+			ExitProcess(1);
+			break;
+		case IDRETRY:
+			// ブレーク
+			__debugbreak();
+			break;
+		case IDIGNORE: break;
+		default: ;
 	}
 
 	return 0;
@@ -84,7 +84,7 @@ void WriteDump(EXCEPTION_POINTERS* ep) {
 		st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond
 	);
 
-	HANDLE hFile = CreateFileW(
+	const HANDLE hFile = CreateFileW(
 		filename,
 		GENERIC_WRITE, 0, nullptr,
 		CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr
@@ -92,9 +92,9 @@ void WriteDump(EXCEPTION_POINTERS* ep) {
 
 	if (hFile != INVALID_HANDLE_VALUE) {
 		MINIDUMP_EXCEPTION_INFORMATION mei = {};
-		mei.ThreadId = GetCurrentThreadId();
-		mei.ExceptionPointers = ep;
-		mei.ClientPointers = FALSE;
+		mei.ThreadId                       = GetCurrentThreadId();
+		mei.ExceptionPointers              = ep;
+		mei.ClientPointers                 = FALSE;
 
 		MiniDumpWriteDump(
 			GetCurrentProcess(),
@@ -107,8 +107,7 @@ void WriteDump(EXCEPTION_POINTERS* ep) {
 		);
 
 		CloseHandle(hFile);
-	}
-	else {
+	} else {
 		Fatal(
 			"WriteDump",
 			"Failed to create dump file: {}",

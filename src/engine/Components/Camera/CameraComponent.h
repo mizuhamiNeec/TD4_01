@@ -1,7 +1,10 @@
 #pragma once
 
+#include <core/math/Math.h>
+
 #include <engine/Components/base/Component.h>
-#include <runtime/core/math/Math.h>
+
+#include "core/math/Mat4.h"
 
 /// @brief カメラコンポーネント
 /// @details カメラです。

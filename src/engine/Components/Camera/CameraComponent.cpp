@@ -2,7 +2,6 @@
 #include <engine/Components/Camera/CameraComponent.h>
 #include <engine/Debug/DebugDraw.h>
 #include <engine/Entity/Entity.h>
-#include <engine/ImGui/ImGuiManager.h>
 
 CameraComponent::~CameraComponent() = default;
 

@@ -1,8 +1,12 @@
 #include "engine/Debug/DebugDraw.h"
 
+#include <algorithm>
+
 #include "engine/Engine.h"
 #include "engine/Camera/CameraManager.h"
 #include "engine/Components/Camera/CameraComponent.h"
+
+#include <core/math/Quaternion.h>
 
 /// @brief 線を描画
 /// @param a 線の始点
@@ -24,8 +28,8 @@ void DebugDraw::DrawRay(
 /// @param position 軸の位置
 /// @param orientation 軸の向き
 void DebugDraw::DrawAxis(const Vec3& position, const Quaternion& orientation) {
-	Mat4 viewMat   = CameraManager::GetActiveCamera()->GetViewMat().Inverse();
-	Vec3 cameraPos = viewMat.GetTranslate();
+	Mat4 viewMat = CameraManager::GetActiveCamera()->GetViewMat().Inverse();
+	const Vec3 cameraPos = viewMat.GetTranslate();
 
 	// カメラとの距離を計算
 	float distance = (position - cameraPos).Length();
@@ -35,13 +39,14 @@ void DebugDraw::DrawAxis(const Vec3& position, const Quaternion& orientation) {
 
 	// スクリーン上で一定の長さに見えるように、
 	// カメラからの距離に比例して実際の長さを調整
-	float desiredScreenSize = 128.0f; // スクリーン上での目標サイズ（ピクセル）
+	constexpr float desiredScreenSize = 128.0f; // スクリーン上での目標サイズ（ピクセル）
 
 	// 最大距離を設定（この距離以上では軸の長さが一定になる）
 	constexpr float maxDistance = 32.0f; // 50メートルを超えたら一定の長さにする
 	distance                    = std::min(distance, maxDistance);
 
-	float length = distance * (desiredScreenSize / 1000.0f); // 1000.0fは調整用の係数
+	const float length = distance * (desiredScreenSize / 1000.0f);
+	// 1000.0fは調整用の係数
 
 	const Vec3 right   = orientation * Vec3::right * length;
 	const Vec3 up      = orientation * Vec3::up * length;
@@ -71,10 +76,10 @@ void DebugDraw::DrawCircle(
 		return;
 	}
 
-	float angleStep = (360.0f / static_cast<float>(segments));
+	float angleStep = 360.0f / static_cast<float>(segments);
 
 	// ラジアンに変換
-	angleStep *= Math::deg2Rad;
+	angleStep *= Math::rad2Deg;
 
 	// とりあえず原点で計算する
 	Vec3 lineStart = Vec3::zero;
@@ -127,9 +132,9 @@ void DebugDraw::DrawArc(
 
 	if (arcSpan <= 0) { arcSpan += 360.0f; }
 
-	float angleStep = (arcSpan / static_cast<float>(arcSegments)) *
-	                  Math::deg2Rad;
-	float stepOffset = startAngle * Math::deg2Rad;
+	const float angleStep = arcSpan / static_cast<float>(arcSegments) *
+	                        Math::deg2Rad;
+	const float stepOffset = startAngle * Math::deg2Rad;
 
 	Vec3 lineStart = Vec3::zero;
 	Vec3 lineEnd   = Vec3::zero;
@@ -137,7 +142,7 @@ void DebugDraw::DrawArc(
 	Vec3 arcStart = Vec3::zero;
 	Vec3 arcEnd   = Vec3::zero;
 
-	Vec3 arcOrigin = position;
+	const Vec3 arcOrigin = position;
 
 	for (int i = 0; i < arcSegments; i++) {
 		const float stepStart = angleStep * static_cast<float>(i) + stepOffset;
@@ -202,10 +207,10 @@ void DebugDraw::DrawArrow(
 	const Vec3 right = dirNormalized.Cross(up).Normalized();
 
 	// 頭部の羽根を描画
-	const Vec3 arrowLeft = end - (dirNormalized * headSize) + (right * headSize
-		                       * 0.5f);
-	const Vec3 arrowRight = end - (dirNormalized * headSize) - (right * headSize
-		                        * 0.5f);
+	const Vec3 arrowLeft = end - dirNormalized * headSize + right * headSize
+	                       * 0.5f;
+	const Vec3 arrowRight = end - dirNormalized * headSize - right * headSize
+	                        * 0.5f;
 
 	// 主体の線
 	DrawLine(position, end, color);
@@ -311,14 +316,14 @@ void DebugDraw::DrawSphere(
 		);
 	}
 
-	Vec3  verticalOffset    = Vec3::zero;
-	float parallelAngleStep = Math::pi / static_cast<float>(segments);
-	float stepRadius        = 0.0f;
+	Vec3        verticalOffset    = Vec3::zero;
+	const float parallelAngleStep = Math::pi / static_cast<float>(segments);
+	float       stepRadius        = 0.0f;
 
 	for (int i = 1; i < segments; i++) {
-		float stepAngle = parallelAngleStep * static_cast<float>(i);
-		verticalOffset  = (orientation * Vec3::up) * cos(stepAngle) * radius;
-		stepRadius      = sin(stepAngle) * radius;
+		const float stepAngle = parallelAngleStep * static_cast<float>(i);
+		verticalOffset = orientation * Vec3::up * cos(stepAngle) * radius;
+		stepRadius = sin(stepAngle) * radius;
 
 		DrawCircle(
 			position + verticalOffset,
@@ -390,7 +395,7 @@ void DebugDraw::DrawCylinder(
 
 	const Vec3 basePositionOffset = drawFromBase ?
 		                                Vec3::zero :
-		                                (localUp * height * 0.5f);
+		                                localUp * height * 0.5f;
 	const Vec3 basePosition = position - basePositionOffset;
 	const Vec3 topPosition  = basePosition + localUp * height;
 
@@ -432,7 +437,7 @@ void DebugDraw::DrawCapsule(
 
 	const Vec3 basePositionOffset = drawFromBase ?
 		                                Vec3::zero :
-		                                (localUp * height * 0.5f);
+		                                localUp * height * 0.5f;
 	const Vec3 baseArcPosition = position + localUp * rad - basePositionOffset;
 	DrawArc(180, 360, baseArcPosition, orientation, rad, color);
 	DrawArc(180, 360, baseArcPosition, arcOrientation, rad, color);

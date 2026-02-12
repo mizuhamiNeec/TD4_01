@@ -1,7 +1,9 @@
 #pragma once
 #include <memory>
+
+#include <core/math/Math.h>
+
 #include <engine/Line/Line.h>
-#include <runtime/core/math/Math.h>
 
 #include "engine/unnamed/uprimitive/UPrimitives.h"
 

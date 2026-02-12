@@ -24,7 +24,7 @@ void MeshColliderComponent::OnAttach(Entity& owner) {
 
 /// @brief 毎フレームの更新処理
 /// @param deltaTime 前フレームからの経過時間
-void MeshColliderComponent::Update(float deltaTime) { deltaTime; }
+void MeshColliderComponent::Update(const float deltaTime) { deltaTime; }
 
 /// @brief ImGuiでインスペクターを描画する
 void MeshColliderComponent::DrawInspectorImGui() {
@@ -70,7 +70,7 @@ StaticMesh* MeshColliderComponent::GetStaticMesh() const {
 
 /// @brief 三角形リストを構築する
 void MeshColliderComponent::BuildTriangleList() {
-	auto* mesh = mMeshRenderer->GetStaticMesh();
+	const auto* mesh = mMeshRenderer->GetStaticMesh();
 	if (!mesh) { return; }
 
 	mTriangles.clear();

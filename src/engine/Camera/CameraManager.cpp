@@ -28,8 +28,8 @@ void CameraManager::SetActiveCamera(
 /// @note カメラが複数存在する場合にのみ動作する
 void CameraManager::SwitchToNextCamera() {
 	if (mCameras.empty()) return;
-	size_t currentIndex = GetActiveCameraIndex();
-	size_t nextIndex    = (currentIndex + 1) % mCameras.size();
+	const size_t currentIndex = GetActiveCameraIndex();
+	const size_t nextIndex    = (currentIndex + 1) % mCameras.size();
 	SetActiveCameraByIndex(nextIndex);
 }
 
@@ -37,10 +37,10 @@ void CameraManager::SwitchToNextCamera() {
 /// @note カメラが複数存在する場合にのみ動作する
 void CameraManager::SwitchToPrevCamera() {
 	if (mCameras.empty()) return;
-	size_t currentIndex = GetActiveCameraIndex();
-	size_t prevIndex    = currentIndex == 0 ?
-		                      mCameras.size() - 1 :
-		                      currentIndex - 1;
+	const size_t currentIndex = GetActiveCameraIndex();
+	const size_t prevIndex    = currentIndex == 0 ?
+		                            mCameras.size() - 1 :
+		                            currentIndex - 1;
 	SetActiveCameraByIndex(prevIndex);
 }
 
@@ -54,7 +54,7 @@ void CameraManager::SetActiveCameraByIndex(const size_t index) {
 /// @return アクティブなカメラのインデックス
 size_t CameraManager::GetActiveCameraIndex() {
 	if (!mActiveCamera) { return 0; }
-	auto it = std::ranges::find(mCameras, mActiveCamera);
+	const auto it = std::ranges::find(mCameras, mActiveCamera);
 	return it != mCameras.end() ? std::distance(mCameras.begin(), it) : 0;
 }
 

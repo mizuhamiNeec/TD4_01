@@ -35,15 +35,15 @@ struct InstanceData {
 
 StructuredBuffer<InstanceData> gInstances : register(t1);
 
-InstanceData GetInstanceData(uint instanceId) {
-	return gInstances[instanceId];
-}
+InstanceData GetInstanceData(uint instanceId) { return gInstances[instanceId]; }
 
 float3 TransformPositionWS(InstanceData inst, float3 posOS) {
 	float4 p = float4(posOS, 1.0f);
-	return float3(dot(p, inst.worldCol0),
-				  dot(p, inst.worldCol1),
-				  dot(p, inst.worldCol2));
+	return float3(
+		dot(p, inst.worldCol0),
+		dot(p, inst.worldCol1),
+		dot(p, inst.worldCol2)
+	);
 }
 
 float3 TransformNormalWS(InstanceData inst, float3 nrmOS) {

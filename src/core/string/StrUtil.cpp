@@ -25,16 +25,18 @@ namespace Unnamed::StrUtil {
 
 	std::string ToString(const wchar_t* string) {
 		// WideCharToMultiByteを使用して、ワイド文字列をマルチバイト文字列に変換
-		int bufferSize = WideCharToMultiByte(
+		const int bufferSize = WideCharToMultiByte(
 			CP_UTF8, 0, string, -1, nullptr, 0,
 			nullptr, nullptr
 		);
-		std::string ret(bufferSize - 1, 0);
+		if (bufferSize == 0) { return {}; }
+		std::string ret(bufferSize, 0);
 		WideCharToMultiByte(
 			CP_UTF8, 0, string, -1, ret.data(), bufferSize,
 			nullptr,
 			nullptr
 		);
+		if (!ret.empty()) { ret.pop_back(); }
 		return ret;
 	}
 
@@ -42,13 +44,13 @@ namespace Unnamed::StrUtil {
 	std::wstring ToWString(const std::string& string) {
 		if (string.empty()) { return {}; }
 
-		int sizeNeeded = MultiByteToWideChar(
+		const int sizeNeeded = MultiByteToWideChar(
 			CP_UTF8, 0, string.data(), static_cast<int>(string.size()), nullptr,
 			0
 		);
 		if (sizeNeeded == 0) { return {}; }
 		std::wstring result(sizeNeeded, 0);
-		int          written = MultiByteToWideChar(
+		const int    written = MultiByteToWideChar(
 			CP_UTF8, 0, string.data(), static_cast<int>(string.size()),
 			result.data(), sizeNeeded
 		);
@@ -74,7 +76,7 @@ namespace Unnamed::StrUtil {
 			str1.begin(),
 			str1.end(),
 			str2.begin(),
-			[](unsigned char c1, unsigned char c2) {
+			[](const unsigned char c1, const unsigned char c2) {
 				return std::tolower(c1) == std::tolower(c2);
 			}
 		);
@@ -101,7 +103,7 @@ namespace Unnamed::StrUtil {
 		}
 	}
 
-	std::string ConvertToUtf8(uint32_t codePoint) {
+	std::string ConvertToUtf8(const uint32_t codePoint) {
 		std::string utf8String;
 
 		if (codePoint <= 0x7F) {
@@ -109,19 +111,19 @@ namespace Unnamed::StrUtil {
 			utf8String += static_cast<char>(codePoint);
 		} else if (codePoint <= 0x7FF) {
 			// 2バイト形式: 110xxxxx 10xxxxxx
-			utf8String += static_cast<char>(0xC0 | ((codePoint >> 6) & 0x1F));
-			utf8String += static_cast<char>(0x80 | (codePoint & 0x3F));
+			utf8String += static_cast<char>(0xC0 | codePoint >> 6 & 0x1F);
+			utf8String += static_cast<char>(0x80 | codePoint & 0x3F);
 		} else if (codePoint <= 0xFFFF) {
 			// 3バイト形式: 1110xxxx 10xxxxxx 10xxxxxx
-			utf8String += static_cast<char>(0xE0 | ((codePoint >> 12) & 0x0F));
-			utf8String += static_cast<char>(0x80 | ((codePoint >> 6) & 0x3F));
-			utf8String += static_cast<char>(0x80 | (codePoint & 0x3F));
+			utf8String += static_cast<char>(0xE0 | codePoint >> 12 & 0x0F);
+			utf8String += static_cast<char>(0x80 | codePoint >> 6 & 0x3F);
+			utf8String += static_cast<char>(0x80 | codePoint & 0x3F);
 		} else if (codePoint <= 0x10FFFF) {
 			// 4バイト形式: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-			utf8String += static_cast<char>(0xF0 | ((codePoint >> 18) & 0x07));
-			utf8String += static_cast<char>(0x80 | ((codePoint >> 12) & 0x3F));
-			utf8String += static_cast<char>(0x80 | ((codePoint >> 6) & 0x3F));
-			utf8String += static_cast<char>(0x80 | (codePoint & 0x3F));
+			utf8String += static_cast<char>(0xF0 | codePoint >> 18 & 0x07);
+			utf8String += static_cast<char>(0x80 | codePoint >> 12 & 0x3F);
+			utf8String += static_cast<char>(0x80 | codePoint >> 6 & 0x3F);
+			utf8String += static_cast<char>(0x80 | codePoint & 0x3F);
 		} else {}
 
 		return utf8String;
@@ -194,8 +196,9 @@ namespace Unnamed::StrUtil {
 	}
 
 	bool CheckBoolString(std::string str) {
-		str      = ToLowerCase(str);
-		bool ret = (str == "1" || str == "true" || str == "yes" || str == "on");
+		str            = ToLowerCase(str);
+		const bool ret = str == "1" || str == "true" || str == "yes" || str ==
+		                 "on";
 		return ret;
 	}
 
@@ -203,9 +206,11 @@ namespace Unnamed::StrUtil {
 		std::vector<LinkSpan> result;
 		const auto            size = line.size();
 
-		auto IsSpace = [](unsigned char c) { return std::isspace(c) != 0; };
+		auto IsSpace = [](const unsigned char c) {
+			return std::isspace(c) != 0;
+		};
 
-		auto IsTrailingPunct = [](char c) {
+		auto IsTrailingPunct = [](const char c) {
 			switch (c) {
 				case '.':
 				case ',':

@@ -3,7 +3,7 @@
 #include <initializer_list>
 
 struct Mat4;
-#include <runtime/core/math/Vec3.h>
+#include <core/math/Vec3.h>
 
 /**
  * @brief 4次元ベクトル構造体
@@ -40,10 +40,10 @@ struct Vec4 final {
 	 */
 	constexpr Vec4(const std::initializer_list<float> list) {
 		auto it = list.begin();
-		x       = (it != list.end()) ? *it++ : 0.0f;
-		y       = (it != list.end()) ? *it++ : 0.0f;
-		z       = (it != list.end()) ? *it++ : 0.0f;
-		w       = (it != list.end()) ? *it++ : 0.0f;
+		x       = it != list.end() ? *it++ : 0.0f;
+		y       = it != list.end() ? *it++ : 0.0f;
+		z       = it != list.end() ? *it++ : 0.0f;
+		w       = it != list.end() ? *it++ : 0.0f;
 	}
 
 	float       x, y, z, w;

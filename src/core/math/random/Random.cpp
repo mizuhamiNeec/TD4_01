@@ -1,5 +1,5 @@
-#include <runtime/core/math/Math.h>
-#include <runtime/core/math/random/Random.h>
+#include <core/math/Math.h>
+#include <core/math/random/Random.h>
 
 #include <mutex>
 #include <random>
@@ -14,8 +14,8 @@ std::mutex      Random::mtx_;                                  // mutexも定義
 //-----------------------------------------------------------------------------
 int Random::IntRange(const int& min, const int& max) {
 	if (min == max) { return min; }
-	int                                validMin = std::min(min, max);
-	int                                validMax = std::max(min, max);
+	const int                          validMin = std::min(min, max);
+	const int                          validMax = std::max(min, max);
 	std::uniform_int_distribution<int> distribution(validMin, validMax);
 	std::lock_guard                    lock(mtx_);
 	return distribution(randomEngine_);
@@ -26,8 +26,8 @@ int Random::IntRange(const int& min, const int& max) {
 //-----------------------------------------------------------------------------
 float Random::FloatRange(const float& min, const float& max) {
 	if (min == max) { return min; }
-	float                                 validMin = std::min(min, max);
-	float                                 validMax = std::max(min, max);
+	const float                           validMin = std::min(min, max);
+	const float                           validMax = std::max(min, max);
 	std::uniform_real_distribution<float> distribution(validMin, validMax);
 	std::lock_guard                       lock(mtx_);
 	return distribution(randomEngine_);

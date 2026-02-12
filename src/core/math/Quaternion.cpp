@@ -1,7 +1,10 @@
-#include <runtime/core/math/Math.h>
+#include "Quaternion.h"
+#include <core/math/Math.h>
 
 #include <algorithm>
 #include <cmath>
+
+#include "Vec3.h"
 
 const Quaternion Quaternion::identity = Quaternion(0, 0, 0, 1);
 
@@ -47,11 +50,11 @@ Quaternion Quaternion::Normalized() const {
 Quaternion Quaternion::Conjugate() const { return {-x, -y, -z, w}; }
 
 Quaternion Quaternion::Inverse() const {
-	float normSquared = x * x + y * y + z * z + w * w;
+	const float normSquared = x * x + y * y + z * z + w * w;
 
 	if (normSquared < 1e-6f) { return identity; }
 
-	float invNormSquared = 1.0f / normSquared;
+	const float invNormSquared = 1.0f / normSquared;
 	return Quaternion(
 		-x * invNormSquared,
 		-y * invNormSquared,
@@ -109,23 +112,23 @@ Quaternion Quaternion::AxisAngle(const Vec3& axis, const float angleDeg) {
 }
 
 Quaternion Quaternion::LookRotation(const Vec3& forward, const Vec3& up) {
-	Vec3 f = forward.Normalized();
-	Vec3 u = up.Normalized();
-	Vec3 r = u.Cross(f).Normalized();
-	u      = f.Cross(r);
+	const Vec3 f = forward.Normalized();
+	Vec3       u = up.Normalized();
+	const Vec3 r = u.Cross(f).Normalized();
+	u            = f.Cross(r);
 
-	float m00 = r.x;
-	float m01 = r.y;
-	float m02 = r.z;
-	float m10 = u.x;
-	float m11 = u.y;
-	float m12 = u.z;
-	float m20 = f.x;
-	float m21 = f.y;
-	float m22 = f.z;
+	const float m00 = r.x;
+	const float m01 = r.y;
+	const float m02 = r.z;
+	const float m10 = u.x;
+	const float m11 = u.y;
+	const float m12 = u.z;
+	const float m20 = f.x;
+	const float m21 = f.y;
+	const float m22 = f.z;
 
-	float      num8 = (m00 + m11) + m22;
-	Quaternion quaternion;
+	const float num8 = m00 + m11 + m22;
+	Quaternion  quaternion;
 	if (num8 > 0.0f) {
 		float num    = sqrt(num8 + 1.0f);
 		quaternion.w = num * 0.5f;
@@ -135,36 +138,36 @@ Quaternion Quaternion::LookRotation(const Vec3& forward, const Vec3& up) {
 		quaternion.z = (m01 - m10) * num;
 		return quaternion;
 	}
-	if ((m00 >= m11) && (m00 >= m22)) {
-		float num7   = sqrt(((1.0f + m00) - m11) - m22);
-		float num4   = 0.5f / num7;
-		quaternion.x = 0.5f * num7;
-		quaternion.y = (m01 + m10) * num4;
-		quaternion.z = (m02 + m20) * num4;
-		quaternion.w = (m12 - m21) * num4;
+	if (m00 >= m11 && m00 >= m22) {
+		const float num7 = sqrt(1.0f + m00 - m11 - m22);
+		const float num4 = 0.5f / num7;
+		quaternion.x     = 0.5f * num7;
+		quaternion.y     = (m01 + m10) * num4;
+		quaternion.z     = (m02 + m20) * num4;
+		quaternion.w     = (m12 - m21) * num4;
 		return quaternion;
 	}
 	if (m11 > m22) {
-		float num6   = sqrt(((1.0f + m11) - m00) - m22);
-		float num3   = 0.5f / num6;
-		quaternion.x = (m10 + m01) * num3;
-		quaternion.y = 0.5f * num6;
-		quaternion.z = (m21 + m12) * num3;
-		quaternion.w = (m20 - m02) * num3;
+		const float num6 = sqrt(1.0f + m11 - m00 - m22);
+		const float num3 = 0.5f / num6;
+		quaternion.x     = (m10 + m01) * num3;
+		quaternion.y     = 0.5f * num6;
+		quaternion.z     = (m21 + m12) * num3;
+		quaternion.w     = (m20 - m02) * num3;
 		return quaternion;
 	}
-	float num5   = sqrt(((1.0f + m22) - m00) - m11);
-	float num2   = 0.5f / num5;
-	quaternion.x = (m20 + m02) * num2;
-	quaternion.y = (m21 + m12) * num2;
-	quaternion.z = 0.5f * num5;
-	quaternion.w = (m01 - m10) * num2;
+	const float num5 = sqrt(1.0f + m22 - m00 - m11);
+	const float num2 = 0.5f / num5;
+	quaternion.x     = (m20 + m02) * num2;
+	quaternion.y     = (m21 + m12) * num2;
+	quaternion.z     = 0.5f * num5;
+	quaternion.w     = (m01 - m10) * num2;
 	return quaternion;
 }
 
 Quaternion Quaternion::Lerp(const Quaternion& a, const Quaternion& b, float t) {
-	t                 = std::clamp(t, 0.0f, 1.0f);
-	Quaternion result = {
+	t                       = std::clamp(t, 0.0f, 1.0f);
+	const Quaternion result = {
 		(1.0f - t) * a.x + t * b.x,
 		(1.0f - t) * a.y + t * b.y,
 		(1.0f - t) * a.z + t * b.z,
@@ -185,7 +188,7 @@ Quaternion Quaternion::Slerp(
 	dot = std::clamp(dot, -1.0f, 1.0f);
 
 	// angle を計算
-	float angle = std::acos(dot);
+	const float angle = std::acos(dot);
 
 	// angle が非常に小さい場合は Lerp に切り替え
 	if (angle < 1e-6f) {
@@ -193,7 +196,7 @@ Quaternion Quaternion::Slerp(
 	}
 
 	// sin(angle) を計算
-	float sinAngle = std::sin(angle);
+	const float sinAngle = std::sin(angle);
 
 	// sinAngle が非常に小さい場合は Lerp に切り替え
 	if (std::abs(sinAngle) < 1e-6f) {
@@ -205,8 +208,8 @@ Quaternion Quaternion::Slerp(
 	if (t == 1.0f) { return b; }
 
 	// Slerp の計算
-	float scale0 = std::sin((1.0f - t) * angle) / sinAngle;
-	float scale1 = std::sin(t * angle) / sinAngle;
+	const float scale0 = std::sin((1.0f - t) * angle) / sinAngle;
+	float       scale1 = std::sin(t * angle) / sinAngle;
 
 	// dot が負の場合、反転する
 	if (dot < 0.0f) { scale1 = -scale1; }
@@ -253,20 +256,20 @@ Vec3 Quaternion::GetAxis() const {
 }
 
 Vec3 Quaternion::RotateVector(const Vec3 vec3) const {
-	Quaternion qVec(vec3.x, vec3.y, vec3.z, 0.0f);
-	Quaternion qConj   = Conjugate();
-	Quaternion qResult = *this * qVec * qConj;
+	const Quaternion qVec(vec3.x, vec3.y, vec3.z, 0.0f);
+	const Quaternion qConj   = Conjugate();
+	Quaternion       qResult = *this * qVec * qConj;
 	return {qResult.x, qResult.y, qResult.z};
 }
 
 float Quaternion::GetRotationAroundAxis(const Vec3& axis) const {
-	Vec3 normalizedAxis = axis.Normalized();
+	const Vec3 normalizedAxis = axis.Normalized();
 
 	Vec3  quaternionAxis;
 	float angle;
 	ToAxisAngle(quaternionAxis, angle);
 
-	float projection = quaternionAxis.Dot(normalizedAxis);
+	const float projection = quaternionAxis.Dot(normalizedAxis);
 
 	return angle * projection;
 }

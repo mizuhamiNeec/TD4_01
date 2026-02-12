@@ -2,13 +2,11 @@
 
 #include <numbers>
 
-#include <runtime/core/math/Mat4.h>
-#include <runtime/core/math/Quaternion.h>
-#include <runtime/core/math/Vec2.h>
-#include <runtime/core/math/Vec3.h>
-#include <runtime/core/math/Vec4.h>
+#include <core/math/Vec2.h>
+#include <core/math/Vec3.h>
+#include <core/math/Vec4.h>
 
-#include <runtime/core/math/random/Random.h>
+#include <core/math/random/Random.h>
 
 namespace Math {
 	//-------------------------------------------------------------------------

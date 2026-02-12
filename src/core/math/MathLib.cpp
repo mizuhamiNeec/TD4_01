@@ -1,6 +1,6 @@
 #include <pch.h>
 
-#include <runtime/core/math/Math.h>
+#include <core/math/Math.h>
 
 #include <engine/Camera/CameraManager.h>
 #include <engine/Components/Camera/CameraComponent.h>
@@ -99,7 +99,7 @@ namespace Math {
 
 		// w除算を行いNDC空間に変換
 		const float invW = 1.0f / clipSpace.w;
-		auto        ndc  = Vec3(
+		const auto  ndc  = Vec3(
 			clipSpace.x * invW,
 			clipSpace.y * invW,
 			clipSpace.z * invW
@@ -112,7 +112,7 @@ namespace Math {
 		);
 
 		// 画面中心からの方向ベクトル計算
-		Vec2 direction = screenPos - screenCenter;
+		const Vec2 direction = screenPos - screenCenter;
 
 		// 角度計算
 		outAngle = std::atan2(direction.x, -direction.y);
@@ -189,7 +189,7 @@ namespace Math {
 	/// @param groundNormal 地面の法線ベクトル
 	/// @return 地面に沿った移動方向のベクトル
 	Vec3 GetMoveDirection(const Vec3& forward, const Vec3& groundNormal) {
-		Vec3 projectedForward = ProjectOnPlane(forward, groundNormal);
+		const Vec3 projectedForward = ProjectOnPlane(forward, groundNormal);
 		return projectedForward.Normalized();
 	}
 

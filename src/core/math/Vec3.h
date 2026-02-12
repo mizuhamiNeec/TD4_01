@@ -3,7 +3,7 @@
 #include <string>
 
 struct Quaternion;
-#include <runtime/core/math/Vec2.h>
+#include <core/math/Vec2.h>
 
 /**
  * @brief 3次元ベクトル構造体

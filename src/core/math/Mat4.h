@@ -49,7 +49,7 @@ struct Mat4 final {
 	/// @param vector 変換するベクトル
 	/// @param matrix 変換行列
 	/// @return 変換されたベクトル
-	static Vec3 Transform(Vec3 vector, const Mat4& matrix);
+	static Vec3 Transform(const Vec3& vector, const Mat4& matrix);
 
 	/// @brief クォータニオンから回転行列を生成する
 	/// @param quaternion 回転クォータニオン

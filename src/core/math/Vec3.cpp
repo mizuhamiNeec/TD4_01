@@ -1,9 +1,14 @@
-#include <runtime/core/math/Math.h>
+#include <core/math/Math.h>
 
 #include <algorithm>
 #include <cmath>
 #include <format>
 #include <stdexcept>
+
+#include "Quaternion.h"
+
+#include "Mat4.h"
+
 
 const Vec3 Vec3::zero(0.0f, 0.0f, 0.0f);
 const Vec3 Vec3::one(1.0f, 1.0f, 1.0f);

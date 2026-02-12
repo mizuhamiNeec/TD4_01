@@ -3,6 +3,7 @@
 #include <dwmapi.h>
 #include <ranges>
 
+#include "IPlatformEvents.h"
 #include "WindowsUtils.h"
 
 #include "core/string/StrUtil.h"
@@ -83,7 +84,7 @@ namespace Unnamed {
 			if (wnd && wnd->GetHwnd()) { hwnds.emplace_back(wnd->GetHwnd()); }
 		}
 
-		for (HWND hwnd : hwnds) { ::DestroyWindow(hwnd); }
+		for (const HWND hwnd : hwnds) { ::DestroyWindow(hwnd); }
 
 		mWindows.clear();
 
@@ -146,13 +147,13 @@ namespace Unnamed {
 		mWindows.erase(it);
 	}
 
-	Window* WindowManager::FindWindowById(WindowId id) {
+	Window* WindowManager::FindWindowById(const WindowId id) {
 		const auto it = mWindows.find(id.value);
 		if (it == mWindows.end()) { return nullptr; }
 		return it->second.get();
 	}
 
-	const Window* WindowManager::FindWindowById(WindowId id) const {
+	const Window* WindowManager::FindWindowById(const WindowId id) const {
 		const auto it = mWindows.find(id.value);
 		if (it == mWindows.end()) { return nullptr; }
 		return it->second.get();
@@ -166,6 +167,10 @@ namespace Unnamed {
 		}
 		return ids;
 	}
+
+	void WindowManager::RegisterPlatformEvents(
+		IPlatformEvents* events
+	) { mPlatformEvents = events; }
 
 	bool WindowManager::EnsureWindowClassRegistered() {
 		if (mWindowClassRegistered) { return true; }
@@ -221,7 +226,9 @@ namespace Unnamed {
 			return std::nullopt;
 		}
 
-		HMONITOR hMonitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+		const HMONITOR hMonitor = MonitorFromWindow(
+			hwnd, MONITOR_DEFAULTTONEAREST
+		);
 		MONITORINFO mi = {sizeof(mi)};
 		if (!GetMonitorInfoW(hMonitor, &mi)) {
 			Error(kChannel, "Failed to get monitor info.");
@@ -260,7 +267,8 @@ namespace Unnamed {
 	}
 
 	LRESULT WindowManager::StaticWndProc(
-		HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
+		const HWND   hwnd, const UINT msg, const WPARAM wParam,
+		const LPARAM lParam
 	) {
 #ifdef _DEBUG
 		if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam)) {
@@ -268,11 +276,16 @@ namespace Unnamed {
 		}
 #endif
 
+		// メッセージを他のシステムに横流し
+		if (mPlatformEvents) {
+			mPlatformEvents->DispatchMessage(hwnd, msg, wParam, lParam);
+		}
+
 		// --------------------------------------------------------------------
 		// ザ・ワールド対策 Alt || F10キー対策
 		// --------------------------------------------------------------------
 		if (msg == WM_SYSKEYDOWN || msg == WM_SYSKEYUP) {
-			if (wParam == VK_F4 && (lParam & (1 << 29))) {
+			if (wParam == VK_F4 && lParam & 1 << 29) {
 				// Alt + F4
 				PostMessageW(hwnd, WM_CLOSE, 0, 0);
 				return 0;
@@ -366,4 +379,6 @@ namespace Unnamed {
 			);
 		}
 	}
+
+	IPlatformEvents* WindowManager::mPlatformEvents = nullptr;
 }

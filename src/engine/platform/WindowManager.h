@@ -5,9 +5,11 @@
 #include <unordered_map>
 #include <vector>
 
+#include "IPlatformEvents.h"
 #include "Window.h"
 
 #include "engine/EngineConfig.h"
+#include "engine/unnamed/subsystem/input/UInputSystem.h"
 
 namespace Unnamed {
 	class WindowManager final {
@@ -46,6 +48,8 @@ namespace Unnamed {
 		/// @brief すべてのウィンドウIDを取得する
 		[[nodiscard]] std::vector<WindowId> GetAllWindowIds() const;
 
+		void RegisterPlatformEvents(IPlatformEvents* events);
+
 	private:
 		bool                    EnsureWindowClassRegistered();
 		std::optional<HWND>     CreateNativeWindow(const WindowDesc& desc);
@@ -58,10 +62,11 @@ namespace Unnamed {
 		/// @param isSystemDarkTheme ダークテーマを使用するかどうか
 		static void SetUseImmersiveDarkMode(HWND hwnd, bool isSystemDarkTheme);
 
-	private:
 		WindowId mMainWindowId = {};
 		uint32_t mNextWindowId = 1;
 		std::unordered_map<uint32_t, std::unique_ptr<Window>> mWindows;
+
+		static IPlatformEvents* mPlatformEvents;
 
 		bool mInitialized           = false;
 		bool mWindowClassRegistered = false;

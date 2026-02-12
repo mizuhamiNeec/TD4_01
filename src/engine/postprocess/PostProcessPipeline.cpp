@@ -4,21 +4,21 @@
 
 namespace Unnamed {
 	void PostProcessPipeline::Init(
-		D3D12* renderer,
-		SrvManager* srvManager,
-		uint32_t width,
-		uint32_t height,
-		const float* clearColor,
-		DXGI_FORMAT rtvFormat,
-		DXGI_FORMAT dsvFormat
+		D3D12*            renderer,
+		SrvManager*       srvManager,
+		const uint32_t    width,
+		const uint32_t    height,
+		const float*      clearColor,
+		const DXGI_FORMAT rtvFormat,
+		const DXGI_FORMAT dsvFormat
 	) {
-		mRenderer = renderer;
+		mRenderer   = renderer;
 		mSrvManager = srvManager;
-		mWidth = width;
-		mHeight = height;
-		mRtvFormat = rtvFormat;
-		mDsvFormat = dsvFormat;
-		mPingIndex = 0;
+		mWidth      = width;
+		mHeight     = height;
+		mRtvFormat  = rtvFormat;
+		mDsvFormat  = dsvFormat;
+		mPingIndex  = 0;
 
 		mClearColorLocal[0] = clearColor[0];
 		mClearColorLocal[1] = clearColor[1];
@@ -30,52 +30,55 @@ namespace Unnamed {
 
 	void PostProcessPipeline::Shutdown() {
 		mPasses.clear();
-		for (auto& rt : mPingRtv) {
-			rt.rtv.Reset();
-		}
-		mRenderer = nullptr;
+		for (auto& rt : mPingRtv) { rt.rtv.Reset(); }
+		mRenderer   = nullptr;
 		mSrvManager = nullptr;
-		mWidth = 0;
-		mHeight = 0;
-		mPingIndex = 0;
+		mWidth      = 0;
+		mHeight     = 0;
+		mPingIndex  = 0;
 	}
 
 	void PostProcessPipeline::AddPass(std::unique_ptr<IPostProcess> pass) {
 		mPasses.emplace_back(std::move(pass));
 	}
 
-	void PostProcessPipeline::OnResize(uint32_t width, uint32_t height) {
+	void PostProcessPipeline::OnResize(
+		const uint32_t width, const uint32_t height
+	) {
 		if (!mRenderer || width == 0 || height == 0) { return; }
 
-		mWidth = width;
-		mHeight = height;
+		mWidth     = width;
+		mHeight    = height;
 		mPingIndex = 0;
 
-		for (auto& rt : mPingRtv) {
-			rt.rtv.Reset();
-		}
+		for (auto& rt : mPingRtv) { rt.rtv.Reset(); }
 
 		CreateTargets(width, height);
 	}
 
-	void PostProcessPipeline::CreateTargets(uint32_t width, uint32_t height) {
+	void PostProcessPipeline::CreateTargets(
+		const uint32_t width, const uint32_t height
+	) {
 		if (!mRenderer) { return; }
 		for (auto& rt : mPingRtv) {
 			rt = mRenderer->CreateRenderTargetTexture(
 				width,
 				height,
-				Vec4{ mClearColorLocal[0], mClearColorLocal[1], mClearColorLocal[2], mClearColorLocal[3] },
+				Vec4{
+					mClearColorLocal[0], mClearColorLocal[1],
+					mClearColorLocal[2], mClearColorLocal[3]
+				},
 				mRtvFormat
 			);
 		}
 	}
 
 	void PostProcessPipeline::Execute(
-		ID3D12GraphicsCommandList* commandList,
-		ID3D12Resource* inputTexture,
-		D3D12_CPU_DESCRIPTOR_HANDLE finalOutRtv,
-		uint32_t finalWidth,
-		uint32_t finalHeight
+		ID3D12GraphicsCommandList*        commandList,
+		ID3D12Resource*                   inputTexture,
+		const D3D12_CPU_DESCRIPTOR_HANDLE finalOutRtv,
+		const uint32_t                    finalWidth,
+		const uint32_t                    finalHeight
 	) {
 		if (!commandList || !inputTexture || !mRenderer) { return; }
 		if (mPasses.empty()) {
@@ -88,25 +91,25 @@ namespace Unnamed {
 
 		for (auto& pass : mPasses) {
 			const uint32_t next = mPingIndex ^ 1;
-			auto& dest = mPingRtv[next];
+			auto&          dest = mPingRtv[next];
 
-			const bool isLastPass = (&pass == &mPasses.back());
-			const auto outRtv = isLastPass ? finalOutRtv : dest.rtvHandle;
+			const bool     isLastPass = &pass == &mPasses.back();
+			const auto     outRtv = isLastPass ? finalOutRtv : dest.rtvHandle;
 			const uint32_t outW = isLastPass ? finalWidth : mWidth;
 			const uint32_t outH = isLastPass ? finalHeight : mHeight;
 
 			PostProcessContext context = {};
-			context.commandList = commandList;
-			context.inputTexture = postProcessTarget;
-			context.outRtv = outRtv;
-			context.width = outW;
-			context.height = outH;
+			context.commandList        = commandList;
+			context.inputTexture       = postProcessTarget;
+			context.outRtv             = outRtv;
+			context.width              = outW;
+			context.height             = outH;
 
 			pass->Execute(context);
 
 			if (!isLastPass) {
 				postProcessTarget = dest.rtv.Get();
-				mPingIndex = next;
+				mPingIndex        = next;
 			}
 		}
 	}

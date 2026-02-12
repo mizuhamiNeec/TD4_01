@@ -21,7 +21,9 @@ public:
 	void Update(float dt) override;
 	void Execute(const PostProcessContext& ctx) override;
 
-	void SetBlurStrength(float strength) { mParams.blurStrength = strength; }
+	void SetBlurStrength(const float strength) {
+		mParams.blurStrength = strength;
+	}
 
 private:
 	void Init();

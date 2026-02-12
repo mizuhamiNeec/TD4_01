@@ -30,18 +30,18 @@ void PPBloom::Init() {
 
 	mSrvIndex = mSrvManager->AllocateForTexture2D();
 
-	D3D12_HEAP_PROPERTIES heapProps = {D3D12_HEAP_TYPE_UPLOAD};
-	D3D12_RESOURCE_DESC   desc      = {};
-	desc.Dimension                  = D3D12_RESOURCE_DIMENSION_BUFFER;
-	desc.Width                      = (sizeof(BloomParams) + 255) & ~255;
-	desc.Height                     = 1;
-	desc.DepthOrArraySize           = 1;
-	desc.MipLevels                  = 1;
-	desc.Format                     = DXGI_FORMAT_UNKNOWN;
-	desc.SampleDesc.Count           = 1;
-	desc.Layout                     = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	constexpr D3D12_HEAP_PROPERTIES heapProps = {D3D12_HEAP_TYPE_UPLOAD};
+	D3D12_RESOURCE_DESC             desc = {};
+	desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	desc.Width = sizeof(BloomParams) + 255 & ~255;
+	desc.Height = 1;
+	desc.DepthOrArraySize = 1;
+	desc.MipLevels = 1;
+	desc.Format = DXGI_FORMAT_UNKNOWN;
+	desc.SampleDesc.Count = 1;
+	desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
-	HRESULT hr = mDevice->CreateCommittedResource(
+	const HRESULT hr = mDevice->CreateCommittedResource(
 		&heapProps, D3D12_HEAP_FLAG_NONE, &desc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr, IID_PPV_ARGS(&mBloomCb)
@@ -76,8 +76,8 @@ void PPBloom::Update(float) {
 void PPBloom::Execute(const PostProcessContext& context) {
 	auto* cmd = context.commandList;
 
-	void*   pData = nullptr;
-	HRESULT hr    = mBloomCb->Map(0, nullptr, &pData);
+	void*         pData = nullptr;
+	const HRESULT hr    = mBloomCb->Map(0, nullptr, &pData);
 	UASSERT(
 		SUCCEEDED(hr) && pData != nullptr &&
 		"Failed to map Bloom constant buffer"
@@ -98,7 +98,7 @@ void PPBloom::Execute(const PostProcessContext& context) {
 		context.inputTexture->GetDesc().MipLevels
 	);
 
-	D3D12_GPU_DESCRIPTOR_HANDLE srv = mSrvManager->GetGPUDescriptorHandle(
+	const D3D12_GPU_DESCRIPTOR_HANDLE srv = mSrvManager->GetGPUDescriptorHandle(
 		mSrvIndex
 	);
 	cmd->SetGraphicsRootDescriptorTable(0, srv);
@@ -112,7 +112,7 @@ void PPBloom::Execute(const PostProcessContext& context) {
 
 /// @brief ルートシグネチャの作成
 void PPBloom::CreateRootSignature() {
-	D3D12_DESCRIPTOR_RANGE1 range = {
+	constexpr D3D12_DESCRIPTOR_RANGE1 range = {
 		.RangeType                         = D3D12_DESCRIPTOR_RANGE_TYPE_SRV,
 		.NumDescriptors                    = 1,
 		.BaseShaderRegister                = 0,
@@ -144,7 +144,7 @@ void PPBloom::CreateRootSignature() {
 		.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL
 	};
 
-	D3D12_VERSIONED_ROOT_SIGNATURE_DESC desc = {
+	const D3D12_VERSIONED_ROOT_SIGNATURE_DESC desc = {
 		.Version  = D3D_ROOT_SIGNATURE_VERSION_1_1,
 		.Desc_1_1 = {
 			.NumParameters     = 2,
@@ -170,7 +170,7 @@ void PPBloom::CreateRootSignature() {
 
 /// @brief パイプラインステートの作成
 void PPBloom::CreatePipelineState() {
-	D3D12_DEPTH_STENCIL_DESC depth = {
+	constexpr D3D12_DEPTH_STENCIL_DESC depth = {
 		.DepthEnable    = FALSE,
 		.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO,
 		.DepthFunc      = D3D12_COMPARISON_FUNC_LESS,

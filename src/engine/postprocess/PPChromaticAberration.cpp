@@ -31,7 +31,7 @@ void PPChromaticAberration::Init() {
 	D3D12_RESOURCE_DESC cbDesc = {};
 	cbDesc.Dimension           = D3D12_RESOURCE_DIMENSION_BUFFER;
 	cbDesc.Alignment           = 0;
-	cbDesc.Width               = (sizeof(CAParams) + 255) & ~255;
+	cbDesc.Width               = sizeof(CAParams) + 255 & ~255;
 	cbDesc.Height              = 1;
 	cbDesc.DepthOrArraySize    = 1;
 	cbDesc.MipLevels           = 1;
@@ -41,7 +41,7 @@ void PPChromaticAberration::Init() {
 	cbDesc.Layout              = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 	cbDesc.Flags               = D3D12_RESOURCE_FLAG_NONE;
 
-	D3D12_HEAP_PROPERTIES hp = {D3D12_HEAP_TYPE_UPLOAD};
+	constexpr D3D12_HEAP_PROPERTIES hp = {D3D12_HEAP_TYPE_UPLOAD};
 
 	mDevice->CreateCommittedResource(
 		&hp, D3D12_HEAP_FLAG_NONE, &cbDesc,
@@ -110,7 +110,7 @@ void PPChromaticAberration::Execute(const PostProcessContext& ctx) {
 
 /// @brief ルートシグネチャを作成します
 void PPChromaticAberration::CreateRootSignature() {
-	D3D12_DESCRIPTOR_RANGE1 range = {
+	constexpr D3D12_DESCRIPTOR_RANGE1 range = {
 		.RangeType                         = D3D12_DESCRIPTOR_RANGE_TYPE_SRV,
 		.NumDescriptors                    = 1,
 		.BaseShaderRegister                = 0,
@@ -137,7 +137,7 @@ void PPChromaticAberration::CreateRootSignature() {
 		.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL
 	};
 
-	D3D12_VERSIONED_ROOT_SIGNATURE_DESC desc = {
+	const D3D12_VERSIONED_ROOT_SIGNATURE_DESC desc = {
 		.Version  = D3D_ROOT_SIGNATURE_VERSION_1_1,
 		.Desc_1_1 = {
 			.NumParameters     = 2,
@@ -159,7 +159,7 @@ void PPChromaticAberration::CreateRootSignature() {
 
 /// @brief パイプラインステートを作成します
 void PPChromaticAberration::CreatePipelineState() {
-	D3D12_DEPTH_STENCIL_DESC ds = {
+	constexpr D3D12_DEPTH_STENCIL_DESC ds = {
 		.DepthEnable = FALSE, .StencilEnable = FALSE
 	};
 	PipelineState pso{

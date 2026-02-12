@@ -23,7 +23,9 @@ public:
 	void Update(float deltaTime) override;
 	void Execute(const PostProcessContext& context) override;
 
-	void SetStrength(float strength) { mBloomParams.bloomStrength = strength; }
+	void SetStrength(const float strength) {
+		mBloomParams.bloomStrength = strength;
+	}
 
 private:
 	void CreateRootSignature();

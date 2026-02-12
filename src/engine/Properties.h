@@ -1,14 +1,14 @@
 ﻿#pragma once
 #include <cstdint>
 #include <dxgiformat.h>
-#include <string>
-#include <runtime/core/math/Math.h>
+
+#include <core/math/Math.h>
 
 //-----------------------------------------------------------------------------
 // Engine
 //-----------------------------------------------------------------------------
-const std::string kEngineBuildDate = __DATE__;
-const std::string kEngineBuildTime = __TIME__;
+static constexpr std::string_view kEngineBuildDate = __DATE__;
+static constexpr std::string_view kEngineBuildTime = __TIME__;
 
 //-----------------------------------------------------------------------------
 // Window

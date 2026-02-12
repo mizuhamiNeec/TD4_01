@@ -9,9 +9,6 @@
 
 
 namespace Unnamed {
-	/// @brief 文字列からInputKeyを取得します
-	/// @param name キー名の文字列
-	/// @return 対応するInputKey（存在しない場合はstd::nullopt）
 	std::optional<InputKey> KeyNameTable::FromString(
 		const std::string_view name
 	) {
@@ -28,27 +25,19 @@ namespace Unnamed {
 		return it->second;
 	}
 
-	/// @brief InputKeyから文字列を取得します
-	/// @param key 入力キー
 	std::string_view KeyNameTable::ToString(const InputKey& key) {
 		const auto& map = KeyToName();
 		const auto  it  = map.find(key);
 		return it == map.end() ? std::string_view{} : it->second;
 	}
 
-	/// @brief キー名からInputKeyへのマッピングを取得します
-	/// @return キー名からInputKeyへのマッピング
 	const std::unordered_map<std::string, InputKey>& KeyNameTable::NameToKey() {
-		return sNameToKey;
+		return kSNameToKey;
 	}
 
-	/// @brief InputKeyからキー名へのマッピングを取得します
 	const std::unordered_map<InputKey, std::string_view, KeyHash>&
-	KeyNameTable::KeyToName() { return sKeyToName; }
+	KeyNameTable::KeyToName() { return kSKeyToName; }
 
-	/// @brief 文字列を正規化します（小文字化）
-	/// @param str 正規化する文字列
-	/// @return 正規化された文字列
 	std::string KeyNameTable::Normalize(std::string_view str) {
 		std::string ret;
 		ret.reserve(str.size());
@@ -64,10 +53,14 @@ namespace Unnamed {
 
 #define KEY(name, dev, code) { name, { InputDeviceType::dev, static_cast<uint32_t>(code) } }
 
-	const std::unordered_map<std::string, InputKey> KeyNameTable::sNameToKey = {
+	const std::unordered_map<std::string, InputKey> KeyNameTable::kSNameToKey =
+	{
 		//---------------------------------------------------------------------
 		// キーボード
 		//---------------------------------------------------------------------
+
+		KEY("`", KEYBOARD, VK_OEM_3), // ` <-- 1の左のキー
+
 		// 数字キー
 		KEY("0", KEYBOARD, 0x30), // 0
 		KEY("1", KEYBOARD, 0x31), // 1
@@ -191,9 +184,9 @@ namespace Unnamed {
 	};
 
 	const std::unordered_map<InputKey, std::string_view, KeyHash>
-	KeyNameTable::sKeyToName = [] {
+	KeyNameTable::kSKeyToName = [] {
 		std::unordered_map<InputKey, std::string_view, KeyHash> rev;
-		for (const auto& [name, key] : sNameToKey) rev.emplace(key, name);
+		for (const auto& [name, key] : kSNameToKey) rev.emplace(key, name);
 		return rev;
 	}();
 }

@@ -3,7 +3,7 @@
 #include <string>
 #include <unordered_map>
 
-#include <runtime/core/math/Math.h>
+#include <core/math/Math.h>
 
 /**
  * @brief 入力システムクラス

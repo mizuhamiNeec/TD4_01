@@ -51,8 +51,8 @@ void InputSystem::Init() {
 				);
 				return;
 			}
-			std::string key     = args[0];
-			std::string command = args[1];
+			const std::string key     = args[0];
+			const std::string command = args[1];
 			BindKey(key, command);
 		},
 		"Bind a key to a command."
@@ -68,7 +68,7 @@ void InputSystem::Init() {
 				);
 				return;
 			}
-			std::string key = args[0];
+			const std::string key = args[0];
 			UnbindKey(key);
 		},
 		"Unbind a key."
@@ -121,7 +121,7 @@ void InputSystem::ProcessInput(const long lParam) {
 		RID_INPUT, nullptr, &dwSize, sizeof(RAWINPUTHEADER)
 	);
 
-	auto lpb = std::make_unique<BYTE[]>(dwSize);
+	const auto lpb = std::make_unique<BYTE[]>(dwSize);
 	if (GetRawInputData(
 		    reinterpret_cast<HRAWINPUT>(static_cast<LPARAM>(lParam)), RID_INPUT,
 		    lpb.get(), &dwSize, sizeof(RAWINPUTHEADER)
@@ -139,9 +139,9 @@ void InputSystem::ProcessInput(const long lParam) {
 		keyName             = Unnamed::StrUtil::ToLowerCase(keyName);
 
 		if (!keyName.empty() && mKeyBindings.contains(keyName)) {
-			std::string cmd = mKeyBindings[keyName];
+			const std::string cmd = mKeyBindings[keyName];
 			if (cmd[0] == '+') {
-				std::string baseCmd = cmd.substr(1);
+				const std::string baseCmd = cmd.substr(1);
 
 				if (isKeyDown) {
 					// すでに押下中でない場合のみ triggered に追加
@@ -215,7 +215,8 @@ void InputSystem::ProcessInput(const long lParam) {
 
 		// マウスホイール
 		if (raw->data.mouse.usButtonFlags & RI_MOUSE_WHEEL) {
-			short wheelDelta = static_cast<short>(raw->data.mouse.usButtonData);
+			const short wheelDelta = static_cast<short>(raw->data.mouse.
+				usButtonData);
 			if (wheelDelta > 0) {
 				ExecuteCommand(mKeyBindings["mousewheelup"], true);
 				ExecuteCommand(mKeyBindings["mousewheelup"], false);
@@ -232,7 +233,7 @@ void InputSystem::ProcessInput(const long lParam) {
  * @return マウスの移動量（ピクセル）
  */
 Vec2 InputSystem::GetMouseDelta() {
-	Vec2 delta = mMouseDelta;
+	const Vec2 delta = mMouseDelta;
 	return delta;
 }
 
@@ -307,7 +308,9 @@ void InputSystem::UnbindAll() { mKeyBindings.clear(); }
  * @param command コマンド名
  * @param isDown キーが押された場合true、離された場合false
  */
-void InputSystem::ExecuteCommand(const std::string& command, bool isDown) {
+void InputSystem::ExecuteCommand(
+	const std::string& command, const bool isDown
+) {
 	// +/- プレフィックスの解析
 	std::string baseCommand   = command;
 	bool        isPlusCommand = false;
@@ -410,7 +413,7 @@ void InputSystem::UpdateMouseButtonState(
 		if (mKeyBindings.contains(buttonName)) {
 			const std::string cmd = mKeyBindings[buttonName];
 			if (cmd[0] == '+') {
-				std::string baseCmd         = cmd.substr(1);
+				const std::string baseCmd   = cmd.substr(1);
 				mTriggeredCommands[baseCmd] = true;
 				mPressedCommands[baseCmd]   = true; // 長押し状態を設定
 			}
@@ -421,7 +424,7 @@ void InputSystem::UpdateMouseButtonState(
 		if (mKeyBindings.contains(buttonName)) {
 			const std::string cmd = mKeyBindings[buttonName];
 			if (cmd[0] == '+') {
-				std::string baseCmd        = cmd.substr(1);
+				const std::string baseCmd  = cmd.substr(1);
 				mPressedCommands[baseCmd]  = false; // 長押し状態を解除
 				mReleasedCommands[baseCmd] = true;
 			}

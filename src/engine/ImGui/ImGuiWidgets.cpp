@@ -4,11 +4,10 @@
 #include <imgui_internal.h>
 #include <pch.h>
 
-#include <runtime/core/math/Math.h>
+#include <core/math/Math.h>
 
+#include <engine/Properties.h>
 #include <engine/ImGui/Icons.h>
-
-#include <runtime/core/Properties.h>
 
 namespace ImGuiWidgets {
 	/// @brief Dragウィジェット用のスタイルカラーをプッシュします。
@@ -173,10 +172,10 @@ namespace ImGuiWidgets {
 		ImGui::DragFloat4(label.c_str(), controlPoints, 0.01f, 0.0f, 1.0f);
 
 		// ウィンドウ内の利用可能領域から正方形のキャンバスサイズを決定
-		ImVec2 avail = ImGui::GetContentRegionAvail();
-		float  side  = (avail.x < avail.y) ? avail.x : avail.y;
-		ImVec2 canvasSize(side, side);
-		ImVec2 canvasPos = ImGui::GetCursorScreenPos();
+		const ImVec2 avail = ImGui::GetContentRegionAvail();
+		const float  side  = avail.x < avail.y ? avail.x : avail.y;
+		const ImVec2 canvasSize(side, side);
+		const ImVec2 canvasPos = ImGui::GetCursorScreenPos();
 		ImGui::InvisibleButton("canvas", canvasSize);
 
 		ImDrawList* drawList = ImGui::GetWindowDrawList();
@@ -223,11 +222,11 @@ namespace ImGuiWidgets {
 		}
 
 		// 各コントロールポイントのキャンバス上の位置を計算
-		auto cp1 = ImVec2(
+		const auto cp1 = ImVec2(
 			canvasPos.x + controlPoints[0] * canvasSize.x,
 			canvasPos.y + (1.0f - controlPoints[1]) * canvasSize.y
 		);
-		auto cp2 = ImVec2(
+		const auto cp2 = ImVec2(
 			canvasPos.x + controlPoints[2] * canvasSize.x,
 			canvasPos.y + (1.0f - controlPoints[3]) * canvasSize.y
 		);
@@ -261,7 +260,7 @@ namespace ImGuiWidgets {
 		// ドラッグ中なら、マウス位置に応じてコントロールポイントを更新（キャンバス座標を[0,1]に変換）
 		auto clamp = [
 			](const float v, const float lo, const float hi) -> float {
-			return (v < lo) ? lo : ((v > hi) ? hi : v);
+			return v < lo ? lo : v > hi ? hi : v;
 		};
 		if (bIsDraggingCp1) {
 			const float nx = clamp(
@@ -320,8 +319,8 @@ namespace ImGuiWidgets {
 
 		// 2) サイズを見積もる
 		const bool  hasLabel = label && label[0];
-		const float gap      = (labelDir == ImGuiDir_Left ||
-		                        labelDir == ImGuiDir_Right) ?
+		const float gap      = labelDir == ImGuiDir_Left ||
+		                       labelDir == ImGuiDir_Right ?
 			                       style.ItemSpacing.x :
 			                       style.ItemSpacing.y;
 
@@ -334,9 +333,10 @@ namespace ImGuiWidgets {
 			                         ImGui::CalcTextSize(label) :
 			                         ImVec2(0, 0);
 		if (size.x <= 0.0f) size.x = std::max(iconBaseSize.x, labelSize.x);
-		if (size.y <= 0.0f) size.y = iconBaseSize.y + (hasLabel ?
-			                             (labelSize.y + gap) :
-			                             0);
+		if (size.y <= 0.0f)
+			size.y = iconBaseSize.y + (hasLabel ?
+				                           labelSize.y + gap :
+				                           0);
 
 		const ImVec2 pad = style.FramePadding;
 		const ImVec2 innerStart = {start.x + pad.x, start.y + pad.y};
@@ -354,7 +354,7 @@ namespace ImGuiWidgets {
 		// 横レイアウト時は幅を再調整
 		if (labelDir == ImGuiDir_Left || labelDir == ImGuiDir_Right)
 			if (size.x <= 0.0f)
-				size.x = iconSize.x + (hasLabel ? (labelSize.x + gap) : 0) + pad
+				size.x = iconSize.x + (hasLabel ? labelSize.x + gap : 0) + pad
 				         .x * 2.0f;
 
 		// 3) InvisibleButton でヒット領域登録
@@ -370,7 +370,7 @@ namespace ImGuiWidgets {
 			case ImGuiDir_Down: {
 				// 垂直方向の合計サイズ
 				const float blockH = iconSize.y + (hasLabel ?
-					                                   (labelSize.y + gap) :
+					                                   labelSize.y + gap :
 					                                   0.0f);
 				const float y0 = innerStart.y + (innerSize.y - blockH) * 0.5f;
 
@@ -399,7 +399,7 @@ namespace ImGuiWidgets {
 			default: {
 				// 水平方向の合計サイズ
 				const float blockW = iconSize.x + (hasLabel ?
-					                                   (labelSize.x + gap) :
+					                                   labelSize.x + gap :
 					                                   0.0f);
 				const float x0 = innerStart.x + (innerSize.x - blockW) * 0.5f;
 				// ブロック X 先頭
@@ -448,20 +448,31 @@ namespace ImGuiWidgets {
 	/// @brief アイコン付きメニューアイテムを表示します。
 	/// @param icon アイコン文字列（フォントアイコン）
 	/// @param label ラベル文字列
+	/// @param shortcut ショートカット文字列
+	/// @param selected 選択状態かどうか
+	/// @param enabled メニューアイテムが有効かどうか
 	/// @return メニューアイテムが選択された場合にtrueを返します
-	bool MenuItemWithIcon(const char* icon, const char* label) {
-		std::string ret;
-		if (icon && icon[0] != '\0') {
-			ret = std::string(icon) + " " + label;
-		} else { ret = std::string(kIconSpace) + " " + label; }
-		return ImGui::MenuItem(ret.c_str());
+	bool MenuItemWithIcon(
+		const char*    label,
+		const uint32_t icon,
+		const char*    shortcut,
+		const bool     selected,
+		const bool     enabled
+	) {
+		return ImGui::MenuItemEx(
+			label,
+			Unnamed::StrUtil::ConvertToUtf8(icon).c_str(),
+			shortcut,
+			selected,
+			enabled
+		);
 	}
 
 	/// @brief メインメニュー用のBeginMenuを開始します。
 	///	@param label メニューラベル
 	/// @param enabled メニューが有効かどうか
 	/// @return メニューが開かれた場合にtrueを返します。
-	bool BeginMainMenu(const char* label, bool enabled) {
+	bool BeginMainMenu(const char* label, const bool enabled) {
 		ImGui::PushStyleVar(
 			ImGuiStyleVar_FramePadding,
 			ImVec2(
@@ -480,6 +491,28 @@ namespace ImGuiWidgets {
 		const bool ret = ImGui::BeginMenu(label, enabled);
 		ImGui::PopStyleVar(2);
 		return ret;
+	}
+
+	void HandleHoveredComboMenuMouseWheelScroll(
+		uint32_t& index, const uint32_t itemSize
+	) {
+		if (ImGui::IsItemHovered()) {
+			if (itemSize == 0) {
+				index = 0;
+				return;
+			}
+
+			const float wheel = ImGui::GetIO().MouseWheel;
+			if (wheel == 0.0f) return;
+
+			const int delta = static_cast<int>(wheel);
+
+			const int maxIndex = static_cast<int>(itemSize - 1);
+			const int next     = std::clamp(
+				static_cast<int>(index) - delta, 0, maxIndex
+			);
+			index = static_cast<uint32_t>(next);
+		}
 	}
 }
 #endif

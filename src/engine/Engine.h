@@ -1,29 +1,35 @@
 #pragma once
 #include <memory>
+
+#include <core/assets/AssetID.h>
+
 #include <engine/EngineConfig.h>
-#include <engine/ImGui/ImGuiManager.h>
-#include <engine/Line/LineCommon.h>
-#include <engine/Model/ModelCommon.h>
-#include <engine/Object3D/Object3DCommon.h>
-#include <engine/OldConsole/Console.h>
-#include <engine/particle/ParticleManager.h>
-#include <engine/postprocess/IPostProcess.h>
 #include <engine/postprocess/PostProcessPipeline.h>
-#include <engine/renderer/D3D12.h>
 #include <engine/renderer/RenderTargets.h>
-#include <engine/ResourceSystem/Manager/ResourceManager.h>
-#include <engine/Sprite/SpriteCommon.h>
-#include <engine/unnamed/subsystem/input/UInputSystem.h>
-#include <engine/unnamed/subsystem/time/TimeSystem.h>
-#include <game/scene/GameScene.h>
 
-#include "Platform/WindowManager.h"
-
-#include "runtime/world/UWorld.h"
-
+class ImGuiManager;
+class ModelCommon;
+class Object3DCommon;
+class LineCommon;
+class ParticleManager;
+class SpriteCommon;
 class AudioManager;
+class TexManager;
+class ResourceManager;
 
 namespace Unnamed {
+	class ConsoleSystem;
+	class ConVarHelper;
+	class UWorld;
+
+	namespace Rhi {
+		class IRhiDevice;
+	}
+
+	namespace Render {
+		class RenderGraph;
+	}
+
 	/// @brief エンジンクラス
 	class Engine {
 	public:
@@ -33,48 +39,34 @@ namespace Unnamed {
 		int Run();
 
 		[[nodiscard]]
-		AudioManager* GetAudioManagerInstance() const {
-			return mAudioManager.get();
-		}
+		AudioManager* GetAudioManagerInstance() const;
 
 		[[nodiscard]]
-		D3D12* GetRendererInstance() const { return mRenderer.get(); }
+		D3D12* GetRendererInstance() const;
 
 		[[nodiscard]]
-		ResourceManager* GetResourceManagerInstance() const {
-			return mResourceManager.get();
-		}
+		ResourceManager* GetResourceManagerInstance() const;
 
 		[[nodiscard]]
-		SpriteCommon* GetSpriteCommonInstance() const {
-			return mSpriteCommon.get();
-		}
+		SpriteCommon* GetSpriteCommonInstance() const;
 
 		[[nodiscard]]
-		ParticleManager* GetParticleManagerInstance() const {
-			return mParticleManager.get();
-		}
+		ParticleManager* GetParticleManagerInstance() const;
 
 		[[nodiscard]]
-		SrvManager* GetSrvManagerInstance() const {
-			return mResourceManager->GetSrvManager();
-		}
+		SrvManager* GetSrvManagerInstance() const;
 
 		[[nodiscard]]
-		TexManager* GetTexManagerInstance() const {
-			return mResourceManager ?
-				       mResourceManager->GetTexManager() :
-				       nullptr;
-		}
+		TexManager* GetTexManagerInstance() const;
 
 		[[nodiscard]]
-		Vec2 GetViewportLTInstance() const { return mViewportLT; }
+		Vec2 GetViewportLTInstance() const;
 
 		[[nodiscard]]
-		Vec2 GetViewportSizeInstance() const { return mViewportSize; }
+		Vec2 GetViewportSizeInstance() const;
 
 		[[nodiscard]]
-		float& GetBlurStrengthInstance() { return mBlurStrength; }
+		float& GetBlurStrengthInstance();
 
 		void OnResize(uint32_t width, uint32_t height);
 		void ResizeOffscreenRenderTextures(uint32_t width, uint32_t height);
@@ -85,31 +77,16 @@ namespace Unnamed {
 		//Editor* GetEditor() const { return mEditor.get(); }
 
 		/// @brief ポストプロセスエフェクト数の取得
-		std::size_t GetPostChainSize() const {
-			return mPostProcessPipeline.GetPassCount();
-		}
+		std::size_t GetPostChainSize() const;
 
 		/// @brief ポストプロセスエフェクトの取得
-		IPostProcess* GetPostProcessAt(int index) const {
-			if (index < 0) { return nullptr; }
-			return mPostProcessPipeline.GetPassAt(static_cast<size_t>(index));
-		}
-
-		/// @brief ビューポートをメインウィンドウ全体へ設定
-		void SetViewportToMainWindow();
-
-		/// @brief ビューポート(左上座標/サイズ)をエディター UI の値で更新
-		void SetViewportFromEditor(float x, float y, float w, float h);
+		IPostProcess* GetPostProcessAt(int index) const;
 
 		/// @brief 現在の PingPong テクスチャの SRV (GPU ptr)
-		uint64_t GetActivePingSrvGpuPtr() const {
-			return mPostProcessPipeline.GetActivePingSrvGpuPtr();
-		}
+		uint64_t GetActivePingSrvGpuPtr() const;
 
 		/// @brief 現在の PingPong テクスチャの RTV リソース記述子
-		D3D12_RESOURCE_DESC GetActivePingRtvDesc() const {
-			return mPostProcessPipeline.GetActivePingRtvDesc();
-		}
+		D3D12_RESOURCE_DESC GetActivePingRtvDesc() const;
 
 	private:
 		/// @brief 初期化処理
@@ -125,47 +102,37 @@ namespace Unnamed {
 		/// @param args コンストラクタに渡す引数
 		/// @return 切り替えたワールドの参照
 		template <class TWorld, class... Args>
-		TWorld& SwitchWorld(Args&&... args) {
-			static_assert(std::is_base_of_v<UWorld, TWorld>);
-
-			if (mWorld) {
-				mWorld->Shutdown();
-				mWorld.reset();
-			}
-
-			auto newWorld = std::make_unique<TWorld>(
-				std::forward<Args>(args)...
-			);
-			TWorld* raw = newWorld.get();
-
-			mWorld = std::move(newWorld);
-
-			mWorld->Initialize();
-			return *raw;
-		}
+		TWorld& SwitchWorld(Args&&... args);
 
 		/// @brief 現在のワールドを取得します。
 		/// @return 現在のワールドの参照
-		UWorld* GetWorld() const { return mWorld.get(); }
+		UWorld* GetWorld() const;
 
-	private:
 		EngineConfig mConfig;
 
-		// 基幹システム
-		std::unique_ptr<ConsoleSystem> mConsoleSystem;
-		std::unique_ptr<TimeSystem>    mTimeSystem;
-
 		// 基本システム
-		std::unique_ptr<WindowManager> mWindowManager;
-		std::unique_ptr<UInputSystem>  mInputSystem;
+		std::unique_ptr<class AssetManager>       mAssetManager;
+		std::unique_ptr<class PlatformEventsImpl> mPlatformEvents;
+		std::unique_ptr<class WindowManager>      mWindowManager;
+
+		// 基幹システム
+		std::unique_ptr<ConsoleSystem>        mConsoleSystem;
+		std::unique_ptr<class TerminalSystem> mTerminalSystem;
+		std::unique_ptr<ConVarHelper>         mConVarHelper;
+
+		std::unique_ptr<class TimeSystem>   mTimeSystem;
+		std::unique_ptr<class UInputSystem> mInputSystem;
+
+		std::unique_ptr<Rhi::IRhiDevice>     mRhiDevice;
+		std::unique_ptr<Render::RenderGraph> mGraph;
+
+		AssetID test = kInvalidAssetID;
 
 		std::unique_ptr<UWorld> mWorld;
 
-		std::unique_ptr<Console> mConsole;
-		PostProcessPipeline      mPostProcessPipeline;
-		RenderTargets            mRenderTargets;
-		bool                     mSwapchainPassBegun = false;
-
+		PostProcessPipeline mPostProcessPipeline;
+		RenderTargets       mRenderTargets;
+		bool                mSwapchainPassBegun = false;
 
 		std::unique_ptr<ResourceManager> mResourceManager;
 

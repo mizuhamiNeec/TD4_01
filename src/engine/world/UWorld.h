@@ -1,11 +1,10 @@
 ﻿#pragma once
 #include <memory>
 
+#include <engine/scene/UScene.h>
 #include "core/guidgenerator/GuidGenerator.h"
-#include <runtime/scene/UScene.h>
 
 namespace Unnamed {
-
 	class JsonReader;
 
 	struct WorldTime {
@@ -32,7 +31,6 @@ namespace Unnamed {
 		virtual void OnSceneLoaded();
 		virtual void OnSceneUnloaded();
 
-	protected:
 		std::unique_ptr<UScene> mScene;
 		GuidGenerator           mGuidGenerator;
 		WorldTime               mTime;

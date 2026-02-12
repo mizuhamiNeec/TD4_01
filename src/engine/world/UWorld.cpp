@@ -2,8 +2,8 @@
 
 #include "engine/unnamed/subsystem/console/Log.h"
 
-#include "runtime/scene/UScene.h"
-#include "runtime/scene/USceneSerializer.h"
+#include "engine/scene/UScene.h"
+#include "engine/scene/USceneSerializer.h"
 
 namespace Unnamed {
 	static constexpr std::string_view kChannel = "UWorld";
@@ -13,9 +13,9 @@ namespace Unnamed {
 	void UWorld::Initialize() {}
 	void UWorld::Shutdown() { UnloadScene(); }
 
-	void UWorld::Tick(float deltaTime) {
+	void UWorld::Tick(const float deltaTime) {
 		deltaTime;
-		if (!mScene) { return; }
+		if (!mScene) {}
 
 		// DO SOMETHING	
 	}
@@ -45,7 +45,7 @@ namespace Unnamed {
 
 	void UWorld::UnloadScene() {
 		if (!mScene) { return; }
-		
+
 		OnSceneUnloaded();
 		mScene.reset();
 	}

@@ -141,7 +141,7 @@ namespace Unnamed {
 		// 索引から抜く
 		{
 			const auto key = component->GetTypeId();
-			auto       it  = mComponentsByType.find(key);
+			const auto it  = mComponentsByType.find(key);
 			if (it != mComponentsByType.end()) {
 				auto& vec = it->second;
 				std::erase(vec, component);

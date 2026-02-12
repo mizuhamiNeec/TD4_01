@@ -305,17 +305,14 @@ namespace Unnamed {
 		// RemoveComponent 等で mComponents が変更される可能性に備えてスナップショットを取る
 		std::vector<UBaseComponent*> snapshot;
 		snapshot.reserve(mComponents.size());
-		for (auto& uptr : mComponents) {
-			snapshot.push_back(uptr.get());
-		}
+		for (auto& uptr : mComponents) { snapshot.push_back(uptr.get()); }
 
 		for (UBaseComponent* c : snapshot) {
 			if (!c) continue;
-			if constexpr (std::is_same_v<std::invoke_result_t<Func, UBaseComponent&>, bool>) {
+			if constexpr (std::is_same_v<
+				std::invoke_result_t<Func, UBaseComponent&>, bool>) {
 				if (!std::forward<Func>(func)(*c)) { return false; }
-			} else {
-				std::forward<Func>(func)(*c);
-			}
+			} else { std::forward<Func>(func)(*c); }
 		}
 		return true;
 	}
@@ -324,17 +321,14 @@ namespace Unnamed {
 	bool UEntity::ForEachComponent(Func&& func) const {
 		std::vector<const UBaseComponent*> snapshot;
 		snapshot.reserve(mComponents.size());
-		for (const auto& uptr : mComponents) {
-			snapshot.push_back(uptr.get());
-		}
+		for (const auto& uptr : mComponents) { snapshot.push_back(uptr.get()); }
 
 		for (const UBaseComponent* c : snapshot) {
 			if (!c) continue;
-			if constexpr (std::is_same_v<std::invoke_result_t<Func, const UBaseComponent&>, bool>) {
+			if constexpr (std::is_same_v<
+				std::invoke_result_t<Func, const UBaseComponent&>, bool>) {
 				if (!std::forward<Func>(func)(*c)) { return false; }
-			} else {
-				std::forward<Func>(func)(*c);
-			}
+			} else { std::forward<Func>(func)(*c); }
 		}
 		return true;
 	}
@@ -352,18 +346,19 @@ namespace Unnamed {
 
 		const TypeId typeId = HashTypeName(ComponentType::GetStableName());
 		const auto   it     = mComponentsByType.find(typeId);
-		if (it == mComponentsByType.end() || it->second.empty()) { return true; }
+		if (it == mComponentsByType.end() || it->second.empty()) {
+			return true;
+		}
 
 		// RemoveComponent 等で vector が変わる可能性に備えてスナップショットを取る
-		std::vector<UBaseComponent*> snapshot = it->second;
+		const std::vector<UBaseComponent*> snapshot = it->second;
 		for (UBaseComponent* base : snapshot) {
 			if (!base) continue;
 			auto* c = static_cast<ComponentType*>(base);
-			if constexpr (std::is_same_v<std::invoke_result_t<Func, ComponentType&>, bool>) {
+			if constexpr (std::is_same_v<
+				std::invoke_result_t<Func, ComponentType&>, bool>) {
 				if (!std::forward<Func>(func)(*c)) { return false; }
-			} else {
-				std::forward<Func>(func)(*c);
-			}
+			} else { std::forward<Func>(func)(*c); }
 		}
 		return true;
 	}
@@ -381,17 +376,18 @@ namespace Unnamed {
 
 		const TypeId typeId = HashTypeName(ComponentType::GetStableName());
 		const auto   it     = mComponentsByType.find(typeId);
-		if (it == mComponentsByType.end() || it->second.empty()) { return true; }
+		if (it == mComponentsByType.end() || it->second.empty()) {
+			return true;
+		}
 
-		std::vector<UBaseComponent*> snapshot = it->second;
+		const std::vector<UBaseComponent*> snapshot = it->second;
 		for (UBaseComponent* base : snapshot) {
 			if (!base) continue;
 			const auto* c = static_cast<const ComponentType*>(base);
-			if constexpr (std::is_same_v<std::invoke_result_t<Func, const ComponentType&>, bool>) {
+			if constexpr (std::is_same_v<
+				std::invoke_result_t<Func, const ComponentType&>, bool>) {
 				if (!std::forward<Func>(func)(*c)) { return false; }
-			} else {
-				std::forward<Func>(func)(*c);
-			}
+			} else { std::forward<Func>(func)(*c); }
 		}
 		return true;
 	}

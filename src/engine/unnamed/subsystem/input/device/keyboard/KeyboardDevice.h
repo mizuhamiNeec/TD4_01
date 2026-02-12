@@ -1,14 +1,14 @@
 ﻿#pragma once
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
-#include "engine/unnamed/subsystem/input/device/base/BaseInputDevice.h"
 #endif
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
+#include <unordered_map>
 #include <Windows.h>
 
-#include <unordered_map>
+#include <engine/unnamed/subsystem/input/device/base/BaseInputDevice.h>
 
 namespace Unnamed {
 	/// @brief キーボードデバイスクラス

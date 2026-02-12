@@ -1,5 +1,5 @@
 #pragma once
-#include <runtime/core/math/Vec2.h>
+#include <core/math/Vec2.h>
 
 namespace Unnamed::Gui {
 	/// @brief 矩形構造体

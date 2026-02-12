@@ -2,7 +2,7 @@
 
 #include <engine/unnamed/subsystem/console/Log.h>
 
-#include <runtime/core/math/Math.h>
+#include <core/math/Math.h>
 
 #include "UiButton.h"
 #include "UiPanel.h"
@@ -39,8 +39,7 @@ namespace Unnamed::Gui {
 		}
 	}
 
-	UiWidget::UiWidget() : mVisible(true),
-	                       mEnabled(true) {}
+	UiWidget::UiWidget() {}
 
 	UiWidget::~UiWidget() = default;
 
@@ -177,7 +176,7 @@ namespace Unnamed::Gui {
 	}
 
 	void UiWidget::SetSizePolicy(
-		UiSizePolicyAxis horizontal, UiSizePolicyAxis vertical
+		const UiSizePolicyAxis horizontal, const UiSizePolicyAxis vertical
 	) {
 		mSizePolicy.horizontal = horizontal;
 		mSizePolicy.vertical   = vertical;
@@ -231,7 +230,7 @@ namespace Unnamed::Gui {
 		}
 
 		// 参照だけ持っている子
-		for (auto* refChild : mReferenceChildren) {
+		for (const auto* refChild : mReferenceChildren) {
 			if (refChild) { refChild->BuildDrawCommands(out); }
 		}
 	}
@@ -265,14 +264,14 @@ namespace Unnamed::Gui {
 		// 参照だけ持っている子も再帰
 		// mReferenceChildren は非 const getterがないので、static 関数を
 		// UiWidget 内に追加するか、friend 的にアクセスできるようにする必要あり。
-		for (auto* refChild : w->mReferenceChildren) {
+		for (const auto* refChild : w->mReferenceChildren) {
 			// 同じクラス内なのでアクセス可能
 			if (refChild) { DebugDrawUi(refChild); }
 		}
 #endif
 	}
 
-	UiWidget* UiWidget::HitTest(float x, float y) {
+	UiWidget* UiWidget::HitTest(const float x, const float y) {
 		if (!mVisible || !mEnabled) return nullptr;
 
 		// まず z-order 的に後ろの方から（所有子）
@@ -293,8 +292,8 @@ namespace Unnamed::Gui {
 
 		const Rect& r      = mGlobalRect;
 		const bool  inside =
-			(x >= r.x) && (x <= r.x + r.width) &&
-			(y >= r.y) && (y <= r.y + r.height);
+			x >= r.x && x <= r.x + r.width &&
+			y >= r.y && y <= r.y + r.height;
 
 		return inside ? this : nullptr;
 	}
@@ -376,7 +375,7 @@ namespace Unnamed::Gui {
 
 		// Rect
 		if (reader.Has("rect")) {
-			Rect r = ReadRect(reader["rect"].GetArray());
+			const Rect r = ReadRect(reader["rect"].GetArray());
 			SetLocalRect(r);
 		}
 
@@ -430,8 +429,8 @@ namespace Unnamed::Gui {
 
 		// 子
 		if (reader.Has("children")) {
-			JsonReader   children = reader["children"].GetArray();
-			const size_t count    = children.Size();
+			const JsonReader children = reader["children"].GetArray();
+			const size_t     count    = children.Size();
 			for (size_t i = 0; i < count; ++i) {
 				JsonReader childNode   = children[i];
 				auto       childWidget = CreateFromJson(childNode);
@@ -471,7 +470,7 @@ namespace Unnamed::Gui {
 			x = anchorLeft + mLocalRect.x;
 			w = mLocalRect.width;
 		} else {
-			const float available = (anchorRight - anchorLeft);
+			const float available = anchorRight - anchorLeft;
 			x                     = anchorLeft + mMargins.left;
 			w                     = available - mMargins.left - mMargins.right;
 		}
@@ -481,7 +480,7 @@ namespace Unnamed::Gui {
 			y = anchorTop + mLocalRect.y;
 			h = mLocalRect.height;
 		} else {
-			const float available = (anchorBottom - anchorTop);
+			const float available = anchorBottom - anchorTop;
 			y                     = anchorTop + mMargins.top;
 			h                     = available - mMargins.top - mMargins.bottom;
 		}

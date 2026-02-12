@@ -122,10 +122,10 @@ namespace Unnamed::Gui {
 		if (!node.Valid() || node.Size() < 2) { return policy; }
 		const auto h      = node[0].GetString();
 		const auto v      = node[1].GetString();
-		policy.horizontal = (h == "Expand") ?
+		policy.horizontal = h == "Expand" ?
 			                    UiSizePolicyAxis::EXPAND :
 			                    UiSizePolicyAxis::FIXED;
-		policy.vertical = (v == "Expand") ?
+		policy.vertical = v == "Expand" ?
 			                  UiSizePolicyAxis::EXPAND :
 			                  UiSizePolicyAxis::FIXED;
 		return policy;

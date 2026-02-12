@@ -43,7 +43,7 @@ namespace Unnamed::Gui {
 				preferred = 64.0f; // TODO: パラメータ化
 			}
 
-			float clamped = std::clamp(
+			const float clamped = std::clamp(
 				preferred, constraint.minWidth,
 				constraint.maxWidth
 			);
@@ -80,7 +80,7 @@ namespace Unnamed::Gui {
 		// 子のローカル矩形を設定していく
 		float currentXLocal = mPadding.left;
 
-		for (auto& info : childrenInfo) {
+		for (const auto& info : childrenInfo) {
 			UiWidget* child = info.widget;
 
 			Rect childLocal = child->GetLocalRect();

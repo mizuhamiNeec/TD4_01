@@ -24,7 +24,7 @@ namespace Unnamed::Gui {
 	}
 
 	std::shared_ptr<UiDocument> UiDocument::Load(const std::string& path) {
-		JsonReader reader(path); // ファイル読み込みコンストラクタ
+		const JsonReader reader(path); // ファイル読み込みコンストラクタ
 		if (!reader.Valid()) { return nullptr; }
 
 		auto doc = std::make_shared<UiDocument>();
@@ -32,8 +32,8 @@ namespace Unnamed::Gui {
 		if (reader.Has("name")) { doc->SetName(reader["name"].GetString()); }
 
 		if (reader.Has("root")) {
-			JsonReader rootNode   = reader["root"];
-			auto       rootWidget = UiWidget::CreateFromJson(rootNode);
+			const JsonReader rootNode   = reader["root"];
+			auto             rootWidget = UiWidget::CreateFromJson(rootNode);
 			if (rootWidget) { doc->SetRootWidget(std::move(rootWidget)); }
 		}
 
@@ -57,7 +57,7 @@ namespace Unnamed::Gui {
 	) { mNamedWidgets[id] = widget; }
 
 	UiWidget* UiDocument::FindWidgetById(const std::string& id) {
-		auto it = mNamedWidgets.find(id);
+		const auto it = mNamedWidgets.find(id);
 		if (it != mNamedWidgets.end()) { return it->second; }
 		return nullptr;
 	}

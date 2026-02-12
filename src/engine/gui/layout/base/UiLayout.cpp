@@ -1,6 +1,6 @@
 ﻿#include "UiLayout.h"
 
-#include "runtime/gui/UiSerializationHelpers.h"
+#include "engine/gui/UiSerializationHelpers.h"
 
 namespace Unnamed::Gui {
 	UiLayout::UiLayout()  = default;
@@ -28,7 +28,7 @@ namespace Unnamed::Gui {
 		writer.Write(mSpacing);
 	}
 
-	void UiLayout::OnDeserialize(JsonReader& reader) {
+	void UiLayout::OnDeserialize(const JsonReader& reader) {
 		if (reader.Has("padding")) {
 			SetPadding(ReadPadding(reader["padding"].GetArray()));
 		}

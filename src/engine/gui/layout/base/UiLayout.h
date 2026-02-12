@@ -1,6 +1,5 @@
 ﻿#pragma once
-#include "runtime/gui/UiWidget.h"
-
+#include "engine/gui/UiWidget.h"
 
 namespace Unnamed::Gui {
 	struct LayoutPadding {
@@ -33,7 +32,7 @@ namespace Unnamed::Gui {
 
 	protected:
 		void OnSerialize(JsonWriter& writer) const override;
-		void OnDeserialize(JsonReader& reader);
+		void OnDeserialize(const JsonReader& reader) override;
 
 		LayoutPadding mPadding;
 		float         mSpacing = 0.0f;

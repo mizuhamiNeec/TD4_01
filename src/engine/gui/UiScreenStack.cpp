@@ -10,7 +10,7 @@ namespace Unnamed::Gui {
 	void UiScreenStack::PushScreen(std::shared_ptr<UiScreen> screen) {
 		if (!screen || !mUiRoot) return;
 
-		UiDocument* doc = screen->GetDocument();
+		const UiDocument* doc = screen->GetDocument();
 		if (!doc) return;
 
 		UiWidget* documentRoot = doc->GetRootWidget();
@@ -30,12 +30,12 @@ namespace Unnamed::Gui {
 	void UiScreenStack::PopScreen() {
 		if (mScreens.empty()) { return; }
 
-		auto screen = mScreens.back();
+		const auto screen = mScreens.back();
 
 		// ★ 追加: UiRootから参照を外す
 		if (screen && mUiRoot && mUiRoot->GetRootWidget()) {
-			if (auto* doc = screen->GetDocument()) {
-				if (auto* docRoot = doc->GetRootWidget()) {
+			if (const auto* doc = screen->GetDocument()) {
+				if (const auto* docRoot = doc->GetRootWidget()) {
 					mUiRoot->GetRootWidget()->RemoveChildReference(docRoot);
 				}
 			}
@@ -52,8 +52,8 @@ namespace Unnamed::Gui {
 		if (mUiRoot && mUiRoot->GetRootWidget()) {
 			for (auto& screen : mScreens) {
 				if (screen) {
-					if (auto* doc = screen->GetDocument()) {
-						if (auto* docRoot = doc->GetRootWidget()) {
+					if (const auto* doc = screen->GetDocument()) {
+						if (const auto* docRoot = doc->GetRootWidget()) {
 							mUiRoot->GetRootWidget()->RemoveChildReference(
 								docRoot
 							);
@@ -73,7 +73,7 @@ namespace Unnamed::Gui {
 		DevMsg(kChannel, "Clear: all screens removed\n");
 	}
 
-	void UiScreenStack::Tick(float deltaTime) {
+	void UiScreenStack::Tick(const float deltaTime) {
 		for (auto& screen : mScreens) {
 			if (screen) { screen->OnUpdate(deltaTime); }
 		}

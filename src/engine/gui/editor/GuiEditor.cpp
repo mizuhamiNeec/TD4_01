@@ -2,20 +2,20 @@
 
 #include "engine/unnamed/subsystem/console/Log.h"
 
-#include "runtime/gui/UiButton.h"
-#include "runtime/gui/UiPanel.h"
-#include "runtime/gui/UiRoot.h"
-#include "runtime/gui/UiScreenStack.h"
-#include "runtime/gui/UiWidget.h"
-#include "runtime/gui/layout/UiHorizontalLayout.h"
-#include "runtime/gui/layout/UiVerticalLayout.h"
+#include "engine/gui/UiButton.h"
+#include "engine/gui/UiPanel.h"
+#include "engine/gui/UiRoot.h"
+#include "engine/gui/UiScreenStack.h"
+#include "engine/gui/UiWidget.h"
+#include "engine/gui/layout/UiHorizontalLayout.h"
+#include "engine/gui/layout/UiVerticalLayout.h"
 
 #ifdef _DEBUG
 namespace Unnamed::Gui {
 	void DrawWidgetTreeNode(UiWidget* widget) {
 		if (!widget) return;
 
-		const bool isSelected = (widget == gSelectedWidget);
+		const bool isSelected = widget == gSelectedWidget;
 
 		ImGuiTreeNodeFlags flags =
 			ImGuiTreeNodeFlags_OpenOnArrow |
@@ -152,8 +152,8 @@ namespace Unnamed::Gui {
 	}
 
 	void DrawNameInspector(UiWidget* widget) {
-		auto name = std::string(widget->GetName());
-		char buffer[128]{};
+		const auto name = std::string(widget->GetName());
+		char       buffer[128]{};
 		std::snprintf(buffer, sizeof(buffer), "%s", name.c_str());
 
 		if (ImGui::InputText("Name", buffer, sizeof(buffer))) {
@@ -260,11 +260,12 @@ namespace Unnamed::Gui {
 				bool                      needsRestore = false;
 
 				if (screenStack && screenStack->GetUiRoot()) {
-					UiWidget* uiRootWidget = screenStack->GetUiRoot()->
+					const UiWidget* uiRootWidget = screenStack->GetUiRoot()->
 						GetRootWidget();
 					// UiRootの最初の子がactiveDocumentのroot
 					if (uiRootWidget && !uiRootWidget->GetChildren().empty()) {
-						UiWidget* firstChild = uiRootWidget->GetChildren()[0].
+						const UiWidget* firstChild = uiRootWidget->GetChildren()
+							[0].
 							get();
 						if (firstChild) {
 							// 子を取り出してDocumentに設定
@@ -282,7 +283,7 @@ namespace Unnamed::Gui {
 				}
 
 				// 保存実行
-				bool saveSuccess = activeDocument->Save(pathBuffer);
+				const bool saveSuccess = activeDocument->Save(pathBuffer);
 
 				// rootWidgetをUiRootに戻す
 				if (needsRestore) {
@@ -314,7 +315,7 @@ namespace Unnamed::Gui {
 
 				if (screenStack) {
 					screenStack->Clear();
-					auto screen = std::make_shared<UiScreen>(doc);
+					const auto screen = std::make_shared<UiScreen>(doc);
 					screenStack->PushScreen(screen);
 				}
 			} else {
@@ -338,7 +339,9 @@ namespace Unnamed::Gui {
 				// ランタイムの画面にも適用
 				if (screenStack) {
 					screenStack->Clear();
-					auto screen = std::make_shared<UiScreen>(activeDocument);
+					const auto screen = std::make_shared<UiScreen>(
+						activeDocument
+					);
 					screenStack->PushScreen(screen);
 				}
 			}

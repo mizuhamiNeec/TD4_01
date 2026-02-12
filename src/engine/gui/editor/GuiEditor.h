@@ -1,8 +1,6 @@
 #pragma once
-#include "engine/ImGui/ImGuiManager.h"
-
-#include "runtime/gui/UiDocumentManager.h"
-#include "runtime/gui/UiScreenStack.h"
+#include "engine/gui/UiDocumentManager.h"
+#include "engine/gui/UiScreenStack.h"
 
 #ifdef _DEBUG
 namespace Unnamed::Gui {

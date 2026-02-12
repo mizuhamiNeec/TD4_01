@@ -2,7 +2,7 @@
 
 #include <engine/unnamed/subsystem/console/Log.h>
 
-#include <runtime/gui/UiWidget.h>
+#include <engine/gui/UiWidget.h>
 
 namespace Unnamed::Gui {
 	static constexpr std::string_view kChannel = "UiRoot";

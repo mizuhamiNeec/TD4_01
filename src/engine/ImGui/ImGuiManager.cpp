@@ -4,7 +4,7 @@
 
 #include <engine/Engine.h>
 #include <engine/ImGui/ImGuiManager.h>
-#include <engine/Platform/WindowsUtils.h>
+#include <engine/platform/WindowsUtils.h>
 #include <engine/renderer/SrvManager.h>
 
 #include "ImGuiUtil.h"
@@ -13,7 +13,7 @@
 /// @param renderer D3D12レンダラーへのポインタ
 /// @param srvManager SRVマネージャーへのポインタ
 ImGuiManager::ImGuiManager(
-	HWND        hwnd,
+	const HWND  hwnd,
 	D3D12*      renderer,
 	SrvManager* srvManager
 ) :
@@ -77,31 +77,27 @@ ImGuiManager::ImGuiManager(
 	init_info.SrvDescriptorHeap       = mSrvManager->GetDescriptorHeap();
 	init_info.UserData                = this;
 
-	auto AllocFn =
-		[](
+	init_info.SrvDescriptorAllocFn = [](
 		ImGui_ImplDX12_InitInfo*     info,
 		D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle,
 		D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle
 	) {
-		const auto mgr   = static_cast<ImGuiManager*>(info->UserData);
-		const auto index = mgr->GetSrvManager()->AllocateForTexture2D();
-		*cpuHandle       = mgr->GetSrvManager()->GetCPUDescriptorHandle(index);
-		*gpuHandle       = mgr->GetSrvManager()->GetGPUDescriptorHandle(index);
-	};
-
-	auto FreeFn =
-		[](
+			const auto mgr = static_cast<ImGuiManager*>(info->UserData);
+			const auto index = mgr->GetSrvManager()->AllocateForTexture2D();
+			*cpuHandle = mgr->GetSrvManager()->GetCPUDescriptorHandle(index);
+			*gpuHandle = mgr->GetSrvManager()->GetGPUDescriptorHandle(index);
+		};
+	init_info.SrvDescriptorFreeFn = [](
 		ImGui_ImplDX12_InitInfo*    info,
 		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle,
 		D3D12_GPU_DESCRIPTOR_HANDLE
 	) {
-		const auto mgr = static_cast<ImGuiManager*>(info->UserData);
-		auto cpuIndex = mgr->GetSrvManager()->GetIndexFromCPUHandle(cpuHandle);
-		mgr->GetSrvManager()->DeallocateTexture2D(cpuIndex);
-	};
-
-	init_info.SrvDescriptorAllocFn = AllocFn;
-	init_info.SrvDescriptorFreeFn  = FreeFn;
+			const auto mgr      = static_cast<ImGuiManager*>(info->UserData);
+			const auto cpuIndex = mgr->GetSrvManager()->GetIndexFromCPUHandle(
+				cpuHandle
+			);
+			mgr->GetSrvManager()->DeallocateTexture2D(cpuIndex);
+		};
 
 	ImGui_ImplDX12_Init(&init_info);
 }

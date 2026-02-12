@@ -1,4 +1,4 @@
-#include "BuiltInCommands.h"
+﻿#include "BuiltInCommands.h"
 
 #include <engine/unnamed/subsystem/console/ConsoleSystem.h>
 #include <engine/unnamed/subsystem/console/concommand/UnnamedConCommand.h>
@@ -53,7 +53,7 @@ namespace Unnamed {
 					case CVAR_TYPE::BOOL: {
 						const auto bVar = dynamic_cast<UnnamedConVar<bool>*>(
 							var);
-						bool bValue = static_cast<bool>(*bVar);
+						const bool bValue = static_cast<bool>(*bVar);
 						bVar->SetValue(!bValue);
 						Msg(kChannelNone, "Toggle: {}", bVar->GetValue());
 					}

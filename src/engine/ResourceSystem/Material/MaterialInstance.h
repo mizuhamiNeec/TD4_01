@@ -15,13 +15,13 @@ public:
 	}
 
 	std::string GetTexture(const std::string& slot) {
-		auto it = mTextureSlots.find(slot);
+		const auto it = mTextureSlots.find(slot);
 		return it != mTextureSlots.end() ? it->second : "";
 	}
 
 	void Apply(
 		UINT                            rootParameterIndex,
-		SrvManager*                     srvManager,
+		const SrvManager*               srvManager,
 		const std::vector<std::string>& textureOrder
 	);
 

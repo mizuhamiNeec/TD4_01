@@ -101,7 +101,7 @@ Microsoft::WRL::ComPtr<IDxcBlob> Shader::GetGeometryShaderBlob() {
 /// @param resourceName リソース名
 /// @return レジスタ番号。見つからなかった場合は0xffffffffを返す
 UINT Shader::GetResourceRegister(const std::string& resourceName) const {
-	auto it = mResourceRegisterMap.find(resourceName);
+	const auto it = mResourceRegisterMap.find(resourceName);
 	if (it != mResourceRegisterMap.end()) { return it->second.bindPoint; }
 
 	// リソースが見つからなかった
@@ -125,7 +125,7 @@ std::string Shader::GetName() { return mName; }
 /// @param resourceName リソース名
 /// @return リソースパラメータのインデックス。見つからなかった場合はUINT_MAXを返す
 UINT Shader::GetResourceParameterIndex(const std::string& resourceName) {
-	auto it = mResourceParameterIndices.find(resourceName);
+	const auto it = mResourceParameterIndices.find(resourceName);
 	if (it != mResourceParameterIndices.end()) { return it->second; }
 
 	Console::Print(

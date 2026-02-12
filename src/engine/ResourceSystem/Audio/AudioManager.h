@@ -2,7 +2,8 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include <wrl.h>
+
+#include <wrl/client.h>
 
 #include "Audio.h"
 

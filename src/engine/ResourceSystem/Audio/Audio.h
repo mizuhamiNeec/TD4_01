@@ -49,6 +49,6 @@ private:
 	IXAudio2SourceVoice* mSourceVoice = nullptr;
 	XAUDIO2_BUFFER       mAudioBuffer = {};
 	SoundData            mAudioData;
-	bool                 mIsPlaying = false;
+	bool                 mIsPlaying  = false;
 	bool                 mVoiceValid = true;
 };

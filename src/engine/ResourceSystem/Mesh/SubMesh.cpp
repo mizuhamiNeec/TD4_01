@@ -1,6 +1,8 @@
 #include <engine/ResourceSystem/Mesh/SubMesh.h>
 
 #include "engine/OldConsole/Console.h"
+#include "engine/renderer/IndexBuffer.h"
+#include "engine/unnamed/uprimitive/UPrimitives.h"
 
 /// @brief コンストラクタ
 /// @param device D3D12デバイスへのCOMポインタ

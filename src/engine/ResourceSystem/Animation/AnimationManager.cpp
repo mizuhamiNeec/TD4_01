@@ -1,6 +1,7 @@
 ﻿#include "engine/ResourceSystem/Animation/AnimationManager.h"
 
 #include <cassert>
+#include <format>
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -23,7 +24,7 @@ void AnimationManager::Shutdown() {
 /// @param name アニメーション名
 /// @return アニメーション
 Animation AnimationManager::GetAnimation(const std::string& name) const {
-	auto it = mAnimations.find(name);
+	const auto it = mAnimations.find(name);
 	if (it != mAnimations.end()) { return it->second; }
 	Console::Print(
 		std::format("アニメーションが見つかりませんでした: {}", name)
@@ -36,17 +37,16 @@ Animation AnimationManager::GetAnimation(const std::string& name) const {
 /// @return アニメーション	
 Animation AnimationManager::LoadAnimationFile(const std::string& filePath) {
 	// キャッシュしているものがあったらそれを返す
-	auto it = mAnimations.find(filePath);
+	const auto it = mAnimations.find(filePath);
 	if (it != mAnimations.end()) { return it->second; }
 
 	// キャッシュに無い場合は新たに読み込む
-	Animation        animation;
 	Assimp::Importer importer;
 	const aiScene*   aScene = importer.ReadFile(filePath.c_str(), 0);
 	assert(aScene->mNumAnimations != 0 && "No animations found in the file");
-	aiAnimation* animationAssimp = aScene->mAnimations[0];
+	const aiAnimation* animationAssimp = aScene->mAnimations[0];
 	// 最初のアニメーションだけ採用（既存の互換性のため）
-	animation = LoadSingleAnimation(animationAssimp);
+	Animation animation = LoadSingleAnimation(animationAssimp);
 
 	// キャッシュに詰め込む
 	mAnimations[filePath] = animation;
@@ -72,8 +72,8 @@ std::vector<Animation> AnimationManager::LoadAllAnimationsFromFile(
 
 	for (uint32_t animIndex = 0; animIndex < aScene->mNumAnimations; ++
 	     animIndex) {
-		aiAnimation* animationAssimp = aScene->mAnimations[animIndex];
-		Animation    animation       = LoadSingleAnimation(animationAssimp);
+		const aiAnimation* animationAssimp = aScene->mAnimations[animIndex];
+		Animation          animation = LoadSingleAnimation(animationAssimp);
 
 		// アニメーションに名前をつける
 		std::string animationKey = filePath + "::" + std::string(
@@ -103,7 +103,7 @@ Animation AnimationManager::LoadAnimationByName(
 ) {
 	// キャッシュを確認
 	const std::string animationKey = filePath + "::" + animationName;
-	auto              it           = mAnimations.find(animationKey);
+	const auto        it           = mAnimations.find(animationKey);
 	if (it != mAnimations.end()) { return it->second; }
 
 	Assimp::Importer importer;
@@ -114,7 +114,7 @@ Animation AnimationManager::LoadAnimationByName(
 	// 指定された名前のアニメーションを探す
 	for (uint32_t animIndex = 0; animIndex < aScene->mNumAnimations; ++
 	     animIndex) {
-		aiAnimation* animationAssimp = aScene->mAnimations[animIndex];
+		const aiAnimation* animationAssimp = aScene->mAnimations[animIndex];
 		if (std::string(animationAssimp->mName.C_Str()) == animationName) {
 			Animation animation = LoadSingleAnimation(animationAssimp);
 
@@ -140,7 +140,7 @@ std::vector<std::string> AnimationManager::GetAnimationNamesFromFile(
 	const std::string& filePath
 ) {
 	// キャッシュを確認
-	auto it = mFileAnimationNames.find(filePath);
+	const auto it = mFileAnimationNames.find(filePath);
 	if (it != mFileAnimationNames.end()) { return it->second; }
 
 	std::vector<std::string> animationNames;
@@ -151,7 +151,7 @@ std::vector<std::string> AnimationManager::GetAnimationNamesFromFile(
 
 	for (uint32_t animIndex = 0; animIndex < aScene->mNumAnimations; ++
 	     animIndex) {
-		aiAnimation* animationAssimp = aScene->mAnimations[animIndex];
+		const aiAnimation* animationAssimp = aScene->mAnimations[animIndex];
 		animationNames.
 			emplace_back(std::string(animationAssimp->mName.C_Str()));
 	}
@@ -178,7 +178,7 @@ Animation AnimationManager::LoadSingleAnimation(
 		channelIndex < animationAssimp->mNumChannels
 		; ++channelIndex
 	) {
-		aiNodeAnim* nodeAnimationAssimp = animationAssimp->mChannels[
+		const aiNodeAnim* nodeAnimationAssimp = animationAssimp->mChannels[
 			channelIndex];
 		NodeAnimation& nodeAnimation = animation.nodeAnimations[
 			nodeAnimationAssimp->mNodeName.C_Str()

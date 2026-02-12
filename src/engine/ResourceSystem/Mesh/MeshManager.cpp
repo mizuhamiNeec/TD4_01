@@ -5,20 +5,18 @@
 #include <codecvt>
 #include <filesystem>
 #include <format>
-#include <iostream>
 #include <ranges>
 #include <string>
 
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
-#include <assimp/postprocess.h>
 
+#include <engine/Engine.h>
+#include <engine/EngineServices.h>
 #include <engine/OldConsole/Console.h>
 #include <engine/ResourceSystem/Material/MaterialManager.h>
 #include <engine/ResourceSystem/Mesh/MeshManager.h>
-#include <engine/EngineServices.h>
 #include <engine/ResourceSystem/Shader/DefaultShader.h>
-#include <engine/Engine.h>
 #include <engine/TextureManager/TexManager.h>
 
 /// @brief 初期化
@@ -127,7 +125,7 @@ bool MeshManager::ReloadMeshFromFile(const std::string& filePath) {
 	);
 
 	// 既存のメッシュを削除
-	auto it = mStaticMeshes.find(filePath);
+	const auto it = mStaticMeshes.find(filePath);
 	if (it != mStaticMeshes.end()) {
 		Console::Print(
 			"既存のメッシュを削除しました: " + filePath + "\n",
@@ -148,7 +146,7 @@ bool MeshManager::ReloadMeshFromFile(const std::string& filePath) {
 	}
 
 	// 新しいメッシュを読み込み
-	bool result = LoadMeshFromFile(filePath);
+	const bool result = LoadMeshFromFile(filePath);
 
 	if (result) {
 		Console::Print(
@@ -222,7 +220,7 @@ bool MeshManager::LoadSkeletalMeshFromFile(const std::string& filePath) {
 
 	// スケルトンを読み込み
 	if (scene->mNumMeshes > 0 && scene->mMeshes[0]->HasBones()) {
-		Skeleton skeleton = LoadSkeleton(scene);
+		const Skeleton skeleton = LoadSkeleton(scene);
 		skeletalMesh->SetSkeleton(skeleton);
 	}
 
@@ -254,8 +252,8 @@ SkeletalMesh* MeshManager::GetSkeletalMesh(const std::string& name) const {
 SkeletalMesh* MeshManager::CreateSkeletalMesh(const std::string& name) {
 	const auto it = mSkeletalMeshes.find(name);
 	if (it != mSkeletalMeshes.end()) { return it->second.get(); }
-	auto mesh             = std::make_unique<SkeletalMesh>(name);
-	auto meshPtr          = mesh.get();
+	auto       mesh       = std::make_unique<SkeletalMesh>(name);
+	const auto meshPtr    = mesh.get();
 	mSkeletalMeshes[name] = std::move(mesh);
 	return meshPtr;
 }
@@ -266,9 +264,9 @@ SkeletalMesh* MeshManager::CreateSkeletalMesh(const std::string& name) {
 SubMesh* MeshManager::CreateSubMesh(const std::string& name) {
 	const auto it = mSubMeshes.find(name);
 	if (it != mSubMeshes.end()) { return it->second.get(); }
-	auto subMesh     = std::make_unique<SubMesh>(mDevice, name);
-	auto subMeshPtr  = subMesh.get();
-	mSubMeshes[name] = std::move(subMesh);
+	auto       subMesh    = std::make_unique<SubMesh>(mDevice, name);
+	const auto subMeshPtr = subMesh.get();
+	mSubMeshes[name]      = std::move(subMesh);
 	return subMeshPtr;
 }
 
@@ -290,7 +288,7 @@ void MeshManager::ProcessStaticMeshNode(
 	}
 
 	// ノードの変換行列を取得
-	aiMatrix4x4 transform = node->mTransformation;
+	const aiMatrix4x4 transform = node->mTransformation;
 
 	for (uint32_t meshIndex = 0; meshIndex < node->mNumMeshes; ++meshIndex) {
 		if (node->mMeshes[meshIndex] >= scene->mNumMeshes) {
@@ -326,7 +324,7 @@ void MeshManager::ProcessStaticMeshNode(
 /// @param scene シーン
 /// @param skeletalMesh スケルタルメッシュへのポインタ
 void MeshManager::ProcessSkeletalMeshNode(
-	aiNode*        node,
+	const aiNode*  node,
 	const aiScene* scene,
 	SkeletalMesh*  skeletalMesh
 ) {
@@ -339,7 +337,7 @@ void MeshManager::ProcessSkeletalMeshNode(
 	}
 
 	// ノードの変換行列を取得
-	aiMatrix4x4 transform = node->mTransformation;
+	const aiMatrix4x4 transform = node->mTransformation;
 
 	for (uint32_t meshIndex = 0; meshIndex < node->mNumMeshes; ++meshIndex) {
 		if (node->mMeshes[meshIndex] >= scene->mNumMeshes) {

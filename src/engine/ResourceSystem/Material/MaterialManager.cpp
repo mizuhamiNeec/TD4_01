@@ -70,8 +70,8 @@ Material* MaterialManager::GetMaterial(
 	const std::string& name,
 	const std::string& meshName
 ) {
-	std::string key = GenerateMaterialKey(name, meshName);
-	auto        it  = mMaterials.find(key);
+	const std::string key = GenerateMaterialKey(name, meshName);
+	const auto        it  = mMaterials.find(key);
 	return it != mMaterials.end() ? it->second.get() : nullptr;
 }
 
@@ -98,7 +98,7 @@ void MaterialManager::Init() {
 
 /// @brief シャットダウン
 void MaterialManager::Shutdown() {
-	for (auto& material : mMaterials) {
+	for (const auto& material : mMaterials) {
 		Console::Print(
 			"MatMgr: Releasing " + material.second->GetName() + "\n",
 			Vec4::white,

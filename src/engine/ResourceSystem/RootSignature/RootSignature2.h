@@ -2,7 +2,7 @@
 
 #include <d3d12.h>
 #include <vector>
-#include <wrl.h>
+#include <wrl/client.h>
 
 struct RootSignatureDesc;
 

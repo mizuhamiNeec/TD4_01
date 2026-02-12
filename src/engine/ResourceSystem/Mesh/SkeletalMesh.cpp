@@ -44,7 +44,7 @@ void SkeletalMesh::AddAnimation(
 /// @param name アニメーション名
 /// @return アニメーションへのポインタ（存在しない場合はnullptr）
 const Animation* SkeletalMesh::GetAnimation(const std::string& name) const {
-	auto it = mAnimations.find(name);
+	const auto it = mAnimations.find(name);
 	return it != mAnimations.end() ? &it->second : nullptr;
 }
 

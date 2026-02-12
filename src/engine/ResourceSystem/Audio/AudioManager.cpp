@@ -8,9 +8,7 @@
 AudioManager::AudioManager() {}
 
 /// @brief デストラクタ
-AudioManager::~AudioManager() {
-	Shutdown();
-}
+AudioManager::~AudioManager() { Shutdown(); }
 
 /// @brief 初期化
 /// @return 成功したらtrue、失敗したらfalse
@@ -69,7 +67,7 @@ void AudioManager::Shutdown() {
 /// @return 音声オブジェクトへの共有ポインタ
 std::shared_ptr<Audio> AudioManager::GetAudio(const std::string& filePath) {
 	// キャッシュを検索
-	auto it = mAudioCache.find(filePath);
+	const auto it = mAudioCache.find(filePath);
 	if (it != mAudioCache.end()) { return it->second; }
 
 	// 音声を新しく読み込む

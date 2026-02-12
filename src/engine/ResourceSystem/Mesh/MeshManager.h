@@ -39,7 +39,7 @@ private:
 		StaticMesh*   staticMesh
 	);
 	void ProcessSkeletalMeshNode(
-		aiNode*       node, const aiScene* scene,
+		const aiNode* node, const aiScene* scene,
 		SkeletalMesh* skeletalMesh
 	);
 

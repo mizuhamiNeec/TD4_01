@@ -12,7 +12,7 @@
 /// @param textureOrder テクスチャスロット名の順序リスト
 void MaterialInstance::Apply(
 	UINT                            rootParameterIndex,
-	SrvManager*                     srvManager,
+	const SrvManager*               srvManager,
 	const std::vector<std::string>& textureOrder
 ) {
 	// デバッグ情報
@@ -79,7 +79,7 @@ void MaterialInstance::Apply(
 			);
 		}
 
-		auto* engine = Unnamed::EngineServices::Get();
+		const auto* engine = Unnamed::EngineServices::Get();
 		if (!engine) { continue; }
 		TexManager* texManager = engine->GetTexManagerInstance();
 		if (!texManager) { continue; }

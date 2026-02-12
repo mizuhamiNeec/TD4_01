@@ -3,6 +3,7 @@
 // 不可能だという点に目をつぶればよぉ～～～
 //-----------------------------------------------------------------------------
 
+#include <map>
 #include <ranges>
 
 #include <engine/Engine.h>
@@ -14,6 +15,8 @@
 #include <engine/ResourceSystem/RootSignature/RootSignatureManager2.h>
 #include <engine/ResourceSystem/Shader/Shader.h>
 #include <engine/TextureManager/TexManager.h>
+
+#include "engine/renderer/Structs.h"
 
 /// @brief コンストラクタ
 /// @param name マテリアル名
@@ -183,10 +186,12 @@ void Material::Apply(
 	}
 
 	// ディスクリプタヒープを設定
-	auto* engine3 = Unnamed::EngineServices::Get();
+	auto* engine3     = Unnamed::EngineServices::Get();
 	auto* srvManager3 = engine3 ? engine3->GetSrvManagerInstance() : nullptr;
 	if (!srvManager3) { return; }
-	ID3D12DescriptorHeap* descriptorHeaps[] = { srvManager3->GetDescriptorHeap() };
+	ID3D12DescriptorHeap* descriptorHeaps[] = {
+		srvManager3->GetDescriptorHeap()
+	};
 	commandList->SetDescriptorHeaps(1, descriptorHeaps);
 
 	// テクスチャのディスクリプタテーブルバインド
@@ -220,9 +225,13 @@ void Material::Apply(
 		UINT totalTextureCount = static_cast<UINT>(texturesByRegister.size());
 
 		if (totalTextureCount > 0) {
-			auto* engine4 = Unnamed::EngineServices::Get();
-			auto* srvManager = engine4 ? engine4->GetSrvManagerInstance() : nullptr;
-			auto* texManager = engine4 ? engine4->GetTexManagerInstance() : nullptr;
+			auto* engine4    = Unnamed::EngineServices::Get();
+			auto* srvManager = engine4 ?
+				                   engine4->GetSrvManagerInstance() :
+				                   nullptr;
+			auto* texManager = engine4 ?
+				                   engine4->GetTexManagerInstance() :
+				                   nullptr;
 			if (!srvManager || !texManager) { return; }
 
 			// テクスチャの組み合わせキーを生成（再利用判定用）
@@ -434,7 +443,7 @@ ID3D12PipelineState* Material::GetOrCreatePipelineState(
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC desc = baseDesc;
 
 	// ルートシグネチャの設定
-	auto rootSig = GetOrCreateRootSignature(device);
+	const auto rootSig = GetOrCreateRootSignature(device);
 	if (!rootSig) {
 		Console::Print(
 			"ルートシグネチャの取得に失敗しました\n", kConTextColorError,
@@ -625,8 +634,8 @@ std::string Material::GetFullName() const {
 /// @param bindPoint バインドポイント（レジスタ番号）
 /// @return 生成されたキー文字列
 std::string Material::GenerateBufferKey(
-	D3D12_SHADER_VISIBILITY visibility,
-	UINT                    bindPoint
+	const D3D12_SHADER_VISIBILITY visibility,
+	const UINT                    bindPoint
 ) {
 	std::string key;
 	switch (visibility) {

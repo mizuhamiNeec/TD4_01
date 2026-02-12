@@ -15,7 +15,7 @@ Shader* ShaderManager::LoadShader(
 	const std::string& gsPath
 ) {
 	// パスを結合してキーにする
-	std::string filePath = vsPath + ";" + psPath + ";" + gsPath;
+	const std::string filePath = vsPath + ";" + psPath + ";" + gsPath;
 
 	// 既に読み込まれているシェーダがあればそれを返す
 	if (mShaders.contains(filePath)) { return mShaders[filePath].get(); }
@@ -40,7 +40,7 @@ Shader* ShaderManager::LoadShader(
 /// @param name シェーダ名
 /// @return シェーダへのポインタ（存在しない場合はnullptr）
 Shader* ShaderManager::GetShader(const std::string& name) {
-	auto it = mShaders.find(name);
+	const auto it = mShaders.find(name);
 	return it != mShaders.end() ? it->second.get() : nullptr;
 }
 

@@ -1,12 +1,16 @@
 #pragma once
 #include <d3d12.h>
 #include <string>
-#include <engine/renderer/IndexBuffer.h>
-#include <engine/renderer/Structs.h>
-#include <engine/Renderer/VertexBuffer.h>
-#include <engine/ResourceSystem/Material/Material.h>
+#include <vector>
 
+#include <wrl/client.h>
+
+#include "engine/renderer/Structs.h"
+#include "engine/renderer/VertexBuffer.h"
 #include "engine/unnamed/uprimitive/UPrimitives.h"
+
+class IndexBuffer;
+class Material;
 
 /// @brief サブメッシュクラス
 class SubMesh {

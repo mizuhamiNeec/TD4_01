@@ -77,9 +77,7 @@ void ResourceManager::Shutdown() {
 		mShaderManager.reset();
 	}
 
-	if (mTexManager) {
-		mTexManager.reset();
-	}
+	if (mTexManager) { mTexManager.reset(); }
 
 	RootSignatureManager2::Shutdown();
 }
@@ -90,9 +88,7 @@ SrvManager* ResourceManager::GetSrvManager() const { return mSrvManager.get(); }
 
 /// @brief TexManagerを取得
 /// @return TexManagerへのポインタ
-TexManager* ResourceManager::GetTexManager() const {
-	return mTexManager.get();
-}
+TexManager* ResourceManager::GetTexManager() const { return mTexManager.get(); }
 
 /// @brief MeshManagerを取得
 /// @return MeshManagerへのポインタ

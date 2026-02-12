@@ -38,6 +38,6 @@ void StaticMesh::Render(ID3D12GraphicsCommandList* commandList) const {
 
 /// @brief リソースの解放
 void StaticMesh::ReleaseResource() {
-	for (auto& subMesh : mSubMeshes) { subMesh->ReleaseResource(); }
+	for (const auto& subMesh : mSubMeshes) { subMesh->ReleaseResource(); }
 	mSubMeshes.clear();
 }

@@ -1,5 +1,6 @@
 #include "engine/ResourceSystem/Audio/Audio.h"
 
+#include <algorithm>
 #include <format>
 #include <fstream>
 
@@ -126,7 +127,7 @@ void Audio::SetVolume(float volume) const {
 
 /// @brief ピッチの設定
 /// @param pitch ピッチ (1.0f が標準、2.0f が2倍速、0.5f が半分の速さ)
-void Audio::SetPitch(float pitch) const {
+void Audio::SetPitch(const float pitch) const {
 	if (!mSourceVoice) { return; }
 	mSourceVoice->SetFrequencyRatio(pitch);
 }

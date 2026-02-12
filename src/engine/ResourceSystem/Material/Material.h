@@ -3,6 +3,8 @@
 #include <string>
 #include <unordered_map>
 
+#include <wrl/client.h>
+
 #include "engine/ResourceSystem/RootSignature/RootSignature2.h"
 
 struct MatParam;

@@ -66,10 +66,10 @@ ID3D12PipelineState* PipelineManager::GetOrCreatePipelineState(
 	const std::string&                        key,
 	const D3D12_GRAPHICS_PIPELINE_STATE_DESC& desc
 ) {
-	size_t psoHash = CalculatePSOHash(desc);
+	const size_t psoHash = CalculatePSOHash(desc);
 
 	// ハッシュ値で作成済みのPSOを検索
-	auto it = mPipelineStatesByHash.find(psoHash);
+	const auto it = mPipelineStatesByHash.find(psoHash);
 	if (it != mPipelineStatesByHash.end()) { return it->second.Get(); }
 
 	// ルートシグネチャの確認
@@ -103,7 +103,7 @@ ID3D12PipelineState* PipelineManager::GetOrCreatePipelineState(
 
 	// パイプラインステートの作成
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
-	HRESULT hr = device->CreateGraphicsPipelineState(
+	const HRESULT hr = device->CreateGraphicsPipelineState(
 		&desc, IID_PPV_ARGS(&pipelineState)
 	);
 	if (FAILED(hr)) {

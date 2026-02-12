@@ -1,7 +1,12 @@
 ﻿#pragma once
 #include <vector>
+
+#include <core/math/Math.h>
+
 #include <engine/Animation/KeyFrame.h>
-#include <runtime/core/math/Math.h>
+
+#include "core/math/Mat4.h"
+#include "core/math/Quaternion.h"
 
 struct aiNode;
 

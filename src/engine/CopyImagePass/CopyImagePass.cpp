@@ -7,7 +7,6 @@
 #include "engine/renderer/PipelineState.h"
 
 #ifdef _DEBUG
-#include <imgui.h>
 #endif
 
 /// @brief コンストラクタ
@@ -174,7 +173,7 @@ void CopyImagePass::CreatePipelineState() {
 	inputLayout.pInputElementDescs      = nullptr;
 	inputLayout.NumElements             = 0;
 
-	D3D12_DEPTH_STENCIL_DESC depthStencilDesc = {
+	constexpr D3D12_DEPTH_STENCIL_DESC depthStencilDesc = {
 		.DepthEnable = false, // 全画面に対してなにか処理を施したいだけだから、比較も書き込みも必要ないのでDepth自体不要
 		.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO, // 書き込まない
 		.DepthFunc = D3D12_COMPARISON_FUNC_LESS, // 比較関数はLess

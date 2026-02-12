@@ -1,8 +1,12 @@
 #include <pch.h>
 
+#include "core/math/Math.h"
+
 #include <editor/Editor.h>
 
 #include <engine/Engine.h>
+#include <engine/EngineServices.h>
+#include <engine/Properties.h>
 #include <engine/Camera/CameraManager.h>
 #include <engine/Components/Base/Component.h>
 #include <engine/Debug/DebugDraw.h>
@@ -13,13 +17,8 @@
 #include <engine/Input/InputSystem.h>
 #include <engine/OldConsole/Console.h>
 #include <engine/OldConsole/ConVarManager.h>
-#include <engine/EngineServices.h>
-#include <engine/SceneManager/SceneManager.h>
-
-#include <runtime/core/Properties.h>
-#include <runtime/core/math/Math.h>
-
-#include "engine/unnamed/subsystem/console/concommand/UnnamedConVar.h"
+#include <engine/scene/SceneManager.h>
+#include <engine/unnamed/subsystem/console/concommand/UnnamedConVar.h>
 
 #ifdef _DEBUG
 #include <imgui_internal.h>
@@ -56,7 +55,7 @@ void Editor::Init() {
 	CameraComponent* rawCameraPtr = mCameraEntity->AddComponent<
 		CameraComponent>();
 	// 生ポインタを std::shared_ptr に変換
-	auto camera = std::shared_ptr<CameraComponent>(
+	const auto camera = std::shared_ptr<CameraComponent>(
 		rawCameraPtr, [](CameraComponent*) {}
 	);
 
@@ -477,8 +476,8 @@ void Editor::Update([[maybe_unused]] const float deltaTime) {
 
 			// ウィンドウの中央下部位置を計算
 			ImVec2 windowPos(
-				viewportPos.x + (viewportSize.x) * 0.5f,
-				viewportPos.y + (viewportSize.y) * iconScale
+				viewportPos.x + viewportSize.x * 0.5f,
+				viewportPos.y + viewportSize.y * iconScale
 			);
 
 			// ウィンドウの位置を調整
@@ -543,10 +542,10 @@ void Editor::Update([[maybe_unused]] const float deltaTime) {
 
 /// @brief エディタのレンダリング処理
 void Editor::Render() const {
-	if (auto currentScene = mSceneManager->GetCurrentScene()) {
+	if (const auto currentScene = mSceneManager->GetCurrentScene()) {
 		currentScene->Render();
-		if (auto* engine3 = Unnamed::EngineServices::Get()) {
-			if (auto* r = engine3->GetRendererInstance()) {
+		if (const auto* engine3 = Unnamed::EngineServices::Get()) {
+			if (const auto* r = engine3->GetRendererInstance()) {
 				mCameraEntity->Render(r->GetCommandList());
 			}
 		}
@@ -656,7 +655,7 @@ void Editor::DrawOutliner() {
 					}
 
 					ImGui::AlignTextToFramePadding();
-					bool nodeOpen = ImGui::TreeNodeEx(
+					const bool nodeOpen = ImGui::TreeNodeEx(
 						(Unnamed::StrUtil::ConvertToUtf8(kIconEntity) +
 						 " " +
 						 entity->GetName())
@@ -674,7 +673,7 @@ void Editor::DrawOutliner() {
 						if (entity != mCameraEntity.get()) {
 							// エディタカメラは削除不可
 							if (ImGui::MenuItem("Delete")) {
-								if (auto currentScene = mSceneManager->
+								if (const auto currentScene = mSceneManager->
 									GetCurrentScene()) {
 									// SceneクラスにRemoveEntityメソッドが実装されていると仮定
 									currentScene->RemoveEntity(entity);
@@ -699,7 +698,7 @@ void Editor::DrawOutliner() {
 					// Visible アイコン
 					{
 						ImGui::TableNextColumn();
-						bool visible = entity->IsVisible();
+						const bool visible = entity->IsVisible();
 
 						if (ImGuiWidgets::IconButton(
 							Unnamed::StrUtil::ConvertToUtf8(
@@ -723,7 +722,7 @@ void Editor::DrawOutliner() {
 						// 子エンティティを処理する前に、現在のエンティティが削除されていないか確認
 						// (上記の削除処理でreturnしているため、基本的にはここは通らないはずだが念のため)
 						bool entityStillExists = false;
-						if (auto currentScene = mSceneManager->
+						if (const auto currentScene = mSceneManager->
 							GetCurrentScene()) {
 							for (const auto& e : currentScene->GetEntities()) {
 								if (e == entity) {
@@ -736,9 +735,9 @@ void Editor::DrawOutliner() {
 						if (entityStillExists) {
 							// GetChildren() が返すコンテナのコピーに対してループする方が安全な場合がある
 							// ここでは元の実装に従う
-							auto children = entity->GetChildren();
+							const auto children = entity->GetChildren();
 							// コピーを取得する方が安全かもしれない
-							for (auto& child : children) {
+							for (const auto& child : children) {
 								// childが削除される可能性も考慮すると、さらに堅牢なイテレーションが必要
 								drawEntityNode(child);
 							}
@@ -754,9 +753,9 @@ void Editor::DrawOutliner() {
 			// ここではGetCurrentScene()->GetEntities()が安全なコピーまたは参照を返すと仮定する。
 			if (mScene) {
 				// scene_が有効か確認
-				auto entities = mScene->GetEntities();
+				const auto entities = mScene->GetEntities();
 				// 削除操作があるため、コピーを取得することを検討
-				for (auto& entity : entities) {
+				for (const auto& entity : entities) {
 					if (entity && entity->GetParent() == nullptr) {
 						// entityがnullでないことも確認
 						drawEntityNode(entity);
@@ -827,9 +826,9 @@ void Editor::DrawMainMenuBar() {
 				.
 				c_str()
 			)) {
-				BaseScene* currentScene = mSceneManager->
-				                          GetCurrentScene().
-				                          get();
+				const BaseScene* currentScene = mSceneManager->
+				                                GetCurrentScene().
+				                                get();
 				if (currentScene) {
 					char szFile[MAX_PATH] = ""; // 初期ファイル名は空
 
@@ -837,7 +836,7 @@ void Editor::DrawMainMenuBar() {
 					ZeroMemory(&ofn, sizeof(ofn)); // 構造体をゼロ初期化
 					ofn.lStructSize = sizeof(OPENFILENAMEA);
 
-					HWND hwndOwner = nullptr;
+					const HWND hwndOwner = nullptr;
 					// TODO: 直す
 					// if (OldWindowManager::GetMainWindow()) {
 					// 	hwndOwner =
@@ -885,7 +884,7 @@ void Editor::DrawMainMenuBar() {
 					ZeroMemory(&ofn, sizeof(ofn)); // 構造体をゼロ初期化
 					ofn.lStructSize = sizeof(OPENFILENAMEA);
 
-					HWND hwndOwner = nullptr;
+					const HWND hwndOwner = nullptr;
 					// TODO: 直す
 					// if (OldWindowManager::GetMainWindow()) {
 					// 	hwndOwner =
@@ -939,8 +938,8 @@ void Editor::DrawMainMenuBar() {
 		if (ImGuiWidgets::BeginMainMenu("Edit")) {
 			ImGui::Separator();
 			if (ImGuiWidgets::MenuItemWithIcon(
-				Unnamed::StrUtil::ConvertToUtf8(kIconSettings).c_str(),
-				"Settings"
+				"Settings",
+				kIconSettings
 			)) {}
 
 			ImGui::EndMenu();
@@ -1147,7 +1146,7 @@ void Editor::DrawStatusBar() {
 		)
 	) {
 		// ステータスバーの幅を取得
-		float statusBarWidth = ImGui::GetWindowWidth();
+		const float statusBarWidth = ImGui::GetWindowWidth();
 
 		// アングルスナップ
 		{
@@ -1172,7 +1171,7 @@ void Editor::DrawStatusBar() {
 			ImGui::PushItemWidth(statusBarWidth * 0.2f);
 			if (ImGui::BeginCombo("##angle", comboLabel)) {
 				for (int n = 0; n < IM_ARRAYSIZE(items); ++n) {
-					const bool isSelected = (itemCurrentIndex == n);
+					const bool isSelected = itemCurrentIndex == n;
 					if (ImGui::Selectable(items[n], isSelected)) {
 						itemCurrentIndex = n;
 						mAngleSnap       = std::stof(
@@ -1208,7 +1207,7 @@ void Editor::DrawStatusBar() {
 
 			if (ImGui::BeginCombo("##grid", comboLabel)) {
 				for (int n = 0; n < IM_ARRAYSIZE(items); ++n) {
-					const bool isSelected = (itemCurrentIndex == n);
+					const bool isSelected = itemCurrentIndex == n;
 					if (ImGui::Selectable(items[n], isSelected)) {
 						itemCurrentIndex = n;
 						// 選択された文字列を浮動小数点数に変換してgridSizeに設定
@@ -1221,7 +1220,7 @@ void Editor::DrawStatusBar() {
 
 			// コンボボックスにマウスオーバーしている時にホイールで操作
 			if (ImGui::IsItemHovered()) {
-				float wheel = ImGui::GetIO().MouseWheel;
+				const float wheel = ImGui::GetIO().MouseWheel;
 				if (wheel != 0.0f) {
 					itemCurrentIndex -= static_cast<int>(wheel);
 					itemCurrentIndex = std::clamp(
@@ -1349,15 +1348,15 @@ void Editor::DrawGrid(
 			if (x < -range || x > range) continue;
 
 			// 主要線と軸線は既に描画済みなのでスキップ
-			const bool isAxis  = (i == 0);
-			const bool isMajor = !isAxis && (std::abs(
-				                                 std::fmod(x, majorInterval)
-			                                 ) < 0.01f);
+			const bool isAxis  = i == 0;
+			const bool isMajor = !isAxis && std::abs(
+				                     std::fmod(x, majorInterval)
+			                     ) < 0.01f;
 			if (isAxis || isMajor) continue;
 
 			// 細線判定
-			const bool isMinor = (std::abs(std::fmod(x, minorInterval)) <
-			                      0.01f);
+			const bool isMinor = std::abs(std::fmod(x, minorInterval)) <
+			                     0.01f;
 
 			// 通常のグリッド線は近距離のみ描画判定
 			const float dx     = cameraPosX - x;
@@ -1395,15 +1394,15 @@ void Editor::DrawGrid(
 			if (z < -range || z > range) continue;
 
 			// 主要線と軸線は既に描画済みなのでスキップ
-			const bool isAxis  = (i == 0);
-			const bool isMajor = !isAxis && (std::abs(
-				                                 std::fmod(z, majorInterval)
-			                                 ) < 0.01f);
+			const bool isAxis  = i == 0;
+			const bool isMajor = !isAxis && std::abs(
+				                     std::fmod(z, majorInterval)
+			                     ) < 0.01f;
 			if (isAxis || isMajor) continue;
 
 			// 細線判定
-			const bool isMinor = (std::abs(std::fmod(z, minorInterval)) <
-			                      0.01f);
+			const bool isMinor = std::abs(std::fmod(z, minorInterval)) <
+			                     0.01f;
 
 			// 通常のグリッド線は近距離のみ描画判定
 			const float dz     = cameraPosZ - z;

@@ -5,7 +5,7 @@
 #include <engine/Entity/Entity.h>
 #include <engine/unnamed/subsystem/time/GameTime.h>
 
-#include "game/scene/base/BaseScene.h"
+#include <engine/scene/BaseScene.h>
 
 class GameTime;
 class SceneManager;

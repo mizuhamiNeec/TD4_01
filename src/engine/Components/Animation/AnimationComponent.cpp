@@ -1,3 +1,4 @@
+#include <cmath>
 #include <engine/Animation/Animation.h>
 #include <engine/Components/Animation/AnimationComponent.h>
 #include <engine/Entity/Entity.h>
@@ -44,7 +45,7 @@ void AnimationComponent::Update(const float deltaTime) {
 		// 現在選択されているノードのアニメーションを再生
 		if (!mCurrentNodeName.empty() &&
 		    mAnimation.nodeAnimations.contains(mCurrentNodeName)) {
-			NodeAnimation& nodeAnimation = mAnimation.nodeAnimations[
+			const NodeAnimation& nodeAnimation = mAnimation.nodeAnimations[
 				mCurrentNodeName];
 
 			const Vec3 translate = CalculateValue(
@@ -67,17 +68,17 @@ void AnimationComponent::Update(const float deltaTime) {
 		}
 		// デフォルトのフォールバック（既存のコード）
 		else if (mAnimation.nodeAnimations.contains("AnimatedCube")) {
-			NodeAnimation& rootNodeAnimation = mAnimation.nodeAnimations[
+			const NodeAnimation& rootNodeAnimation = mAnimation.nodeAnimations[
 				"AnimatedCube"];
-			Vec3 translate = CalculateValue(
+			const Vec3 translate = CalculateValue(
 				rootNodeAnimation.translate.keyFrames,
 				mAnimationTime
 			);
-			Quaternion rotate = CalculateValue(
+			const Quaternion rotate = CalculateValue(
 				rootNodeAnimation.rotate.keyFrames,
 				mAnimationTime
 			);
-			Vec3 scale = CalculateValue(
+			const Vec3 scale = CalculateValue(
 				rootNodeAnimation.scale.keyFrames,
 				mAnimationTime
 			);
@@ -102,7 +103,7 @@ void AnimationComponent::DrawInspectorImGui() {
 	if (ImGui::CollapsingHeader("Animation Component")) {
 		if (ImGui::BeginCombo("NodeName", mCurrentNodeName.c_str())) {
 			for (const auto& nodeName : mAnimation.nodeNames) {
-				bool isSelected = (mCurrentNodeName == nodeName);
+				const bool isSelected = mCurrentNodeName == nodeName;
 				if (ImGui::Selectable(nodeName.c_str(), isSelected)) {
 					mCurrentNodeName = nodeName;
 				}

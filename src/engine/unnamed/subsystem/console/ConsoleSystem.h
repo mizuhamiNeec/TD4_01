@@ -26,7 +26,7 @@ namespace Unnamed {
 	};
 
 	/// @brief コンソールコマンド実行フラグ
-	enum class EXEC_FLAG {
+	enum class EXEC_FLAG : uint8_t {
 		NONE         = 0,
 		SILENT       = 1 << 0,
 		FROM_ENGINE  = 1 << 1,
@@ -39,6 +39,12 @@ namespace Unnamed {
 	/// @param rhs 右辺
 	/// @return 演算結果
 	EXEC_FLAG operator|=(EXEC_FLAG& lhs, const EXEC_FLAG& rhs);
+
+	/// @brief EXEC_FLAGのOR演算子オーバーロード
+	/// @param lhs 左辺
+	/// @param rhs 右辺
+	/// @return 演算結果
+	EXEC_FLAG operator|(EXEC_FLAG lhs, const EXEC_FLAG& rhs);
 
 	/// @brief EXEC_FLAGのAND演算子オーバーロード
 	/// @param lhs 左辺

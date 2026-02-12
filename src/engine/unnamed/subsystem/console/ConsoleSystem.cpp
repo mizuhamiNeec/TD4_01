@@ -1,5 +1,7 @@
 #include <pch.h>
 //-----------------------------------------------------------------------------
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <ranges>
 
@@ -14,17 +16,24 @@
 #include <engine/unnamed/subsystem/interface/ServiceLocator.h>
 #include <engine/unnamed/subsystem/time/SystemClock.h>
 
+#include <engine/unnamed/subsystem/input/UInputSystem.h>
+
 namespace Unnamed {
 	static constexpr std::string_view kChannelConsole = "Console";
-	
+	static constexpr std::string_view kConsoleLogPath = "console.log";
+
 	// ユーザー設定ファイルのパス
-	static constexpr std::string_view kUserCfgPath    =
+	static constexpr std::string_view kUserCfgPath =
 		"./content/core/cfg/user.cfg";
 
 	EXEC_FLAG operator|=(EXEC_FLAG& lhs, const EXEC_FLAG& rhs) {
 		lhs = static_cast<EXEC_FLAG>(static_cast<int>(lhs) | static_cast<int>(
 			                             rhs));
 		return lhs;
+	}
+
+	EXEC_FLAG operator|(EXEC_FLAG lhs, const EXEC_FLAG& rhs) {
+		return lhs |= rhs;
 	}
 
 	bool operator&(EXEC_FLAG lhs, EXEC_FLAG rhs) {
@@ -36,10 +45,43 @@ namespace Unnamed {
 	bool ConsoleSystem::Init() {
 		ServiceLocator::Register<ConsoleSystem>(this);
 
-#ifdef _DEBUG
-		mConsoleUI = std::make_unique<ConsoleUI>(this);
-		mConsoleUI->Init();
-#endif
+		// 既存のログファイルを削除
+		if (std::filesystem::exists(kConsoleLogPath)) {
+			std::filesystem::remove(kConsoleLogPath);
+		}
+
+		// 新規ファイルを作成
+		std::ofstream logFile;
+		logFile.open(kConsoleLogPath, std::ios::out | std::ios::binary);
+		if (logFile.is_open()) {
+			// ヘッダーを書き込む
+			const auto now = SystemClock::GetDateTime(SystemClock::StartTime());
+			const std::string header = std::format(
+				"//-----------------------------------------------------------------------------\n"
+				"// BuildDate: {}-{}\n"
+				"// Engine: {} Ver. {}\n"
+				"// LaunchDate: {:02}-{:02}-{:02} {:02}:{:02}:{:02}\n"
+				"//-----------------------------------------------------------------------------\n\n",
+				__DATE__, __TIME__,
+				ENGINE_NAME, ENGINE_VERSION,
+				now.year, now.month, now.day, now.hour, now.minute, now.second
+			);
+			logFile.write(
+				header.c_str(), static_cast<std::streamsize>(header.size())
+			);
+			logFile.flush();
+			logFile.close();
+		} else {
+			Error(
+				kChannelConsole, "Failed to create log file: {}",
+				kConsoleLogPath
+			);
+		}
+
+		// #ifdef _DEBUG
+		// 		mConsoleUI = std::make_unique<ConsoleUI>(this);
+		// 		mConsoleUI->Init();
+		// #endif
 
 		RegisterCommonCommands();
 
@@ -53,9 +95,9 @@ namespace Unnamed {
 	}
 
 	void ConsoleSystem::Update(float) {
-#ifdef _DEBUG
-		mConsoleUI->Show();
-#endif
+		// #ifdef _DEBUG
+		// 		mConsoleUI->Show();
+		// #endif
 	}
 
 	void ConsoleSystem::Shutdown() {
@@ -95,9 +137,9 @@ namespace Unnamed {
 		OutputDebugStringW(StrUtil::ToWString(out).c_str());
 		OutputDebugStringW(StrUtil::ToWString("\n").c_str());
 
-#ifdef _DEBUG
-		mConsoleUI->OnConsoleUpdate();
-#endif
+		// #ifdef _DEBUG
+		// 		mConsoleUI->OnConsoleUpdate();
+		// #endif
 	}
 
 	void ConsoleSystem::RegisterConCommand(UnnamedConCommandBase* conCommand) {
@@ -263,9 +305,9 @@ namespace Unnamed {
 				"> {}",
 				trimmed
 			);
-#ifdef _DEBUG
-			mConsoleUI->OnConsoleUpdate();
-#endif
+			// #ifdef _DEBUG
+			// 			mConsoleUI->OnConsoleUpdate();
+			// #endif
 		}
 
 		for (const auto& singleCommand : commands) {
@@ -273,12 +315,28 @@ namespace Unnamed {
 
 			std::vector<std::string> tokens = StrUtil::Tokenize(singleCommand);
 			if (tokens.empty()) { continue; }
-			const std::vector<std::string> args(
+			const std::vector args(
 				tokens.begin() + 1, tokens.end()
 			);
 
 			const bool foundCommand = mConCommands.contains(tokens[0]);
 			const bool foundVar     = mConVars.contains(tokens[0]);
+
+			if (!foundCommand && !foundVar && !tokens[0].empty()) {
+				const char prefix = tokens[0][0];
+				if (prefix == '+' || prefix == '-') {
+					const std::string actionName = tokens[0].substr(1);
+					if (!actionName.empty()) {
+						if (auto* input = ServiceLocator::Get<UInputSystem>()) {
+							input->HandleConsoleAction(
+								actionName,
+								prefix == '+'
+							);
+							break;
+						}
+					}
+				}
+			}
 
 			// コマンドの場合
 			if (foundCommand) {
@@ -293,7 +351,7 @@ namespace Unnamed {
 					break;
 				}
 
-				auto* cmd = static_cast<UnnamedConCommand*>(base);
+				const auto* cmd = static_cast<UnnamedConCommand*>(base);
 
 				// コールバックを実行
 				if (cmd->onExecute(args)) {
@@ -325,7 +383,7 @@ namespace Unnamed {
 					SpecialMsg(
 						LogLevel::Info,
 						"",
-						"{} = [{}] {}: {}",
+						"{} = [{}] {} : {}",
 						var->GetName(),
 						type,
 						value,

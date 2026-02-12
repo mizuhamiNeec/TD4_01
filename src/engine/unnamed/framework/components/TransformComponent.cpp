@@ -23,17 +23,17 @@ namespace Unnamed {
 		return mWorldMat;
 	}
 
-	void TransformComponent::SetPosition(Vec3 position) noexcept {
+	void TransformComponent::SetPosition(const Vec3 position) noexcept {
 		mLocalPos = position;
 		MarkDirty();
 	}
 
-	void TransformComponent::SetRotation(Quaternion rotation) noexcept {
+	void TransformComponent::SetRotation(const Quaternion rotation) noexcept {
 		mLocalRot = rotation;
 		MarkDirty();
 	}
 
-	void TransformComponent::SetScale(Vec3 scale) noexcept {
+	void TransformComponent::SetScale(const Vec3 scale) noexcept {
 		mLocalScale = scale;
 		MarkDirty();
 	}

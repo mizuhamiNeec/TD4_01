@@ -3,9 +3,9 @@
 
 #include "base/UBaseComponent.h"
 
-#include "runtime/core/math/Mat4.h"
-#include "runtime/core/math/Quaternion.h"
-#include "runtime/core/math/Vec3.h"
+#include "core/math/Mat4.h"
+#include "core/math/Quaternion.h"
+#include "core/math/Vec3.h"
 
 namespace Unnamed {
 	class TransformComponent : public UBaseComponent {
@@ -45,7 +45,6 @@ namespace Unnamed {
 		/// @brief 変更されたことをマークします。
 		void MarkDirty();
 
-	private:
 		Vec3       mLocalPos   = Vec3::zero;
 		Quaternion mLocalRot   = Quaternion::identity;
 		Vec3       mLocalScale = Vec3::one;

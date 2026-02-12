@@ -106,7 +106,7 @@ void SceneComponent::SetWorldRot(const Quaternion& newRotation) {
 		if (const SceneComponent* parentTransform = mOwner->GetParent()->
 			GetTransform()) {
 			// 親の回転を取得
-			Quaternion parentRot = parentTransform->GetWorldRot();
+			const Quaternion parentRot = parentTransform->GetWorldRot();
 			// 親の回転の逆クォータニオンをかけることでローカル回転を取得
 			const Quaternion invParentRot = parentRot.Inverse();
 			mRotation                     = invParentRot * newRotation;

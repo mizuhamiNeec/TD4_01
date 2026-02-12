@@ -1,6 +1,9 @@
 #pragma once
+#include <core/math/Math.h>
 #include <engine/Components/Base/Component.h>
-#include <runtime/core/math/Math.h>
+
+#include "core/math/Mat4.h"
+#include "core/math/Quaternion.h"
 
 /// @brief シーン上のオブジェクトの位置、回転、スケールを管理するコンポーネント
 class SceneComponent : public Component {

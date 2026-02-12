@@ -40,7 +40,7 @@ public:
 		if (!mapInstance.IsValid()) { return nullptr; }
 
 		const auto it = mapInstance.GetMap().find(typeid(T));
-		return (it != mapInstance.GetMap().end()) ?
+		return it != mapInstance.GetMap().end() ?
 			       static_cast<T*>(it->second) :
 			       nullptr;
 	}

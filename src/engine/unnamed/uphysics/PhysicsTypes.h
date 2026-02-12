@@ -1,8 +1,9 @@
 ﻿#pragma once
 
+#include <core/math/Math.h>
+
 #include <engine/Entity/Entity.h>
 #include <engine/unnamed/uprimitive/UPrimitives.h>
-#include <runtime/core/math/Math.h>
 
 namespace UPhysics {
 	// ヒット情報

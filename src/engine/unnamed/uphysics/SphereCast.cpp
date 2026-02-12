@@ -58,7 +58,7 @@ namespace {
 		}
 
 		const float va = d3 * d6 - d5 * d4;
-		if (va <= 0.0f && (d4 - d3) >= 0.0f && (d5 - d6) >= 0.0f) {
+		if (va <= 0.0f && d4 - d3 >= 0.0f && d5 - d6 >= 0.0f) {
 			const Vec3  bc = c - b;
 			const float t  =
 				std::clamp((p - b).Dot(bc) / bc.Dot(bc), 0.0f, 1.0f);
@@ -66,7 +66,7 @@ namespace {
 		}
 
 		// Inside face region
-		const Vec3  n    = (ab.Cross(ac)).Normalized();
+		const Vec3  n    = ab.Cross(ac).Normalized();
 		const float dist = (p - a).Dot(n);
 		return p - n * dist;
 	}
@@ -98,7 +98,7 @@ namespace UPhysics {
 	bool SphereCast::TestTriangle(
 		const Unnamed::Triangle& triangle,
 		const Vec3&              dir,
-		float                    length,
+		const float              length,
 		float&                   outTOI,
 		Vec3&                    outNormal
 	) const {
@@ -127,11 +127,11 @@ namespace UPhysics {
 		const float dist = v.Length();
 		if (dist < radius) {
 			depth  = radius - dist;
-			normal = (dist > 1e-8f) ?
-				         (v / dist) :
-				         ((triangle.v1 - triangle.v0).Cross(
+			normal = dist > 1e-8f ?
+				         v / dist :
+				         (triangle.v1 - triangle.v0).Cross(
 					         triangle.v2 - triangle.v0
-				         ).Normalized());
+				         ).Normalized();
 			return true;
 		}
 		return false;
@@ -147,12 +147,12 @@ namespace UPhysics {
 	Vec3 SphereCast::ComputeImpactPoint(
 		const Vec3& start,
 		const Vec3& dirNormalized,
-		float       length,
-		float       toi,
+		const float length,
+		const float toi,
 		const Vec3& normal
 	) const {
 		const float travel       = toi * length;
-		Vec3        impactCenter = start + dirNormalized * travel;
+		const Vec3  impactCenter = start + dirNormalized * travel;
 		Vec3        n            = normal;
 		const float nLenSq       = n.SqrLength();
 		if (nLenSq > 1e-12f) { n /= std::sqrt(nLenSq); } else {

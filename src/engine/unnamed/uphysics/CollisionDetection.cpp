@@ -4,6 +4,8 @@
 
 #include <assimp/mesh.h>
 
+#include "engine/unnamed/uprimitive/UPrimitives.h"
+
 namespace UPhysics {
 	/// @brief レイとAABBの交差判定を行います
 	/// @param ray 判定するレイ
@@ -20,7 +22,8 @@ namespace UPhysics {
 		for (int i = 0; i < 3; ++i) {
 			if (fabs(ray.dir[i]) < 1e-8f) {
 				if (ray.origin[i] < aabb.min[i] || ray.origin[i] > aabb.max[
-					    i]) return false;
+					    i])
+					return false;
 			} else {
 				const float invD = 1.0f / ray.dir[i];
 				float       t1   = (aabb.min[i] - ray.origin[i]) * invD;
@@ -51,17 +54,17 @@ namespace UPhysics {
 		const float     det      = e1.Dot(p);
 
 		if (fabs(det) < kEpsilon) { return false; }
-		float invDet = 1.0f / det;
+		const float invDet = 1.0f / det;
 
-		Vec3  s = ray.origin - triangle.v0;
-		float u = s.Dot(p) * invDet;
+		const Vec3  s = ray.origin - triangle.v0;
+		const float u = s.Dot(p) * invDet;
 		if (u < 0.0f || u > 1.0f) { return false; }
 
-		Vec3  q = s.Cross(e1);
-		float v = ray.dir.Dot(q) * invDet;
+		const Vec3  q = s.Cross(e1);
+		const float v = ray.dir.Dot(q) * invDet;
 		if (v < 0.0f || u + v > 1.0f) { return false; }
 
-		float t = e2.Dot(q) * invDet;
+		const float t = e2.Dot(q) * invDet;
 		if (t < ray.tMin || t > tHit) {
 			return false; // レイは三角形と交差しない
 		}
@@ -105,10 +108,10 @@ namespace UPhysics {
 		axes[axisCount++] = {0, 0, 1};
 
 		/* 2-3 triEdge × boxAxis (交叉積) */
-		Vec3 e0          = tri.v1 - tri.v0;
-		Vec3 e1          = tri.v2 - tri.v1;
-		Vec3 e2          = tri.v0 - tri.v2;
-		Vec3 triEdges[3] = {e0, e1, e2};
+		const Vec3 e0          = tri.v1 - tri.v0;
+		const Vec3 e1          = tri.v2 - tri.v1;
+		const Vec3 e2          = tri.v0 - tri.v2;
+		Vec3       triEdges[3] = {e0, e1, e2};
 		for (Vec3 e : triEdges) {
 			if (e.Dot(e) < 1e-10f) continue; // degenerate
 			Vec3 n0 = e.Cross(Vec3::right).Normalized();
@@ -129,20 +132,21 @@ namespace UPhysics {
 			if (A.Dot(A) < 1e-8f) continue; // 0 ベクトルはスキップ
 
 			/* ボックス：中心投影 ± radius */
-			float projC0 = C0.Dot(A);
-			float rBox = fabsf(A.x) * H.x + fabsf(A.y) * H.y + fabsf(A.z) * H.z;
-			float minBox0 = projC0 - rBox;
-			float maxBox0 = projC0 + rBox;
+			const float projC0 = C0.Dot(A);
+			const float rBox = fabsf(A.x) * H.x + fabsf(A.y) * H.y + fabsf(A.z)
+			                   * H.z;
+			const float minBox0 = projC0 - rBox;
+			const float maxBox0 = projC0 + rBox;
 
 			/* 三角形：3頂点投影 min/max */
-			float v0     = tri.v0.Dot(A);
-			float v1     = tri.v1.Dot(A);
-			float v2     = tri.v2.Dot(A);
-			float minTri = std::min(v0, std::min(v1, v2));
-			float maxTri = std::max(v0, std::max(v1, v2));
+			float       v0     = tri.v0.Dot(A);
+			float       v1     = tri.v1.Dot(A);
+			float       v2     = tri.v2.Dot(A);
+			const float minTri = std::min(v0, std::min(v1, v2));
+			const float maxTri = std::max(v0, std::max(v1, v2));
 
 			/* 相対速度を投影 */
-			float vRel = V.Dot(A);
+			const float vRel = V.Dot(A);
 
 			if (fabsf(vRel) < 1e-8f) {
 				/* 平行移動しない軸：現時点で分離なら衝突なし */
@@ -216,8 +220,8 @@ namespace UPhysics {
 			Vec3 edge1 = edges[(i + 2) % 3]; // 前のエッジ（逆向き）
 			Vec3 edge2 = edges[i];           // 次のエッジ
 
-			bool inVertexRegion = (toVert.Dot(-edge1) >= 0) && (toVert.
-				                      Dot(edge2) >= 0);
+			const bool inVertexRegion = toVert.Dot(-edge1) >= 0 && toVert.
+			                            Dot(edge2) >= 0;
 
 			if (inVertexRegion) {
 				float len = toVert.Length();
@@ -282,7 +286,7 @@ namespace UPhysics {
 				/* 重複している場合、分離距離をチェック（負の値）*/
 				if (separation > bestSeparation) {
 					bestSeparation   = separation;
-					bestNrm          = (separation1 > separation2) ? A : -A;
+					bestNrm          = separation1 > separation2 ? A : -A;
 					foundValidNormal = true;
 				}
 				continue;
@@ -427,10 +431,10 @@ namespace UPhysics {
 			const Vec3& ax = axes[i];
 
 			// Box（中心 + half）の投影
-			float boxCenter = ax.Dot(box.center);
-			float boxExtent = std::abs(ax.x) * box.halfSize.x +
-			                  std::abs(ax.y) * box.halfSize.y +
-			                  std::abs(ax.z) * box.halfSize.z;
+			const float boxCenter = ax.Dot(box.center);
+			const float boxExtent = std::abs(ax.x) * box.halfSize.x +
+			                        std::abs(ax.y) * box.halfSize.y +
+			                        std::abs(ax.z) * box.halfSize.z;
 			float boxMin = boxCenter - boxExtent;
 			float boxMax = boxCenter + boxExtent;
 
@@ -443,7 +447,9 @@ namespace UPhysics {
 			triMax       = std::max({triMax, d1, d2});
 
 			// オーバラップ量（符号付き）
-			float overlap = std::min(boxMax, triMax) - std::max(boxMin, triMin);
+			const float overlap = std::min(boxMax, triMax) - std::max(
+				                      boxMin, triMin
+			                      );
 			if (overlap < 0.0f) {
 				return false; // 分離軸発見 → 衝突無し
 			}
@@ -455,7 +461,7 @@ namespace UPhysics {
 		}
 
 		// 3) bestAxis 方向へ押し出し
-		outNormal = (triN.Dot(box.center - tri.v0) > 0.0f) ?
+		outNormal = triN.Dot(box.center - tri.v0) > 0.0f ?
 			            bestAxis :
 			            -bestAxis;
 		outDepth = bestDepth;

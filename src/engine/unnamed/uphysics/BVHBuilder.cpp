@@ -45,8 +45,8 @@ namespace UPhysics {
 		const uint32_t& start, const uint32_t& end,
 		const int&      depth
 	) {
-		FlatNode node      = {};
-		uint32_t nodeIndex = static_cast<uint32_t>(mNodes.size());
+		FlatNode       node      = {};
+		const uint32_t nodeIndex = static_cast<uint32_t>(mNodes.size());
 		mNodes.emplace_back(node);
 
 		Unnamed::AABB bounds = {};
@@ -103,8 +103,8 @@ namespace UPhysics {
 
 		const float minC  = (&centerBounds.min.x)[axis];
 		const float maxC  = (&centerBounds.max.x)[axis];
-		const float scale = (maxC - minC > 1e-5f) ?
-			                    (kBucket / (maxC - minC)) :
+		const float scale = maxC - minC > 1e-5f ?
+			                    kBucket / (maxC - minC) :
 			                    0.0f;
 
 		// バケツに三角形を振り分け

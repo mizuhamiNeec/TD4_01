@@ -1,5 +1,13 @@
 ﻿#pragma once
-#include <engine/unnamed/uphysics/PhysicsTypes.h>
+
+struct Vec3;
+
+namespace Unnamed {
+	struct Box;
+	struct Triangle;
+	struct AABB;
+	struct Ray;
+}
 
 namespace UPhysics {
 	bool RayVsAABB(
@@ -48,7 +56,7 @@ namespace UPhysics {
 		float&                   outTOI,
 		Vec3&                    outNormal
 	);
-	
+
 	bool BoxVsTriangleOverlap(
 		const Unnamed::Box&      box,
 		const Unnamed::Triangle& tri,

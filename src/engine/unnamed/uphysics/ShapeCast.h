@@ -1,5 +1,6 @@
 ﻿#pragma once
-#include <engine/unnamed/uphysics/PhysicsTypes.h>
+
+#include <engine/unnamed/uprimitive/UPrimitives.h>
 
 namespace UPhysics {
 	/// @brief 形状キャストインターフェース
@@ -28,8 +29,8 @@ namespace UPhysics {
 		virtual Vec3 ComputeImpactPoint(
 			const Vec3& start,
 			const Vec3& dirNormalized,
-			float       length,
-			float       toi,
+			const float length,
+			const float toi,
 			const Vec3& normal
 		) const {
 			(void)normal;

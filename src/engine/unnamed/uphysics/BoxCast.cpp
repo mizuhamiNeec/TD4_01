@@ -58,12 +58,12 @@ namespace UPhysics {
 	Vec3 BoxCast::ComputeImpactPoint(
 		const Vec3& start,
 		const Vec3& dirNormalized,
-		float       length,
-		float       toi,
+		const float length,
+		const float toi,
 		const Vec3& normal
 	) const {
 		const float travel = toi * length;
-		Vec3        center = start + dirNormalized * travel;
+		const Vec3  center = start + dirNormalized * travel;
 		Vec3        n      = normal;
 		const float nLenSq = n.SqrLength();
 		if (nLenSq > 1e-12f) { n /= std::sqrt(nLenSq); } else { return center; }

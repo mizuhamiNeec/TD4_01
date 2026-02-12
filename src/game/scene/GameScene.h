@@ -1,22 +1,15 @@
 #pragma once
 #include <memory>
 
-#include <engine/Components/MeshRenderer/SkeletalMeshRenderer.h>
-#include <engine/Components/MeshRenderer/StaticMeshRenderer.h>
 #include <engine/CubeMap/CubeMap.h>
-#include <engine/Entity/Entity.h>
 #include <engine/particle/ExplosionEffect.h>
 #include <engine/particle/ParticleEmitter.h>
 #include <engine/particle/ParticleObject.h>
-#include <engine/particle/WindEffect.h>
-#include <runtime/physics/core/UPhysics.h>
+#include <engine/physics/core/UPhysics.h>
+#include <engine/scene/BaseScene.h>
+#include <engine/Sprite/Sprite.h>
 
-#include <game/components/CameraAnimator.h>
-#include <game/components/player/MovementComponent.h>
-#include <game/components/weapon/base/WeaponComponent.h>
-#include <game/scene/base/BaseScene.h>
-
-#include "engine/Sprite/Sprite.h"
+#include <game/effects/WindEffect.h>
 
 class Audio;
 class GameTime;

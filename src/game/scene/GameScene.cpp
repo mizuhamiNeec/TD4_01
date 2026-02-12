@@ -1,32 +1,25 @@
 #include "GameScene.h"
 
 #include <array>
-#include <format>
-#include <limits>
-#include <string>
 
 #include <engine/Engine.h>
 #include <engine/EngineServices.h>
 #include <engine/Camera/CameraManager.h>
 #include <engine/Components/Camera/CameraComponent.h>
-#include <engine/Components/ColliderComponent/AABBCollider.h>
 #include <engine/Components/ColliderComponent/MeshColliderComponent.h>
-#include <engine/Debug/DebugDraw.h>
-#include <engine/Debug/DebugHud.h>
 #include <engine/ImGui/ImGuiUtil.h>
 #include <engine/Input/InputSystem.h>
 #include <engine/OldConsole/ConVarManager.h>
 #include <engine/ResourceSystem/Audio/AudioManager.h>
 #include <engine/TextureManager/TexManager.h>
-#include <engine/unnamed/subsystem/console/Log.h>
 #include <engine/unnamed/subsystem/interface/ServiceLocator.h>
 
-#include <game/components/CameraRotator.h>
 #include <game/components/RotateComponent.h>
-#include <game/components/ViewmodelSway.h>
-#include <game/components/checkpoint/CheckpointComponent.h>
 #include <game/components/checkpoint/CheckpointManager.h>
-#include <game/components/checkpoint/GoalComponent.h>
+
+#include "engine/particle/ParticleManager.h"
+#include "engine/unnamed/subsystem/time/GameTime.h"
+#include "engine/unnamed/subsystem/time/TimeSystem.h"
 
 namespace {
 	constexpr char kScenePath[] =
@@ -58,7 +51,7 @@ GameScene::~GameScene() {
 /// @brief 初期化
 void GameScene::Init() {
 	// 各種マネージャーの取得
-	auto* engine = Unnamed::EngineServices::Get();
+	const auto* engine = Unnamed::EngineServices::Get();
 	UASSERT(engine && "Engine instance not registered");
 
 	mAudioManager = engine ? engine->GetAudioManagerInstance() : nullptr;
@@ -127,7 +120,7 @@ void GameScene::Render() {
 		if (entity) { entity->Render(commandList); }
 	}
 
-	if (auto* engine = Unnamed::EngineServices::Get()) {
+	if (const auto* engine = Unnamed::EngineServices::Get()) {
 		if (auto* particleManager = engine->GetParticleManagerInstance()) {
 			particleManager->Render();
 		}
@@ -159,8 +152,8 @@ void GameScene::RegisterConVars() {
 
 /// @brief コアテクスチャの読み込み
 void GameScene::LoadCoreTextures() const {
-	auto* engine     = Unnamed::EngineServices::Get();
-	auto* texManager = engine ? engine->GetTexManagerInstance() : nullptr;
+	const auto* engine     = Unnamed::EngineServices::Get();
+	auto*       texManager = engine ? engine->GetTexManagerInstance() : nullptr;
 	if (!texManager) { return; }
 
 	struct TextureRequest {
@@ -191,8 +184,8 @@ void GameScene::LoadCoreTextures() const {
 /// @brief キューブマップの初期化
 void GameScene::InitializeCubeMap() {
 	if (!mRenderer || !mSrvManager) { return; }
-	auto* engine     = Unnamed::EngineServices::Get();
-	auto* texManager = engine ? engine->GetTexManagerInstance() : nullptr;
+	const auto* engine     = Unnamed::EngineServices::Get();
+	auto*       texManager = engine ? engine->GetTexManagerInstance() : nullptr;
 	if (!texManager) { return; }
 
 	mCubeMap = std::make_unique<CubeMap>(
@@ -205,10 +198,10 @@ void GameScene::InitializeCubeMap() {
 
 /// @brief パーティクルの初期化
 void GameScene::InitializeParticles() {
-	auto* engine          = Unnamed::EngineServices::Get();
-	auto* particleManager = engine ?
-		                        engine->GetParticleManagerInstance() :
-		                        nullptr;
+	const auto* engine          = Unnamed::EngineServices::Get();
+	auto*       particleManager = engine ?
+		                              engine->GetParticleManagerInstance() :
+		                              nullptr;
 	if (!particleManager) { return; }
 
 	particleManager->CreateParticleGroup("wind", kWindParticleTexturePath);
@@ -251,13 +244,13 @@ void GameScene::HandleWeaponFire(
 	ray.tMax   = 100.0f;
 
 	UPhysics::Hit hit{};
-	if (!mUPhysicsEngine->RayCast(ray, &hit)) { return; }
+	if (!mUPhysicsEngine->RayCast(ray, &hit)) {}
 }
 
 /// @brief パーティクルとエフェクトの更新
 /// @param deltaTime 経過時間
-void GameScene::UpdateParticlesAndEffects(float deltaTime) {
-	if (auto* engine = Unnamed::EngineServices::Get()) {
+void GameScene::UpdateParticlesAndEffects(const float deltaTime) {
+	if (const auto* engine = Unnamed::EngineServices::Get()) {
 		if (auto* particleManager = engine->GetParticleManagerInstance()) {
 			particleManager->Update(deltaTime);
 		}
@@ -272,9 +265,9 @@ void GameScene::UpdateParticlesAndEffects(float deltaTime) {
 
 /// @brief エンティティの更新
 /// @param deltaTime 経過時間
-void GameScene::UpdateEntities(float deltaTime) {
+void GameScene::UpdateEntities(const float deltaTime) {
 	// 物理更新前の処理
-	for (auto* entity : mEntities) {
+	for (const auto* entity : mEntities) {
 		if (entity && !entity->GetParent()) { entity->PrePhysics(deltaTime); }
 	}
 
@@ -287,7 +280,7 @@ void GameScene::UpdateEntities(float deltaTime) {
 	if (mUPhysicsEngine) { mUPhysicsEngine->Update(deltaTime); }
 
 	// 物理更新後の処理
-	for (auto* entity : mEntities) {
+	for (const auto* entity : mEntities) {
 		if (entity && !entity->GetParent()) { entity->PostPhysics(deltaTime); }
 	}
 }

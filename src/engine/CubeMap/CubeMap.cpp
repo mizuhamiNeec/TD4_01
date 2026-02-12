@@ -16,7 +16,7 @@ CubeMap::CubeMap(
 ) : mVertexData({}),
     mDevice(device),
     mSrvManager(srvManager),
-	mTexManager(texManager) {
+    mTexManager(texManager) {
 	mTexturePath = path;
 	Init();
 }

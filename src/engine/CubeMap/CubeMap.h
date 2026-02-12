@@ -4,7 +4,6 @@
 #include <engine/Object3D/Object3D.h>
 #include <engine/renderer/IndexBuffer.h>
 #include <engine/renderer/Structs.h>
-#include <engine/renderer/VertexBuffer.h>
 
 class SrvManager;
 class TexManager;

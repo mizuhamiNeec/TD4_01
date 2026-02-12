@@ -12,6 +12,8 @@
 #include "engine/Debug/DebugHud.h"
 #include "engine/Entity/Entity.h"
 #include "engine/ImGui/ImGuiUtil.h"
+#include "engine/OldConsole/Console.h"
+#include "engine/ResourceSystem/Material/Material.h"
 #include "engine/ResourceSystem/Shader/Shader.h"
 #include "engine/TextureManager/TexManager.h"
 
@@ -39,8 +41,8 @@ void SkeletalMeshRenderer::OnAttach(Entity& owner) {
 	MeshRenderer::OnAttach(owner);
 	mScene = mOwner->GetTransform();
 
-	auto* engine = Unnamed::EngineServices::Get();
-	
+	const auto* engine = Unnamed::EngineServices::Get();
+
 	// 変換行列用の定数バッファ
 	mTransformationMatrixConstantBuffer = std::make_unique<ConstantBuffer>(
 		engine->GetRendererInstance()->GetDevice(),
@@ -127,7 +129,7 @@ void SkeletalMeshRenderer::OnAttach(Entity& owner) {
 
 /// @brief 毎フレームの更新処理
 /// @param deltaTime 前フレームからの経過時間（秒）
-void SkeletalMeshRenderer::Update(float deltaTime) {
+void SkeletalMeshRenderer::Update(const float deltaTime) {
 	if (mIsPlaying) {
 		// アニメーション遷移中の処理
 		if (mIsTransitioning) {
@@ -198,7 +200,7 @@ void SkeletalMeshRenderer::Render(ID3D12GraphicsCommandList* commandList) {
 	}
 
 	// 現在バインドされているマテリアルを追跡
-	Material* currentlyBoundMaterial = nullptr;
+	const Material* currentlyBoundMaterial = nullptr;
 
 	// メッシュ内の各サブメッシュを描画
 	for (const auto& subMesh : mSkeletalMesh->GetSubMeshes()) {
@@ -214,7 +216,7 @@ void SkeletalMeshRenderer::Render(ID3D12GraphicsCommandList* commandList) {
 				);
 				const Mat4& viewProjMat = CameraManager::GetActiveCamera()->
 					GetViewProjMat();
-				Mat4 worldViewProjMat = worldMat * viewProjMat;
+				const Mat4 worldViewProjMat = worldMat * viewProjMat;
 
 				mTransformationMatrix->wvp                   = worldViewProjMat;
 				mTransformationMatrix->world                 = worldMat;
@@ -283,13 +285,13 @@ void SkeletalMeshRenderer::Render(ID3D12GraphicsCommandList* commandList) {
 				                       "UnknownSkeletalMesh";
 
 			// ファイルパスからファイル名のみを抽出
-			size_t lastSlash = meshName.find_last_of("/\\");
+			const size_t lastSlash = meshName.find_last_of("/\\");
 			if (lastSlash != std::string::npos) {
 				meshName = meshName.substr(lastSlash + 1);
 			}
 
 			// 拡張子を削除
-			size_t lastDot = meshName.find_last_of('.');
+			const size_t lastDot = meshName.find_last_of('.');
 			if (lastDot != std::string::npos) {
 				meshName = meshName.substr(0, lastDot);
 			}
@@ -335,8 +337,8 @@ void SkeletalMeshRenderer::DrawInspectorImGui() {
 						mCurrentAnimationName.c_str()
 					)) {
 						for (const auto& [animName, anim] : animations) {
-							bool isSelected = (mCurrentAnimationName ==
-							                   animName);
+							const bool isSelected = mCurrentAnimationName ==
+							                        animName;
 							if (ImGui::Selectable(
 								animName.c_str(), isSelected
 							)) { PlayAnimation(animName, mIsLooping); }
@@ -501,7 +503,7 @@ void SkeletalMeshRenderer::DrawInspectorImGui() {
 			ImGui::Separator();
 			ImGui::Text("SubMeshes and Textures:");
 			for (auto& subMesh : mSkeletalMesh->GetSubMeshes()) {
-				Material* material = subMesh->GetMaterial();
+				const Material* material = subMesh->GetMaterial();
 				if (material) {
 					if (ImGui::TreeNode(
 						(subMesh->GetName() + " - " + material->GetFullName()).
@@ -511,7 +513,8 @@ void SkeletalMeshRenderer::DrawInspectorImGui() {
 						const auto& textures = material->GetTextures();
 						if (!textures.empty()) {
 							ImGui::Text("Textures:");
-							auto* texManager = Unnamed::EngineServices::Get()->GetTexManagerInstance();
+							auto* texManager = Unnamed::EngineServices::Get()->
+								GetTexManagerInstance();
 							if (!texManager) {
 								ImGui::Text("TexManager is null");
 								ImGui::TreePop();
@@ -526,7 +529,7 @@ void SkeletalMeshRenderer::DrawInspectorImGui() {
 									ImGui::Text("ファイルパス: %s", filePath.c_str());
 
 									// テクスチャインデックス情報を表示
-									uint32_t textureIndex = texManager->
+									const uint32_t textureIndex = texManager->
 										GetTextureIndexByFilePath(filePath);
 									ImGui::Text(
 										"テクスチャインデックス: %u",
@@ -534,7 +537,7 @@ void SkeletalMeshRenderer::DrawInspectorImGui() {
 									);
 
 									// テクスチャのプレビューを表示
-									D3D12_GPU_DESCRIPTOR_HANDLE handle =
+									const D3D12_GPU_DESCRIPTOR_HANDLE handle =
 										texManager->GetSrvHandleGPU(filePath);
 									if (handle.ptr != 0) {
 										ImGui::Text(
@@ -585,8 +588,8 @@ void SkeletalMeshRenderer::SetSkeletalMesh(SkeletalMesh* skeletalMesh) {
 /// @param forceRestart 既に同じアニメーションが再生中でも強制的に再開するか
 void SkeletalMeshRenderer::PlayAnimation(
 	const std::string& animationName,
-	bool               loop,
-	bool               forceRestart
+	const bool         loop,
+	const bool         forceRestart
 ) {
 	if (!mSkeletalMesh) return;
 
@@ -629,7 +632,7 @@ void SkeletalMeshRenderer::PlayAnimation(
 void SkeletalMeshRenderer::TransitionToAnimation(
 	const std::string& animationName,
 	float              transitionTime,
-	bool               loop
+	const bool         loop
 ) {
 	if (!mSkeletalMesh) return;
 
@@ -696,7 +699,7 @@ void SkeletalMeshRenderer::ResumeAnimation() {
 
 /// @brief アニメーションの再生速度を設定
 /// @param speed 再生速度（1.0が通常速度）
-void SkeletalMeshRenderer::SetAnimationSpeed(float speed) {
+void SkeletalMeshRenderer::SetAnimationSpeed(const float speed) {
 	mAnimationSpeed = speed;
 }
 
@@ -780,16 +783,18 @@ void SkeletalMeshRenderer::CalculateNodeTransform(
 	if (animation && animation->nodeAnimations.contains(node.name)) {
 		const NodeAnimation& nodeAnim = animation->nodeAnimations.at(node.name);
 
-		Vec3 translation = CalculateValue(
+		const Vec3 translation = CalculateValue(
 			nodeAnim.translate.keyFrames,
 			animationTime
 		);
-		Quaternion rotation = CalculateValue(
+		const Quaternion rotation = CalculateValue(
 			nodeAnim.rotate.keyFrames,
 			animationTime
 		);
 
-		Vec3 scale    = CalculateValue(nodeAnim.scale.keyFrames, animationTime);
+		const Vec3 scale = CalculateValue(
+			nodeAnim.scale.keyFrames, animationTime
+		);
 		nodeTransform = Mat4::Affine(
 			scale,
 			rotation,
@@ -798,14 +803,14 @@ void SkeletalMeshRenderer::CalculateNodeTransform(
 	}
 
 	// 左手座標系かつ行ベクトルの場合、変換順序を修正
-	Mat4 globalTransform = nodeTransform * parentTransform;
+	const Mat4 globalTransform = nodeTransform * parentTransform;
 
 	// このノードがボーンの場合、変換行列を設定
 	if (mSkeletalMesh) {
 		const Skeleton& skeleton = mSkeletalMesh->GetSkeleton();
-		auto            it       = skeleton.boneMap.find(node.name);
+		const auto      it       = skeleton.boneMap.find(node.name);
 		if (it != skeleton.boneMap.end()) {
-			int boneIndex = it->second;
+			const int boneIndex = it->second;
 			if (boneIndex < BoneMatrices::MAX_BONES) {
 				// 元の計算に戻す（補正なし）
 				mBoneMatrices->bones[boneIndex] = skeleton.
@@ -876,30 +881,30 @@ void SkeletalMeshRenderer::CalculateNodeTransformBlended(
 	}
 
 	// 線形補間でブレンド
-	Vec3 translation = Math::Lerp(
+	const Vec3 translation = Math::Lerp(
 		translationCurrent, translationNext, Math::EaseOutBack(blendFactor)
 	);
-	Vec3 scale = Math::Lerp(
+	const Vec3 scale = Math::Lerp(
 		scaleCurrent, scaleNext, Math::EaseOutBack(blendFactor)
 	);
 
 	// 回転
-	Quaternion rotation = Quaternion::Slerp(
+	const Quaternion rotation = Quaternion::Slerp(
 		rotationCurrent, rotationNext, Math::EaseOutBack(blendFactor)
 	);
 
 	// ブレンドされた変換行列を作成
-	Mat4 nodeTransform = Mat4::Affine(scale, rotation, translation);
+	const Mat4 nodeTransform = Mat4::Affine(scale, rotation, translation);
 
 	// グローバル変換を計算
-	Mat4 globalTransform = nodeTransform * parentTransform;
+	const Mat4 globalTransform = nodeTransform * parentTransform;
 
 	// このノードがボーンの場合、変換行列を設定
 	if (mSkeletalMesh) {
 		const Skeleton& skeleton = mSkeletalMesh->GetSkeleton();
-		auto            it       = skeleton.boneMap.find(node.name);
+		const auto      it       = skeleton.boneMap.find(node.name);
 		if (it != skeleton.boneMap.end()) {
-			int boneIndex = it->second;
+			const int boneIndex = it->second;
 			if (boneIndex < BoneMatrices::MAX_BONES) {
 				mBoneMatrices->bones[boneIndex] =
 					skeleton.bones[boneIndex].offsetMatrix * globalTransform;
@@ -938,15 +943,17 @@ void SkeletalMeshRenderer::DrawBoneHierarchy(
 			node.name
 		);
 
-		Vec3 translation = CalculateValue(
+		const Vec3 translation = CalculateValue(
 			nodeAnim.translate.keyFrames,
 			mAnimationTime
 		);
-		Quaternion rotation = CalculateValue(
+		const Quaternion rotation = CalculateValue(
 			nodeAnim.rotate.keyFrames,
 			mAnimationTime
 		);
-		Vec3 scale = CalculateValue(nodeAnim.scale.keyFrames, mAnimationTime);
+		const Vec3 scale = CalculateValue(
+			nodeAnim.scale.keyFrames, mAnimationTime
+		);
 
 		nodeTransform = Mat4::Affine(
 			scale, rotation,
@@ -955,9 +962,9 @@ void SkeletalMeshRenderer::DrawBoneHierarchy(
 	}
 
 	// 左手座標系かつ行ベクトルの場合、変換順序を修正
-	Mat4       globalTransform = nodeTransform * parentTransform;
-	Vec3       nodePos         = globalTransform.GetTranslate();
-	Quaternion nodeRot         = globalTransform.ToQuaternion();
+	Mat4             globalTransform = nodeTransform * parentTransform;
+	const Vec3       nodePos         = globalTransform.GetTranslate();
+	const Quaternion nodeRot         = globalTransform.ToQuaternion();
 
 	if (mSkeletalMesh->GetSkeleton().boneMap.contains(node.name)) {
 		DebugDraw::DrawSphere(
@@ -969,19 +976,20 @@ void SkeletalMeshRenderer::DrawBoneHierarchy(
 		);
 
 		if (parentTransform != Mat4::identity) {
-			Mat4 parentT   = parentTransform;
-			Vec3 parentPos = parentT.GetTranslate();
+			Mat4       parentT   = parentTransform;
+			const Vec3 parentPos = parentT.GetTranslate();
 			DebugDraw::DrawLine(parentPos, nodePos, {0.8f, 0.8f, 0.2f, 1.0f});
 			{
 				const Vec3 worldPos   = nodePos;
-				Vec2       screenSize = Unnamed::EngineServices::Get()->GetViewportSizeInstance();
+				Vec2       screenSize = Unnamed::EngineServices::Get()->
+					GetViewportSizeInstance();
 
 				const Vec3 cameraPos = CameraManager::GetActiveCamera()->
 				                       GetViewMat().
 				                       Inverse().GetTranslate();
 
 				// カメラとの距離を計算
-				float distance = (worldPos - cameraPos).Length();
+				const float distance = (worldPos - cameraPos).Length();
 
 				// カメラとの距離が一定以下の場合は描画しない
 				if (distance < Math::HtoM(4.0f)) { return; }
@@ -989,7 +997,7 @@ void SkeletalMeshRenderer::DrawBoneHierarchy(
 				bool  bIsOffscreen = false;
 				float outAngle     = 0.0f;
 
-				Vec2 scrPosition = Math::WorldToScreen(
+				const Vec2 scrPosition = Math::WorldToScreen(
 					worldPos,
 					screenSize,
 					false,
@@ -1004,7 +1012,7 @@ void SkeletalMeshRenderer::DrawBoneHierarchy(
 					// ImVec2 screenPos = {
 					// 	Unnamed::Engine::GetViewportLT().x, Unnamed::Engine::GetViewportLT().y
 					// };
-					ImVec2 screenPos = ImGui::GetMainViewport()->Pos;
+					const ImVec2 screenPos = ImGui::GetMainViewport()->Pos;
 					ImGui::SetNextWindowPos(screenPos);
 					ImGui::SetNextWindowSize({screenSize.x, screenSize.y});
 					ImGui::SetNextWindowBgAlpha(0.0f); // 背景を透明にする
@@ -1021,12 +1029,12 @@ void SkeletalMeshRenderer::DrawBoneHierarchy(
 						ImGuiWindowFlags_NoNav
 					);
 
-					ImVec2      textPos  = {scrPosition.x, scrPosition.y};
-					ImDrawList* drawList = ImGui::GetWindowDrawList();
+					const ImVec2 textPos  = {scrPosition.x, scrPosition.y};
+					ImDrawList*  drawList = ImGui::GetWindowDrawList();
 
-					float outlineSize = 1.0f;
+					constexpr float outlineSize = 1.0f;
 
-					ImVec4 textColor = ImGuiUtil::ToImVec4(Vec4::white);
+					const ImVec4 textColor = ImGuiUtil::ToImVec4(Vec4::white);
 
 					ImGuiUtil::TextOutlined(
 						drawList,

@@ -1,12 +1,13 @@
 #pragma once
 
-#include <runtime/core/math/Math.h>
-
-#include <engine/Components/MeshRenderer/Base/MeshRenderer.h>
+#include <core/math/Math.h>
 
 #include <engine/Animation/Animation.h>
+#include <engine/Components/MeshRenderer/Base/MeshRenderer.h>
 #include <engine/renderer/ConstantBuffer.h>
 #include <engine/ResourceSystem/Mesh/SkeletalMesh.h>
+
+struct MatParam;
 
 // ボーン変換行列用の定数バッファ構造体
 struct BoneMatrices {

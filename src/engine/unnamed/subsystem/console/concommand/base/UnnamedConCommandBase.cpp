@@ -7,7 +7,7 @@ namespace Unnamed {
 	/// @brief FCVAR列挙型を文字列に変換します。
 	/// @param e 変換するFCVAR値
 	/// @return 変換された文字列
-	const char* ToString(FCVAR e) {
+	const char* ToString(const FCVAR e) {
 		switch (e) {
 			case FCVAR::NONE: return "NONE";
 			case FCVAR::UNREGISTERED: return "UNREGISTERED";
@@ -46,7 +46,7 @@ namespace Unnamed {
 	/// @param flags チェックするフラグ
 	/// @return そのフラグが設定されているかどうか
 	bool UnnamedConCommandBase::HasFlags(const FCVAR& flags) const {
-		return (mFlags & flags);
+		return mFlags & flags;
 	}
 
 	/// @brief フラグを追加します。

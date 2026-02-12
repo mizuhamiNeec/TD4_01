@@ -1,15 +1,16 @@
-#include "engine/particle/WindEffect.h"
+#include <core/math/Math.h>
 
-#include "engine/Camera/CameraManager.h"
-#include "engine/Components/Camera/CameraComponent.h"
-#include "engine/Debug/DebugDraw.h"
-#include "engine/Entity/Entity.h"
-#include "engine/particle/ParticleManager.h"
-#include "engine/particle/ParticleObject.h"
+#include <engine/Camera/CameraManager.h>
+#include <engine/Components/Camera/CameraComponent.h>
+#include <engine/Debug/DebugDraw.h>
+#include <engine/Entity/Entity.h>
+#include <engine/particle/ParticleManager.h>
+#include <engine/particle/ParticleObject.h>
 
-#include <runtime/core/math/Math.h>
+#include <game/components/player/MovementComponent.h>
+#include <game/effects/WindEffect.h>
 
-#include "game/components/player/MovementComponent.h"
+#include "core/math/random/Random.h"
 
 /// @brief デストラクタ
 WindEffect::~WindEffect() {
@@ -59,7 +60,8 @@ void WindEffect::Update([[maybe_unused]] const float deltaTime) {
 		// 次のエミッションまでの時間を計算
 
 		// 時間が経過したらパーティクルを放出
-		if (float emissionInterval = 1.0f / currentEmissionRate; mEmissionTimer
+		if (const float emissionInterval = 1.0f / currentEmissionRate;
+			mEmissionTimer
 			>= emissionInterval) {
 			mEmissionTimer = 0.0f;
 
@@ -104,7 +106,7 @@ void WindEffect::Draw() const { if (mWindParticle) { mWindParticle->Draw(); } }
 /// @brief プレイヤーの進行方向に基づいてランダムな位置を取得します
 /// @return ランダムな位置ベクター
 Vec3 WindEffect::GetRandomPositionInPlayerDirection() const {
-	auto camera = CameraManager::GetActiveCamera();
+	const auto camera = CameraManager::GetActiveCamera();
 	if (!camera || !mPlayerMovement) { return Vec3::zero; }
 
 	// アスペクト比取得

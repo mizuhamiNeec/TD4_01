@@ -1,7 +1,7 @@
 #pragma once
 #include <engine/Components/MeshRenderer/Base/MeshRenderer.h>
 #include <engine/Entity/Entity.h>
-#include <engine/Renderer/ConstantBuffer.h>
+#include <engine/renderer/ConstantBuffer.h>
 #include <engine/ResourceSystem/Mesh/StaticMesh.h>
 
 struct TransformationMatrix;

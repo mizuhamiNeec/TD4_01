@@ -7,6 +7,8 @@
 
 #include "engine/EngineServices.h"
 #include "engine/Components/Camera/CameraComponent.h"
+#include "engine/OldConsole/Console.h"
+#include "engine/ResourceSystem/Material/Material.h"
 
 struct MatParam {
 	Vec4  baseColor;
@@ -30,7 +32,7 @@ void StaticMeshRenderer::OnAttach(Entity& owner) {
 	MeshRenderer::OnAttach(owner);
 	mScene = mOwner->GetTransform();
 
-	auto* engine = Unnamed::EngineServices::Get();
+	const auto* engine = Unnamed::EngineServices::Get();
 
 	mTransformationMatrixConstantBuffer = std::make_unique<ConstantBuffer>(
 		engine->GetRendererInstance()->GetDevice(),
@@ -116,7 +118,7 @@ void StaticMeshRenderer::Render(ID3D12GraphicsCommandList* commandList) {
 	}
 
 	// 現在バインドされているマテリアルを追跡
-	Material* currentlyBoundMaterial = nullptr;
+	const Material* currentlyBoundMaterial = nullptr;
 
 	// メッシュ内の各サブメッシュを描画
 	for (const auto& subMesh : mStaticMesh->GetSubMeshes()) {
@@ -132,7 +134,7 @@ void StaticMeshRenderer::Render(ID3D12GraphicsCommandList* commandList) {
 				);
 				const Mat4& viewProjMat = CameraManager::GetActiveCamera()->
 					GetViewProjMat();
-				Mat4 worldViewProjMat = worldMat * viewProjMat;
+				const Mat4 worldViewProjMat = worldMat * viewProjMat;
 
 				mTransformationMatrix->wvp                   = worldViewProjMat;
 				mTransformationMatrix->world                 = worldMat;
@@ -190,13 +192,13 @@ void StaticMeshRenderer::Render(ID3D12GraphicsCommandList* commandList) {
 				                       "UnknownMesh";
 
 			// ファイルパスからファイル名のみを抽出
-			size_t lastSlash = meshName.find_last_of("/\\");
+			const size_t lastSlash = meshName.find_last_of("/\\");
 			if (lastSlash != std::string::npos) {
 				meshName = meshName.substr(lastSlash + 1);
 			}
 
 			// 拡張子を削除
-			size_t lastDot = meshName.find_last_of('.');
+			const size_t lastDot = meshName.find_last_of('.');
 			if (lastDot != std::string::npos) {
 				meshName = meshName.substr(0, lastDot);
 			}
@@ -204,7 +206,7 @@ void StaticMeshRenderer::Render(ID3D12GraphicsCommandList* commandList) {
 			material->Apply(commandList, meshName);
 
 			// デバッグ用：テクスチャスロット確認のみ
-			auto shader = material->GetShader();
+			const auto shader = material->GetShader();
 			if (shader) {
 				std::vector<std::string> textureOrder = shader->
 					GetTextureSlots();
@@ -311,7 +313,7 @@ void StaticMeshRenderer::DrawInspectorImGui() {
 			ImGui::Separator();
 			ImGui::Text("SubMeshes and Textures:");
 			for (auto& subMesh : mStaticMesh->GetSubMeshes()) {
-				Material* material = subMesh->GetMaterial();
+				const Material* material = subMesh->GetMaterial();
 				if (material) {
 					if (ImGui::TreeNode(
 						(subMesh->GetName() + " - " + material->GetFullName()).
@@ -321,7 +323,7 @@ void StaticMeshRenderer::DrawInspectorImGui() {
 						const auto& textures = material->GetTextures();
 						if (!textures.empty()) {
 							ImGui::Text("Textures:");
-							auto  engine     = Unnamed::EngineServices::Get();
+							const auto engine = Unnamed::EngineServices::Get();
 							auto* texManager = engine->GetTexManagerInstance();
 							if (!texManager) {
 								ImGui::Text("TexManager is null");
@@ -338,7 +340,7 @@ void StaticMeshRenderer::DrawInspectorImGui() {
 									ImGui::Text("ファイルパス: %s", filePath.c_str());
 
 									// テクスチャインデックス情報を表示
-									uint32_t textureIndex = texManager->
+									const uint32_t textureIndex = texManager->
 										GetTextureIndexByFilePath(filePath);
 									ImGui::Text(
 										"テクスチャインデックス: %u",
@@ -346,7 +348,7 @@ void StaticMeshRenderer::DrawInspectorImGui() {
 									);
 
 									// テクスチャのプレビューを表示
-									D3D12_GPU_DESCRIPTOR_HANDLE handle =
+									const D3D12_GPU_DESCRIPTOR_HANDLE handle =
 										texManager->GetSrvHandleGPU(filePath);
 									if (handle.ptr != 0) {
 										ImGui::Text(

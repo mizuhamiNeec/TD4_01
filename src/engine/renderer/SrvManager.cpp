@@ -1,8 +1,7 @@
-#include <engine/renderer/SrvManager.h>
-
-#include <runtime/core/Properties.h>
-
 #include <cassert>
+
+#include <engine/Properties.h>
+#include <engine/renderer/SrvManager.h>
 
 #include "engine/OldConsole/Console.h"
 
@@ -168,7 +167,7 @@ void SrvManager::SetGraphicsRootDescriptorTable(
 		return;
 	}
 
-	D3D12_GPU_DESCRIPTOR_HANDLE handle = GetGPUDescriptorHandle(srvIndex);
+	const D3D12_GPU_DESCRIPTOR_HANDLE handle = GetGPUDescriptorHandle(srvIndex);
 	mD3d12->GetCommandList()->SetGraphicsRootDescriptorTable(
 		rootParameterIndex, handle
 	);
@@ -221,7 +220,7 @@ uint32_t SrvManager::AllocateForTexture2D() {
 	}
 
 	// 使用状況を記録
-	size_t arrayIndex = index - kTexture2DStartIndex;
+	const size_t arrayIndex = index - kTexture2DStartIndex;
 	if (arrayIndex < mUsedTexture2DIndices.size()) {
 		mUsedTexture2DIndices[arrayIndex] = true;
 	}
@@ -249,7 +248,7 @@ uint32_t SrvManager::AllocateForTextureCube() {
 	}
 
 	// 使用状況を記録
-	size_t arrayIndex = index - kTextureCubeStartIndex;
+	const size_t arrayIndex = index - kTextureCubeStartIndex;
 	if (arrayIndex < mUsedTextureCubeIndices.size()) {
 		mUsedTextureCubeIndices[arrayIndex] = true;
 	}
@@ -320,7 +319,7 @@ uint32_t SrvManager::AllocateForStructuredBuffer() {
 	}
 
 	// 使用状況を記録
-	size_t arrayIndex = index - kStructuredBufferStartIndex;
+	const size_t arrayIndex = index - kStructuredBufferStartIndex;
 	if (arrayIndex < mUsedStructuredBufferIndices.size()) {
 		mUsedStructuredBufferIndices[arrayIndex] = true;
 	}
@@ -346,7 +345,7 @@ uint32_t SrvManager::AllocateConsecutiveTexture2DSlots(uint32_t count) {
 
 		// 代替案：最初から再割り当て（デバッグ用の一時的な対処）
 		// 本来はフリーリストから連続スロットを探すか、より適切な管理が必要
-		uint32_t startIndex = kTexture2DStartIndex;
+		constexpr uint32_t startIndex = kTexture2DStartIndex;
 
 		// 使用可能な連続スロットがあるかチェック
 		if (startIndex + count <= kTexture2DEndIndex) { return startIndex; }
@@ -362,7 +361,7 @@ uint32_t SrvManager::AllocateConsecutiveTexture2DSlots(uint32_t count) {
 	}
 
 	// 開始インデックスを記録
-	uint32_t startIndex = mTexture2DIndex;
+	const uint32_t startIndex = mTexture2DIndex;
 	// インデックスを進める
 	mTexture2DIndex += count;
 
@@ -410,7 +409,7 @@ uint32_t SrvManager::AllocateForTexture() { return AllocateForTexture2D(); }
 /// @brief AllocateConsecutiveTexture2DSlotsにリダイレクト
 /// @param count 割り当てるインデックスの数
 /// @return 割り当てられた最初の2Dテクスチャ用SRVインデックス
-uint32_t SrvManager::AllocateConsecutiveTextureSlots(uint32_t count) {
+uint32_t SrvManager::AllocateConsecutiveTextureSlots(const uint32_t count) {
 	return AllocateConsecutiveTexture2DSlots(count);
 }
 
@@ -431,7 +430,7 @@ void SrvManager::DeallocateTexture2D(uint32_t index) {
 	}
 
 	// 使用状況をクリア
-	size_t arrayIndex = index - kTexture2DStartIndex;
+	const size_t arrayIndex = index - kTexture2DStartIndex;
 	if (arrayIndex < mUsedTexture2DIndices.size()) {
 		if (!mUsedTexture2DIndices[arrayIndex]) {
 			Console::Print(
@@ -477,7 +476,7 @@ void SrvManager::DeallocateTextureCube(uint32_t index) {
 	}
 
 	// 使用状況をクリア
-	size_t arrayIndex = index - kTextureCubeStartIndex;
+	const size_t arrayIndex = index - kTextureCubeStartIndex;
 	if (arrayIndex < mUsedTextureCubeIndices.size()) {
 		if (!mUsedTextureCubeIndices[arrayIndex]) {
 			Console::Print(
@@ -524,7 +523,7 @@ void SrvManager::DeallocateStructuredBuffer(uint32_t index) {
 	}
 
 	// 使用状況をクリア
-	size_t arrayIndex = index - kStructuredBufferStartIndex;
+	const size_t arrayIndex = index - kStructuredBufferStartIndex;
 	if (arrayIndex < mUsedStructuredBufferIndices.size()) {
 		if (!mUsedStructuredBufferIndices[arrayIndex]) {
 			Console::Print(
@@ -555,7 +554,7 @@ void SrvManager::DeallocateStructuredBuffer(uint32_t index) {
 
 /// @brief DeallocateTexture2Dにリダイレクト
 /// @param index 返却する2Dテクスチャ用SRVインデックス
-void SrvManager::DeallocateTexture(uint32_t index) {
+void SrvManager::DeallocateTexture(const uint32_t index) {
 	DeallocateTexture2D(index);
 }
 
@@ -576,7 +575,7 @@ void SrvManager::DeallocateTextureArray(uint32_t index) {
 	}
 
 	// 使用状況をクリア
-	size_t arrayIndex = index - kTextureArrayStartIndex;
+	const size_t arrayIndex = index - kTextureArrayStartIndex;
 	if (arrayIndex < mUsedTextureArrayIndices.size()) {
 		if (!mUsedTextureArrayIndices[arrayIndex]) {
 			Console::Print(

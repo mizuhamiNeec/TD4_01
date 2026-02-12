@@ -1,5 +1,4 @@
 #include <cassert>
-#include <iterator>
 
 #include <engine/renderer/IndexBuffer.h>
 
@@ -64,8 +63,8 @@ void IndexBuffer::Update(const void* pInitData, const size_t size) const {
 	assert(pInitData != nullptr);
 	assert(size <= mSize);
 
-	void*                    ptr = nullptr;
-	[[maybe_unused]] HRESULT hr  = mBuffer->Map(0, nullptr, &ptr);
+	void*                          ptr = nullptr;
+	[[maybe_unused]] const HRESULT hr  = mBuffer->Map(0, nullptr, &ptr);
 	assert(SUCCEEDED(hr));
 
 	memcpy(ptr, pInitData, size);
@@ -80,8 +79,8 @@ size_t IndexBuffer::GetSize() const { return mSize; }
 /// @return インデックスデータのベクターへの参照
 std::vector<uint32_t>& IndexBuffer::GetIndices() const {
 	mIndices.resize(mSize / sizeof(uint32_t));
-	void*                    ptr = nullptr;
-	[[maybe_unused]] HRESULT hr  = mBuffer->Map(0, nullptr, &ptr);
+	void*                          ptr = nullptr;
+	[[maybe_unused]] const HRESULT hr  = mBuffer->Map(0, nullptr, &ptr);
 	assert(SUCCEEDED(hr));
 
 	memcpy(mIndices.data(), ptr, mSize);

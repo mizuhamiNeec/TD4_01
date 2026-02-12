@@ -17,7 +17,7 @@
 #include <engine/renderer/D3D12.h>
 #include <engine/renderer/SrvManager.h>
 
-#include "engine/Platform/Window.h"
+#include "engine/platform/Window.h"
 
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
@@ -168,7 +168,7 @@ void D3D12::SetShaderResourceViewManager(
 
 /// @brief レンダーターゲットと深度ステンシルバッファをクリアします
 void D3D12::ClearColorAndDepth() {
-	auto dsvHandle = mDefaultDepthStencilTexture.dsvHandle;
+	const auto dsvHandle = mDefaultDepthStencilTexture.dsvHandle;
 
 	mCommandList->ClearDepthStencilView(
 		dsvHandle,
@@ -282,7 +282,7 @@ void D3D12::BeginRenderPass(const RenderPassTargets& targets) const {
 
 	if (ConVarManager::GetConVar("r_clear")->GetValueAsBool()) {
 		if (targets.bClearColor) {
-			FLOAT clearColor[4] = {
+			const FLOAT clearColor[4] = {
 				targets.clearColor.x,
 				targets.clearColor.y,
 				targets.clearColor.z,
@@ -347,8 +347,8 @@ void D3D12::WriteToUploadHeapMemory(
 	ID3D12Resource* resource,
 	const uint32_t  size, const void* data
 ) {
-	void*   mapped;
-	HRESULT hr = resource->Map(0, nullptr, &mapped);
+	void*         mapped;
+	const HRESULT hr = resource->Map(0, nullptr, &mapped);
 	if (SUCCEEDED(hr)) {
 		memcpy(mapped, data, size);
 		resource->Unmap(0, nullptr);
@@ -382,10 +382,10 @@ void D3D12::WaitPreviousFrame() {
 
 /// @brief コマンドキューをフラッシュします
 void D3D12::Flush() {
-	UINT64 fenceValue = ++mFenceValue;
+	const UINT64 fenceValue = ++mFenceValue;
 	mCommandQueue->Signal(mFence.Get(), fenceValue);
 	if (mFence->GetCompletedValue() < fenceValue) {
-		HANDLE event = CreateEvent(nullptr, false, false, nullptr);
+		const HANDLE event = CreateEvent(nullptr, false, false, nullptr);
 		mFence->SetEventOnCompletion(fenceValue, event);
 		WaitForSingleObject(event, INFINITE);
 		CloseHandle(event);
@@ -868,7 +868,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE D3D12::GetCPUDescriptorHandle(
 /// @param format テクスチャのフォーマット
 /// @return 生成された深度ステンシルテクスチャ情報
 ComPtr<ID3D12Resource> D3D12::CreateDepthStencilTextureResource(
-	uint32_t width, uint32_t height, DXGI_FORMAT format
+	const uint32_t width, const uint32_t height, const DXGI_FORMAT format
 ) const {
 	// 生成するResourceの設定
 	D3D12_RESOURCE_DESC resourceDesc = {};
@@ -916,7 +916,8 @@ ComPtr<ID3D12Resource> D3D12::CreateDepthStencilTextureResource(
 /// @param format テクスチャのフォーマット
 /// @return 生成された深度ステンシルテクスチャ情報
 RenderTargetTexture D3D12::CreateRenderTargetTexture(
-	uint32_t width, uint32_t height, Vec4 clearColor, DXGI_FORMAT format
+	const uint32_t    width, const uint32_t height, const Vec4 clearColor,
+	const DXGI_FORMAT format
 ) {
 	// 新規作成の場合は無効なインデックス（0）を渡す
 	return CreateRenderTargetTexture(width, height, clearColor, 0, format);
@@ -1078,7 +1079,7 @@ RenderTargetTexture D3D12::CreateRenderTargetTexture(
 /// @param format テクスチャのフォーマット
 /// @return 生成された深度ステンシルテクスチャ情報
 DepthStencilTexture D3D12::CreateDepthStencilTexture(
-	uint32_t width, uint32_t height, DXGI_FORMAT format
+	const uint32_t width, const uint32_t height, const DXGI_FORMAT format
 ) {
 	// 新規作成の場合は無効なインデックス（0）を渡す
 	return CreateDepthStencilTexture(width, height, 0, format);
@@ -1091,7 +1092,8 @@ DepthStencilTexture D3D12::CreateDepthStencilTexture(
 /// @param format テクスチャのフォーマット
 /// @return 生成された深度ステンシルテクスチャ情報
 DepthStencilTexture D3D12::CreateDepthStencilTexture(
-	uint32_t width, uint32_t height, uint32_t oldSrvIndex, DXGI_FORMAT format
+	const uint32_t    width, const uint32_t height, uint32_t oldSrvIndex,
+	const DXGI_FORMAT format
 ) {
 	DepthStencilTexture result = {};
 
@@ -1112,10 +1114,10 @@ DepthStencilTexture D3D12::CreateDepthStencilTexture(
 	result.dsv = CreateDepthStencilTextureResource(width, height, format);
 
 	// 2. DSVディスクリプタハンドルを算出
-	uint32_t dsvIndex = mCurrentDsvIndex;
+	const uint32_t dsvIndex = mCurrentDsvIndex;
 	++mCurrentDsvIndex;
 
-	auto dsvHandle = GetCPUDescriptorHandle(
+	const auto dsvHandle = GetCPUDescriptorHandle(
 		mDsvDescriptorHeap.Get(),
 		mDescriptorSizeDsv,
 		dsvIndex
@@ -1137,8 +1139,8 @@ DepthStencilTexture D3D12::CreateDepthStencilTexture(
 /// @return 割り当てられたRTVハンドル
 D3D12_CPU_DESCRIPTOR_HANDLE D3D12::AllocateNewRTVHandle() {
 	// ディスクリプタヒープのサイズを取得
-	uint32_t index = kFrameBufferCount + static_cast<uint32_t>(
-		                 mRtvHandlesSwapChain.size());
+	const uint32_t index = kFrameBufferCount + static_cast<uint32_t>(
+		                       mRtvHandlesSwapChain.size());
 
 	// インデックスからハンドル取得
 	auto handle = GetCPUDescriptorHandle(

@@ -12,9 +12,8 @@
 #include <string>
 #include <winnt.h>
 
+#include <engine/Properties.h>
 #include <engine/OldConsole/Console.h>
-#include <runtime/core/Properties.h>
-#include <runtime/core/math/Math.h>
 
 /// @brief 定数定義
 PipelineState::PipelineState() = default;

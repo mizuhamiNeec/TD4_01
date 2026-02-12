@@ -19,13 +19,13 @@ bool RootSignatureManager::CreateRootSignature(
 	const std::string&                       name,
 	const std::vector<D3D12_ROOT_PARAMETER>& rootParameters,
 	const D3D12_STATIC_SAMPLER_DESC*         staticSamplers,
-	UINT                                     numStaticSamplers
+	const UINT                               numStaticSamplers
 ) {
 	if (mRootSignatures.contains(name)) {
 		return false; // すでに存在する場合は作る必要なし
 	}
 
-	D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc = {
+	const D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc = {
 		static_cast<UINT>(rootParameters.size()),
 		rootParameters.data(),
 		numStaticSamplers,

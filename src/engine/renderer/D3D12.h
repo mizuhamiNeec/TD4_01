@@ -6,9 +6,9 @@
 
 #include <wrl/client.h>
 
-#include <runtime/core/Properties.h>
+#include <engine/Properties.h>
 
-#include "engine/Platform/Window.h"
+#include "engine/platform/Window.h"
 
 class SrvManager;
 

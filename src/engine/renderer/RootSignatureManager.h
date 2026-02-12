@@ -21,7 +21,7 @@ public:
 	);
 
 	ID3D12RootSignature* Get(const std::string& name) const {
-		auto it = mRootSignatures.find(name);
+		const auto it = mRootSignatures.find(name);
 		if (it != mRootSignatures.end()) { return it->second.Get(); }
 		return nullptr;
 	}

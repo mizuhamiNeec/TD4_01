@@ -4,29 +4,29 @@
 
 namespace Unnamed {
 	void RenderTargets::Init(
-		D3D12* renderer,
-		uint32_t width,
-		uint32_t height,
-		Vec4 clearColor,
-		DXGI_FORMAT rtvFormat,
-		DXGI_FORMAT dsvFormat
+		D3D12*            renderer,
+		const uint32_t    width,
+		const uint32_t    height,
+		const Vec4        clearColor,
+		const DXGI_FORMAT rtvFormat,
+		const DXGI_FORMAT dsvFormat
 	) {
-		mRenderer = renderer;
-		mWidth = width;
-		mHeight = height;
+		mRenderer   = renderer;
+		mWidth      = width;
+		mHeight     = height;
 		mClearColor = clearColor;
-		mRtvFormat = rtvFormat;
-		mDsvFormat = dsvFormat;
+		mRtvFormat  = rtvFormat;
+		mDsvFormat  = dsvFormat;
 
 		Create(width, height, false);
 	}
 
-	void RenderTargets::OnResize(uint32_t width, uint32_t height) {
+	void RenderTargets::OnResize(const uint32_t width, const uint32_t height) {
 		if (!mRenderer || width == 0 || height == 0) { return; }
 
 		mRenderer->Flush();
 
-		mWidth = width;
+		mWidth  = width;
 		mHeight = height;
 
 		// Resize 用のAPIがあるので呼ぶ（swapchainなども含む）
@@ -36,9 +36,9 @@ namespace Unnamed {
 	}
 
 	void RenderTargets::Create(
-		uint32_t width,
-		uint32_t height,
-		bool keepSrvIndices
+		const uint32_t width,
+		const uint32_t height,
+		const bool     keepSrvIndices
 	) {
 		if (!mRenderer) { return; }
 
@@ -73,8 +73,7 @@ namespace Unnamed {
 				mPostProcessedDsv.srvIndex,
 				mDsvFormat
 			);
-		}
-		else {
+		} else {
 			mOffscreenRtv = mRenderer->CreateRenderTargetTexture(
 				width,
 				height,
@@ -101,25 +100,25 @@ namespace Unnamed {
 		}
 
 		mOffscreenRenderPassTargets = {
-			.pRTVs = &mOffscreenRtv.rtvHandle,
-			.numRTVs = 1,
-			.pDSV = &mOffscreenDsv.dsvHandle,
-			.clearColor = mClearColor,
-			.clearDepth = 1.0f,
+			.pRTVs        = &mOffscreenRtv.rtvHandle,
+			.numRTVs      = 1,
+			.pDSV         = &mOffscreenDsv.dsvHandle,
+			.clearColor   = mClearColor,
+			.clearDepth   = 1.0f,
 			.clearStencil = 0,
-			.bClearColor = true,
-			.bClearDepth = true,
+			.bClearColor  = true,
+			.bClearDepth  = true,
 		};
 
 		mPostProcessedRenderPassTargets = {
-			.pRTVs = &mPostProcessedRtv.rtvHandle,
-			.numRTVs = 1,
-			.pDSV = &mPostProcessedDsv.dsvHandle,
-			.clearColor = mClearColor,
-			.clearDepth = 1.0f,
+			.pRTVs        = &mPostProcessedRtv.rtvHandle,
+			.numRTVs      = 1,
+			.pDSV         = &mPostProcessedDsv.dsvHandle,
+			.clearColor   = mClearColor,
+			.clearDepth   = 1.0f,
 			.clearStencil = 0,
-			.bClearColor = true,
-			.bClearDepth = true,
+			.bClearColor  = true,
+			.bClearDepth  = true,
 		};
 	}
 }

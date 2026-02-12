@@ -2,6 +2,8 @@
 
 #include <engine/particle/ParticleManager.h>
 
+#include "engine/Engine.h"
+#include "engine/EngineServices.h"
 #include "engine/Camera/CameraManager.h"
 #include "engine/Components/Camera/CameraComponent.h"
 #include "engine/OldConsole/Console.h"
@@ -10,8 +12,7 @@
 #include "engine/renderer/PipelineState.h"
 #include "engine/renderer/RootSignatureManager.h"
 #include "engine/renderer/SrvManager.h"
-#include "engine/Engine.h"
-#include "engine/EngineServices.h"
+#include "engine/TextureManager/TexManager.h"
 
 /// @brief ParticleManagerを初期化します
 /// @param d3d12 D3D12レンダラーへのポインタ
@@ -19,7 +20,7 @@
 void ParticleManager::Init(D3D12* d3d12, SrvManager* srvManager) {
 	mRenderer   = d3d12;
 	mSrvManager = srvManager;
-	if (auto* engine = Unnamed::EngineServices::Get()) {
+	if (const auto* engine = Unnamed::EngineServices::Get()) {
 		mTexManager = engine->GetTexManagerInstance();
 	}
 	Console::Print(
@@ -299,7 +300,7 @@ void ParticleManager::Render() {
 /// @param segments セグメント数
 /// @return 生成された頂点データのベクター	
 std::vector<Vertex> ParticleManager::GenerateRingVertices(
-	float innerRadius, float outerRadius, int segments
+	const float innerRadius, const float outerRadius, const int segments
 ) {
 	std::vector<Vertex> vertices;
 	// 各セグメントごとに内側と外側の頂点を生成
@@ -309,21 +310,22 @@ std::vector<Vertex> ParticleManager::GenerateRingVertices(
 	Vec3 normal = Vec3::forward;
 
 	for (int i = 0; i < segments; ++i) {
-		float theta = 2.0f * 3.14159265f * static_cast<float>(i) / static_cast<
-			              float>(segments);
-		float cosT = cos(theta);
-		float sinT = sin(theta);
+		const float theta = 2.0f * 3.14159265f * static_cast<float>(i) /
+		                    static_cast<
+			                    float>(segments);
+		const float cosT = cos(theta);
+		const float sinT = sin(theta);
 
 		// UV座標の計算
-		float u = static_cast<float>(i) / segments;
+		const float u = static_cast<float>(i) / segments;
 
 		// 内側の頂点
-		float x_in = cosT * innerRadius;
-		float y_in = sinT * innerRadius;
+		const float x_in = cosT * innerRadius;
+		const float y_in = sinT * innerRadius;
 
 		// 外側の頂点
-		float x_out = cosT * outerRadius;
-		float y_out = sinT * outerRadius;
+		const float x_out = cosT * outerRadius;
+		const float y_out = sinT * outerRadius;
 
 		// 内側の頂点
 		vertices.emplace_back(
@@ -390,7 +392,7 @@ void ParticleManager::RegisterMesh(
 /// @brief メッシュデータを取得します
 /// @param type メッシュタイプ
 /// @return メッシュデータへの参照
-MeshData& ParticleManager::GetMeshData(ParticleMeshType type) {
+MeshData& ParticleManager::GetMeshData(const ParticleMeshType type) {
 	return mMeshData[type];
 }
 

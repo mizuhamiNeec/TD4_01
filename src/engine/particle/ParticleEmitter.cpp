@@ -15,7 +15,7 @@ void ParticleEmitter::Init(
 
 /// @brief パーティクルエミッターを更新します
 /// @param deltaTime 前のフレームからの経過時間
-void ParticleEmitter::Update(float deltaTime) {
+void ParticleEmitter::Update(const float deltaTime) {
 	// 時刻を進める
 	mEmitter.frequencyTime += deltaTime;
 	// 発生頻度より大きいなら発生

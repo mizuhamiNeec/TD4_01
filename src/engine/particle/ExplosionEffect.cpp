@@ -1,6 +1,6 @@
 ﻿#include <engine/particle/ExplosionEffect.h>
 
-#include <runtime/core/math/Math.h>
+#include <core/math/Math.h>
 
 /// @brief デストラクタ
 ExplosionEffect::~ExplosionEffect() {
@@ -28,16 +28,16 @@ void ExplosionEffect::Init(
 /// @param particleCount 発生させるパーティクル数
 /// @param coneAngle パーティクルの放出角度
 void ExplosionEffect::TriggerExplosion(
-	const Vec3& position,
-	const Vec3& normal,
-	uint32_t    particleCount,
-	float       coneAngle
+	const Vec3&    position,
+	const Vec3&    normal,
+	const uint32_t particleCount,
+	const float    coneAngle
 ) {
 	for (uint32_t i = 0; i < particleCount; ++i) {
 		Vec3 randomDir = Random::Vec3Range(-Vec3::one, Vec3::one);
 		randomDir.Normalize();
-		float randomSpeed = Random::FloatRange(5.0f, 15.0f);
-		Vec3  velocity    = normal + randomDir * randomSpeed;
+		const float randomSpeed = Random::FloatRange(5.0f, 15.0f);
+		Vec3        velocity    = normal + randomDir * randomSpeed;
 
 		mExplosionParticleObject->EmitParticlesAtPosition(
 			position,
@@ -53,7 +53,7 @@ void ExplosionEffect::TriggerExplosion(
 
 /// @brief 爆発エフェクトを更新します
 /// @param deltaTime 前のフレームからの経過時間
-void ExplosionEffect::Update(float deltaTime) const {
+void ExplosionEffect::Update(const float deltaTime) const {
 	if (mExplosionParticleObject) {
 		mExplosionParticleObject->Update(deltaTime);
 	}

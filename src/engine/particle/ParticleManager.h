@@ -2,18 +2,20 @@
 
 #include <list>
 #include <memory>
+#include <string>
 #include <unordered_map>
 
-#include <engine/renderer/ConstantBuffer.h>
-#include <engine/renderer/IndexBuffer.h>
-#include <engine/renderer/PipelineState.h>
-#include <engine/renderer/RootSignatureManager.h>
-#include <engine/renderer/Structs.h>
-#include <engine/renderer/VertexBuffer.h>
+#include "core/math/Vec3.h"
 
-#include <engine/TextureManager/TexManager.h>
+#include "engine/renderer/Structs.h"
+#include "engine/renderer/VertexBuffer.h"
 
-
+class PipelineState;
+class TexManager;
+class RootSignatureManager;
+class ConstantBuffer;
+class IndexBuffer;
+struct Vertex;
 class SrvManager;
 class CameraComponent;
 class Camera;

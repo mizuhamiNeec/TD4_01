@@ -1,17 +1,18 @@
+#include <core/math/Math.h>
+
+#include <engine/Engine.h>
+#include <engine/EngineServices.h>
 #include <engine/Camera/CameraManager.h>
 #include <engine/Components/Camera/CameraComponent.h>
 #include <engine/Debug/DebugDraw.h>
-#include <engine/ImGui/ImGuiManager.h>
 #include <engine/ImGui/ImGuiUtil.h>
 #include <engine/particle/ParticleManager.h>
 #include <engine/particle/ParticleObject.h>
 #include <engine/renderer/D3D12.h>
 #include <engine/renderer/SrvManager.h>
-#include <engine/Engine.h>
 #include <engine/TextureManager/TexManager.h>
-#include <engine/EngineServices.h>
 
-#include <runtime/core/math/Math.h>
+#include "core/math/random/Random.h"
 
 /// @brief パーティクルオブジェクトを初期化します
 /// @param particleCommon パーティクルマネージャーへのポインタ
@@ -340,7 +341,7 @@ void ParticleObject::Draw() const {
 	                 );
 
 	// SRVのDescriptorTableの先頭を設定
-	if (auto* engine = Unnamed::EngineServices::Get()) {
+	if (const auto* engine = Unnamed::EngineServices::Get()) {
 		if (auto* tex = engine->GetTexManagerInstance()) {
 			mParticleCommon->GetD3D12()->GetCommandList()->
 			                 SetGraphicsRootDescriptorTable(
@@ -350,7 +351,7 @@ void ParticleObject::Draw() const {
 	}
 
 	// インデックスバッファの設定
-	D3D12_INDEX_BUFFER_VIEW indexBufferView = mIndexBuffer->View();
+	const D3D12_INDEX_BUFFER_VIEW indexBufferView = mIndexBuffer->View();
 	mParticleCommon->GetD3D12()->GetCommandList()->IASetIndexBuffer(
 		&indexBufferView
 	);
@@ -432,11 +433,12 @@ Particle ParticleObject::MakeNewParticle(
 /// @param endSize 終了サイズ
 /// @return 放出されたパーティクルのリスト
 std::list<Particle> ParticleObject::Emit(
-	const Emitter& emitter, int shapeType, [[maybe_unused]] float coneAngle,
+	const Emitter&               emitter, const int shapeType,
+	[[maybe_unused]] float       coneAngle,
 	[[maybe_unused]] const Vec3& drag, const Vec3& gravity,
-	const Vec3& velocity,
-	Vec4 startColor, Vec4 endColor,
-	const Vec3& startSize, const Vec3& endSize
+	const Vec3&                  velocity,
+	const Vec4                   startColor, const Vec4 endColor,
+	const Vec3&                  startSize, const Vec3& endSize
 ) {
 	std::list<Particle> particles;
 	for (uint32_t count = 0; count < emitter.count; ++count) {
@@ -465,7 +467,7 @@ void ParticleObject::SetCamera(CameraComponent* newCamera) {
 /// @return 生成されたパーティクルの初期位置
 Vec3 ParticleObject::GeneratePosition(
 	const Vec3& emitterPosition,
-	int         shapeType
+	const int   shapeType
 ) const {
 	switch (shapeType) {
 		case 0: // Sphere（球）
@@ -477,13 +479,13 @@ Vec3 ParticleObject::GeneratePosition(
 			);
 			direction.Normalize();
 			// ランダムな半径
-			float radius = Random::FloatRange(0.0f, 0.01f); // サイズを考慮
+			const float radius = Random::FloatRange(0.0f, 0.01f); // サイズを考慮
 			return emitterPosition + direction * radius;
 		}
 		case 1: // Cube（立方体）
 		{
 			// -1.0fから1.0fの範囲でランダムな位置
-			Vec3 offset = Random::Vec3Range(-Vec3::one, Vec3::one);
+			const Vec3 offset = Random::Vec3Range(-Vec3::one, Vec3::one);
 			return emitterPosition + offset * mEmitter.size; // サイズを考慮
 		}
 		default: return emitterPosition;
@@ -493,18 +495,20 @@ Vec3 ParticleObject::GeneratePosition(
 /// @brief コーン形状の初期速度を生成します
 /// @param coneAngle コーンの角度（度数法）
 /// @return 生成された初期速度ベクトル	
-Vec3 ParticleObject::GenerateConeVelocity(float coneAngle) {
+Vec3 ParticleObject::GenerateConeVelocity(const float coneAngle) {
 	// コーンの中心方向（例としてY軸正方向）
-	Vec3 coneDirection = Vec3::up;
+	const Vec3 coneDirection = Vec3::up;
 
 	// コーンの角度をラジアンに変換
-	float angleRad = coneAngle * Math::deg2Rad;
+	const float angleRad = coneAngle * Math::deg2Rad;
 
 	// ランダムな円周上の角度を生成
-	float theta = Random::FloatRange(0.0f, 2.0f * std::numbers::pi_v<float>);
+	const float theta = Random::FloatRange(
+		0.0f, 2.0f * std::numbers::pi_v<float>
+	);
 	// コーン内のランダムな角度を生成
-	float cosPhi = Random::FloatRange(cos(angleRad), 1.0f);
-	float sinPhi = sqrt(1.0f - cosPhi * cosPhi);
+	const float cosPhi = Random::FloatRange(cos(angleRad), 1.0f);
+	const float sinPhi = sqrt(1.0f - cosPhi * cosPhi);
 
 	// ディレクションベクトルを計算
 	Vec3 randomDir;
@@ -518,15 +522,15 @@ Vec3 ParticleObject::GenerateConeVelocity(float coneAngle) {
 		Vec3 rotationAxis = Vec3::up.Cross(coneDirection);
 		rotationAxis.Normalize();
 		// 回転角を計算
-		float angleBetween = acos(Vec3::up.Dot(coneDirection));
+		const float angleBetween = acos(Vec3::up.Dot(coneDirection));
 		// クォータニオンを生成
-		Quaternion rotation(rotationAxis, angleBetween);
+		const Quaternion rotation(rotationAxis, angleBetween);
 		// 回転を適用
 		randomDir = rotation * randomDir;
 	}
 
 	// 速度の大きさを設定（例として1.0f）
-	float speed = 1.0f;
+	constexpr float speed = 1.0f;
 	return randomDir * speed;
 }
 

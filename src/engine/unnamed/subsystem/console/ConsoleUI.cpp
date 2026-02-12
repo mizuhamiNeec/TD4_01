@@ -17,7 +17,7 @@ namespace Unnamed {
 	static constexpr auto kConsoleUIContextPopupId = "##ConsoleUIContextMenu";
 
 	constexpr Vec4 kConTextColor        = {0.71f, 0.71f, 0.72f, 1.0f};
-	constexpr Vec4 kConTextColorDev     = {0.25f, 0.71f, 0.25f, 1.0f};
+	constexpr Vec4 kConTextColorDev     = {0.18f, 0.55f, 0.18f, 1.0f};
 	constexpr Vec4 kConTextColorWarn    = {0.93f, 0.79f, 0.09f, 1.0f};
 	constexpr Vec4 kConTextColorError   = {0.71f, 0.25f, 0.25f, 1.0f};
 	constexpr Vec4 kConTextColorFatal   = {0.71f, 0.0f, 0.0f, 1.0f};
@@ -32,7 +32,7 @@ namespace Unnamed {
 
 			// 選択
 			std::vector<bool> selected;
-			int               lastSelectedIndex = -1;
+			int               lastSelectedFilteredIndex = -1;
 
 			// フィルタ
 			std::string currentFilterChannel;
@@ -41,6 +41,9 @@ namespace Unnamed {
 			std::string scratch      = {}; // 一時保存用
 			int         historyIndex = -1;
 			bool        browsing     = false;
+
+			// クリッピング用: フィルタ後の表示行 -> 実ログ(actualIndex) の対応
+			std::vector<size_t> filteredToActual = {};
 		} gConsoleUIData;
 	}
 
@@ -61,7 +64,10 @@ namespace Unnamed {
 	/// @brief コンストラクタ
 	ConsoleUI::ConsoleUI(
 		ConsoleSystem* consoleSystem
-	) : mConsoleSystem(consoleSystem) {}
+	) : mConsoleSystem(consoleSystem) {
+		// ConVarヘルパーを初期化
+		mConVarHelper = std::make_unique<ConVarHelper>(consoleSystem);
+	}
 
 	void ConsoleUI::Init() {
 		static UnnamedConCommand toggleconsole(
@@ -77,9 +83,10 @@ namespace Unnamed {
 	/// @brief コンソールUIを表示します。
 	/// @details ImGuiのコンテキスト内で呼び出し
 	void ConsoleUI::Show() {
-		if (!mShowConsole) { return; }
+		// ConVarヘルパーは独立して表示
+		if (mShowConVarHelper) { mConVarHelper->Show(mShowConVarHelper); }
 
-		// フィルター可能なチャンネルを集める
+		if (!mShowConsole) { return; }
 
 		const bool windowOpen = ImGui::Begin(
 			"Console##ConsoleUI",
@@ -99,6 +106,8 @@ namespace Unnamed {
 			DrawLogTable(childSize);
 
 			DrawInputTextAndSubmitButton();
+
+			if (mShowAbout) { ShowAbout(); }
 		}
 
 		ImGui::End();
@@ -106,25 +115,74 @@ namespace Unnamed {
 
 	void ConsoleUI::OnConsoleUpdate() { mWishScrollToBottom = true; }
 
-	void ConsoleUI::ShowMenuBar() const {
+	void ConsoleUI::ShowMenuBar() {
 		if (ImGui::BeginMenuBar()) {
 			if (ImGui::BeginMenu("File")) {
-				if (
-					ImGuiWidgets::MenuItemWithIcon(
-						StrUtil::ConvertToUtf8(kIconReset).c_str(), "Clear Log"
-					)
-				) { mConsoleSystem->ExecuteCommand("clear"); }
+				ImGui::Spacing();
+
+				if (ImGuiWidgets::MenuItemWithIcon("Clear", kIconReset)) {
+					// コンソール出力をクリア
+					mConsoleSystem->ExecuteCommand("clear");
+				}
+				if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) {
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted("コンソールの履歴をクリアします。");
+					ImGui::EndTooltip();
+				}
+
+				ImGui::Separator();
+
+				if (ImGuiWidgets::MenuItemWithIcon("Close", kIconClose)) {
+					// コンソールを閉じる
+					mShowConsole = false;
+				}
+				if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) {
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted("コンソールを閉じます");
+					ImGui::EndTooltip();
+				}
+
+				ImGui::Spacing();
+
 				ImGui::EndMenu();
 			}
+
+			if (ImGui::BeginMenu("Tools")) {
+				ImGui::Spacing();
+				if (ImGuiWidgets::MenuItemWithIcon(
+					"ConVar Helper", kIconSettings, nullptr, mShowConVarHelper
+				)) {
+					// ConVarヘルパーを表示/非表示
+					mShowConVarHelper = !mShowConVarHelper;
+				}
+				if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) {
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted("ConVarヘルパーウィンドウを表示/非表示します。");
+					ImGui::EndTooltip();
+				}
+				ImGui::Spacing();
+				ImGui::EndMenu();
+			}
+
 			if (ImGui::BeginMenu("Help")) {
-				if (ImGui::MenuItem("Help", "F1")) {
+				ImGui::Spacing();
+				if (ImGuiWidgets::MenuItemWithIcon("Help", kIconHelp)) {
 					mConsoleSystem->ExecuteCommand("help");
 				}
-				if (
-					ImGuiWidgets::MenuItemWithIcon(
-						StrUtil::ConvertToUtf8(kIconInfo).c_str(), "About"
-					)
-				) {}
+				if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) {
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted("ヘルプを表示します。");
+					ImGui::EndTooltip();
+				}
+				if (ImGuiWidgets::MenuItemWithIcon(
+					"About", kIconInfo, nullptr, mShowAbout
+				)) { mShowAbout = true; }
+				if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) {
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted("コンソールUIについて。");
+					ImGui::EndTooltip();
+				}
+				ImGui::Spacing();
 				ImGui::EndMenu();
 			}
 			ImGui::EndMenuBar();
@@ -167,6 +225,93 @@ namespace Unnamed {
 		if (ImGui::Button(kSubmitButtonText)) { Submit(); }
 	}
 
+	void ConsoleUI::ShowAbout() {
+		const std::string text =
+			"About " + std::string(ENGINE_NAME) + " Console";
+		ImGui::OpenPopup(text.c_str());
+
+		const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+		ImGui::SetNextWindowPos(
+			center, 1, ImVec2(0.5f, 0.5f)
+		);
+
+		constexpr ImVec2 windowSize = {280.0f, 230.0f};
+		ImGui::SetNextWindowSize(windowSize, ImGuiCond_FirstUseEver);
+
+		constexpr ImGuiWindowFlags flags =
+			ImGuiWindowFlags_NoResize |
+			ImGuiWindowFlags_NoMove |
+			ImGuiWindowFlags_NoCollapse |
+			ImGuiWindowFlags_NoSavedSettings;
+
+		const bool bOpen = ImGui::BeginPopupModal(
+			text.c_str(), &mShowAbout, flags
+		);
+
+		if (bOpen) {
+			ImDrawList*     dl        = ImGui::GetWindowDrawList();
+			ImFont*         font      = ImGui::GetFont();
+			constexpr float iconSize  = 70.0f;
+			constexpr float titleSize = 24.0f;
+			constexpr float margin    = 8.0f;
+
+			// アイコンを描画
+			dl->AddText(
+				font, iconSize, ImGui::GetCursorScreenPos(),
+				ImGui::GetColorU32(ImGuiCol_Text),
+				StrUtil::ConvertToUtf8(kIconTerminal).c_str()
+			);
+
+			// アイコン分だけ右にカーソルを移動
+			ImGui::SetCursorPosX(iconSize + margin);
+
+			// タイトルを描画
+			dl->AddText(
+				font, titleSize, ImGui::GetCursorScreenPos(),
+				ImGui::GetColorU32(ImGuiCol_Text),
+				"Unnamed Console"
+			);
+
+			ImGui::Dummy({iconSize + margin, titleSize});
+
+			// ただ2回スペース空けてカーソルを移動する関数
+			auto doublespacing = [&] {
+				for (int i = 0; i < 2; ++i) { ImGui::Spacing(); }
+				ImGui::SetCursorPosX(iconSize + margin);
+			};
+
+			doublespacing();
+			ImGui::Text("Version: %s", std::string(ENGINE_VERSION).c_str());
+			doublespacing();
+			ImGui::Text(
+				"Build: %s %s", std::string(__DATE__).c_str(),
+				std::string(__TIME__).c_str()
+			);
+			doublespacing();
+			ImGui::Text("ImGui Version: %s", ImGui::GetVersion());
+			doublespacing();
+			// ボタンサイズとウィンドウサイズを取得
+			constexpr auto buttonSize     = ImVec2(74.0f, 24.0f);
+			const ImVec2   clientSize     = ImGui::GetWindowSize(); // サイズ
+			const ImVec2   cursorStartPos = ImGui::GetCursorPos();  // 現在のカーソル位置
+			// ボタンを中央に配置
+			const float buttonPosX =
+				(clientSize.x - buttonSize.x) * 0.5f; // 中央揃えのX座標
+			const float buttonPosY =
+				cursorStartPos.y +
+				ImGui::GetContentRegionAvail().y -
+				buttonSize.y; // 下端からの位置調整
+			ImGui::SetCursorPos(ImVec2(buttonPosX, buttonPosY));
+
+			if (ImGui::Button("Close", buttonSize)) {
+				mShowAbout = false;
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::EndPopup();
+		}
+	}
+
 	void ConsoleUI::ShowContextMenu() const {
 		if (ImGui::BeginPopup(kConsoleUIContextPopupId)) {
 			// 選択数をカウント
@@ -189,8 +334,8 @@ namespace Unnamed {
 				ImGui::TextDisabled("Line: %d", buffer.location.line());
 
 				if (ImGuiWidgets::MenuItemWithIcon(
-					StrUtil::ConvertToUtf8(kIconBox).c_str(),
-					" Open Source File"
+					"Open Source File",
+					kIconBox
 				)) {
 					OpenSourceFile(
 						buffer.location.file_name(),
@@ -204,8 +349,8 @@ namespace Unnamed {
 			// 複数選択時は「Copy Selected」のみ表示
 			if (
 				ImGuiWidgets::MenuItemWithIcon(
-					StrUtil::ConvertToUtf8(kIconCopy).c_str(),
-					" Copy Selected"
+					"Copy Selected",
+					kIconCopy
 				)
 			) { CopySelectedToClipboard(); }
 
@@ -232,9 +377,23 @@ namespace Unnamed {
 		int  visibleIndex           = 0;
 		bool requestOpenContextMenu = false;
 
+		// 選択バッファはログ数に合わせる
 		gConsoleUIData.selected.resize(
 			mConsoleSystem->GetLogBuffer().Size(), false
 		);
+
+		// フィルタ後の表示行 から actualIndex マップを作成
+		gConsoleUIData.filteredToActual.clear();
+		gConsoleUIData.filteredToActual.reserve(
+			mConsoleSystem->GetLogBuffer().Size()
+		);
+		for (size_t i = 0; i < mConsoleSystem->GetLogBuffer().Size(); ++i) {
+			const auto& buffer = mConsoleSystem->GetLogBuffer()[i];
+			if (
+				gConsoleUIData.currentFilterChannel == kChannelNone ||
+				buffer.channel == gConsoleUIData.currentFilterChannel
+			) { gConsoleUIData.filteredToActual.push_back(i); }
+		}
 
 		DrawLogRows(visibleIndex, requestOpenContextMenu);
 
@@ -249,25 +408,33 @@ namespace Unnamed {
 	void ConsoleUI::DrawLogRows(
 		int& visibleIndex, bool& requestOpenContextMenu
 	) {
-		for (size_t i = 0; i < mConsoleSystem->GetLogBuffer().Size(); ++i) {
-			if (DrawLogRow(i, visibleIndex, requestOpenContextMenu)) {
-				visibleIndex++;
+		// ImGuiListClipper でスクロール範囲外の行の描画/入力処理を省略
+		ImGuiListClipper clipper;
+		clipper.Begin(static_cast<int>(gConsoleUIData.filteredToActual.size()));
+		while (clipper.Step()) {
+			for (
+				int row = clipper.DisplayStart;
+				row < clipper.DisplayEnd;
+				++row
+			) {
+				const size_t actualIndex = gConsoleUIData.filteredToActual[
+					static_cast<size_t>(row)
+				];
+				if (DrawLogRow(
+					actualIndex,
+					row,
+					requestOpenContextMenu
+				)) { visibleIndex++; }
 			}
 		}
 	}
 
 	bool ConsoleUI::DrawLogRow(
-		size_t actualIndex,
-		int    visibleIndex,
-		bool&  requestOpenContextMenu
+		const size_t actualIndex,
+		const int    visibleIndex,
+		bool&        requestOpenContextMenu
 	) {
 		const auto& buffer = mConsoleSystem->GetLogBuffer()[actualIndex];
-
-		// フィルターに一致しない場合はスキップ
-		if (gConsoleUIData.currentFilterChannel != kChannelNone &&
-		    buffer.channel != gConsoleUIData.currentFilterChannel) {
-			return false;
-		}
 
 		std::string display = buffer.message;
 		display             += "##" + std::to_string(actualIndex);
@@ -289,21 +456,22 @@ namespace Unnamed {
 		// 左クリック選択
 		if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
 			if (ImGui::GetIO().KeyCtrl) {
-				gConsoleUIData.selected[actualIndex] = !gConsoleUIData.selected[
-					actualIndex];
-				gConsoleUIData.lastSelectedIndex = static_cast<int>(
-					actualIndex);
-			} else if (ImGui::GetIO().KeyShift && gConsoleUIData.
-			           lastSelectedIndex != -1) {
+				gConsoleUIData.selected[actualIndex] =
+					!gConsoleUIData.selected[actualIndex];
+				gConsoleUIData.lastSelectedFilteredIndex = visibleIndex;
+			} else if (
+				ImGui::GetIO().KeyShift &&
+				gConsoleUIData.lastSelectedFilteredIndex != -1
+			) {
 				if (!ImGui::GetIO().KeyCtrl) {
 					std::ranges::fill(gConsoleUIData.selected, false);
 				}
 
 				const int start = std::min(
-					gConsoleUIData.lastSelectedIndex, visibleIndex
+					gConsoleUIData.lastSelectedFilteredIndex, visibleIndex
 				);
 				const int end = std::max(
-					gConsoleUIData.lastSelectedIndex, visibleIndex
+					gConsoleUIData.lastSelectedFilteredIndex, visibleIndex
 				);
 				for (int j = start; j <= end; ++j) {
 					const size_t idx = FilteredToActualIndex(j);
@@ -313,9 +481,8 @@ namespace Unnamed {
 				}
 			} else {
 				std::ranges::fill(gConsoleUIData.selected, false);
-				gConsoleUIData.selected[actualIndex] = true;
-				gConsoleUIData.lastSelectedIndex     = static_cast<int>(
-					actualIndex);
+				gConsoleUIData.selected[actualIndex]     = true;
+				gConsoleUIData.lastSelectedFilteredIndex = visibleIndex;
 			}
 		}
 
@@ -323,9 +490,8 @@ namespace Unnamed {
 		if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
 			if (!gConsoleUIData.selected[actualIndex]) {
 				std::ranges::fill(gConsoleUIData.selected, false);
-				gConsoleUIData.selected[actualIndex] = true;
-				gConsoleUIData.lastSelectedIndex     = static_cast<int>(
-					actualIndex);
+				gConsoleUIData.selected[actualIndex]     = true;
+				gConsoleUIData.lastSelectedFilteredIndex = visibleIndex;
 			}
 			requestOpenContextMenu = true;
 		}
@@ -389,7 +555,7 @@ namespace Unnamed {
 		// 送信してもフォーカスは維持
 		ImGui::SetKeyboardFocusHere(-1);
 
-		std::string cmd = std::string(mInputBuffer);
+		const auto cmd = std::string(mInputBuffer);
 
 		// 空は履歴に入れない（実行は ConsoleSystem 側に任せる）
 		if (!cmd.empty()) { gConsoleUIData.history.Push(cmd); }
@@ -515,18 +681,11 @@ namespace Unnamed {
 		return 0;
 	}
 
-	size_t ConsoleUI::FilteredToActualIndex(int filteredIndex) {
-		int visibleIndex = 0;
-		for (size_t i = 0; i < mConsoleSystem->GetLogBuffer().Size(); ++i) {
-			const auto& buffer = mConsoleSystem->GetLogBuffer()[i];
-			if (
-				gConsoleUIData.currentFilterChannel == kChannelNone ||
-				buffer.channel == gConsoleUIData.currentFilterChannel) {
-				if (visibleIndex == filteredIndex) { return i; }
-				visibleIndex++;
-			}
-		}
-		return SIZE_MAX;
+	size_t ConsoleUI::FilteredToActualIndex(const int filteredIndex) {
+		if (filteredIndex < 0) { return SIZE_MAX; }
+		const auto idx = static_cast<size_t>(filteredIndex);
+		if (idx >= gConsoleUIData.filteredToActual.size()) { return SIZE_MAX; }
+		return gConsoleUIData.filteredToActual[idx];
 	}
 
 	void ConsoleUI::OpenSourceFile(

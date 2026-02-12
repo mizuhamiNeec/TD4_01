@@ -1,5 +1,5 @@
 #pragma once
-#include <runtime/core/math/Vec4.h>
+#include "ConVarHelper.h"
 
 namespace Unnamed {
 	class ConsoleSystem;
@@ -20,10 +20,13 @@ namespace Unnamed {
 
 	private:
 		/// @brief メニューバーを表示します
-		void ShowMenuBar() const;
-		
+		void ShowMenuBar();
+
 		/// @brief 入力欄と送信ボタンを描画します
 		void DrawInputTextAndSubmitButton();
+
+		/// @brief 「About」ウィンドウを表示します
+		void ShowAbout();
 
 		/// @brief コンソールのコンテキストメニューを表示します
 		void ShowContextMenu() const;
@@ -42,7 +45,9 @@ namespace Unnamed {
 		/// @param file ファイルパス
 		/// @param line 行番号
 		/// @param column 列番号
-		void OpenSourceFile(const std::string& file, int line, int column) const;
+		void OpenSourceFile(
+			const std::string& file, int line, int column
+		) const;
 
 
 #ifdef _DEBUG
@@ -50,14 +55,16 @@ namespace Unnamed {
 #endif
 
 		size_t FilteredToActualIndex(int filteredIndex);
-		
-		// --- Show() 分割 ---
+
+		// 表示
 		/// @brief ログテーブル（ヘッダ+行）を描画します
 		void DrawLogTable(const ImVec2& childSize);
 		/// @brief ログ行を描画します（フィルタ/選択/右クリックも含む）
 		void DrawLogRows(int& visibleIndex, bool& requestOpenContextMenu);
 		/// @brief 1行分の描画と入力処理を行います。描画した場合は true
-		bool DrawLogRow(size_t actualIndex, int visibleIndex, bool& requestOpenContextMenu);
+		bool DrawLogRow(
+			size_t actualIndex, int visibleIndex, bool& requestOpenContextMenu
+		);
 		/// @brief 選択中ログをクリップボードへコピーします（1要素=1行）
 		void CopySelectedToClipboard() const;
 		/// @brief Ctrl+C のコピー処理
@@ -65,12 +72,15 @@ namespace Unnamed {
 		/// @brief 右クリックで開くコンテキストメニューを要求します
 		static void OpenConsoleContextMenuPopup();
 
-	private:
 		ConsoleSystem* mConsoleSystem; // コンソールシステムへのポインタ
 
-		bool mShowConsole = true;
+		std::unique_ptr<ConVarHelper> mConVarHelper; // ConVarヘルパー
 
-		bool mWishScrollToBottom = false;
+		bool mShowConsole      = true;  // コンソール表示フラグ
+		bool mShowAbout        = false; // Aboutウィンドウ表示フラグ
+		bool mShowConVarHelper = false; // ConVarヘルパー表示フラグ
+
+		bool mWishScrollToBottom = false; // 自動スクロールフラグ
 
 		char mInputBuffer[256] = "";
 	};

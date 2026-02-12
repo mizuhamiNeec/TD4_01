@@ -4,7 +4,6 @@
 #include <memory>
 #include <string>
 #include <type_traits>
-#include <unordered_map>
 #include <utility>
 
 #include <engine/Components/Base/Component.h>

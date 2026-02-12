@@ -1,8 +1,8 @@
 #include <engine/Engine.h>
+#include <engine/EngineServices.h>
 #include <engine/Camera/CameraManager.h>
 #include <engine/Debug/DebugDraw.h>
 #include <engine/Entity/Entity.h>
-#include <engine/EngineServices.h>
 #include <engine/OldConsole/ConVarManager.h>
 
 #include "engine/Components/Camera/CameraComponent.h"
@@ -10,7 +10,6 @@
 #include "engine/ImGui/ImGuiUtil.h"
 
 #ifdef _DEBUG
-#include "imgui_internal.h"
 #endif
 
 Entity::~Entity() {
@@ -23,7 +22,7 @@ Entity::~Entity() {
 	}*/
 }
 
-void Entity::PrePhysics(float deltaTime) const {
+void Entity::PrePhysics(const float deltaTime) const {
 	if (!mIsActive) { return; }
 
 	for (const auto& component : mComponents) {
@@ -63,21 +62,22 @@ void Entity::Update(const float deltaTime) {
 	}
 
 	if (ConVarManager::GetConVar("ent_axis")->GetValueAsBool()) {
-		Vec3 worldPos   = GetTransform()->GetWorldPos();
-		Vec2 screenSize = Unnamed::EngineServices::Get() ?
-			               Unnamed::EngineServices::Get()->GetViewportSizeInstance() :
-			               Vec2{};
+		const Vec3 worldPos   = GetTransform()->GetWorldPos();
+		Vec2       screenSize = Unnamed::EngineServices::Get() ?
+			                        Unnamed::EngineServices::Get()->
+			                        GetViewportSizeInstance() :
+			                        Vec2{};
 
 		DebugDraw::DrawAxis(
 			worldPos,
 			GetTransform()->GetWorldRot()
 		);
 
-		Vec3 cameraPos = CameraManager::GetActiveCamera()->GetViewMat().
+		const Vec3 cameraPos = CameraManager::GetActiveCamera()->GetViewMat().
 			Inverse().GetTranslate();
 
 		// カメラとの距離を計算
-		float distance = (worldPos - cameraPos).Length();
+		const float distance = (worldPos - cameraPos).Length();
 
 		// カメラとの距離が一定以下の場合は描画しない
 		if (distance < Math::HtoM(4.0f)) { return; }
@@ -85,7 +85,7 @@ void Entity::Update(const float deltaTime) {
 		bool  bIsOffscreen = false;
 		float outAngle     = 0.0f;
 
-		Vec2 scrPosition = Math::WorldToScreen(
+		const Vec2 scrPosition = Math::WorldToScreen(
 			worldPos,
 			screenSize,
 			false,
@@ -97,10 +97,11 @@ void Entity::Update(const float deltaTime) {
 		if (!bIsOffscreen) {
 #ifdef _DEBUG
 			//auto   viewport  = ImGui::GetMainViewport();
-			auto viewportLt = Unnamed::EngineServices::Get() ?
-			                    Unnamed::EngineServices::Get()->GetViewportLTInstance() :
-			                    Vec2{};
-			ImVec2 screenPos = { viewportLt.x, viewportLt.y };
+			const auto viewportLt = Unnamed::EngineServices::Get() ?
+				                        Unnamed::EngineServices::Get()->
+				                        GetViewportLTInstance() :
+				                        Vec2{};
+			const ImVec2 screenPos = {viewportLt.x, viewportLt.y};
 			ImGui::SetNextWindowPos(screenPos);
 			ImGui::SetNextWindowSize({screenSize.x, screenSize.y});
 			ImGui::SetNextWindowBgAlpha(0.0f); // 背景を透明にする
@@ -117,12 +118,12 @@ void Entity::Update(const float deltaTime) {
 				ImGuiWindowFlags_NoNav
 			);
 
-			ImVec2      textPos  = {scrPosition.x, scrPosition.y};
-			ImDrawList* drawList = ImGui::GetWindowDrawList();
+			const ImVec2 textPos  = {scrPosition.x, scrPosition.y};
+			ImDrawList*  drawList = ImGui::GetWindowDrawList();
 
-			float outlineSize = 1.0f;
+			constexpr float outlineSize = 1.0f;
 
-			ImVec4 textColor = ImGuiUtil::ToImVec4(Vec4::white);
+			const ImVec4 textColor = ImGuiUtil::ToImVec4(Vec4::white);
 
 			ImGuiUtil::TextOutlined(
 				drawList,
@@ -146,7 +147,7 @@ void Entity::Update(const float deltaTime) {
 	}
 }
 
-void Entity::PostPhysics(float deltaTime) const {
+void Entity::PostPhysics(const float deltaTime) const {
 	if (!mIsActive) { return; }
 
 	for (const auto& component : mComponents) {
@@ -223,7 +224,7 @@ void Entity::SetParent(Entity* newParent) {
 
 	// 既存の親から削除
 	if (mParent) {
-		auto it = std::ranges::find(mParent->mChildren, this);
+		const auto it = std::ranges::find(mParent->mChildren, this);
 		if (it != mParent->mChildren.end()) { mParent->mChildren.erase(it); }
 	}
 
@@ -234,9 +235,11 @@ void Entity::SetParent(Entity* newParent) {
 	if (mScene) {
 		if (mParent && mParent->GetTransform()) {
 			// 親のワールド変換を取得
-			Vec3 parentWorldPos = mParent->GetTransform()->GetWorldPos();
-			Quaternion parentWorldRot = mParent->GetTransform()->GetWorldRot();
-			Vec3 parentWorldScale = mParent->GetTransform()->GetWorldScale();
+			const Vec3 parentWorldPos = mParent->GetTransform()->GetWorldPos();
+			const Quaternion parentWorldRot = mParent->GetTransform()->
+				GetWorldRot();
+			const Vec3 parentWorldScale = mParent->GetTransform()->
+			                                       GetWorldScale();
 
 			// 位置の計算
 			Vec3 localPos = currentWorldPos - parentWorldPos;
@@ -246,10 +249,11 @@ void Entity::SetParent(Entity* newParent) {
 			localPos = localPos / parentWorldScale;
 
 			// 回転の計算
-			Quaternion localRot = parentWorldRot.Inverse() * currentWorldRot;
+			const Quaternion localRot =
+				parentWorldRot.Inverse() * currentWorldRot;
 
 			// スケールの計算
-			Vec3 localScale = currentWorldScale / parentWorldScale;
+			const Vec3 localScale = currentWorldScale / parentWorldScale;
 
 			mScene->SetLocalPos(localPos);
 			mScene->SetLocalRot(localRot);
@@ -284,7 +288,7 @@ void Entity::AddChild(Entity* child) {
 }
 
 void Entity::RemoveChild(Entity* child) {
-	auto it = std::ranges::remove(mChildren, child).begin();
+	const auto it = std::ranges::remove(mChildren, child).begin();
 	if (it != mChildren.end()) {
 		mChildren.erase(it);
 		child->SetParent(nullptr);

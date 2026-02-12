@@ -30,7 +30,7 @@ void GameTime::StartGame() {
 /// @brief フレーム開始時の処理を行います。
 void GameTime::EndFrame() {
 	// フレーム終了時刻を記録
-	TimePoint frameEndTime = Clock::now();
+	const TimePoint frameEndTime = Clock::now();
 
 	// デルタ計算
 	mDeltaTime = std::chrono::duration<double>(
@@ -67,7 +67,7 @@ template <typename T>
 T GameTime::ScaledDeltaTime() {
 	const double clamped = std::min(
 		mScaledDeltaTime * TimeScale(),
-		(1.0 / 60.0) * TimeScale()
+		1.0 / 60.0 * TimeScale()
 	);
 	return static_cast<T>(clamped);
 }

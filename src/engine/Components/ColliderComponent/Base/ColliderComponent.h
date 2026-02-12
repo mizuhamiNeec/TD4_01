@@ -4,7 +4,7 @@
 #include <engine/Components/base/Component.h>
 #include <engine/unnamed/uphysics/PhysicsTypes.h>
 
-#include <runtime/core/math/Math.h>
+#include <core/math/Math.h>
 
 /// @brief すべてのコライダーコンポーネントの基底クラス
 class ColliderComponent : public Component {

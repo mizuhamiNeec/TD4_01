@@ -11,6 +11,7 @@
 # --- VS Project ---
 *.vcxproj
 *.sln
+*.slnx
 *.vcxproj.filters
 
 # --- Build results / intermediates ---

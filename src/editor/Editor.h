@@ -1,12 +1,9 @@
 #pragma once
 #include <memory>
 
-#include <engine/Components/Camera/CameraComponent.h>
-#include <engine/Entity/Entity.h>
-#include <engine/unnamed/subsystem/time/GameTime.h>
-
 #include <engine/scene/BaseScene.h>
 
+class CameraComponent;
 class GameTime;
 class SceneManager;
 class EntityLoader;

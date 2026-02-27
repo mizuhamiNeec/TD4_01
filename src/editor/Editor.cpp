@@ -20,6 +20,10 @@
 #include <engine/scene/SceneManager.h>
 #include <engine/unnamed/subsystem/console/concommand/UnnamedConVar.h>
 
+#include "engine/Components/Camera/CameraComponent.h"
+#include "engine/renderer/D3D12.h"
+#include "engine/unnamed/subsystem/time/GameTime.h"
+
 #ifdef _DEBUG
 #include <imgui_internal.h>
 // ImGuizmoのインクルードはImGuiより後

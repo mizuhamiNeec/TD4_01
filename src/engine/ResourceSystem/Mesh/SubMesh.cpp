@@ -2,6 +2,7 @@
 
 #include "engine/OldConsole/Console.h"
 #include "engine/renderer/IndexBuffer.h"
+#include "engine/renderer/Structs.h"
 #include "engine/unnamed/uprimitive/UPrimitives.h"
 
 /// @brief コンストラクタ

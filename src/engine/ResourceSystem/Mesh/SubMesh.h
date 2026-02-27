@@ -1,14 +1,19 @@
 #pragma once
 #include <d3d12.h>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include <wrl/client.h>
 
-#include "engine/renderer/Structs.h"
 #include "engine/renderer/VertexBuffer.h"
-#include "engine/unnamed/uprimitive/UPrimitives.h"
 
+namespace Unnamed {
+	struct Triangle;
+}
+
+struct SkinnedVertex;
+struct Vertex;
 class IndexBuffer;
 class Material;
 

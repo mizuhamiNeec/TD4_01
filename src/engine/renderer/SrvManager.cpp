@@ -3,6 +3,8 @@
 #include <engine/Properties.h>
 #include <engine/renderer/SrvManager.h>
 
+#include "D3D12.h"
+
 #include "engine/OldConsole/Console.h"
 
 /// @brief SRVマネージャーの初期化
@@ -402,17 +404,6 @@ uint32_t SrvManager::AllocateConsecutiveTextureCubeSlots(uint32_t count) {
 	return startIndex;
 }
 
-/// @brief Allocate2DTextureにリダイレクト
-/// @return 割り当てられた2Dテクスチャ用SRVインデックス
-uint32_t SrvManager::AllocateForTexture() { return AllocateForTexture2D(); }
-
-/// @brief AllocateConsecutiveTexture2DSlotsにリダイレクト
-/// @param count 割り当てるインデックスの数
-/// @return 割り当てられた最初の2Dテクスチャ用SRVインデックス
-uint32_t SrvManager::AllocateConsecutiveTextureSlots(const uint32_t count) {
-	return AllocateConsecutiveTexture2DSlots(count);
-}
-
 /// @brief 2Dテクスチャ用SRVインデックスを返却します
 /// @param index 返却する2Dテクスチャ用SRVインデックス
 void SrvManager::DeallocateTexture2D(uint32_t index) {
@@ -550,12 +541,6 @@ void SrvManager::DeallocateStructuredBuffer(uint32_t index) {
 		kConTextColorCompleted,
 		Channel::RenderSystem
 	);
-}
-
-/// @brief DeallocateTexture2Dにリダイレクト
-/// @param index 返却する2Dテクスチャ用SRVインデックス
-void SrvManager::DeallocateTexture(const uint32_t index) {
-	DeallocateTexture2D(index);
 }
 
 /// @brief テクスチャ配列用SRVインデックスを返却します

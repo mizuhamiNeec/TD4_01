@@ -1,11 +1,10 @@
 #pragma once
 #include <cstdint>
+#include <d3d12.h>
 #include <queue>
 #include <vector>
-
+#include <engine/Properties.h>
 #include <wrl/client.h>
-
-#include <engine/renderer/D3D12.h>
 
 class D3D12;
 
@@ -21,39 +20,15 @@ public:
 	uint32_t AllocateForTextureArray();     // テクスチャ配列用SRVの割り当て（将来用）
 	uint32_t AllocateForStructuredBuffer(); // ストラクチャードバッファ用SRVの割り当て
 
-	// 互換性のためのメソッド
-	uint32_t AllocateForTexture(); // AllocateForTexture2Dにリダイレクト
-
 	// 連続したテクスチャスロットを確保
 	uint32_t AllocateConsecutiveTexture2DSlots(uint32_t count);
 	uint32_t AllocateConsecutiveTextureCubeSlots(uint32_t count);
-
-	// 互換性のためのメソッド
-	uint32_t AllocateConsecutiveTextureSlots(uint32_t count);
-	// AllocateConsecutiveTexture2DSlotsにリダイレクト
 
 	// インデックス返却（再利用可能にする）
 	void DeallocateTexture2D(uint32_t index);
 	void DeallocateTextureCube(uint32_t index);
 	void DeallocateTextureArray(uint32_t index);
 	void DeallocateStructuredBuffer(uint32_t index);
-
-	// 互換性のためのメソッド
-	void DeallocateTexture(uint32_t index); // DeallocateTexture2Dにリダイレクト
-
-	// 連続したスロットの返却
-	void DeallocateConsecutiveTexture2DSlots(
-		uint32_t startIndex,
-		uint32_t count
-	);
-	void DeallocateConsecutiveTextureCubeSlots(
-		uint32_t startIndex,
-		uint32_t count
-	);
-
-	// 互換性のためのメソッド
-	void DeallocateConsecutiveTextureSlots(uint32_t startIndex, uint32_t count);
-	// DeallocateConsecutiveTexture2DSlotsにリダイレクト
 
 	ID3D12DescriptorHeap* GetDescriptorHeap() const;
 	void                  CreateSRVForTexture2D(

@@ -251,7 +251,7 @@ void Console::SubmitCommand(
 
 		for (const auto conVar : ConVarManager::GetAllConVars()) {
 			// 変数が存在する場合
-			if (Unnamed::StrUtil::Equal(conVar->GetName(), tokens[0])) {
+			if (conVar->GetName() == tokens[0]) {
 				found = true;
 				// 変数のみ入力された場合
 				if (tokens.size() < 2) {
@@ -418,7 +418,7 @@ void Console::Print(
 					const std::string lastBaseMsg = lastHasNewLine ?
 						                                lastMsg.substr(
 							                                0, lastMsg.size() -
-							                                1
+								                                1
 						                                ) :
 						                                lastMsg;
 

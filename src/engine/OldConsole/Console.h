@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include <functional>
-#include <imgui.h>
 #include <iosfwd>
 #include <mutex>
 #include <queue>

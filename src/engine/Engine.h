@@ -1,12 +1,16 @@
 #pragma once
+#include <d3d12.h>
 #include <memory>
 
 #include <core/assets/AssetID.h>
 
 #include <engine/EngineConfig.h>
-#include <engine/postprocess/PostProcessPipeline.h>
-#include <engine/renderer/RenderTargets.h>
 
+#include "core/math/Vec2.h"
+
+class IPostProcess;
+class SrvManager;
+class D3D12;
 class ImGuiManager;
 class ModelCommon;
 class Object3DCommon;
@@ -18,16 +22,21 @@ class TexManager;
 class ResourceManager;
 
 namespace Unnamed {
+	class RenderTargets;
+	class PostProcessPipeline;
+	class UEditorRuntime;
+	class UImGuiLayer;
+
+	namespace Render {
+		class RenderModule;
+		struct RenderFrameContext;
+	}
+
 	class ConsoleSystem;
-	class ConVarHelper;
 	class UWorld;
 
 	namespace Rhi {
 		class IRhiDevice;
-	}
-
-	namespace Render {
-		class RenderGraph;
 	}
 
 	/// @brief エンジンクラス
@@ -118,28 +127,29 @@ namespace Unnamed {
 		// 基幹システム
 		std::unique_ptr<ConsoleSystem>        mConsoleSystem;
 		std::unique_ptr<class TerminalSystem> mTerminalSystem;
-		std::unique_ptr<ConVarHelper>         mConVarHelper;
 
 		std::unique_ptr<class TimeSystem>   mTimeSystem;
 		std::unique_ptr<class UInputSystem> mInputSystem;
 
-		std::unique_ptr<Rhi::IRhiDevice>     mRhiDevice;
-		std::unique_ptr<Render::RenderGraph> mGraph;
+		std::unique_ptr<Rhi::IRhiDevice>      mRhiDevice;
+		std::unique_ptr<Render::RenderModule> mRenderModule;
 
 		AssetID test = kInvalidAssetID;
 
 		std::unique_ptr<UWorld> mWorld;
 
-		PostProcessPipeline mPostProcessPipeline;
-		RenderTargets       mRenderTargets;
-		bool                mSwapchainPassBegun = false;
+		std::unique_ptr<PostProcessPipeline> mPostProcessPipeline;
+		std::unique_ptr<RenderTargets>       mRenderTargets;
+		bool                                 mSwapchainPassBegun = false;
 
 		std::unique_ptr<ResourceManager> mResourceManager;
 
 		std::unique_ptr<D3D12> mRenderer;
 
 #ifdef _DEBUG
-		std::unique_ptr<ImGuiManager> mImGuiManager;
+		std::unique_ptr<ImGuiManager>   mImGuiManager;
+		std::unique_ptr<UImGuiLayer>    mUImGuiLayer;
+		std::unique_ptr<UEditorRuntime> mUEditorRuntime;
 #endif
 
 		std::unique_ptr<ParticleManager> mParticleManager;
@@ -160,6 +170,11 @@ namespace Unnamed {
 
 		bool mWishShutdown = false;
 
-		float mBlurStrength = 0.0f;
+		float    mBlurStrength     = 0.0f;
+		uint32_t mFrameIndex       = 0;
+		uint32_t mLastResizeWidth  = 0;
+		uint32_t mLastResizeHeight = 0;
+
+		std::unique_ptr<Render::RenderFrameContext> mRenderFrameContext;
 	};
 }

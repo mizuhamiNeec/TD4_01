@@ -192,7 +192,7 @@ namespace Unnamed {
 		static UnnamedConCommand quit(
 			"quit",
 			[this](const std::vector<std::string>&) {
-				mWishShutdown = true;
+				// TODO: 終了処理を実装しよう
 				return true;
 			},
 			"Quit the engine."
@@ -390,117 +390,6 @@ namespace Unnamed {
 			gameWorld.LoadSceneFromFile("./content/core/scenes/sandbox.json");
 		}
 
-		// 		mRenderer = std::make_unique<D3D12>(hwnd, window->GetDesc());
-		//
-		// 		InputSystem::Init();
-		//
-		// 		RegisterConsoleCommandsAndVariables();
-		//
-		// 		// 各マネージャーの初期化
-		// 		mResourceManager = std::make_unique<ResourceManager>(mRenderer.get());
-		//
-		// 		mResourceManager->Init();
-		// 		mRenderer->SetShaderResourceViewManager(
-		// 			mResourceManager->GetSrvManager()
-		// 		);
-		// 		mRenderer->Init();
-		//
-		// 		mAudioManager = std::make_unique<AudioManager>();
-		// 		mAudioManager->Init();
-		//
-		// #ifdef _DEBUG
-		// 		// ImGuiFontテクスチャ用にSRVを確保
-		// 		mResourceManager->GetSrvManager()->AllocateForTexture2D();
-		// 		// ImGuiManagerの初期化
-		// 		mImGuiManager = std::make_unique<ImGuiManager>(
-		// 			hwnd, mRenderer.get(), mResourceManager->GetSrvManager()
-		// 		);
-		// #endif
-		//
-		// 		// コンソールを作成
-		// 		mConsole = std::make_unique<Console>();
-		//
-		// #pragma region PostProcessInit
-		// 		mRenderTargets.Init(
-		// 			mRenderer.get(),
-		// 			window->GetDesc().width,
-		// 			window->GetDesc().height,
-		// 			kOffscreenClearColor,
-		// 			kBufferFormat,
-		// 			DXGI_FORMAT_D32_FLOAT
-		// 		);
-		//
-		// 		mPostProcessPipeline.Init(
-		// 			mRenderer.get(),
-		// 			mResourceManager->GetSrvManager(),
-		// 			window->GetDesc().width,
-		// 			window->GetDesc().height,
-		// 			reinterpret_cast<const float*>(&kOffscreenClearColor),
-		// 			kBufferFormat,
-		// 			DXGI_FORMAT_D32_FLOAT
-		// 		);
-		//
-		// 		mPostProcessPipeline.AddPass(
-		// 			std::make_unique<PPBloom>(
-		// 				mRenderer->GetDevice(), mResourceManager->GetSrvManager()
-		// 			)
-		// 		);
-		//
-		// 		mPostProcessPipeline.AddPass(
-		// 			std::make_unique<PPVignette>(
-		// 				mRenderer->GetDevice(), mResourceManager->GetSrvManager()
-		// 			)
-		// 		);
-		//
-		// 		mPostProcessPipeline.AddPass(
-		// 			std::make_unique<PPChromaticAberration>(
-		// 				mRenderer->GetDevice(), mResourceManager->GetSrvManager()
-		// 			)
-		// 		);
-		//
-		// 		mPostProcessPipeline.AddPass(
-		// 			std::make_unique<PPRadialBlur>(
-		// 				mRenderer->GetDevice(), mResourceManager->GetSrvManager()
-		// 			)
-		// 		);
-		// #pragma endregion
-		//
-		// 		// スプライト
-		// 		mSpriteCommon = std::make_unique<SpriteCommon>();
-		// 		mSpriteCommon->Init(mRenderer.get());
-		//
-		// 		// パーティクル
-		// 		mParticleManager = std::make_unique<ParticleManager>();
-		// 		mParticleManager->Init(
-		// 			mRenderer.get(), mResourceManager->GetSrvManager()
-		// 		);
-		//
-		// 		// ライン
-		// 		mLineCommon = std::make_unique<LineCommon>();
-		// 		mLineCommon->Init(mRenderer.get());
-		//
-		// 		DebugDraw::Init(mLineCommon.get());
-		//
-		// 		//---------------------------------------------------------------------
-		// 		// すべての初期化が完了
-		// 		//---------------------------------------------------------------------
-		//
-		// 		Console::SubmitCommand("neofetch");
-		//
-		// 		//---------------------------------------------------------------------
-		// 		// エディターの初期化
-		// 		//---------------------------------------------------------------------
-		//
-		// 		assert(SUCCEEDED(mRenderer->GetCommandList()->Close()));
-		//
-		// 		mConsoleSystem->ExecuteCommand(
-		// 			"exec ./content/core/cfg/config_default.cfg"
-		// 		);
-		//
-		// 		// ワールドの作成とシーンの読み込み
-		// 		SwitchWorld<UWorld>();
-		// 		mWorld->LoadSceneFromFile("./content/core/scenes/sandbox.json");
-
 		return true;
 	}
 
@@ -521,6 +410,7 @@ namespace Unnamed {
 #ifdef _DEBUG
 		// Update内でImGuiを使えるように更新前にフレーム開始
 		if (mUImGuiLayer) { mUImGuiLayer->BeginFrame(); }
+		if (mUEditorRuntime && mIsEditorMode) { mUEditorRuntime->BeginUI(); }
 #endif
 
 		/* ----------- 更新処理 ---------- */
@@ -564,8 +454,6 @@ namespace Unnamed {
 
 	/// @brief シャットダウン
 	void Engine::Shutdown() {
-		//mRenderer->WaitPreviousFrame();
-
 		if (mWorld) {
 			mWorld->Shutdown();
 			mWorld.reset();
@@ -585,20 +473,6 @@ namespace Unnamed {
 		if (mPlatformEvents && mInputSystem) {
 			mPlatformEvents->RemoveListener(mInputSystem.get());
 		}
-
-		// 		DebugDraw::Shutdown();
-		//
-		// 		mParticleManager->Shutdown();
-		// 		mParticleManager.reset();
-		//
-		// 		mRenderer->Shutdown();
-		//
-		// #ifdef _DEBUG
-		// 		if (mImGuiManager) { mImGuiManager->Shutdown(); }
-		// #endif
-		//
-		// 		mResourceManager->Shutdown();
-		// 		mResourceManager.reset();
 
 		if (mInputSystem) { mInputSystem->Shutdown(); }
 		if (mTerminalSystem) { mTerminalSystem->Shutdown(); }

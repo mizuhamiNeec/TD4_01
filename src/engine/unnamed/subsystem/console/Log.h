@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <format>
 #include <iostream>
 #include <string_view>
@@ -8,21 +8,21 @@
 #include <engine/unnamed/subsystem/console/ConsoleSystem.h>
 #include <engine/unnamed/subsystem/interface/ServiceLocator.h>
 
-namespace {
+namespace Unnamed {
 	/// @brief メッセージを出力します（フォールバック用）
 	/// @param level ログレベル
 	/// @param channel チャンネル名
 	/// @param message メッセージ本文
-	void Print(
-		const Unnamed::LogLevel level,
-		const std::string_view  channel,
-		const std::string_view  message
+	inline void Print(
+		const LogLevel         level,
+		const std::string_view channel,
+		const std::string_view message
 	) {
 		std::string out;
 
 		// レベル・チャンネルが空の場合はチャンネル名を出力しない
 		if (
-			level != Unnamed::LogLevel::None && !Unnamed::kChannelNone.empty()
+			level != LogLevel::None && !kChannelNone.empty()
 		) {
 			out =
 				"[" +
@@ -62,12 +62,12 @@ namespace {
 	/// @param args フォーマット引数
 	template <typename... Args>
 	void LogCore(
-		const Unnamed::LogLevel           level,
+		const LogLevel                    level,
 		const std::string_view&           channel,
 		const std::source_location        location,
 		const std::format_string<Args...> fmt, Args&&... args
 	) {
-		auto* console = ServiceLocator::Get<Unnamed::ConsoleSystem>();
+		auto* console = ServiceLocator::Get<ConsoleSystem>();
 
 		const std::string body = std::format(fmt, std::forward<Args>(args)...);
 
@@ -81,20 +81,45 @@ namespace {
 	}
 }
 
+/// @brief 情報メッセージを出力します。
+/// @param channel チャンネル名
+/// @param format フォーマット文字列
+/// @param args フォーマット引数
 #define Msg(channel, format, ...) \
 	LogCore(Unnamed::LogLevel::Info, channel, std::source_location::current(), format, ##__VA_ARGS__)
 
+/// @brief 開発用の詳細なメッセージを出力します。リリースビルドでは出力されないことが多いです。
+/// @param channel チャンネル名
+/// @param format フォーマット文字列
+/// @param args フォーマット引数
 #define DevMsg(channel, format, ...) \
 	LogCore(Unnamed::LogLevel::Dev, channel, std::source_location::current(), format, ##__VA_ARGS__)
 
+/// @brief 警告メッセージを出力します。注意が必要な状況を示すのに使います。
+/// @param channel チャンネル名
+/// @param format フォーマット文字列
+/// @param args フォーマット引数
 #define Warning(channel, format, ...) \
 	LogCore(Unnamed::LogLevel::Warning, channel, std::source_location::current(), format, ##__VA_ARGS__)
 
+/// @brief エラーメッセージを出力します。問題が発生したことを示すのに使います。
+/// @param channel チャンネル名
+/// @param format フォーマット文字列
+/// @param args フォーマット引数
 #define Error(channel, format, ...) \
 	LogCore(Unnamed::LogLevel::Error, channel, std::source_location::current(), format, ##__VA_ARGS__)
 
+/// @brief 致命的なエラーメッセージを出力します。まじでヤベー状況を示すのに使います。あんまり見たくないです。ははっ。
+/// @param channel チャンネル名
+/// @param format フォーマット文字列
+/// @param args フォーマット引数
 #define Fatal(channel, format, ...) \
 	LogCore(Unnamed::LogLevel::Fatal, channel, std::source_location::current(), format, ##__VA_ARGS__)
 
+/// @brief 特殊なログメッセージを出力します。用途に応じてログレベルを指定できます。
+/// @param logLevel ログレベル
+/// @param channel チャンネル名
+/// @param format フォーマット文字列
+/// @param args フォーマット引数
 #define SpecialMsg(logLevel, channel, format, ...) \
 	LogCore(logLevel, channel, std::source_location::current(), format, ##__VA_ARGS__)

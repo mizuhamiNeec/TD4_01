@@ -113,7 +113,8 @@ namespace Unnamed {
 	}
 
 	UImGuiLayer::~UImGuiLayer() {
-		if (ImGui::GetCurrentContext()) { ImGui::DestroyPlatformWindows(); }
+		// TODO: ↓ あるとクラッシュする Why?
+		//if (ImGui::GetCurrentContext()) { ImGui::DestroyPlatformWindows(); }
 		ImGui_ImplDX12_Shutdown();
 		ImGui_ImplWin32_Shutdown();
 		ImGui::DestroyContext();

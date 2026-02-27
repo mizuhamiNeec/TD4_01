@@ -153,15 +153,15 @@ struct Mat4 final {
 
 	/// @brief 右方向ベクトルを取得する
 	/// @return 右方向ベクトル
-	Vec3 GetRight();
+	Vec3 GetRight() const;
 
 	/// @brief 上方向ベクトルを取得する
 	/// @return 上方向ベクトル
-	Vec3 GetUp();
+	Vec3 GetUp() const;
 
 	/// @brief 前方向ベクトルを取得する
 	/// @return 前方向ベクトル
-	Vec3 GetForward();
+	Vec3 GetForward() const;
 
 	//-------------------------------------------------------------------------
 	// Operator

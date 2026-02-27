@@ -1,11 +1,11 @@
 #include <pch.h>
 //-----------------------------------------------------------------------------
 #include <filesystem>
-#include <fstream>
 #include <iostream>
 #include <ranges>
 
 #include <engine/unnamed/subsystem/console/ConsoleSystem.h>
+#include <engine/unnamed/subsystem/console/ConsoleUI.h>
 #include <engine/unnamed/subsystem/console/ConVarWriter.h>
 #include <engine/unnamed/subsystem/console/Log.h>
 #include <engine/unnamed/subsystem/console/builtin/BuiltInCommands.h>
@@ -13,14 +13,13 @@
 #include <engine/unnamed/subsystem/console/concommand/UnnamedConCommand.h>
 #include <engine/unnamed/subsystem/console/concommand/UnnamedConVar.h>
 #include <engine/unnamed/subsystem/console/concommand/base/UnnamedConCommandBase.h>
+#include <engine/unnamed/subsystem/input/UInputSystem.h>
 #include <engine/unnamed/subsystem/interface/ServiceLocator.h>
 #include <engine/unnamed/subsystem/time/SystemClock.h>
 
-#include <engine/unnamed/subsystem/input/UInputSystem.h>
-
 namespace Unnamed {
 	static constexpr std::string_view kChannelConsole = "Console";
-	static constexpr std::string_view kConsoleLogPath = "console.log";
+	static constexpr std::string_view kConsoleLogPath = "./consolesystem.log";
 
 	// ユーザー設定ファイルのパス
 	static constexpr std::string_view kUserCfgPath =
@@ -40,48 +39,28 @@ namespace Unnamed {
 		return (static_cast<int>(lhs) & static_cast<int>(rhs)) != 0;
 	}
 
-	ConsoleSystem::~ConsoleSystem() = default;
+	ConsoleSystem::~ConsoleSystem() {};
 
 	bool ConsoleSystem::Init() {
+		// サービスロケータに登録
 		ServiceLocator::Register<ConsoleSystem>(this);
 
-		// 既存のログファイルを削除
-		if (std::filesystem::exists(kConsoleLogPath)) {
-			std::filesystem::remove(kConsoleLogPath);
+		// ファイルログの開始
+		if (mEnableFileLog) {
+			ConsoleFileLogSink::Config cfg;
+			cfg.path = std::string(kConsoleLogPath);
+			if (!mFileLogSink.Start(cfg)) {
+				Error(
+					kChannelConsole,
+					"Failed to start file log sink. File logging will be disabled."
+				);
+			}
 		}
 
-		// 新規ファイルを作成
-		std::ofstream logFile;
-		logFile.open(kConsoleLogPath, std::ios::out | std::ios::binary);
-		if (logFile.is_open()) {
-			// ヘッダーを書き込む
-			const auto now = SystemClock::GetDateTime(SystemClock::StartTime());
-			const std::string header = std::format(
-				"//-----------------------------------------------------------------------------\n"
-				"// BuildDate: {}-{}\n"
-				"// Engine: {} Ver. {}\n"
-				"// LaunchDate: {:02}-{:02}-{:02} {:02}:{:02}:{:02}\n"
-				"//-----------------------------------------------------------------------------\n\n",
-				__DATE__, __TIME__,
-				ENGINE_NAME, ENGINE_VERSION,
-				now.year, now.month, now.day, now.hour, now.minute, now.second
-			);
-			logFile.write(
-				header.c_str(), static_cast<std::streamsize>(header.size())
-			);
-			logFile.flush();
-			logFile.close();
-		} else {
-			Error(
-				kChannelConsole, "Failed to create log file: {}",
-				kConsoleLogPath
-			);
-		}
-
-		// #ifdef _DEBUG
-		// 		mConsoleUI = std::make_unique<ConsoleUI>(this);
-		// 		mConsoleUI->Init();
-		// #endif
+#ifdef _DEBUG
+		mConsoleUI = std::make_unique<ConsoleUI>(this);
+		mConsoleUI->Init();
+#endif
 
 		RegisterCommonCommands();
 
@@ -95,14 +74,17 @@ namespace Unnamed {
 	}
 
 	void ConsoleSystem::Update(float) {
-		// #ifdef _DEBUG
-		// 		mConsoleUI->Show();
-		// #endif
+#ifdef _DEBUG
+		mConsoleUI->Show();
+#endif
 	}
 
 	void ConsoleSystem::Shutdown() {
 		// ユーザー設定ファイルに変数を書き込む
 		[[maybe_unused]] ConVarWriter writer(kUserCfgPath);
+
+		// ファイルログ停止して残りを書き出し
+		mFileLogSink.Stop();
 	}
 
 	const std::string_view ConsoleSystem::GetName() const { return "Console"; }
@@ -125,6 +107,21 @@ namespace Unnamed {
 		logText.location  = location;
 		mLogBuffer.Push(logText);
 
+		// ファイルへ出力
+		if (mEnableFileLog) {
+			ConsoleFileLogSink::Event e;
+			e.level     = level;
+			e.channel   = std::string(channel);
+			e.message   = std::string(message);
+			e.timeStamp = logText.timeStamp;
+			e.location  = location;
+			e.threadId  = GetCurrentThreadId();
+			mFileLogSink.Enqueue(std::move(e));
+
+			// Error以上は今すぐ書き出す
+			if (level >= LogLevel::Error) { mFileLogSink.FlushNow(50); }
+		}
+
 		std::string out;
 		if (!logText.channel.empty()) {
 			out = "[" + logText.channel + "] " + logText.message;
@@ -137,9 +134,9 @@ namespace Unnamed {
 		OutputDebugStringW(StrUtil::ToWString(out).c_str());
 		OutputDebugStringW(StrUtil::ToWString("\n").c_str());
 
-		// #ifdef _DEBUG
-		// 		mConsoleUI->OnConsoleUpdate();
-		// #endif
+#ifdef _DEBUG
+		mConsoleUI->OnConsoleUpdate();
+#endif
 	}
 
 	void ConsoleSystem::RegisterConCommand(UnnamedConCommandBase* conCommand) {
@@ -305,9 +302,9 @@ namespace Unnamed {
 				"> {}",
 				trimmed
 			);
-			// #ifdef _DEBUG
-			// 			mConsoleUI->OnConsoleUpdate();
-			// #endif
+#ifdef _DEBUG
+			mConsoleUI->OnConsoleUpdate();
+#endif
 		}
 
 		for (const auto& singleCommand : commands) {

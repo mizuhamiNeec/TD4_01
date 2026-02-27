@@ -6,11 +6,11 @@
 
 #include <core/containers/RingBuffer.h>
 
+#include <engine/unnamed/subsystem/console/ConsoleFileLogSink.h>
 #include <engine/unnamed/subsystem/console/ConsoleUI.h>
 #include <engine/unnamed/subsystem/console/concommand/base/UnnamedConCommandBase.h>
 #include <engine/unnamed/subsystem/console/interface/IConsole.h>
 #include <engine/unnamed/subsystem/interface/ISubsystem.h>
-#include <engine/unnamed/time/DateTime.h>
 
 namespace Unnamed {
 	class UnnamedConCommandBase;
@@ -146,6 +146,10 @@ namespace Unnamed {
 
 		// ログのリングバッファ
 		RingBuffer<ConsoleLogText, kConsoleBufferSize> mLogBuffer;
+
+		// ファイル出力
+		ConsoleFileLogSink mFileLogSink;
+		bool               mEnableFileLog = true;
 
 		// 登録されているコマンドと変数のマップ
 		std::unordered_map<std::string, UnnamedConCommandBase*> mConCommands;

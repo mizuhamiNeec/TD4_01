@@ -1,11 +1,17 @@
-﻿#pragma once
+#pragma once
 #include <variant>
 #include <vector>
 
 #include "AssetID.h"
 #include "FileStamp.h"
 
-#include "types/TextureAsset.h"
+#include "types/MaterialAssetData.h"
+#include "types/MaterialInstanceAssetData.h"
+#include "types/MeshAssetData.h"
+#include "types/PostFxChainAssetData.h"
+#include "types/ShaderProgramAssetData.h"
+#include "types/ShaderSourceAssetData.h"
+#include "types/TextureAssetData.h"
 
 namespace Unnamed {
 	//-------------------------------------------------------------------------
@@ -16,7 +22,13 @@ namespace Unnamed {
 	/// @brief アセットのペイロードデータ
 	using AssetPayload = std::variant<
 		std::monostate,
-		TextureAssetData
+		TextureAssetData,
+		ShaderSourceAssetData,
+		MeshAssetData,
+		ShaderProgramAssetData,
+		MaterialAssetData,
+		MaterialInstanceAssetData,
+		PostFxChainAssetData
 	>;
 
 	struct LoadResult {

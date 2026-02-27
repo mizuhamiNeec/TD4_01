@@ -27,6 +27,4 @@ VSOut VsMain(uint vid : SV_VertexID) {
 	return o;
 }
 
-float4 PsMain(VSOut i) : SV_Target {
-	return gTex.Sample(gSampler, i.uv);
-}
+float4 PsMain(VSOut i) : SV_Target { return gTex.Sample(gSampler, i.uv); }

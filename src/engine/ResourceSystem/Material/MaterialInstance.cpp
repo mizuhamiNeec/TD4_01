@@ -1,5 +1,7 @@
 #include "engine/ResourceSystem/Material/MaterialInstance.h"
 
+#include <format>
+
 #include "engine/Engine.h"
 #include "engine/EngineServices.h"
 #include "engine/OldConsole/Console.h"

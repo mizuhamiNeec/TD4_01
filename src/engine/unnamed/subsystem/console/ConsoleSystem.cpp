@@ -59,7 +59,7 @@ namespace Unnamed {
 
 #ifdef _DEBUG
 		mConsoleUI = std::make_unique<ConsoleUI>(this);
-		mConsoleUI->Init();
+		if (mConsoleUI) { mConsoleUI->Init(); }
 #endif
 
 		RegisterCommonCommands();
@@ -135,7 +135,7 @@ namespace Unnamed {
 		OutputDebugStringW(StrUtil::ToWString("\n").c_str());
 
 #ifdef _DEBUG
-		mConsoleUI->OnConsoleUpdate();
+		if (mConsoleUI) { mConsoleUI->OnConsoleUpdate(); }
 #endif
 	}
 
@@ -303,7 +303,7 @@ namespace Unnamed {
 				trimmed
 			);
 #ifdef _DEBUG
-			mConsoleUI->OnConsoleUpdate();
+			if (mConsoleUI) { mConsoleUI->OnConsoleUpdate(); }
 #endif
 		}
 

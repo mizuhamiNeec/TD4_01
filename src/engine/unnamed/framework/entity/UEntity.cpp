@@ -1,4 +1,4 @@
-﻿#include "UEntity.h"
+#include "UEntity.h"
 
 #include "core/guidgenerator/GuidGenerator.h"
 
@@ -107,6 +107,9 @@ namespace Unnamed {
 	}
 
 	void UEntity::OnDestroy() {
+		if (mDestroyed) { return; }
+		mDestroyed = true;
+
 		DevMsg(
 			kChannel,
 			"Entity '{}' (GUID: {}) destroyed.",
@@ -116,6 +119,7 @@ namespace Unnamed {
 
 		for (const auto& component : mComponents) { component->OnDetached(); }
 		mComponents.clear();
+		mComponentsByType.clear();
 	}
 
 	UBaseComponent* UEntity::AddComponentInstance(

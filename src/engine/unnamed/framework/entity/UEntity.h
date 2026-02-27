@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <memory>
 #include <ranges>
 #include <string>
@@ -66,12 +66,11 @@ namespace Unnamed {
 		/// @param args コンポーネントのコンストラクタに渡す引数
 		/// @return 追加されたコンポーネントのポインタ
 		template <typename ComponentType, typename... Args>
-		[[nodiscard]] ComponentType* AddComponent(Args&&... args);
+		ComponentType* AddComponent(Args&&... args);
 
 		/// @brief コンポーネントインスタンスを追加します。
 		/// @param component 追加するコンポーネントのユニークポインタ
 		/// @return 追加されたコンポーネントのポインタ
-		[[nodiscard]]
 		UBaseComponent* AddComponentInstance(
 			std::unique_ptr<UBaseComponent> component
 		);
@@ -177,6 +176,7 @@ namespace Unnamed {
 		uint64_t    mGuid         = 0;         // GUID
 		bool        mIsEditorOnly = false;     // エディター専用か?
 		bool        mIsActive     = true;      // アクティブか?
+		bool        mDestroyed    = false;     // OnDestroy二重呼び出し防止
 	};
 
 	template <typename ComponentType, typename... Args>
@@ -186,7 +186,7 @@ namespace Unnamed {
 			"T は UBaseComponent の派生クラスでなければなりません。"
 		);
 		static_assert(
-			requires { ComponentType::GetStableName(); },
+			requires { ComponentType{}.GetStableName(); },
 			"ComponentType は std::string_view GetStableName() const を持つ必要があります。"
 		);
 
@@ -201,7 +201,7 @@ namespace Unnamed {
 		mComponents.emplace_back(std::move(ptr));
 
 		// 型索引へ登録
-		const TypeId typeId = HashTypeName(ComponentType::GetStableName());
+		const TypeId typeId = HashTypeName(ComponentType{}.GetStableName());
 		mComponentsByType[typeId].emplace_back(raw);
 
 		raw->OnAttached();
@@ -215,11 +215,11 @@ namespace Unnamed {
 			"ComponentType は UBaseComponent の派生クラスでなければなりません。"
 		);
 		static_assert(
-			requires { ComponentType::GetStableName(); },
+			requires { ComponentType{}.GetStableName(); },
 			"ComponentType は std::string_view GetStableName() const を持つ必要があります。"
 		);
 
-		const TypeId typeId = HashTypeName(ComponentType::GetStableName());
+		const TypeId typeId = HashTypeName(ComponentType{}.GetStableName());
 
 		const auto it = mComponentsByType.find(typeId);
 		if (it == mComponentsByType.end() || it->second.empty()) {
@@ -235,11 +235,11 @@ namespace Unnamed {
 			"T は UBaseComponent の派生クラスでなければなりません。"
 		);
 		static_assert(
-			requires { ComponentType::GetStableName(); },
+			requires { ComponentType{}.GetStableName(); },
 			"ComponentType は std::string_view GetStableName() const を持つ必要があります。"
 		);
 
-		const TypeId typeId = HashTypeName(ComponentType::GetStableName());
+		const TypeId typeId = HashTypeName(ComponentType{}.GetStableName());
 
 		const auto it = mComponentsByType.find(typeId);
 		if (it == mComponentsByType.end() || it->second.empty()) {
@@ -255,12 +255,12 @@ namespace Unnamed {
 			"T は UBaseComponent の派生クラスでなければなりません。"
 		);
 		static_assert(
-			requires { ComponentType::GetStableName(); },
+			requires { ComponentType{}.GetStableName(); },
 			"ComponentType は std::string_view GetStableName() const を持つ必要があります。"
 		);
 
 		out.clear();
-		const TypeId typeId = HashTypeName(ComponentType::GetStableName());
+		const TypeId typeId = HashTypeName(ComponentType{}.GetStableName());
 		const auto   it     = mComponentsByType.find(typeId);
 		if (it == mComponentsByType.end()) return;
 
@@ -277,12 +277,12 @@ namespace Unnamed {
 			"T は UBaseComponent の派生クラスでなければなりません。"
 		);
 		static_assert(
-			requires { ComponentType::GetStableName(); },
+			requires { ComponentType{}.GetStableName(); },
 			"ComponentType は std::string_view GetStableName() const を持つ必要があります。"
 		);
 
 		out.clear();
-		const TypeId typeId = HashTypeName(ComponentType::GetStableName());
+		const TypeId typeId = HashTypeName(ComponentType{}.GetStableName());
 		const auto   it     = mComponentsByType.find(typeId);
 		if (it == mComponentsByType.end()) return;
 
@@ -340,11 +340,11 @@ namespace Unnamed {
 			"ComponentType は UBaseComponent の派生クラスでなければなりません。"
 		);
 		static_assert(
-			requires { ComponentType::GetStableName(); },
+			requires { ComponentType{}.GetStableName(); },
 			"ComponentType は std::string_view GetStableName() const を持つ必要があります。"
 		);
 
-		const TypeId typeId = HashTypeName(ComponentType::GetStableName());
+		const TypeId typeId = HashTypeName(ComponentType{}.GetStableName());
 		const auto   it     = mComponentsByType.find(typeId);
 		if (it == mComponentsByType.end() || it->second.empty()) {
 			return true;
@@ -370,11 +370,11 @@ namespace Unnamed {
 			"ComponentType は UBaseComponent の派生クラスでなければなりません。"
 		);
 		static_assert(
-			requires { ComponentType::GetStableName(); },
+			requires { ComponentType{}.GetStableName(); },
 			"ComponentType は std::string_view GetStableName() const を持つ必要があります。"
 		);
 
-		const TypeId typeId = HashTypeName(ComponentType::GetStableName());
+		const TypeId typeId = HashTypeName(ComponentType{}.GetStableName());
 		const auto   it     = mComponentsByType.find(typeId);
 		if (it == mComponentsByType.end() || it->second.empty()) {
 			return true;

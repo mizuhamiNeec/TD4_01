@@ -5,7 +5,9 @@
 
 #include <wrl/client.h>
 
-#include "Audio.h"
+struct IXAudio2MasteringVoice;
+struct IXAudio2;
+class Audio;
 
 /// @brief オーディオマネージャークラス
 class AudioManager {

@@ -2,13 +2,17 @@
 
 #include "engine/ResourceSystem/Audio/AudioManager.h"
 
+#include <cassert>
+
+#include "Audio.h"
+
 #include "engine/OldConsole/Console.h"
 
 /// @brief コンストラクタ
-AudioManager::AudioManager() {}
+AudioManager::AudioManager() = default;
 
 /// @brief デストラクタ
-AudioManager::~AudioManager() { Shutdown(); }
+AudioManager::~AudioManager() = default;
 
 /// @brief 初期化
 /// @return 成功したらtrue、失敗したらfalse

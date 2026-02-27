@@ -1,0 +1,21 @@
+{
+	"name": "dev_material",
+	"shader": "../shaders/programs/geom_pbr.shader.json",
+	"domain": "pbr",
+	"renderState": {
+		"depthEnable": true,
+		"depthWrite": true,
+		"cullBackFace": true,
+		"blendEnable": false,
+		"stencilEnable": false
+	},
+	"scalars": {
+		"Metallic": 0.1,
+		"Roughness": 0.6,
+		"Opacity": 1.0
+	},
+	"vectors": {
+		"BaseColor": [1.0, 1.0, 1.0, 1.0],
+		"EmissiveColor": [0.0, 0.0, 0.0, 0.0]
+	}
+}

@@ -1,16 +1,19 @@
 #pragma once
 #include <memory>
 
-#include <engine/CubeMap/CubeMap.h>
-#include <engine/particle/ExplosionEffect.h>
-#include <engine/particle/ParticleEmitter.h>
-#include <engine/particle/ParticleObject.h>
-#include <engine/physics/core/UPhysics.h>
-#include <engine/scene/BaseScene.h>
-#include <engine/Sprite/Sprite.h>
+#include "engine/scene/BaseScene.h"
 
-#include <game/effects/WindEffect.h>
+class Sprite;
+class ExplosionEffect;
+class WindEffect;
+class ParticleObject;
+class ParticleEmitter;
 
+namespace UPhysics {
+	class Engine;
+}
+
+class CubeMap;
 class Audio;
 class GameTime;
 class D3D12;

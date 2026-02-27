@@ -17,9 +17,18 @@
 #include <game/components/RotateComponent.h>
 #include <game/components/checkpoint/CheckpointManager.h>
 
+#include "engine/CubeMap/CubeMap.h"
+#include "engine/particle/ExplosionEffect.h"
+#include "engine/particle/ParticleEmitter.h"
 #include "engine/particle/ParticleManager.h"
+#include "engine/particle/ParticleObject.h"
+#include "engine/renderer/D3D12.h"
+#include "engine/ResourceSystem/Audio/Audio.h"
+#include "engine/Sprite/Sprite.h"
 #include "engine/unnamed/subsystem/time/GameTime.h"
 #include "engine/unnamed/subsystem/time/TimeSystem.h"
+
+#include "game/effects/WindEffect.h"
 
 namespace {
 	constexpr char kScenePath[] =

@@ -30,8 +30,6 @@ namespace Unnamed::Render {
 		uint32_t albedoTextureId = 0;
 		uint32_t skinningCbIndex = 0;
 		uint32_t useSkinning     = 0;
-
-		// TODO: マテリアルIDとかPSOキーとかルートシグネチャとかテクスチャとか
 	};
 
 	struct DrawBatch {

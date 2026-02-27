@@ -1,7 +1,7 @@
 ﻿RWTexture2D<float4> gOut : register(u0);
 
 [numthreads(8,8,1)]
-void main(uint3 dtid : SV_DispatchThreadID) {
+void CsMain(uint3 dtid : SV_DispatchThreadID) {
 	uint w, h;
 	gOut.GetDimensions(w, h);
 

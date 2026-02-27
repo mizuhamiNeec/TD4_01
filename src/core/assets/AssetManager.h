@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <functional>
 #include <memory>
 #include <mutex>
@@ -136,11 +136,6 @@ namespace Unnamed {
 
 		/// @brief すべてのアセットの依存関係情報を再構築します
 		void RebuildAllDependents();
-
-		/// @brief パスを正規化します
-		/// @param path 正規化するパス
-		/// @return 正規化されたパス
-		static std::string NormalizePath(std::string path);
 
 		struct Node {
 			AssetMetaData        meta;

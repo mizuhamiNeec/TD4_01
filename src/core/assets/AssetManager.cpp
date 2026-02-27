@@ -125,7 +125,7 @@ namespace Unnamed {
 
 		for (const auto dep : n.dependencies) {
 			if (dep == kInvalidAssetID || dep >= mNextID) { continue; }
-			auto& vec = mNodes[dep].dependencies;
+			auto& vec = mNodes[dep].dependents;
 			std::erase(vec, id);
 		}
 
@@ -134,7 +134,10 @@ namespace Unnamed {
 		// 依存先のdependentsを更新
 		for (const auto dep : n.dependencies) {
 			if (dep == kInvalidAssetID || dep >= mNextID) { continue; }
-			mNodes[dep].dependents.emplace_back(id);
+			auto& depBy = mNodes[dep].dependents;
+			if (std::ranges::find(depBy, id) == depBy.end()) {
+				depBy.emplace_back(id);
+			}
 		}
 	}
 

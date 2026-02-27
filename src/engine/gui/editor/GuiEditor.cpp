@@ -9,6 +9,7 @@
 #include "engine/gui/UiWidget.h"
 #include "engine/gui/layout/UiHorizontalLayout.h"
 #include "engine/gui/layout/UiVerticalLayout.h"
+#include "engine/ImGui/ImGuiUtil.h"
 
 #ifdef _DEBUG
 namespace Unnamed::Gui {

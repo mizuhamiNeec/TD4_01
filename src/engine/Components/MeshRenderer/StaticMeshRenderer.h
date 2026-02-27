@@ -1,9 +1,10 @@
 #pragma once
-#include <engine/Components/MeshRenderer/Base/MeshRenderer.h>
-#include <engine/Entity/Entity.h>
-#include <engine/renderer/ConstantBuffer.h>
-#include <engine/ResourceSystem/Mesh/StaticMesh.h>
+#include <memory>
 
+#include "Base/MeshRenderer.h"
+#include "engine/renderer/ConstantBuffer.h"
+
+class StaticMesh;
 struct TransformationMatrix;
 struct MatParam;
 struct DirectionalLight;

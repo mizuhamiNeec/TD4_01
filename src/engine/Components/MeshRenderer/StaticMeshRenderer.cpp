@@ -7,8 +7,13 @@
 
 #include "engine/EngineServices.h"
 #include "engine/Components/Camera/CameraComponent.h"
+#include "engine/Entity/Entity.h"
 #include "engine/OldConsole/Console.h"
+#include "engine/renderer/ConstantBuffer.h"
+#include "engine/renderer/D3D12.h"
+#include "engine/renderer/Structs.h"
 #include "engine/ResourceSystem/Material/Material.h"
+#include "engine/ResourceSystem/Mesh/StaticMesh.h"
 
 struct MatParam {
 	Vec4  baseColor;

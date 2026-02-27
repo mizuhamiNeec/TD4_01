@@ -5,6 +5,7 @@
 #include <iterator>
 
 #include "core/UnnamedMacro.h"
+#include "core/string/StrUtil.h"
 
 #include "engine/unnamed/subsystem/console/Log.h"
 
@@ -90,7 +91,7 @@ namespace Unnamed::Rhi {
 		std::vector<std::wstring> owned;
 		owned.reserve(16 + includeDirs.size() * 2 + extraArgs.size());
 
-		auto Push = [&](const std::wstring& s) { owned.push_back(s); };
+		auto Push = [&](const std::wstring& s) { owned.emplace_back(s); };
 
 		// 必須
 		// DXC は先頭にソースパスを渡す形式を前提にする実装があるため明示する
@@ -103,8 +104,9 @@ namespace Unnamed::Rhi {
 		// 便利設定（好みで）
 		Push(L"-WX");           // 警告をエラー
 		Push(L"-Zi");           // デバッグ情報
-		Push(L"-Qembed_debug"); // DXILにデバッグ埋め込み（任意）
-		Push(L"-O3");           // 最適化（開発中は -Od でもOK）
+		Push(L"-Qembed_debug"); // DXILにデバッグ埋め込み
+		Push(L"-O3");           // 最適化
+		Push(L"-Zpr");          // メモリレイアウトは行優先（row-major）
 
 		// include
 		for (const auto& dir : includeDirs) {
@@ -117,7 +119,7 @@ namespace Unnamed::Rhi {
 
 		std::vector<LPCWSTR> argv;
 		argv.reserve(owned.size());
-		for (auto& s : owned) argv.push_back(s.c_str());
+		for (auto& s : owned) argv.emplace_back(s.c_str());
 
 		Microsoft::WRL::ComPtr<IDxcResult> result;
 		if (FAILED(
@@ -160,6 +162,12 @@ namespace Unnamed::Rhi {
 		if (!outputDirectory.empty()) {
 			std::filesystem::create_directories(outputDirectory);
 		}
+
+		Msg(
+			"Shader", "Compile Succeeded! {} to {}",
+			StrUtil::ToString(sourcePath), StrUtil::ToString(outputPath)
+		);
+
 		return WriteBinaryFile(
 			outputPath, objectBlob->GetBufferPointer(),
 			objectBlob->GetBufferSize()

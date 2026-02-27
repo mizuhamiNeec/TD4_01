@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <engine/unnamed/uphysics/ShapeCast.h>
 
 namespace UPhysics {

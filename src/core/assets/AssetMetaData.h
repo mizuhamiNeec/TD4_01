@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "AssetType.h"
 #include "FileStamp.h"
 

@@ -1,4 +1,4 @@
-﻿#include "UBaseComponent.h"
+#include "UBaseComponent.h"
 
 namespace Unnamed {
 	UBaseComponent::UBaseComponent()  = default;

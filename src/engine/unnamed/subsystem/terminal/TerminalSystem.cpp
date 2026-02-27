@@ -1,4 +1,4 @@
-﻿#include "TerminalSystem.h"
+#include "TerminalSystem.h"
 
 #include <Windows.h>
 

@@ -1,4 +1,4 @@
-﻿#include <engine/Animation/KeyFrame.h>
+#include <engine/Animation/KeyFrame.h>
 
 #include "core/math/Quaternion.h"
 

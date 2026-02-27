@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "engine/platform/Window.h"
 
 #include "interface/IGameView.h"

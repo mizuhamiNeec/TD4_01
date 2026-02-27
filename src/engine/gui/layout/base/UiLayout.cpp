@@ -1,4 +1,4 @@
-﻿#include "UiLayout.h"
+#include "UiLayout.h"
 
 #include "engine/gui/UiSerializationHelpers.h"
 

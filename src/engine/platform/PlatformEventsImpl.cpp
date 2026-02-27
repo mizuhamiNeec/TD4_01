@@ -1,4 +1,4 @@
-﻿#include "PlatformEventsImpl.h"
+#include "PlatformEventsImpl.h"
 
 #include <engine/IWin32MsgListener.h>
 

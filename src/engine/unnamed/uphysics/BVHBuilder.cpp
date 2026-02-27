@@ -1,4 +1,4 @@
-﻿#include <engine/unnamed/uphysics/BVHBuilder.h>
+#include <engine/unnamed/uphysics/BVHBuilder.h>
 
 namespace UPhysics {
 	/// @brief BVH構築

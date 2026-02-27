@@ -1,4 +1,4 @@
-﻿#include <engine/Animation/Node.h>
+#include <engine/Animation/Node.h>
 
 #include <assimp/matrix4x4.h>
 #include <assimp/scene.h>

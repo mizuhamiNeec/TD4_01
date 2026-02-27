@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <vector>
 
 #include <engine/unnamed/uphysics/BVHBuilder.h>

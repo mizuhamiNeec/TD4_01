@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #ifndef _CRTDBG_MAP_ALLOC
 #define _CRTDBG_MAP_ALLOC

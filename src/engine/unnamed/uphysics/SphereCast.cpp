@@ -1,4 +1,4 @@
-﻿#include "SphereCast.h"
+#include "SphereCast.h"
 
 #include "CollisionDetection.h"
 

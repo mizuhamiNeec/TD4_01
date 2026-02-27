@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <engine/Animation/Animation.h>
 #include <engine/Components/Base/Component.h>
 

@@ -1,4 +1,4 @@
-﻿#include "BuiltInConVars.h"
+#include "BuiltInConVars.h"
 
 #include <engine/unnamed/subsystem/console/concommand/UnnamedConVar.h>
 

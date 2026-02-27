@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "core/assets/AssetType.h"
 #include "core/assets/LoadResult.h"
 

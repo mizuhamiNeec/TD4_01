@@ -1,4 +1,4 @@
-﻿#include <engine/particle/ExplosionEffect.h>
+#include <engine/particle/ExplosionEffect.h>
 
 #include <core/math/Math.h>
 

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <cstdint>
 
 /// @brief 2次元ベクトル構造体

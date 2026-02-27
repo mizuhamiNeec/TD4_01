@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <engine/unnamed/uprimitive/UPrimitives.h>
 

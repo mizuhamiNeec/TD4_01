@@ -1,4 +1,4 @@
-﻿#include "MouseDevice.h"
+#include "MouseDevice.h"
 
 
 namespace Unnamed {

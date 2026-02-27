@@ -1,4 +1,4 @@
-﻿#include <pch.h>
+#include <pch.h>
 
 #include <engine/unnamed/subsystem/console/ConsoleFlags.h>
 #include <engine/unnamed/subsystem/console/concommand/base/UnnamedConCommandBase.h>

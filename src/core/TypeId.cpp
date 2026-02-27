@@ -1,1 +1,1 @@
-﻿#include "TypeId.h"
+#include "TypeId.h"

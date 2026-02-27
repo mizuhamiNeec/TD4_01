@@ -1,4 +1,4 @@
-﻿#include "UiPanel.h"
+#include "UiPanel.h"
 
 #include "engine/unnamed/subsystem/console/Log.h"
 

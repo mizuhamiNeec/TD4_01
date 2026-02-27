@@ -1,4 +1,4 @@
-﻿#include "engine/ResourceSystem/Animation/AnimationManager.h"
+#include "engine/ResourceSystem/Animation/AnimationManager.h"
 
 #include <cassert>
 #include <format>

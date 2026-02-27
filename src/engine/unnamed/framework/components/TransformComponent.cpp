@@ -1,4 +1,4 @@
-﻿#include "TransformComponent.h"
+#include "TransformComponent.h"
 
 #include "core/ComponentRegistry.h"
 #include "core/json/JsonReader.h"

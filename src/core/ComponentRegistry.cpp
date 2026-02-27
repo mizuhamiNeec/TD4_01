@@ -1,4 +1,4 @@
-﻿#include "ComponentRegistry.h"
+#include "ComponentRegistry.h"
 
 #include "engine/unnamed/subsystem/console/Log.h"
 

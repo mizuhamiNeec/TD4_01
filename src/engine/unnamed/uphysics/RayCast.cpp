@@ -1,4 +1,4 @@
-﻿#include <engine/unnamed/uphysics/CollisionDetection.h>
+#include <engine/unnamed/uphysics/CollisionDetection.h>
 #include <engine/unnamed/uphysics/RayCast.h>
 
 namespace UPhysics {

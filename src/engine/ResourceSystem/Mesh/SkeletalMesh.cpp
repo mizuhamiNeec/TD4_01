@@ -1,4 +1,4 @@
-﻿#include <engine/ResourceSystem/Mesh/SkeletalMesh.h>
+#include <engine/ResourceSystem/Mesh/SkeletalMesh.h>
 
 /// @brief コンストラクタ
 /// @param name メッシュ名

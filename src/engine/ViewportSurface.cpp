@@ -1,4 +1,4 @@
-﻿#include "ViewportSurface.h"
+#include "ViewportSurface.h"
 
 namespace Unnamed {
 	ViewportSurface::ViewportSurface() = default;

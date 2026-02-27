@@ -1,4 +1,4 @@
-﻿#include "ServiceLocator.h"
+#include "ServiceLocator.h"
 
 /// @brief サービスロケーターマップのシングルトンインスタンスを取得します
 /// @return サービスロケーターマップの参照

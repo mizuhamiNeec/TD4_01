@@ -1,4 +1,4 @@
-﻿#include "GameInstance.h"
+#include "GameInstance.h"
 
 namespace Unnamed {
 	void GameInstance::SetView(

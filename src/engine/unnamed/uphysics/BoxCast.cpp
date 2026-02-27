@@ -1,4 +1,4 @@
-﻿#include <engine/unnamed/uphysics/BoxCast.h>
+#include <engine/unnamed/uphysics/BoxCast.h>
 #include <engine/unnamed/uphysics/CollisionDetection.h>
 
 #include <cmath>

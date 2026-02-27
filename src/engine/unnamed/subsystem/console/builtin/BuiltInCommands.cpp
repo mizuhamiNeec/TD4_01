@@ -1,4 +1,4 @@
-﻿#include "BuiltInCommands.h"
+#include "BuiltInCommands.h"
 
 #include <engine/unnamed/subsystem/console/ConsoleSystem.h>
 #include <engine/unnamed/subsystem/console/concommand/UnnamedConCommand.h>

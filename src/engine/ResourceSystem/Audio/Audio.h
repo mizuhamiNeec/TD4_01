@@ -1,6 +1,5 @@
 #pragma once
 #include <string>
-#include <vector>
 #include <xaudio2.h>
 
 /// @brief オーディオクラス

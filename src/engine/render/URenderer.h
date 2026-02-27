@@ -98,7 +98,7 @@ namespace Unnamed::Render {
 		) const;
 
 		struct FullscreenPassRes {
-			ID3D12RootSignature* rootSig = nullptr; // TODO: DX12寄りだが今は最小
+			ID3D12RootSignature* rootSig = nullptr; // TODO: DX12から独立
 			GraphicsPsoKey       psoKey  = {};
 		};
 

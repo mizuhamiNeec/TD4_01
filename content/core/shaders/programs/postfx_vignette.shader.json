@@ -1,0 +1,13 @@
+{
+  "name": "PostFxVignette",
+  "vs": {
+    "path": "../src/PostFxVignette.hlsl",
+    "entry": "VsMain",
+    "profile": "vs_6_6"
+  },
+  "ps": {
+    "path": "../src/PostFxVignette.hlsl",
+    "entry": "PsMain",
+    "profile": "ps_6_6"
+  }
+}

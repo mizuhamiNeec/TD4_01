@@ -333,9 +333,4 @@ namespace Unnamed {
 			}
 		}
 	}
-
-	std::string AssetManager::NormalizePath(std::string path) {
-		for (auto& c : path) { if (c == '\\') { c = '/'; } }
-		return path;
-	}
 }

@@ -1,12 +1,17 @@
 #pragma once
+#include "Base/MeshRenderer.h"
 
-#include <core/math/Math.h>
+#include "core/math/Mat4.h"
 
-#include <engine/Animation/Animation.h>
-#include <engine/Components/MeshRenderer/Base/MeshRenderer.h>
-#include <engine/renderer/ConstantBuffer.h>
-#include <engine/ResourceSystem/Mesh/SkeletalMesh.h>
-
+struct SpotLight;
+struct PointLight;
+struct CameraForGPU;
+struct DirectionalLight;
+struct TransformationMatrix;
+class ConstantBuffer;
+struct Animation;
+struct Node;
+class SkeletalMesh;
 struct MatParam;
 
 // ボーン変換行列用の定数バッファ構造体

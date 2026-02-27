@@ -6,6 +6,7 @@
 
 #include "engine/Engine.h"
 #include "engine/EngineServices.h"
+#include "engine/Animation/Animation.h"
 #include "engine/Camera/CameraManager.h"
 #include "engine/Components/Camera/CameraComponent.h"
 #include "engine/Debug/DebugDraw.h"
@@ -13,7 +14,11 @@
 #include "engine/Entity/Entity.h"
 #include "engine/ImGui/ImGuiUtil.h"
 #include "engine/OldConsole/Console.h"
+#include "engine/renderer/ConstantBuffer.h"
+#include "engine/renderer/D3D12.h"
+#include "engine/renderer/Structs.h"
 #include "engine/ResourceSystem/Material/Material.h"
+#include "engine/ResourceSystem/Mesh/SkeletalMesh.h"
 #include "engine/ResourceSystem/Shader/Shader.h"
 #include "engine/TextureManager/TexManager.h"
 
@@ -846,9 +851,6 @@ void SkeletalMeshRenderer::CalculateNodeTransformBlended(
 	const float      nextTime,
 	const float      blendFactor
 ) {
-	Mat4 nodeTransformCurrent = node.localMat;
-	Mat4 nodeTransformNext    = node.localMat;
-
 	// 現在のアニメーションのトランスフォームを取得
 	Vec3       translationCurrent = Vec3::zero;
 	Quaternion rotationCurrent    = Quaternion::identity;

@@ -1,9 +1,18 @@
 #pragma once
-
 #include <cstdint>
+#include <dxgiformat.h>
 
-#include <engine/renderer/D3D12.h>
+#include <core/math/Vec4.h>
 
+#include <engine/Properties.h>
+
+#include "D3D12Types.h"
+
+struct DepthStencilTexture;
+struct RenderTargetTexture;
+struct RenderPassTargets;
+struct Vec4;
+class D3D12;
 class SrvManager;
 
 namespace Unnamed {
@@ -26,32 +35,36 @@ namespace Unnamed {
 
 		void OnResize(uint32_t width, uint32_t height);
 
-		const RenderPassTargets& GetOffscreenPassTargets() const {
+		RenderPassTargets GetOffscreenPassTargets() const {
 			return mOffscreenRenderPassTargets;
 		}
 
-		RenderTargetTexture& GetPostProcessedRtv() { return mPostProcessedRtv; }
-
-		const RenderTargetTexture& GetPostProcessedRtv() const {
-			return mPostProcessedRtv;
+		RenderTargetTexture* GetPostProcessedRtv() {
+			return mPostProcessedRtv.get();
 		}
 
-		DepthStencilTexture& GetPostProcessedDsv() { return mPostProcessedDsv; }
-
-		const DepthStencilTexture& GetPostProcessedDsv() const {
-			return mPostProcessedDsv;
+		RenderTargetTexture* GetPostProcessedRtv() const {
+			return mPostProcessedRtv.get();
 		}
 
-		RenderTargetTexture& GetOffscreenRtv() { return mOffscreenRtv; }
-
-		const RenderTargetTexture& GetOffscreenRtv() const {
-			return mOffscreenRtv;
+		DepthStencilTexture* GetPostProcessedDsv() {
+			return mPostProcessedDsv.get();
 		}
 
-		DepthStencilTexture& GetOffscreenDsv() { return mOffscreenDsv; }
+		DepthStencilTexture* GetPostProcessedDsv() const {
+			return mPostProcessedDsv.get();
+		}
 
-		const DepthStencilTexture& GetOffscreenDsv() const {
-			return mOffscreenDsv;
+		RenderTargetTexture* GetOffscreenRtv() { return mOffscreenRtv.get(); }
+
+		RenderTargetTexture* GetOffscreenRtv() const {
+			return mOffscreenRtv.get();
+		}
+
+		DepthStencilTexture* GetOffscreenDsv() { return mOffscreenDsv.get(); }
+
+		DepthStencilTexture* GetOffscreenDsv() const {
+			return mOffscreenDsv.get();
 		}
 
 	private:
@@ -64,12 +77,12 @@ namespace Unnamed {
 		DXGI_FORMAT mRtvFormat = kBufferFormat;
 		DXGI_FORMAT mDsvFormat = DXGI_FORMAT_D32_FLOAT;
 
-		RenderTargetTexture mOffscreenRtv;
-		DepthStencilTexture mOffscreenDsv;
-		RenderPassTargets   mOffscreenRenderPassTargets;
+		std::unique_ptr<RenderTargetTexture> mOffscreenRtv;
+		std::unique_ptr<DepthStencilTexture> mOffscreenDsv;
+		RenderPassTargets                    mOffscreenRenderPassTargets;
 
-		RenderTargetTexture mPostProcessedRtv;
-		DepthStencilTexture mPostProcessedDsv;
-		RenderPassTargets   mPostProcessedRenderPassTargets;
+		std::unique_ptr<RenderTargetTexture> mPostProcessedRtv;
+		std::unique_ptr<DepthStencilTexture> mPostProcessedDsv;
+		RenderPassTargets                    mPostProcessedRenderPassTargets;
 	};
 }

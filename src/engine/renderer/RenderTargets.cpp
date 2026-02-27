@@ -2,6 +2,8 @@
 
 #include <engine/renderer/RenderTargets.h>
 
+#include "D3D12.h"
+
 namespace Unnamed {
 	void RenderTargets::Init(
 		D3D12*            renderer,
@@ -42,67 +44,83 @@ namespace Unnamed {
 	) {
 		if (!mRenderer) { return; }
 
-		mPostProcessedRtv.rtv.Reset();
-		mPostProcessedDsv.dsv.Reset();
+		mPostProcessedRtv->rtv.Reset();
+		mPostProcessedDsv->dsv.Reset();
 
 		if (keepSrvIndices) {
-			mOffscreenRtv = mRenderer->CreateRenderTargetTexture(
-				width,
-				height,
-				mClearColor,
-				mOffscreenRtv.srvIndex,
-				mRtvFormat
+			mOffscreenRtv = std::make_unique<RenderTargetTexture>(
+				mRenderer->CreateRenderTargetTexture(
+					width,
+					height,
+					mClearColor,
+					mOffscreenRtv->srvIndex,
+					mRtvFormat
+				)
 			);
-			mOffscreenDsv = mRenderer->CreateDepthStencilTexture(
-				width,
-				height,
-				mOffscreenDsv.srvIndex,
-				mDsvFormat
+			mOffscreenDsv = std::make_unique<DepthStencilTexture>(
+				mRenderer->CreateDepthStencilTexture(
+					width,
+					height,
+					mOffscreenDsv->srvIndex,
+					mDsvFormat
+				)
 			);
 
-			mPostProcessedRtv = mRenderer->CreateRenderTargetTexture(
-				width,
-				height,
-				mClearColor,
-				mPostProcessedRtv.srvIndex,
-				mRtvFormat
+			mPostProcessedRtv = std::make_unique<RenderTargetTexture>(
+				mRenderer->CreateRenderTargetTexture(
+					width,
+					height,
+					mClearColor,
+					mPostProcessedRtv->srvIndex,
+					mRtvFormat
+				)
 			);
-			mPostProcessedDsv = mRenderer->CreateDepthStencilTexture(
-				width,
-				height,
-				mPostProcessedDsv.srvIndex,
-				mDsvFormat
+			mPostProcessedDsv = std::make_unique<DepthStencilTexture>(
+				mRenderer->CreateDepthStencilTexture(
+					width,
+					height,
+					mPostProcessedDsv->srvIndex,
+					mDsvFormat
+				)
 			);
 		} else {
-			mOffscreenRtv = mRenderer->CreateRenderTargetTexture(
-				width,
-				height,
-				mClearColor,
-				mRtvFormat
+			mOffscreenRtv = std::make_unique<RenderTargetTexture>(
+				mRenderer->CreateRenderTargetTexture(
+					width,
+					height,
+					mClearColor,
+					mRtvFormat
+				)
 			);
-			mOffscreenDsv = mRenderer->CreateDepthStencilTexture(
-				width,
-				height,
-				mDsvFormat
+			mOffscreenDsv = std::make_unique<DepthStencilTexture>(
+				mRenderer->CreateDepthStencilTexture(
+					width,
+					height,
+					mDsvFormat
+				)
 			);
 
-			mPostProcessedRtv = mRenderer->CreateRenderTargetTexture(
-				width,
-				height,
-				mClearColor,
-				mRtvFormat
+			mPostProcessedRtv = std::make_unique<RenderTargetTexture>(
+				mRenderer->CreateRenderTargetTexture(
+					width,
+					height,
+					mClearColor,
+					mRtvFormat
+				)
 			);
-			mPostProcessedDsv = mRenderer->CreateDepthStencilTexture(
-				width,
-				height,
-				mDsvFormat
+			mPostProcessedDsv = std::make_unique<DepthStencilTexture>(
+				mRenderer->CreateDepthStencilTexture(
+					width,
+					height,
+					mDsvFormat
+				)
 			);
 		}
 
 		mOffscreenRenderPassTargets = {
-			.pRTVs        = &mOffscreenRtv.rtvHandle,
+			.pRTVs        = &mOffscreenRtv->rtvHandle,
 			.numRTVs      = 1,
-			.pDSV         = &mOffscreenDsv.dsvHandle,
+			.pDSV         = &mOffscreenDsv->dsvHandle,
 			.clearColor   = mClearColor,
 			.clearDepth   = 1.0f,
 			.clearStencil = 0,
@@ -111,9 +129,9 @@ namespace Unnamed {
 		};
 
 		mPostProcessedRenderPassTargets = {
-			.pRTVs        = &mPostProcessedRtv.rtvHandle,
+			.pRTVs        = &mPostProcessedRtv->rtvHandle,
 			.numRTVs      = 1,
-			.pDSV         = &mPostProcessedDsv.dsvHandle,
+			.pDSV         = &mPostProcessedDsv->dsvHandle,
 			.clearColor   = mClearColor,
 			.clearDepth   = 1.0f,
 			.clearStencil = 0,

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "D3D12Device.h"
 
@@ -41,6 +41,11 @@ namespace Unnamed::Rhi {
 
 		void Dispatch(uint32_t x, uint32_t y, uint32_t z);
 		void DrawFullScreenTriangle();
+
+		D3D12SwapChain* GetSwapChain() const;
+
+		D3D12_CPU_DESCRIPTOR_HANDLE GetCurrentBackBufferRtv() const;
+		ID3D12Resource*             GetCurrentBackBufferResource();
 
 	private:
 		ID3D12GraphicsCommandList* mCommandList = nullptr;

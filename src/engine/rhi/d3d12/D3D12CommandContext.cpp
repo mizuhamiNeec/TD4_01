@@ -1,4 +1,4 @@
-﻿#include "D3D12CommandContext.h"
+#include "D3D12CommandContext.h"
 
 #include "D3D12SwapChain.h"
 
@@ -112,5 +112,20 @@ namespace Unnamed::Rhi {
 			D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST
 		);
 		mCommandList->DrawInstanced(3, 1, 0, 0);
+	}
+
+	D3D12SwapChain* D3D12CommandContext::GetSwapChain() const {
+		return mSwapChain;
+	}
+
+	D3D12_CPU_DESCRIPTOR_HANDLE
+	D3D12CommandContext::GetCurrentBackBufferRtv() const {
+		const uint32_t index = mSwapChain->GetCurrentBackBufferIndex();
+		return mSwapChain->GetRtvHandle(index);
+	}
+
+	ID3D12Resource* D3D12CommandContext::GetCurrentBackBufferResource() {
+		const uint32_t index = mSwapChain->GetCurrentBackBufferIndex();
+		return mSwapChain->GetBackBuffer(index);
 	}
 }

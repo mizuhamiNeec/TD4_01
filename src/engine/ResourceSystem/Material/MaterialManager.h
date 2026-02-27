@@ -1,7 +1,11 @@
 #pragma once
 #include <memory>
+#include <string>
+#include <unordered_map>
 
-#include <engine/ResourceSystem/Material/Material.h>
+#include "Material.h"
+
+class Shader;
 
 /// @brief マテリアルマネージャークラス
 class MaterialManager {

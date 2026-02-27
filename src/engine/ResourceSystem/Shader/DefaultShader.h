@@ -1,8 +1,8 @@
 #pragma once
 #include <string>
 
-#include <engine/ResourceSystem/Shader/Shader.h>
-#include <engine/ResourceSystem/Shader/ShaderManager.h>
+class ShaderManager;
+class Shader;
 
 /// @brief デフォルトシェーダクラス
 class DefaultShader {

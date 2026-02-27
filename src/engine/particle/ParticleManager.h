@@ -7,15 +7,15 @@
 
 #include "core/math/Vec3.h"
 
+#include "engine/renderer/ConstantBuffer.h"
+#include "engine/renderer/IndexBuffer.h"
 #include "engine/renderer/Structs.h"
 #include "engine/renderer/VertexBuffer.h"
 
+struct Vertex;
 class PipelineState;
 class TexManager;
 class RootSignatureManager;
-class ConstantBuffer;
-class IndexBuffer;
-struct Vertex;
 class SrvManager;
 class CameraComponent;
 class Camera;
@@ -93,11 +93,11 @@ private:
 	std::vector<std::string> mRegisteredGroupNames;
 
 	D3D12*                                mRenderer             = nullptr;
-	std::unique_ptr<RootSignatureManager> mRootSignatureManager = nullptr;
 	SrvManager*                           mSrvManager           = nullptr;
 	TexManager*                           mTexManager           = nullptr;
-	std::unique_ptr<PipelineState>        mPipelineState        = nullptr;
 	CameraComponent*                      mDefaultCamera        = nullptr;
+	std::unique_ptr<RootSignatureManager> mRootSignatureManager = nullptr;
+	std::unique_ptr<PipelineState>        mPipelineState        = nullptr;
 
 	uint32_t mKNumMaxInstance = 16385; // 最大インスタンス数
 

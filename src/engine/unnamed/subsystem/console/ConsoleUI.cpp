@@ -1,16 +1,16 @@
 #ifdef _DEBUG
+#include <imgui.h>
+#include <imgui_internal.h>
 #include <pch.h>
 #include <string>
 
+#include <core/math/Vec4.h>
+
+#include <engine/ImGui/Icons.h>
+#include <engine/ImGui/ImGuiWidgets.h>
 #include <engine/unnamed/subsystem/console/ConsoleUI.h>
-
-#include <imgui.h>
-#include <imgui_internal.h>
-
-#include "concommand/UnnamedConCommand.h"
-
-#include "engine/ImGui/Icons.h"
-#include "engine/ImGui/ImGuiWidgets.h"
+#include <engine/unnamed/subsystem/console/ConVarHelper.h>
+#include <engine/unnamed/subsystem/console/concommand/UnnamedConCommand.h>
 
 namespace Unnamed {
 	static constexpr uint32_t kHistoryBufferSize = 64;
@@ -68,6 +68,8 @@ namespace Unnamed {
 		// ConVarヘルパーを初期化
 		mConVarHelper = std::make_unique<ConVarHelper>(consoleSystem);
 	}
+
+	ConsoleUI::~ConsoleUI() {};
 
 	void ConsoleUI::Init() {
 		static UnnamedConCommand toggleconsole(
@@ -358,6 +360,162 @@ namespace Unnamed {
 		}
 	}
 
+	void ConsoleUI::Submit() {
+		// 送信してもフォーカスは維持
+		ImGui::SetKeyboardFocusHere(-1);
+
+		const auto cmd = std::string(mInputBuffer);
+
+		// 空は履歴に入れない（実行は ConsoleSystem 側に任せる）
+		if (!cmd.empty()) { gConsoleUIData.history.Push(cmd); }
+
+		// 履歴ナビゲーションの状態をリセット
+		gConsoleUIData.historyIndex =
+			static_cast<int>(gConsoleUIData.history.Size());
+		gConsoleUIData.scratch.clear();
+		gConsoleUIData.browsing = false;
+
+		// コンソールシステムに送る
+		mConsoleSystem->ExecuteCommand(cmd);
+		mInputBuffer[0] = '\0';
+
+		// コマンドが送信時に一番下までスクロールする
+		mWishScrollToBottom = true;
+	}
+
+	void ConsoleUI::CheckScroll() {
+		// スクロールが一番下にある場合、自動スクロールを行う
+		if (
+			mWishScrollToBottom &&
+			ImGui::GetScrollY() >= ImGui::GetScrollMaxY()
+		) { ImGui::SetScrollHereY(1.0f); }
+
+		// スクロール位置をチェックし、状態を更新
+		if (ImGui::GetScrollY() < ImGui::GetScrollMaxY()) {
+			mWishScrollToBottom = false;
+		} else { mWishScrollToBottom = true; }
+	}
+
+	void ConsoleUI::PushTextColor(const ConsoleLogText& buffer) {
+		switch (buffer.level) {
+			case LogLevel::None:
+			case LogLevel::Info: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColor)
+				);
+				break;
+			case LogLevel::Dev: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColorDev)
+				);
+				break;
+			case LogLevel::Warning: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColorWarn)
+				);
+				break;
+			case LogLevel::Error: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColorError)
+				);
+				break;
+			case LogLevel::Fatal: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColorFatal)
+				);
+				break;
+			case LogLevel::Execute: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColorExec)
+				);
+				break;
+			case LogLevel::Waiting: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColorWait)
+				);
+				break;
+			case LogLevel::Success: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColorSuccess)
+				);
+				break;
+		}
+	}
+
+	void ConsoleUI::OpenSourceFile(
+		const std::string& file, int line, int column
+	) const {
+		const std::string command = std::format(
+			"--line {} --column {} {}",
+			line,
+			column,
+			file
+		);
+		ShellExecuteW(
+			nullptr,
+			L"open",
+			L"Rider.cmd",
+			StrUtil::ToWString(command).c_str(),
+			nullptr,
+			SW_HIDE
+		);
+	}
+
+	/// @brief インプットテキストからのコールバック
+	int ConsoleUI::InputTextCallback(ImGuiInputTextCallbackData* data) {
+		auto& c = gConsoleUIData;
+		switch (data->EventFlag) {
+			case ImGuiInputTextFlags_CallbackCompletion: {
+				Msg("callback", "completion");
+			}
+			break;
+
+			case ImGuiInputTextFlags_CallbackHistory: {
+				const int historySize = static_cast<int>(c.history.Size());
+				if (historySize <= 0) { break; }
+
+				// ↑↓を押したら入力中だったテキストを scratch に保存
+				if (!c.browsing) {
+					c.scratch.assign(data->Buf, data->BufTextLen);
+					c.browsing     = true;
+					c.historyIndex = historySize; // 末尾（scratch位置）から開始
+				}
+
+				const int prevHistoryIndex = c.historyIndex;
+				if (data->EventKey == ImGuiKey_UpArrow) {
+					if (c.historyIndex > 0) { c.historyIndex--; }
+				} else if (data->EventKey == ImGuiKey_DownArrow) {
+					if (c.historyIndex < historySize) {
+						c.historyIndex++;
+					} else { c.historyIndex = historySize; }
+				}
+
+				if (prevHistoryIndex != c.historyIndex) {
+					data->DeleteChars(0, data->BufTextLen);
+					if (c.historyIndex < historySize) {
+						data->InsertChars(
+							0, c.history[static_cast<size_t>(c.historyIndex)].
+							c_str()
+						);
+					} else {
+						// 末尾に戻ったら 入力中テキストを復元
+						data->InsertChars(0, c.scratch.c_str());
+					}
+				}
+				break;
+			}
+
+			case ImGuiInputTextFlags_CallbackEdit:
+				// 編集が入ったら「履歴閲覧中」フラグを解除（次の↑↓で scratch を取り直す）
+				c.browsing = false;
+				break;
+
+			case ImGuiInputTextFlags_CallbackResize: {}
+			break;
+			default: ;
+		}
+		return 0;
+	}
+
+	size_t ConsoleUI::FilteredToActualIndex(const int filteredIndex) {
+		if (filteredIndex < 0) { return SIZE_MAX; }
+		const auto idx = static_cast<size_t>(filteredIndex);
+		if (idx >= gConsoleUIData.filteredToActual.size()) { return SIZE_MAX; }
+		return gConsoleUIData.filteredToActual[idx];
+	}
+
 	void ConsoleUI::DrawLogTable(const ImVec2& childSize) {
 		if (!ImGui::BeginTable(
 			"Show##ConsoleUI", 2,
@@ -450,7 +608,7 @@ namespace Unnamed {
 			display.c_str(),
 			isSelected,
 			ImGuiSelectableFlags_SpanAllColumns |
-			ImGuiSelectableFlags_AllowItemOverlap
+			ImGuiSelectableFlags_AllowOverlap
 		);
 
 		// 左クリック選択
@@ -514,10 +672,6 @@ namespace Unnamed {
 		return true;
 	}
 
-	void ConsoleUI::OpenConsoleContextMenuPopup() {
-		ImGui::OpenPopup(kConsoleUIContextPopupId);
-	}
-
 	void ConsoleUI::CopySelectedToClipboard() const {
 		std::string      copiedText;
 		constexpr size_t kMaxCopyLength = static_cast<size_t>(1024) * 1024;
@@ -551,160 +705,8 @@ namespace Unnamed {
 		}
 	}
 
-	void ConsoleUI::Submit() {
-		// 送信してもフォーカスは維持
-		ImGui::SetKeyboardFocusHere(-1);
-
-		const auto cmd = std::string(mInputBuffer);
-
-		// 空は履歴に入れない（実行は ConsoleSystem 側に任せる）
-		if (!cmd.empty()) { gConsoleUIData.history.Push(cmd); }
-
-		// 履歴ナビゲーションの状態をリセット
-		gConsoleUIData.historyIndex =
-			static_cast<int>(gConsoleUIData.history.Size());
-		gConsoleUIData.scratch.clear();
-		gConsoleUIData.browsing = false;
-
-		// コンソールシステムに送る
-		mConsoleSystem->ExecuteCommand(cmd);
-		mInputBuffer[0] = '\0';
-
-		// コマンドが送信時に一番下までスクロールする
-		mWishScrollToBottom = true;
-	}
-
-	void ConsoleUI::CheckScroll() {
-		// スクロールが一番下にある場合、自動スクロールを行う
-		if (
-			mWishScrollToBottom &&
-			ImGui::GetScrollY() >= ImGui::GetScrollMaxY()
-		) { ImGui::SetScrollHereY(1.0f); }
-
-		// スクロール位置をチェックし、状態を更新
-		if (ImGui::GetScrollY() < ImGui::GetScrollMaxY()) {
-			mWishScrollToBottom = false;
-		} else { mWishScrollToBottom = true; }
-	}
-
-	void ConsoleUI::PushTextColor(const ConsoleLogText& buffer) {
-		switch (buffer.level) {
-			case LogLevel::None:
-			case LogLevel::Info: ImGui::PushStyleColor(
-					ImGuiCol_Text, ToImVec4(kConTextColor)
-				);
-				break;
-			case LogLevel::Dev: ImGui::PushStyleColor(
-					ImGuiCol_Text, ToImVec4(kConTextColorDev)
-				);
-				break;
-			case LogLevel::Warning: ImGui::PushStyleColor(
-					ImGuiCol_Text, ToImVec4(kConTextColorWarn)
-				);
-				break;
-			case LogLevel::Error: ImGui::PushStyleColor(
-					ImGuiCol_Text, ToImVec4(kConTextColorError)
-				);
-				break;
-			case LogLevel::Fatal: ImGui::PushStyleColor(
-					ImGuiCol_Text, ToImVec4(kConTextColorFatal)
-				);
-				break;
-			case LogLevel::Execute: ImGui::PushStyleColor(
-					ImGuiCol_Text, ToImVec4(kConTextColorExec)
-				);
-				break;
-			case LogLevel::Waiting: ImGui::PushStyleColor(
-					ImGuiCol_Text, ToImVec4(kConTextColorWait)
-				);
-				break;
-			case LogLevel::Success: ImGui::PushStyleColor(
-					ImGuiCol_Text, ToImVec4(kConTextColorSuccess)
-				);
-				break;
-		}
-	}
-
-	/// @brief インプットテキストからのコールバック
-	int ConsoleUI::InputTextCallback(ImGuiInputTextCallbackData* data) {
-		auto& c = gConsoleUIData;
-		switch (data->EventFlag) {
-			case ImGuiInputTextFlags_CallbackCompletion: {
-				Msg("callback", "completion");
-			}
-			break;
-
-			case ImGuiInputTextFlags_CallbackHistory: {
-				const int historySize = static_cast<int>(c.history.Size());
-				if (historySize <= 0) { break; }
-
-				// ↑↓を押したら入力中だったテキストを scratch に保存
-				if (!c.browsing) {
-					c.scratch.assign(data->Buf, data->BufTextLen);
-					c.browsing     = true;
-					c.historyIndex = historySize; // 末尾（scratch位置）から開始
-				}
-
-				const int prevHistoryIndex = c.historyIndex;
-				if (data->EventKey == ImGuiKey_UpArrow) {
-					if (c.historyIndex > 0) { c.historyIndex--; }
-				} else if (data->EventKey == ImGuiKey_DownArrow) {
-					if (c.historyIndex < historySize) {
-						c.historyIndex++;
-					} else { c.historyIndex = historySize; }
-				}
-
-				if (prevHistoryIndex != c.historyIndex) {
-					data->DeleteChars(0, data->BufTextLen);
-					if (c.historyIndex < historySize) {
-						data->InsertChars(
-							0, c.history[static_cast<size_t>(c.historyIndex)].
-							c_str()
-						);
-					} else {
-						// 末尾に戻ったら 入力中テキストを復元
-						data->InsertChars(0, c.scratch.c_str());
-					}
-				}
-				break;
-			}
-
-			case ImGuiInputTextFlags_CallbackEdit:
-				// 編集が入ったら「履歴閲覧中」フラグを解除（次の↑↓で scratch を取り直す）
-				c.browsing = false;
-				break;
-
-			case ImGuiInputTextFlags_CallbackResize: {}
-			break;
-			default: ;
-		}
-		return 0;
-	}
-
-	size_t ConsoleUI::FilteredToActualIndex(const int filteredIndex) {
-		if (filteredIndex < 0) { return SIZE_MAX; }
-		const auto idx = static_cast<size_t>(filteredIndex);
-		if (idx >= gConsoleUIData.filteredToActual.size()) { return SIZE_MAX; }
-		return gConsoleUIData.filteredToActual[idx];
-	}
-
-	void ConsoleUI::OpenSourceFile(
-		const std::string& file, int line, int column
-	) const {
-		const std::string command = std::format(
-			"--line {} --column {} {}",
-			line,
-			column,
-			file
-		);
-		ShellExecuteW(
-			nullptr,
-			L"open",
-			L"Rider.cmd",
-			StrUtil::ToWString(command).c_str(),
-			nullptr,
-			SW_HIDE
-		);
+	void ConsoleUI::OpenConsoleContextMenuPopup() {
+		ImGui::OpenPopup(kConsoleUIContextPopupId);
 	}
 }
 #endif

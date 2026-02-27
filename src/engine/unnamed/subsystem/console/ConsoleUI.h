@@ -1,13 +1,22 @@
 #pragma once
-#include "ConVarHelper.h"
+#ifdef _DEBUG
+struct ImVec2;
+struct ImGuiInputTextCallbackData;
 
 namespace Unnamed {
+	struct ConsoleLogText;
+	class ConVarHelper;
 	class ConsoleSystem;
 
 	/// @brief コンソールUIクラス
 	class ConsoleUI {
 	public:
 		explicit ConsoleUI(ConsoleSystem* consoleSystem);
+		~ConsoleUI();
+
+		// コピー禁止
+		ConsoleUI(const ConsoleUI&)            = delete;
+		ConsoleUI& operator=(const ConsoleUI&) = delete;
 
 		/// @brief 初期化
 		void Init();
@@ -39,7 +48,7 @@ namespace Unnamed {
 
 		/// @brief コンソールログのテキストの色を設定します。
 		/// @param buffer コンソールログのテキスト情報
-		static void PushTextColor(const struct ConsoleLogText& buffer);
+		static void PushTextColor(const ConsoleLogText& buffer);
 
 		/// @brief 指定されたファイルパスと行番号で外部エディタを開きます
 		/// @param file ファイルパス
@@ -50,9 +59,7 @@ namespace Unnamed {
 		) const;
 
 
-#ifdef _DEBUG
 		static int InputTextCallback(ImGuiInputTextCallbackData* data);
-#endif
 
 		size_t FilteredToActualIndex(int filteredIndex);
 
@@ -85,3 +92,4 @@ namespace Unnamed {
 		char mInputBuffer[256] = "";
 	};
 }
+#endif

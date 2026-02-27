@@ -1,4 +1,4 @@
-﻿#include <algorithm>
+#include <algorithm>
 #include <cmath>
 #include <stdexcept>
 #include <core/math/Math.h>
@@ -123,7 +123,7 @@ void Vec2::Normalize() {
 }
 
 Vec2 Vec2::Normalized() const {
-	float len = Length();
+	const float len = Length();
 	if (len > 0) { return {x / len, y / len}; }
 	return zero;
 }

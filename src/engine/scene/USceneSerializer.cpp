@@ -1,4 +1,4 @@
-﻿#include "USceneSerializer.h"
+#include "USceneSerializer.h"
 
 #include "UScene.h"
 
@@ -6,6 +6,8 @@
 #include "core/guidgenerator/GuidGenerator.h"
 #include "core/json/JsonReader.h"
 #include "core/json/JsonWriter.h"
+
+#include <json.hpp>
 
 #include "engine/unnamed/framework/entity/UEntity.h"
 #include "engine/unnamed/subsystem/console/Log.h"
@@ -58,6 +60,8 @@ namespace Unnamed {
 	bool USceneSerializer::Deserialize(
 		UScene& scene, const JsonReader& root, GuidGenerator& guidGen
 	) {
+		scene.Reset();
+
 		const JsonReader entities = root["entities"];
 
 		// エンティティ配列の検証 
@@ -73,7 +77,10 @@ namespace Unnamed {
 			const bool isEditorOnly = ReadBoolOr(e, "isEditorOnly", false);
 			const bool entityActive = ReadBoolOr(e, "active", true);
 
-			const uint64_t finalGuid = guid != 0 ? guid : guidGen.Alloc();
+			uint64_t finalGuid = guid != 0 ? guid : guidGen.Alloc();
+			while (finalGuid == 0 || scene.FindEntity(finalGuid) != nullptr) {
+				finalGuid = guidGen.Alloc();
+			}
 
 			UEntity& entity = scene.CreateEntity(name, finalGuid, isEditorOnly);
 			entity.SetActive(entityActive);
@@ -95,17 +102,8 @@ namespace Unnamed {
 					continue;
 				}
 
-				// GUIDを読む。0 の場合は新規割り当て
 				const uint64_t compGuid = ReadU64Or(c, "guid", 0);
 				comp->SetGuid(compGuid != 0 ? compGuid : guidGen.Alloc());
-
-				if (compGuid != 0) {
-					// GUIDがある場合はそれを使用
-					comp->SetGuid(compGuid);
-				} else {
-					// GUIDがない場合は仮のGUIDを割り当て
-					comp->SetGuid(0x200000 + ci);
-				}
 
 				comp->SetActive(ReadBoolOr(c, "active", true));
 
@@ -185,5 +183,21 @@ namespace Unnamed {
 
 		writer.EndArray();
 		writer.EndObject();
+	}
+
+	bool USceneSerializer::CloneScene(
+		const UScene& src, UScene& dst, GuidGenerator& guidGen
+	) {
+		try {
+			JsonWriter writer("__clone__.json");
+			Serialize(src, writer);
+
+			const auto       root = nlohmann::json::parse(writer.ToString());
+			const JsonReader reader(root);
+			return Deserialize(dst, reader, guidGen);
+		} catch (...) {
+			Error(kChannel, "Failed to clone scene");
+			return false;
+		}
 	}
 }

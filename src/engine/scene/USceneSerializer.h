@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <string>
 
 #include "core/guidgenerator/GuidGenerator.h"
@@ -19,5 +19,9 @@ namespace Unnamed {
 			UScene& scene, const JsonReader& root, GuidGenerator& guidGen
 		);
 		static void Serialize(const UScene& scene, JsonWriter& writer);
+
+		static bool CloneScene(
+			const UScene& src, UScene& dst, GuidGenerator& guidGen
+		);
 	};
 }

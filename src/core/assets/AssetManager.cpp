@@ -314,11 +314,10 @@ namespace Unnamed {
 
 		// idの依存を見て各depの依存に追加
 		for (const AssetID d : mNodes[id].dependencies) {
-			if (d == kInvalidAssetID || d >= mNextID) {
-				auto& depBy = mNodes[d].dependents;
-				if (std::ranges::find(depBy, id) == depBy.end()) {
-					depBy.emplace_back(id);
-				}
+			if (d == kInvalidAssetID || d >= mNextID) { continue; }
+			auto& depBy = mNodes[d].dependents;
+			if (std::ranges::find(depBy, id) == depBy.end()) {
+				depBy.emplace_back(id);
 			}
 		}
 	}

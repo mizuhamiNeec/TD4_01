@@ -3,9 +3,14 @@
 
 #include <algorithm>
 #include <array>
-
 #include <imgui.h>
+#include <imgui_internal.h>
 
+#include "core/string/StrUtil.h"
+
+#include "engine/Properties.h"
+#include "engine/ImGui/Icons.h"
+#include "engine/ImGui/ImGuiWidgets.h"
 #include "engine/platform/Window.h"
 #include "engine/platform/WindowManager.h"
 #include "engine/render/RenderModule.h"
@@ -22,11 +27,53 @@ namespace Unnamed {
 		UEditorWorld&         editorWorld,
 		WindowManager&        windowManager,
 		Render::RenderModule& renderModule,
-		UImGuiLayer&          imguiLayer
+		UImGuiLayer&          imGuiLayer
 	) : mEditorWorld(editorWorld),
 	    mWindowManager(windowManager),
 	    mRenderModule(renderModule),
-	    mImGuiLayer(imguiLayer) {}
+	    mImGuiLayer(imGuiLayer) {}
+
+	void UEditorRuntime::BeginUI() {
+		DrawMainMenu();
+
+		// DockSpaceの開始
+		{
+			const ImGuiViewport* viewport = ImGui::GetMainViewport();
+			ImGui::SetNextWindowPos(viewport->WorkPos);
+			ImGui::SetNextWindowSize(viewport->WorkSize);
+			ImGui::SetNextWindowViewport(viewport->ID);
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+			ImGui::PushStyleVar(
+				ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f)
+			);
+
+			constexpr ImGuiDockNodeFlags dockSpaceFlags =
+				ImGuiDockNodeFlags_PassthruCentralNode;
+			constexpr ImGuiWindowFlags windowFlags =
+				ImGuiWindowFlags_NoTitleBar |
+				ImGuiWindowFlags_NoCollapse |
+				ImGuiWindowFlags_NoResize |
+				ImGuiWindowFlags_NoMove |
+				ImGuiWindowFlags_NoBringToFrontOnFocus |
+				ImGuiWindowFlags_NoNavFocus |
+				ImGuiWindowFlags_NoBackground;
+
+			ImGui::Begin("DockSpace", nullptr, windowFlags);
+
+			ImGui::PopStyleVar(3);
+
+			const ImGuiIO& io = ImGui::GetIO();
+			if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) {
+				const ImGuiID dockSpaceId = ImGui::GetID("DockSpace");
+				ImGui::DockSpace(
+					dockSpaceId, ImVec2(0.0f, 0.0f), dockSpaceFlags
+				);
+			}
+
+			ImGui::End();
+		}
+	}
 
 	void UEditorRuntime::SetSceneOutput(
 		const uint32_t                    textureId,
@@ -39,19 +86,82 @@ namespace Unnamed {
 	}
 
 	void UEditorRuntime::BuildUi() {
-		ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
-
-		DrawMainMenu();
 		DrawToolbar();
 		DrawViewport();
 
-		if (mPresentMode == EditorPresentMode::ViewportPanel) {
+		if (mPresentMode == EDITOR_PRESENT_MODE::VIEWPORT_PANEL) {
 			DrawSceneHierarchy();
 			DrawInspector();
 		}
 	}
 
 	void UEditorRuntime::DrawMainMenu() {
+		// TODO: ConVarでメニューバーの高さを調整できるようにする
+		// メニューバーを少し高くする
+		ImGui::PushStyleVar(
+			ImGuiStyleVar_FramePadding,
+			ImVec2(0.0f, kTitleBarH * 0.5f - ImGui::GetFontSize() * 0.5f)
+		);
+
+		ImGui::PushStyleVar(
+			ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, kTitleBarH)
+		);
+
+		if (ImGui::BeginMainMenuBar()) {
+			ImGui::PopStyleVar(2); // メニューバーのスタイルを元に戻す
+			// アイコンメニュー
+
+			// ロゴメニュー は色を変える
+			ImGui::PushStyleColor(
+				ImGuiCol_Text,
+				ImVec4(0.13f, 0.5f, 1.0f, 1.0f)
+			);
+			if (
+				ImGuiWidgets::BeginMainMenu(
+					StrUtil::ConvertToUtf8(kIconArrowBack).c_str()
+				)
+			) {
+				ImGui::PopStyleColor();
+				ImGui::Spacing();
+				if (ImGuiWidgets::MenuItemWithIcon(
+					"About Unnamed", kIconInfo
+				)) {}
+				ImGui::Spacing();
+				ImGui::EndMenu();
+			} else { ImGui::PopStyleColor(); }
+
+			if (ImGuiWidgets::BeginMainMenu("File")) {
+				ImGui::Spacing();
+				ImGui::BeginDisabled();
+				if (
+					ImGuiWidgets::MenuItemWithIcon(
+						"Save", kIconSave
+					)
+				) {}
+
+				if (
+					ImGuiWidgets::MenuItemWithIcon("Save As", kIconSaveAs)
+				) {}
+
+				ImGui::EndDisabled();
+
+				ImGui::Separator();
+
+				if (ImGuiWidgets::MenuItemWithIcon("Import", kIconDownload)) {}
+				if (ImGuiWidgets::MenuItemWithIcon("Export", kIconUpload)) {}
+
+				ImGui::Separator();
+
+				if (ImGuiWidgets::MenuItemWithIcon("Exit", kIconPower)) {
+					ServiceLocator::Get<ConsoleSystem>()->
+						ExecuteCommand("quit");
+				}
+				ImGui::Spacing();
+				ImGui::EndMenu();
+			}
+			ImGui::EndMainMenuBar();
+		}
+
 		if (!ImGui::BeginMainMenuBar()) { return; }
 
 		if (ImGui::BeginMenu("File")) {
@@ -86,7 +196,7 @@ namespace Unnamed {
 
 		ImGui::SameLine();
 		const char* modeLabel = mPresentMode ==
-		                        EditorPresentMode::ViewportPanel ?
+		                        EDITOR_PRESENT_MODE::VIEWPORT_PANEL ?
 			                        "Fullscreen" :
 			                        "Viewport";
 		if (ImGui::Button(modeLabel)) {
@@ -97,49 +207,52 @@ namespace Unnamed {
 			) {
 				window->ToggleFullscreen();
 				mPresentMode = mPresentMode ==
-				               EditorPresentMode::ViewportPanel ?
-					               EditorPresentMode::FullscreenSwapChain :
-					               EditorPresentMode::ViewportPanel;
+				               EDITOR_PRESENT_MODE::VIEWPORT_PANEL ?
+					               EDITOR_PRESENT_MODE::FULLSCREEN_SWAP_CHAIN :
+					               EDITOR_PRESENT_MODE::VIEWPORT_PANEL;
 			}
 		}
 
 		ImGui::SameLine();
 		const char* viewportModeLabel = "Fit";
 		switch (mViewportRenderMode) {
-			case EditorViewportRenderMode::FitViewport
+			case EDITOR_VIEWPORT_RENDER_MODE::FIT_VIEWPORT
 			: viewportModeLabel = "Fit";
 				break;
-			case EditorViewportRenderMode::FixedAspect16x9
+			case EDITOR_VIEWPORT_RENDER_MODE::FIXED_ASPECT_16_9
 			: viewportModeLabel = "16:9";
 				break;
-			case EditorViewportRenderMode::HD720: viewportModeLabel = "HD";
+			case EDITOR_VIEWPORT_RENDER_MODE::HD720: viewportModeLabel = "HD";
 				break;
-			case EditorViewportRenderMode::FHD1080: viewportModeLabel = "FHD";
+			case EDITOR_VIEWPORT_RENDER_MODE::FHD1080
+			: viewportModeLabel = "FHD";
 				break;
 			default: break;
 		}
 		ImGui::SetNextItemWidth(140.0f);
 		if (ImGui::BeginCombo("RenderMode", viewportModeLabel)) {
 			const bool fitSelected =
-				mViewportRenderMode == EditorViewportRenderMode::FitViewport;
+				mViewportRenderMode ==
+				EDITOR_VIEWPORT_RENDER_MODE::FIT_VIEWPORT;
 			if (ImGui::Selectable("Fit", fitSelected)) {
-				mViewportRenderMode = EditorViewportRenderMode::FitViewport;
+				mViewportRenderMode = EDITOR_VIEWPORT_RENDER_MODE::FIT_VIEWPORT;
 			}
 			const bool fixedSelected =
 				mViewportRenderMode ==
-				EditorViewportRenderMode::FixedAspect16x9;
+				EDITOR_VIEWPORT_RENDER_MODE::FIXED_ASPECT_16_9;
 			if (ImGui::Selectable("Fixed 16:9", fixedSelected)) {
-				mViewportRenderMode = EditorViewportRenderMode::FixedAspect16x9;
+				mViewportRenderMode =
+					EDITOR_VIEWPORT_RENDER_MODE::FIXED_ASPECT_16_9;
 			}
 			const bool hdSelected =
-				mViewportRenderMode == EditorViewportRenderMode::HD720;
+				mViewportRenderMode == EDITOR_VIEWPORT_RENDER_MODE::HD720;
 			if (ImGui::Selectable("HD (1280x720)", hdSelected)) {
-				mViewportRenderMode = EditorViewportRenderMode::HD720;
+				mViewportRenderMode = EDITOR_VIEWPORT_RENDER_MODE::HD720;
 			}
 			const bool fhdSelected =
-				mViewportRenderMode == EditorViewportRenderMode::FHD1080;
+				mViewportRenderMode == EDITOR_VIEWPORT_RENDER_MODE::FHD1080;
 			if (ImGui::Selectable("FHD (1920x1080)", fhdSelected)) {
-				mViewportRenderMode = EditorViewportRenderMode::FHD1080;
+				mViewportRenderMode = EDITOR_VIEWPORT_RENDER_MODE::FHD1080;
 			}
 			ImGui::EndCombo();
 		}
@@ -311,7 +424,7 @@ namespace Unnamed {
 
 	void UEditorRuntime::DrawViewport() {
 		ImGuiWindowFlags flags = 0;
-		if (mPresentMode == EditorPresentMode::FullscreenSwapChain) {
+		if (mPresentMode == EDITOR_PRESENT_MODE::FULLSCREEN_SWAP_CHAIN) {
 			const ImGuiViewport* mainVp = ImGui::GetMainViewport();
 			ImGui::SetNextWindowPos(mainVp->Pos);
 			ImGui::SetNextWindowSize(mainVp->Size);
@@ -336,16 +449,16 @@ namespace Unnamed {
 		uint32_t requestHeight = static_cast<uint32_t>(height);
 		sceneRequest.preferRealtimeResize = true;
 		switch (mViewportRenderMode) {
-			case EditorViewportRenderMode::FitViewport
+			case EDITOR_VIEWPORT_RENDER_MODE::FIT_VIEWPORT
 			: sceneRequest.mode = Render::SCENE_RENDER_MODE::FIT_VIEWPORT;
 				break;
-			case EditorViewportRenderMode::FixedAspect16x9
+			case EDITOR_VIEWPORT_RENDER_MODE::FIXED_ASPECT_16_9
 			: sceneRequest.mode = Render::SCENE_RENDER_MODE::FIXED_ASPECT_16X9;
 				break;
-			case EditorViewportRenderMode::HD720
+			case EDITOR_VIEWPORT_RENDER_MODE::HD720
 			: sceneRequest.mode = Render::SCENE_RENDER_MODE::HD_720P;
 				break;
-			case EditorViewportRenderMode::FHD1080
+			case EDITOR_VIEWPORT_RENDER_MODE::FHD1080
 			: sceneRequest.mode = Render::SCENE_RENDER_MODE::FHD_1080P;
 				break;
 			default: break;
@@ -383,7 +496,8 @@ namespace Unnamed {
 		} else if (mSceneSrvCpu.ptr != 0 && mSceneTextureId != 0) {
 			float drawWidth  = width;
 			float drawHeight = height;
-			if (mViewportRenderMode != EditorViewportRenderMode::FitViewport) {
+			if (mViewportRenderMode !=
+			    EDITOR_VIEWPORT_RENDER_MODE::FIT_VIEWPORT) {
 				constexpr float targetAspect = 16.0f / 9.0f;
 				if (drawWidth / drawHeight > targetAspect) {
 					drawWidth = drawHeight * targetAspect;

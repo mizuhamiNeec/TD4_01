@@ -1,11 +1,15 @@
 #pragma once
-#include <engine/renderer/SrvManager.h>
-#include <engine/ResourceSystem/Animation/AnimationManager.h>
-#include <engine/ResourceSystem/Material/MaterialManager.h>
-#include <engine/ResourceSystem/Mesh/MeshManager.h>
-#include <engine/ResourceSystem/Shader/ShaderManager.h>
+#include <memory>
 
-class TexManager;
+#include "engine/renderer/SrvManager.h"
+#include "engine/ResourceSystem/Animation/AnimationManager.h"
+#include "engine/ResourceSystem/Material/MaterialManager.h"
+#include "engine/ResourceSystem/Mesh/MeshManager.h"
+#include "engine/ResourceSystem/Shader/ShaderManager.h"
+#include "engine/TextureManager/TexManager.h"
+
+
+class D3D12;
 
 /// @brief リソースマネージャークラス
 class ResourceManager {
@@ -24,7 +28,7 @@ public:
 	[[nodiscard]] AnimationManager* GetAnimationManager() const;
 
 private:
-	D3D12* d3d12_;
+	D3D12* mD3d12;
 
 	std::unique_ptr<SrvManager>       mSrvManager;
 	std::unique_ptr<TexManager>       mTexManager;

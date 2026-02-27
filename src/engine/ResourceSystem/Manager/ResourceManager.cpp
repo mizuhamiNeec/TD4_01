@@ -3,13 +3,17 @@
 #include "engine/OldConsole/Console.h"
 #include "engine/renderer/D3D12.h"
 #include "engine/renderer/SrvManager.h"
+#include "engine/ResourceSystem/Animation/AnimationManager.h"
+#include "engine/ResourceSystem/Material/MaterialManager.h"
+#include "engine/ResourceSystem/Mesh/MeshManager.h"
 #include "engine/ResourceSystem/RootSignature/RootSignatureManager2.h"
+#include "engine/ResourceSystem/Shader/ShaderManager.h"
 #include "engine/TextureManager/TexManager.h"
 
 /// @brief コンストラクタ
 /// @param d3d12 D3D12クラスへのポインタ
 ResourceManager::ResourceManager(D3D12* d3d12) :
-	d3d12_(d3d12),
+	mD3d12(d3d12),
 	mSrvManager(nullptr),
 	mTexManager(nullptr),
 	mShaderManager(nullptr),
@@ -30,13 +34,13 @@ void ResourceManager::Init() const {
 		Channel::ResourceSystem
 	);
 	// マネージャーを初期化
-	mSrvManager->Init(d3d12_);
-	mTexManager->Init(d3d12_, mSrvManager.get());
-	RootSignatureManager2::Init(d3d12_->GetDevice());
+	mSrvManager->Init(mD3d12);
+	mTexManager->Init(mD3d12, mSrvManager.get());
+	RootSignatureManager2::Init(mD3d12->GetDevice());
 	mShaderManager->Init();
 	mMaterialManager->Init();
 	mMeshManager->Init(
-		d3d12_->GetDevice(),
+		mD3d12->GetDevice(),
 		mShaderManager.get(), mMaterialManager.get()
 	);
 

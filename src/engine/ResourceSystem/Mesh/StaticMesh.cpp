@@ -1,5 +1,7 @@
 #include <engine/ResourceSystem/Mesh/StaticMesh.h>
 
+#include <engine/unnamed/uprimitive/UPrimitives.h>
+
 /// @brief コンストラクタ
 /// @param name メッシュ名
 void StaticMesh::AddSubMesh(std::unique_ptr<SubMesh> subMesh) {

@@ -1,8 +1,6 @@
 #pragma once
-#include <pch.h>
 #include <string>
 #include <unordered_map>
-
 
 namespace Unnamed {
 	/// @brief INIファイルパーサークラス

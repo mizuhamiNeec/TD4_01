@@ -2,9 +2,13 @@
 
 #include "IniParser.h"
 
-#include <engine/OldConsole/Console.h>
+#include "core/string/StrUtil.h"
+
+#include "engine/unnamed/subsystem/console/Log.h"
 
 namespace Unnamed {
+	static constexpr std::string_view kChannel = "IniParser";
+
 	/// @brief INIファイルをパースする
 	/// @param filePath INIファイルのパス
 	/// @return セクション名とキー・値のペアのマップ
@@ -16,9 +20,8 @@ namespace Unnamed {
 			                   std::string, std::string>> iniData;
 		std::ifstream                                     inputFile(filePath);
 		if (!inputFile.is_open()) {
-			Console::Print(
-				"ファイルを開けませんでした: " + filePath + "\n",
-				kConTextColorError
+			Msg(
+				kChannel, "ファイルを開けませんでした: {}", filePath
 			);
 			return iniData;
 		}

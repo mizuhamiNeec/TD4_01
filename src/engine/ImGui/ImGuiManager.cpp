@@ -9,6 +9,8 @@
 
 #include "ImGuiUtil.h"
 
+#include "engine/renderer/D3D12.h"
+
 /// @brief ImGuiマネージャーのコンストラクタ
 /// @param renderer D3D12レンダラーへのポインタ
 /// @param srvManager SRVマネージャーへのポインタ

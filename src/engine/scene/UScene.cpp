@@ -1,5 +1,6 @@
-﻿#include "UScene.h"
+#include "UScene.h"
 
+#include <algorithm>
 #include <string>
 
 #include "engine/unnamed/framework/entity/UEntity.h"
@@ -11,6 +12,8 @@ namespace Unnamed {
 	UEntity& UScene::CreateEntity(
 		const std::string_view name, uint64_t id, bool isEditorOnly
 	) {
+		if (id == 0 || mEntityById.contains(id)) { id = AllocateEntityId(); }
+
 		auto entity = std::make_unique<UEntity>(
 			std::string(name), id, isEditorOnly
 		);
@@ -18,6 +21,7 @@ namespace Unnamed {
 
 		mEntities.emplace_back(std::move(entity));
 		mEntityById[id] = raw;
+		mNextEntityId   = std::max<EntityId>(mNextEntityId, id + 1);
 		return *raw;
 	}
 
@@ -69,5 +73,16 @@ namespace Unnamed {
 		// 未実装
 	}
 
-	EntityId UScene::AllocateEntityId() { return mNextEntityId++; }
+	void UScene::Reset() {
+		mEntities.clear();
+		mEntityById.clear();
+		mNextEntityId = 1;
+	}
+
+	EntityId UScene::AllocateEntityId() {
+		while (mEntityById.contains(mNextEntityId) || mNextEntityId == 0) {
+			++mNextEntityId;
+		}
+		return mNextEntityId++;
+	}
 }

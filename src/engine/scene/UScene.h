@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <cstdint>
 #include <memory>
 #include <string_view>
@@ -67,12 +67,15 @@ namespace Unnamed {
 		/// @brief シーンがロードされた後に呼び出されます。
 		void OnPostLoad();
 
+		/// @brief シーンの全エンティティを削除して初期状態に戻します。
+		void Reset();
+
 		/// @brief エンティティIDを割り当てます。
 		/// @return 新しいエンティティID
 		[[nodiscard]] EntityId AllocateEntityId();
 
 	private:
-		EntityId                               mNextEntityId = 0;
+		EntityId                               mNextEntityId = 1;
 		std::vector<std::unique_ptr<UEntity>>  mEntities;
 		std::unordered_map<EntityId, UEntity*> mEntityById;
 	};

@@ -1,12 +1,11 @@
 #pragma once
 #include <memory>
 
-#include <engine/renderer/PipelineState.h>
-#include <engine/renderer/RootSignatureManager.h>
 
-class Camera;
 class CameraComponent;
 class D3D12;
+class PipelineState;
+class RootSignatureManager;
 
 /// @brief ライン描画の共通クラス
 class LineCommon {
@@ -25,5 +24,5 @@ private:
 	CameraComponent*                      mDefaultCamera        = nullptr;
 	D3D12*                                mRenderer             = nullptr;
 	std::unique_ptr<RootSignatureManager> mRootSignatureManager = nullptr;
-	PipelineState                         mPipelineState;
+	std::unique_ptr<PipelineState>        mPipelineState;
 };

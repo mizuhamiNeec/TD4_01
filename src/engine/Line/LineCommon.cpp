@@ -4,6 +4,9 @@
 
 #include "engine/Camera/CameraManager.h"
 #include "engine/OldConsole/Console.h"
+#include "engine/renderer/D3D12.h"
+#include "engine/renderer/PipelineState.h"
+#include "engine/renderer/RootSignatureManager.h"
 
 /// @brief LineCommonクラスの初期化
 /// @param d3d12 D3D12レンダラーへのポインタ
@@ -59,22 +62,25 @@ void LineCommon::CreateGraphicsPipeline() {
 	CreateRootSignature();
 
 	// パイプラインステートを作成
-	mPipelineState = PipelineState(
-		D3D12_CULL_MODE_BACK, D3D12_FILL_MODE_SOLID,
+	mPipelineState = std::make_unique<PipelineState>(
+		D3D12_CULL_MODE_BACK,
+		D3D12_FILL_MODE_SOLID,
 		D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE
 	);
-	mPipelineState.SetInputLayout(LineVertex::inputLayout);
-	mPipelineState.SetRootSignature(mRootSignatureManager->Get("Line"));
+	mPipelineState->SetInputLayout(
+		LineVertex::inputLayout
+	);
+	mPipelineState->SetRootSignature(mRootSignatureManager->Get("Line"));
 
-	mPipelineState.SetDepthWriteMask(D3D12_DEPTH_WRITE_MASK_ALL);
-	mPipelineState.SetBlendMode(kBlendModeNone);
+	mPipelineState->SetDepthWriteMask(D3D12_DEPTH_WRITE_MASK_ALL);
+	mPipelineState->SetBlendMode(kBlendModeNone);
 
 	// シェーダーのファイルパスを設定
-	mPipelineState.SetVertexShader(L"./content/core/shaders/Line.VS.hlsl");
-	mPipelineState.SetPixelShader(L"./content/core/shaders/Line.PS.hlsl");
-	mPipelineState.Create(mRenderer->GetDevice());
+	mPipelineState->SetVertexShader(L"./content/core/shaders/Line.VS.hlsl");
+	mPipelineState->SetPixelShader(L"./content/core/shaders/Line.PS.hlsl");
+	mPipelineState->Create(mRenderer->GetDevice());
 
-	if (mPipelineState.Get()) {
+	if (mPipelineState->Get()) {
 		Console::Print(
 			"LineCommon : パイプラインステートの作成に成功.\n",
 			kConTextColorCompleted, Channel::Engine
@@ -84,7 +90,7 @@ void LineCommon::CreateGraphicsPipeline() {
 
 /// @brief ライン描画のレンダリングを行います
 void LineCommon::Render() const {
-	mRenderer->GetCommandList()->SetPipelineState(mPipelineState.Get());
+	mRenderer->GetCommandList()->SetPipelineState(mPipelineState->Get());
 	mRenderer->GetCommandList()->SetGraphicsRootSignature(
 		mRootSignatureManager->Get("Line")
 	);

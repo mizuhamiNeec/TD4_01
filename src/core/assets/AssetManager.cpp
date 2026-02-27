@@ -155,7 +155,13 @@ namespace Unnamed {
 		return std::get_if<T>(&const_cast<AssetPayload&>(v));
 	}
 
-	template const TextureAssetData* AssetManager::Get(AssetID) const;
+	template const TextureAssetData*          AssetManager::Get(AssetID) const;
+	template const ShaderSourceAssetData*     AssetManager::Get(AssetID) const;
+	template const MeshAssetData*             AssetManager::Get(AssetID) const;
+	template const ShaderProgramAssetData*    AssetManager::Get(AssetID) const;
+	template const MaterialAssetData*         AssetManager::Get(AssetID) const;
+	template const MaterialInstanceAssetData* AssetManager::Get(AssetID) const;
+	template const PostFxChainAssetData*      AssetManager::Get(AssetID) const;
 
 	const std::vector<AssetID>& AssetManager::GetDependencies(
 		const AssetID id

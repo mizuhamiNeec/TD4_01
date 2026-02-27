@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -30,8 +30,9 @@ namespace Unnamed {
 	};
 
 	struct WindowResizeEvent {
-		int32_t width  = 0;
-		int32_t height = 0;
+		int32_t width        = 0;
+		int32_t height       = 0;
+		bool    isLiveResize = false;
 	};
 
 	class Window final {
@@ -65,5 +66,6 @@ namespace Unnamed {
 		bool mShouldClose      = false;
 		bool mMinimized        = false;
 		bool mHasPendingResize = false;
+		bool mInLiveResize     = false;
 	};
 }

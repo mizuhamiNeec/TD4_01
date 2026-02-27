@@ -1,4 +1,4 @@
-﻿#include "Window.h"
+#include "Window.h"
 
 namespace Unnamed {
 	Window::Window(const WindowId id, WindowDesc desc, const HWND hwnd) :
@@ -46,11 +46,20 @@ namespace Unnamed {
 				const int32_t height = HIWORD(lParam);
 
 				if (wParam == SIZE_MINIMIZED) { mMinimized = true; } else {
-					mMinimized            = false;
-					mHasPendingResize     = true;
-					mPendingResize.width  = width;
-					mPendingResize.height = height;
+					mMinimized                  = false;
+					mHasPendingResize           = true;
+					mPendingResize.width        = width;
+					mPendingResize.height       = height;
+					mPendingResize.isLiveResize = mInLiveResize;
 				}
+				return 0;
+			}
+			case WM_ENTERSIZEMOVE: {
+				mInLiveResize = true;
+				return 0;
+			}
+			case WM_EXITSIZEMOVE: {
+				mInLiveResize = false;
 				return 0;
 			}
 

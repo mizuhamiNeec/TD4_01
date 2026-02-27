@@ -1,10 +1,10 @@
-﻿#include "TextureLoaderDirectXTex.h"
+#include "TextureLoaderDirectXTex.h"
 
 #include <array>
 #include <DirectXTex.h>
 #include <filesystem>
 
-#include <core/assets/types/TextureAsset.h>
+#include <core/assets/types/TextureAssetData.h>
 #include <core/string/StrUtil.h>
 
 #include <engine/unnamed/subsystem/console/Log.h>
@@ -35,16 +35,11 @@ namespace Unnamed {
 	bool TextureLoaderDirectXTex::CanLoad(
 		const std::string_view path, ASSET_TYPE* outType
 	) const {
-		// 拡張子で判定
-
-		// 小文字に変換してから比較
-		const std::string ext = StrUtil::ToLowerExt(path);
-
 		bool ok = false;
 
 		// サポートされている拡張子か確認
 		for (const auto& supported : kSupportedExtensions) {
-			if (ext == supported) {
+			if (StrUtil::HasExtension(path, supported)) {
 				ok = true;
 				break;
 			}

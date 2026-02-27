@@ -91,10 +91,11 @@ void WriteDump(EXCEPTION_POINTERS* ep) {
 	);
 
 	if (hFile != INVALID_HANDLE_VALUE) {
-		MINIDUMP_EXCEPTION_INFORMATION mei = {};
-		mei.ThreadId                       = GetCurrentThreadId();
-		mei.ExceptionPointers              = ep;
-		mei.ClientPointers                 = FALSE;
+		MINIDUMP_EXCEPTION_INFORMATION mei = {
+			.ThreadId          = GetCurrentThreadId(),
+			.ExceptionPointers = ep,
+			.ClientPointers    = FALSE,
+		};
 
 		MiniDumpWriteDump(
 			GetCurrentProcess(),

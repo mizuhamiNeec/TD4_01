@@ -1,4 +1,5 @@
-﻿#include "ConVarHelper.h"
+#ifdef _DEBUG
+#include "ConVarHelper.h"
 
 #include <algorithm>
 #include <format>
@@ -731,3 +732,4 @@ namespace Unnamed {
 		newHeight;
 	}
 }
+#endif

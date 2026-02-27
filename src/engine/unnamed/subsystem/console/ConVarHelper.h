@@ -1,4 +1,5 @@
-﻿#pragma once
+#pragma once
+#ifdef _DEBUG
 #include <string>
 #include <variant>
 #include <vector>
@@ -139,3 +140,4 @@ namespace Unnamed {
 		std::string      mElementEditDraftButtonCommand{};
 	};
 }
+#endif

@@ -1,257 +1,257 @@
 {
-    "name": "./content/parkour/ui/MainMenu.ui.json",
-    "root": {
-        "anchors": [
-            0.0,
-            1.0,
-            0.0,
-            1.0
-        ],
-        "children": [
-            {
-                "anchors": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "children": [
-                    {
-                        "anchors": [
-                            0.0,
-                            0.0,
-                            1.0,
-                            1.0
-                        ],
-                        "children": [
-                            {
-                                "anchors": [
-                                    0.0,
-                                    0.0,
-                                    0.0,
-                                    0.0
-                                ],
-                                "children": [],
-                                "constraints": {
-                                    "maxHeight": 3.4028234663852886e+38,
-                                    "maxWidth": 3.4028234663852886e+38,
-                                    "minHeight": 0.0,
-                                    "minWidth": 0.0
-                                },
-                                "enabled": true,
-                                "margins": [
-                                    0.0,
-                                    0.0,
-                                    0.0,
-                                    0.0
-                                ],
-                                "name": "PlayButton",
-                                "pivot": [
-                                    0.0,
-                                    0.0
-                                ],
-                                "rect": [
-                                    0.0,
-                                    0.0,
-                                    300.0,
-                                    83.33333587646484
-                                ],
-                                "sizePolicy": [
-                                    "Fixed",
-                                    "Expand"
-                                ],
-                                "text": "Play",
-                                "type": "Button",
-                                "visible": true
-                            },
-                            {
-                                "anchors": [
-                                    0.0,
-                                    0.0,
-                                    0.0,
-                                    0.0
-                                ],
-                                "children": [],
-                                "constraints": {
-                                    "maxHeight": 3.4028234663852886e+38,
-                                    "maxWidth": 3.4028234663852886e+38,
-                                    "minHeight": 0.0,
-                                    "minWidth": 0.0
-                                },
-                                "enabled": true,
-                                "margins": [
-                                    0.0,
-                                    0.0,
-                                    0.0,
-                                    0.0
-                                ],
-                                "name": "OptionsButton",
-                                "pivot": [
-                                    0.0,
-                                    0.0
-                                ],
-                                "rect": [
-                                    0.0,
-                                    83.33333587646484,
-                                    300.0,
-                                    83.33333587646484
-                                ],
-                                "sizePolicy": [
-                                    "Fixed",
-                                    "Expand"
-                                ],
-                                "text": "Options",
-                                "type": "Button",
-                                "visible": true
-                            },
-                            {
-                                "anchors": [
-                                    0.0,
-                                    0.0,
-                                    0.0,
-                                    0.0
-                                ],
-                                "children": [],
-                                "constraints": {
-                                    "maxHeight": 3.4028234663852886e+38,
-                                    "maxWidth": 3.4028234663852886e+38,
-                                    "minHeight": 0.0,
-                                    "minWidth": 0.0
-                                },
-                                "enabled": true,
-                                "margins": [
-                                    0.0,
-                                    0.0,
-                                    0.0,
-                                    0.0
-                                ],
-                                "name": "QuitButton",
-                                "pivot": [
-                                    0.0,
-                                    0.0
-                                ],
-                                "rect": [
-                                    0.0,
-                                    166.6666717529297,
-                                    300.0,
-                                    83.33333587646484
-                                ],
-                                "sizePolicy": [
-                                    "Fixed",
-                                    "Expand"
-                                ],
-                                "text": "Quit",
-                                "type": "Button",
-                                "visible": true
-                            }
-                        ],
-                        "constraints": {
-                            "maxHeight": 3.4028234663852886e+38,
-                            "maxWidth": 3.4028234663852886e+38,
-                            "minHeight": 0.0,
-                            "minWidth": 0.0
-                        },
-                        "enabled": true,
-                        "margins": [
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0
-                        ],
-                        "name": "MenuLayout",
-                        "padding": [
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0
-                        ],
-                        "pivot": [
-                            0.0,
-                            0.0
-                        ],
-                        "rect": [
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0
-                        ],
-                        "sizePolicy": [
-                            "Fixed",
-                            "Fixed"
-                        ],
-                        "spacing": 0.0,
-                        "type": "VerticalLayout",
-                        "visible": true
-                    }
-                ],
-                "constraints": {
-                    "maxHeight": 3.4028234663852886e+38,
-                    "maxWidth": 3.4028234663852886e+38,
-                    "minHeight": 0.0,
-                    "minWidth": 0.0
-                },
-                "enabled": true,
-                "margins": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "name": "MainPanel",
-                "pivot": [
-                    0.0,
-                    0.0
-                ],
-                "rect": [
-                    0.0,
-                    0.0,
-                    300.0,
-                    250.0
-                ],
-                "sizePolicy": [
-                    "Fixed",
-                    "Expand"
-                ],
-                "type": "Panel",
-                "visible": true
-            }
-        ],
-        "constraints": {
-            "maxHeight": 3.4028234663852886e+38,
-            "maxWidth": 3.4028234663852886e+38,
-            "minHeight": 0.0,
-            "minWidth": 0.0
-        },
-        "enabled": true,
-        "margins": [
-            0.0,
-            0.0,
-            0.0,
-            0.0
-        ],
-        "name": "RootLayout",
-        "padding": [
-            0.0,
-            0.0,
-            0.0,
-            0.0
-        ],
-        "pivot": [
-            0.0,
-            1.0
-        ],
-        "rect": [
-            64.0,
-            -64.0,
-            300.0,
-            250.0
-        ],
-        "sizePolicy": [
-            "Fixed",
-            "Expand"
-        ],
-        "spacing": 0.0,
-        "type": "VerticalLayout",
-        "visible": true
-    }
+	"name": "./content/parkour/ui/MainMenu.ui.json",
+	"root": {
+		"anchors": [
+			0.0,
+			1.0,
+			0.0,
+			1.0
+		],
+		"children": [
+			{
+				"anchors": [
+					0.0,
+					0.0,
+					0.0,
+					0.0
+				],
+				"children": [
+					{
+						"anchors": [
+							0.0,
+							0.0,
+							1.0,
+							1.0
+						],
+						"children": [
+							{
+								"anchors": [
+									0.0,
+									0.0,
+									0.0,
+									0.0
+								],
+								"children": [],
+								"constraints": {
+									"maxHeight": 3.4028234663852886e+38,
+									"maxWidth": 3.4028234663852886e+38,
+									"minHeight": 0.0,
+									"minWidth": 0.0
+								},
+								"enabled": true,
+								"margins": [
+									0.0,
+									0.0,
+									0.0,
+									0.0
+								],
+								"name": "PlayButton",
+								"pivot": [
+									0.0,
+									0.0
+								],
+								"rect": [
+									0.0,
+									0.0,
+									300.0,
+									83.33333587646484
+								],
+								"sizePolicy": [
+									"Fixed",
+									"Expand"
+								],
+								"text": "Play",
+								"type": "Button",
+								"visible": true
+							},
+							{
+								"anchors": [
+									0.0,
+									0.0,
+									0.0,
+									0.0
+								],
+								"children": [],
+								"constraints": {
+									"maxHeight": 3.4028234663852886e+38,
+									"maxWidth": 3.4028234663852886e+38,
+									"minHeight": 0.0,
+									"minWidth": 0.0
+								},
+								"enabled": true,
+								"margins": [
+									0.0,
+									0.0,
+									0.0,
+									0.0
+								],
+								"name": "OptionsButton",
+								"pivot": [
+									0.0,
+									0.0
+								],
+								"rect": [
+									0.0,
+									83.33333587646484,
+									300.0,
+									83.33333587646484
+								],
+								"sizePolicy": [
+									"Fixed",
+									"Expand"
+								],
+								"text": "Options",
+								"type": "Button",
+								"visible": true
+							},
+							{
+								"anchors": [
+									0.0,
+									0.0,
+									0.0,
+									0.0
+								],
+								"children": [],
+								"constraints": {
+									"maxHeight": 3.4028234663852886e+38,
+									"maxWidth": 3.4028234663852886e+38,
+									"minHeight": 0.0,
+									"minWidth": 0.0
+								},
+								"enabled": true,
+								"margins": [
+									0.0,
+									0.0,
+									0.0,
+									0.0
+								],
+								"name": "QuitButton",
+								"pivot": [
+									0.0,
+									0.0
+								],
+								"rect": [
+									0.0,
+									166.6666717529297,
+									300.0,
+									83.33333587646484
+								],
+								"sizePolicy": [
+									"Fixed",
+									"Expand"
+								],
+								"text": "Quit",
+								"type": "Button",
+								"visible": true
+							}
+						],
+						"constraints": {
+							"maxHeight": 3.4028234663852886e+38,
+							"maxWidth": 3.4028234663852886e+38,
+							"minHeight": 0.0,
+							"minWidth": 0.0
+						},
+						"enabled": true,
+						"margins": [
+							0.0,
+							0.0,
+							0.0,
+							0.0
+						],
+						"name": "MenuLayout",
+						"padding": [
+							0.0,
+							0.0,
+							0.0,
+							0.0
+						],
+						"pivot": [
+							0.0,
+							0.0
+						],
+						"rect": [
+							0.0,
+							0.0,
+							0.0,
+							0.0
+						],
+						"sizePolicy": [
+							"Fixed",
+							"Fixed"
+						],
+						"spacing": 0.0,
+						"type": "VerticalLayout",
+						"visible": true
+					}
+				],
+				"constraints": {
+					"maxHeight": 3.4028234663852886e+38,
+					"maxWidth": 3.4028234663852886e+38,
+					"minHeight": 0.0,
+					"minWidth": 0.0
+				},
+				"enabled": true,
+				"margins": [
+					0.0,
+					0.0,
+					0.0,
+					0.0
+				],
+				"name": "MainPanel",
+				"pivot": [
+					0.0,
+					0.0
+				],
+				"rect": [
+					0.0,
+					0.0,
+					300.0,
+					250.0
+				],
+				"sizePolicy": [
+					"Fixed",
+					"Expand"
+				],
+				"type": "Panel",
+				"visible": true
+			}
+		],
+		"constraints": {
+			"maxHeight": 3.4028234663852886e+38,
+			"maxWidth": 3.4028234663852886e+38,
+			"minHeight": 0.0,
+			"minWidth": 0.0
+		},
+		"enabled": true,
+		"margins": [
+			0.0,
+			0.0,
+			0.0,
+			0.0
+		],
+		"name": "RootLayout",
+		"padding": [
+			0.0,
+			0.0,
+			0.0,
+			0.0
+		],
+		"pivot": [
+			0.0,
+			1.0
+		],
+		"rect": [
+			64.0,
+			-64.0,
+			300.0,
+			250.0
+		],
+		"sizePolicy": [
+			"Fixed",
+			"Expand"
+		],
+		"spacing": 0.0,
+		"type": "VerticalLayout",
+		"visible": true
+	}
 }

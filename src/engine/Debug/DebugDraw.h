@@ -3,9 +3,10 @@
 
 #include <core/math/Math.h>
 
-#include <engine/Line/Line.h>
-
 #include "engine/unnamed/uprimitive/UPrimitives.h"
+
+class Line;
+class LineCommon;
 
 /// @brief デバッグ描画クラス
 class DebugDraw {

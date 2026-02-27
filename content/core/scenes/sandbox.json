@@ -1,23 +1,45 @@
-﻿{
-	"version": 1,
-	"entities": [
-		{
-			"name": "TestEntity",
-			"guid": 1001,
-			"isEditorOnly": false,
-			"active": true,
-			"components": [
-				{
-					"type": "engine.Transform",
-					"guid": 2001,
-					"active": true,
-					"data": {
-						"position": [0, 1, 0],
-						"rotation": [0, 0, 0, 1],
-						"scale": [1, 1, 1]
-					}
-				}
-			]
-		}
-	]
+{
+    "entities": [
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "position": [
+                            0.0,
+                            1.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 2001,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "",
+                        "meshPath": "./content/core/models/reflectionTest.obj"
+                    },
+                    "guid": 1,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "guid": 1001,
+            "isEditorOnly": false,
+            "name": "TestEntity"
+        }
+    ],
+    "version": 1
 }

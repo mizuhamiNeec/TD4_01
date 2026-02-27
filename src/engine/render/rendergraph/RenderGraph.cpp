@@ -179,7 +179,7 @@ namespace Unnamed::Render {
 					}
 
 					case RG_ACCESS::DEPTH_READ: {
-						// TODO: 後で対応
+						// TODO: 今のところ使わないので未対応。
 						break;
 					}
 

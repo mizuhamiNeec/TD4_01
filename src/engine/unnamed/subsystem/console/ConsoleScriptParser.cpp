@@ -8,7 +8,7 @@
 #include <engine/unnamed/subsystem/console/Log.h>
 
 namespace Unnamed {
-	static constexpr std::string_view kChannel = "ConsoleScriptParser";
+	static constexpr std::string_view kChannel = "ConScrP";
 
 	/// @brief コンストラクタ
 	/// @param path スクリプトファイルのパス

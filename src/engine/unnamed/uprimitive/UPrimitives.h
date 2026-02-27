@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <core/math/Math.h>
 
 namespace Unnamed {
@@ -19,11 +19,23 @@ namespace Unnamed {
 
 	/// @brief 三角形構造体
 	struct Triangle {
-		Vec3 v0 = Vec3(-0.86603f, -0.5f, 0.0f);
-		Vec3 v1 = Vec3(0.86603f, -0.5f, 0.0f);
+		static constexpr float kSin60 = 0.86603f; // 60度の正弦値
+
+		Vec3 v0 = Vec3(-kSin60, -0.5f, 0.0f);
+		Vec3 v1 = Vec3(kSin60, -0.5f, 0.0f);
 		Vec3 v2 = Vec3::up;
-		// 0.86603 = sin(60°)
 	};
+
+	/// @brief 平面構造体
+	struct Plane {
+		Vec3  normal = Vec3::zero;
+		float d      = 0.0f;
+	};
+
+	/// @brief 平面を正規化します
+	/// @param plane 正規化する平面
+	/// @return 正規化された平面
+	Plane NormalizePlane(const Plane& plane);
 
 	/// @brief ボックス構造体
 	struct Box {
@@ -31,7 +43,17 @@ namespace Unnamed {
 		Vec3 halfSize = Vec3::one * 0.5f;
 	};
 
-	/// @brief 軸平行境界ボックス構造体
+	/// @brief フラスタム構造体
+	struct Frustum {
+		Plane planes[6];
+	};
+
+	/// @brief ビュープロジェクション行列からフラスタムを構築します
+	/// @param viewProjRowVector ビュープロジェクション行列（行ベクトル形式）
+	/// @return 構築されたフラスタム
+	Frustum BuildFrustum(const Mat4& viewProjRowVector);
+
+	/// @brief Axis Aligned Bounding Box
 	struct AABB {
 		Vec3 min = Vec3(FLT_MAX);
 		Vec3 max = Vec3(-FLT_MAX);
@@ -47,7 +69,12 @@ namespace Unnamed {
 		[[nodiscard]] Vec3 Size() const;
 	};
 
-	/// @brief 球構造体
+	AABB TransformAABB(const AABB& local, const Mat4& world);
+
+	bool IsAABBOutsidePlane(const AABB& aabb, const Plane& p);
+	bool IsVisible(const Frustum& f, const AABB& worldAABB);
+
+	/// @brief 球 構造体
 	struct Sphere {
 		Vec3  center = Vec3::zero;
 		float radius = 0.5f;

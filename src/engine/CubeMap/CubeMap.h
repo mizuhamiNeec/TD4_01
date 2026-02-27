@@ -1,12 +1,19 @@
 #pragma once
 #include <array>
+#include <d3d12.h>
+#include <memory>
+#include <string_view>
+#include <wrl.h>
 
-#include <engine/Object3D/Object3D.h>
-#include <engine/renderer/IndexBuffer.h>
-#include <engine/renderer/Structs.h>
+#include "engine/Object3D/Object3D.h"
+#include "engine/renderer/VertexBuffer.h"
 
+class ConstantBuffer;
+class IndexBuffer;
 class SrvManager;
 class TexManager;
+struct TransformationMatrix;
+struct Vertex;
 
 /// @brief キューブマップクラス
 class CubeMap {

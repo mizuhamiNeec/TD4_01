@@ -3,6 +3,7 @@
 #include "engine/Camera/CameraManager.h"
 #include "engine/Components/Camera/CameraComponent.h"
 #include "engine/renderer/ConstantBuffer.h"
+#include "engine/renderer/IndexBuffer.h"
 #include "engine/renderer/PipelineState.h"
 #include "engine/renderer/SrvManager.h"
 #include "engine/TextureManager/TexManager.h"

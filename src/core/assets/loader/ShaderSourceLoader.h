@@ -1,0 +1,33 @@
+#pragma once
+#include "interface/IAssetLoader.h"
+
+namespace Unnamed {
+	class AssetManager;
+
+	/// @brief シェーダーソースローダークラス
+	class ShaderSourceLoader : public IAssetLoader {
+	public:
+		/// @brief コンストラクタ
+		/// @param assetManager アセットマネージャーの参照
+		explicit ShaderSourceLoader(AssetManager& assetManager);
+
+		/// @brief 対象のファイルを読み込めるか?
+		/// @param path 読み込むファイルのパス
+		/// @param outType ロード可能な場合、対応するASSET_TYPEを出力するポインタ
+		/// @return 読み込める場合はtrue、そうでない場合はfalse
+		bool CanLoad(std::string_view path, ASSET_TYPE* outType) const override;
+
+		/// @brief ファイルを読み込む
+		/// @param path 読み込むファイルのパス
+		/// @return ロード結果
+		LoadResult Load(const std::string& path) override;
+
+	private:
+		/// @brief シェーダーソースのテキストを解析して、インクルードされているファイルのパスを抽出します。
+		/// @param text シェーダーソースのテキスト
+		/// @return インクルードされているファイルのパスのリスト
+		static std::vector<std::string> ParseIncludes(const std::string& text);
+
+		AssetManager& mAssetManager;
+	};
+}

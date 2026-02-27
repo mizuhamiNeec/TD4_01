@@ -1,4 +1,4 @@
-﻿#include "D3D12Device.h"
+#include "D3D12Device.h"
 
 #include <dxgidebug.h>
 
@@ -52,43 +52,10 @@ namespace Unnamed::Rhi {
 			"フレーム数が不正です"
 		);
 
-		DxcShaderCompiler compiler;
-		if (!compiler.Initialize()) {
+		if (!mDxcCompiler.Initialize()) {
 			Error(kChannel, "DxcShaderCompiler の初期化に失敗しました");
 			UASSERT(false);
 		}
-
-		if (
-			!compiler.CompileToFileDXIL(
-				L"./content/core/shaders/src/CsWriteUav.hlsl",
-				L"main",
-				L"cs_6_6",
-				{},
-				{},
-				L"./content/core/shaders/compiled/CsWriteUav.dxil"
-			)
-		) {
-			Error(kChannel, "シェーダのコンパイルに失敗しました");
-			UASSERT(false);
-		}
-
-		compiler.CompileToFileDXIL(
-			L"./content/core/shaders/src/Fullscreen.hlsl",
-			L"PsMain",
-			L"ps_6_6",
-			{},
-			{},
-			L"./content/core/shaders/compiled/FullscreenPS.dxil"
-		);
-
-		compiler.CompileToFileDXIL(
-			L"./content/core/shaders/src/Fullscreen.hlsl",
-			L"VsMain",
-			L"vs_6_6",
-			{},
-			{},
-			L"./content/core/shaders/compiled/FullscreenVS.dxil"
-		);
 
 		if (deviceDesc.enableDebugLayer) {
 			EnableDebugLayer(deviceDesc.enableGpuBasedValidation);
@@ -100,7 +67,8 @@ namespace Unnamed::Rhi {
 
 		CreateQueue();
 		CreateSrvUavHeap();
-		CreateOrResizeIntermediate(swapChainDesc.width, swapChainDesc.height);
+		CreateRtvHeap();
+		CreateDsvHeap();
 		CreatePipelines();
 		CreateCommandObjects();
 		CreateFenceObjects();
@@ -121,25 +89,19 @@ namespace Unnamed::Rhi {
 		// リソースの解放
 		mSwapChain.reset();
 		mCommandList.Reset();
-		for (auto& frame : mFrames) { frame.commandAllocator.Reset(); }
+		for (auto& frame : mFrames) {
+			frame.upload.Shutdown();
+			frame.commandAllocator.Reset();
+		}
 
 		mSrvUavHeap.Reset();
-		mIntermediate.Reset();
-
-		mFsPipelineStateObject.Reset();
+		mRtvHeap.Reset();
+		mDsvHeap.Reset();
 		mFsRootSignature.Reset();
-		mCsPipelineStateObject.Reset();
 		mCsRootSignature.Reset();
+		mGeomRootSignature.Reset();
 
-		mGraphicsQueue.Reset();
-		mFence.Reset();
-		mDevice.Reset();
-		mFactory.Reset();
-
-		if (mFenceEvent) {
-			CloseHandle(mFenceEvent);
-			mFenceEvent = nullptr;
-		}
+		mUploadContext.reset();
 
 		// アダプタ変更イベントの解放
 		if (mAdapterChangeEventCookie != 0) {
@@ -156,6 +118,16 @@ namespace Unnamed::Rhi {
 		}
 		mFactory7.Reset();
 
+		mGraphicsQueue.Reset();
+		mFence.Reset();
+		mDevice.Reset();
+		mFactory.Reset();
+
+		if (mFenceEvent) {
+			CloseHandle(mFenceEvent);
+			mFenceEvent = nullptr;
+		}
+
 #ifdef _DEBUG
 		ComPtr<IDXGIDebug1> dxgiDebug;
 		if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug)))) {
@@ -171,6 +143,8 @@ namespace Unnamed::Rhi {
 
 		WaitForFrame(frameIndex);
 
+		// アロケータをリセットしてコマンドリストを開始する
+		mFrames[frameIndex].upload.BeginFrame();
 		Throw(mFrames[frameIndex].commandAllocator->Reset());
 		Throw(
 			mCommandList->Reset(
@@ -201,8 +175,6 @@ namespace Unnamed::Rhi {
 		WaitForGpuIdle();
 
 		mSwapChain->Resize(width, height);
-
-		CreateOrResizeIntermediate(width, height);
 	}
 
 	BACKEND_TYPE D3D12Device::GetBackendType() const {
@@ -215,8 +187,146 @@ namespace Unnamed::Rhi {
 		return mCommandList.Get();
 	}
 
+	ID3D12CommandQueue* D3D12Device::GetGraphicsQueue() const {
+		return mGraphicsQueue.Get();
+	}
+
 	D3D12SwapChain* D3D12Device::GetD3D12SwapChain() const {
 		return mSwapChain.get();
+	}
+
+	ID3D12DescriptorHeap* D3D12Device::GetSrvUavHeap() const {
+		return mSrvUavHeap.Get();
+	}
+
+	uint32_t D3D12Device::GetSrvUavDescriptorSize() const {
+		return mSrvUavDescriptorSize;
+	}
+
+	uint32_t D3D12Device::GetSrvUavHeapCapacity() const {
+		return mSrvUavHeapCapacity;
+	}
+
+	ID3D12DescriptorHeap* D3D12Device::GetRtvHeap() const {
+		return mRtvHeap.Get();
+	}
+
+	uint32_t D3D12Device::GetRtvDescriptorSize() const {
+		return mRtvDescriptorSize;
+	}
+
+	uint32_t D3D12Device::GetRtvHeapCapacity() const {
+		return mRtvHeapCapacity;
+	}
+
+	ID3D12DescriptorHeap* D3D12Device::GetDsvHeap() const {
+		return mDsvHeap.Get();
+	}
+
+	uint32_t D3D12Device::GetDsvDescriptorSize() const {
+		return mDsvDescriptorSize;
+	}
+
+	uint32_t D3D12Device::GetDsvHeapCapacity() const {
+		return mDsvHeapCapacity;
+	}
+
+	ID3D12RootSignature* D3D12Device::GetCsRootSignature() const {
+		return mCsRootSignature.Get();
+	}
+
+	ID3D12RootSignature* D3D12Device::GetFsRootSignature() const {
+		return mFsRootSignature.Get();
+	}
+
+	ID3D12RootSignature* D3D12Device::GetGeomRootSignature() const {
+		return mGeomRootSignature.Get();
+	}
+
+	ID3D12Device* D3D12Device::GetDevice() const { return mDevice.Get(); }
+
+	DxcShaderCompiler& D3D12Device::GetDxcCompiler() { return mDxcCompiler; }
+
+	D3D12FrameUploadAllocator& D3D12Device::GetFrameUploadAllocator() {
+		const uint32_t frameIndex = mSwapChain->GetCurrentBackBufferIndex();
+		return mFrames[frameIndex].upload;
+	}
+
+	uint32_t D3D12Device::GetFramesInFlight() const { return mFramesInFlight; }
+
+	D3D12Device::UploadContext::UploadContext(D3D12Device& device) : mDevice(
+		device
+	) {
+		auto* d = mDevice.GetDevice();
+
+		Throw(
+			d->CreateCommandAllocator(
+				D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(
+					mAllocator.ReleaseAndGetAddressOf()
+				)
+			)
+		);
+
+		Throw(
+			d->CreateCommandList(
+				0, D3D12_COMMAND_LIST_TYPE_DIRECT, mAllocator.Get(), nullptr,
+				IID_PPV_ARGS(mCommandList.ReleaseAndGetAddressOf())
+			)
+		);
+
+		// コマンドリストは開いた状態で作成されるので閉じる
+		Throw(mCommandList->Close());
+
+		Throw(
+			d->CreateFence(
+				0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(
+					mFence.ReleaseAndGetAddressOf()
+				)
+			)
+		);
+
+		mFenceEvent = CreateEvent(nullptr, FALSE,FALSE, nullptr);
+		if (!mFenceEvent) {
+			Fatal(
+				"UploadContext", "フェンスイベントでイベント作成に失敗しました。"
+			);
+		}
+	}
+
+	D3D12Device::UploadContext::~UploadContext() {
+		if (mFenceEvent) {
+			CloseHandle(mFenceEvent);
+			mFenceEvent = nullptr;
+		}
+	}
+
+	void D3D12Device::UploadContext::Begin() {
+		Throw(mAllocator->Reset());
+		Throw(mCommandList->Reset(mAllocator.Get(), nullptr));
+	}
+
+	uint64_t D3D12Device::UploadContext::EndAndSubmitAndWait() {
+		Throw(mCommandList->Close());
+
+		ID3D12CommandList* lists[] = {mCommandList.Get()};
+		auto*              queue   = mDevice.GetGraphicsQueue();
+		queue->ExecuteCommandLists(1, lists);
+
+		const uint64_t signalValue = ++mFenceValue;
+		Throw(queue->Signal(mFence.Get(), signalValue));
+
+		if (mFence->GetCompletedValue() < signalValue) {
+			Throw(mFence->SetEventOnCompletion(signalValue, mFenceEvent));
+			WaitForSingleObject(mFenceEvent, INFINITE);
+		}
+		return signalValue;
+	}
+
+	D3D12Device::UploadContext& D3D12Device::GetUploadContext() {
+		if (!mUploadContext) {
+			mUploadContext = std::make_unique<UploadContext>(*this);
+		}
+		return *mUploadContext;
 	}
 
 	void D3D12Device::EnableDebugLayer(const bool gpuValidation) {
@@ -321,14 +431,16 @@ namespace Unnamed::Rhi {
 		}
 
 		// --- アダプタ変更イベントの登録（できれば） ---
-		if (const auto factory7 = QueryInterface<IDXGIFactory7>(mFactory)) {
+		ComPtr<IDXGIFactory7> factory7;
+		if (SUCCEEDED(mFactory.As(&factory7))) {
+			mFactory7           = factory7;
 			mAdapterChangeEvent = CreateEventW(
 				nullptr, FALSE, FALSE, nullptr
 			);
 			UASSERT(mAdapterChangeEvent != nullptr && "アダプタ変更イベントの作成に失敗しました");
 
 			Throw(
-				factory7->RegisterAdaptersChangedEvent(
+				mFactory7->RegisterAdaptersChangedEvent(
 					mAdapterChangeEvent, &mAdapterChangeEventCookie
 				)
 			);
@@ -388,6 +500,9 @@ namespace Unnamed::Rhi {
 				D3D12_MESSAGE_ID_RESOURCE_BARRIER_MISMATCHING_COMMAND_LIST_TYPE,
 				// これはオーバーレイ系を使うと出るので抑制しておく
 				D3D12_MESSAGE_ID_CREATERESOURCE_STATE_IGNORED,
+
+				// お口チャック
+				D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE,
 			};
 
 			// 抑制するレベル
@@ -423,8 +538,10 @@ namespace Unnamed::Rhi {
 	void D3D12Device::CreateSrvUavHeap() {
 		D3D12_DESCRIPTOR_HEAP_DESC desc = {};
 		desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		desc.NumDescriptors = 2; // SRVとUAV
+		desc.NumDescriptors = 8192; // とりあえず大きめに確保
 		desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+
+		mSrvUavHeapCapacity = desc.NumDescriptors; // キャパシティを保存
 
 		Throw(
 			mDevice->CreateDescriptorHeap(
@@ -434,18 +551,42 @@ namespace Unnamed::Rhi {
 		mSrvUavDescriptorSize = mDevice->GetDescriptorHandleIncrementSize(
 			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
 		);
+	}
 
-		auto cpu = mSrvUavHeap->GetCPUDescriptorHandleForHeapStart();
-		auto gpu = mSrvUavHeap->GetGPUDescriptorHandleForHeapStart();
+	void D3D12Device::CreateRtvHeap() {
+		D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+		desc.Type                       = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+		desc.NumDescriptors             = 1024; // 必要に応じて増やす
+		desc.Flags                      = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 
-		mIntermediateUavCPU = cpu;
-		mIntermediateUavGPU = gpu;
+		mRtvHeapCapacity = desc.NumDescriptors; // キャパシティを保存
 
-		cpu.ptr += mSrvUavDescriptorSize;
-		gpu.ptr += mSrvUavDescriptorSize;
+		Throw(
+			mDevice->CreateDescriptorHeap(
+				&desc, IID_PPV_ARGS(mRtvHeap.ReleaseAndGetAddressOf())
+			)
+		);
+		mRtvDescriptorSize = mDevice->GetDescriptorHandleIncrementSize(
+			D3D12_DESCRIPTOR_HEAP_TYPE_RTV
+		);
+	}
 
-		mIntermediateSrvCPU = cpu;
-		mIntermediateSrvGPU = gpu;
+	void D3D12Device::CreateDsvHeap() {
+		D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+		desc.Type                       = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+		desc.NumDescriptors             = 1024; // 必要に応じて増やす
+		desc.Flags                      = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+		mDsvHeapCapacity = desc.NumDescriptors;
+
+		Throw(
+			mDevice->CreateDescriptorHeap(
+				&desc, IID_PPV_ARGS(mDsvHeap.ReleaseAndGetAddressOf())
+			)
+		);
+		mDsvDescriptorSize = mDevice->GetDescriptorHandleIncrementSize(
+			D3D12_DESCRIPTOR_HEAP_TYPE_DSV
+		);
 	}
 
 	void D3D12Device::CreatePipelines() {
@@ -542,98 +683,78 @@ namespace Unnamed::Rhi {
 			);
 		}
 
-		// コンピュートシェーダ PSO
+		// Geometry RootSignature:
+		// CBV(b0)=Frame, CBV(b1)=Object, CBV(b2)=Material, CBV(b3)=Skinning, SRV(t0)=BaseColor
 		{
-			auto csBytes = LoadFileBytes(
-				L"./content/core/shaders/compiled/CsWriteUav.dxil"
-			);
-			D3D12_COMPUTE_PIPELINE_STATE_DESC desc = {};
-			desc.pRootSignature                    = mCsRootSignature.Get();
-			desc.CS.pShaderBytecode                = csBytes.data();
-			desc.CS.BytecodeLength                 = csBytes.size();
+			D3D12_DESCRIPTOR_RANGE srvRange = {};
+			srvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+			srvRange.NumDescriptors = 1;
+			srvRange.BaseShaderRegister = 0; // t0
+			srvRange.RegisterSpace = 0;
+			srvRange.OffsetInDescriptorsFromTableStart =
+				D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+			// CBV(b0)->FrameConstants, CBV(b1)->ObjectConstants, CBV(b2)->Material, CBV(b3)->SkinningPalette
+			std::array<D3D12_ROOT_PARAMETER, 5> param = {};
+			param[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+			param[0].Descriptor.ShaderRegister = 0; // b0
+			param[0].Descriptor.RegisterSpace = 0;
+			param[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+			param[1].ParameterType             = D3D12_ROOT_PARAMETER_TYPE_CBV;
+			param[1].Descriptor.ShaderRegister = 1; // b1
+			param[1].Descriptor.RegisterSpace  = 0;
+			param[1].ShaderVisibility          = D3D12_SHADER_VISIBILITY_VERTEX;
+
+			param[2].ParameterType             = D3D12_ROOT_PARAMETER_TYPE_CBV;
+			param[2].Descriptor.ShaderRegister = 2; // b2
+			param[2].Descriptor.RegisterSpace  = 0;
+			param[2].ShaderVisibility          = D3D12_SHADER_VISIBILITY_PIXEL;
+
+			param[3].ParameterType             = D3D12_ROOT_PARAMETER_TYPE_CBV;
+			param[3].Descriptor.ShaderRegister = 3; // b3
+			param[3].Descriptor.RegisterSpace  = 0;
+			param[3].ShaderVisibility          = D3D12_SHADER_VISIBILITY_VERTEX;
+
+			param[4].ParameterType =
+				D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+			param[4].DescriptorTable.NumDescriptorRanges = 1;
+			param[4].DescriptorTable.pDescriptorRanges = &srvRange;
+			param[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+			D3D12_STATIC_SAMPLER_DESC sampler = {};
+			sampler.Filter                    = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+			sampler.AddressU                  = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+			sampler.AddressV                  = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+			sampler.AddressW                  = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+			sampler.ShaderRegister            = 0; // s0
+			sampler.RegisterSpace             = 0;
+			sampler.ShaderVisibility          = D3D12_SHADER_VISIBILITY_PIXEL;
+
+			D3D12_ROOT_SIGNATURE_DESC desc = {};
+			desc.NumParameters             = static_cast<UINT>(param.size());
+			desc.pParameters               = param.data();
+			desc.NumStaticSamplers         = 1;
+			desc.pStaticSamplers           = &sampler;
+			desc.Flags                     =
+				D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+
+			ComPtr<ID3DBlob> blob, error;
 			Throw(
-				mDevice->CreateComputePipelineState(
-					&desc, IID_PPV_ARGS(
-						mCsPipelineStateObject.ReleaseAndGetAddressOf()
-					)
+				D3D12SerializeRootSignature(
+					&desc,
+					D3D_ROOT_SIGNATURE_VERSION_1,
+					blob.ReleaseAndGetAddressOf(),
+					error.ReleaseAndGetAddressOf()
 				)
 			);
-		}
-
-		{
-			auto vsBytes = LoadFileBytes(
-				L"./content/core/shaders/compiled/FullscreenVS.dxil"
-			);
-			auto psBytes = LoadFileBytes(
-				L"./content/core/shaders/compiled/FullscreenPS.dxil"
-			);
-
-			D3D12_GRAPHICS_PIPELINE_STATE_DESC desc = {};
-			desc.pRootSignature = mFsRootSignature.Get();
-			desc.VS = {vsBytes.data(), vsBytes.size()};
-			desc.PS = {psBytes.data(), psBytes.size()};
-
-			D3D12_BLEND_DESC blendDesc       = {};
-			blendDesc.AlphaToCoverageEnable  = FALSE;
-			blendDesc.IndependentBlendEnable = FALSE;
-			constexpr D3D12_RENDER_TARGET_BLEND_DESC
-				defaultRenderTargetBlendDesc =
-				{
-					FALSE, FALSE,
-					D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
-					D3D12_BLEND_ONE, D3D12_BLEND_ZERO, D3D12_BLEND_OP_ADD,
-					D3D12_LOGIC_OP_NOOP,
-					D3D12_COLOR_WRITE_ENABLE_ALL,
-				};
-			for (auto& rtBlendDesc : blendDesc.RenderTarget) {
-				rtBlendDesc = defaultRenderTargetBlendDesc;
-			}
-
-			D3D12_RASTERIZER_DESC defaultRasterizerDesc = {};
-			defaultRasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
-			defaultRasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
-			defaultRasterizerDesc.FrontCounterClockwise = FALSE;
-			defaultRasterizerDesc.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
-			defaultRasterizerDesc.DepthBiasClamp =
-				D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
-			defaultRasterizerDesc.SlopeScaledDepthBias =
-				D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
-			defaultRasterizerDesc.DepthClipEnable       = TRUE;
-			defaultRasterizerDesc.MultisampleEnable     = FALSE;
-			defaultRasterizerDesc.AntialiasedLineEnable = FALSE;
-			defaultRasterizerDesc.ForcedSampleCount     = 0;
-			defaultRasterizerDesc.ConservativeRaster    =
-				D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
-
-			D3D12_DEPTH_STENCIL_DESC depthStencilDesc = {};
-			depthStencilDesc.DepthEnable = FALSE;
-			depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-			depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
-			depthStencilDesc.StencilEnable = FALSE;
-			depthStencilDesc.StencilReadMask = D3D12_DEFAULT_STENCIL_READ_MASK;
-			depthStencilDesc.StencilWriteMask =
-				D3D12_DEFAULT_STENCIL_WRITE_MASK;
-			depthStencilDesc.FrontFace = {};
-			depthStencilDesc.BackFace  = {};
-
-			desc.BlendState                      = blendDesc;
-			desc.RasterizerState                 = defaultRasterizerDesc;
-			desc.DepthStencilState               = depthStencilDesc;
-			desc.DepthStencilState.DepthEnable   = FALSE;
-			desc.DepthStencilState.StencilEnable = FALSE;
-
-			desc.SampleMask            = UINT_MAX;
-			desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-
-			desc.NumRenderTargets = 1;
-			desc.RTVFormats[0]    = DXGI_FORMAT_R8G8B8A8_UNORM;
-			desc.SampleDesc.Count = 1;
 
 			Throw(
-				mDevice->CreateGraphicsPipelineState(
-					&desc, IID_PPV_ARGS(
-						mFsPipelineStateObject.ReleaseAndGetAddressOf()
-					)
+				mDevice->CreateRootSignature(
+					0,
+					blob->GetBufferPointer(),
+					blob->GetBufferSize(),
+					IID_PPV_ARGS(mGeomRootSignature.ReleaseAndGetAddressOf())
 				)
 			);
 		}
@@ -648,6 +769,10 @@ namespace Unnamed::Rhi {
 					)
 				)
 			);
+
+			// 256KBのアップロードアロケータを作成
+			mFrames[i].upload.Initialize(mDevice.Get(), 256 * 1024);
+
 			mFrames[i].fenceValue = 0;
 		}
 
@@ -700,64 +825,5 @@ namespace Unnamed::Rhi {
 		// すべてのフレームが完了するまで待つ
 		for (uint32_t i = 0; i < mFramesInFlight; ++i) { SignalFrame(i); }
 		for (uint32_t i = 0; i < mFramesInFlight; ++i) { WaitForFrame(i); }
-	}
-
-	void D3D12Device::CreateOrResizeIntermediate(
-		uint32_t width, uint32_t height
-	) {
-		mIntermediate.Reset();
-
-		D3D12_RESOURCE_DESC tex = {};
-		tex.Dimension           = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-		tex.Alignment           = 0;
-		tex.Width               = width;
-		tex.Height              = height;
-		tex.DepthOrArraySize    = 1;
-		tex.MipLevels           = 1;
-		tex.Format              = DXGI_FORMAT_R8G8B8A8_UNORM;
-		tex.SampleDesc.Count    = 1;
-		tex.SampleDesc.Quality  = 0;
-		tex.Layout              = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-		tex.Flags               = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-
-		D3D12_HEAP_PROPERTIES heap = {};
-		heap.Type                  = D3D12_HEAP_TYPE_DEFAULT;
-
-		Throw(
-			mDevice->CreateCommittedResource(
-				&heap,
-				D3D12_HEAP_FLAG_NONE,
-				&tex,
-				D3D12_RESOURCE_STATE_COMMON,
-				nullptr,
-				IID_PPV_ARGS(mIntermediate.ReleaseAndGetAddressOf())
-			)
-		);
-
-		mIntermediate->SetName(L"Intermediate");
-
-		mIntermediateState = D3D12_RESOURCE_STATE_COMMON;
-
-		// UAV
-		D3D12_UNORDERED_ACCESS_VIEW_DESC uav = {};
-		uav.ViewDimension                    = D3D12_UAV_DIMENSION_TEXTURE2D;
-		uav.Format                           = DXGI_FORMAT_R8G8B8A8_UNORM;
-		uav.Texture2D.MipSlice               = 0;
-		uav.Texture2D.PlaneSlice             = 0;
-		mDevice->CreateUnorderedAccessView(
-			mIntermediate.Get(), nullptr, &uav, mIntermediateUavCPU
-		);
-
-		// SRV
-		D3D12_SHADER_RESOURCE_VIEW_DESC srv = {};
-		srv.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-		srv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		srv.Texture2D.MipLevels = 1;
-		srv.Texture2D.MostDetailedMip = 0;
-		srv.Texture2D.ResourceMinLODClamp = 0.0f;
-		mDevice->CreateShaderResourceView(
-			mIntermediate.Get(), &srv, mIntermediateSrvCPU
-		);
 	}
 }

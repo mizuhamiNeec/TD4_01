@@ -2,6 +2,10 @@
 
 #include <engine/postprocess/PostProcessPipeline.h>
 
+#include "IPostProcess.h"
+
+#include "engine/renderer/D3D12.h"
+
 namespace Unnamed {
 	void PostProcessPipeline::Init(
 		D3D12*            renderer,

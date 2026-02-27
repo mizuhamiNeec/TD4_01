@@ -8,10 +8,12 @@
 
 #include <d3d12.h>
 
-#include <engine/postprocess/IPostProcess.h>
-#include <engine/renderer/D3D12.h>
+#include "engine/renderer/D3D12.h"
 
-#include <engine/renderer/SrvManager.h>
+struct RenderTargetTexture;
+class IPostProcess;
+class SrvManager;
+class D3D12;
 
 namespace Unnamed {
 	/// @brief ポストプロセスチェーン管理とPingPongターゲット管理

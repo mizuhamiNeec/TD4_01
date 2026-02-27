@@ -4,14 +4,14 @@
 #include <string>
 #include <unordered_map>
 
-#include <engine/ResourceSystem/RootSignature/RootSignature2.h>
-
 /// @brief ルートシグネチャ記述子構造体
 struct RootSignatureDesc {
 	std::vector<D3D12_ROOT_PARAMETER>      parameters;
 	std::vector<D3D12_STATIC_SAMPLER_DESC> samplers;
 	D3D12_ROOT_SIGNATURE_FLAGS             flags;
 };
+
+class RootSignature2;
 
 /// @brief ルートシグネチャマネージャークラス
 class RootSignatureManager2 {

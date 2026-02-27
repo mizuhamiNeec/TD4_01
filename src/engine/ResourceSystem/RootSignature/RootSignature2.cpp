@@ -1,5 +1,6 @@
 #include "engine/ResourceSystem/RootSignature/RootSignature2.h"
 
+#include <cassert>
 #include <sstream>
 
 #include "engine/OldConsole/Console.h"

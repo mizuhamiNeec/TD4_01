@@ -3,9 +3,14 @@
 
 #include <assimp/scene.h>
 
-#include <engine/ResourceSystem/Mesh/SkeletalMesh.h>
-#include <engine/ResourceSystem/Mesh/StaticMesh.h>
+#include "MeshTypes.h"
+#include "SkeletalMesh.h"
+#include "StaticMesh.h"
 
+#include "engine/Animation/Animation.h"
+#include "engine/Animation/Node.h"
+
+class SubMesh;
 class D3D12;
 class MaterialManager;
 class ShaderManager;

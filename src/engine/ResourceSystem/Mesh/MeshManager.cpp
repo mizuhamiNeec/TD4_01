@@ -19,6 +19,13 @@
 #include <engine/ResourceSystem/Shader/DefaultShader.h>
 #include <engine/TextureManager/TexManager.h>
 
+#include "SkeletalMesh.h"
+#include "StaticMesh.h"
+#include "SubMesh.h"
+
+#include "engine/renderer/Structs.h"
+#include "engine/ResourceSystem/Material/Material.h"
+
 /// @brief 初期化
 /// @param device D3D12デバイスへのポインタ
 /// @param shaderManager シェーダマネージャーへのポインタ

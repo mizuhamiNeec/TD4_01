@@ -1,4 +1,4 @@
-#include "Window.h"
+﻿#include "Window.h"
 
 namespace Unnamed {
 	Window::Window(const WindowId id, WindowDesc desc, const HWND hwnd) :
@@ -69,7 +69,7 @@ namespace Unnamed {
 		return DefWindowProc(hwnd, msg, wParam, lParam);
 	}
 
-	void Window::ToggleFullscreen() {
+	void Window::ToggleFullscreen() const {
 		// フルスクリーン切り替え
 		const HWND hwnd = GetHwnd();
 		if (

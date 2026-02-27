@@ -1,4 +1,4 @@
-#include "WindowManager.h"
+﻿#include "WindowManager.h"
 
 #include <dwmapi.h>
 #include <ranges>

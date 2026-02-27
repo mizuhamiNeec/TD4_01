@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -39,23 +39,34 @@ namespace Unnamed {
 	public:
 		Window(WindowId id, WindowDesc desc, HWND hwnd);
 
+		/// @brief ウィンドウのIDを取得します。
 		[[nodiscard]] WindowId GetId() const;
-		[[nodiscard]] HWND     GetHwnd() const;
 
+		/// @brief ウィンドウのHWNDを取得します。
+		[[nodiscard]] HWND GetHwnd() const;
+
+		/// @brief ウィンドウの説明を取得します。
 		[[nodiscard]] WindowDesc GetDesc() const;
 
+		/// @brief ウィンドウが閉じるべきかどうかを返します。WindowManagerがこれを見て実際の破棄を行います。
 		[[nodiscard]] bool ShouldClose() const;
+
+		/// @brief ウィンドウが最小化されているかどうかを返します。
 		[[nodiscard]] bool IsMinimized() const;
 
+		/// @brief 保留中のリサイズイベントを消費します。リサイズイベントがない場合はstd::nulloptを返します。
 		std::optional<WindowResizeEvent> ConsumeResizeEvent();
 
+		/// @brief ウィンドウメッセージを処理します。WindowManagerから呼び出されます。
 		LRESULT HandleMessage(
 			HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
 		);
 
-		void ToggleFullscreen();
+		/// @brief フルスクリーンとウィンドウモードを切り替えます。
+		void ToggleFullscreen() const;
 
 	private:
+		/// @brief ウィンドウを閉じるようにマークします。実際の破棄はWindowManagerが行います。
 		void MarkCloseRequested();
 
 		HWND              mHwnd          = nullptr;

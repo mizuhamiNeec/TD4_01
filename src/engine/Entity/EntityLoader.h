@@ -1,13 +1,13 @@
-﻿#pragma once
+#pragma once
 #include <json.hpp>
 
 #include <core/math/Math.h>
 
-class ResourceManager;
-using json = nlohmann::json;
-
-class Entity;
 class BaseScene;
+class Entity;
+class ResourceManager;
+
+using json = nlohmann::json;
 
 /// @brief エンティティローダー
 class EntityLoader {

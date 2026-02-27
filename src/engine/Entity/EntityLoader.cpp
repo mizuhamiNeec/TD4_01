@@ -1,17 +1,15 @@
-﻿#include <fstream>
+#include <fstream>
 
 #include <engine/Components/MeshRenderer/StaticMeshRenderer.h>
 #include <engine/Entity/Entity.h>
 #include <engine/Entity/EntityLoader.h>
 #include <engine/ResourceSystem/Manager/ResourceManager.h>
-
+#include <engine/ResourceSystem/Mesh/MeshManager.h>
+#include <engine/ResourceSystem/Mesh/StaticMesh.h>
 #include <engine/scene/BaseScene.h>
 
-
-class StaticMeshRenderer;
-
 /// @brief デストラクタ
-EntityLoader::~EntityLoader() {}
+EntityLoader::~EntityLoader() = default;
 
 /// @brief エンティティに変換を適用する
 /// @param e エンティティ

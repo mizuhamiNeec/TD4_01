@@ -1,12 +1,21 @@
-﻿#include "AssetManager.h"
+#include "AssetManager.h"
 
+#include <algorithm>
 #include <filesystem>
 
-#include "core/UnnamedMacro.h"
+#include <core/UnnamedMacro.h>
+#include <core/string/StrUtil.h>
 
-#include "engine/unnamed/subsystem/console/Log.h"
+#include <engine/unnamed/subsystem/console/Log.h>
 
 #include "loader/interface/IAssetLoader.h"
+
+#include "types/MaterialAssetData.h"
+#include "types/MaterialInstanceAssetData.h"
+#include "types/MeshAssetData.h"
+#include "types/PostFxChainAssetData.h"
+#include "types/ShaderProgramAssetData.h"
+#include "types/ShaderSourceAssetData.h"
 
 namespace Unnamed {
 	constexpr std::string_view kChannel = "AssetManager";

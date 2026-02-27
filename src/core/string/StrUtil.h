@@ -25,12 +25,6 @@ namespace Unnamed::StrUtil {
 	/// @return 小文字に変換された文字列
 	std::string ToLowerCase(const std::string& input);
 
-	/// @brief 2つの文字列が等しいかを判定する
-	/// @param str1 文字列1
-	/// @param str2 文字列2
-	/// @return 等しい場合true
-	bool Equal(const std::string& str1, const std::string& str2);
-
 	/// @brief 文字列配列をデリミタで結合する
 	/// @param args 文字列配列
 	/// @param delimiter デリミタ文字列
@@ -53,6 +47,12 @@ namespace Unnamed::StrUtil {
 	/// @param version バージョン文字列（例: "1.2.3"）
 	/// @return バージョン番号の配列
 	std::vector<int> ParseVersion(const std::string& version);
+
+	/// @brief パスが指定された拡張子を持つかを判定する（大文字小文字を区別しない）
+	/// @param path ファイルパス
+	/// @param ext 拡張子（例: ".txt"）
+	/// @return 指定された拡張子を持つ場合true
+	bool HasExtension(std::string_view path, std::string_view ext);
 
 	/// @brief 拡張子を小文字に変換する
 	/// @param str 入力文字列
@@ -78,6 +78,17 @@ namespace Unnamed::StrUtil {
 	/// @param string 対象文字列
 	/// @return トリムされた文字列
 	std::string TrimSpaces(const std::string& string);
+
+	/// @brief ファイルを読み込み、内容を文字列として返す
+	/// @param path ファイルパス
+	/// @param outString ファイル内容の文字列
+	/// @return 成功したらtrueを返す
+	bool ReadFileToString(const std::string& path, std::string& outString);
+
+	/// @brief パスを正規化する（例: "C:/folder/../file.txt" -> "C:/file.txt"）
+	/// @param path 入力パス
+	/// @return 正規化されたパス
+	std::string NormalizePath(std::string path);
 
 	/// @brief ブール文字列かを判定する
 	/// @param str 判定する文字列

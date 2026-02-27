@@ -1,6 +1,7 @@
 #include <pch.h>
 
 #include <filesystem>
+#include <fstream>
 #include <sstream>
 
 namespace Unnamed::StrUtil {
@@ -70,18 +71,6 @@ namespace Unnamed::StrUtil {
 		return result;
 	}
 
-	bool Equal(const std::string& str1, const std::string& str2) {
-		if (str1.size() != str2.size()) { return false; }
-		return std::equal(
-			str1.begin(),
-			str1.end(),
-			str2.begin(),
-			[](const unsigned char c1, const unsigned char c2) {
-				return std::tolower(c1) == std::tolower(c2);
-			}
-		);
-	}
-
 	std::string Join(
 		const std::vector<std::string>& args,
 		const char*                     delimiter
@@ -141,6 +130,13 @@ namespace Unnamed::StrUtil {
 		return result;
 	}
 
+	bool HasExtension(std::string_view path, std::string_view ext) {
+		if (path.size() < ext.size()) { return false; }
+		const auto tail = path.substr(path.size() - ext.size(), ext.size());
+		const auto lowerTail = ToLowerCase(std::string(tail));
+		return lowerTail == ext;
+	}
+
 	std::string ToLowerExt(const std::string_view& str) {
 		std::string e = std::filesystem::path(std::string(str)).extension().
 			string();
@@ -193,6 +189,20 @@ namespace Unnamed::StrUtil {
 			return "";
 		}
 		return string.substr(start, end - start + 1);
+	}
+
+	bool ReadFileToString(const std::string& path, std::string& outString) {
+		const std::ifstream ifs(path, std::ios::binary);
+		if (!ifs) { return false; }
+		std::stringstream ss;
+		ss << ifs.rdbuf();
+		outString = ss.str();
+		return true;
+	}
+
+	std::string NormalizePath(std::string path) {
+		for (auto& c : path) { if (c == '\\') { c = '/'; } }
+		return path;
 	}
 
 	bool CheckBoolString(std::string str) {

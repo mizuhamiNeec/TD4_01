@@ -1,15 +1,15 @@
 #pragma once
-#include <core/math/Math.h>
+#include <d3d12.h>
 
-#include <engine/Line/LineCommon.h>
-#include <engine/renderer/ConstantBuffer.h>
-#include <engine/renderer/D3D12.h>
-#include <engine/renderer/IndexBuffer.h>
+#include <core/math/Math.h>
 
 #include "core/math/Mat4.h"
 
 #include "engine/renderer/VertexBuffer.h"
 
+class ConstantBuffer;
+class IndexBuffer;
+class LineCommon;
 struct TransformationMatrix;
 constexpr size_t kMaxLineCount = 256;
 

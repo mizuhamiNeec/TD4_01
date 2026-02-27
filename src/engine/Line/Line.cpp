@@ -3,11 +3,17 @@
 #include <d3d12.h>
 
 #include <mutex>
+
+#include "LineCommon.h"
+
 #include "engine/Camera/CameraManager.h"
 
 #include "engine/Components/Camera/CameraComponent.h"
 
 #include "engine/OldConsole/Console.h"
+#include "engine/renderer/ConstantBuffer.h"
+#include "engine/renderer/D3D12.h"
+#include "engine/renderer/IndexBuffer.h"
 
 const D3D12_INPUT_ELEMENT_DESC LineVertex::inputElements[] = {
 	{

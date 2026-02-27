@@ -5,10 +5,10 @@
 #include <format>
 #include <stdexcept>
 
-#include "Quaternion.h"
-
 #include "Mat4.h"
 
+// ReSharper disable once CppUnusedIncludeDirective
+#include "Quaternion.h"
 
 const Vec3 Vec3::zero(0.0f, 0.0f, 0.0f);
 const Vec3 Vec3::one(1.0f, 1.0f, 1.0f);
@@ -28,6 +28,12 @@ const Vec3 Vec3::min(
 	std::numeric_limits<float>::lowest(),
 	std::numeric_limits<float>::lowest()
 );
+
+Vec3::Vec3(const Vec4 vec4) {
+	x = vec4.x;
+	y = vec4.y;
+	z = vec4.z;
+}
 
 float Vec3::Length() const {
 	if (const float sqrLength = SqrLength(); sqrLength > 0.0f) {
@@ -114,7 +120,7 @@ Vec3 Vec3::Abs() {
 }
 
 Vec3 Vec3::TransformDirection(const Quaternion& rotation) const {
-	Mat4 rotationMat = Mat4::RotateQuaternion(rotation);
+	const Mat4 rotationMat = Mat4::RotateQuaternion(rotation);
 	return Mat4::Transform(*this, rotationMat);
 }
 

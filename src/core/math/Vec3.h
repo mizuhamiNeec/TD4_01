@@ -1,7 +1,8 @@
-﻿#pragma once
+#pragma once
 #include <cstdint>
 #include <string>
 
+struct Vec4;
 struct Quaternion;
 #include <core/math/Vec2.h>
 
@@ -22,69 +23,55 @@ struct Vec3 final {
 	static const Vec3 max;      ///< 最大値
 	static const Vec3 min;      ///< 最小値
 
-	/**
-	 * @brief デフォルトコンストラクタ
-	 */
+	/// @brief デフォルトコンストラクタ（ゼロベクトルで初期化）
 	constexpr Vec3() : Vec3(0.0f, 0.0f, 0.0f) {}
 
-	/**
-	 * @brief コンストラクタ
-	 * @param x X成分
-	 * @param y Y成分
-	 * @param z Z成分
-	 */
+	/// @brief 各成分を指定して初期化するコンストラクタ
+	/// @param x X成分
+	/// @param y Y成分
+	/// @param z Z成分
 	constexpr Vec3(const float x, const float y, const float z) : x(x),
 		y(y),
 		z(z) {}
 
-	/**
-	 * @brief スカラー値から初期化するコンストラクタ
-	 * @param scalar 全成分に設定する値
-	 */
+	/// @brief スカラー値から全成分を初期化するコンストラクタ
+	/// @param scalar スカラー値
 	explicit constexpr Vec3(const float scalar) : x(scalar),
 	                                              y(scalar),
 	                                              z(scalar) {}
 
-	/**
-	 * @brief Vec2から変換するコンストラクタ
-	 * @param vec2 2次元ベクトル（z成分は0に設定）
-	 */
+	/// @brief Vec2から変換するコンストラクタ
+	/// @param vec2 2次元ベクトル（z成分は0.0fに設定される）
 	constexpr Vec3(const Vec2 vec2) : x(vec2.x),
 	                                  y(vec2.y),
 	                                  z(0.0f) {}
 
+	/// @brief Vec4から変換するコンストラクタ
+	/// @param vec4 4次元ベクトル（w成分は無視される）
+	explicit Vec3(Vec4 vec4);
+
 	/* ---------------- 関数類 ---------------- */
-	/**
-	 * @brief ベクトルの長さを取得する
-	 * @return ベクトルの長さ
-	 */
+	/// @brief ベクトルの長さを取得する
+	/// @return ベクトルの長さ
 	float Length() const;
 
-	/**
-	 * @brief ベクトルの長さの2乗を取得する
-	 * @return ベクトルの長さの2乗
-	 */
+	/// @brief ベクトルの長さの二乗を取得する
+	/// @return ベクトルの長さの二乗
 	float SqrLength() const;
 
-	/**
-	 * @brief 他のベクトルとの距離を計算する
-	 * @param other 対象ベクトル
-	 * @return 2点間の距離
-	 */
+	/// @brief 他のベクトルとの距離を計算する
+	/// @param other 対象ベクトル
+	/// @return 距離の値
 	float Distance(const Vec3& other) const;
 
-	/**
-	 * @brief 内積を計算する
-	 * @param other 対象ベクトル
-	 * @return 内積の値
-	 */
+	/// @brief 他のベクトルとの内積を計算する
+	/// @param other 対象ベクトル
+	/// @return 内積の値
 	float Dot(const Vec3& other) const;
 
-	/**
-	 * @brief 外積を計算する
-	 * @param other 対象ベクトル
-	 * @return 外積ベクトル
-	 */
+	/// @brief 他のベクトルとの外積を計算する
+	/// @param other 対象ベクトル
+	/// @return 外積のベクトル
 	Vec3 Cross(const Vec3& other) const;
 
 	/**

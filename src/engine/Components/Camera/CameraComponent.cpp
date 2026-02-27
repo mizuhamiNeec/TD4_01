@@ -3,6 +3,8 @@
 #include <engine/Debug/DebugDraw.h>
 #include <engine/Entity/Entity.h>
 
+#include "engine/Properties.h"
+
 CameraComponent::~CameraComponent() = default;
 
 /// @brief コンポーネントがアタッチされたときに呼ばれます

@@ -283,7 +283,7 @@ namespace Unnamed {
 	AssetID AssetManager::FindOrCreateSlotByPath(
 		const std::string& path, const ASSET_TYPE type
 	) {
-		const auto normalized = NormalizePath(path);
+		const auto normalized = StrUtil::NormalizePath(path);
 		const auto it         = mPathToID.find(normalized);
 		if (it != mPathToID.end()) { return it->second; }
 

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <array>
 #include <d3d12.h>
 #include <dxgi1_6.h>
@@ -18,10 +18,11 @@ namespace Unnamed::Rhi {
 			const SwapChainDesc&                       desc
 		);
 
-		[[nodiscard]] uint32_t GetWidth() const override;
-		[[nodiscard]] uint32_t GetHeight() const override;
-		[[nodiscard]] uint32_t GetBufferCount() const override;
-		[[nodiscard]] uint32_t GetCurrentBackBufferIndex() const override;
+		[[nodiscard]] uint32_t       GetWidth() const override;
+		[[nodiscard]] uint32_t       GetHeight() const override;
+		[[nodiscard]] uint32_t       GetBufferCount() const override;
+		[[nodiscard]] uint32_t       GetCurrentBackBufferIndex() const override;
+		[[nodiscard]] TEXTURE_FORMAT GetFormat() const override;
 
 		void Resize(uint32_t width, uint32_t height) override;
 		void Present(bool vSync) override;

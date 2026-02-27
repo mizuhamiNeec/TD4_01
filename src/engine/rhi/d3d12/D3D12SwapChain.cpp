@@ -1,4 +1,4 @@
-﻿#include "D3D12SwapChain.h"
+#include "D3D12SwapChain.h"
 
 #include <string_view>
 
@@ -51,6 +51,12 @@ namespace Unnamed::Rhi {
 
 	uint32_t D3D12SwapChain::GetCurrentBackBufferIndex() const {
 		return mSwapChain->GetCurrentBackBufferIndex();
+	}
+
+	TEXTURE_FORMAT D3D12SwapChain::GetFormat() const {
+		DXGI_SWAP_CHAIN_DESC1 desc = {};
+		Throw(mSwapChain->GetDesc1(&desc));
+		return ToTextureFormat(desc.Format);
 	}
 
 	void D3D12SwapChain::Resize(const uint32_t width, const uint32_t height) {
@@ -110,7 +116,7 @@ namespace Unnamed::Rhi {
 		DXGI_SWAP_CHAIN_DESC1 scDesc;
 		scDesc.Width              = desc.width;
 		scDesc.Height             = desc.height;
-		scDesc.Format             = DXGI_FORMAT_R8G8B8A8_UNORM;
+		scDesc.Format             = ToDxgiFormat(desc.format);
 		scDesc.Stereo             = FALSE;
 		scDesc.SampleDesc.Count   = 1;
 		scDesc.SampleDesc.Quality = 0;
@@ -151,6 +157,9 @@ namespace Unnamed::Rhi {
 			mDevice->CreateRenderTargetView(
 				mBackBuffers[i].Get(), nullptr, GetRtvHandle(i)
 			);
+
+			auto name = std::format(L"BackBuffer{}", i);
+			mBackBuffers[i]->SetName(name.c_str());
 		}
 	}
 }

@@ -7,6 +7,8 @@
 #include <engine/Sprite/Sprite.h>
 #include <engine/Sprite/SpriteCommon.h>
 
+SpriteCommon::~SpriteCommon() {}
+
 /// @brief SpriteCommonを初期化します
 /// @param d3d12 D3D12クラスへのポインタ
 void SpriteCommon::Init(D3D12* d3d12) {

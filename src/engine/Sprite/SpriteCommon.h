@@ -9,6 +9,8 @@ class D3D12;
 /// @brief スプライト共通クラス
 class SpriteCommon {
 public:
+	~SpriteCommon();
+
 	void Init(D3D12* d3d12);
 	void Shutdown() const;
 	void CreateRootSignature();

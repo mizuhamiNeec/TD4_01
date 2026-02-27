@@ -2,9 +2,8 @@
 
 #include <memory>
 
-#include <engine/renderer/PipelineState.h>
-#include <engine/renderer/RootSignatureManager.h>
-
+class PipelineState;
+class RootSignatureManager;
 class CameraComponent;
 class D3D12;
 
@@ -25,8 +24,7 @@ public:
 	static CameraComponent* GetDefaultCamera();
 
 private:
-	CameraComponent*                      mDefaultCamera        = nullptr;
 	D3D12*                                mD3d12                = nullptr;
 	std::unique_ptr<RootSignatureManager> mRootSignatureManager = nullptr;
-	PipelineState                         mPipelineState;
+	std::unique_ptr<PipelineState>        mPipelineState        = nullptr;
 };

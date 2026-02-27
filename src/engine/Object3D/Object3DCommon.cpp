@@ -7,6 +7,7 @@
 #include "engine/Camera/CameraManager.h"
 
 #include "engine/renderer/D3D12.h"
+#include "engine/renderer/PipelineState.h"
 
 /// @brief Object3DCommonを初期化します
 /// @param d3d12 D3D12レンダラーへのポインタ
@@ -117,25 +118,25 @@ void Object3DCommon::CreateGraphicsPipeline() {
 	CreateRootSignature();
 
 	// パイプラインステートを作成
-	mPipelineState = PipelineState(
+	mPipelineState = std::make_unique<PipelineState>(
 		D3D12_CULL_MODE_BACK, D3D12_FILL_MODE_SOLID,
 		D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE
 	);
-	mPipelineState.SetInputLayout(Vertex::inputLayout);
-	mPipelineState.SetRootSignature(mRootSignatureManager->Get("Object3d"));
+	mPipelineState->SetInputLayout(Vertex::inputLayout);
+	mPipelineState->SetRootSignature(mRootSignatureManager->Get("Object3d"));
 
-	mPipelineState.SetDepthWriteMask(D3D12_DEPTH_WRITE_MASK_ALL);
-	mPipelineState.SetBlendMode(kBlendModeNormal);
+	mPipelineState->SetDepthWriteMask(D3D12_DEPTH_WRITE_MASK_ALL);
+	mPipelineState->SetBlendMode(kBlendModeNormal);
 
 	// シェーダーのファイルパスを設定
-	mPipelineState.SetVertexShader(L"./content/core/shaders/Object3d.VS.hlsl");
-	mPipelineState.SetPixelShader(L"./content/core/shaders/Object3d.PS.hlsl");
-	mPipelineState.Create(mD3d12->GetDevice());
+	mPipelineState->SetVertexShader(L"./content/core/shaders/Object3d.VS.hlsl");
+	mPipelineState->SetPixelShader(L"./content/core/shaders/Object3d.PS.hlsl");
+	mPipelineState->Create(mD3d12->GetDevice());
 }
 
 /// @brief Object3Dの描画を行います
 void Object3DCommon::Render() const {
-	mD3d12->GetCommandList()->SetPipelineState(mPipelineState.Get());
+	mD3d12->GetCommandList()->SetPipelineState(mPipelineState->Get());
 	mD3d12->GetCommandList()->SetGraphicsRootSignature(
 		mRootSignatureManager->Get("Object3d")
 	);

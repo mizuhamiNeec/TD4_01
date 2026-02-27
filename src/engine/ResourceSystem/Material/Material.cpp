@@ -3,6 +3,7 @@
 // 不可能だという点に目をつぶればよぉ～～～
 //-----------------------------------------------------------------------------
 
+#include <format>
 #include <map>
 #include <ranges>
 
@@ -16,7 +17,9 @@
 #include <engine/ResourceSystem/Shader/Shader.h>
 #include <engine/TextureManager/TexManager.h>
 
+#include "engine/renderer/D3D12.h"
 #include "engine/renderer/Structs.h"
+#include "engine/ResourceSystem/RootSignature/RootSignature2.h"
 
 /// @brief コンストラクタ
 /// @param name マテリアル名

@@ -5,8 +5,6 @@
 
 #include <wrl/client.h>
 
-#include "engine/ResourceSystem/RootSignature/RootSignature2.h"
-
 struct MatParam;
 
 class Texture;
@@ -67,6 +65,4 @@ private:
 
 	// 定数バッファ キーはシェーダーステージ_レジスタ番号
 	std::unordered_map<std::string, ID3D12Resource*> mConstantBuffers;
-
-	RootSignature2 mRootSignatureBuilder;
 };

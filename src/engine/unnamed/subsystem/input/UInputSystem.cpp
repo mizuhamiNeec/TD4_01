@@ -1,4 +1,4 @@
-﻿#include <pch.h>
+#include <pch.h>
 
 #include <ranges>
 
@@ -12,7 +12,7 @@
 #include "engine/unnamed/subsystem/console/concommand/UnnamedConCommand.h"
 
 namespace Unnamed {
-	static constexpr std::string_view kChannel = "InputSystem";
+	static constexpr std::string_view kChannel = "UInput";
 
 	namespace {
 		/// @brief 指定されたウィンドウが実際にアクティブかどうかを判定します
@@ -452,9 +452,9 @@ namespace Unnamed {
 		return it->second.bIsPressed;
 	}
 
-	/// @brief 指定したアクションが押された瞬間に true を返します
+	/// @brief 指定したアクションが押されている間 true を返します
 	/// @param action アクション名
-	/// @return 押された瞬間に true
+	/// @return 押されている間 true
 	bool UInputSystem::IsHeld(const std::string& action) const {
 		const auto it = mActionStates.find(action);
 		if (it == mActionStates.end()) { return false; }

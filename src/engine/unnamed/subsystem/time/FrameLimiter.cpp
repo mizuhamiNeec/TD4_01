@@ -1,4 +1,3 @@
-#include <engine/Properties.h>
 #include <engine/OldConsole/ConVarManager.h>
 #include <engine/unnamed/subsystem/time/FrameLimiter.h>
 #include <engine/unnamed/subsystem/time/GameTime.h>
@@ -6,6 +5,8 @@
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
 #include "engine/unnamed/subsystem/console/concommand/UnnamedConVar.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
+
+static constexpr std::string_view kChannel = "FrmLim";
 
 /// @brief コンストラクタ
 /// @param gameTime ゲームタイムクラスへのポインタ
@@ -17,12 +18,11 @@ FrameLimiter::FrameLimiter(GameTime* gameTime) :
 
 	if (fpsmax) {
 		SetTargetFPS(fpsmax->GetValue());
-		DevMsg(
-			"FrameLimiter",
-			"Initial target FPS set to {}\n",
-			fpsmax->GetValue()
-		);
-	} else { SetTargetFPS(0.0); }
+		DevMsg(kChannel, "Initial target FPS set to {}", fpsmax->GetValue());
+	} else {
+		// fps_maxが見つからない場合はデフォで無制限にする
+		SetTargetFPS(0.0);
+	}
 }
 
 /// @brief 目標FPSを設定します

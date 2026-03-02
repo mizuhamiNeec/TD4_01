@@ -26,6 +26,12 @@ namespace Unnamed::Render {
 	class RenderPassContext;
 	class RenderDevice;
 
+	struct SceneOutputView {
+		uint32_t                    textureId   = 0;
+		D3D12_CPU_DESCRIPTOR_HANDLE srvCpu      = {};
+		uint64_t                    srvRevision = 0;
+	};
+
 	class URenderer {
 	public:
 		URenderer() = default;
@@ -65,6 +71,10 @@ namespace Unnamed::Render {
 			return mSceneOutputTextureId;
 		}
 
+		[[nodiscard]] SceneOutputView GetSceneOutputView(
+			const RenderDevice& renderDevice
+		) const;
+
 	private:
 		/// @brief レンダリンググラフの構築
 		/// @param renderDevice 描画に使用するRenderDevice
@@ -78,6 +88,7 @@ namespace Unnamed::Render {
 		void BuildDrawBatches();
 
 		void CreateTriangleTestResources(Rhi::D3D12Device& dx);
+		void CreatePortalQuadResources(Rhi::D3D12Device& dx);
 		bool EnsureMeshResourceLoaded(
 			RenderDevice& renderDevice, Rhi::D3D12Device& dx,
 			AssetID       meshAssetId
@@ -138,14 +149,37 @@ namespace Unnamed::Render {
 		};
 
 		struct PortalPassRes {
-			FullscreenPassRes    maskPass     = {};
-			GraphicsPsoKey       scenePsoKey  = {};
-			ID3D12RootSignature* sceneRootSig = nullptr;
-			ID3D12PipelineState* scenePso     = nullptr;
-			uint32_t             stencilRef   = 1;
+			GeometryPassRes      maskPassGeom   = {};
+			GeometryPassRes      compositeGeom  = {};
+			GraphicsPsoKey       scenePsoKey    = {};
+			ID3D12RootSignature* sceneRootSig   = nullptr;
+			ID3D12PipelineState* scenePso       = nullptr;
+			uint32_t             stencilRefBase = 1;
 		};
 
-		static constexpr uint32_t kMaxDrawObjects = 1024; // とりあえず
+		struct ActivePortalView {
+			PortalPairInput pair              = {};
+			uint32_t        stencilRef        = 0;
+			uint32_t        maskObjectCbIndex = 0;
+		};
+
+		struct RecursivePortalView {
+			PortalPairInput pair                   = {};
+			Mat4            cameraWorld            = Mat4::identity;
+			uint32_t        frameCbIndex           = 0;
+			uint32_t        compositeObjectCbIndex = 0;
+			uint32_t        stencilRef             = 0;
+			bool            visibleFromPrevious    = false;
+		};
+
+		struct SpritePassRes {
+			GeometryPassRes geom = {};
+		};
+
+		static constexpr uint32_t kMaxDrawObjects       = 1024; // とりあえず
+		static constexpr uint32_t kMaxPortalViews       = 16;
+		static constexpr uint32_t kPortalRecursionDepth = 6;
+		static constexpr uint32_t kPortalDirections     = 2;
 
 		RenderGraph mGraph;
 
@@ -154,9 +188,11 @@ namespace Unnamed::Render {
 		ComputePassRes           mComputePass        = {};
 		GeometryPassRes          mGeometryPass       = {};
 		PortalPassRes            mPortalPass         = {};
+		SpritePassRes            mSpritePass         = {};
 		AdvancedRenderFoundation mAdvancedFoundation = {};
 
 		Rhi::UploadBuffer<Rhi::FrameConstants> mFrameCb;
+		Rhi::UploadBuffer<Rhi::FrameConstants> mPortalFrameCb;
 		Rhi::UploadBuffer<Rhi::ObjectConstants> mObjectCb;
 		Rhi::UploadBuffer<Rhi::MaterialConstants> mMaterialCb;
 		Rhi::UploadBuffer<Rhi::SkinningPaletteConstants> mSkinningCb;
@@ -168,17 +204,48 @@ namespace Unnamed::Render {
 		AssetID mPostFxChainAsset = kInvalidAssetID;
 		std::unordered_map<AssetID, MaterialBinding> mMaterialBindings;
 		std::vector<PostFxRuntimePass> mPostFxPasses;
+		std::vector<ScreenSpriteInput> mScreenSprites;
+		std::unordered_map<AssetID, uint32_t> mSpriteTextureIds;
+		uint32_t mSpriteFallbackTextureId = 0;
 
-		std::vector<MeshDrawItem> mDrawList;
-		std::vector<DrawBatch>    mBatches;
-		bool                      mPortalEnabled        = false;
-		uint32_t                  mSceneOutputTextureId = 0;
-		SceneRenderRequest        mSceneRenderRequest   = {};
-		uint32_t                  mSceneRenderWidth     = 0;
-		uint32_t                  mSceneRenderHeight    = 0;
+		std::vector<MeshDrawItem>     mMainDrawList;
+		std::vector<MeshDrawItem>     mPortalDrawList;
+		std::vector<DrawBatch>        mMainBatches;
+		std::vector<DrawBatch>        mPortalBatches;
+		bool                          mPortalEnabled = false;
+		std::vector<ActivePortalView> mActivePortalViews;
+		std::array<std::array<RecursivePortalView, kPortalRecursionDepth>,
+		           kPortalDirections>
+		mPortalRecursionViews = {};
+		std::array<std::array<uint32_t, kPortalRecursionDepth>,
+		           kPortalDirections>
+		mPortalRecursionColorIds = {};
+		std::array<std::array<uint32_t, kPortalRecursionDepth>,
+		           kPortalDirections>
+		mPortalRecursionDepthIds                                   = {};
+		uint32_t                  mSceneOutputTextureId            = 0;
+		uint32_t                  mSceneColorTextureId             = 0;
+		uint32_t                  mPostFxTextureAId                = 0;
+		uint32_t                  mPostFxTextureBId                = 0;
+		uint32_t                  mDepthTextureId                  = 0;
+		SceneRenderRequest        mSceneRenderRequest              = {};
+		uint32_t                  mSceneRenderWidth                = 0;
+		uint32_t                  mSceneRenderHeight               = 0;
+		bool                      mPresentSceneToSwapChain         = true;
+		bool                      mClearSwapChainWhenNotPresenting = false;
+		bool                      mHasExternalSceneRenderRequest   = false;
+		uint32_t                  mPendingSceneRenderWidth         = 0;
+		uint32_t                  mPendingSceneRenderHeight        = 0;
+		uint32_t                  mPendingSceneExtentStableFrames  = 0;
+		static constexpr uint32_t kSceneExtentConfirmFrames        = 2;
 		UiMainRenderCallback      mUiMainRenderCallback;
 		UiPlatformRenderCallback  mUiPlatformRenderCallback;
 
 		bool mGraphBuilt = false;
+
+		uint32_t EnsureSpriteTextureLoaded(
+			RenderDevice& renderDevice, AssetID textureAssetId
+		);
+		void EnsureSpriteFallbackTexture(RenderDevice& renderDevice);
 	};
 }

@@ -78,11 +78,30 @@ namespace Unnamed {
 	) {
 		UProfiler*       profiler = ServiceLocator::Get<UProfiler>();
 		std::scoped_lock lock(mMutex);
+		const std::string normalizedPath = StrUtil::NormalizePath(path);
+
+		if (policy == AssetLoadPolicy::UseCachedIfLoaded) {
+			const auto cachedIt = mPathToID.find(normalizedPath);
+			if (cachedIt != mPathToID.end()) {
+				const AssetID cachedId = cachedIt->second;
+				Node&         cached   = mNodes[cachedId];
+				if (
+					cached.meta.loaded &&
+					(!typeOpt.has_value() || cached.meta.type == *typeOpt ||
+					 cached.meta.type == ASSET_TYPE::UNKNOWN)
+				) {
+					if (profiler) {
+						profiler->AddSample("Asset.Load.CacheHit", 1.0f);
+					}
+					return cachedId;
+				}
+			}
+		}
 		auto             deduced = ASSET_TYPE::UNKNOWN;
 		if (!typeOpt.has_value()) {
 			// 型がわかんねぇので、ローダに読めるか確認させる
 			for (const auto& l : mLoaders) {
-				if (l->CanLoad(path, &deduced)) { break; }
+				if (l->CanLoad(normalizedPath, &deduced)) { break; }
 			}
 
 			Warning(
@@ -93,7 +112,7 @@ namespace Unnamed {
 		} else { deduced = *typeOpt; }
 
 		// 不明の場合はスロットだけ作成
-		const AssetID id = FindOrCreateSlotByPath(path, deduced);
+		const AssetID id = FindOrCreateSlotByPath(normalizedPath, deduced);
 		Node&         n  = mNodes[id];
 		if (
 			policy == AssetLoadPolicy::UseCachedIfLoaded &&
@@ -111,7 +130,7 @@ namespace Unnamed {
 			if (!l->CanLoad(path, &t)) { continue; }
 			if (typeOpt.has_value() && t != deduced) { continue; }
 
-			LoadResult r     = l->Load(path);
+			LoadResult r     = l->Load(normalizedPath);
 			n.payload        = std::move(r.payload);
 			n.meta.type      = deduced == ASSET_TYPE::UNKNOWN ? t : deduced;
 			n.meta.loaded    = true;
@@ -128,7 +147,7 @@ namespace Unnamed {
 
 			SpecialMsg(
 				LogLevel::Success, kChannel,
-				"Loaded asset from file: {} (ID: {})", path, id
+				"Loaded asset from file: {} (ID: {})", normalizedPath, id
 			);
 
 			return id;
@@ -396,7 +415,8 @@ namespace Unnamed {
 
 	AssetID AssetManager::FindByPath(const std::string_view path) const {
 		std::scoped_lock lock(mMutex);
-		const auto       it = mPathToID.find(std::string(path));
+		const std::string normalized = StrUtil::NormalizePath(std::string(path));
+		const auto        it = mPathToID.find(normalized);
 		return it != mPathToID.end() ? it->second : kInvalidAssetID;
 	}
 

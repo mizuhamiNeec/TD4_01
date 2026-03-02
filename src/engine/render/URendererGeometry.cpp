@@ -72,8 +72,8 @@ namespace Unnamed::Render {
 					)
 				);
 
-				void*             mapped = nullptr;
-				const D3D12_RANGE range  = {0, 0};
+				void*                 mapped = nullptr;
+				constexpr D3D12_RANGE range  = {0, 0};
 				Rhi::Throw(outUpload->Map(0, &range, &mapped));
 				memcpy(mapped, srcData, byteSize);
 				outUpload->Unmap(0, nullptr);
@@ -99,6 +99,11 @@ namespace Unnamed::Render {
 			float u,   v;
 			float bi0, bi1, bi2, bi3;
 			float bw0, bw1, bw2, bw3;
+		};
+
+		struct PortalMaskVertex {
+			float px, py, pz;
+			float u,  v;
 		};
 
 		AABB MakeAabbFromPositions(const std::vector<VertexGeom>& vertices) {
@@ -165,6 +170,67 @@ namespace Unnamed::Render {
 
 		mGeometryPass.vb->SetName(L"TriangleTestVB_Default");
 		mGeometryPass.ib->SetName(L"TriangleTestIB_Default");
+	}
+
+	void URenderer::CreatePortalQuadResources(Rhi::D3D12Device& dx) {
+		auto& up = dx.GetUploadContext();
+		up.Begin();
+
+		auto* device  = dx.GetDevice();
+		auto* cmdList = up.GetCommandList();
+
+		constexpr PortalMaskVertex verts[4] = {
+			{-1.0f, -1.0f, 0.0f, 0.0f, 1.0f},
+			{-1.0f, 1.0f, 0.0f, 0.0f, 0.0f},
+			{1.0f, 1.0f, 0.0f, 1.0f, 0.0f},
+			{1.0f, -1.0f, 0.0f, 1.0f, 1.0f},
+		};
+		constexpr uint16_t indices[6] = {0, 1, 2, 0, 2, 3};
+
+		Microsoft::WRL::ComPtr<ID3D12Resource> vbUpload;
+		Microsoft::WRL::ComPtr<ID3D12Resource> ibUpload;
+
+		CreateDefaultBufferWithUpload(
+			device,
+			cmdList,
+			verts,
+			sizeof(verts),
+			mPortalPass.maskPassGeom.vb,
+			vbUpload,
+			D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER
+		);
+
+		CreateDefaultBufferWithUpload(
+			device,
+			cmdList,
+			indices,
+			sizeof(indices),
+			mPortalPass.maskPassGeom.ib,
+			ibUpload,
+			D3D12_RESOURCE_STATE_INDEX_BUFFER
+		);
+
+		up.EndAndSubmitAndWait();
+
+		mPortalPass.maskPassGeom.vbv.BufferLocation =
+			mPortalPass.maskPassGeom.vb->GetGPUVirtualAddress();
+		mPortalPass.maskPassGeom.vbv.SizeInBytes   = sizeof(verts);
+		mPortalPass.maskPassGeom.vbv.StrideInBytes = sizeof(PortalMaskVertex);
+
+		mPortalPass.maskPassGeom.ibv.BufferLocation =
+			mPortalPass.maskPassGeom.ib->GetGPUVirtualAddress();
+		mPortalPass.maskPassGeom.ibv.SizeInBytes = sizeof(indices);
+		mPortalPass.maskPassGeom.ibv.Format      = DXGI_FORMAT_R16_UINT;
+		mPortalPass.maskPassGeom.indexCount      = 6;
+
+		mPortalPass.maskPassGeom.vb->SetName(L"PortalMaskQuadVB_Default");
+		mPortalPass.maskPassGeom.ib->SetName(L"PortalMaskQuadIB_Default");
+		mPortalPass.compositeGeom.vb         = mPortalPass.maskPassGeom.vb;
+		mPortalPass.compositeGeom.ib         = mPortalPass.maskPassGeom.ib;
+		mPortalPass.compositeGeom.vbv        = mPortalPass.maskPassGeom.vbv;
+		mPortalPass.compositeGeom.ibv        = mPortalPass.maskPassGeom.ibv;
+		mPortalPass.compositeGeom.indexCount = mPortalPass.maskPassGeom.
+			indexCount;
 	}
 
 	bool URenderer::EnsureMeshResourceLoaded(
@@ -299,6 +365,7 @@ namespace Unnamed::Render {
 
 	void URenderer::LoadMaterialResources(
 		RenderDevice& renderDevice, Rhi::D3D12Device&
+
 	
 	) {
 		auto& assetManager = renderDevice.GetAssetManager();
@@ -411,5 +478,51 @@ namespace Unnamed::Render {
 		mMaterialBindings.clear();
 		mMaterialBindings.emplace(materialInstanceId, std::move(binding));
 		mDefaultMaterialInstance = materialInstanceId;
+	}
+
+	uint32_t URenderer::EnsureSpriteTextureLoaded(
+		RenderDevice& renderDevice, const AssetID textureAssetId
+	) {
+		if (textureAssetId == kInvalidAssetID) {
+			EnsureSpriteFallbackTexture(renderDevice);
+			return mSpriteFallbackTextureId;
+		}
+
+		if (const auto it = mSpriteTextureIds.find(textureAssetId);
+			it != mSpriteTextureIds.end()) {
+			return it->second;
+		}
+
+		auto& assetManager = renderDevice.GetAssetManager();
+		auto& registry     = renderDevice.GetRegistry();
+		const auto* tex = assetManager.Get<TextureAssetData>(textureAssetId);
+		if (!tex) {
+			EnsureSpriteFallbackTexture(renderDevice);
+			return mSpriteFallbackTextureId;
+		}
+
+		const uint32_t textureId = registry.CreateTexture2DFromAsset(
+			*tex, "SpriteOverlayTex"
+		);
+		mSpriteTextureIds.emplace(textureAssetId, textureId);
+		return textureId;
+	}
+
+	void URenderer::EnsureSpriteFallbackTexture(RenderDevice& renderDevice) {
+		if (mSpriteFallbackTextureId != 0) { return; }
+
+		TextureAssetData white = {};
+		white.width            = 1;
+		white.height           = 1;
+		white.isSRGB           = true;
+		TextureMip mip         = {};
+		mip.width              = 1;
+		mip.height             = 1;
+		mip.rowPitch           = 4;
+		mip.bytes              = {255, 255, 255, 255};
+		white.mips.emplace_back(std::move(mip));
+		mSpriteFallbackTextureId = renderDevice.GetRegistry().CreateTexture2DFromAsset(
+			white, "SpriteOverlayFallbackWhite"
+		);
 	}
 }

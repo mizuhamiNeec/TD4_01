@@ -75,15 +75,25 @@ namespace Unnamed::Render {
 		desc.VS = {vsDxil.bytes.data(), vsDxil.bytes.size()};
 		desc.PS = {psDxil.bytes.data(), psDxil.bytes.size()};
 
-		desc.BlendState      = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-		desc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+		desc.BlendState               = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+		desc.BlendState.RenderTarget[0].BlendEnable = key.blendEnable;
+		desc.BlendState.RenderTarget[0].SrcBlend = key.srcBlend;
+		desc.BlendState.RenderTarget[0].DestBlend = key.destBlend;
+		desc.BlendState.RenderTarget[0].BlendOp = key.blendOp;
+		desc.BlendState.RenderTarget[0].SrcBlendAlpha = key.srcBlendAlpha;
+		desc.BlendState.RenderTarget[0].DestBlendAlpha = key.destBlendAlpha;
+		desc.BlendState.RenderTarget[0].BlendOpAlpha = key.blendOpAlpha;
+		desc.RasterizerState          = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+		desc.RasterizerState.CullMode = key.cullMode;
 
 		desc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 
 		desc.SampleMask = UINT_MAX;
 
-		desc.NumRenderTargets = 1;
-		desc.RTVFormats[0]    = key.rtvFormat;
+		desc.NumRenderTargets = key.numRenderTargets;
+		desc.RTVFormats[0]    = key.numRenderTargets > 0 ?
+			                        key.rtvFormat :
+			                        DXGI_FORMAT_UNKNOWN;
 		desc.SampleDesc.Count = 1;
 
 		if (key.depthEnable || key.stencilEnable) {

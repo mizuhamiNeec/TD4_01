@@ -19,7 +19,8 @@ namespace Unnamed::Render {
 		ID3D12RootSignature*                 rootSignature = nullptr;
 		std::optional<Rhi::VertexLayoutDesc> vertexLayout  = std::nullopt;
 
-		DXGI_FORMAT rtvFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+		uint8_t     numRenderTargets = 1;
+		DXGI_FORMAT rtvFormat        = DXGI_FORMAT_R8G8B8A8_UNORM;
 
 		bool                  depthEnable = false;
 		DXGI_FORMAT           dsvFormat   = DXGI_FORMAT_UNKNOWN;
@@ -39,12 +40,21 @@ namespace Unnamed::Render {
 		D3D12_STENCIL_OP      stencilBackPassOp = D3D12_STENCIL_OP_KEEP;
 		D3D12_COMPARISON_FUNC stencilBackFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 
-		uint32_t stencilRef = 0;
+		uint32_t        stencilRef = 0;
+		D3D12_CULL_MODE cullMode   = D3D12_CULL_MODE_BACK;
+		bool            blendEnable = false;
+		D3D12_BLEND     srcBlend = D3D12_BLEND_ONE;
+		D3D12_BLEND     destBlend = D3D12_BLEND_ZERO;
+		D3D12_BLEND_OP  blendOp = D3D12_BLEND_OP_ADD;
+		D3D12_BLEND     srcBlendAlpha = D3D12_BLEND_ONE;
+		D3D12_BLEND     destBlendAlpha = D3D12_BLEND_ZERO;
+		D3D12_BLEND_OP  blendOpAlpha = D3D12_BLEND_OP_ADD;
 
 		bool operator==(const GraphicsPsoKey& rhs) const {
 			return vs == rhs.vs &&
 			       ps == rhs.ps &&
 			       rootSignature == rhs.rootSignature &&
+			       numRenderTargets == rhs.numRenderTargets &&
 			       rtvFormat == rhs.rtvFormat &&
 			       depthEnable == rhs.depthEnable &&
 			       dsvFormat == rhs.dsvFormat &&
@@ -61,6 +71,14 @@ namespace Unnamed::Render {
 			       stencilBackPassOp == rhs.stencilBackPassOp &&
 			       stencilBackFunc == rhs.stencilBackFunc &&
 			       stencilRef == rhs.stencilRef &&
+			       cullMode == rhs.cullMode &&
+			       blendEnable == rhs.blendEnable &&
+			       srcBlend == rhs.srcBlend &&
+			       destBlend == rhs.destBlend &&
+			       blendOp == rhs.blendOp &&
+			       srcBlendAlpha == rhs.srcBlendAlpha &&
+			       destBlendAlpha == rhs.destBlendAlpha &&
+			       blendOpAlpha == rhs.blendOpAlpha &&
 			       vertexLayout == rhs.vertexLayout;
 		}
 	};
@@ -107,6 +125,7 @@ namespace Unnamed::Render {
 			HashCombine(seed, ShaderKeyHash{}(k.vs));
 			HashCombine(seed, ShaderKeyHash{}(k.ps));
 			HashCombine(seed, std::hash<void*>{}(k.rootSignature));
+			HashCombine(seed, std::hash<uint8_t>{}(k.numRenderTargets));
 			HashCombine(seed, std::hash<int>{}(k.rtvFormat));
 
 			HashCombine(seed, std::hash<bool>{}(k.depthEnable));
@@ -124,6 +143,14 @@ namespace Unnamed::Render {
 			HashCombine(seed, std::hash<int>{}(k.stencilBackPassOp));
 			HashCombine(seed, std::hash<int>{}(k.stencilBackFunc));
 			HashCombine(seed, std::hash<uint32_t>{}(k.stencilRef));
+			HashCombine(seed, std::hash<int>{}(k.cullMode));
+			HashCombine(seed, std::hash<bool>{}(k.blendEnable));
+			HashCombine(seed, std::hash<int>{}(k.srcBlend));
+			HashCombine(seed, std::hash<int>{}(k.destBlend));
+			HashCombine(seed, std::hash<int>{}(k.blendOp));
+			HashCombine(seed, std::hash<int>{}(k.srcBlendAlpha));
+			HashCombine(seed, std::hash<int>{}(k.destBlendAlpha));
+			HashCombine(seed, std::hash<int>{}(k.blendOpAlpha));
 
 			HashCombine(seed, std::hash<bool>{}(k.vertexLayout.has_value()));
 			if (k.vertexLayout.has_value()) {
@@ -141,6 +168,7 @@ namespace Unnamed::Render {
 			if (a.vs != b.vs) { return false; }
 			if (a.ps != b.ps) { return false; }
 			if (a.rootSignature != b.rootSignature) { return false; }
+			if (a.numRenderTargets != b.numRenderTargets) { return false; }
 			if (a.rtvFormat != b.rtvFormat) { return false; }
 			if (a.depthEnable != b.depthEnable) { return false; }
 			if (a.dsvFormat != b.dsvFormat) { return false; }
@@ -161,6 +189,14 @@ namespace Unnamed::Render {
 			if (a.stencilBackPassOp != b.stencilBackPassOp) { return false; }
 			if (a.stencilBackFunc != b.stencilBackFunc) { return false; }
 			if (a.stencilRef != b.stencilRef) { return false; }
+			if (a.cullMode != b.cullMode) { return false; }
+			if (a.blendEnable != b.blendEnable) { return false; }
+			if (a.srcBlend != b.srcBlend) { return false; }
+			if (a.destBlend != b.destBlend) { return false; }
+			if (a.blendOp != b.blendOp) { return false; }
+			if (a.srcBlendAlpha != b.srcBlendAlpha) { return false; }
+			if (a.destBlendAlpha != b.destBlendAlpha) { return false; }
+			if (a.blendOpAlpha != b.blendOpAlpha) { return false; }
 			if (a.vertexLayout.has_value() != b.vertexLayout.has_value()) {
 				return false;
 			}

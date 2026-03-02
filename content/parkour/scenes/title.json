@@ -1,0 +1,330 @@
+{
+  "version": 1,
+  "folders": [
+    "Gameplay",
+    "Gameplay/World",
+    "Gameplay/Player",
+    "Gameplay/Controllers",
+    "Gameplay/Effects"
+  ],
+  "entities": [
+    {
+      "name": "World",
+      "guid": 1001,
+      "folderPath": "Gameplay/World",
+      "isEditorOnly": false,
+      "active": true,
+      "visible": true,
+      "components": [
+        {
+          "type": "engine.Transform",
+          "guid": 2001,
+          "active": true,
+          "data": {
+            "position": [0.0, 0.0, 0.0],
+            "rotation": [0.0, 0.0, 0.0, 1.0],
+            "scale": [1.0, 1.0, 1.0],
+            "parentEntityGuid": 0
+          }
+        },
+        {
+          "type": "engine.StaticMeshRenderer",
+          "guid": 2002,
+          "active": true,
+          "data": {
+            "meshPath": "./content/parkour/models/map/sp_city.obj",
+            "materialInstancePath": ""
+          }
+        },
+        {
+          "type": "parkour.StaticMeshCollider",
+          "guid": 2003,
+          "active": true,
+          "data": {
+            "enabled": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "Fan",
+      "guid": 1010,
+      "folderPath": "Gameplay/World",
+      "isEditorOnly": false,
+      "active": true,
+      "visible": true,
+      "components": [
+        {
+          "type": "engine.Transform",
+          "guid": 2010,
+          "active": true,
+          "data": {
+            "position": [0.0, -16.0, 0.0],
+            "rotation": [0.0, 0.0, 0.0, 1.0],
+            "scale": [1.0, 1.0, 1.0],
+            "parentEntityGuid": 0
+          }
+        },
+        {
+          "type": "engine.StaticMeshRenderer",
+          "guid": 2011,
+          "active": true,
+          "data": {
+            "meshPath": "./content/core/models/fan.obj",
+            "materialInstancePath": ""
+          }
+        },
+        {
+          "type": "parkour.Rotate",
+          "guid": 2012,
+          "active": true,
+          "data": {
+            "rotationRate": [0.0, 90.0, 0.0],
+            "enabled": true
+          }
+        },
+        {
+          "type": "parkour.OscillateTransform",
+          "guid": 2013,
+          "active": true,
+          "data": {
+            "axis": [1.0, 0.0, 0.0],
+            "amplitude": 20.0,
+            "frequency": 1.0,
+            "phaseOffset": 0.0
+          }
+        }
+      ]
+    },
+    {
+      "name": "Player",
+      "guid": 1100,
+      "folderPath": "Gameplay/Player",
+      "isEditorOnly": false,
+      "active": true,
+      "visible": true,
+      "components": [
+        {
+          "type": "engine.Transform",
+          "guid": 2100,
+          "active": true,
+          "data": {
+            "position": [0.0, 2.0, 0.0],
+            "rotation": [0.0, 0.0, 0.0, 1.0],
+            "scale": [1.0, 1.0, 1.0],
+            "parentEntityGuid": 0
+          }
+        },
+        {
+          "type": "parkour.Movement",
+          "guid": 2101,
+          "active": true,
+          "data": {
+            "widthHu": 32.0,
+            "heightHu": 72.0,
+            "crouchHeightHu": 48.0,
+            "moveSpeedHu": 320.0,
+            "jumpVelocityHu": 400.0,
+            "gravityHu": 800.0,
+            "respawnPosition": [0.0, 2.0, 0.0],
+            "lookSourceEntityGuid": 1101
+          }
+        },
+        {
+          "type": "parkour.MovementWindEmitter",
+          "guid": 2102,
+          "active": true,
+          "data": {
+            "movementEntityGuid": 1100,
+            "speedThresholdHu": 80.0,
+            "fullEmissionSpeedHu": 420.0,
+            "spawnRateScaleMin": 0.15,
+            "spawnRateScaleMax": 1.0
+          }
+        },
+        {
+          "type": "parkour.ParticleEmitter",
+          "guid": 2103,
+          "active": true,
+          "data": {
+            "texturePath": "./content/core/textures/circle.png",
+            "maxParticles": 128,
+            "emissionMode": 0,
+            "spawnRate": 96.0,
+            "burstCount": 24,
+            "lifetimeMinSec": 0.1,
+            "lifetimeMaxSec": 0.25,
+            "startSize": [0.18, 0.18],
+            "endSize": [0.03, 0.03],
+            "startColor": [0.85, 0.95, 1.0, 0.2],
+            "endColor": [0.85, 0.95, 1.0, 0.0],
+            "velocityMinLocal": [-0.1, -0.03, -0.8],
+            "velocityMaxLocal": [0.1, 0.03, -0.35],
+            "accelerationWorld": [0.0, 0.0, 0.0],
+            "spawnBoxExtents": [0.08, 0.08, 0.08],
+            "loop": true,
+            "playOnStart": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "CameraRoot",
+      "guid": 1101,
+      "folderPath": "Gameplay/Player",
+      "isEditorOnly": false,
+      "active": true,
+      "visible": true,
+      "components": [
+        {
+          "type": "engine.Transform",
+          "guid": 2110,
+          "active": true,
+          "data": {
+            "position": [0.0, 1.7, 0.0],
+            "rotation": [0.0, 0.0, 0.0, 1.0],
+            "scale": [1.0, 1.0, 1.0],
+            "parentEntityGuid": 1100
+          }
+        },
+        {
+          "type": "parkour.CameraRotator",
+          "guid": 2111,
+          "active": true,
+          "data": {
+            "pitchDegrees": 0.0,
+            "yawDegrees": 0.0,
+            "sensitivity": 0.15
+          }
+        }
+      ]
+    },
+    {
+      "name": "Camera",
+      "guid": 1103,
+      "folderPath": "Gameplay/Player",
+      "isEditorOnly": false,
+      "active": true,
+      "visible": true,
+      "components": [
+        {
+          "type": "engine.Transform",
+          "guid": 2130,
+          "active": true,
+          "data": {
+            "position": [0.0, 0.0, 0.1016],
+            "rotation": [0.0, 0.0, 0.0, 1.0],
+            "scale": [1.0, 1.0, 1.0],
+            "parentEntityGuid": 1101
+          }
+        },
+        {
+          "type": "gameplay.GameplayCamera",
+          "guid": 2131,
+          "active": true,
+          "data": {
+            "fovYDegrees": 90.0,
+            "nearZ": 0.01,
+            "farZ": 10000.0,
+            "cameraActive": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "TitleController",
+      "guid": 1400,
+      "folderPath": "Gameplay/Controllers",
+      "isEditorOnly": false,
+      "active": true,
+      "visible": false,
+      "components": [
+        {
+          "type": "engine.Transform",
+          "guid": 2400,
+          "active": true,
+          "data": {
+            "position": [0.0, 0.0, 0.0],
+            "rotation": [0.0, 0.0, 0.0, 1.0],
+            "scale": [1.0, 1.0, 1.0],
+            "parentEntityGuid": 0
+          }
+        },
+        {
+          "type": "parkour.TitleFlow",
+          "guid": 2401,
+          "active": true,
+          "data": {
+            "playerEntityGuid": 1100,
+            "cameraRootEntityGuid": 1101,
+            "replayPath": "./content/parkour/replay/title_demo.json",
+            "loop": true,
+            "startAction": "jump",
+            "targetScene": "Game",
+            "logoTexturePath": "./content/parkour/textures/title_logo.png",
+            "promptTexturePath": "./content/parkour/textures/press_space_start.png",
+            "logoAnchorNormalized": [0.5, 0.32],
+            "promptAnchorNormalized": [0.5, 0.82],
+            "logoSizePx": [1400.0, 320.0],
+            "promptSizePx": [1200.0, 140.0],
+            "promptBlinkSpeed": 4.0
+          }
+        },
+        {
+          "type": "parkour.CursorMode",
+          "guid": 2402,
+          "active": true,
+          "data": {
+            "lockCursor": false,
+            "showCursor": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "DebugExplosionEmitter",
+      "guid": 1500,
+      "folderPath": "Gameplay/Effects",
+      "isEditorOnly": false,
+      "active": true,
+      "visible": false,
+      "components": [
+        {
+          "type": "engine.Transform",
+          "guid": 2500,
+          "active": true,
+          "data": {
+            "position": [0.0, 0.0, 0.0],
+            "rotation": [0.0, 0.0, 0.0, 1.0],
+            "scale": [1.0, 1.0, 1.0],
+            "parentEntityGuid": 0
+          }
+        },
+        {
+          "type": "parkour.ParticleEmitter",
+          "guid": 2501,
+          "active": true,
+          "data": {
+            "texturePath": "./content/core/textures/smoke.png",
+            "maxParticles": 128,
+            "emissionMode": 1,
+            "spawnRate": 0.0,
+            "burstCount": 32,
+            "lifetimeMinSec": 0.35,
+            "lifetimeMaxSec": 0.8,
+            "startSize": [0.6, 0.6],
+            "endSize": [1.8, 1.8],
+            "startColor": [0.78, 0.29, 0.05, 1.0],
+            "endColor": [0.04, 0.04, 0.05, 0.0],
+            "velocityMinLocal": [-1.0, -1.0, -1.0],
+            "velocityMaxLocal": [1.0, 1.0, 1.0],
+            "accelerationWorld": [0.0, 0.0, 0.0],
+            "spawnBoxExtents": [0.05, 0.05, 0.05],
+            "loop": false,
+            "playOnStart": false
+          }
+        }
+      ]
+    }
+  ]
+}

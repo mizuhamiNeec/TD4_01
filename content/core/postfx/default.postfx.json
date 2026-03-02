@@ -1,13 +1,13 @@
 {
-  "name": "default_postfx",
-  "passes": [
-    {
-      "name": "Vignette",
-      "enabled": true,
-      "shader": "../shaders/programs/postfx_vignette.shader.json",
-      "scalars": {
-        "Intensity": 1.0
-      }
-    }
-  ]
+	"name": "default_postfx",
+	"passes": [
+		{
+			"name": "Vignette",
+			"enabled": true,
+			"shader": "../shaders/programs/postfx_vignette.shader.json",
+			"scalars": {
+				"Intensity": 1.0
+			}
+		}
+	]
 }

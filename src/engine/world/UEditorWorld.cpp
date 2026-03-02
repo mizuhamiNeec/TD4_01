@@ -1,13 +1,45 @@
 #include "UEditorWorld.h"
 
+#include <algorithm>
+#include <chrono>
+
 #include "engine/render/frame/RenderFrameInputs.h"
 #include "engine/scene/USceneSerializer.h"
 #include "engine/unnamed/framework/components/EditorCameraComponent.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/framework/entity/UEntity.h"
+#include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/world/UGameWorld.h"
 
 namespace Unnamed {
+	static constexpr std::string_view kChannel = "UEditorWorld";
+
+	namespace {
+		float ResolveEditorCameraAspect(
+			const Render::SceneRenderRequest& request
+		) {
+			switch (request.mode) {
+				case Render::SCENE_RENDER_MODE::FIXED_ASPECT_16X9
+				: return 16.0f / 9.0f;
+				case Render::SCENE_RENDER_MODE::HD_720P
+				: return 1280.0f / 720.0f;
+				case Render::SCENE_RENDER_MODE::FHD_1080P
+				: return 1920.0f / 1080.0f;
+				case Render::SCENE_RENDER_MODE::FIT_VIEWPORT:
+				default: {
+					const uint32_t width = std::max(
+						1u, request.viewportPanelWidth
+					);
+					const uint32_t height = std::max(
+						1u, request.viewportPanelHeight
+					);
+					return static_cast<float>(width) / static_cast<float>(
+						       height);
+				}
+			}
+		}
+	}
+
 	void UEditorWorld::Initialize() {
 		UWorld::Initialize();
 
@@ -16,7 +48,10 @@ namespace Unnamed {
 				"__EditorCameraEntity", mGuidGenerator.Alloc(), true
 			);
 			auto* transform = mEditorEntity->AddComponent<TransformComponent>();
-			transform->SetPosition(Vec3(0.0f, 1.0f, -3.0f));
+			transform->SetPosition(Vec3(0.0f, 5.0f, -3.0f));
+			transform->SetRotation(
+				Quaternion::EulerDegrees(Vec3::right * 15.0f)
+			);
 			mEditorEntity->AddComponent<EditorCameraComponent>();
 		}
 	}
@@ -37,17 +72,41 @@ namespace Unnamed {
 	void UEditorWorld::StartPlayInEditor() {
 		if (mPlayWorld || !mScene) { return; }
 
-		auto playWorld = std::make_unique<UGameWorld>();
+		const auto totalStart     = std::chrono::steady_clock::now();
+		auto       playWorld      = std::make_unique<UGameWorld>();
+		const auto worldInitStart = std::chrono::steady_clock::now();
 		playWorld->Initialize();
+		const auto worldInitEnd = std::chrono::steady_clock::now();
 
 		auto          playScene = std::make_unique<UScene>();
 		GuidGenerator cloneGuid;
+		const auto    cloneStart = std::chrono::steady_clock::now();
 		if (!USceneSerializer::CloneScene(*mScene, *playScene, cloneGuid)) {
 			return;
 		}
+		const auto cloneEnd = std::chrono::steady_clock::now();
 
+		const auto setSceneStart = std::chrono::steady_clock::now();
 		playWorld->SetScene(std::move(playScene));
-		mPlayWorld = std::move(playWorld);
+		const auto setSceneEnd = std::chrono::steady_clock::now();
+		mPlayWorld             = std::move(playWorld);
+
+		DevMsg(
+			kChannel,
+			"StartPlayInEditor timing: worldInit={}ms clone={}ms setScene={}ms total={}ms",
+			std::chrono::duration_cast<std::chrono::milliseconds>(
+				worldInitEnd - worldInitStart
+			).count(),
+			std::chrono::duration_cast<std::chrono::milliseconds>(
+				cloneEnd - cloneStart
+			).count(),
+			std::chrono::duration_cast<std::chrono::milliseconds>(
+				setSceneEnd - setSceneStart
+			).count(),
+			std::chrono::duration_cast<std::chrono::milliseconds>(
+				setSceneEnd - totalStart
+			).count()
+		);
 	}
 
 	void UEditorWorld::StopPlayInEditor() {
@@ -67,6 +126,7 @@ namespace Unnamed {
 			);
 			return;
 		}
+		UpdateEditorCameraAspectIfNeeded(inputs.sceneRenderRequest);
 		UWorld::FillRenderFrameInputs(inputs, frameContext, assetManager);
 
 		if (!inputs.camera.valid && mEditorEntity && mEditorEntity->
@@ -74,34 +134,47 @@ namespace Unnamed {
 			if (
 				const auto* camera = mEditorEntity->GetComponent<
 					EditorCameraComponent>(); camera && camera->IsActive()
-			) {
-				float aspect = 16.0f / 9.0f;
-				switch (inputs.sceneRenderRequest.mode) {
-					case Render::SCENE_RENDER_MODE::FIXED_ASPECT_16X9
-					: aspect = 16.0f / 9.0f;
-						break;
-					case Render::SCENE_RENDER_MODE::HD_720P
-					: aspect = 1280.0f / 720.0f;
-						break;
-					case Render::SCENE_RENDER_MODE::FHD_1080P
-					: aspect = 1920.0f / 1080.0f;
-						break;
-					default: {
-						const auto width = inputs.sceneRenderRequest.
-						                          viewportPanelWidth;
-						const auto height = inputs.sceneRenderRequest.
-						                           viewportPanelHeight;
-						if (width > 0 && height > 0) {
-							aspect =
-								static_cast<float>(width) / static_cast<float>(
-									height);
-						}
-						break;
-					}
-				}
-				camera->BuildCameraInput(aspect, inputs.camera);
-			}
+			) { camera->BuildCameraInput(inputs.camera); }
 		}
+	}
+
+	bool UEditorWorld::IsGameSimulationEnabled() const noexcept {
+		return false;
+	}
+
+	void UEditorWorld::UpdateEditorCameraAspectIfNeeded(
+		const Render::SceneRenderRequest& request
+	) {
+		if (!mEditorEntity || !mEditorEntity->IsActive()) { return; }
+
+		auto* camera = mEditorEntity->GetComponent<EditorCameraComponent>();
+		if (!camera || !camera->IsActive()) { return; }
+
+		bool shouldUpdate = false;
+		switch (request.mode) {
+			case Render::SCENE_RENDER_MODE::FIT_VIEWPORT: {
+				shouldUpdate =
+					request.mode != mLastAspectMode ||
+					request.viewportPanelWidth != mLastAspectViewportWidth ||
+					request.viewportPanelHeight != mLastAspectViewportHeight;
+				break;
+			}
+			case Render::SCENE_RENDER_MODE::FIXED_ASPECT_16X9:
+			case Render::SCENE_RENDER_MODE::HD_720P:
+			case Render::SCENE_RENDER_MODE::FHD_1080P: {
+				shouldUpdate = request.mode != mLastAspectMode;
+				break;
+			}
+			default: break;
+		}
+
+		if (shouldUpdate) {
+			camera->SetAspectRatio(ResolveEditorCameraAspect(request));
+		}
+
+		mLastAspectMode           = request.mode;
+		mLastAspectViewportWidth  = request.viewportPanelWidth;
+		mLastAspectViewportHeight = request.viewportPanelHeight;
 	}
 
 	UWorld* UEditorWorld::GetRuntimeSceneWorld() {
@@ -110,5 +183,36 @@ namespace Unnamed {
 
 	const UWorld* UEditorWorld::GetRuntimeSceneWorld() const {
 		return mPlayWorld ? static_cast<const UWorld*>(mPlayWorld.get()) : this;
+	}
+
+	UScene* UEditorWorld::GetActiveScene() {
+		UWorld* runtimeWorld = GetRuntimeSceneWorld();
+		return runtimeWorld ? &runtimeWorld->GetScene() : nullptr;
+	}
+
+	const UScene* UEditorWorld::GetActiveScene() const {
+		const UWorld* runtimeWorld = GetRuntimeSceneWorld();
+		return runtimeWorld ? &runtimeWorld->GetScene() : nullptr;
+	}
+
+	bool UEditorWorld::BuildEditorCameraMatrices(
+		const Render::SceneRenderRequest& request,
+		Mat4&                             outView,
+		Mat4&                             outProj
+	) {
+		UpdateEditorCameraAspectIfNeeded(request);
+		if (!mEditorEntity || !mEditorEntity->IsActive()) { return false; }
+
+		const auto* camera = mEditorEntity->GetComponent<
+			EditorCameraComponent>();
+		if (!camera || !camera->IsActive()) { return false; }
+		return camera->BuildViewProjectionMatrices(outView, outProj);
+	}
+
+	void UEditorWorld::SetEditorCameraLookEnabled(const bool enabled) {
+		if (!mEditorEntity || !mEditorEntity->IsActive()) { return; }
+		auto* camera = mEditorEntity->GetComponent<EditorCameraComponent>();
+		if (!camera || !camera->IsActive()) { return; }
+		camera->SetLookEnabled(enabled);
 	}
 }

@@ -1,7 +1,13 @@
 #pragma once
 #include "UWorld.h"
 
+#include "engine/render/frame/RenderFrameInputs.h"
+
 namespace Unnamed {
+	namespace Render {
+		struct SceneRenderRequest;
+	}
+
 	class UGameWorld;
 	class UEntity;
 
@@ -19,6 +25,7 @@ namespace Unnamed {
 			Render::RenderFrameContext& frameContext,
 			AssetManager&               assetManager
 		) override;
+		[[nodiscard]] bool IsGameSimulationEnabled() const noexcept override;
 
 		[[nodiscard]] UScene* GetEditableScene() { return mScene.get(); }
 
@@ -28,9 +35,25 @@ namespace Unnamed {
 
 		[[nodiscard]] UWorld*       GetRuntimeSceneWorld();
 		[[nodiscard]] const UWorld* GetRuntimeSceneWorld() const;
+		[[nodiscard]] UScene*       GetActiveScene();
+		[[nodiscard]] const UScene* GetActiveScene() const;
+		bool                        BuildEditorCameraMatrices(
+			const Render::SceneRenderRequest& request,
+			Mat4&                             outView,
+			Mat4&                             outProj
+		);
+		void SetEditorCameraLookEnabled(bool enabled);
 
 	private:
+		void UpdateEditorCameraAspectIfNeeded(
+			const Render::SceneRenderRequest& request
+		);
+
 		std::unique_ptr<UEntity>    mEditorEntity;
 		std::unique_ptr<UGameWorld> mPlayWorld;
+		Render::SCENE_RENDER_MODE   mLastAspectMode =
+			Render::SCENE_RENDER_MODE::FIT_VIEWPORT;
+		uint32_t mLastAspectViewportWidth  = 0;
+		uint32_t mLastAspectViewportHeight = 0;
 	};
 }

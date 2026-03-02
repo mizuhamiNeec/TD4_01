@@ -67,9 +67,6 @@ namespace Unnamed {
 		RegisterBuiltInCommands();
 		RegisterBuiltInConVars();
 
-		// ユーザー設定ファイルを実行
-		ExecuteCommand("exec " + std::string(kUserCfgPath));
-
 		return true;
 	}
 

@@ -1,4 +1,6 @@
 #ifdef _DEBUG
+#include "ImGuiWidgets.h"
+
 #include <array>
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -42,7 +44,7 @@ namespace ImGuiWidgets {
 		bool valueChanged = false;
 
 		// 全体のウィジェット幅は通常の DragFloat3 と同じ
-		const float widgetWidth = ImGui::CalcItemWidth();
+		const float widgetWidth = ImGui::GetContentRegionAvail().x;
 		const float setWidth    = widgetWidth / 3.0f; // 各軸のセル幅
 
 		// 角丸四角形のサイズ ImGuiから取ってくる
@@ -97,9 +99,19 @@ namespace ImGuiWidgets {
 					rectMax,
 					rectColors[i],
 					rounding,
-					ImDrawFlags_RoundCornersTopLeft |
-					ImDrawFlags_RoundCornersBottomLeft
+					ImDrawFlags_RoundCornersLeft
 				);
+				// 角丸四角形の枠線を描画
+				if (ImGui::GetStyle().FrameBorderSize > 0.0f) {
+					ImGui::GetWindowDrawList()->AddRect(
+						rectPos,
+						rectMax,
+						ImGui::GetColorU32(ImGuiCol_Border),
+						rounding,
+						ImDrawFlags_RoundCornersLeft,
+						ImGui::GetStyle().FrameBorderSize
+					);
+				}
 
 				constexpr std::array<const char*, 3> axisLabels = {
 					"X", "Y", "Z"
@@ -296,175 +308,165 @@ namespace ImGuiWidgets {
 		return bIsDraggingCp1 || bIsDraggingCp2;
 	}
 
-	/// @brief アイコン付きボタンウィジェットを表示します。
-	/// @param icon アイコン文字列（フォントアイコン）
-	/// @param label ラベル文字列（省略可能）
-	/// @param size ボタンのサイズ（(0,0)で自動調整）
-	/// @param iconScale アイコンのスケーリング（高さに対する比率）
-	/// @param labelDir ラベルの配置方向
-	/// @return ボタンが押された場合にtrueを返します。
 	bool IconButton(
-		const char*    icon,
+		const uint32_t icon,
 		const char*    label,
 		ImVec2         size,
 		const float    iconScale,
 		const ImGuiDir labelDir
 	) {
-		// 1) レイアウト境界
-		ImGui::BeginGroup();
-		const ImVec2      start = ImGui::GetCursorScreenPos();
 		const ImGuiStyle& style = ImGui::GetStyle();
-		ImDrawList*       dl    = ImGui::GetWindowDrawList();
-		ImFont*           font  = ImGui::GetFont();
-
-		// 2) サイズを見積もる
-		const bool  hasLabel = label && label[0];
-		const float gap      = labelDir == ImGuiDir_Left ||
-		                       labelDir == ImGuiDir_Right ?
+		ImDrawList*       dl = ImGui::GetWindowDrawList();
+		ImFont*           font = ImGui::GetFont();
+		const std::string iconUtf8 = Unnamed::StrUtil::ConvertToUtf8(icon);
+		const bool        hasLabel = label && label[0] != '\0';
+		const bool        horizontalLayout =
+			labelDir == ImGuiDir_Left || labelDir == ImGuiDir_Right;
+		const bool  iconOnly = !hasLabel || labelDir == ImGuiDir_None;
+		const float gap      = horizontalLayout ?
 			                       style.ItemSpacing.x :
-			                       style.ItemSpacing.y;
+			                       style
+			                       .ItemSpacing.y;
+		const ImVec2 pad          = style.FramePadding;
+		const ImVec2 iconBaseSize = ImGui::CalcTextSize(iconUtf8.c_str());
+		const ImVec2 labelSize    = hasLabel ?
+			                            ImGui::CalcTextSize(label) :
+			                            ImVec2(0.0f, 0.0f);
 
-		// アイコン基準サイズ（フォント等倍時）
-		const ImVec2 iconBaseSize = ImGui::CalcTextSize(icon);
-
-		// 仮の高さが決まらないと iconFontSize が計算できないので、
-		// まず label を含まない最小寸法で初期化しておく
-		const ImVec2 labelSize = hasLabel ?
-			                         ImGui::CalcTextSize(label) :
-			                         ImVec2(0, 0);
-		if (size.x <= 0.0f) size.x = std::max(iconBaseSize.x, labelSize.x);
-		if (size.y <= 0.0f)
-			size.y = iconBaseSize.y + (hasLabel ?
-				                           labelSize.y + gap :
-				                           0);
-
-		const ImVec2 pad = style.FramePadding;
-		const ImVec2 innerStart = {start.x + pad.x, start.y + pad.y};
-		const ImVec2 innerSize = {size.x - pad.x * 2.0f, size.y - pad.y * 2.0f};
-
-		// 確定した高さからアイコン描画サイズを算出
-		const float baseFontSize = ImGui::GetFontSize();
-		const float iconFontSize = innerSize.y * iconScale;
-		const float fontScale    = iconFontSize / baseFontSize;
-		const auto  iconSize     = ImVec2(
-			ImGui::CalcTextSize(icon).x * fontScale,
-			ImGui::CalcTextSize(icon).y * fontScale
-		);
-
-		// 横レイアウト時は幅を再調整
-		if (labelDir == ImGuiDir_Left || labelDir == ImGuiDir_Right)
-			if (size.x <= 0.0f)
-				size.x = iconSize.x + (hasLabel ? labelSize.x + gap : 0) + pad
-				         .x * 2.0f;
-
-		// 3) InvisibleButton でヒット領域登録
-		const std::string btnId = "##IconBtn" + std::string(icon) +
-		                          std::to_string(ImGui::GetID(icon));
-		const bool pressed = ImGui::Button(btnId.c_str(), size);
-
-		// 4) テキスト描画位置を計算
-		ImVec2 iconPos, labelPos;
-
-		switch (labelDir) {
-			case ImGuiDir_Up:
-			case ImGuiDir_Down: {
-				// 垂直方向の合計サイズ
-				const float blockH = iconSize.y + (hasLabel ?
-					                                   labelSize.y + gap :
-					                                   0.0f);
-				const float y0 = innerStart.y + (innerSize.y - blockH) * 0.5f;
-
-				if (labelDir == ImGuiDir_Up) {
-					labelPos = {start.x + (size.x - labelSize.x) * 0.5f, y0};
-					iconPos  = {
-						start.x + (size.x - iconSize.x) * 0.5f,
-						y0 + labelSize.y + gap
-					};
-				} else {
-					// Down (= デフォルト)
-					iconPos = {
-						start.x + (size.x - iconSize.x) * 0.5f,
-						y0
-					};
-					if (hasLabel)
-						labelPos = {
-							start.x + (size.x - labelSize.x) * 0.5f,
-							y0 + iconSize.y + gap
-						};
-				}
-				break;
-			}
-			case ImGuiDir_Left:
-			case ImGuiDir_Right:
-			default: {
-				// 水平方向の合計サイズ
-				const float blockW = iconSize.x + (hasLabel ?
-					                                   labelSize.x + gap :
-					                                   0.0f);
-				const float x0 = innerStart.x + (innerSize.x - blockW) * 0.5f;
-				// ブロック X 先頭
-				const float cy = innerStart.y + (innerSize.y - std::max(
-					                                 iconSize.y, labelSize.y
-				                                 )) * 0.5f;
-
-				if (labelDir == ImGuiDir_Left) {
-					labelPos = {x0, cy + (iconSize.y - labelSize.y) * 0.5f};
-					iconPos  = {x0 + labelSize.x + gap, cy};
-				} else // Right
-				{
-					iconPos = {x0, cy};
-					if (hasLabel)
-						labelPos = {
-							x0 + iconSize.x + gap,
-							cy + (iconSize.y - labelSize.y) * 0.5f
-						};
-				}
-				break;
+		if (size.x <= 0.0f) {
+			if (iconOnly) { size.x = iconBaseSize.x + pad.x * 2.0f; } else if (
+				horizontalLayout) {
+				size.x = iconBaseSize.x + labelSize.x + gap + pad.x * 2.0f;
+			} else {
+				size.x = std::max(iconBaseSize.x, labelSize.x) + pad.x * 2.0f;
 			}
 		}
 
-		// 5) 描画
-		const ImU32 col = ImGui::GetColorU32(ImGuiCol_Text);
+		if (size.y <= 0.0f) {
+			if (iconOnly) { size.y = iconBaseSize.y + pad.y * 2.0f; } else if (
+				horizontalLayout) {
+				size.y = std::max(iconBaseSize.y, labelSize.y) + pad.y * 2.0f;
+			} else {
+				size.y = iconBaseSize.y + labelSize.y + gap + pad.y * 2.0f;
+			}
+		}
 
-		// クリッピング領域を設定（ボタンの境界内に収める）
-		dl->PushClipRect(
-			start, ImVec2(start.x + size.x, start.y + size.y),
-			true
+		const std::string btnId =
+			"##IconBtn" + iconUtf8 + std::to_string(ImGui::GetID(icon));
+		const bool pressed = ImGui::InvisibleButton(btnId.c_str(), size);
+		const bool hovered = ImGui::IsItemHovered();
+		const bool active  = ImGui::IsItemActive();
+
+		const ImVec2 itemMin  = ImGui::GetItemRectMin();
+		const ImVec2 itemMax  = ImGui::GetItemRectMax();
+		const ImVec2 itemSize = ImVec2(
+			itemMax.x - itemMin.x, itemMax.y - itemMin.y
+		);
+		const ImVec2 innerMin  = ImVec2(itemMin.x + pad.x, itemMin.y + pad.y);
+		const ImVec2 innerSize = ImVec2(
+			std::max(1.0f, itemSize.x - pad.x * 2.0f),
+			std::max(1.0f, itemSize.y - pad.y * 2.0f)
 		);
 
-		// アイコンを描画（指定されたフォントサイズで）
-		dl->AddText(font, iconFontSize, iconPos, col, icon);
+		const ImU32 bgColor = ImGui::GetColorU32(
+			active ?
+				ImGuiCol_ButtonActive :
+				hovered ?
+				ImGuiCol_ButtonHovered :
+				ImGuiCol_Button
+		);
+		ImGui::RenderFrame(
+			itemMin, itemMax, bgColor, true, style.FrameRounding
+		);
 
-		if (hasLabel) dl->AddText(labelPos, col, label);
+		const float  baseFontSize = ImGui::GetFontSize();
+		const float  iconFontSize = std::max(1.0f, innerSize.y * iconScale);
+		const float  fontScale    = iconFontSize / std::max(1.0f, baseFontSize);
+		const ImVec2 iconSize     = ImVec2(
+			iconBaseSize.x * fontScale, iconBaseSize.y * fontScale
+		);
 
-		// クリッピング領域を解除
+		ImVec2 iconPos  = innerMin;
+		ImVec2 labelPos = innerMin;
+
+		if (iconOnly) {
+			iconPos = ImVec2(
+				innerMin.x + (innerSize.x - iconSize.x) * 0.5f,
+				innerMin.y + (innerSize.y - iconSize.y) * 0.5f
+			);
+		} else if (horizontalLayout) {
+			const float blockWidth = iconSize.x + labelSize.x + gap;
+			const float blockHeight = std::max(iconSize.y, labelSize.y);
+			const float startX = innerMin.x + (innerSize.x - blockWidth) * 0.5f;
+			const float startY =
+				innerMin.y + (innerSize.y - blockHeight) * 0.5f;
+
+			if (labelDir == ImGuiDir_Left) {
+				labelPos = ImVec2(
+					startX, startY + (blockHeight - labelSize.y) * 0.5f
+				);
+				iconPos = ImVec2(
+					startX + labelSize.x + gap,
+					startY + (blockHeight - iconSize.y) * 0.5f
+				);
+			} else {
+				iconPos = ImVec2(
+					startX, startY + (blockHeight - iconSize.y) * 0.5f
+				);
+				labelPos = ImVec2(
+					startX + iconSize.x + gap,
+					startY + (blockHeight - labelSize.y) * 0.5f
+				);
+			}
+		} else {
+			const float blockHeight = iconSize.y + labelSize.y + gap;
+			const float startY      =
+				innerMin.y + (innerSize.y - blockHeight) * 0.5f;
+			if (labelDir == ImGuiDir_Up) {
+				labelPos = ImVec2(
+					innerMin.x + (innerSize.x - labelSize.x) * 0.5f,
+					startY
+				);
+				iconPos = ImVec2(
+					innerMin.x + (innerSize.x - iconSize.x) * 0.5f,
+					startY + labelSize.y + gap
+				);
+			} else {
+				iconPos = ImVec2(
+					innerMin.x + (innerSize.x - iconSize.x) * 0.5f,
+					startY
+				);
+				labelPos = ImVec2(
+					innerMin.x + (innerSize.x - labelSize.x) * 0.5f,
+					startY + iconSize.y + gap
+				);
+			}
+		}
+
+		const ImU32 textColor = ImGui::GetColorU32(ImGuiCol_Text);
+		dl->PushClipRect(itemMin, itemMax, true);
+		dl->AddText(font, iconFontSize, iconPos, textColor, iconUtf8.c_str());
+		if (!iconOnly) { dl->AddText(labelPos, textColor, label); }
 		dl->PopClipRect();
 
-		// 6) グループ終了
-		ImGui::EndGroup();
 		return pressed;
 	}
 
-	/// @brief アイコン付きメニューアイテムを表示します。
-	/// @param icon アイコン文字列（フォントアイコン）
-	/// @param label ラベル文字列
-	/// @param shortcut ショートカット文字列
-	/// @param selected 選択状態かどうか
-	/// @param enabled メニューアイテムが有効かどうか
-	/// @return メニューアイテムが選択された場合にtrueを返します
 	bool MenuItemWithIcon(
 		const char*    label,
 		const uint32_t icon,
 		const char*    shortcut,
 		const bool     selected,
-		const bool     enabled
+		const bool     enabled,
+		const float    rounding
 	) {
-		return ImGui::MenuItemEx(
+		return MenuItemExWithRounding(
 			label,
 			Unnamed::StrUtil::ConvertToUtf8(icon).c_str(),
 			shortcut,
 			selected,
-			enabled
+			enabled,
+			rounding
 		);
 	}
 
@@ -513,6 +515,359 @@ namespace ImGuiWidgets {
 			);
 			index = static_cast<uint32_t>(next);
 		}
+	}
+
+	bool SelectableWithRounding(
+		const char*   label, bool selected, const ImGuiSelectableFlags flags,
+		const ImVec2& sizeArg, const float rounding
+	) {
+		ImGuiWindow* window = ImGui::GetCurrentWindow();
+		if (window->SkipItems) return false;
+
+		ImGuiContext&     g     = *GImGui;
+		const ImGuiStyle& style = g.Style;
+
+		// Submit label or explicit size to ItemSize(), whereas ItemAdd() will submit a larger/spanning rectangle.
+		const ImGuiID id         = window->GetID(label);
+		const ImVec2  label_size = ImGui::CalcTextSize(label, NULL, true);
+		ImVec2        size(
+			sizeArg.x != 0.0f ? sizeArg.x : label_size.x,
+			sizeArg.y != 0.0f ? sizeArg.y : label_size.y
+		);
+		ImVec2 pos = window->DC.CursorPos;
+		pos.y      += window->DC.CurrLineTextBaseOffset;
+		ImGui::ItemSize(size, 0.0f);
+
+		const bool span_all_columns =
+			(flags & ImGuiSelectableFlags_SpanAllColumns) != 0;
+		const float min_x = span_all_columns ?
+			                    window->ParentWorkRect.Min.x :
+			                    pos.x;
+		const float max_x = span_all_columns ?
+			                    window->ParentWorkRect.Max.x :
+			                    window->WorkRect.Max.x;
+		if (sizeArg.x == 0.0f || flags & ImGuiSelectableFlags_SpanAvailWidth)
+			size.x = ImMax(
+				label_size.x, max_x - min_x
+			);
+
+		ImRect bb(min_x, pos.y, min_x + size.x, pos.y + size.y);
+		if ((flags & ImGuiSelectableFlags_NoPadWithHalfSpacing) == 0) {
+			const float spacing_x = span_all_columns ?
+				                        0.0f :
+				                        style.ItemSpacing.x;
+			const float spacing_y = style.ItemSpacing.y;
+			const float spacing_L = IM_TRUNC(spacing_x * 0.50f);
+			const float spacing_U = IM_TRUNC(spacing_y * 0.50f);
+			bb.Min.x              -= spacing_L;
+			bb.Min.y              -= spacing_U;
+			bb.Max.x              += spacing_x - spacing_L;
+			bb.Max.y              += spacing_y - spacing_U;
+		}
+
+		const bool disabled_item = (flags & ImGuiSelectableFlags_Disabled) != 0;
+		const ImGuiItemFlags extra_item_flags = disabled_item ?
+			                                        static_cast<ImGuiItemFlags>(
+				                                        ImGuiItemFlags_Disabled) :
+			                                        ImGuiItemFlags_None;
+		bool is_visible;
+		if (span_all_columns) {
+			const float backup_clip_rect_min_x = window->ClipRect.Min.x;
+			const float backup_clip_rect_max_x = window->ClipRect.Max.x;
+			window->ClipRect.Min.x = window->ParentWorkRect.Min.x;
+			window->ClipRect.Max.x = window->ParentWorkRect.Max.x;
+			is_visible = ImGui::ItemAdd(bb, id, NULL, extra_item_flags);
+			window->ClipRect.Min.x = backup_clip_rect_min_x;
+			window->ClipRect.Max.x = backup_clip_rect_max_x;
+		} else { is_visible = ImGui::ItemAdd(bb, id, NULL, extra_item_flags); }
+
+		const bool is_multi_select =
+			(g.LastItemData.ItemFlags & ImGuiItemFlags_IsMultiSelect) != 0;
+		if (!is_visible)
+			if (!is_multi_select || !g.BoxSelectState.UnclipMode || !g.
+			    BoxSelectState.UnclipRect.Overlaps(bb))
+				return false;
+
+		const bool disabled_global =
+			(g.CurrentItemFlags & ImGuiItemFlags_Disabled) != 0;
+		if (disabled_item && !disabled_global) ImGui::BeginDisabled();
+
+		if (span_all_columns) {
+			if (g.CurrentTable) ImGui::TablePushBackgroundChannel();
+			else if (window->DC.CurrentColumns) ImGui::PushColumnsBackground();
+			g.LastItemData.StatusFlags |= ImGuiItemStatusFlags_HasClipRect;
+			g.LastItemData.ClipRect    = window->ClipRect;
+		}
+
+		ImGuiButtonFlags button_flags = 0;
+		if (flags & ImGuiSelectableFlags_NoHoldingActiveID) {
+			button_flags |= ImGuiButtonFlags_NoHoldingActiveId;
+		}
+		if (flags & ImGuiSelectableFlags_NoSetKeyOwner) {
+			button_flags |= ImGuiButtonFlags_NoSetKeyOwner;
+		}
+		if (flags & ImGuiSelectableFlags_SelectOnClick) {
+			button_flags |= ImGuiButtonFlags_PressedOnClick;
+		}
+		if (flags & ImGuiSelectableFlags_SelectOnRelease) {
+			button_flags |= ImGuiButtonFlags_PressedOnRelease;
+		}
+		if (flags & ImGuiSelectableFlags_AllowDoubleClick) {
+			button_flags |= ImGuiButtonFlags_PressedOnClickRelease |
+				ImGuiButtonFlags_PressedOnDoubleClick;
+		}
+		if (flags & ImGuiSelectableFlags_AllowOverlap || g.LastItemData.
+		    ItemFlags & ImGuiItemFlags_AllowOverlap) {
+			button_flags |= ImGuiButtonFlags_AllowOverlap;
+		}
+
+		const bool was_selected = selected;
+		if (is_multi_select) {
+			ImGui::MultiSelectItemHeader(id, &selected, &button_flags);
+		}
+
+		bool hovered, held;
+		bool pressed = ImGui::ButtonBehavior(
+			bb, id, &hovered, &held, button_flags
+		);
+		bool auto_selected = false;
+
+		if (is_multi_select) {
+			ImGui::MultiSelectItemFooter(id, &selected, &pressed);
+		} else {
+			if (flags & ImGuiSelectableFlags_SelectOnNav && g.NavJustMovedToId
+			    != 0 && g.NavJustMovedToFocusScopeId == g.CurrentFocusScopeId)
+				if (g.NavJustMovedToId == id && (
+					    g.NavJustMovedToKeyMods & ImGuiMod_Ctrl) == 0)
+					selected = pressed = auto_selected = true;
+		}
+
+		if (pressed || (hovered && flags &
+		                ImGuiSelectableFlags_SetNavIdOnHover)) {
+			if (!g.NavHighlightItemUnderNav && g.NavWindow == window && g.
+			    NavLayer == window->DC.NavLayerCurrent) {
+				ImGui::SetNavID(
+					id, window->DC.NavLayerCurrent, g.CurrentFocusScopeId,
+					ImGui::WindowRectAbsToRel(window, bb)
+				);
+				if (g.IO.ConfigNavCursorVisibleAuto) g.NavCursorVisible = false;
+			}
+		}
+		if (pressed) ImGui::MarkItemEdited(id);
+
+		if (selected !=
+		    was_selected)
+			g.LastItemData.StatusFlags |=
+				ImGuiItemStatusFlags_ToggledSelection;
+
+		if (is_visible) {
+			const bool highlighted =
+				hovered || flags & ImGuiSelectableFlags_Highlight;
+			if (highlighted || selected) {
+				const ImU32 col = ImGui::GetColorU32(
+					held && highlighted ?
+						ImGuiCol_HeaderActive :
+						highlighted ?
+						ImGuiCol_HeaderHovered :
+						ImGuiCol_Header
+				);
+				ImGui::RenderFrame(bb.Min, bb.Max, col, false, rounding);
+			}
+			if (g.NavId == id) {
+				ImGuiNavRenderCursorFlags nav_render_cursor_flags =
+					ImGuiNavRenderCursorFlags_Compact |
+					ImGuiNavRenderCursorFlags_NoRounding;
+				if (is_multi_select)
+					nav_render_cursor_flags |=
+						ImGuiNavRenderCursorFlags_AlwaysDraw;
+				ImGui::RenderNavCursor(bb, id, nav_render_cursor_flags);
+			}
+		}
+
+		if (span_all_columns) {
+			if (g.CurrentTable) ImGui::TablePopBackgroundChannel();
+			else if (window->DC.CurrentColumns) ImGui::PopColumnsBackground();
+		}
+
+		if (is_visible)
+			ImGui::RenderTextClipped(
+				pos, ImVec2(
+					ImMin(pos.x + size.x, window->WorkRect.Max.x),
+					pos.y + size.y
+				), label, NULL, &label_size, style.SelectableTextAlign, &bb
+			);
+
+		if (pressed && !auto_selected && window->Flags & ImGuiWindowFlags_Popup
+		    && !(
+			    flags & ImGuiSelectableFlags_NoAutoClosePopups) && g.
+		    LastItemData.ItemFlags & ImGuiItemFlags_AutoClosePopups)
+			ImGui::CloseCurrentPopup();
+
+		if (disabled_item && !disabled_global) ImGui::EndDisabled();
+
+		IMGUI_TEST_ENGINE_ITEM_INFO(id, label, g.LastItemData.StatusFlags);
+		return pressed; //-V1020
+	}
+
+	/// @brief ImGui 1.92.6から持ってきました。現在のウィンドウが、開いているメニューセットのルートであるかを判定します。
+	/// @return ルートである場合にtrueを返します。
+	static bool IsRootOfOpenMenuSet() {
+		ImGuiContext& g      = *GImGui;
+		ImGuiWindow*  window = g.CurrentWindow;
+		if (g.OpenPopupStack.Size <= g.BeginPopupStack.Size || window->Flags &
+		    ImGuiWindowFlags_ChildMenu)
+			return false;
+
+		const ImGuiPopupData* upperPopup =
+			&g.OpenPopupStack[g.BeginPopupStack.Size];
+		if (window->DC.NavLayerCurrent != upperPopup->ParentNavLayer) {
+			return false;
+		}
+		return upperPopup->Window &&
+		       upperPopup->Window->Flags & ImGuiWindowFlags_ChildMenu &&
+		       ImGui::IsWindowChildOf(upperPopup->Window, window, true, false);
+	}
+
+	/// @brief ImVec2同士の加算演算子
+	/// @param lhs 左辺のImVec2
+	/// @param rhs 右辺のImVec2
+	/// @return 加算結果のImVec2
+	static ImVec2 operator+(const ImVec2& lhs, const ImVec2& rhs) {
+		return ImVec2(lhs.x + rhs.x, lhs.y + rhs.y);
+	}
+
+	bool MenuItemExWithRounding(
+		const char* label, const char*   icon, const char*    shortcut,
+		const bool  selected, const bool enabled, const float rounding
+	) {
+		ImGuiWindow* window = ImGui::GetCurrentWindow();
+		if (window->SkipItems) return false;
+
+		const ImGuiContext& g = *GImGui;
+		const ImGuiStyle& style = g.Style;
+		const ImVec2 pos = window->DC.CursorPos;
+		const ImVec2 labelSize = ImGui::CalcTextSize(label, nullptr, true);
+
+		const bool menuSetIsOpen = IsRootOfOpenMenuSet();
+		if (menuSetIsOpen) {
+			ImGui::PushItemFlag(ImGuiItemFlags_NoWindowHoverableCheck, true);
+		}
+
+		bool pressed;
+		ImGui::PushID(label);
+		if (!enabled) ImGui::BeginDisabled();
+
+		constexpr ImGuiSelectableFlags selectableFlags =
+			ImGuiSelectableFlags_SelectOnRelease |
+			ImGuiSelectableFlags_NoSetKeyOwner |
+			ImGuiSelectableFlags_SetNavIdOnHover;
+		const ImGuiMenuColumns* offsets = &window->DC.MenuColumns;
+		if (window->DC.LayoutType == ImGuiLayoutType_Horizontal) {
+			const float w          = labelSize.x;
+			window->DC.CursorPos.x += IM_TRUNC(style.ItemSpacing.x * 0.5f);
+			const ImVec2 text_pos(
+				window->DC.CursorPos.x + offsets->OffsetLabel,
+				window->DC.CursorPos.y + window->DC.CurrLineTextBaseOffset
+			);
+			ImGui::PushStyleVarX(
+				ImGuiStyleVar_ItemSpacing, style.ItemSpacing.x * 2.0f
+			);
+			pressed = SelectableWithRounding(
+				"", selected, selectableFlags, ImVec2(w, 0.0f),
+				style.FrameRounding
+			);
+			ImGui::PopStyleVar();
+			if (g.LastItemData.StatusFlags &
+			    ImGuiItemStatusFlags_Visible)
+				ImGui::RenderText(text_pos, label);
+			window->DC.CursorPos.x +=
+				IM_TRUNC(style.ItemSpacing.x * (-1.0f + 0.5f));
+		} else {
+			const float iconW = icon && icon[0] ?
+				                    ImGui::CalcTextSize(icon, NULL).x :
+				                    0.0f;
+			const float shortcutW = shortcut && shortcut[0] ?
+				                        ImGui::CalcTextSize(shortcut, NULL).x :
+				                        0.0f;
+			const float checkmarkW = IM_TRUNC(g.FontSize * 1.20f);
+			const float minW       = window->DC.MenuColumns.DeclColumns(
+				iconW, labelSize.x, shortcutW, checkmarkW
+			); // Feedback for next frame
+			const float stretchW = ImMax(
+				0.0f, ImGui::GetContentRegionAvail().x - minW
+			);
+			const ImVec2 textPos(
+				pos.x, pos.y + window->DC.CurrLineTextBaseOffset
+			);
+			pressed = SelectableWithRounding(
+				"", false,
+				selectableFlags | ImGuiSelectableFlags_SpanAvailWidth,
+				ImVec2(minW, labelSize.y),
+				rounding
+			);
+
+			if (g.LastItemData.StatusFlags & ImGuiItemStatusFlags_Visible) {
+				ImGui::RenderText(
+					textPos + ImVec2(offsets->OffsetLabel, 0.0f), label
+				);
+				if (iconW > 0.0f)
+					ImGui::RenderText(
+						textPos + ImVec2(offsets->OffsetIcon, 0.0f), icon
+					);
+				if (shortcutW > 0.0f) {
+					ImGui::PushStyleColor(
+						ImGuiCol_Text, style.Colors[ImGuiCol_TextDisabled]
+					);
+					ImGui::LogSetNextTextDecoration("(", ")");
+					ImGui::RenderText(
+						textPos + ImVec2(
+							offsets->OffsetShortcut + stretchW, 0.0f
+						), shortcut, NULL, false
+					);
+					ImGui::PopStyleColor();
+				}
+				if (selected)
+					ImGui::RenderCheckMark(
+						window->DrawList,
+						textPos + ImVec2(
+							offsets->OffsetMark + stretchW + g.FontSize *
+							0.40f,
+							g.FontSize * 0.134f * 0.5f
+						), ImGui::GetColorU32(ImGuiCol_Text),
+						g.FontSize * 0.866f
+					);
+			}
+		}
+		IMGUI_TEST_ENGINE_ITEM_INFO(
+			g.LastItemData.ID, label,
+			g.LastItemData.StatusFlags | ImGuiItemStatusFlags_Checkable | (
+				selected ? ImGuiItemStatusFlags_Checked : 0)
+		);
+		if (!enabled) ImGui::EndDisabled();
+		ImGui::PopID();
+		if (menuSetIsOpen) ImGui::PopItemFlag();
+
+		return pressed;
+	}
+
+	void ImageWithRounding(
+		const ImTextureID textureId, const ImVec2     imageSize,
+		const float       rounding, const ImDrawFlags flags,
+		const ImVec2      uv0, const ImVec2           uv1,
+		const ImVec4      tintColor
+	) {
+		const ImVec2 pos  = ImGui::GetCursorScreenPos();
+		const ImVec2 size = imageSize;
+		ImGui::GetWindowDrawList()->AddImageRounded(
+			textureId,
+			pos,
+			pos + size,
+			uv0, uv1,
+			ImGui::GetColorU32(tintColor),
+			rounding,
+			flags
+		);
+		ImGui::Dummy(size);
 	}
 }
 #endif

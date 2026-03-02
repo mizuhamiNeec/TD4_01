@@ -48,14 +48,14 @@ namespace ImGuiWidgets {
 	);
 
 	/// @brief アイコン付きボタンウィジェットを表示します。
-	/// @param icon アイコン文字列（フォントアイコン）
+	/// @param icon アイコン（フォントアイコン）
 	/// @param label ラベル文字列（省略可能）
 	/// @param size ボタンのサイズ（(0,0)で自動調整）
 	/// @param iconScale アイコンのスケーリング（高さに対する比率）
 	/// @param labelDir ラベルの配置方向
 	/// @return ボタンが押された場合にtrueを返します。
 	bool IconButton(
-		const char* icon,
+		uint32_t    icon,
 		const char* label     = nullptr,
 		ImVec2      size      = ImVec2(0, 0),
 		float       iconScale = 1.0f,
@@ -68,13 +68,15 @@ namespace ImGuiWidgets {
 	/// @param shortcut ショートカット文字列（省略可能）
 	/// @param selected 選択状態かどうか
 	/// @param enabled メニューアイテムが有効かどうか
+	/// @param rounding 角丸の半径
 	/// @return メニューアイテムが選択された場合にtrueを返します
 	bool MenuItemWithIcon(
 		const char* label,
 		uint32_t    icon,
 		const char* shortcut = nullptr,
 		bool        selected = false,
-		bool        enabled  = true
+		bool        enabled  = true,
+		float       rounding = 4.0f
 	);
 
 	/// @brief メインメニューバーを開始します。
@@ -88,6 +90,46 @@ namespace ImGuiWidgets {
 	/// @param itemSize コンボメニューの項目数
 	void HandleHoveredComboMenuMouseWheelScroll(
 		uint32_t& index, uint32_t itemSize
+	);
+
+	/// @brief ImGui1.92.6から取ってきたSelectableウィジェット。角丸四角形で表示します。
+	/// @param label ウィジェットのラベル（非表示にする場合は"##unique_id"のようにユニークなIDを指定）
+	/// @param selected 選択状態かどうか
+	/// @param flags ImGuiSelectableFlagsのフラグ
+	/// @param sizeArg ウィジェットのサイズ（(0,0)で自動調整）
+	/// @param rounding 角丸の半径
+	/// @return ウィジェットが選択された場合にtrueを返します
+	bool SelectableWithRounding(
+		const char*   label, bool    selected, ImGuiSelectableFlags flags,
+		const ImVec2& sizeArg, float rounding
+	);
+
+	/// @brief 角丸四角形のメニューアイテムを表示します。
+	/// @param label メニューアイテムのラベル
+	/// @param icon アイコン文字列（フォントアイコン）
+	/// @param shortcut ショートカット文字列（省略可能）
+	/// @param selected 選択状態かどうか
+	/// @param enabled メニューアイテムが有効かどうか
+	/// @param rounding 角丸の半径
+	/// @return メニューアイテムが選択された場合にtrueを返します
+	bool MenuItemExWithRounding(
+		const char* label, const char* icon, const char* shortcut,
+		bool        selected, bool     enabled, float    rounding
+	);
+
+	/// @brief 角丸四角形のイメージを表示します。
+	/// @param textureId ImGuiのテクスチャID
+	/// @param imageSize イメージの表示サイズ
+	/// @param rounding 角丸の半径
+	/// @param flags ImDrawFlagsのフラグ
+	/// @param uv0 テクスチャのUV座標の左上
+	/// @param uv1 テクスチャのUV座標の右下
+	/// @param tintColor テクスチャの色の乗算
+	void ImageWithRounding(
+		ImTextureID textureId, ImVec2     imageSize,
+		float       rounding, ImDrawFlags flags = ImDrawFlags_RoundCornersAll,
+		ImVec2      uv0 = ImVec2(0, 0), ImVec2 uv1 = ImVec2(1, 1),
+		ImVec4      tintColor = ImVec4(1, 1, 1, 1)
 	);
 }
 #endif

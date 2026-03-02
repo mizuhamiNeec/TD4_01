@@ -1,7 +1,9 @@
 #include "MeshAssetLoader.h"
 
 #include <array>
+#include <chrono>
 #include <filesystem>
+#include <fstream>
 #include <unordered_map>
 
 #include <assimp/Importer.hpp>
@@ -12,11 +14,15 @@
 #include "core/assets/types/MeshAssetData.h"
 #include "core/string/StrUtil.h"
 
+#include "engine/profiler/UProfiler.h"
 #include "engine/unnamed/subsystem/console/Log.h"
+#include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 
 namespace Unnamed {
 	namespace {
-		constexpr std::string_view kChannel = "MeshAssetLdr";
+		constexpr std::string_view kChannel          = "MeshAssetLdr";
+		constexpr uint32_t         kMeshCacheMagic   = 0x48534D55; // UMSH
+		constexpr uint32_t         kMeshCacheVersion = 1;
 
 		constexpr std::array kSupportedExtensions = {
 			".obj",
@@ -24,6 +30,61 @@ namespace Unnamed {
 			".gltf",
 			".glb",
 		};
+
+		struct MeshCacheHeader {
+			uint32_t magic                = kMeshCacheMagic;
+			uint32_t version              = kMeshCacheVersion;
+			uint64_t sourcePathHash       = 0;
+			int64_t  sourceLastWriteTicks = 0;
+			uint64_t sourceSizeBytes      = 0;
+			uint64_t importerConfigHash   = 0;
+			uint32_t vertexCount          = 0;
+			uint32_t indexCount           = 0;
+			uint32_t skeletonBoneCount    = 0;
+			uint32_t flags                = 0;
+		};
+
+		FileStamp ReadCurrentFileStamp(const std::string& path) {
+			FileStamp       stamp = {};
+			std::error_code ec;
+			if (!std::filesystem::exists(path, ec)) { return stamp; }
+
+			const auto lastWrite = std::filesystem::last_write_time(path, ec);
+			if (!ec) {
+				stamp.lastWriteTicks = lastWrite.time_since_epoch().count();
+			}
+			stamp.sizeInBytes = std::filesystem::file_size(path, ec);
+			return stamp;
+		}
+
+		uint64_t HashCombine64(const uint64_t a, const uint64_t b) {
+			return a ^ b + 0x9e3779b97f4a7c15ull + (a << 6) + (a >> 2);
+		}
+
+		uint64_t BuildImporterConfigHash(const bool hasSkinning) {
+			constexpr uint64_t kBaseFlags =
+				aiProcess_JoinIdenticalVertices |
+				aiProcess_ImproveCacheLocality |
+				aiProcess_SortByPType |
+				aiProcess_ConvertToLeftHanded;
+			uint64_t hash = HashCombine64(kBaseFlags, kMeshCacheVersion);
+			if (!hasSkinning) {
+				hash = HashCombine64(hash, aiProcess_PreTransformVertices);
+			}
+			return hash;
+		}
+
+		template <typename T>
+		bool WritePod(std::ofstream& ofs, const T& value) {
+			ofs.write(reinterpret_cast<const char*>(&value), sizeof(T));
+			return static_cast<bool>(ofs);
+		}
+
+		template <typename T>
+		bool ReadPod(std::ifstream& ifs, T& value) {
+			ifs.read(reinterpret_cast<char*>(&value), sizeof(T));
+			return static_cast<bool>(ifs);
+		}
 
 		Mat4 ToMat4(const aiMatrix4x4& m) {
 			Mat4 out    = Mat4::identity;
@@ -91,14 +152,16 @@ namespace Unnamed {
 
 	LoadResult MeshAssetLoader::Load(const std::string& path) {
 		LoadResult r = {};
+		if (TryLoadDerivedCache(path, r)) { return r; }
+
+		UProfiler*            profiler = ServiceLocator::Get<UProfiler>();
+		UProfiler::ScopeTimer assimpScope(profiler, "MeshImport.Assimp");
 
 		Assimp::Importer   importer;
 		constexpr uint32_t kBaseFlags =
-			aiProcess_Triangulate |
 			aiProcess_JoinIdenticalVertices |
 			aiProcess_ImproveCacheLocality |
 			aiProcess_SortByPType |
-			aiProcess_GenSmoothNormals |
 			aiProcess_ConvertToLeftHanded;
 
 		const aiScene* scene = importer.ReadFile(
@@ -242,12 +305,161 @@ namespace Unnamed {
 
 		r.payload     = std::move(out);
 		r.resolveName = std::filesystem::path(path).filename().string();
-
-		std::error_code ec;
-		if (std::filesystem::exists(path, ec)) {
-			r.stamp.sizeInBytes = std::filesystem::file_size(path, ec);
-		}
+		r.stamp       = ReadCurrentFileStamp(path);
+		WriteDerivedCache(path, r);
 
 		return r;
+	}
+
+	std::filesystem::path MeshAssetLoader::GetDerivedCachePath(
+		const std::string& sourcePath
+	) const {
+		const std::string normalized = StrUtil::NormalizePath(sourcePath);
+		const uint64_t    hash       = std::hash<std::string>{}(normalized);
+		return std::filesystem::path("./bin/cache/assets/meshes") /
+		       (std::to_string(hash) + ".umeshbin");
+	}
+
+	bool MeshAssetLoader::TryLoadDerivedCache(
+		const std::string& path, LoadResult& out
+	) {
+		const std::filesystem::path cachePath = GetDerivedCachePath(path);
+		if (!std::filesystem::exists(cachePath)) { return false; }
+
+		std::ifstream ifs(cachePath, std::ios::binary);
+		if (!ifs) { return false; }
+
+		MeshCacheHeader header = {};
+		if (!ReadPod(ifs, header)) { return false; }
+		if (header.magic != kMeshCacheMagic || header.version !=
+		    kMeshCacheVersion) { return false; }
+
+		const std::string normalized  = StrUtil::NormalizePath(path);
+		const FileStamp   sourceStamp = ReadCurrentFileStamp(path);
+		if (header.sourcePathHash != std::hash<std::string>{}(normalized)) {
+			return false;
+		}
+		if (
+			header.sourceLastWriteTicks !=
+			sourceStamp.lastWriteTicks ||
+			header.sourceSizeBytes != sourceStamp.sizeInBytes
+		) { return false; }
+
+		const bool hasSkinning = (header.flags & 0x1u) != 0u;
+		if (header.importerConfigHash != BuildImporterConfigHash(hasSkinning)) {
+			return false;
+		}
+
+		MeshAssetData mesh = {};
+		mesh.sourcePath    = path;
+		mesh.hasSkinning   = hasSkinning;
+		mesh.vertices.resize(header.vertexCount);
+		mesh.indices.resize(header.indexCount);
+		mesh.skeleton.resize(header.skeletonBoneCount);
+
+		if (
+			(header.vertexCount > 0 &&
+			 !static_cast<bool>(ifs.read(
+				 reinterpret_cast<char*>(mesh.vertices.data()),
+				 sizeof(MeshVertex) * mesh.vertices.size()
+			 ))) ||
+			(header.indexCount > 0 &&
+			 !static_cast<bool>(ifs.read(
+				 reinterpret_cast<char*>(mesh.indices.data()),
+				 sizeof(uint32_t) * mesh.indices.size()
+			 )))
+		) { return false; }
+
+		for (uint32_t i = 0; i < header.skeletonBoneCount; ++i) {
+			uint32_t nameLen = 0;
+			if (!ReadPod(ifs, nameLen)) { return false; }
+			mesh.skeleton[i].name.resize(nameLen);
+			if (
+				nameLen > 0 &&
+				!static_cast<bool>(ifs.read(
+					mesh.skeleton[i].name.data(), nameLen
+				))
+			) { return false; }
+			if (!ReadPod(ifs, mesh.skeleton[i].parentIndex)) { return false; }
+			if (!ReadPod(ifs, mesh.skeleton[i].inverseBindPose)) {
+				return false;
+			}
+		}
+
+		for (const auto& vertex : mesh.vertices) {
+			mesh.localBoundsMin = Vec3::Min(
+				mesh.localBoundsMin, vertex.position
+			);
+			mesh.localBoundsMax = Vec3::Max(
+				mesh.localBoundsMax, vertex.position
+			);
+		}
+
+		out.payload     = std::move(mesh);
+		out.resolveName = std::filesystem::path(path).filename().string();
+		out.stamp       = sourceStamp;
+
+		if (UProfiler* profiler = ServiceLocator::Get<UProfiler>()) {
+			profiler->AddSample("MeshImport.CacheRead", 1.0f);
+		}
+		return true;
+	}
+
+	bool MeshAssetLoader::WriteDerivedCache(
+		const std::string& path, const LoadResult& in
+	) {
+		const auto* mesh = std::get_if<MeshAssetData>(
+			&const_cast<AssetPayload&>(in.payload)
+		);
+		if (!mesh) { return false; }
+
+		const std::filesystem::path cachePath = GetDerivedCachePath(path);
+		std::error_code             ec;
+		std::filesystem::create_directories(cachePath.parent_path(), ec);
+
+		std::ofstream ofs(cachePath, std::ios::binary | std::ios::trunc);
+		if (!ofs) { return false; }
+
+		MeshCacheHeader header = {};
+		header.sourcePathHash  = std::hash<std::string>{}(
+			StrUtil::NormalizePath(path)
+		);
+		header.sourceLastWriteTicks = in.stamp.lastWriteTicks;
+		header.sourceSizeBytes = in.stamp.sizeInBytes;
+		header.importerConfigHash = BuildImporterConfigHash(mesh->hasSkinning);
+		header.vertexCount = static_cast<uint32_t>(mesh->vertices.size());
+		header.indexCount = static_cast<uint32_t>(mesh->indices.size());
+		header.skeletonBoneCount = static_cast<uint32_t>(mesh->skeleton.size());
+		header.flags = mesh->hasSkinning ? 0x1u : 0u;
+
+		if (!WritePod(ofs, header)) { return false; }
+		if (
+			(header.vertexCount > 0 &&
+			 !static_cast<bool>(ofs.write(
+				 reinterpret_cast<const char*>(mesh->vertices.data()),
+				 sizeof(MeshVertex) * mesh->vertices.size()
+			 ))) ||
+			(header.indexCount > 0 &&
+			 !static_cast<bool>(ofs.write(
+				 reinterpret_cast<const char*>(mesh->indices.data()),
+				 sizeof(uint32_t) * mesh->indices.size()
+			 )))
+		) { return false; }
+
+		for (const auto& bone : mesh->skeleton) {
+			const uint32_t nameLen = static_cast<uint32_t>(bone.name.size());
+			if (!WritePod(ofs, nameLen)) { return false; }
+			if (
+				nameLen > 0 &&
+				!static_cast<bool>(ofs.write(bone.name.data(), nameLen))
+			) { return false; }
+			if (!WritePod(ofs, bone.parentIndex)) { return false; }
+			if (!WritePod(ofs, bone.inverseBindPose)) { return false; }
+		}
+
+		if (UProfiler* profiler = ServiceLocator::Get<UProfiler>()) {
+			profiler->AddSample("MeshImport.CacheWrite", 1.0f);
+		}
+		return static_cast<bool>(ofs);
 	}
 }

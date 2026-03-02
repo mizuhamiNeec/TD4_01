@@ -2,7 +2,9 @@
 
 #include "core/math/Quaternion.h"
 
-#include "engine/OldConsole/Console.h"
+#include "engine/unnamed/subsystem/console/Log.h"
+
+static constexpr std::string_view kChannel = "KeyFrame";
 
 /// キーフレームから指定された時刻の値を計算する
 /// @param keyframes キーフレームの配列
@@ -13,9 +15,7 @@ Vec3 CalculateValue(
 ) {
 	//assert(!keyframes.empty() && "Keyframes must not be empty");
 	if (keyframes.empty()) {
-		Console::Print(
-			"キーがありません。\n"
-		);
+		Error(kChannel, "キーがありません。\n");
 		return {};
 	}
 	if (keyframes.size() == 1 || time <= keyframes[0].time) {
@@ -55,9 +55,7 @@ Quaternion CalculateValue(
 ) {
 	//assert(!keyframes.empty() && "Keyframes must not be empty");
 	if (keyframes.empty()) {
-		Console::Print(
-			"キーがありません。\n"
-		);
+		Error(kChannel, "キーがありません。\n");
 		return {};
 	}
 	if (keyframes.size() == 1 || time <= keyframes[0].time) {

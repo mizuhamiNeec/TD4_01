@@ -15,6 +15,10 @@ namespace Unnamed {
 	void UBaseComponent::OnEditorTick(float) {}
 	void UBaseComponent::OnEditorRender() const {}
 
+#ifdef _DEBUG
+	void UBaseComponent::DrawInspectorImGui() {}
+#endif
+
 	UEntity* UBaseComponent::GetOwner() const { return mOwner; }
 
 	void UBaseComponent::SetOwner(UEntity* owner) { mOwner = owner; }

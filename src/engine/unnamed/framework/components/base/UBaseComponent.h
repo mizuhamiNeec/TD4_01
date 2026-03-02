@@ -50,6 +50,12 @@ namespace Unnamed {
 		/// @brief エディタでの表示やコンソールのログに使用されます。オーバーライド必須
 		[[nodiscard]] virtual std::string_view GetComponentName() const = 0;
 
+#ifdef _DEBUG
+		/// @brief エディタのインスペクターでこのコンポーネントのプロパティを描画します。
+		/// @details デフォルトの実装は何も描画しません。必要に応じてオーバーライドしてください。
+		virtual void DrawInspectorImGui();
+#endif
+
 		/// @brief コンポーネントの値を読み込む際に使用されます。オーバーライド必須
 		virtual void Deserialize(const JsonReader& reader) = 0;
 

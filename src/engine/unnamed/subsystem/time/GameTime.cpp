@@ -1,7 +1,10 @@
 #include <algorithm>
 
-#include <engine/OldConsole/ConVarManager.h>
 #include <engine/unnamed/subsystem/time/GameTime.h>
+
+#include "engine/unnamed/subsystem/console/ConsoleSystem.h"
+#include "engine/unnamed/subsystem/console/concommand/UnnamedConVar.h"
+#include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 
 /// @brief コンストラクタ
 GameTime::GameTime() :
@@ -10,14 +13,7 @@ GameTime::GameTime() :
 	mDeltaTime(1.0 / 60.0),
 	mScaledDeltaTime(1.0 / 60.0),
 	mTotalTime(0),
-	mFrameCount(0) {
-	// コンソール変数の登録
-	ConVarManager::RegisterConVar<float>(
-		"host_timescale",
-		1.0f,
-		"Prescale the clock by this amount."
-	);
-}
+	mFrameCount(0) {}
 
 /// @brief ゲーム開始時の処理を行います。
 void GameTime::StartGame() {
@@ -38,9 +34,10 @@ void GameTime::EndFrame() {
 	).count();
 
 	// タイムスケールを取得
-	mTimeScale = ConVarManager::GetConVar(
+	mTimeScale = ServiceLocator::Get<Unnamed::ConsoleSystem>()->GetConVarAs<
+		Unnamed::UnnamedConVar<float>>(
 		"host_timescale"
-	)->GetValueAsFloat();
+	)->GetValue();
 
 	// 各値を更新
 	mScaledDeltaTime = mDeltaTime * mTimeScale;

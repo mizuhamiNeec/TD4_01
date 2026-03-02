@@ -439,17 +439,38 @@ Mat4 Mat4::PerspectiveFovMat(
 	const float fovY, const float     aspectRatio,
 	const float nearClip, const float farClip
 ) {
+	return PerspectiveFovD3D(
+		fovY, aspectRatio, nearClip, farClip, ProjectionDepthMode::ForwardZ
+	);
+}
+
+Mat4 Mat4::PerspectiveFovD3D(
+	const float               fovY,
+	const float               aspectRatio,
+	const float               nearClip,
+	const float               farClip,
+	const ProjectionDepthMode depthMode
+) {
 	Mat4 result = identity;
 
-	const float cot  = 1.0f / std::tan(fovY * 0.5f);
-	const float dist = farClip - nearClip;
+	const float safeAspect = aspectRatio > 0.0f ? aspectRatio : 1.0f;
+	const float safeNear   = nearClip > 0.0f ? nearClip : 0.001f;
+	const float safeFar    = farClip > safeNear ? farClip : safeNear + 1.0f;
+	const float cot        = 1.0f / std::tan(fovY * 0.5f);
+	const float dist       = safeFar - safeNear;
 
-	result.m[0][0] = cot / aspectRatio;
+	result.m[0][0] = cot / safeAspect;
 	result.m[1][1] = cot;
-	result.m[2][2] = (farClip + nearClip) / dist;
 	result.m[2][3] = 1.0f;
-	result.m[3][2] = -nearClip * farClip / dist;
 	result.m[3][3] = 0.0f;
+
+	if (depthMode == ProjectionDepthMode::ReverseZ) {
+		result.m[2][2] = safeNear / (safeNear - safeFar);
+		result.m[3][2] = safeNear * safeFar / dist;
+	} else {
+		result.m[2][2] = safeFar / dist;
+		result.m[3][2] = -(safeNear * safeFar) / dist;
+	}
 
 	return result;
 }

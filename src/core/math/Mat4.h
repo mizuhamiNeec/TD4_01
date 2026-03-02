@@ -1,10 +1,16 @@
 #pragma once
 
+#include <cstdint>
 #include <initializer_list>
 
 struct Quaternion;
 struct Vec3;
 struct Vec4;
+
+enum class ProjectionDepthMode : uint8_t {
+	ForwardZ,
+	ReverseZ,
+};
 
 /// @brief 4x4行列構造体
 struct Mat4 final {
@@ -102,6 +108,10 @@ struct Mat4 final {
 	/// @return 透視投影行列
 	static Mat4 PerspectiveFovMat(
 		float fovY, float aspectRatio, float nearClip, float farClip
+	);
+	static Mat4 PerspectiveFovD3D(
+		float fovY, float aspectRatio, float nearClip, float farClip,
+		ProjectionDepthMode depthMode
 	);
 
 	/// @brief 正射影行列を生成する

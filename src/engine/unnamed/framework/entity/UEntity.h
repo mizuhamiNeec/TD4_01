@@ -129,11 +129,16 @@ namespace Unnamed {
 
 		/// @brief エンティティをアクティブまたは非アクティブに設定します。
 		/// @param isActive アクティブにする場合は true、非アクティブにする場合は false
-		void SetActive(bool isActive) noexcept;
+		void               SetActive(bool isActive) noexcept;
+		[[nodiscard]] bool IsVisible() const noexcept;
+		void               SetVisible(bool isVisible) noexcept;
 
 		/// @brief エンティティのGUIDを取得します。
 		/// @return エンティティのGUID
 		[[nodiscard]] uint64_t GetGuid() const noexcept;
+
+		[[nodiscard]] std::string_view GetFolderPath() const noexcept;
+		void SetFolderPath(std::string_view folderPath);
 
 		/// @brief 全てのコンポーネントに対して関数を実行します。
 		/// @tparam Func 呼び出し可能オブジェクト型（`void(UBaseComponent&)` 等）
@@ -172,11 +177,13 @@ namespace Unnamed {
 		std::unordered_map<TypeId, std::vector<UBaseComponent*>>
 		mComponentsByType;
 
-		std::string mName         = "unnamed"; // 名前
-		uint64_t    mGuid         = 0;         // GUID
-		bool        mIsEditorOnly = false;     // エディター専用か?
-		bool        mIsActive     = true;      // アクティブか?
-		bool        mDestroyed    = false;     // OnDestroy二重呼び出し防止
+		std::string mName = "unnamed";     // 名前
+		std::string mFolderPath;           // エディタ階層上のフォルダパス
+		uint64_t    mGuid         = 0;     // GUID
+		bool        mIsEditorOnly = false; // エディター専用か?
+		bool        mIsActive     = true;  // アクティブか?
+		bool        mIsVisible    = true;  // レンダリング上の可視状態
+		bool        mDestroyed    = false; // OnDestroy二重呼び出し防止
 	};
 
 	template <typename ComponentType, typename... Args>

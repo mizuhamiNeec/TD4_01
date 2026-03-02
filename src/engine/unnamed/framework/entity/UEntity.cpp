@@ -1,5 +1,7 @@
 #include "UEntity.h"
 
+#include <algorithm>
+
 #include "core/guidgenerator/GuidGenerator.h"
 
 #include "engine/unnamed/subsystem/console/Log.h"
@@ -179,5 +181,26 @@ namespace Unnamed {
 		mIsActive = isActive;
 	}
 
+	bool UEntity::IsVisible() const noexcept { return mIsVisible; }
+
+	void UEntity::SetVisible(const bool isVisible) noexcept {
+		mIsVisible = isVisible;
+	}
+
 	uint64_t UEntity::GetGuid() const noexcept { return mGuid; }
+
+	std::string_view UEntity::GetFolderPath() const noexcept {
+		return mFolderPath;
+	}
+
+	void UEntity::SetFolderPath(const std::string_view folderPath) {
+		mFolderPath = folderPath;
+		std::replace(mFolderPath.begin(), mFolderPath.end(), '\\', '/');
+		while (!mFolderPath.empty() && mFolderPath.front() == '/') {
+			mFolderPath.erase(mFolderPath.begin());
+		}
+		while (!mFolderPath.empty() && mFolderPath.back() == '/') {
+			mFolderPath.pop_back();
+		}
+	}
 }

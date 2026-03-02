@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
@@ -55,6 +56,17 @@ namespace Unnamed {
 		/// @brief シーン内のすべてのエンティティを取得します。
 		[[nodiscard]]
 		const std::vector<std::unique_ptr<UEntity>>& GetEntities() const;
+		[[nodiscard]] const std::vector<std::string>& GetFolders() const;
+
+		void AddFolder(std::string_view folderPath);
+		void RemoveFolder(std::string_view folderPath);
+		void RenameFolderSubtree(
+			std::string_view sourceFolderPath, std::string_view newLeafName
+		);
+		void DeleteFolderSubtree(std::string_view folderPath);
+		void MoveFolderSubtree(
+			std::string_view sourceFolderPath, std::string_view targetParentPath
+		);
 
 		/// @brief シーンをシリアライズします。
 		/// @param writer JSONライター
@@ -78,5 +90,6 @@ namespace Unnamed {
 		EntityId                               mNextEntityId = 1;
 		std::vector<std::unique_ptr<UEntity>>  mEntities;
 		std::unordered_map<EntityId, UEntity*> mEntityById;
+		std::vector<std::string>               mFolders;
 	};
 }

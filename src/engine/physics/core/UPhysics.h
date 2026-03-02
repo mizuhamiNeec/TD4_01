@@ -1,9 +1,11 @@
 #pragma once
 #include <cmath>
-#include <engine/Debug/DebugDraw.h>
+#include <span>
 #include <engine/unnamed/uphysics/BVH.h>
 #include <engine/unnamed/uphysics/BVHBuilder.h>
 #include <engine/unnamed/uphysics/CollisionDetection.h>
+
+#include "core/assets/types/MeshAssetData.h"
 
 namespace UPhysics {
 	/// @brief 物理エンジン
@@ -12,20 +14,34 @@ namespace UPhysics {
 		void Init();
 		void Update(float deltaTime) const;
 
-		void RegisterEntity(Entity* entity);
-		void UnregisterEntity(const Entity* entity);
-
+		/// @brief レイキャストを行う関数
+		/// @param ray レイ情報
+		/// @param outHit 衝突情報の出力先
+		/// @return 衝突した場合trueを返す
 		bool RayCast(
 			const Unnamed::Ray& ray,
 			Hit*                outHit
 		) const;
 
+		/// @brief ボックスキャストを行う関数
+		/// @param box ボックス情報
+		/// @param dir キャスト方向
+		/// @param length キャスト距離
+		/// @param outHit 衝突情報の出力先
+		/// @return 衝突した場合trueを返す
 		bool BoxCast(
 			const Unnamed::Box& box,
 			const Vec3&         dir,
 			float               length, Hit* outHit
 		) const;
 
+		/// @brief スフィアキャストを行う関数
+		/// @param start スフィアの開始位置
+		/// @param radius スフィアの半径
+		/// @param dir キャスト方向
+		/// @param length キャスト距離
+		/// @param outHit 衝突情報の出力先
+		/// @return 衝突した場合trueを返す
 		bool SphereCast(
 			const Vec3& start,
 			float       radius,
@@ -34,16 +50,34 @@ namespace UPhysics {
 			Hit*        outHit
 		) const;
 
+		/// @brief ボックスとメッシュの重なり判定を行う関数
+		/// @param box ボックス情報
+		/// @param outHit 衝突情報の出力先
+		/// @return 重なりがあった場合trueを返す
 		bool BoxOverlap(
 			const Unnamed::Box& box,
 			Hit*                outHit
 		) const;
 
+		/// @brief ボックスとメッシュの重なり判定を行う関数（複数ヒット版）
+		/// @param box ボックス情報
+		/// @param outHits 衝突情報の出力先配列
+		/// @param maxHits 出力先配列の最大ヒット数
+		/// @return ヒットした数を返す
 		int BoxOverlap(
 			const Unnamed::Box& box,
-			Hit*                outHit,
+			Hit*                outHits,
 			int                 maxHits
 		) const;
+
+		void ClearStaticMeshes();
+		bool RegisterStaticMesh(
+			uint64_t ownerGuid,
+			std::span<const Unnamed::MeshVertex> vertices,
+			std::span<const uint32_t>            indices,
+			const Mat4&                          world
+		);
+		void UnregisterStaticMesh(uint64_t ownerGuid);
 
 	private:
 		template <class CastType>
@@ -87,10 +121,11 @@ namespace UPhysics {
 
 			// 本格的に探索する
 			// 一番近い衝突のTOI (TOI: Time of Impact 衝突までの時間[0.0f ～ 1.0f])
-			float    bestTOI = 1.0f;
-			uint32_t hitTri  = UINT32_MAX; // ヒットした三角形のインデックス
-			Vec3     hitNormal;            // ヒットした法線
-			uint32_t stack[64];            // スタックを使ってBVHを探索(深さ優先探索)
+			float    bestTOI           = 1.0f;
+			uint32_t hitTri            = UINT32_MAX; // ヒットした三角形のインデックス
+			uint64_t hitEntityGuid     = 0;
+			Vec3     hitNormal;                    // ヒットした法線
+			uint32_t stack[64];                    // スタックを使ってBVHを探索(深さ優先探索)
 
 			// ブロードフェーズで検知されたBVHを探索する
 			for (auto* bvh : filtered) {
@@ -105,12 +140,14 @@ namespace UPhysics {
 					Vec3 center = (node.bounds.min + node.bounds.max) *
 					              0.5f;
 					const Vec3 size = node.bounds.max - node.bounds.min;
-					DebugDraw::DrawBox(
-						center,
-						Quaternion::identity,
-						size,
-						Vec4::orange
-					);
+
+					// TODO: デバッグ描画はエンジンの外に出すべきかもね
+					// DebugDraw::DrawBox(
+					// 	center,
+					// 	Quaternion::identity,
+					// 	size,
+					// 	Vec4::orange
+					// );
 #endif
 
 					// 現在の最良TOIを使った早期終了
@@ -144,9 +181,10 @@ namespace UPhysics {
 								)
 							) {
 								if (toi < bestTOI) {
-									bestTOI   = toi;
-									hitTri    = triIdx;
-									hitNormal = nrm;
+									bestTOI       = toi;
+									hitTri        = triIdx;
+									hitEntityGuid = bvh->ownerGuid;
+									hitNormal     = nrm;
 									// TOIが更新されたら、より厳しい早期終了を設定
 									pruneRay.tMax = bestTOI * length;
 								}
@@ -175,8 +213,8 @@ namespace UPhysics {
 					bestTOI,
 					finalNormal
 				);
-				outHit->triIndex  = hitTri;
-				outHit->hitEntity = bvhSet[0].owner;
+				outHit->triIndex      = hitTri;
+				outHit->hitEntityGuid = hitEntityGuid;
 			}
 			return true;
 		}

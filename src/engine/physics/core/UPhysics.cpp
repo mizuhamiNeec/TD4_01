@@ -1,14 +1,9 @@
 #include "UPhysics.h"
 
 #include <pch.h>
+#include <algorithm>
 #include <vector>
 
-#include <engine/Camera/CameraManager.h>
-#include <engine/Components/Camera/CameraComponent.h>
-#include <engine/Components/ColliderComponent/MeshColliderComponent.h>
-#include <engine/Debug/DebugDraw.h>
-#include <engine/Entity/Entity.h>
-#include <engine/ResourceSystem/Mesh/StaticMesh.h>
 #include <engine/unnamed/subsystem/console/Log.h>
 #include <engine/unnamed/uphysics/BoxCast.h>
 #include <engine/unnamed/uphysics/PhysicsTypes.h>
@@ -16,184 +11,66 @@
 #include <engine/unnamed/uphysics/SphereCast.h>
 
 namespace UPhysics {
-	/// @brief 初期化
-	void Engine::Init() {
-		// なんかする
+	namespace {
+		Unnamed::Triangle BuildTriangle(
+			const Unnamed::MeshVertex& a,
+			const Unnamed::MeshVertex& b,
+			const Unnamed::MeshVertex& c,
+			const Mat4&                world
+		) {
+			return {
+				.v0 = world.TransformPoint(a.position),
+				.v1 = world.TransformPoint(b.position),
+				.v2 = world.TransformPoint(c.position),
+			};
+		}
 	}
+
+	/// @brief 初期化
+	void Engine::Init() {}
 
 	/// @brief 更新
 	void Engine::Update(float) const {
 #ifdef _DEBUG
-		const auto camera = CameraManager::GetActiveCamera();
-		if (camera) {
-			Mat4       invView = camera->GetViewMat().Inverse();
-			const Vec3 start   = invView.GetTranslate();
-			Vec3       dir     = invView.GetForward();
-
-			dir.Normalize();
-			const Unnamed::Ray ray = {
-				.origin = start,
-				.dir    = dir,
-				.invDir = 1.0f / dir,
-				.tMin   = 0.0f,
-				.tMax   = 1e30f
-			};
-
-			DebugDraw::DrawAxis(
-				start,
-				Quaternion::identity
-			);
-
-			Hit hit;
-			if (RayCast(ray, &hit)) {
-				DebugDraw::DrawRay(
-					start,
-					dir * hit.t,
-					Vec4::blue
-				);
-				DebugDraw::DrawAxis(
-					hit.pos,
-					Quaternion::identity
-				);
-				DebugDraw::DrawRay(
-					hit.pos,
-					hit.normal,
-					Vec4::magenta
-				);
-			}
-		}
+		// const auto camera = CameraManager::GetActiveCamera();
+		// if (camera) {
+		// 	Mat4       invView = camera->GetViewMat().Inverse();
+		// 	const Vec3 start   = invView.GetTranslate();
+		// 	Vec3       dir     = invView.GetForward();
+		//
+		// 	dir.Normalize();
+		// 	const Unnamed::Ray ray = {
+		// 		.origin = start,
+		// 		.dir    = dir,
+		// 		.invDir = 1.0f / dir,
+		// 		.tMin   = 0.0f,
+		// 		.tMax   = 1e30f
+		// 	};
+		//
+		// 	DebugDraw::DrawAxis(
+		// 		start,
+		// 		Quaternion::identity
+		// 	);
+		//
+		// 	Hit hit;
+		// 	if (RayCast(ray, &hit)) {
+		// 		DebugDraw::DrawRay(
+		// 			start,
+		// 			dir * hit.t,
+		// 			Vec4::blue
+		// 		);
+		// 		DebugDraw::DrawAxis(
+		// 			hit.pos,
+		// 			Quaternion::identity
+		// 		);
+		// 		DebugDraw::DrawRay(
+		// 			hit.pos,
+		// 			hit.normal,
+		// 			Vec4::magenta
+		// 		);
+		// 	}
+		// }
 #endif
-	}
-
-	/// @brief エンティティを登録する関数
-	/// @details メッシュコライダーを持ったエンティティを登録します
-	/// @param entity 登録するエンティティ(旧)
-	void Engine::RegisterEntity(Entity* entity) {
-		const auto meshCollider = entity->GetComponent<MeshColliderComponent>();
-		if (!meshCollider) {
-			Warning(
-				"UPhysics",
-				"Entity '{}' MeshColliderComponent is null.",
-				entity->GetName()
-			);
-			return;
-		}
-
-		const auto  transform = meshCollider->GetOwner()->GetTransform();
-		const Mat4& worldMat  = transform->GetWorldMat();
-
-		const float m00 = worldMat.m[0][0], m01 = worldMat.m[0][1], m02 =
-			            worldMat.m[0][2];
-		const float m10 = worldMat.m[1][0], m11 = worldMat.m[1][1], m12 =
-			            worldMat.m[1][2];
-		const float m20 = worldMat.m[2][0], m21 = worldMat.m[2][1], m22 =
-			            worldMat.m[2][2];
-		const float m30 = worldMat.m[3][0], m31 = worldMat.m[3][1], m32 =
-			            worldMat.m[3][2];
-
-		for (
-			const auto& subMesh : meshCollider->GetStaticMesh()->GetSubMeshes()
-		) {
-			const auto& tris = subMesh->GetPolygons();
-
-			std::vector<Unnamed::Triangle> triangles;
-			triangles.reserve(tris.size());
-
-			// UPhysics::Triangleに変換
-			for (const auto& tri : tris) {
-				triangles.emplace_back(
-					Vec3(
-						tri.v0.x * m00 + tri.v0.y * m10 + tri.v0.z * m20 + m30,
-						tri.v0.x * m01 + tri.v0.y * m11 + tri.v0.z * m21 + m31,
-						tri.v0.x * m02 + tri.v0.y * m12 + tri.v0.z * m22 + m32
-					),
-					Vec3(
-						tri.v1.x * m00 + tri.v1.y * m10 + tri.v1.z * m20 + m30,
-						tri.v1.x * m01 + tri.v1.y * m11 + tri.v1.z * m21 + m31,
-						tri.v1.x * m02 + tri.v1.y * m12 + tri.v1.z * m22 + m32
-					),
-					Vec3(
-						tri.v2.x * m00 + tri.v2.y * m10 + tri.v2.z * m20 + m30,
-						tri.v2.x * m01 + tri.v2.y * m11 + tri.v2.z * m21 + m31,
-						tri.v2.x * m02 + tri.v2.y * m12 + tri.v2.z * m22 + m32
-					)
-				);
-			}
-
-			// BVHを構築
-			BVHBuilder            bvhBuilder;
-			std::vector<FlatNode> nodes;
-			std::vector<uint32_t> triIndices;
-
-			const size_t triStart = mTriangles.size();
-
-			bvhBuilder.Build(triangles, nodes, triIndices);
-
-			const size_t triCount = triangles.size();
-
-			AddGlobalOffset(
-				triIndices,
-				static_cast<uint32_t>(mTriangles.size())
-			);
-
-			mBVHs.emplace_back(
-				RegisteredBVH{
-					.nodes      = std::move(nodes),
-					.triIndices = std::move(triIndices),
-					.triStart   = triStart,
-					.triCount   = triCount,
-					.owner      = entity
-				}
-			);
-
-			mTriangles.insert(
-				mTriangles.end(),
-				triangles.begin(),
-				triangles.end()
-			);
-		}
-	}
-
-	/// @brief エンティティの登録を解除する関数
-	/// @param entity 登録解除するエンティティ
-	void Engine::UnregisterEntity(const Entity* entity) {
-		if (mBVHs.empty()) { return; }
-
-		struct DelRange {
-			size_t start, count;
-		};
-		std::vector<DelRange> ranges;
-
-		std::erase_if(
-			mBVHs,
-			[&](const RegisteredBVH& bvh) {
-				if (bvh.owner != entity) { return false; }
-				ranges.emplace_back(bvh.triStart, bvh.triCount);
-				return true;
-			}
-		);
-
-		if (ranges.empty()) { return; }
-
-		std::ranges::sort(
-			ranges, [](auto& a, auto& b) { return a.start > b.start; }
-		);
-
-		for (auto& [start, count] : ranges) {
-			mTriangles.erase(
-				mTriangles.begin() + static_cast<long long>(start),
-				mTriangles.begin() + static_cast<long long>(start + count)
-			);
-
-			for (auto& bvh : mBVHs) {
-				if (bvh.triStart > start) {
-					bvh.triStart -= count;
-					for (uint32_t& id : bvh.triIndices) {
-						if (id >= start) { id -= static_cast<uint32_t>(count); }
-					}
-				}
-			}
-		}
 	}
 
 	/// @brief レイキャストを行う関数
@@ -298,12 +175,12 @@ namespace UPhysics {
 		if (filtered.empty()) { return false; }
 
 		// ナローフェーズ：詳細な重なり判定
-		float    minPenetration = FLT_MAX;
-		uint32_t hitTri         = UINT32_MAX;
-		Vec3     hitNormal;
-		Vec3     hitPos;
-		uint32_t stack[64];
-		Entity*  hitEntity = nullptr;
+		float         minPenetration = FLT_MAX;
+		uint32_t      hitTri         = UINT32_MAX;
+		Vec3          hitNormal;
+		Vec3          hitPos;
+		uint32_t      stack[64];
+		uint64_t hitEntityGuid = 0;
 
 		for (auto* bvh : filtered) {
 			int sp      = 0;
@@ -352,7 +229,7 @@ namespace UPhysics {
 										         box.halfSize.z
 									         }
 								         ) - penetrationDepth * 0.5f);
-								hitEntity = bvh->owner;
+								hitEntityGuid = bvh->ownerGuid;
 							}
 						}
 					}
@@ -365,21 +242,16 @@ namespace UPhysics {
 		}
 
 		if (outHit) {
-			outHit->t         = 1.0f;           // sweep 用でないので 1
-			outHit->depth     = minPenetration; // ← depth をセット
-			outHit->pos       = hitPos;
-			outHit->normal    = hitNormal;
-			outHit->triIndex  = hitTri;
-			outHit->hitEntity = hitEntity;
+			outHit->t        = 1.0f;           // sweep 用でないので 1
+			outHit->depth    = minPenetration; // ← depth をセット
+			outHit->pos      = hitPos;
+			outHit->normal   = hitNormal;
+			outHit->triIndex = hitTri;
+			outHit->hitEntityGuid = hitEntityGuid;
 		}
 		return true;
 	}
 
-	/// @brief ボックスとメッシュの重なり判定を行う関数（複数ヒット版）
-	/// @param box ボックス情報
-	/// @param outHits 衝突情報の出力先配列
-	/// @param maxHits 出力先配列の最大ヒット数
-	/// @return ヒットした数を返す
 	int Engine::BoxOverlap(
 		const Unnamed::Box& box,
 		Hit*                outHits,
@@ -462,9 +334,9 @@ namespace UPhysics {
 										               box.halfSize.z
 									               }
 								               ) - penetrationDepth * 0.5f);
-							tmpHit.normal    = separationAxis;
-							tmpHit.triIndex  = triIdx;
-							tmpHit.hitEntity = bvh->owner;
+							tmpHit.normal   = separationAxis;
+							tmpHit.triIndex = triIdx;
+							tmpHit.hitEntityGuid = bvh->ownerGuid;
 
 							outHits[hitCount] = tmpHit;
 							hitCount++;
@@ -475,6 +347,80 @@ namespace UPhysics {
 		}
 
 		return hitCount;
+	}
+
+	void Engine::ClearStaticMeshes() {
+		mTriangles.clear();
+		mNodes.clear();
+		mTriIndices.clear();
+		mBVHs.clear();
+	}
+
+	bool Engine::RegisterStaticMesh(
+		const uint64_t ownerGuid,
+		const std::span<const Unnamed::MeshVertex> vertices,
+		const std::span<const uint32_t>            indices,
+		const Mat4&                                world
+	) {
+		if (ownerGuid == 0 || vertices.empty() || indices.size() < 3) {
+			return false;
+		}
+
+		const size_t triStart = mTriangles.size();
+		std::vector<Unnamed::Triangle> localTriangles;
+		localTriangles.reserve(indices.size() / 3);
+
+		for (size_t i = 0; i + 2 < indices.size(); i += 3) {
+			const uint32_t i0 = indices[i + 0];
+			const uint32_t i1 = indices[i + 1];
+			const uint32_t i2 = indices[i + 2];
+			if (i0 >= vertices.size() || i1 >= vertices.size() || i2 >= vertices.
+			    size()) {
+				continue;
+			}
+			localTriangles.emplace_back(
+				BuildTriangle(vertices[i0], vertices[i1], vertices[i2], world)
+			);
+		}
+
+		if (localTriangles.empty()) { return false; }
+
+		mTriangles.insert(
+			mTriangles.end(),
+			localTriangles.begin(),
+			localTriangles.end()
+		);
+
+		BVHBuilder             builder;
+		std::vector<FlatNode>  nodes;
+		std::vector<uint32_t>  triIndices;
+		builder.Build(localTriangles, nodes, triIndices);
+		AddGlobalOffset(triIndices, static_cast<uint32_t>(triStart));
+
+		RegisteredBVH registered = {};
+		registered.nodes         = std::move(nodes);
+		registered.triIndices    = std::move(triIndices);
+		registered.triStart      = triStart;
+		registered.triCount      = localTriangles.size();
+		registered.ownerGuid     = ownerGuid;
+		mBVHs.emplace_back(std::move(registered));
+		return true;
+	}
+
+	void Engine::UnregisterStaticMesh(const uint64_t ownerGuid) {
+		if (ownerGuid == 0) { return; }
+		const auto it = std::find_if(
+			mBVHs.begin(),
+			mBVHs.end(),
+			[ownerGuid](const RegisteredBVH& bvh) {
+				return bvh.ownerGuid == ownerGuid;
+			}
+		);
+		if (it == mBVHs.end()) { return; }
+
+		// The current runtime rebuilds static physics on scene load, so a full reset
+		// keeps ownership data coherent without incremental BVH compaction.
+		ClearStaticMeshes();
 	}
 
 	/// @brief インデックスにグローバルオフセットを追加します

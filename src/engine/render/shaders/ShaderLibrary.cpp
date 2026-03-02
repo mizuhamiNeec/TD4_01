@@ -22,7 +22,7 @@ namespace Unnamed::Render {
 	static uint64_t StampToU64(const FileStamp& stamp) {
 		return HashCombine64(
 			stamp.sizeInBytes,
-			static_cast<uint64_t>(stamp.lastWrite.time_since_epoch().count())
+			static_cast<uint64_t>(stamp.lastWriteTicks)
 		);
 	}
 

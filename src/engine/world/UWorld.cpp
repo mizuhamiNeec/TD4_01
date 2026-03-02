@@ -10,40 +10,38 @@
 #include "engine/render/frame/RenderFrameInputs.h"
 #include "engine/scene/UScene.h"
 #include "engine/scene/USceneSerializer.h"
+#include "engine/unnamed/framework/components/GameplayCameraComponent.h"
 #include "engine/unnamed/framework/components/EditorCameraComponent.h"
+#include "engine/unnamed/framework/components/PortalComponent.h"
 #include "engine/unnamed/framework/components/SkeletalMeshRendererComponent.h"
 #include "engine/unnamed/framework/components/StaticMeshRendererComponent.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/framework/entity/UEntity.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 
+#include <set>
+
 namespace Unnamed {
 	static constexpr std::string_view kChannel = "UWorld";
-
 	namespace {
-		float ResolveRenderAspect(const Render::SceneRenderRequest& request) {
-			uint32_t width  = request.viewportPanelWidth;
-			uint32_t height = request.viewportPanelHeight;
+		thread_local UWorld* gTickingWorld = nullptr;
 
-			switch (request.mode) {
-				case Render::SCENE_RENDER_MODE::FIXED_ASPECT_16X9: width = 16;
-					height = 9;
-					break;
-				case Render::SCENE_RENDER_MODE::HD_720P: width = 1280;
-					height = 720;
-					break;
-				case Render::SCENE_RENDER_MODE::FHD_1080P: width = 1920;
-					height = 1080;
-					break;
-				default: break;
+		class ScopedTickingWorld {
+		public:
+			explicit ScopedTickingWorld(UWorld* world) : mPrevious(gTickingWorld) {
+				gTickingWorld = world;
 			}
 
-			if (width == 0 || height == 0) { return 16.0f / 9.0f; }
-			return static_cast<float>(width) / static_cast<float>(height);
-		}
+			~ScopedTickingWorld() { gTickingWorld = mPrevious; }
+
+		private:
+			UWorld* mPrevious = nullptr;
+		};
 	}
 
 	UWorld::~UWorld() = default;
+
+	UWorld* UWorld::GetTickingWorld() noexcept { return gTickingWorld; }
 
 	void UWorld::Initialize() {
 		if (!mScene) { mScene = std::make_unique<UScene>(); }
@@ -57,6 +55,7 @@ namespace Unnamed {
 		mTime.timeSeconds       += deltaTime;
 
 		if (!mScene) { return; }
+		ScopedTickingWorld tickingWorld(this);
 
 		for (const auto& entity : mScene->GetEntities()) {
 			if (!entity || !entity->IsActive()) { continue; }
@@ -113,26 +112,36 @@ namespace Unnamed {
 		inputs.visibleObjects.clear();
 		inputs.skinningPalettes.clear();
 		inputs.portalPairs.clear();
+		inputs.screenSprites.clear();
 
 		if (!mScene) { return; }
-		const float renderAspect = ResolveRenderAspect(
-			inputs.sceneRenderRequest
-		);
+
+		std::set<std::pair<uint64_t, uint64_t>> emittedPortalPairs;
 
 		for (const auto& entity : mScene->GetEntities()) {
 			if (!entity || !entity->IsActive()) { continue; }
 
 			if (!inputs.camera.valid) {
-				const auto* editorCamera = entity->GetComponent<
-					EditorCameraComponent>();
-				if (editorCamera && editorCamera->IsActive()) {
-					editorCamera->BuildCameraInput(renderAspect, inputs.camera);
+				const auto* gameplayCamera = entity->GetComponent<
+					GameplayCameraComponent>();
+				if (gameplayCamera && gameplayCamera->IsActive() &&
+				    gameplayCamera->IsCameraActive()) {
+					gameplayCamera->BuildCameraInput(inputs.camera);
 				}
 			}
 
-			if (entity->IsEditorOnly()) { continue; }
+			if (!inputs.camera.valid) {
+				const auto* editorCamera = entity->GetComponent<
+					EditorCameraComponent>();
+				if (editorCamera && editorCamera->IsActive()) {
+					editorCamera->BuildCameraInput(inputs.camera);
+				}
+			}
+
+			if (entity->IsEditorOnly() || !entity->IsVisible()) { continue; }
 
 			const auto* transform = entity->GetComponent<TransformComponent>();
+			const auto* portal = entity->GetComponent<PortalComponent>();
 			auto*       meshRenderer = entity->GetComponent<
 				StaticMeshRendererComponent>();
 			auto* skelRenderer = entity->GetComponent<
@@ -150,6 +159,11 @@ namespace Unnamed {
 						ResolveMaterialInstanceAsset(
 							assetManager
 						);
+					object.ownerEntityGuid = entity->GetGuid();
+					object.isPortalSurface =
+						portal && portal->IsActive() && portal->IsEnabled() &&
+						portal->GetLinkedPortalGuid() != 0 &&
+						portal->GetUseAsPortalSurface();
 					object.world     = transform->WorldMat();
 					object.isSkinned = false;
 					inputs.visibleObjects.emplace_back(object);
@@ -168,6 +182,11 @@ namespace Unnamed {
 					ResolveMaterialInstanceAsset(
 						assetManager
 					);
+				object.ownerEntityGuid = entity->GetGuid();
+				object.isPortalSurface =
+					portal && portal->IsActive() && portal->IsEnabled() &&
+					portal->GetLinkedPortalGuid() != 0 &&
+					portal->GetUseAsPortalSurface();
 				object.world             = transform->WorldMat();
 				object.isSkinned         = false;
 				object.skeletonPaletteId = 0;
@@ -211,6 +230,54 @@ namespace Unnamed {
 				}
 
 				inputs.visibleObjects.emplace_back(object);
+			}
+
+			if (
+				portal && portal->IsActive() && portal->IsEnabled() &&
+				portal->GetLinkedPortalGuid() != 0
+			) {
+				if (portal->GetLinkedPortalGuid() == entity->GetGuid()) {
+					continue;
+				}
+
+				UEntity* linkedEntity = mScene->FindEntity(
+					portal->GetLinkedPortalGuid()
+				);
+				if (!linkedEntity || !linkedEntity->IsActive()) { continue; }
+
+				const auto* linkedPortal = linkedEntity->GetComponent<
+					PortalComponent>();
+				const auto* linkedTransform = linkedEntity->GetComponent<
+					TransformComponent>();
+				if (!linkedPortal || !linkedTransform || !linkedPortal->
+				    IsActive() ||
+				    !linkedPortal->IsEnabled()) { continue; }
+				if (linkedPortal->GetLinkedPortalGuid() != entity->GetGuid()) {
+					continue;
+				}
+
+				const auto pairKey = std::minmax(
+					entity->GetGuid(), linkedEntity->GetGuid()
+				);
+				if (!emittedPortalPairs.emplace(pairKey).second) { continue; }
+
+				Render::PortalPairInput portalPair = {};
+				portalPair.enabled = true;
+				portalPair.fromPortalGuid = entity->GetGuid();
+				portalPair.toPortalGuid = linkedEntity->GetGuid();
+				portalPair.fromPortalWorld = transform->WorldMat();
+				portalPair.toPortalWorld = linkedTransform->WorldMat();
+				portalPair.fromPortalHalfExtents = portal->GetHalfExtents();
+				portalPair.toPortalHalfExtents = linkedPortal->GetHalfExtents();
+				inputs.portalPairs.emplace_back(portalPair);
+
+				std::swap(portalPair.fromPortalGuid, portalPair.toPortalGuid);
+				std::swap(portalPair.fromPortalWorld, portalPair.toPortalWorld);
+				std::swap(
+					portalPair.fromPortalHalfExtents,
+					portalPair.toPortalHalfExtents
+				);
+				inputs.portalPairs.emplace_back(portalPair);
 			}
 		}
 	}

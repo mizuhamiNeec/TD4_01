@@ -27,6 +27,8 @@ namespace Unnamed {
 	public:
 		virtual ~UWorld();
 
+		[[nodiscard]] static UWorld* GetTickingWorld() noexcept;
+
 		[[nodiscard]] UScene&       GetScene() { return *mScene; }
 		[[nodiscard]] const UScene& GetScene() const { return *mScene; }
 
@@ -43,6 +45,9 @@ namespace Unnamed {
 			Render::RenderFrameContext& frameContext,
 			AssetManager&               assetManager
 		);
+		[[nodiscard]] virtual bool IsGameSimulationEnabled() const noexcept {
+			return true;
+		}
 
 		[[nodiscard]] std::string_view GetLoadedScenePath() const {
 			return mLoadedScenePath;

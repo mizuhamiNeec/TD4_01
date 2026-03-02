@@ -4,6 +4,9 @@ cbuffer FrameCB : register(b0) {
 	float4x4 gViewProj;  // ビュープロジェクション行列
 	float3   gCameraPos; // カメラのワールド空間位置
 	float    gTime;      // 経過時間
+	float4   gPortalClipPlane;
+	float    gPortalClipEnabled;
+	float3   gFramePadding;
 }
 
 cbuffer ObjectCB : register(b1) {
@@ -80,6 +83,10 @@ VsOut VsMain(VsIn i) {
 }
 
 float4 PsMain(VsOut i) : SV_TARGET {
+	if (gPortalClipEnabled > 0.5f) {
+		clip(dot(float4(i.positionWS, 1.0f), gPortalClipPlane));
+	}
+
 	float3 texColor = gBaseColorTex.Sample(gLinearWrap, i.uv).rgb;
 	float3 albedo   = texColor * gBaseColor.rgb;
 

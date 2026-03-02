@@ -6,7 +6,11 @@
 
 #include "Audio.h"
 
-#include "engine/OldConsole/Console.h"
+#include "core/UnnamedMacro.h"
+
+#include "engine/unnamed/subsystem/console/Log.h"
+
+static constexpr std::string_view kChannel = "AudMgr";
 
 /// @brief コンストラクタ
 AudioManager::AudioManager() = default;
@@ -22,21 +26,16 @@ bool AudioManager::Init() {
 		XAUDIO2_DEFAULT_PROCESSOR
 	);
 	if (FAILED(hr)) {
-		Console::Print(
-			"[AudioManager] XAudio2の作成に失敗しました\n", kConTextColorError,
-			Channel::ResourceSystem
-		);
-		assert(SUCCEEDED(hr));
+		Fatal(kChannel, "XAudio2の作成に失敗しました。");
+		UASSERT(SUCCEEDED(hr));
 		return false;
 	}
 
 	// マスターボイスの作成を追加
 	hr = mXAudio2->CreateMasteringVoice(&mAsterVoice);
 	if (FAILED(hr)) {
-		Console::Print(
-			"[AudioManager] マスターボイスの作成に失敗しました\n", kConTextColorError,
-			Channel::ResourceSystem
-		);
+		Fatal(kChannel, "マスターボイスの作成に失敗しました。");
+		UASSERT(SUCCEEDED(hr));
 		return false;
 	}
 
@@ -81,10 +80,7 @@ std::shared_ptr<Audio> AudioManager::GetAudio(const std::string& filePath) {
 		return audio;
 	}
 
-	Console::Print(
-		"[AudioManager] 音声の読み込みに失敗しました: " + filePath + "\n",
-		kConTextColorError, Channel::ResourceSystem
-	);
+	Error(kChannel, "音声の読み込みに失敗しました: {}", filePath);
 
 	return nullptr;
 }
@@ -94,10 +90,7 @@ std::shared_ptr<Audio> AudioManager::GetAudio(const std::string& filePath) {
 void AudioManager::UnloadAudio(const std::string& filePath) {
 	// 検索してあったら削除
 	if (mAudioCache.contains(filePath)) { mAudioCache.erase(filePath); } else {
-		Console::Print(
-			"[AudioManager] 音声のアンロードに失敗しました: " + filePath + "\n",
-			kConTextColorError, Channel::ResourceSystem
-		);
+		Error(kChannel, "音声のアンロードに失敗しました: {}", filePath);
 	}
 }
 

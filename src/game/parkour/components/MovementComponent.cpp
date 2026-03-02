@@ -13,10 +13,11 @@
 
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/framework/entity/UEntity.h"
-#include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/unnamed/subsystem/input/UInputSystem.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 #include "engine/world/UWorld.h"
+
+#include "game/parkour/ParkourServices.h"
 
 namespace Unnamed {
 	namespace {
@@ -55,6 +56,9 @@ namespace Unnamed {
 			mWasJumpHeldLastFrame = false;
 			return;
 		}
+
+		mPhysics = ResolvePhysics();
+		mCameraRotator = ResolveCameraRotator();
 
 		if (mSpeedBoostRemaining > 0.0f) {
 			mSpeedBoostRemaining = std::max(
@@ -146,6 +150,9 @@ namespace Unnamed {
 		mRespawnPosition = ReadVec3Or(
 			reader, "respawnPosition", mRespawnPosition
 		);
+		mLookSourceEntityGuid = reader.ReadUint64("lookSourceEntityGuid").value_or(
+			mLookSourceEntityGuid
+		);
 	}
 
 	void MovementComponent::Serialize(JsonWriter& writer) const {
@@ -167,6 +174,8 @@ namespace Unnamed {
 		writer.Write(mRespawnPosition.y);
 		writer.Write(mRespawnPosition.z);
 		writer.EndArray();
+		writer.Key("lookSourceEntityGuid");
+		writer.Write(mLookSourceEntityGuid);
 	}
 
 #ifdef _DEBUG
@@ -175,16 +184,17 @@ namespace Unnamed {
 		ImGui::Checkbox("Sliding", &mSliding);
 		ImGui::Checkbox("WallRunning", &mWallRunning);
 		ImGui::DragFloat3("Velocity", &mVelocity.x, 0.01f);
+
+		ImGui::Text(
+			"Input: %.2f, %.2f | Jump: %d | Crouch: %d | Blink: %d",
+			mLiveInputOverride.moveInput.x,
+			mLiveInputOverride.moveInput.y,
+			mLiveInputOverride.wishJump,
+			mLiveInputOverride.wishCrouch,
+			mLiveInputOverride.wishBlink
+		);
 	}
 #endif
-
-	void MovementComponent::Initialize(
-		UPhysics::Engine* const       physics,
-		CameraRotatorComponent* const cameraRotator
-	) {
-		mPhysics       = physics;
-		mCameraRotator = cameraRotator;
-	}
 
 	void MovementComponent::SetReplayFrame(const ReplayUserCmdFrame& frame) {
 		mReplayFrame       = frame;
@@ -323,6 +333,34 @@ namespace Unnamed {
 		return owner ? owner->GetComponent<TransformComponent>() : nullptr;
 	}
 
+	UPhysics::Engine* MovementComponent::ResolvePhysics() const {
+		const ParkourServices* services = ServiceLocator::Get<ParkourServices>();
+		return services ? services->physics : nullptr;
+	}
+
+	CameraRotatorComponent* MovementComponent::ResolveCameraRotator() const {
+		if (mCameraRotator) {
+			if (mLookSourceEntityGuid == 0 ||
+			    (mCameraRotator->GetOwner() &&
+			     mCameraRotator->GetOwner()->GetGuid() == mLookSourceEntityGuid)) {
+				return mCameraRotator;
+			}
+		}
+
+		UEntity* owner = GetOwner();
+		UWorld*  world = UWorld::GetTickingWorld();
+		if (!world) { return nullptr; }
+
+		if (mLookSourceEntityGuid != 0) {
+			if (UEntity* entity = world->GetScene().FindEntity(mLookSourceEntityGuid)) {
+				return entity->GetComponent<CameraRotatorComponent>();
+			}
+		}
+
+		if (owner) { return owner->GetComponent<CameraRotatorComponent>(); }
+		return nullptr;
+	}
+
 	MovementComponent::InputFrame MovementComponent::SampleInput() const {
 		InputFrame frame = {};
 		if (mReplayInputActive) {
@@ -347,13 +385,6 @@ namespace Unnamed {
 		frame.wishJump   = mInput->IsHeld("jump");
 		frame.wishCrouch = mInput->IsHeld("duck");
 		frame.wishBlink  = mInput->IsPressed("attack2");
-
-		Msg(
-			"MovementComponent",
-			" moveInput: ({:.2f}, {:.2f}), wishJump: {}, wishCrouch: {}, wishBlink: {}",
-			frame.moveInput.x, frame.moveInput.y, frame.wishJump,
-			frame.wishCrouch, frame.wishBlink
-		);
 
 		return frame;
 	}

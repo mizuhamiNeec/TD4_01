@@ -40,11 +40,6 @@ namespace Unnamed {
 		void DrawInspectorImGui() override;
 #endif
 
-		void Initialize(
-			UPhysics::Engine* physics,
-			CameraRotatorComponent* cameraRotator
-		);
-
 		void SetReplayFrame(const ReplayUserCmdFrame& frame);
 		void ClearReplayFrame();
 		void SetLiveInputOverride(
@@ -90,6 +85,8 @@ namespace Unnamed {
 		};
 
 		[[nodiscard]] TransformComponent* GetTransform() const;
+		[[nodiscard]] UPhysics::Engine* ResolvePhysics() const;
+		[[nodiscard]] CameraRotatorComponent* ResolveCameraRotator() const;
 		[[nodiscard]] InputFrame SampleInput() const;
 		[[nodiscard]] Vec3 BuildWishDirection(const Vec2& moveInput) const;
 		[[nodiscard]] Unnamed::Box BuildPhysicsBoxAt(
@@ -112,6 +109,7 @@ namespace Unnamed {
 		UInputSystem*           mInput         = nullptr;
 		UPhysics::Engine*       mPhysics       = nullptr;
 		CameraRotatorComponent* mCameraRotator = nullptr;
+		uint64_t                mLookSourceEntityGuid = 0;
 
 		Vec3 mVelocity = Vec3::zero;
 		Vec3 mRespawnPosition = Vec3::zero;

@@ -77,14 +77,8 @@ namespace Unnamed {
 				if (const auto resize = wnd->ConsumeResizeEvent()) {
 					if (
 						resize->width > 0 && resize->height > 0 &&
-						(std::cmp_not_equal(
-							 resize->width,
-							 mLastResizeWidth
-						 ) ||
-						 std::cmp_not_equal(
-							 resize->height,
-							 mLastResizeHeight
-						 ))
+						(std::cmp_not_equal(resize->width, mLastResizeWidth) ||
+						 std::cmp_not_equal(resize->height, mLastResizeHeight))
 					) {
 						mLastResizeWidth = static_cast<uint32_t>(resize->width);
 						mLastResizeHeight = static_cast<uint32_t>(resize->
@@ -206,11 +200,14 @@ namespace Unnamed {
 		// InputSystemの初期化
 		mInputSystem = std::make_unique<UInputSystem>();
 		if (!mInputSystem->Init()) { return false; }
+
 		// デバイス登録
 		const auto keyboardDevice = std::make_shared<KeyboardDevice>(hwnd);
 		const auto mouseDevice    = std::make_shared<MouseDevice>(hwnd);
 		mInputSystem->RegisterDevice(keyboardDevice);
 		mInputSystem->RegisterDevice(mouseDevice);
+
+		// コンソールコマンドと変数の登録
 		mConsoleSystem->ExecuteCommand(
 			"exec ./content/core/cfg/config_default.cfg"
 		);
@@ -275,7 +272,7 @@ namespace Unnamed {
 
 		if (mConfig.mode == RUN_MODE::EDITOR) {
 			auto& editorWorld = SwitchWorld<UEditorWorld>();
-			editorWorld.LoadSceneFromFile("./content/core/scenes/sandbox.json");
+			editorWorld.LoadSceneFromFile("./content/parkour/scenes/game.json");
 #ifdef _DEBUG
 			mUEditorRuntime = std::make_unique<UEditorRuntime>(
 				editorWorld,
@@ -288,9 +285,7 @@ namespace Unnamed {
 				"exec ./content/core/cfg/editor.cfg"
 			);
 #endif
-		} else {
-			(void)SwitchWorld<UGameWorld>();
-		}
+		} else { (void)SwitchWorld<UGameWorld>(); }
 
 		return true;
 	}
@@ -307,6 +302,7 @@ namespace Unnamed {
 			UProfiler::ScopeTimer scope(mProfiler.get(), "Input.Update");
 			mInputSystem->Update(deltaTime);
 		}
+
 		{
 			mAssetHotReloadPollAccumulator += deltaTime;
 			if (
@@ -369,8 +365,8 @@ namespace Unnamed {
 		Render::RenderFrameInputs inputs = {};
 		// フレームインデックスとゲーム時間を設定
 		inputs.frameIndex = mFrameIndex++;
-		inputs.time       = static_cast<float>(mTimeSystem->GetGameTime()->
-			TotalTime());
+		inputs.time       =
+			static_cast<float>(mTimeSystem->GetGameTime()->TotalTime());
 #ifdef _DEBUG
 		if (mUEditorRuntime && mIsEditorMode) {
 			inputs.sceneRenderRequest = mUEditorRuntime->

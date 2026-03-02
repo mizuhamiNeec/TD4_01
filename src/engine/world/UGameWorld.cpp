@@ -15,7 +15,7 @@ namespace Unnamed {
 		UWorld::Initialize();
 		if (!mRuntime) { mRuntime = std::make_unique<ParkourRuntime>(*this); }
 		mRuntime->Initialize();
-		LoadSceneFromFile(mGameplayScenePath.c_str());
+		LoadSceneFromFile(ResolveScenePath(mActiveSceneId));
 	}
 
 	void UGameWorld::Shutdown() {
@@ -62,7 +62,7 @@ namespace Unnamed {
 	) {
 		if (mRuntime) { mRuntime->PrepareRender(inputs.sceneRenderRequest); }
 		UWorld::FillRenderFrameInputs(inputs, frameContext, assetManager);
-		if (mRuntime) { mRuntime->BuildOverlaySprites(inputs, assetManager); }
+		if (mRuntime) { mRuntime->BuildRenderContributions(inputs, assetManager); }
 	}
 
 	void UGameWorld::SetScene(std::unique_ptr<UScene> scene) {
@@ -81,12 +81,20 @@ namespace Unnamed {
 		if (!mHasPendingSceneChange) { return; }
 		mHasPendingSceneChange = false;
 		mActiveSceneId         = mPendingSceneId;
-		LoadSceneFromFile(mGameplayScenePath.c_str());
+		LoadSceneFromFile(ResolveScenePath(mActiveSceneId));
 	}
 
 	void UGameWorld::AttachRuntimeToCurrentScene() {
 		if (mSceneRuntimeAttached || !mScene || !mRuntime) { return; }
 		mRuntime->OnSceneLoaded(*mScene);
 		mSceneRuntimeAttached = true;
+	}
+
+	const char* UGameWorld::ResolveScenePath(const GameSceneId sceneId) const {
+		switch (sceneId) {
+			case GameSceneId::Title: return mTitleScenePath.c_str();
+			case GameSceneId::Game: return mGameplayScenePath.c_str();
+			default: return mGameplayScenePath.c_str();
+		}
 	}
 }

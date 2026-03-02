@@ -33,12 +33,14 @@ namespace Unnamed {
 
 	private:
 		void AttachRuntimeToCurrentScene();
+		[[nodiscard]] const char* ResolveScenePath(GameSceneId sceneId) const;
 
 		GameSceneId mActiveSceneId = GameSceneId::Title;
 		bool        mHasPendingSceneChange = false;
 		GameSceneId mPendingSceneId = GameSceneId::Title;
 		bool        mSceneRuntimeAttached = false;
-		std::string mGameplayScenePath = "./content/core/scenes/sandbox.json";
+		std::string mTitleScenePath = "./content/parkour/scenes/title.json";
+		std::string mGameplayScenePath = "./content/parkour/scenes/game.json";
 		std::unique_ptr<ParkourRuntime> mRuntime;
 	};
 }

@@ -1,6 +1,7 @@
 #include "URenderer.h"
 
 #include <algorithm>
+#include <cmath>
 
 #include "RenderDevice.h"
 
@@ -573,6 +574,98 @@ namespace Unnamed::Render {
 						4, mPortalRecursionColorIds[directionIndex][0]
 					);
 					pass.DrawIndexedTest(mPortalPass.compositeGeom.indexCount);
+				}
+			}
+		);
+
+		mGraph.AddPass(
+			"WorldBillboardPass",
+			[this](RenderGraphBuilder& b) {
+				b.WriteRt(mSceneColorTextureId);
+				b.WriteDepth(mDepthTextureId);
+			},
+			[this, &renderDevice](RenderPassContext& pass) {
+				if (mWorldBillboards.empty()) { return; }
+
+				auto&          rhi        = renderDevice.GetRhiDevice();
+				const uint32_t frameIndex =
+					rhi.GetSwapChain().GetCurrentBackBufferIndex();
+				const uint32_t frameSlot =
+					frameIndex % rhi.GetSwapChain().GetBufferCount();
+				auto& allocator = static_cast<Rhi::D3D12Device&>(rhi).
+				                  GetFrameUploadAllocator();
+
+				const Vec3 cameraRight = mBillboardCameraWorld.GetRight().
+				                         Normalized();
+				const Vec3 cameraUp = mBillboardCameraWorld.GetUp().Normalized();
+				const Vec3 cameraForward =
+					mBillboardCameraWorld.GetForward().Normalized();
+
+				pass.SetViewportAndScissor(
+					0.0f,
+					0.0f,
+					static_cast<float>(mSceneRenderWidth),
+					static_cast<float>(mSceneRenderHeight)
+				);
+				pass.SetSrvUavHeap();
+				pass.SetRenderTargetAndDepth(
+					std::span<const uint32_t>(&mSceneColorTextureId, 1),
+					mDepthTextureId
+				);
+				pass.SetGraphicsPipeline(
+					mBillboardPass.geom.rootSig,
+					mBillboardPass.geom.pso
+				);
+				pass.BindGraphicsCbv(0, mFrameCb.GetGpuAddress(frameSlot));
+				pass.SetVertexBuffer(mBillboardPass.geom.vbv);
+				pass.SetIndexBuffer(mBillboardPass.geom.ibv);
+
+				for (const auto& billboard : mWorldBillboards) {
+					const float cosine = std::cos(billboard.rotationRad);
+					const float sine = std::sin(billboard.rotationRad);
+					const Vec3 rotatedRight =
+						cameraRight * cosine + cameraUp * sine;
+					const Vec3 rotatedUp =
+						cameraRight * -sine + cameraUp * cosine;
+
+					Rhi::ObjectConstants object = {};
+					object.world = Mat4::identity;
+					object.world.m[0][0] = rotatedRight.x * billboard.sizeWorld.x * 0.5f;
+					object.world.m[0][1] = rotatedRight.y * billboard.sizeWorld.x * 0.5f;
+					object.world.m[0][2] = rotatedRight.z * billboard.sizeWorld.x * 0.5f;
+					object.world.m[1][0] = rotatedUp.x * billboard.sizeWorld.y * 0.5f;
+					object.world.m[1][1] = rotatedUp.y * billboard.sizeWorld.y * 0.5f;
+					object.world.m[1][2] = rotatedUp.z * billboard.sizeWorld.y * 0.5f;
+					object.world.m[2][0] = cameraForward.x;
+					object.world.m[2][1] = cameraForward.y;
+					object.world.m[2][2] = cameraForward.z;
+					object.world.m[3][0] = billboard.worldPosition.x;
+					object.world.m[3][1] = billboard.worldPosition.y;
+					object.world.m[3][2] = billboard.worldPosition.z;
+					object.worldInverseTranspose =
+						object.world.Inverse().Transpose();
+
+					Rhi::MaterialConstants material = {};
+					material.baseColor = billboard.color;
+					material.opacity = billboard.color.w;
+					material.domainMode = 0.0f;
+
+					const D3D12_GPU_VIRTUAL_ADDRESS objectCb =
+						allocator.AllocateConstantBuffer(&object, sizeof(object));
+					const D3D12_GPU_VIRTUAL_ADDRESS materialCb =
+						allocator.AllocateConstantBuffer(&material, sizeof(material));
+
+					pass.BindGraphicsCbv(1, objectCb);
+					pass.BindGraphicsCbv(2, materialCb);
+					pass.BindGraphicsCbv(3, objectCb);
+					pass.BindGraphicsSrvTable(
+						4,
+						EnsureSpriteTextureLoaded(
+							renderDevice,
+							billboard.textureAssetId
+						)
+					);
+					pass.DrawIndexedTest(mBillboardPass.geom.indexCount);
 				}
 			}
 		);

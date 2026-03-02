@@ -13,6 +13,7 @@
 
 #include "core/string/StrUtil.h"
 
+#include "engine/Properties.h"
 #include "engine/ImGui/Icons.h"
 
 namespace Unnamed {
@@ -21,6 +22,8 @@ namespace Unnamed {
 	static constexpr float    kCellHeight    = 24.0f; // グリッドセルの高さ
 
 	void ConVarHelper::Show(bool& showConVarHelper) {
+		if (!showConVarHelper) { return; }
+
 		ImGui::SetNextWindowSizeConstraints(
 			{172.0f, 0.0f},
 			{0xFFFF, 0xFFFF}
@@ -50,8 +53,12 @@ namespace Unnamed {
 	void ConVarHelper::ShowMenuBar() {
 		// メニューバー
 		if (ImGui::BeginMenuBar()) {
+			ImGui::PushStyleVar(
+				ImGuiStyleVar_WindowPadding,
+				ImVec2(kPopupPadding, kPopupPadding)
+			);
+
 			if (ImGui::BeginMenu("File")) {
-				ImGui::Spacing();
 				if (ImGuiWidgets::MenuItemWithIcon(
 					"Import Page", kIconDownload
 				)) { ImportPage(); }
@@ -59,9 +66,11 @@ namespace Unnamed {
 				if (ImGuiWidgets::MenuItemWithIcon(
 					"Export Page", kIconUpload
 				)) { ExportPage(); }
-				ImGui::Spacing();
 				ImGui::EndMenu();
 			}
+
+			ImGui::PopStyleVar();
+
 			ImGui::EndMenuBar();
 		}
 	}

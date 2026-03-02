@@ -131,6 +131,7 @@ group "Engine"
 	
 		excludes {
 			"src/thirdparty/**",
+			"src/transplantation/**",
 		}
 
         includedirs {

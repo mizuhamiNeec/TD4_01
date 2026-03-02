@@ -2,9 +2,6 @@
 
 #include <core/math/Math.h>
 
-#include <engine/Camera/CameraManager.h>
-#include <engine/Components/Camera/CameraComponent.h>
-
 namespace Math {
 	float Lerp(const float a, const float b, float t) {
 		return a * (1.0f - t) + b * t;
@@ -91,89 +88,97 @@ namespace Math {
 		bool&       outIsOffscreen,
 		float&      outAngle
 	) {
-		CameraComponent* camera = CameraManager::GetActiveCamera().get();
-		const Vec4 viewSpace = Vec4(worldPos, 1.0f) * camera->GetViewMat();
-		const Vec4 clipSpace = viewSpace * camera->GetProjMat();
+		worldPos;
+		screenSize;
+		bClamp;
+		margin;
+		outIsOffscreen;
+		outAngle;
 
-		const Vec2 screenCenter = screenSize * 0.5f;
+		if (true) { return Vec2::zero; }
 
-		// w除算を行いNDC空間に変換
-		const float invW = 1.0f / clipSpace.w;
-		const auto  ndc  = Vec3(
-			clipSpace.x * invW,
-			clipSpace.y * invW,
-			clipSpace.z * invW
-		);
-
-		// スクリーン座標変換
-		auto screenPos = Vec2(
-			(ndc.x * 0.5f + 0.5f) * screenSize.x,
-			(1.0f - (ndc.y * 0.5f + 0.5f)) * screenSize.y
-		);
-
-		// 画面中心からの方向ベクトル計算
-		const Vec2 direction = screenPos - screenCenter;
-
-		// 角度計算
-		outAngle = std::atan2(direction.x, -direction.y);
-		if (viewSpace.z < 0.0f) { outAngle += pi; }
-		outAngle = std::fmod(outAngle + 2.0f * pi, 2.0f * pi);
-
-		// 画面外か判定する
-		if (!bClamp) {
-			outIsOffscreen =
-				viewSpace.z < 0.0f ||
-				screenPos.x < 0.0f ||
-				screenPos.x > screenSize.x ||
-				screenPos.y < 0.0f ||
-				screenPos.y > screenSize.y;
-			return outIsOffscreen ? -Vec2::one * 0xFFFFFF : screenPos;
-		}
-
-		// クランプ処理
-		outIsOffscreen = false;
-		if (
-			viewSpace.z < 0.0f ||
-			screenPos.x < margin ||
-			screenPos.x > screenSize.x - margin ||
-			screenPos.y < margin ||
-			screenPos.y > screenSize.y - margin
-		) {
-			outIsOffscreen      = true;
-			Vec2 clampDirection = viewSpace.z < 0.0f ?
-				                      Vec2(viewSpace.x, -viewSpace.y) :
-				                      direction;
-
-			const float length =
-				std::hypot(clampDirection.x, clampDirection.y);
-			if (length > 0.0f) {
-				clampDirection /= length; // 正規化
-			}
-
-			const float screenRight  = screenSize.x - margin;
-			const float screenBottom = screenSize.y - margin;
-
-			// 境界との交差点を計算
-			const std::vector tValues{
-				(margin - screenCenter.x) / clampDirection.x,
-				(screenRight - screenCenter.x) / clampDirection.x,
-				(margin - screenCenter.y) / clampDirection.y,
-				(screenBottom - screenCenter.y) / clampDirection.y
-			};
-
-			float minT = std::numeric_limits<float>::max();
-			for (const float t : tValues) {
-				if (t > 0.0f && t < minT) { minT = t; }
-			}
-
-			screenPos = screenCenter + clampDirection * minT;
-			screenPos.Clamp(
-				{margin, margin},
-				{std::max(screenRight, margin), std::max(screenBottom, margin)}
-			);
-		}
-
-		return screenPos;
+		// const Vec4 viewSpace = Vec4(worldPos, 1.0f) * camera->GetViewMat();
+		// const Vec4 clipSpace = viewSpace * camera->GetProjMat();
+		//
+		// const Vec2 screenCenter = screenSize * 0.5f;
+		//
+		// // w除算を行いNDC空間に変換
+		// const float invW = 1.0f / clipSpace.w;
+		// const auto  ndc  = Vec3(
+		// 	clipSpace.x * invW,
+		// 	clipSpace.y * invW,
+		// 	clipSpace.z * invW
+		// );
+		//
+		// // スクリーン座標変換
+		// auto screenPos = Vec2(
+		// 	(ndc.x * 0.5f + 0.5f) * screenSize.x,
+		// 	(1.0f - (ndc.y * 0.5f + 0.5f)) * screenSize.y
+		// );
+		//
+		// // 画面中心からの方向ベクトル計算
+		// const Vec2 direction = screenPos - screenCenter;
+		//
+		// // 角度計算
+		// outAngle = std::atan2(direction.x, -direction.y);
+		// if (viewSpace.z < 0.0f) { outAngle += pi; }
+		// outAngle = std::fmod(outAngle + 2.0f * pi, 2.0f * pi);
+		//
+		// // 画面外か判定する
+		// if (!bClamp) {
+		// 	outIsOffscreen =
+		// 		viewSpace.z < 0.0f ||
+		// 		screenPos.x < 0.0f ||
+		// 		screenPos.x > screenSize.x ||
+		// 		screenPos.y < 0.0f ||
+		// 		screenPos.y > screenSize.y;
+		// 	return outIsOffscreen ? -Vec2::one * 0xFFFFFF : screenPos;
+		// }
+		//
+		// // クランプ処理
+		// outIsOffscreen = false;
+		// if (
+		// 	viewSpace.z < 0.0f ||
+		// 	screenPos.x < margin ||
+		// 	screenPos.x > screenSize.x - margin ||
+		// 	screenPos.y < margin ||
+		// 	screenPos.y > screenSize.y - margin
+		// ) {
+		// 	outIsOffscreen      = true;
+		// 	Vec2 clampDirection = viewSpace.z < 0.0f ?
+		// 		                      Vec2(viewSpace.x, -viewSpace.y) :
+		// 		                      direction;
+		//
+		// 	const float length =
+		// 		std::hypot(clampDirection.x, clampDirection.y);
+		// 	if (length > 0.0f) {
+		// 		clampDirection /= length; // 正規化
+		// 	}
+		//
+		// 	const float screenRight  = screenSize.x - margin;
+		// 	const float screenBottom = screenSize.y - margin;
+		//
+		// 	// 境界との交差点を計算
+		// 	const std::vector tValues{
+		// 		(margin - screenCenter.x) / clampDirection.x,
+		// 		(screenRight - screenCenter.x) / clampDirection.x,
+		// 		(margin - screenCenter.y) / clampDirection.y,
+		// 		(screenBottom - screenCenter.y) / clampDirection.y
+		// 	};
+		//
+		// 	float minT = std::numeric_limits<float>::max();
+		// 	for (const float t : tValues) {
+		// 		if (t > 0.0f && t < minT) { minT = t; }
+		// 	}
+		//
+		// 	screenPos = screenCenter + clampDirection * minT;
+		// 	screenPos.Clamp(
+		// 		{margin, margin},
+		// 		{std::max(screenRight, margin), std::max(screenBottom, margin)}
+		// 	);
+		// }
+		//
+		// return screenPos;
 	}
 
 	/// @brief ベクトルを平面に投影します

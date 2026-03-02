@@ -68,6 +68,7 @@ namespace Unnamed::Render {
 		[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE GetSrvCpu(
 			uint32_t textureId
 		) const;
+		[[nodiscard]] uint64_t GetSrvRevision(uint32_t textureId) const;
 		[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE GetUav(
 			uint32_t textureId
 		) const;
@@ -81,6 +82,7 @@ namespace Unnamed::Render {
 		) const;
 
 		void OnResize(uint32_t width, uint32_t height, uint32_t frameIndex);
+		void CollectGarbage(uint64_t completedFenceValue);
 
 	private:
 		uint32_t AllocSrvUavSlot();
@@ -103,6 +105,8 @@ namespace Unnamed::Render {
 		struct TexEntry {
 			RgTextureDesc                          desc;
 			Microsoft::WRL::ComPtr<ID3D12Resource> resource;
+			uint64_t                               srvRevision      = 0;
+			uint64_t                               resourceRevision = 0;
 
 			// フレーム内インデックス
 			uint32_t srvLocal    = UINT32_MAX;
@@ -116,7 +120,13 @@ namespace Unnamed::Render {
 			D3D12_CPU_DESCRIPTOR_HANDLE dsvCpu = {};
 		};
 
-		uint32_t AllocateId();
+		struct RetiredTextureResource {
+			uint64_t                               retireFenceValue = 0;
+			Microsoft::WRL::ComPtr<ID3D12Resource> resource;
+		};
+
+		uint32_t               AllocateId();
+		[[nodiscard]] uint64_t GetSafeRetireFenceValue() const;
 
 		void CreateD3D12Texture(TexEntry& e) const;
 		void CreateDescriptors(TexEntry& e);
@@ -149,9 +159,10 @@ namespace Unnamed::Render {
 		uint32_t mBackBufferWidth  = 0;
 		uint32_t mBackBufferHeight = 0;
 
-		std::vector<uint32_t> mDsvFrameBase;
-		uint32_t              mDsvPerFrameSlots = 0;
-		uint32_t              mNextDsvLocal     = 0;
-		uint32_t              mDsvCapacity      = 0;
+		std::vector<uint32_t>               mDsvFrameBase;
+		uint32_t                            mDsvPerFrameSlots = 0;
+		uint32_t                            mNextDsvLocal     = 0;
+		uint32_t                            mDsvCapacity      = 0;
+		std::vector<RetiredTextureResource> mRetiredResources;
 	};
 }

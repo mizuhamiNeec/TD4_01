@@ -51,7 +51,7 @@ namespace Unnamed::Render {
 	}
 
 	void RgResourceRegistry::SetFramesInFlight(const uint32_t framesInFlight) {
-		// 最低2にする
+		// 最佁Eにする
 		mFramesInFlight = std::max(2u, framesInFlight);
 		mSrvUavFrameBase.resize(mFramesInFlight);
 		mRtvFrameBase.resize(mFramesInFlight);
@@ -74,7 +74,7 @@ namespace Unnamed::Render {
 			resolved.width  = mBackBufferWidth;
 			resolved.height = mBackBufferHeight;
 			Msg(
-				kChannel, "テクスチャ {} はバックバッファに合わせてリサイズされます: {}x{}",
+				kChannel, "テクスチャ {} はバックバッファに合わせてリサイズされます。 {}x{}",
 				desc.debugName, resolved.width, resolved.height
 			);
 		}
@@ -259,6 +259,13 @@ namespace Unnamed::Render {
 		return e.srvCpu;
 	}
 
+	uint64_t RgResourceRegistry::GetSrvRevision(
+		const uint32_t textureId
+	) const {
+		if (textureId == 0 || textureId >= mEntries.size()) { return 0; }
+		return mEntries[textureId].srvRevision;
+	}
+
 	D3D12_GPU_DESCRIPTOR_HANDLE RgResourceRegistry::GetUav(
 		const uint32_t textureId
 	) const {
@@ -319,11 +326,23 @@ namespace Unnamed::Render {
 		}
 	}
 
+	void RgResourceRegistry::CollectGarbage(
+		const uint64_t completedFenceValue
+	) {
+		std::erase_if(
+			mRetiredResources,
+			[completedFenceValue](const RetiredTextureResource& retired) {
+				return retired.retireFenceValue == 0 ||
+				       retired.retireFenceValue <= completedFenceValue;
+			}
+		);
+	}
+
 	uint32_t RgResourceRegistry::AllocSrvUavSlot() {
 		const uint32_t local = mNextSrvUavLocalGlobal++;
 		if (local >= mSrvUavPerFrameSlots) {
 			Fatal(
-				kChannel, "SRV/UAVヒープのスロットが足らんのじゃ: local={}, perFrame={}",
+				kChannel, "SRV/UAV heap slots exhausted: local={}, perFrame={}",
 				local, mSrvUavPerFrameSlots
 			);
 			UASSERT(false);
@@ -335,7 +354,7 @@ namespace Unnamed::Render {
 		const uint32_t local = mNextRtvLocalGlobal++;
 		if (local >= mRtvPerFrameSlots) {
 			Fatal(
-				kChannel, "RTVヒープのスロットが足らんのじゃ: local={}, perFrame={}",
+				kChannel, "RTV heap slots exhausted: local={}, perFrame={}",
 				local, mRtvPerFrameSlots
 			);
 			UASSERT(false);
@@ -347,10 +366,11 @@ namespace Unnamed::Render {
 		const uint32_t slot = mCpuNextSlot++;
 		if (slot >= mCpuHeapCapacity) {
 			Fatal(
-				kChannel, "CPU SRV/UAV ヒープのスロットが足らんのじゃ: slot={}, capacity={}",
+				kChannel,
+				"CPU SRV/UAV heap slots exhausted: slot={}, capacity={}",
 				slot, mCpuHeapCapacity
 			);
-			UASSERT(false && "CPU SRV/UAV ヒープのスロットが足らんのじゃ");
+			UASSERT(false && "CPU SRV/UAV heap slots exhausted.");
 		}
 		return slot;
 	}
@@ -363,7 +383,7 @@ namespace Unnamed::Render {
 		if (slot >= end) {
 			Fatal(
 				kChannel,
-				"DSVヒープのスロットが足らんのじゃ: slot={}, perFrame={}, frameIndex={}",
+				"DSV heap slots exhausted: slot={}, perFrame={}, frameIndex={}",
 				slot, mDsvPerFrameSlots, mCurrentFrameIndex
 			);
 		}
@@ -414,7 +434,7 @@ namespace Unnamed::Render {
 		const uint32_t rtvCap    = mDx.GetRtvHeapCapacity();
 		const uint32_t dsvCap    = mDx.GetDsvHeapCapacity();
 
-		// フレームごとに最低1スロットは確保する
+		// Reserve at least one slot per frame.
 		mSrvUavPerFrameSlots = std::max(1u, srvUavCap / mFramesInFlight);
 		mRtvPerFrameSlots    = std::max(1u, rtvCap / mFramesInFlight);
 		mDsvPerFrameSlots    = std::max(1u, dsvCap / mFramesInFlight);
@@ -435,17 +455,30 @@ namespace Unnamed::Render {
 
 	uint32_t RgResourceRegistry::AllocateId() { return mNextId++; }
 
+	uint64_t RgResourceRegistry::GetSafeRetireFenceValue() const {
+		uint64_t       retireFenceValue = 0;
+		const uint32_t framesInFlight   = mDx.GetFramesInFlight();
+		for (uint32_t frameIndex = 0; frameIndex < framesInFlight; ++
+		     frameIndex) {
+			retireFenceValue = std::max(
+				retireFenceValue,
+				mDx.GetLastSubmittedFenceValue(frameIndex)
+			);
+		}
+		return retireFenceValue;
+	}
+
 	void RgResourceRegistry::CreateD3D12Texture(TexEntry& e) const {
 		auto* device = mDx.GetDevice();
 
-		DXGI_FORMAT resourceFormat = e.desc.resourceFormat;
+		const DXGI_FORMAT resourceFormat = e.desc.resourceFormat;
 
 		// ---- validation ----
 		if (e.desc.allowDsv) {
 			if (!e.desc.dsvFormat.has_value()) {
 				Fatal(
 					kChannel,
-					"DSVを許可するテクスチャ {} はdsvFormatを指定してください。リソースの作成に失敗します。",
+					"Depth texture {} requires dsvFormat.",
 					e.desc.debugName
 				);
 				UASSERT(false);
@@ -453,14 +486,13 @@ namespace Unnamed::Render {
 
 			if (
 				resourceFormat != DXGI_FORMAT_R32_TYPELESS &&
+				resourceFormat != DXGI_FORMAT_R32G8X24_TYPELESS &&
 				resourceFormat != DXGI_FORMAT_R24G8_TYPELESS &&
 				resourceFormat != DXGI_FORMAT_R16_TYPELESS
 			) {
 				Warning(
 					kChannel,
-					"DSVを許可するテクスチャ {} はtypelessではありません。"
-					"typelessなフォーマットを使用することを推奨します。"
-					"リソースの作成には成功しますが、SRVでの読み取りができない可能性があります。",
+					"Depth texture {} is not typeless. SRV reads may fail.",
 					e.desc.debugName
 				);
 			}
@@ -492,7 +524,7 @@ namespace Unnamed::Render {
 		D3D12_HEAP_PROPERTIES heap = {};
 		heap.Type                  = D3D12_HEAP_TYPE_DEFAULT;
 
-		// 最適化されたクリアカラー/深度がある場合は、リソース作成時にクリア値を指定する
+		// 最適化されたクリアカラー/深度がある場合は、リソース作成時にクリア値を指定する。
 		const D3D12_CLEAR_VALUE* clearPtr = nullptr;
 		D3D12_CLEAR_VALUE        clear    = {};
 
@@ -514,7 +546,18 @@ namespace Unnamed::Render {
 			clearPtr = &clear;
 		}
 
-		// リソースの作成
+		auto* self = const_cast<RgResourceRegistry*>(this);
+		if (e.resource) {
+			RetiredTextureResource retired = {};
+			retired.retireFenceValue       = std::max(
+				self->GetSafeRetireFenceValue(), mDx.GetNextSignalFenceValue()
+			);
+			retired.resource = e.resource;
+			self->mRetiredResources.emplace_back(std::move(retired));
+			e.resource.Reset();
+		}
+
+		// Create resource
 		Rhi::Throw(
 			device->CreateCommittedResource(
 				&heap,
@@ -526,12 +569,14 @@ namespace Unnamed::Render {
 			)
 		);
 
-		// デバッグ名の設定
+		// Set debug name
 		if (!e.desc.debugName.empty()) {
 			e.resource->SetName(
 				StrUtil::ToWString(e.desc.debugName).c_str()
 			);
 		}
+
+		++e.resourceRevision;
 	}
 
 	void RgResourceRegistry::CreateDescriptors(TexEntry& e) {
@@ -558,7 +603,7 @@ namespace Unnamed::Render {
 			if (!e.desc.srvFormat.has_value()) {
 				Fatal(
 					kChannel,
-					"DSVを許可するテクスチャ {} はsrvFormatを指定してください。リソースの作成に失敗します。",
+					"Depth texture {} requires srvFormat.",
 					e.desc.debugName
 				);
 				UASSERT(false);
@@ -609,7 +654,7 @@ namespace Unnamed::Render {
 				);
 
 				if (fi == mCurrentFrameIndex) {
-					e.rtvCpu = cpuRtv; // デバッグ用に保持
+					e.rtvCpu = cpuRtv; // ビューポート用に保存
 				}
 			}
 		}
@@ -633,5 +678,7 @@ namespace Unnamed::Render {
 
 			e.dsvCpu = cpuDsv;
 		}
+
+		++e.srvRevision;
 	}
 }

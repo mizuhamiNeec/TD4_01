@@ -176,6 +176,10 @@ namespace Unnamed::Render {
 			GeometryPassRes geom = {};
 		};
 
+		struct BillboardPassRes {
+			GeometryPassRes geom = {};
+		};
+
 		static constexpr uint32_t kMaxDrawObjects       = 1024; // とりあえず
 		static constexpr uint32_t kMaxPortalViews       = 16;
 		static constexpr uint32_t kPortalRecursionDepth = 6;
@@ -189,6 +193,7 @@ namespace Unnamed::Render {
 		GeometryPassRes          mGeometryPass       = {};
 		PortalPassRes            mPortalPass         = {};
 		SpritePassRes            mSpritePass         = {};
+		BillboardPassRes         mBillboardPass      = {};
 		AdvancedRenderFoundation mAdvancedFoundation = {};
 
 		Rhi::UploadBuffer<Rhi::FrameConstants> mFrameCb;
@@ -204,6 +209,7 @@ namespace Unnamed::Render {
 		AssetID mPostFxChainAsset = kInvalidAssetID;
 		std::unordered_map<AssetID, MaterialBinding> mMaterialBindings;
 		std::vector<PostFxRuntimePass> mPostFxPasses;
+		std::vector<WorldBillboardInput> mWorldBillboards;
 		std::vector<ScreenSpriteInput> mScreenSprites;
 		std::unordered_map<AssetID, uint32_t> mSpriteTextureIds;
 		uint32_t mSpriteFallbackTextureId = 0;
@@ -242,6 +248,7 @@ namespace Unnamed::Render {
 		UiPlatformRenderCallback  mUiPlatformRenderCallback;
 
 		bool mGraphBuilt = false;
+		Mat4 mBillboardCameraWorld = Mat4::identity;
 
 		uint32_t EnsureSpriteTextureLoaded(
 			RenderDevice& renderDevice, AssetID textureAssetId

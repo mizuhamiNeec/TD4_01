@@ -303,6 +303,14 @@ namespace Unnamed::Render {
 			BuildGraph(renderDevice);
 		}
 
+		mWorldBillboards = inputs.worldBillboards;
+		std::sort(
+			mWorldBillboards.begin(),
+			mWorldBillboards.end(),
+			[](const WorldBillboardInput& a, const WorldBillboardInput& b) {
+				return a.sortKey < b.sortKey;
+			}
+		);
 		mScreenSprites = inputs.screenSprites;
 		std::sort(
 			mScreenSprites.begin(),
@@ -311,8 +319,14 @@ namespace Unnamed::Render {
 				return a.sortKey < b.sortKey;
 			}
 		);
-		if (!mScreenSprites.empty()) {
+		if (!mWorldBillboards.empty() || !mScreenSprites.empty()) {
 			EnsureSpriteFallbackTexture(renderDevice);
+			for (const auto& billboard : mWorldBillboards) {
+				(void)EnsureSpriteTextureLoaded(
+					renderDevice,
+					billboard.textureAssetId
+				);
+			}
 			for (const auto& sprite : mScreenSprites) {
 				(void)EnsureSpriteTextureLoaded(renderDevice, sprite.textureAssetId);
 			}
@@ -348,6 +362,7 @@ namespace Unnamed::Render {
 			currentCameraPos =
 				inputs.camera.valid ? inputs.camera.cameraPos : Vec3::zero;
 			viewProjection = currentView * currentProj;
+			mBillboardCameraWorld = currentView.Inverse();
 			mActivePortalViews.clear();
 			mPortalEnabled = false;
 
@@ -791,6 +806,10 @@ namespace Unnamed::Render {
 			mSpritePass.geom.pso =
 				renderDevice.GetPipelineCache().GetOrCreateGraphicsPso(
 					mSpritePass.geom.psoKey
+				);
+			mBillboardPass.geom.pso =
+				renderDevice.GetPipelineCache().GetOrCreateGraphicsPso(
+					mBillboardPass.geom.psoKey
 				);
 
 			BuildDrawBatches();

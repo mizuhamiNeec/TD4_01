@@ -1,0 +1,29 @@
+﻿{
+	"style": {
+		"translationLineThickness": 2.0,
+		"translationLineArrowSize": 8.0,
+		"rotationLineThickness": 4.0,
+		"rotationOuterLineThickness": 2.0,
+		"scaleLineThickness": 2.0,
+		"scaleLineCircleSize": 8.0,
+		"hatchedAxisLineThickness": 2.0,
+		"centerCircleSize": 4.0
+	},
+	"color": {
+		"directionX": [0.78, 0.12, 0.12, 1.0],
+		"directionY": [0.2, 0.78, 0.12, 1.0],
+		"directionZ": [0.12, 0.43, 0.78, 1.0],
+		"planeX": [0.666, 0.000, 0.000, 0.380],
+		"planeY": [0.000, 0.666, 0.000, 0.380],
+		"planeZ": [0.000, 0.000, 0.666, 0.380],
+		"selection": [1.0, 0.5, 0.062, 0.541],
+		"inactive": [0.6, 0.6, 0.6, 0.6],
+		"translationLine": [0.666, 0.666, 0.666, 0.666],
+		"scaleLine": [0.25, 0.25, 0.25, 1.0],
+		"rotationUsingBorder": [1.0, 0.5, 0.062, 1.0],
+		"rotationUsingFill": [1.0, 0.5, 0.062, 0.5],
+		"hatchedAxisLines": [0.0, 0.0, 0.0, 0.5],
+		"text": [1.0, 1.0, 1.0, 1.0],
+		"textShadow": [0.0, 0.0, 0.0, 1.0]
+	}
+}

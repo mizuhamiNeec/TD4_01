@@ -62,6 +62,7 @@ namespace Unnamed {
 		void TickFan(float deltaTime);
 		void TickGameplayTriggers();
 		void TickTeleport();
+		void UpdateActionLatch(std::string_view actionName, bool& state) const;
 		void ResetProgressionState();
 		[[nodiscard]] bool OverlapsPlayerAabb(
 			const Vec3& center, const Vec3& halfExtents
@@ -88,7 +89,13 @@ namespace Unnamed {
 		CachedEntities mCached = {};
 		int32_t mCurrentCheckpointIndex = 0;
 		bool    mTeleportArmed = true;
-		AssetID mPingTexture = kInvalidAssetID;
-		AssetID mArrowTexture = kInvalidAssetID;
+		bool    mForwardHeld = false;
+		bool    mBackHeld = false;
+		bool    mMoveLeftHeld = false;
+		bool    mMoveRightHeld = false;
+		bool    mJumpHeld = false;
+		bool    mCrouchHeld = false;
+		AssetID mTitleLogoTexture = kInvalidAssetID;
+		AssetID mPressSpaceTexture = kInvalidAssetID;
 	};
 }

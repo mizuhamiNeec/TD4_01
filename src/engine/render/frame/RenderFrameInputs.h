@@ -81,6 +81,15 @@ namespace Unnamed::Render {
 		int32_t sortKey        = 0;
 	};
 
+	struct WorldBillboardInput {
+		AssetID textureAssetId = kInvalidAssetID;
+		Vec3    worldPosition  = Vec3::zero;
+		Vec2    sizeWorld      = Vec2::one;
+		Vec4    color          = Vec4::one;
+		float   rotationRad    = 0.0f;
+		int32_t sortKey        = 0;
+	};
+
 	struct RenderFrameInputs {
 		uint32_t frameIndex = 0;
 
@@ -88,6 +97,7 @@ namespace Unnamed::Render {
 		std::vector<VisibleRenderObject>  visibleObjects;
 		std::vector<SkinningPaletteInput> skinningPalettes;
 		std::vector<PortalPairInput>      portalPairs;
+		std::vector<WorldBillboardInput>  worldBillboards;
 		std::vector<ScreenSpriteInput>    screenSprites;
 		SceneRenderRequest                sceneRenderRequest = {};
 

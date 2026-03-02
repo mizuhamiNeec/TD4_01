@@ -23,6 +23,10 @@ namespace Unnamed {
 		void Deserialize(const JsonReader& reader) override;
 		void Serialize(JsonWriter& writer) const override;
 
+#ifdef _DEBUG
+		void DrawInspectorImGui() override;
+#endif
+
 		void SetMeshPath(const std::string& path);
 		void SetMaterialInstancePath(const std::string& path);
 

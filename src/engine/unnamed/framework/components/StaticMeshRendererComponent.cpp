@@ -1,5 +1,10 @@
 #include "StaticMeshRendererComponent.h"
 
+#include <algorithm>
+#include <array>
+
+#include <imgui.h>
+
 #include "core/ComponentRegistry.h"
 #include "core/assets/AssetManager.h"
 #include "core/assets/AssetType.h"
@@ -36,6 +41,33 @@ namespace Unnamed {
 		writer.Key("materialInstancePath");
 		writer.Write(mMaterialInstancePath);
 	}
+
+#ifdef _DEBUG
+	void StaticMeshRendererComponent::DrawInspectorImGui() {
+		std::array<char, 512> meshPath = {};
+		std::array<char, 512> matPath  = {};
+
+		memcpy(
+			meshPath.data(),
+			mMeshPath.c_str(),
+			std::min(mMeshPath.size(), meshPath.size() - 1)
+		);
+		memcpy(
+			matPath.data(),
+			mMaterialInstancePath.c_str(),
+			std::min(mMaterialInstancePath.size(), matPath.size() - 1)
+		);
+
+		if (ImGui::InputText("MeshPath", meshPath.data(), meshPath.size())) {
+			SetMeshPath(meshPath.data());
+		}
+		if (
+			ImGui::InputText(
+				"MaterialInstancePath", matPath.data(), matPath.size()
+			)
+		) { SetMaterialInstancePath(matPath.data()); }
+	}
+#endif
 
 	void StaticMeshRendererComponent::SetMeshPath(const std::string& path) {
 		const std::string normalized = path.empty() ?

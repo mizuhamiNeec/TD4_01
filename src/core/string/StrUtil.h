@@ -59,6 +59,11 @@ namespace Unnamed::StrUtil {
 	/// @return 小文字に変換された拡張子
 	std::string ToLowerExt(const std::string_view& str);
 
+	/// @brief 文字列から両端の二重引用符を削除する
+	/// @param str 入力文字列
+	/// @return 二重引用符が削除された文字列
+	std::string RemoveDoubleQuotes(const std::string_view& str);
+
 	/// @brief 文字列が浮動小数点数かを判定する
 	/// @param str 判定する文字列
 	/// @return 浮動小数点数の場合true

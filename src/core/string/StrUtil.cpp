@@ -146,6 +146,13 @@ namespace Unnamed::StrUtil {
 		return e;
 	}
 
+	std::string RemoveDoubleQuotes(const std::string_view& str) {
+		std::string result;
+		result.reserve(str.size());
+		for (const char c : str) { if (c != '"') { result += c; } }
+		return result;
+	}
+
 	bool IsFloat(const std::string& str) {
 		try {
 			[[maybe_unused]] auto d = std::stof(str);

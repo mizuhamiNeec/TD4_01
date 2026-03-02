@@ -1,12 +1,12 @@
 {
 	"name": "dev_material",
-	"shader": "../shaders/programs/geom_pbr.shader.json",
+	"shader": "../shaders/programs/pbr.shader.json",
 	"domain": "pbr",
 	"renderState": {
 		"depthEnable": true,
 		"depthWrite": true,
 		"cullBackFace": true,
-		"blendEnable": false,
+		"blendEnable": true,
 		"stencilEnable": false
 	},
 	"scalars": {

@@ -12,6 +12,8 @@
 #include <engine/unnamed/subsystem/console/ConVarHelper.h>
 #include <engine/unnamed/subsystem/console/concommand/UnnamedConCommand.h>
 
+#include "engine/Properties.h"
+
 namespace Unnamed {
 	static constexpr uint32_t kHistoryBufferSize = 64;
 	static constexpr auto kConsoleUIContextPopupId = "##ConsoleUIContextMenu";
@@ -86,7 +88,7 @@ namespace Unnamed {
 	/// @details ImGuiのコンテキスト内で呼び出し
 	void ConsoleUI::Show() {
 		// ConVarヘルパーは独立して表示
-		if (mShowConVarHelper) { mConVarHelper->Show(mShowConVarHelper); }
+		if (mConVarHelper) { mConVarHelper->Show(mShowConVarHelper); }
 
 		if (!mShowConsole) { return; }
 
@@ -119,9 +121,12 @@ namespace Unnamed {
 
 	void ConsoleUI::ShowMenuBar() {
 		if (ImGui::BeginMenuBar()) {
-			if (ImGui::BeginMenu("File")) {
-				ImGui::Spacing();
+			ImGui::PushStyleVar(
+				ImGuiStyleVar_WindowPadding,
+				ImVec2(kPopupPadding, kPopupPadding)
+			);
 
+			if (ImGui::BeginMenu("File")) {
 				if (ImGuiWidgets::MenuItemWithIcon("Clear", kIconReset)) {
 					// コンソール出力をクリア
 					mConsoleSystem->ExecuteCommand("clear");
@@ -144,13 +149,10 @@ namespace Unnamed {
 					ImGui::EndTooltip();
 				}
 
-				ImGui::Spacing();
-
 				ImGui::EndMenu();
 			}
 
 			if (ImGui::BeginMenu("Tools")) {
-				ImGui::Spacing();
 				if (ImGuiWidgets::MenuItemWithIcon(
 					"ConVar Helper", kIconSettings, nullptr, mShowConVarHelper
 				)) {
@@ -162,12 +164,10 @@ namespace Unnamed {
 					ImGui::TextUnformatted("ConVarヘルパーウィンドウを表示/非表示します。");
 					ImGui::EndTooltip();
 				}
-				ImGui::Spacing();
 				ImGui::EndMenu();
 			}
 
 			if (ImGui::BeginMenu("Help")) {
-				ImGui::Spacing();
 				if (ImGuiWidgets::MenuItemWithIcon("Help", kIconHelp)) {
 					mConsoleSystem->ExecuteCommand("help");
 				}
@@ -184,9 +184,11 @@ namespace Unnamed {
 					ImGui::TextUnformatted("コンソールUIについて。");
 					ImGui::EndTooltip();
 				}
-				ImGui::Spacing();
 				ImGui::EndMenu();
 			}
+
+			ImGui::PopStyleVar();
+
 			ImGui::EndMenuBar();
 		}
 	}
@@ -315,6 +317,11 @@ namespace Unnamed {
 	}
 
 	void ConsoleUI::ShowContextMenu() const {
+		ImGui::PushStyleVar(
+			ImGuiStyleVar_WindowPadding,
+			ImVec2(kPopupPadding, kPopupPadding)
+		);
+
 		if (ImGui::BeginPopup(kConsoleUIContextPopupId)) {
 			// 選択数をカウント
 			int    selectedCount = 0;
@@ -358,6 +365,7 @@ namespace Unnamed {
 
 			ImGui::EndPopup();
 		}
+		ImGui::PopStyleVar();
 	}
 
 	void ConsoleUI::Submit() {

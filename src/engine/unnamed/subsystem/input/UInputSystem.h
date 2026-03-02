@@ -179,8 +179,10 @@ namespace Unnamed {
 		void SetMouseCursorVisible(const bool& visible);
 
 		/// @brief マウスカーソルのロック位置を設定します
-		/// @param position ロック位置のスクリーン座標
-		void SetMouseCursorLockScreenPosition(const Vec2& position);
+		/// @param hwnd ロック位置の基準となるウィンドウ
+		/// @param clientPos ロック位置のクライアント座標
+		void SetMouseCursorLockClientPosition(HWND hwnd, const Vec2& clientPos);
+		void ClearMouseCursorLockAnchor();
 
 	private:
 		/// @brief 入力状態をリセットします
@@ -212,16 +214,22 @@ namespace Unnamed {
 		std::unordered_map<std::string, InputAxisState1D> mAxisStates1D;
 		std::unordered_map<std::string, InputAxisState2D> mAxisStates2D;
 
-		std::vector<InputBinding>                 mBindings;
-		std::unordered_map<InputKey, bool>        mCurrentKeyStates;
-		std::unordered_map<InputKey, bool>        mPreviousKeyStates;
-		std::unordered_map<InputKey, float>       mAnalogValues;
-		std::unordered_map<InputKey, std::string> mCommandBinds;
+		std::vector<InputBinding> mBindings;
+		std::unordered_map<InputKey, bool> mCurrentKeyStates;
+		std::unordered_map<InputKey, bool> mPreviousKeyStates;
+		std::unordered_map<InputKey, float> mAnalogValues;
+		std::unordered_map<InputKey, std::vector<std::string>> mCommandBinds;
 
 		std::vector<std::shared_ptr<BaseInputDevice>> mDevices;
 
-		Vec2 mMouseCursorLockScrPos = Vec2::zero; // マウスカーソルのロック位置（スクリーン座標）
-		bool mMouseCursorLocked     = false;      // マウスカーソルがロックされているかどうか
-		bool mMouseCursorVisible    = false;      // マウスカーソルが表示されているかどうか
+		struct MouseLockAnchor {
+			HWND hwnd      = nullptr;
+			Vec2 clientPos = Vec2::zero;
+			bool valid     = false;
+		};
+
+		MouseLockAnchor mMouseLockAnchor    = {};
+		bool            mMouseCursorLocked  = false;
+		bool            mMouseCursorVisible = false;
 	};
 }

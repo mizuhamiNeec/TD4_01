@@ -1,5 +1,6 @@
 #include <pch.h>
 
+#include <algorithm>
 #include <ranges>
 
 #include <engine/unnamed/subsystem/input/KeyNameTable.h>
@@ -82,8 +83,25 @@ namespace Unnamed {
 			"Unbind all keys."
 		);
 
+		auto toggleCursorLockHandler = [&](const std::vector<std::string>&) {
+			const bool bNewState = !IsMouseCursorLocked();
+			SetMouseCursorLocked(bNewState);
+			DevMsg(
+				kChannel,
+				"Cursor lock state changed: {}",
+				bNewState ? "Locked" : "Unlocked"
+			);
+			return true;
+		};
+
 		static UnnamedConCommand togglelockcursor(
 			"togglelockcursor",
+			toggleCursorLockHandler,
+			"Toggle the cursor lock state."
+		);
+
+		static UnnamedConCommand togglecursorlock(
+			"togglecursorlock",
 			[&](const std::vector<std::string>&) {
 				const bool bNewState = !IsMouseCursorLocked();
 				SetMouseCursorLocked(bNewState);
@@ -309,15 +327,24 @@ namespace Unnamed {
 		if (mMouseCursorLocked) {
 			// 非アクティブ時は必ずロック解除
 			if (!bActive) { ClipCursor(nullptr); } else {
-				// カーソルをロック位置に固定
-				POINT lockPos = {
-					static_cast<LONG>(mMouseCursorLockScrPos.x),
-					static_cast<LONG>(mMouseCursorLockScrPos.y)
-				};
+				const HWND anchorHwnd = mMouseLockAnchor.valid &&
+				                        mMouseLockAnchor.hwnd != nullptr ?
+					                        mMouseLockAnchor.hwnd :
+					                        hWnd;
+				POINT lockPos = {};
+				if (mMouseLockAnchor.valid) {
+					lockPos.x = static_cast<LONG>(mMouseLockAnchor.clientPos.x);
+					lockPos.y = static_cast<LONG>(mMouseLockAnchor.clientPos.y);
+				} else {
+					RECT clientRect = {};
+					GetClientRect(anchorHwnd, &clientRect);
+					lockPos.x = (clientRect.right - clientRect.left) / 2;
+					lockPos.y = (clientRect.bottom - clientRect.top) / 2;
+				}
+				ClientToScreen(anchorHwnd, &lockPos);
 
 				// ウィンドウがアクティブな場合のみロック
 				if (bActive) {
-					ClientToScreen(hWnd, &lockPos);
 					RECT rect;
 					rect.left   = lockPos.x;
 					rect.top    = lockPos.y;
@@ -494,6 +521,7 @@ namespace Unnamed {
 
 	void UInputSystem::SetMouseCursorLocked(const bool& locked) {
 		mMouseCursorLocked = locked;
+		if (!locked) { ClearMouseCursorLockAnchor(); }
 	}
 
 	bool UInputSystem::IsMouseCursorVisible() const {
@@ -504,9 +532,15 @@ namespace Unnamed {
 		mMouseCursorVisible = visible;
 	}
 
-	void UInputSystem::SetMouseCursorLockScreenPosition(const Vec2& position) {
-		mMouseCursorLockScrPos = position;
+	void UInputSystem::SetMouseCursorLockClientPosition(
+		const HWND hwnd, const Vec2& clientPos
+	) {
+		mMouseLockAnchor.hwnd      = hwnd;
+		mMouseLockAnchor.clientPos = clientPos;
+		mMouseLockAnchor.valid     = hwnd != nullptr;
 	}
+
+	void UInputSystem::ClearMouseCursorLockAnchor() { mMouseLockAnchor = {}; }
 
 	/// @brief 入力状態をリセットします
 	void UInputSystem::ResetInputStates() {
@@ -545,6 +579,8 @@ namespace Unnamed {
 
 		// デバイス状態のリセット
 		for (auto& device : mDevices) { device.get()->ResetStates(); }
+
+		mMouseLockAnchor.valid = false;
 	}
 
 	/// @brief RAW Inputの処理
@@ -620,7 +656,10 @@ namespace Unnamed {
 	void UInputSystem::BindCommand(
 		const InputKey& key, const std::string& command
 	) {
-		mCommandBinds[key] = command;
+		auto& commands = mCommandBinds[key];
+		if (!std::ranges::contains(commands, command)) {
+			commands.emplace_back(command);
+		}
 		DevMsg(
 			kChannel,
 			"コマンドをバインドしました: key = {}, command = '{}'",
@@ -645,7 +684,14 @@ namespace Unnamed {
 
 	std::string UInputSystem::GetBoundCommand(const InputKey& key) const {
 		const auto it = mCommandBinds.find(key);
-		return it != mCommandBinds.end() ? it->second : std::string{};
+		if (it == mCommandBinds.end() || it->second.empty()) { return {}; }
+
+		std::string combined;
+		for (size_t i = 0; i < it->second.size(); ++i) {
+			combined += it->second[i];
+			if (i + 1 < it->second.size()) { combined += "; "; }
+		}
+		return combined;
 	}
 
 	namespace {
@@ -674,7 +720,7 @@ namespace Unnamed {
 		auto* console = ServiceLocator::Get<ConsoleSystem>();
 		if (!console) { return; }
 
-		for (const auto& [key, cmd] : mCommandBinds) {
+		for (const auto& [key, commands] : mCommandBinds) {
 			const bool bIsDown  = GetHardwareKeyState(key);
 			const bool bWasDown = mPreviousKeyStates[key];
 
@@ -684,17 +730,23 @@ namespace Unnamed {
 			const bool bReleased = bWasDown && !bIsDown;
 
 			if (bPressed) {
-				console->ExecuteCommand(
-					cmd, EXEC_FLAG::FROM_USER | EXEC_FLAG::SILENT
-				);
+				for (const auto& cmd : commands) {
+					console->ExecuteCommand(
+						cmd, EXEC_FLAG::FROM_USER | EXEC_FLAG::SILENT
+					);
+				}
 			}
 
 			if (bReleased) {
-				const std::string releaseCmd = MakeReleaseCommandFromPress(cmd);
-				if (!releaseCmd.empty()) {
-					console->ExecuteCommand(
-						releaseCmd, EXEC_FLAG::FROM_USER | EXEC_FLAG::SILENT
-					);
+				for (const auto& cmd : commands) {
+					const std::string releaseCmd =
+						MakeReleaseCommandFromPress(cmd);
+					if (!releaseCmd.empty()) {
+						console->ExecuteCommand(
+							releaseCmd,
+							EXEC_FLAG::FROM_USER | EXEC_FLAG::SILENT
+						);
+					}
 				}
 			}
 		}

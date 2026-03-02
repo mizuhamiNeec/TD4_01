@@ -9,6 +9,8 @@
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/framework/entity/UEntity.h"
 #include "engine/unnamed/subsystem/console/Log.h"
+#include "engine/unnamed/subsystem/input/UInputSystem.h"
+#include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 #include "engine/world/UGameWorld.h"
 
 namespace Unnamed {
@@ -113,6 +115,11 @@ namespace Unnamed {
 		if (!mPlayWorld) { return; }
 		mPlayWorld->Shutdown();
 		mPlayWorld.reset();
+		if (auto* input = ServiceLocator::Get<UInputSystem>()) {
+			input->SetMouseCursorLocked(false);
+			input->SetMouseCursorVisible(true);
+			input->ClearMouseCursorLockAnchor();
+		}
 	}
 
 	void UEditorWorld::FillRenderFrameInputs(

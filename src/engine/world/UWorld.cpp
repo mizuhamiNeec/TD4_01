@@ -112,6 +112,7 @@ namespace Unnamed {
 		inputs.visibleObjects.clear();
 		inputs.skinningPalettes.clear();
 		inputs.portalPairs.clear();
+		inputs.worldBillboards.clear();
 		inputs.screenSprites.clear();
 
 		if (!mScene) { return; }

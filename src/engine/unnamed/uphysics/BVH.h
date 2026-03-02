@@ -1,9 +1,8 @@
 #pragma once
+#include <cstdint>
 #include <vector>
 
 #include <engine/unnamed/uphysics/BVHBuilder.h>
-
-class Entity;
 
 /// @brief BVH構造体
 struct BVH {
@@ -16,7 +15,7 @@ struct RegisteredBVH {
 	std::vector<UPhysics::FlatNode> nodes;
 	std::vector<uint32_t>           triIndices;
 
-	size_t  triStart;
-	size_t  triCount;
-	Entity* owner;
+	size_t   triStart      = 0;
+	size_t   triCount      = 0;
+	uint64_t ownerGuid     = 0;
 };

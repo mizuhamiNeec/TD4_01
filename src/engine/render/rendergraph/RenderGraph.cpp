@@ -323,9 +323,7 @@ namespace Unnamed::Render {
 	void RenderGraph::Reset() {
 		mPasses.clear();
 		mCompiled.clear();
-		mGlobalStates.clear();
-		mStatesInitialized = false;
-		mIsDirty           = true;
+		mIsDirty = true;
 	}
 
 	void RenderGraph::BeginPass(

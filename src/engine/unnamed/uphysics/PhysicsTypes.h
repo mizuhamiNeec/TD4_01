@@ -2,21 +2,19 @@
 
 #include <core/math/Math.h>
 
-#include <engine/Entity/Entity.h>
 #include <engine/unnamed/uprimitive/UPrimitives.h>
 
 namespace UPhysics {
 	// ヒット情報
 	struct Hit {
-		float    t          = FLT_MAX; // 0～1
-		float    depth      = 0.0f;
-		Vec3     pos        = Vec3::zero;
-		Vec3     normal     = Vec3::zero;
-		uint32_t triIndex   = UINT_FAST32_MAX;
-		bool     startSolid = false; // 開始時に形状が重なっていたか
-		bool     allsolid   = false; // トレース全域で固体内だったか
-
-		Entity* hitEntity = nullptr; // ヒットしたエンティティ
+		float    t            = FLT_MAX; // 0～1
+		float    depth        = 0.0f;
+		Vec3     pos          = Vec3::zero;
+		Vec3     normal       = Vec3::zero;
+		uint32_t triIndex     = UINT_FAST32_MAX;
+		uint64_t hitEntityGuid = 0;
+		bool     startSolid   = false; // 開始時に形状が重なっていたか
+		bool     allsolid     = false; // トレース全域で固体内だったか
 	};
 
 	// 形状情報

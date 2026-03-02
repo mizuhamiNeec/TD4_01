@@ -160,10 +160,13 @@ namespace Unnamed::Render {
 			return;
 		}
 
-		std::array<D3D12_CPU_DESCRIPTOR_HANDLE, 8> rtvs  = {}; // 最大8つまで
-		const uint32_t                             count = std::min<uint32_t>(
+		std::array<D3D12_CPU_DESCRIPTOR_HANDLE, 8> rtvs = {}; // 最大8つまで
+
+		constexpr auto size = static_cast<const unsigned&>(rtvs.size());
+
+		const uint32_t count = std::min<uint32_t>(
 			static_cast<uint32_t>(textureIds.size()),
-			static_cast<const unsigned&>(rtvs.size())
+			size
 		);
 
 		for (uint32_t i = 0; i < count; ++i) {
@@ -298,10 +301,13 @@ namespace Unnamed::Render {
 			return;
 		}
 
-		std::array<D3D12_CPU_DESCRIPTOR_HANDLE, 8> rtvs  = {}; // 最大8つまで
-		const uint32_t                             count = std::min<uint32_t>(
+		std::array<D3D12_CPU_DESCRIPTOR_HANDLE, 8> rtvs = {}; // 最大8つまで
+
+		constexpr auto size = static_cast<const unsigned&>(rtvs.size());
+
+		const uint32_t count = std::min<uint32_t>(
 			static_cast<uint32_t>(colorRtIds.size()),
-			static_cast<const unsigned&>(rtvs.size())
+			size
 		);
 
 		for (uint32_t i = 0; i < count; ++i) {
@@ -357,6 +363,12 @@ namespace Unnamed::Render {
 
 	void RenderPassContext::DrawTriangleTest() const {
 		mCommandList->DrawInstanced(3, 1, 0, 0);
+	}
+
+	void RenderPassContext::DrawInstanced(
+		const uint32_t vertexCount, const uint32_t instanceCount
+	) const {
+		mCommandList->DrawInstanced(vertexCount, instanceCount, 0, 0);
 	}
 
 	void RenderPassContext::DrawIndexedTest(const uint32_t indexCount) const {

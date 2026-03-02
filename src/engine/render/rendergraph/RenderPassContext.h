@@ -79,6 +79,9 @@ namespace Unnamed::Render {
 		void SetVertexBuffer(const D3D12_VERTEX_BUFFER_VIEW& vbv) const;
 
 		void DrawTriangleTest() const;
+		void DrawInstanced(
+			uint32_t vertexCount, uint32_t instanceCount
+		) const;
 		void DrawIndexedTest(uint32_t indexCount) const;
 
 		void DispatchForBackBuffer(

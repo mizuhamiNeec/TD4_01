@@ -8,7 +8,7 @@
 #include "core/math/Vec3.h"
 
 namespace Unnamed {
-	/// @brief 名前なしコンソール変数クラス
+	/// @brief コンソール変数クラス
 	template <typename T>
 	class UnnamedConVar : public UnnamedConCommandBase {
 	public:
@@ -63,7 +63,7 @@ namespace Unnamed {
 		// static_cast(objName)で変換できます やったね
 		explicit operator T() const { return mValue; }
 
-		[[nodiscard]] bool IsCommand() const override { return false; }
+		[[nodiscard]] bool IsCommand() const override;
 
 		UnnamedConVar& operator=(const T& value);
 
@@ -194,6 +194,9 @@ namespace Unnamed {
 	/// @brief デストラクタ
 	template <typename T>
 	UnnamedConVar<T>::~UnnamedConVar() = default;
+
+	template <typename T>
+	bool UnnamedConVar<T>::IsCommand() const { return false; }
 
 	/// @brief 代入演算子のオーバーロード
 	/// @param value 代入する値

@@ -1,9 +1,9 @@
 #pragma once
-#include <chrono>
+#include <cstdint>
 
 namespace Unnamed {
 	struct FileStamp {
-		std::chrono::system_clock::time_point lastWrite   = {};
-		uint64_t                              sizeInBytes = 0;
+		int64_t  lastWriteTicks = 0;
+		uint64_t sizeInBytes    = 0;
 	};
 }

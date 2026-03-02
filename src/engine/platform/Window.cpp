@@ -80,7 +80,7 @@ namespace Unnamed {
 			if (GetMonitorInfo(
 				MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY), &mi
 			)) {
-				SetWindowLong(hwnd, GWL_STYLE, style & ~WS_OVERLAPPEDWINDOW);
+				SetWindowLong(hwnd, GWL_STYLE, ~WS_OVERLAPPEDWINDOW & style);
 				SetWindowPos(
 					hwnd,
 					HWND_TOP,

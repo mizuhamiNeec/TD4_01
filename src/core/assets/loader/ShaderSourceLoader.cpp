@@ -42,7 +42,7 @@ namespace Unnamed {
 
 		const std::filesystem::path baseDir = std::filesystem::path(path).
 			parent_path();
-		
+
 		// 依存関係の解決
 		for (const auto& include : data.includePaths) {
 			std::filesystem::path includePath(include);

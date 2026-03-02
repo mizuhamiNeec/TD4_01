@@ -2,66 +2,47 @@
 
 #include <pch.h>
 
+#include <chrono>
+
 // ReSharper disable CppUnusedIncludeDirective
-#include <engine/ImGui/ImGuiManager.h>
-#include <engine/Line/LineCommon.h>
-#include <engine/Model/ModelCommon.h>
-#include <engine/Object3D/Object3DCommon.h>
-#include <engine/particle/ParticleManager.h>
-#include <engine/postprocess/IPostProcess.h>
 #include <engine/ResourceSystem/Audio/AudioManager.h>
-#include <engine/Sprite/SpriteCommon.h>
 // ReSharper restore CppUnusedIncludeDirective
 
-#include "core/assets/AssetManager.h"
-#include "core/assets/loader/MaterialAssetLoader.h"
-#include "core/assets/loader/MaterialInstanceAssetLoader.h"
-#include "core/assets/loader/MeshAssetLoader.h"
-#include "core/assets/loader/PostFxChainLoader.h"
-#include "core/assets/loader/ShaderProgramLoader.h"
-#include "core/assets/loader/ShaderSourceLoader.h"
-#include "core/assets/loader/TextureLoaderDirectXTex.h"
+#include <core/assets/AssetManager.h>
+#include <core/assets/loader/MaterialAssetLoader.h>
+#include <core/assets/loader/MaterialInstanceAssetLoader.h>
+#include <core/assets/loader/MeshAssetLoader.h>
+#include <core/assets/loader/PostFxChainLoader.h>
+#include <core/assets/loader/ShaderProgramLoader.h>
+#include <core/assets/loader/ShaderSourceLoader.h>
+#include <core/assets/loader/TextureLoaderDirectXTex.h>
 
-#include "editor/UEditorRuntime.h"
+#include <engine/editor/UEditorRuntime.h>
+#include <engine/Platform/PlatformEventsImpl.h>
+#include <engine/Platform/WindowManager.h>
+#include <engine/profiler/UProfiler.h>
+#include <engine/render/RenderModule.h>
+#include <engine/render/frame/RenderFrameContext.h>
+#include <engine/render/frame/RenderFrameInputs.h>
+#include <engine/render/rendergraph/RenderPassContext.h>
+#include <engine/rhi/RhiTypes.h>
+#include <engine/rhi/d3d12/D3D12Device.h>
+#include <engine/rhi/d3d12/D3D12Util.h>
+#include <engine/rhi/interface/IRhiDevice.h>
+#include <engine/ui/UImGuiLayer.h>
+#include <engine/unnamed/framework/entity/UEntity.h>
+#include <engine/unnamed/subsystem/console/concommand/UnnamedConCommand.h>
+#include <engine/unnamed/subsystem/input/device/keyboard/KeyboardDevice.h>
+#include <engine/unnamed/subsystem/input/device/mouse/MouseDevice.h>
+#include <engine/unnamed/subsystem/interface/ServiceLocator.h>
+#include <engine/unnamed/subsystem/terminal/TerminalSystem.h>
+#include <engine/unnamed/subsystem/time/SystemClock.h>
+#include <engine/unnamed/subsystem/time/TimeSystem.h>
+#include <engine/world/UEditorWorld.h>
+#include <engine/world/UGameWorld.h>
+#include <engine/world/UWorld.h>
 
-#include "engine/unnamed/framework/entity/UEntity.h"
-
-#include "Platform/PlatformEventsImpl.h"
-#include "Platform/WindowManager.h"
-
-#include "postprocess/PostProcessPipeline.h"
-
-#include "render/RenderModule.h"
-#include "render/frame/RenderFrameContext.h"
-#include "render/frame/RenderFrameInputs.h"
-#include "render/rendergraph/RenderPassContext.h"
-
-#include "renderer/RenderTargets.h"
-
-#include "ResourceSystem/Manager/ResourceManager.h"
-
-#include "rhi/RhiTypes.h"
-#include "rhi/d3d12/D3D12Device.h"
-#include "rhi/d3d12/D3D12Util.h"
-#include "rhi/interface/IRhiDevice.h"
-
-#include "ui/UImGuiLayer.h"
-
-#include "unnamed/subsystem/console/concommand/UnnamedConCommand.h"
-#include "unnamed/subsystem/input/device/keyboard/KeyboardDevice.h"
-#include "unnamed/subsystem/input/device/mouse/MouseDevice.h"
-#include "unnamed/subsystem/terminal/TerminalSystem.h"
-#include "unnamed/subsystem/time/SystemClock.h"
-#include "unnamed/subsystem/time/TimeSystem.h"
-
-#include "world/UEditorWorld.h"
-#include "world/UGameWorld.h"
-#include "world/UWorld.h"
-
-#ifdef _DEBUG
-#include <imgui_internal.h>
-// ImGuizmoのインクルードはImGuiより後! いいね!?
-#endif
+#include <utility>
 
 namespace Unnamed {
 	namespace Rhi {
@@ -73,7 +54,7 @@ namespace Unnamed {
 	Engine::Engine() = default;
 
 	/// @brief デストラクタ
-	Engine::~Engine() {}
+	Engine::~Engine() = default;
 
 	int Engine::Run() {
 		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF); // リークチェック
@@ -96,18 +77,21 @@ namespace Unnamed {
 				if (const auto resize = wnd->ConsumeResizeEvent()) {
 					if (
 						resize->width > 0 && resize->height > 0 &&
-						(static_cast<uint32_t>(resize->width) !=
-						 mLastResizeWidth ||
-						 static_cast<uint32_t>(resize->height) !=
-						 mLastResizeHeight)
+						(std::cmp_not_equal(
+							 resize->width,
+							 mLastResizeWidth
+						 ) ||
+						 std::cmp_not_equal(
+							 resize->height,
+							 mLastResizeHeight
+						 ))
 					) {
 						mLastResizeWidth = static_cast<uint32_t>(resize->width);
 						mLastResizeHeight = static_cast<uint32_t>(resize->
 							height);
 						if (mRenderModule) {
 							mRenderModule->OnResize(
-								static_cast<uint32_t>(resize->width),
-								static_cast<uint32_t>(resize->height)
+								mLastResizeWidth, mLastResizeHeight
 							);
 						}
 					}
@@ -126,115 +110,20 @@ namespace Unnamed {
 		return EXIT_SUCCESS;
 	}
 
-	AudioManager* Engine::GetAudioManagerInstance() const {
-		return mAudioManager.get();
-	}
-
-	D3D12* Engine::GetRendererInstance() const { return mRenderer.get(); }
-
-	ResourceManager* Engine::GetResourceManagerInstance() const {
-		return mResourceManager.get();
-	}
-
-	SpriteCommon* Engine::GetSpriteCommonInstance() const {
-		return mSpriteCommon.get();
-	}
-
-	ParticleManager* Engine::GetParticleManagerInstance() const {
-		return mParticleManager.get();
-	}
-
-	SrvManager* Engine::GetSrvManagerInstance() const {
-		return mResourceManager->GetSrvManager();
-	}
-
-	TexManager* Engine::GetTexManagerInstance() const {
-		return mResourceManager ?
-			       mResourceManager->GetTexManager() :
-			       nullptr;
-	}
-
-	Vec2 Engine::GetViewportLTInstance() const { return mViewportLT; }
-	Vec2 Engine::GetViewportSizeInstance() const { return mViewportSize; }
-
-	float& Engine::GetBlurStrengthInstance() { return mBlurStrength; }
-
-	/// @brief ウィンドウリサイズ時の処理
-	/// @param width 幅
-	/// @param height 高さ
-	void Engine::OnResize(const uint32_t width, const uint32_t height) {
-		if (width == 0 || height == 0) { return; }
-
-		if (mRenderTargets) { mRenderTargets->OnResize(width, height); }
-		if (mPostProcessPipeline) {
-			mPostProcessPipeline->OnResize(width, height);
+	void Engine::ToggleFullscreen() const {
+		if (mWindowManager) {
+			if (const Window* window = mWindowManager->FindWindowById(
+				mWindowManager->GetMainWindowId()
+			)) { window->ToggleFullscreen(); }
 		}
 	}
 
-	/// @brief オフスクリーンレンダーテクスチャのリサイズ
-	/// @param width 幅
-	/// @param height 高さ
-	void Engine::ResizeOffscreenRenderTextures(
-		const uint32_t width,
-		const uint32_t height
-	) {
-		if (width == 0 || height == 0) { return; }
-
-		if (mRenderTargets) { mRenderTargets->OnResize(width, height); }
-		if (mPostProcessPipeline) {
-			mPostProcessPipeline->OnResize(width, height);
-		}
-	}
-
-	/// @brief コンソールコマンドと変数の登録
-	void Engine::RegisterConsoleCommandsAndVariables() {
-		// コンソールコマンドを登録
-		static UnnamedConCommand quit(
-			"quit",
-			[this](const std::vector<std::string>&) {
-				// TODO: 終了処理を実装しよう
-				return true;
-			},
-			"Quit the engine."
-		);
-
+	void Engine::ToggleEditorScreenMode() const {
 #ifdef _DEBUG
-		static UnnamedConCommand toggleeditor(
-			"toggleeditor",
-			[this](const std::vector<std::string>&) {
-				mIsEditorMode = !mIsEditorMode;
-				Warning(
-					"Engine",
-					"Editor mode is now {}",
-					std::to_string(mIsEditorMode)
-				);
-				return true;
-			},
-			"Toggle editor mode."
-		);
+		if (mUEditorRuntime && mIsEditorMode) {
+			mUEditorRuntime->TogglePresentMode();
+		}
 #endif
-
-		// コンソール変数を登録
-		mConsoleSystem->ExecuteCommand(
-			"name " + WindowsUtils::GetWindowsUserName(), EXEC_FLAG::SILENT
-		);
-	}
-
-	std::size_t Engine::GetPostChainSize() const {
-		return mPostProcessPipeline->GetPassCount();
-	}
-
-	IPostProcess* Engine::GetPostProcessAt(const int index) const {
-		if (index < 0) { return nullptr; }
-		return mPostProcessPipeline->GetPassAt(static_cast<size_t>(index));
-	}
-
-	uint64_t Engine::GetActivePingSrvGpuPtr() const {
-		return mPostProcessPipeline->GetActivePingSrvGpuPtr();
-	}
-
-	D3D12_RESOURCE_DESC Engine::GetActivePingRtvDesc() const {
-		return mPostProcessPipeline->GetActivePingRtvDesc();
 	}
 
 	/// @brief 初期化
@@ -280,6 +169,7 @@ namespace Unnamed {
 		if (!mTerminalSystem->Init()) { return false; }
 
 		mAssetManager = std::make_unique<AssetManager>();
+		ServiceLocator::Register<AssetManager>(mAssetManager.get());
 
 		// 各ローダーの登録
 		mAssetManager->RegisterLoader(
@@ -309,6 +199,9 @@ namespace Unnamed {
 		// TimeSystemの初期化
 		mTimeSystem = std::make_unique<TimeSystem>();
 		if (!mTimeSystem->Init()) { return false; }
+
+		mProfiler = std::make_unique<UProfiler>();
+		ServiceLocator::Register<UProfiler>(mProfiler.get());
 
 		// InputSystemの初期化
 		mInputSystem = std::make_unique<UInputSystem>();
@@ -384,10 +277,13 @@ namespace Unnamed {
 				*mRenderModule,
 				*mUImGuiLayer
 			);
+
+			mConsoleSystem->ExecuteCommand(
+				"exec ./content/core/cfg/editor.cfg"
+			);
 #endif
 		} else {
-			auto& gameWorld = SwitchWorld<UGameWorld>();
-			gameWorld.LoadSceneFromFile("./content/core/scenes/sandbox.json");
+			(void)SwitchWorld<UGameWorld>();
 		}
 
 		return true;
@@ -395,39 +291,93 @@ namespace Unnamed {
 
 	/// @brief 更新
 	void Engine::Tick() {
+		const auto frameStart = std::chrono::steady_clock::now();
 		mTimeSystem->BeginFrame();
 		const float deltaTime = mTimeSystem->GetGameTime()->DeltaTime<float>();
+		if (mProfiler) { mProfiler->BeginFrame(); }
 
 		// 入力システムの更新
-		mInputSystem->Update(deltaTime);
+		{
+			UProfiler::ScopeTimer scope(mProfiler.get(), "Input.Update");
+			mInputSystem->Update(deltaTime);
+		}
+		{
+			mAssetHotReloadPollAccumulator += deltaTime;
+			if (
+				mAssetManager &&
+				mAssetHotReloadPollAccumulator >=
+				kAssetHotReloadPollIntervalSeconds
+			) {
+				UProfiler::ScopeTimer scope(
+					mProfiler.get(), "Asset.PollHotReload"
+				);
+				mAssetManager->PollSourceChanges();
+				mAssetHotReloadPollAccumulator = 0.0f;
+			}
+		}
 		// マウスカーソルのロックと表示状態の確認
-		mInputSystem->CheckMouseCursorLockAndVisibility(
-			mWindowManager->FindWindowById(
-				mWindowManager->GetMainWindowId()
-			)->GetHwnd()
-		);
+		{
+			UProfiler::ScopeTimer scope(mProfiler.get(), "Input.MouseLock");
+			mInputSystem->CheckMouseCursorLockAndVisibility(
+				mWindowManager->FindWindowById(
+					mWindowManager->GetMainWindowId()
+				)->GetHwnd()
+			);
+		}
 
 #ifdef _DEBUG
 		// Update内でImGuiを使えるように更新前にフレーム開始
-		if (mUImGuiLayer) { mUImGuiLayer->BeginFrame(); }
-		if (mUEditorRuntime && mIsEditorMode) { mUEditorRuntime->BeginUI(); }
+		if (mUImGuiLayer) {
+			UProfiler::ScopeTimer scope(mProfiler.get(), "ImGui.BeginFrame");
+			auto& dx = dynamic_cast<Rhi::D3D12Device&>(*mRhiDevice);
+			mUImGuiLayer->BeginFrame(dx.GetCurrentFrameIndex());
+		}
+		if (mUEditorRuntime && mIsEditorMode) {
+			if (
+				mUEditorRuntime->GetPresentMode() ==
+				EDITOR_PRESENT_MODE::VIEWPORT_PANEL
+			) {
+				UProfiler::ScopeTimer scope(mProfiler.get(), "Editor.BeginUI");
+				mUEditorRuntime->BeginUI();
+			}
+		}
 #endif
 
 		/* ----------- 更新処理 ---------- */
 
-		mConsoleSystem->Update(deltaTime);
-		mTerminalSystem->Update(deltaTime);
+		{
+			UProfiler::ScopeTimer scope(mProfiler.get(), "Console.Update");
+			mConsoleSystem->Update(deltaTime);
+		}
+		{
+			UProfiler::ScopeTimer scope(mProfiler.get(), "Terminal.Update");
+			mTerminalSystem->Update(deltaTime);
+		}
 
 		// ワールドの更新
-		if (mWorld) { mWorld->Tick(deltaTime); }
+		{
+			UProfiler::ScopeTimer scope(mProfiler.get(), "World.Tick");
+			if (mWorld) { mWorld->Tick(deltaTime); }
+		}
 
 		Render::RenderFrameInputs inputs = {};
 		// フレームインデックスとゲーム時間を設定
 		inputs.frameIndex = mFrameIndex++;
 		inputs.time       = static_cast<float>(mTimeSystem->GetGameTime()->
 			TotalTime());
+#ifdef _DEBUG
+		if (mUEditorRuntime && mIsEditorMode) {
+			inputs.sceneRenderRequest = mUEditorRuntime->
+				GetSceneRenderRequest();
+			if (mRenderModule) {
+				mRenderModule->SetSceneRenderRequest(inputs.sceneRenderRequest);
+			}
+		}
+#endif
 		if (mWorld && mRenderFrameContext) {
-			// ワールドからレンダーフレーム入力を取得
+			UProfiler::ScopeTimer scope(
+				mProfiler.get(), "World.FillRenderFrameInputs"
+			);
 			mWorld->FillRenderFrameInputs(
 				inputs, *mRenderFrameContext, *mAssetManager
 			);
@@ -436,18 +386,39 @@ namespace Unnamed {
 #ifdef _DEBUG
 		if (mUImGuiLayer) {
 			if (mUEditorRuntime && mIsEditorMode) {
-				mUEditorRuntime->SetSceneOutput(
-					mRenderModule->GetSceneOutputTextureId(),
-					mRenderModule->GetSceneOutputSrvCpu(),
-					mRenderModule->GetSceneOutputSize()
-				);
-				mUEditorRuntime->BuildUi();
+				if (
+					mUEditorRuntime->GetPresentMode() ==
+					EDITOR_PRESENT_MODE::VIEWPORT_PANEL
+				) {
+					mUEditorRuntime->SetSceneOutput(
+						mRenderModule->GetSceneOutputView(),
+						mRenderModule->GetSceneOutputSize()
+					);
+					UProfiler::ScopeTimer scope(
+						mProfiler.get(), "Editor.BuildUi"
+					);
+					mUEditorRuntime->BuildUi();
+				}
 			}
-			mUImGuiLayer->EndFrame();
+			{
+				UProfiler::ScopeTimer scope(mProfiler.get(), "ImGui.EndFrame");
+				mUImGuiLayer->EndFrame();
+			}
 		}
 #endif
 
-		mRenderModule->Tick(inputs);
+		{
+			UProfiler::ScopeTimer scope(mProfiler.get(), "Render.Tick");
+			mRenderModule->Tick(inputs);
+		}
+
+		if (mProfiler) {
+			const float totalMs = std::chrono::duration<float, std::milli>(
+				std::chrono::steady_clock::now() - frameStart
+			).count();
+			mProfiler->AddSample("Frame.Total", totalMs);
+			mProfiler->EndFrame();
+		}
 
 		mTimeSystem->EndFrame();
 	}
@@ -468,6 +439,7 @@ namespace Unnamed {
 		mRenderFrameContext.reset();
 		mRenderModule.reset();
 		mRhiDevice.reset();
+		mProfiler.reset();
 
 		// 入力システムのリスナー解除
 		if (mPlatformEvents && mInputSystem) {
@@ -486,6 +458,44 @@ namespace Unnamed {
 		if (mConsoleSystem) { mConsoleSystem->Shutdown(); }
 		if (mTimeSystem) { mTimeSystem->Shutdown(); }
 		if (mWindowManager) { mWindowManager->Shutdown(); }
+	}
+
+	/// @brief コンソールコマンドと変数の登録
+	void Engine::RegisterConsoleCommandsAndVariables() {
+		// コンソールコマンドを登録
+		static UnnamedConCommand quit(
+			"quit",
+			[this](const std::vector<std::string>&) {
+				mWishShutdown = true;
+				return true;
+			},
+			"Quit the engine."
+		);
+
+#ifdef _DEBUG
+		static UnnamedConCommand toggleeditor(
+			"toggleeditor",
+			[this](const std::vector<std::string>&) {
+				ToggleEditorScreenMode();
+				return true;
+			},
+			"Toggle editor mode."
+		);
+
+		static UnnamedConCommand togglefullscreen(
+			"togglefullscreen",
+			[this](const std::vector<std::string>&) {
+				ToggleFullscreen();
+				return true;
+			},
+			"Toggle editor viewport/swapchain presentation mode."
+		);
+#endif
+
+		// コンソール変数を登録
+		mConsoleSystem->ExecuteCommand(
+			"name " + WindowsUtils::GetWindowsUserName(), EXEC_FLAG::SILENT
+		);
 	}
 
 	template <class TWorld, class... Args>

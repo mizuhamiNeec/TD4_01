@@ -1,29 +1,15 @@
 #pragma once
-#include <d3d12.h>
 #include <memory>
 
 #include <core/assets/AssetID.h>
 
 #include <engine/EngineConfig.h>
 
-#include "core/math/Vec2.h"
-
 class IPostProcess;
 class SrvManager;
-class D3D12;
-class ImGuiManager;
-class ModelCommon;
-class Object3DCommon;
-class LineCommon;
-class ParticleManager;
-class SpriteCommon;
 class AudioManager;
-class TexManager;
-class ResourceManager;
 
 namespace Unnamed {
-	class RenderTargets;
-	class PostProcessPipeline;
 	class UEditorRuntime;
 	class UImGuiLayer;
 
@@ -45,57 +31,15 @@ namespace Unnamed {
 		Engine();
 		~Engine();
 
+		/// @brief エンジンの実行
+		/// @return 終了コード
 		int Run();
 
-		[[nodiscard]]
-		AudioManager* GetAudioManagerInstance() const;
+		/// @brief フルスクリーンの切り替えを行います。
+		void ToggleFullscreen() const;
 
-		[[nodiscard]]
-		D3D12* GetRendererInstance() const;
-
-		[[nodiscard]]
-		ResourceManager* GetResourceManagerInstance() const;
-
-		[[nodiscard]]
-		SpriteCommon* GetSpriteCommonInstance() const;
-
-		[[nodiscard]]
-		ParticleManager* GetParticleManagerInstance() const;
-
-		[[nodiscard]]
-		SrvManager* GetSrvManagerInstance() const;
-
-		[[nodiscard]]
-		TexManager* GetTexManagerInstance() const;
-
-		[[nodiscard]]
-		Vec2 GetViewportLTInstance() const;
-
-		[[nodiscard]]
-		Vec2 GetViewportSizeInstance() const;
-
-		[[nodiscard]]
-		float& GetBlurStrengthInstance();
-
-		void OnResize(uint32_t width, uint32_t height);
-		void ResizeOffscreenRenderTextures(uint32_t width, uint32_t height);
-
-		void RegisterConsoleCommandsAndVariables();
-
-		/// @brief エディターインスタンスの取得
-		//Editor* GetEditor() const { return mEditor.get(); }
-
-		/// @brief ポストプロセスエフェクト数の取得
-		std::size_t GetPostChainSize() const;
-
-		/// @brief ポストプロセスエフェクトの取得
-		IPostProcess* GetPostProcessAt(int index) const;
-
-		/// @brief 現在の PingPong テクスチャの SRV (GPU ptr)
-		uint64_t GetActivePingSrvGpuPtr() const;
-
-		/// @brief 現在の PingPong テクスチャの RTV リソース記述子
-		D3D12_RESOURCE_DESC GetActivePingRtvDesc() const;
+		/// @brief エディターモードの画面表示モードを切り替えます。
+		void ToggleEditorScreenMode() const;
 
 	private:
 		/// @brief 初期化処理
@@ -104,6 +48,9 @@ namespace Unnamed {
 		void Tick();
 		/// @brief 終了処理
 		void Shutdown();
+
+		/// @brief コンソールコマンドとコンソール変数を登録します。
+		void RegisterConsoleCommandsAndVariables();
 
 		/// @brief ワールドを切り替えます。
 		/// @tparam TWorld 切り替えるワールドの型
@@ -130,37 +77,20 @@ namespace Unnamed {
 
 		std::unique_ptr<class TimeSystem>   mTimeSystem;
 		std::unique_ptr<class UInputSystem> mInputSystem;
+		std::unique_ptr<class UProfiler>    mProfiler;
 
 		std::unique_ptr<Rhi::IRhiDevice>      mRhiDevice;
 		std::unique_ptr<Render::RenderModule> mRenderModule;
 
-		AssetID test = kInvalidAssetID;
-
 		std::unique_ptr<UWorld> mWorld;
 
-		std::unique_ptr<PostProcessPipeline> mPostProcessPipeline;
-		std::unique_ptr<RenderTargets>       mRenderTargets;
-		bool                                 mSwapchainPassBegun = false;
-
-		std::unique_ptr<ResourceManager> mResourceManager;
-
-		std::unique_ptr<D3D12> mRenderer;
-
 #ifdef _DEBUG
-		std::unique_ptr<ImGuiManager>   mImGuiManager;
 		std::unique_ptr<UImGuiLayer>    mUImGuiLayer;
 		std::unique_ptr<UEditorRuntime> mUEditorRuntime;
 #endif
 
-		std::unique_ptr<ParticleManager> mParticleManager;
-		std::unique_ptr<SpriteCommon>    mSpriteCommon;
-		std::unique_ptr<Object3DCommon>  mObject3DCommon;
-		std::unique_ptr<ModelCommon>     mModelCommon;
-		std::unique_ptr<LineCommon>      mLineCommon;
-		std::unique_ptr<AudioManager>    mAudioManager;
+		std::unique_ptr<AudioManager> mAudioManager;
 
-		Vec2 mViewportLT;
-		Vec2 mViewportSize;
 
 #ifdef _DEBUG
 		bool mIsEditorMode = true;
@@ -170,10 +100,11 @@ namespace Unnamed {
 
 		bool mWishShutdown = false;
 
-		float    mBlurStrength     = 0.0f;
-		uint32_t mFrameIndex       = 0;
-		uint32_t mLastResizeWidth  = 0;
-		uint32_t mLastResizeHeight = 0;
+		uint32_t               mFrameIndex                        = 0;
+		uint32_t               mLastResizeWidth                   = 0;
+		uint32_t               mLastResizeHeight                  = 0;
+		float                  mAssetHotReloadPollAccumulator     = 0.0f;
+		static constexpr float kAssetHotReloadPollIntervalSeconds = 0.25f;
 
 		std::unique_ptr<Render::RenderFrameContext> mRenderFrameContext;
 	};

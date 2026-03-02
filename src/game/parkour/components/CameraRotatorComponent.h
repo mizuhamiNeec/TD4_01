@@ -33,6 +33,8 @@ namespace Unnamed {
 		[[nodiscard]] Vec2 GetLookAnglesDegrees() const;
 		void SetReplayLookOverride(float pitch, float yaw);
 		void ClearReplayLookOverride();
+		void SetLiveLookInput(const Vec2& delta);
+		void ClearLiveLookInput();
 
 	private:
 		[[nodiscard]] TransformComponent* GetTransform() const;
@@ -44,5 +46,7 @@ namespace Unnamed {
 		bool          mReplayLookPending = false;
 		float         mReplayPitchDeg    = 0.0f;
 		float         mReplayYawDeg      = 0.0f;
+		bool          mLiveLookPending   = false;
+		Vec2          mLiveLookDelta     = Vec2::zero;
 	};
 }

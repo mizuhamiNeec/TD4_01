@@ -11,12 +11,34 @@
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/framework/entity/UEntity.h"
 #include "engine/unnamed/subsystem/input/UInputSystem.h"
+#include "engine/unnamed/subsystem/input/device/mouse/MouseDevice.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 #include "engine/world/UWorld.h"
 
 namespace Unnamed {
+	namespace {
+		void BindMouseAxisOnce(UInputSystem* input) {
+			static bool sBound = false;
+			if (sBound || !input) { return; }
+
+			constexpr InputKey mouseX = {
+				.device = InputDeviceType::MOUSE,
+				.code   = VM_X
+			};
+			constexpr InputKey mouseY = {
+				.device = InputDeviceType::MOUSE,
+				.code   = VM_Y
+			};
+
+			input->BindAxis2D("Mouse", mouseX, INPUT_AXIS::X, 1.0f);
+			input->BindAxis2D("Mouse", mouseY, INPUT_AXIS::Y, 1.0f);
+			sBound = true;
+		}
+	}
+
 	void CameraRotatorComponent::OnAttached() {
 		mInput = ServiceLocator::Get<UInputSystem>();
+		BindMouseAxisOnce(mInput);
 	}
 
 	void CameraRotatorComponent::PrePhysicsTick(const float) {
@@ -29,8 +51,14 @@ namespace Unnamed {
 			mPitch             = mReplayPitchDeg;
 			mYaw               = mReplayYawDeg;
 			mReplayLookPending = false;
-		} else if (mInput) {
-			const Vec2 delta = mInput->Axis2D("Mouse");
+		} else {
+			Vec2 delta = Vec2::zero;
+			if (mLiveLookPending) {
+				delta = mLiveLookDelta;
+				mLiveLookPending = false;
+			} else if (mInput) {
+				delta = mInput->Axis2D("Mouse");
+			}
 			mPitch += delta.y * mSensitivity;
 			mYaw   += delta.x * mSensitivity;
 		}
@@ -89,6 +117,16 @@ namespace Unnamed {
 
 	void CameraRotatorComponent::ClearReplayLookOverride() {
 		mReplayLookPending = false;
+	}
+
+	void CameraRotatorComponent::SetLiveLookInput(const Vec2& delta) {
+		mLiveLookDelta   = delta;
+		mLiveLookPending = true;
+	}
+
+	void CameraRotatorComponent::ClearLiveLookInput() {
+		mLiveLookPending = false;
+		mLiveLookDelta   = Vec2::zero;
 	}
 
 	TransformComponent* CameraRotatorComponent::GetTransform() const {

@@ -33,7 +33,7 @@ namespace Unnamed {
 		UImGuiLayer(const UImGuiLayer&)            = delete;
 		UImGuiLayer& operator=(const UImGuiLayer&) = delete;
 
-		void BeginFrame() const;
+		void BeginFrame(uint32_t frameIndex) const;
 		void EndFrame() const;
 
 		void RenderMainDrawData(
@@ -43,15 +43,23 @@ namespace Unnamed {
 
 		ImTextureID GetOrCreateTextureId(
 			uint64_t                    key,
+			uint64_t                    revision,
 			D3D12_CPU_DESCRIPTOR_HANDLE sourceSrv
 		);
 
-		[[nodiscard]] ID3D12DescriptorHeap* GetDescriptorHeap() const {
-			return mSrvHeap.Get();
-		}
+		[[nodiscard]] ID3D12DescriptorHeap* GetDescriptorHeap() const;
 
 	private:
-		[[nodiscard]] uint32_t                    AllocateSlot();
+		struct FrameTextureSlot {
+			uint32_t                    slot            = UINT32_MAX;
+			uint64_t                    revision        = UINT64_MAX;
+			uint64_t                    pendingRevision = UINT64_MAX;
+			D3D12_CPU_DESCRIPTOR_HANDLE pendingSource   = {};
+			bool                        hasPendingCopy  = false;
+		};
+
+		void FlushPendingTextureCopies() const;
+		[[nodiscard]] uint32_t AllocateSlot();
 		[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE CpuHandleAt(
 			uint32_t slot
 		) const;
@@ -61,15 +69,13 @@ namespace Unnamed {
 
 		Rhi::D3D12Device& mDevice;
 
-		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mSrvHeap;
-		uint32_t                                     mDescriptorSize = 0;
-		uint32_t                                     mCapacity       = 0;
-		uint32_t                                     mNextSlot       = 0;
-		uint32_t                                     mFramesInFlight = 1;
-		uint32_t                                     mFrameIndex     = 0;
+		uint32_t mDescriptorSize = 0;
+		uint32_t mCapacity       = 0;
+		uint32_t mFramesInFlight = 1;
+		uint32_t mFrameIndex     = 0;
 
 		struct TextureSlots {
-			std::vector<uint32_t> frameSlots;
+			std::vector<FrameTextureSlot> frameSlots;
 		};
 
 		std::unordered_map<uint64_t, TextureSlots> mTextureSlotsByKey;

@@ -40,14 +40,14 @@ namespace Unnamed {
 
 		io.Fonts->AddFontFromFileTTF(
 			R"(.\content\core\fonts\JetBrainsMono.ttf)",
-			14.0f,
+			16.0f,
 			&fontCfg,
 			io.Fonts->GetGlyphRangesDefault()
 		);
 		fontCfg.MergeMode = true;
 		io.Fonts->AddFontFromFileTTF(
 			R"(.\content\core\fonts\NotoSansJP.ttf)",
-			14.0f,
+			16.0f,
 			&fontCfg,
 			io.Fonts->GetGlyphRangesJapanese()
 		);
@@ -56,7 +56,7 @@ namespace Unnamed {
 		static constexpr ImWchar kIconRanges[] = {0xe003, 0xf8ff, 0};
 		io.Fonts->AddFontFromFileTTF(
 			R"(.\content\core\fonts\MaterialSymbolsRounded_Filled_28pt-Regular.ttf)",
-			14.0f,
+			16.0f,
 			&fontCfg,
 			kIconRanges
 		);
@@ -65,22 +65,10 @@ namespace Unnamed {
 			ImGuiUtil::StyleColorsDark();
 		} else { ImGuiUtil::StyleColorsLight(); }
 
-		mCapacity       = 4096;
+		mCapacity       = device.GetImguiSrvHeapCapacity();
 		mFramesInFlight = std::max(1u, framesInFlight);
 		mFrameIndex     = 0;
-		mDescriptorSize = device.GetDevice()->GetDescriptorHandleIncrementSize(
-			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
-		);
-
-		D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-		heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		heapDesc.NumDescriptors = mCapacity;
-		heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		Rhi::Throw(
-			device.GetDevice()->CreateDescriptorHeap(
-				&heapDesc, IID_PPV_ARGS(mSrvHeap.ReleaseAndGetAddressOf())
-			)
-		);
+		mDescriptorSize = device.GetSrvUavDescriptorSize();
 
 		ImGui_ImplWin32_Init(hwnd);
 
@@ -90,7 +78,7 @@ namespace Unnamed {
 		initInfo.NumFramesInFlight       = static_cast<int>(framesInFlight);
 		initInfo.RTVFormat               = rtvFormat;
 		initInfo.DSVFormat               = DXGI_FORMAT_UNKNOWN;
-		initInfo.SrvDescriptorHeap       = mSrvHeap.Get();
+		initInfo.SrvDescriptorHeap       = device.GetSrvUavHeap();
 		initInfo.UserData                = this;
 
 		initInfo.SrvDescriptorAllocFn = [](
@@ -120,17 +108,18 @@ namespace Unnamed {
 		ImGui::DestroyContext();
 	}
 
-	void UImGuiLayer::BeginFrame() const {
+	void UImGuiLayer::BeginFrame(const uint32_t frameIndex) const {
+		auto& self       = const_cast<UImGuiLayer&>(*this);
+		self.mFrameIndex = self.mFramesInFlight > 0 ?
+			                   frameIndex % self.mFramesInFlight :
+			                   0;
+
 		ImGui_ImplDX12_NewFrame();
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
 	}
 
-	void UImGuiLayer::EndFrame() const {
-		ImGui::Render();
-		auto& self       = const_cast<UImGuiLayer&>(*this);
-		self.mFrameIndex = (self.mFrameIndex + 1u) % self.mFramesInFlight;
-	}
+	void UImGuiLayer::EndFrame() const { ImGui::Render(); }
 
 	void UImGuiLayer::RenderMainDrawData(
 		const Render::RenderPassContext& passContext
@@ -139,7 +128,9 @@ namespace Unnamed {
 		ImDrawData* drawData = ImGui::GetDrawData();
 		if (!drawData || drawData->CmdListsCount <= 0) { return; }
 
-		ID3D12DescriptorHeap* heaps[] = {mSrvHeap.Get()};
+		FlushPendingTextureCopies();
+
+		ID3D12DescriptorHeap* heaps[] = {mDevice.GetSrvUavHeap()};
 		passContext.GetCommandList()->SetDescriptorHeaps(1, heaps);
 		ImGui_ImplDX12_RenderDrawData(drawData, passContext.GetCommandList());
 	}
@@ -155,49 +146,68 @@ namespace Unnamed {
 	}
 
 	ImTextureID UImGuiLayer::GetOrCreateTextureId(
-		const uint64_t key, const D3D12_CPU_DESCRIPTOR_HANDLE sourceSrv
+		const uint64_t                    key,
+		const uint64_t                    revision,
+		const D3D12_CPU_DESCRIPTOR_HANDLE sourceSrv
 	) {
 		if (sourceSrv.ptr == 0) { return 0; }
 
-		auto& [frameSlots] = mTextureSlotsByKey[key];
-		if (frameSlots.empty()) {
-			frameSlots.resize(mFramesInFlight, UINT32_MAX);
-		}
+		auto& textureSlots = mTextureSlotsByKey[key];
+		auto& frameSlots   = textureSlots.frameSlots;
+		if (frameSlots.empty()) { frameSlots.resize(mFramesInFlight); }
 
 		const uint32_t frameSlotIndex = mFrameIndex % mFramesInFlight;
-		uint32_t&      slot           = frameSlots[frameSlotIndex];
-		if (slot == UINT32_MAX) { slot = AllocateSlot(); }
+		auto&          frameSlot      = frameSlots[frameSlotIndex];
+		if (frameSlot.slot == UINT32_MAX) { frameSlot.slot = AllocateSlot(); }
 
-		const D3D12_CPU_DESCRIPTOR_HANDLE dst = CpuHandleAt(slot);
-		mDevice.GetDevice()->CopyDescriptorsSimple(
-			1, dst, sourceSrv, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
-		);
+		if (frameSlot.revision != revision) {
+			frameSlot.pendingSource   = sourceSrv;
+			frameSlot.pendingRevision = revision;
+			frameSlot.hasPendingCopy  = true;
+		}
 
-		const D3D12_GPU_DESCRIPTOR_HANDLE gpu = GpuHandleAt(slot);
+		const D3D12_GPU_DESCRIPTOR_HANDLE gpu = GpuHandleAt(frameSlot.slot);
 		return gpu.ptr;
 	}
 
+	void UImGuiLayer::FlushPendingTextureCopies() const {
+		auto& self = const_cast<UImGuiLayer&>(*this);
+		for (auto& [_, textureSlots] : self.mTextureSlotsByKey) {
+			if (textureSlots.frameSlots.empty()) { continue; }
+
+			auto& frameSlot = textureSlots.frameSlots[
+				self.mFrameIndex % self.mFramesInFlight
+			];
+			if (!frameSlot.hasPendingCopy || frameSlot.pendingSource.ptr == 0 ||
+			    frameSlot.slot == UINT32_MAX) { continue; }
+
+			const D3D12_CPU_DESCRIPTOR_HANDLE dst = CpuHandleAt(frameSlot.slot);
+			mDevice.GetDevice()->CopyDescriptorsSimple(
+				1,
+				dst,
+				frameSlot.pendingSource,
+				D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
+			);
+			frameSlot.revision       = frameSlot.pendingRevision;
+			frameSlot.hasPendingCopy = false;
+			frameSlot.pendingSource  = {};
+		}
+	}
+
 	uint32_t UImGuiLayer::AllocateSlot() {
-		if (mNextSlot >= mCapacity) { return mCapacity - 1; }
-		return mNextSlot++;
+		return mDevice.AllocateImguiSrvSlot();
 	}
 
 	D3D12_CPU_DESCRIPTOR_HANDLE UImGuiLayer::CpuHandleAt(
 		const uint32_t slot
-	) const {
-		D3D12_CPU_DESCRIPTOR_HANDLE handle = mSrvHeap->
-			GetCPUDescriptorHandleForHeapStart();
-		handle.ptr += static_cast<SIZE_T>(slot) * mDescriptorSize;
-		return handle;
-	}
+	) const { return mDevice.GetSrvUavCpuHandle(slot); }
 
 	D3D12_GPU_DESCRIPTOR_HANDLE UImGuiLayer::GpuHandleAt(
 		const uint32_t slot
-	) const {
-		D3D12_GPU_DESCRIPTOR_HANDLE handle = mSrvHeap->
-			GetGPUDescriptorHandleForHeapStart();
-		handle.ptr += static_cast<UINT64>(slot) * mDescriptorSize;
-		return handle;
+	) const { return mDevice.GetSrvUavGpuHandle(slot); }
+
+	ID3D12DescriptorHeap* UImGuiLayer::GetDescriptorHeap() const {
+		return mDevice.GetSrvUavHeap();
 	}
 }
 

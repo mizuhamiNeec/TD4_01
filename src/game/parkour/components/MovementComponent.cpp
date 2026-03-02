@@ -13,6 +13,7 @@
 
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/framework/entity/UEntity.h"
+#include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/unnamed/subsystem/input/UInputSystem.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 #include "engine/world/UWorld.h"
@@ -43,7 +44,9 @@ namespace Unnamed {
 		mInput = ServiceLocator::Get<UInputSystem>();
 	}
 
-	void MovementComponent::PrePhysicsTick(const float deltaTime) {
+	void MovementComponent::PrePhysicsTick(const float) {}
+
+	void MovementComponent::OnTick(float deltaTime) {
 		auto* transform = GetTransform();
 		if (!transform) { return; }
 		const UWorld* world = UWorld::GetTickingWorld();
@@ -54,10 +57,10 @@ namespace Unnamed {
 		}
 
 		if (mSpeedBoostRemaining > 0.0f) {
-			mSpeedBoostRemaining = std::max(0.0f, mSpeedBoostRemaining - deltaTime);
-			if (mSpeedBoostRemaining == 0.0f) {
-				mSpeedBoostMultiplier = 1.0f;
-			}
+			mSpeedBoostRemaining = std::max(
+				0.0f, mSpeedBoostRemaining - deltaTime
+			);
+			if (mSpeedBoostRemaining == 0.0f) { mSpeedBoostMultiplier = 1.0f; }
 		}
 		if (mBlinkCooldownRemaining > 0.0f) {
 			mBlinkCooldownRemaining = std::max(
@@ -67,8 +70,12 @@ namespace Unnamed {
 
 		if (mSpeedVaulting) {
 			mVaultProgress = std::clamp(mVaultProgress, 0.0f, 1.0f);
-			const Vec3 a = Math::Lerp(mVaultStartPos, mVaultApexPos, mVaultProgress);
-			const Vec3 b = Math::Lerp(mVaultApexPos, mVaultEndPos, mVaultProgress);
+			const Vec3 a   = Math::Lerp(
+				mVaultStartPos, mVaultApexPos, mVaultProgress
+			);
+			const Vec3 b = Math::Lerp(
+				mVaultApexPos, mVaultEndPos, mVaultProgress
+			);
 			transform->SetPosition(Math::Lerp(a, b, mVaultProgress));
 			return;
 		}
@@ -76,8 +83,10 @@ namespace Unnamed {
 		const InputFrame input         = SampleInput();
 		const Vec3       wishDir       = BuildWishDirection(input.moveInput);
 		const float      targetSpeedHu = (
-			input.wishCrouch ? mCrouchSpeedHu : mMoveSpeedHu
-		) * mSpeedBoostMultiplier;
+			                                 input.wishCrouch ?
+				                                 mCrouchSpeedHu :
+				                                 mMoveSpeedHu
+		                                 ) * mSpeedBoostMultiplier;
 
 		if (mGrounded && !mSliding) {
 			ApplyFriction(mFriction, deltaTime);
@@ -100,8 +109,11 @@ namespace Unnamed {
 		}
 
 		if (!mGrounded) {
-			const float gravityScale = mWallRunning ? mWallrunGravityScale : 1.0f;
-			mVelocity += Vec3::down * Math::HtoM(mGravityHu) * gravityScale * deltaTime;
+			const float gravityScale = mWallRunning ?
+				                           mWallrunGravityScale :
+				                           1.0f;
+			mVelocity += Vec3::down * Math::HtoM(mGravityHu) * gravityScale *
+				deltaTime;
 		}
 
 		ResolveMovement(mVelocity * deltaTime);
@@ -113,19 +125,27 @@ namespace Unnamed {
 		const UWorld* world = UWorld::GetTickingWorld();
 		if (!world || !world->IsGameSimulationEnabled()) {
 			mReplayInputActive = false;
+			ClearLiveInputOverride();
 			return;
 		}
 		if (mReplayInputActive) { mReplayInputActive = false; }
+		if (mLiveInputOverrideActive) { ClearLiveInputOverride(); }
 	}
 
 	void MovementComponent::Deserialize(const JsonReader& reader) {
-		mWidthHu          = ReadFloatOr(reader, "widthHu", mWidthHu);
-		mHeightHu         = ReadFloatOr(reader, "heightHu", mHeightHu);
-		mCrouchHeightHu   = ReadFloatOr(reader, "crouchHeightHu", mCrouchHeightHu);
-		mMoveSpeedHu      = ReadFloatOr(reader, "moveSpeedHu", mMoveSpeedHu);
-		mJumpVelocityHu   = ReadFloatOr(reader, "jumpVelocityHu", mJumpVelocityHu);
-		mGravityHu        = ReadFloatOr(reader, "gravityHu", mGravityHu);
-		mRespawnPosition  = ReadVec3Or(reader, "respawnPosition", mRespawnPosition);
+		mWidthHu        = ReadFloatOr(reader, "widthHu", mWidthHu);
+		mHeightHu       = ReadFloatOr(reader, "heightHu", mHeightHu);
+		mCrouchHeightHu = ReadFloatOr(
+			reader, "crouchHeightHu", mCrouchHeightHu
+		);
+		mMoveSpeedHu    = ReadFloatOr(reader, "moveSpeedHu", mMoveSpeedHu);
+		mJumpVelocityHu = ReadFloatOr(
+			reader, "jumpVelocityHu", mJumpVelocityHu
+		);
+		mGravityHu       = ReadFloatOr(reader, "gravityHu", mGravityHu);
+		mRespawnPosition = ReadVec3Or(
+			reader, "respawnPosition", mRespawnPosition
+		);
 	}
 
 	void MovementComponent::Serialize(JsonWriter& writer) const {
@@ -159,7 +179,7 @@ namespace Unnamed {
 #endif
 
 	void MovementComponent::Initialize(
-		UPhysics::Engine* const physics,
+		UPhysics::Engine* const       physics,
 		CameraRotatorComponent* const cameraRotator
 	) {
 		mPhysics       = physics;
@@ -179,6 +199,24 @@ namespace Unnamed {
 	}
 
 	void MovementComponent::ClearReplayFrame() { mReplayInputActive = false; }
+
+	void MovementComponent::SetLiveInputOverride(
+		const Vec2& moveInput,
+		const bool  wishJump,
+		const bool  wishCrouch,
+		const bool  wishBlink
+	) {
+		mLiveInputOverride.moveInput  = moveInput;
+		mLiveInputOverride.wishJump   = wishJump;
+		mLiveInputOverride.wishCrouch = wishCrouch;
+		mLiveInputOverride.wishBlink  = wishBlink;
+		mLiveInputOverrideActive      = true;
+	}
+
+	void MovementComponent::ClearLiveInputOverride() {
+		mLiveInputOverrideActive = false;
+		mLiveInputOverride       = {};
+	}
 
 	void MovementComponent::SetRespawnPosition(const Vec3& respawnPosition) {
 		mRespawnPosition = respawnPosition;
@@ -202,7 +240,9 @@ namespace Unnamed {
 	}
 
 	void MovementComponent::TeleportTo(const Vec3& feetPosition) {
-		if (auto* transform = GetTransform()) { transform->SetPosition(feetPosition); }
+		if (auto* transform = GetTransform()) {
+			transform->SetPosition(feetPosition);
+		}
 	}
 
 	void MovementComponent::SetReplayVaultState(
@@ -220,7 +260,11 @@ namespace Unnamed {
 	}
 
 	Vec3 MovementComponent::GetVelocity() const noexcept { return mVelocity; }
-	void MovementComponent::SetVelocity(const Vec3& velocity) noexcept { mVelocity = velocity; }
+
+	void MovementComponent::SetVelocity(const Vec3& velocity) noexcept {
+		mVelocity = velocity;
+	}
+
 	Vec3 MovementComponent::GetFeetPosition() const noexcept {
 		const auto* transform = GetTransform();
 		return transform ? transform->Position() : Vec3::zero;
@@ -228,23 +272,44 @@ namespace Unnamed {
 
 	Vec3 MovementComponent::GetHeadPosition() const noexcept {
 		return GetFeetPosition() + Vec3::up * Math::HtoM(
-			(mGrounded && mSliding) ? mCrouchHeightHu : mHeightHu
-		);
+			       (mGrounded && mSliding) ? mCrouchHeightHu : mHeightHu
+		       );
 	}
 
 	bool MovementComponent::IsGrounded() const noexcept { return mGrounded; }
 	bool MovementComponent::IsSliding() const noexcept { return mSliding; }
-	bool MovementComponent::IsWallRunning() const noexcept { return mWallRunning; }
-	bool MovementComponent::IsSpeedVaulting() const noexcept { return mSpeedVaulting; }
-	float MovementComponent::GetVaultProgress() const noexcept { return mVaultProgress; }
-	Vec3 MovementComponent::GetVaultStartPos() const noexcept { return mVaultStartPos; }
-	Vec3 MovementComponent::GetVaultApexPos() const noexcept { return mVaultApexPos; }
-	Vec3 MovementComponent::GetVaultEndPos() const noexcept { return mVaultEndPos; }
+
+	bool MovementComponent::IsWallRunning() const noexcept {
+		return mWallRunning;
+	}
+
+	bool MovementComponent::IsSpeedVaulting() const noexcept {
+		return mSpeedVaulting;
+	}
+
+	float MovementComponent::GetVaultProgress() const noexcept {
+		return mVaultProgress;
+	}
+
+	Vec3 MovementComponent::GetVaultStartPos() const noexcept {
+		return mVaultStartPos;
+	}
+
+	Vec3 MovementComponent::GetVaultApexPos() const noexcept {
+		return mVaultApexPos;
+	}
+
+	Vec3 MovementComponent::GetVaultEndPos() const noexcept {
+		return mVaultEndPos;
+	}
 
 	PlayerAabb MovementComponent::BuildWorldAabb() const noexcept {
-		const float heightHu = (mGrounded && mSliding) ? mCrouchHeightHu : mHeightHu;
+		const float heightHu = (mGrounded && mSliding) ?
+			                       mCrouchHeightHu :
+			                       mHeightHu;
 		return {
-			.center = GetFeetPosition() + Vec3::up * Math::HtoM(heightHu * 0.5f),
+			.center = GetFeetPosition() + Vec3::up *
+			          Math::HtoM(heightHu * 0.5f),
 			.halfSize = Vec3(
 				Math::HtoM(mWidthHu * 0.5f),
 				Math::HtoM(heightHu * 0.5f),
@@ -263,11 +328,14 @@ namespace Unnamed {
 		if (mReplayInputActive) {
 			frame.moveInput.x = mReplayFrame.moveX;
 			frame.moveInput.y = mReplayFrame.moveY;
-			frame.wishJump = (mReplayFrame.buttons & ReplayButton_Jump) != 0;
-			frame.wishCrouch = (mReplayFrame.buttons & ReplayButton_Crouch) != 0;
+			frame.wishJump    = (mReplayFrame.buttons & ReplayButton_Jump) != 0;
+			frame.wishCrouch  = (mReplayFrame.buttons & ReplayButton_Crouch) !=
+			                    0;
 			frame.wishBlink = (mReplayFrame.buttons & ReplayButton_Blink) != 0;
 			return frame;
 		}
+
+		if (mLiveInputOverrideActive) { return mLiveInputOverride; }
 
 		if (!mInput) { return frame; }
 		frame.moveInput.x =
@@ -279,6 +347,14 @@ namespace Unnamed {
 		frame.wishJump   = mInput->IsHeld("jump");
 		frame.wishCrouch = mInput->IsHeld("duck");
 		frame.wishBlink  = mInput->IsPressed("attack2");
+
+		Msg(
+			"MovementComponent",
+			" moveInput: ({:.2f}, {:.2f}), wishJump: {}, wishCrouch: {}, wishBlink: {}",
+			frame.moveInput.x, frame.moveInput.y, frame.wishJump,
+			frame.wishCrouch, frame.wishBlink
+		);
+
 		return frame;
 	}
 
@@ -286,10 +362,12 @@ namespace Unnamed {
 		if (moveInput.SqrLength() <= 1e-6f) { return Vec3::zero; }
 
 		float yawDegrees = 0.0f;
-		if (mCameraRotator) { yawDegrees = mCameraRotator->GetLookAnglesDegrees().y; }
+		if (mCameraRotator) {
+			yawDegrees = mCameraRotator->GetLookAnglesDegrees().y;
+		}
 
 		const Mat4 yawMatrix = Mat4::RotateY(yawDegrees * Math::deg2Rad);
-		Vec3 forward         = yawMatrix.GetForward();
+		Vec3       forward   = yawMatrix.GetForward();
 		forward.y            = 0.0f;
 		forward.Normalize();
 		Vec3 right = Vec3::up.Cross(forward).Normalized();
@@ -304,23 +382,25 @@ namespace Unnamed {
 	) const noexcept {
 		const PlayerAabb aabb = BuildWorldAabb();
 		return {
-			.center = feetPosition + Vec3::up * aabb.halfSize.y,
+			.center   = feetPosition + Vec3::up * aabb.halfSize.y,
 			.halfSize = aabb.halfSize,
 		};
 	}
 
 	void MovementComponent::Accelerate(
-		const Vec3 wishDir,
+		const Vec3  wishDir,
 		const float wishSpeedHu,
 		const float accelHu,
 		const float deltaTime
 	) {
 		if (wishDir.SqrLength() <= 1e-6f) { return; }
 
-		Vec3 horizontalVelocity = mVelocity;
-		horizontalVelocity.y    = 0.0f;
-		const float currentSpeedHu = Math::MtoH(horizontalVelocity.Dot(wishDir));
-		const float addSpeedHu     = wishSpeedHu - currentSpeedHu;
+		Vec3 horizontalVelocity    = mVelocity;
+		horizontalVelocity.y       = 0.0f;
+		const float currentSpeedHu = Math::MtoH(
+			horizontalVelocity.Dot(wishDir)
+		);
+		const float addSpeedHu = wishSpeedHu - currentSpeedHu;
 		if (addSpeedHu <= 0.0f) { return; }
 
 		const float accelAmountHu = std::min(
@@ -335,10 +415,10 @@ namespace Unnamed {
 	) {
 		Vec3 horizontalVelocity = mVelocity;
 		horizontalVelocity.y    = 0.0f;
-		const float speed = Math::MtoH(horizontalVelocity.Length());
+		const float speed       = Math::MtoH(horizontalVelocity.Length());
 		if (speed <= 1e-4f) { return; }
 
-		const float drop = speed * amount * deltaTime;
+		const float drop     = speed * amount * deltaTime;
 		const float newSpeed = std::max(0.0f, speed - drop);
 		if (newSpeed <= 1e-4f) {
 			mVelocity.x = 0.0f;
@@ -347,8 +427,8 @@ namespace Unnamed {
 		}
 
 		const float ratio = newSpeed / speed;
-		mVelocity.x *= ratio;
-		mVelocity.z *= ratio;
+		mVelocity.x       *= ratio;
+		mVelocity.z       *= ratio;
 	}
 
 	void MovementComponent::ResolveMovement(const Vec3& delta) {
@@ -365,9 +445,11 @@ namespace Unnamed {
 			const float distance = remaining.Length();
 			if (distance <= 1e-5f) { break; }
 
-			const Vec3 direction = remaining / distance;
-			UPhysics::Hit hit = {};
-			if (!mPhysics->BoxCast(BuildPhysicsBoxAt(currentPosition), direction, distance, &hit)) {
+			const Vec3    direction = remaining / distance;
+			UPhysics::Hit hit       = {};
+			if (!mPhysics->BoxCast(
+				BuildPhysicsBoxAt(currentPosition), direction, distance, &hit
+			)) {
 				currentPosition += remaining;
 				break;
 			}
@@ -387,14 +469,15 @@ namespace Unnamed {
 		if (!transform || !mPhysics) { return; }
 
 		UPhysics::Hit groundHit = {};
-		const bool hitGround = mPhysics->BoxCast(
+		const bool    hitGround = mPhysics->BoxCast(
 			BuildPhysicsBoxAt(transform->Position()),
 			Vec3::down,
 			Math::HtoM(mGroundSnapHu),
 			&groundHit
 		);
 
-		if (hitGround && groundHit.normal.y >= mGroundNormalY && mVelocity.y <= 0.0f) {
+		if (hitGround && groundHit.normal.y >= mGroundNormalY && mVelocity.y <=
+		    0.0f) {
 			transform->SetPosition(
 				transform->Position() + Vec3::down * groundHit.t
 			);
@@ -410,13 +493,13 @@ namespace Unnamed {
 		if (!transform) { return; }
 
 		const float yawDegrees = mCameraRotator ?
-			mCameraRotator->GetLookAnglesDegrees().y :
-			0.0f;
+			                         mCameraRotator->GetLookAnglesDegrees().y :
+			                         0.0f;
 		const Vec3 direction = Mat4::RotateY(yawDegrees * Math::deg2Rad).
-			GetForward().Normalized();
+		                       GetForward().Normalized();
 		Vec3 targetPos = transform->Position() + direction * Math::HtoM(
-			mBlinkDistanceHu
-		);
+			                 mBlinkDistanceHu
+		                 );
 		if (mPhysics) {
 			UPhysics::Hit hit = {};
 			if (mPhysics->BoxCast(
@@ -426,13 +509,13 @@ namespace Unnamed {
 				&hit
 			)) {
 				targetPos = transform->Position() + direction * std::max(
-					0.0f, hit.t - Math::HtoM(2.0f)
-				);
+					            0.0f, hit.t - Math::HtoM(2.0f)
+				            );
 			}
 		}
 
 		transform->SetPosition(targetPos);
-		mGrounded = false;
+		mGrounded               = false;
 		mBlinkCooldownRemaining = mBlinkCooldownSec;
 	}
 
@@ -452,13 +535,11 @@ namespace Unnamed {
 				side,
 				checkDistance,
 				&hit
-			)) {
-				continue;
-			}
+			)) { continue; }
 			if (std::abs(hit.normal.y) > 0.2f) { continue; }
 
-			mWallRunning = true;
-			mWallNormal  = hit.normal.Normalized();
+			mWallRunning   = true;
+			mWallNormal    = hit.normal.Normalized();
 			mWallDirection = Math::ProjectOnPlane(
 				horizontal.Normalized(),
 				mWallNormal
@@ -503,9 +584,9 @@ namespace Unnamed {
 		}
 
 		Vec3 horizontal = mWallDirection * std::max(
-			Math::HtoM(mWallrunMinSpeedHu),
-			Vec3(mVelocity.x, 0.0f, mVelocity.z).Length()
-		);
+			                  Math::HtoM(mWallrunMinSpeedHu),
+			                  Vec3(mVelocity.x, 0.0f, mVelocity.z).Length()
+		                  );
 		mVelocity.x = horizontal.x;
 		mVelocity.z = horizontal.z;
 	}
@@ -519,7 +600,7 @@ namespace Unnamed {
 		mSliding        = true;
 		mSlideTime      = 0.0f;
 		mSlideDirection = horizontal.Normalized();
-		mVelocity      += mSlideDirection * Math::HtoM(mSlideBoostHu);
+		mVelocity       += mSlideDirection * Math::HtoM(mSlideBoostHu);
 	}
 
 	void MovementComponent::UpdateSlide(
@@ -532,8 +613,8 @@ namespace Unnamed {
 			return;
 		}
 
-		Vec3 horizontal = mVelocity;
-		horizontal.y    = 0.0f;
+		Vec3 horizontal     = mVelocity;
+		horizontal.y        = 0.0f;
 		const float speedHu = Math::MtoH(horizontal.Length());
 		if (speedHu <= mSlideStopHu || mSlideTime > 20.0f) {
 			EndSlide();
@@ -551,10 +632,10 @@ namespace Unnamed {
 	}
 
 	void MovementComponent::EndWallrun() {
-		mWallRunning = false;
-		mWallNormal  = Vec3::zero;
+		mWallRunning   = false;
+		mWallNormal    = Vec3::zero;
 		mWallDirection = Vec3::zero;
-		mWallrunTime = 0.0f;
+		mWallrunTime   = 0.0f;
 	}
 
 	REGISTER_COMPONENT(MovementComponent);

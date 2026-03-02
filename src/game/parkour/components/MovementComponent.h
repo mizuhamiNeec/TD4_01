@@ -31,6 +31,7 @@ namespace Unnamed {
 
 		void OnAttached() override;
 		void PrePhysicsTick(float deltaTime) override;
+		void OnTick(float deltaTime) override;
 		void PostPhysicsTick(float deltaTime) override;
 		void Deserialize(const JsonReader& reader) override;
 		void Serialize(JsonWriter& writer) const override;
@@ -46,6 +47,13 @@ namespace Unnamed {
 
 		void SetReplayFrame(const ReplayUserCmdFrame& frame);
 		void ClearReplayFrame();
+		void SetLiveInputOverride(
+			const Vec2& moveInput,
+			bool        wishJump,
+			bool        wishCrouch,
+			bool        wishBlink
+		);
+		void ClearLiveInputOverride();
 		void SetRespawnPosition(const Vec3& respawnPosition);
 		[[nodiscard]] Vec3 GetRespawnPosition() const noexcept;
 		void ApplyJumpPadBoost(float velocityHu);
@@ -133,6 +141,8 @@ namespace Unnamed {
 		bool  mSliding         = false;
 		bool  mWallRunning     = false;
 		bool  mReplayInputActive = false;
+		bool  mLiveInputOverrideActive = false;
+		InputFrame mLiveInputOverride = {};
 		ReplayUserCmdFrame mReplayFrame = {};
 		float mBlinkCooldownRemaining = 0.0f;
 		float mSpeedBoostMultiplier   = 1.0f;

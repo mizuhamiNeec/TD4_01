@@ -2,11 +2,15 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <queue>
+#include <unordered_set>
 
 #include <core/UnnamedMacro.h>
 #include <core/string/StrUtil.h>
 
+#include <engine/profiler/UProfiler.h>
 #include <engine/unnamed/subsystem/console/Log.h>
+#include <engine/unnamed/subsystem/interface/ServiceLocator.h>
 
 #include "loader/interface/IAssetLoader.h"
 
@@ -20,6 +24,46 @@
 namespace Unnamed {
 	constexpr std::string_view kChannel = "AssetManager";
 
+	namespace {
+		FileStamp ReadCurrentFileStamp(const std::string& path) {
+			FileStamp       stamp = {};
+			std::error_code ec;
+			if (!std::filesystem::exists(path, ec)) { return stamp; }
+
+			const auto lastWrite = std::filesystem::last_write_time(path, ec);
+			if (!ec) {
+				stamp.lastWriteTicks = lastWrite.time_since_epoch().count();
+			}
+
+			stamp.sizeInBytes = std::filesystem::file_size(path, ec);
+			return stamp;
+		}
+
+		FileStamp CompleteFileStamp(
+			const std::string& path, const FileStamp& partialStamp
+		) {
+			FileStamp completed = partialStamp;
+			if (
+				completed.sizeInBytes != 0 &&
+				completed.lastWriteTicks != 0
+			) { return completed; }
+
+			const FileStamp current = ReadCurrentFileStamp(path);
+			if (completed.sizeInBytes == 0) {
+				completed.sizeInBytes = current.sizeInBytes;
+			}
+			if (completed.lastWriteTicks == 0) {
+				completed.lastWriteTicks = current.lastWriteTicks;
+			}
+			return completed;
+		}
+
+		bool FileStampEquals(const FileStamp& lhs, const FileStamp& rhs) {
+			return lhs.lastWriteTicks == rhs.lastWriteTicks &&
+			       lhs.sizeInBytes == rhs.sizeInBytes;
+		}
+	}
+
 	AssetManager::AssetManager() = default;
 
 	void AssetManager::RegisterLoader(std::unique_ptr<IAssetLoader> loader) {
@@ -28,8 +72,11 @@ namespace Unnamed {
 	}
 
 	AssetID AssetManager::LoadFromFile(
-		const std::string& path, const std::optional<ASSET_TYPE> typeOpt
+		const std::string&              path,
+		const std::optional<ASSET_TYPE> typeOpt,
+		const AssetLoadPolicy           policy
 	) {
+		UProfiler*       profiler = ServiceLocator::Get<UProfiler>();
 		std::scoped_lock lock(mMutex);
 		auto             deduced = ASSET_TYPE::UNKNOWN;
 		if (!typeOpt.has_value()) {
@@ -48,6 +95,16 @@ namespace Unnamed {
 		// 不明の場合はスロットだけ作成
 		const AssetID id = FindOrCreateSlotByPath(path, deduced);
 		Node&         n  = mNodes[id];
+		if (
+			policy == AssetLoadPolicy::UseCachedIfLoaded &&
+			n.meta.loaded &&
+			(!typeOpt.has_value() || n.meta.type == *typeOpt ||
+			 n.meta.type == ASSET_TYPE::UNKNOWN)
+		) {
+			if (profiler) { profiler->AddSample("Asset.Load.CacheHit", 1.0f); }
+			return id;
+		}
+		if (profiler) { profiler->AddSample("Asset.Load.CacheMiss", 1.0f); }
 
 		for (const auto& l : mLoaders) {
 			auto t = ASSET_TYPE::UNKNOWN;
@@ -58,7 +115,7 @@ namespace Unnamed {
 			n.payload        = std::move(r.payload);
 			n.meta.type      = deduced == ASSET_TYPE::UNKNOWN ? t : deduced;
 			n.meta.loaded    = true;
-			n.meta.fileStamp = r.stamp;
+			n.meta.fileStamp = CompleteFileStamp(n.meta.sourcePath, r.stamp);
 
 			// 名前の解決
 			if (!r.resolveName.empty()) {
@@ -68,6 +125,12 @@ namespace Unnamed {
 
 			// 依存の設定
 			SetDependencies(id, r.dependencies);
+
+			SpecialMsg(
+				LogLevel::Success, kChannel,
+				"Loaded asset from file: {} (ID: {})", path, id
+			);
+
 			return id;
 		}
 
@@ -204,7 +267,7 @@ namespace Unnamed {
 			LoadResult r     = l->Load(n.meta.sourcePath);
 			n.payload        = std::move(r.payload);
 			n.meta.loaded    = true;
-			n.meta.fileStamp = r.stamp;
+			n.meta.fileStamp = CompleteFileStamp(n.meta.sourcePath, r.stamp);
 			n.meta.version++;
 
 			// 依存の設定
@@ -217,6 +280,83 @@ namespace Unnamed {
 		}
 
 		return false;
+	}
+
+	bool AssetManager::ReloadWithDependents(const AssetID id) {
+		UProfiler*            profiler = ServiceLocator::Get<UProfiler>();
+		UProfiler::ScopeTimer scope(profiler, "Asset.ReloadWithDependents");
+		if (!Reload(id)) { return false; }
+
+		std::unordered_set<AssetID> visited;
+		std::queue<AssetID>         queue;
+		visited.emplace(id);
+
+		{
+			std::scoped_lock lock(mMutex);
+			for (const AssetID dependent : mNodes[id].dependents) {
+				if (dependent == kInvalidAssetID || dependent >= mNextID) {
+					continue;
+				}
+				if (visited.emplace(dependent).second) {
+					queue.push(dependent);
+				}
+			}
+		}
+
+		while (!queue.empty()) {
+			const AssetID current = queue.front();
+			queue.pop();
+
+			Reload(current);
+
+			std::scoped_lock lock(mMutex);
+			for (const AssetID dependent : mNodes[current].dependents) {
+				if (dependent == kInvalidAssetID || dependent >= mNextID) {
+					continue;
+				}
+				if (visited.emplace(dependent).second) {
+					queue.push(dependent);
+				}
+			}
+		}
+
+		return true;
+	}
+
+	std::vector<AssetID> AssetManager::PollSourceChanges() {
+		std::vector<AssetID> changed;
+		{
+			std::scoped_lock lock(mMutex);
+			changed.reserve(mNextID);
+			for (AssetID id = 1; id < mNextID; ++id) {
+				const Node& node = mNodes[id];
+				if (!node.meta.loaded || node.meta.sourcePath.empty()) {
+					continue;
+				}
+
+				const FileStamp current = ReadCurrentFileStamp(
+					node.meta.sourcePath
+				);
+				if (current.sizeInBytes == 0 && current.lastWriteTicks == 0) {
+					continue;
+				}
+				if (!FileStampEquals(current, node.meta.fileStamp)) {
+					changed.emplace_back(id);
+				}
+			}
+		}
+
+		std::sort(changed.begin(), changed.end());
+		changed.erase(
+			std::unique(changed.begin(), changed.end()), changed.end()
+		);
+
+		std::vector<AssetID> reloaded;
+		reloaded.reserve(changed.size());
+		for (const AssetID id : changed) {
+			if (ReloadWithDependents(id)) { reloaded.emplace_back(id); }
+		}
+		return reloaded;
 	}
 
 	void AssetManager::RegisterReload(ReloadCallback callback) {

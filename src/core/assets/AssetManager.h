@@ -1,9 +1,12 @@
 #pragma once
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <mutex>
 #include <optional>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 #include "AssetID.h"
 #include "AssetMetaData.h"
@@ -17,6 +20,11 @@ namespace Unnamed {
 	public:
 		using ReloadCallback = std::function<void(AssetID id)>;
 
+		enum class AssetLoadPolicy : uint8_t {
+			UseCachedIfLoaded,
+			ForceReload,
+		};
+
 		/// @brief コンストラクタ
 		AssetManager();
 
@@ -29,8 +37,9 @@ namespace Unnamed {
 		/// @param typeOpt アセットの種類（省略可能）
 		/// @return ロードしたアセットのID
 		AssetID LoadFromFile(
-			const std::string&        path,
-			std::optional<ASSET_TYPE> typeOpt = std::nullopt
+			const std::string& path,
+			std::optional<ASSET_TYPE> typeOpt = std::nullopt,
+			AssetLoadPolicy policy = AssetLoadPolicy::UseCachedIfLoaded
 		);
 
 		/// @brief ランタイムアセットを作成します
@@ -94,7 +103,9 @@ namespace Unnamed {
 		/// @brief アセットをリロードします
 		/// @param id アセットのID
 		/// @return リロードに成功したかどうか
-		bool Reload(AssetID id);
+		bool                 Reload(AssetID id);
+		bool                 ReloadWithDependents(AssetID id);
+		std::vector<AssetID> PollSourceChanges();
 
 		/// @brief アセットのリロードコールバックを登録します
 		/// @param callback 登録するコールバック関数

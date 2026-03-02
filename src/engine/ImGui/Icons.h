@@ -11,8 +11,9 @@ constexpr uint32_t kIconClose    = 0xE5CD; // 閉じる
 constexpr uint32_t kIconArrowBack = 0xE5C4; // 戻る/ロゴ(仮)
 
 // ---- Help / Info ------------------------------------------------------------
-constexpr uint32_t kIconInfo = 0xE88E; // 情報
-constexpr uint32_t kIconHelp = 0xE887; // ヘルプ
+constexpr uint32_t kIconInfo    = 0xE88E; // 情報
+constexpr uint32_t kIconHelp    = 0xE887; // ヘルプ
+constexpr uint32_t kIconAvgTime = 0xF813; // 平均時間 (プロファイラー用)
 
 // ---- Console ----------------------------------------------------------------
 constexpr uint32_t kIconTerminal = 0xEB8E; // ターミナル
@@ -33,6 +34,10 @@ constexpr uint32_t kIconUpload   = 0xF09B; // エクスポート
 constexpr uint32_t kIconVisibility    = 0xE8F4; // On
 constexpr uint32_t kIconVisibilityOff = 0xE8F5; // Off
 
+// ---- CheckBox ---------------------------------------------------------------
+constexpr uint32_t kIconCheckBoxOn  = 0xE834; // チェックボックスオン
+constexpr uint32_t kIconCheckBoxOff = 0xE835; // チェックボックスオフ
+
 // ---- Playback / Time --------------------------------------------------------
 constexpr uint32_t kIconPlay  = 0xE037; // プレイ
 constexpr uint32_t kIconPause = 0xE034; // ポーズ
@@ -41,7 +46,6 @@ constexpr uint32_t kIconTimer = 0xE425; // タイマー
 
 // ---- Scene / Data types -----------------------------------------------------
 constexpr uint32_t kIconEntity = 0xEA24; // エンティティ
-
 constexpr uint32_t kIconObject = 0xE3B4; // オブジェクト
 constexpr uint32_t kIconGroup  = 0xE574; // グループ
 constexpr uint32_t kIconMesh   = 0xE3EC; // メッシュ

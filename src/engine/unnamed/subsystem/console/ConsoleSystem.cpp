@@ -312,13 +312,21 @@ namespace Unnamed {
 
 			std::vector<std::string> tokens = StrUtil::Tokenize(singleCommand);
 			if (tokens.empty()) { continue; }
-			const std::vector args(
+			std::vector args(
 				tokens.begin() + 1, tokens.end()
 			);
+
+			// ダブルクォートがある場合は削除しておく
+			for (auto& arg : args) {
+				if (arg.find('"') == std::string::npos) { continue; }
+				// 引数から両端のダブルクォートを削除
+				arg = StrUtil::RemoveDoubleQuotes(arg);
+			}
 
 			const bool foundCommand = mConCommands.contains(tokens[0]);
 			const bool foundVar     = mConVars.contains(tokens[0]);
 
+			// アクションの場合はそちらを処理
 			if (!foundCommand && !foundVar && !tokens[0].empty()) {
 				const char prefix = tokens[0][0];
 				if (prefix == '+' || prefix == '-') {

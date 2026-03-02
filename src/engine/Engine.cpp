@@ -211,6 +211,12 @@ namespace Unnamed {
 		const auto mouseDevice    = std::make_shared<MouseDevice>(hwnd);
 		mInputSystem->RegisterDevice(keyboardDevice);
 		mInputSystem->RegisterDevice(mouseDevice);
+		mConsoleSystem->ExecuteCommand(
+			"exec ./content/core/cfg/config_default.cfg"
+		);
+		mConsoleSystem->ExecuteCommand(
+			"exec ./content/core/cfg/user.cfg"
+		);
 
 		// プラットフォームイベントの作成
 		mPlatformEvents = std::make_unique<PlatformEventsImpl>();

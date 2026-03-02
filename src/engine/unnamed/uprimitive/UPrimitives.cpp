@@ -121,6 +121,13 @@ namespace Unnamed {
 		return aabb;
 	}
 
+	Sphere BuildBoundingSphere(const AABB& aabb) {
+		Sphere sphere = {};
+		sphere.center = aabb.Center();
+		sphere.radius = (aabb.max - sphere.center).Length();
+		return sphere;
+	}
+
 	bool IsAABBOutsidePlane(const AABB& aabb, const Plane& p) {
 		Vec3 v = aabb.min;
 		if (p.normal.x >= 0) { v.x = aabb.max.x; }
@@ -130,9 +137,57 @@ namespace Unnamed {
 	}
 
 	bool IsVisible(const Frustum& f, const AABB& worldAABB) {
+		return IsVisible(f, BuildBoundingSphere(worldAABB));
+	}
+
+	bool IsVisible(const Frustum& f, const Sphere& worldSphere) {
+		static constexpr float kCullingEpsilon = 0.001f;
 		for (const Plane& p : f.planes) {
-			if (IsAABBOutsidePlane(worldAABB, p)) { return false; }
+			const float distance = p.normal.Dot(worldSphere.center) + p.d;
+			if (distance < -(worldSphere.radius + kCullingEpsilon)) {
+				return false;
+			}
 		}
+		return true;
+	}
+
+	bool IsVisible(const Mat4& viewProj, const AABB& worldAABB) {
+		return IsVisible(
+			BuildFrustum(viewProj), BuildBoundingSphere(worldAABB)
+		);
+	}
+
+	bool IsVisiblePerspective(
+		const Sphere& worldSphere,
+		const Mat4&   view,
+		const Mat4&   proj,
+		const float   nearZ,
+		const float   farZ
+	) {
+		const Vec4 centerView4 = view * Vec4(
+			                         worldSphere.center.x,
+			                         worldSphere.center.y,
+			                         worldSphere.center.z,
+			                         1.0f
+		                         );
+		const Vec3  centerView(centerView4);
+		const float radius    = std::max(0.0f, worldSphere.radius);
+		const float nearLimit = std::max(nearZ, 0.0001f);
+
+		if (centerView.z + radius <= 0.0f) { return false; }
+		if (centerView.z + radius < nearLimit) { return false; }
+		if (farZ > nearLimit && centerView.z - radius > farZ) { return false; }
+
+		const float tanHalfFovX =
+			proj.m[0][0] != 0.0f ? 1.0f / proj.m[0][0] : 1000000.0f;
+		const float tanHalfFovY =
+			proj.m[1][1] != 0.0f ? 1.0f / proj.m[1][1] : 1000000.0f;
+		const float depth  = std::max(centerView.z, nearLimit);
+		const float xLimit = depth * tanHalfFovX + radius;
+		const float yLimit = depth * tanHalfFovY + radius;
+
+		if (centerView.x < -xLimit || centerView.x > xLimit) { return false; }
+		if (centerView.y < -yLimit || centerView.y > yLimit) { return false; }
 		return true;
 	}
 }

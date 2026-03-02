@@ -48,6 +48,12 @@ namespace Unnamed {
 		Plane planes[6];
 	};
 
+	/// @brief 球 構造体
+	struct Sphere {
+		Vec3  center = Vec3::zero;
+		float radius = 0.5f;
+	};
+
 	/// @brief ビュープロジェクション行列からフラスタムを構築します
 	/// @param viewProjRowVector ビュープロジェクション行列（行ベクトル形式）
 	/// @return 構築されたフラスタム
@@ -69,16 +75,20 @@ namespace Unnamed {
 		[[nodiscard]] Vec3 Size() const;
 	};
 
-	AABB TransformAABB(const AABB& local, const Mat4& world);
+	AABB   TransformAABB(const AABB& local, const Mat4& world);
+	Sphere BuildBoundingSphere(const AABB& aabb);
 
 	bool IsAABBOutsidePlane(const AABB& aabb, const Plane& p);
 	bool IsVisible(const Frustum& f, const AABB& worldAABB);
-
-	/// @brief 球 構造体
-	struct Sphere {
-		Vec3  center = Vec3::zero;
-		float radius = 0.5f;
-	};
+	bool IsVisible(const Frustum& f, const Sphere& worldSphere);
+	bool IsVisible(const Mat4& viewProj, const AABB& worldAABB);
+	bool IsVisiblePerspective(
+		const Sphere& worldSphere,
+		const Mat4&   view,
+		const Mat4&   proj,
+		float         nearZ,
+		float         farZ
+	);
 
 	/// @brief カプセル構造体
 	struct Capsule {

@@ -42,6 +42,11 @@ namespace Unnamed::Render {
 		);
 	}
 
+	SceneOutputView RenderModule::GetSceneOutputView() const {
+		if (!mRenderer || !mRenderDevice) { return {}; }
+		return mRenderer->GetSceneOutputView(*mRenderDevice);
+	}
+
 	uint32_t RenderModule::GetSceneOutputTextureId() const {
 		return mRenderer ? mRenderer->GetSceneOutputTextureId() : 0;
 	}

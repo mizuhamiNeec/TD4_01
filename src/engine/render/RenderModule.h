@@ -34,6 +34,7 @@ namespace Unnamed::Render {
 			URenderer::UiPlatformRenderCallback platformRenderCallback
 		) const;
 
+		[[nodiscard]] SceneOutputView GetSceneOutputView() const;
 		[[nodiscard]] uint32_t GetSceneOutputTextureId() const;
 		[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE GetSceneOutputSrvCpu() const;
 		[[nodiscard]] Vec2 GetSceneOutputSize() const;

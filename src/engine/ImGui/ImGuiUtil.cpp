@@ -1,12 +1,8 @@
 #ifdef _DEBUG
-#include <imgui_internal.h>
 
 #include <core/math/Math.h>
 
-#include <engine/Components/Transform/SceneComponent.h>
-#include <engine/Entity/Entity.h>
 #include <engine/ImGui/ImGuiUtil.h>
-#include <engine/ImGui/ImGuiWidgets.h>
 
 namespace ImGuiUtil {
 	/// @brief Vec4型をImVec4型に変換します。
@@ -19,6 +15,8 @@ namespace ImGuiUtil {
 		ImGuiStyle& style  = ImGui::GetStyle();
 		ImVec4*     colors = style.Colors;
 
+		colors[ImGuiCol_ChildBg]               = {0.078f, 0.078f, 0.078f, 1.0f};
+		colors[ImGuiCol_PopupBg]               = {0.078f, 0.078f, 0.078f, 1.0f};
 		colors[ImGuiCol_WindowBg]              = {0.14f, 0.14f, 0.14f, 0.94f};
 		colors[ImGuiCol_Border]                = {0.10f, 0.10f, 0.10f, 1.00f};
 		colors[ImGuiCol_FrameBg]               = {0.18f, 0.18f, 0.18f, 1.00f};
@@ -78,7 +76,7 @@ namespace ImGuiUtil {
 
 		// Rounding
 		style.WindowRounding = 4.0f;
-		style.ChildRounding  = 2.0f;
+		style.ChildRounding  = 4.0f;
 		style.FrameRounding  = 4.0f;
 		style.PopupRounding  = 8.0f;
 		style.GrabRounding   = 12.0f;
@@ -137,142 +135,6 @@ namespace ImGuiUtil {
 		ImGui::PushStyleColor(ImGuiCol_FrameBg, bg);
 		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, bgHovered);
 		ImGui::PushStyleColor(ImGuiCol_FrameBgActive, bgActive);
-	}
-
-	/// @brief Transformコンポーネントの編集ウィジェットを表示します。
-	/// @param transform 編集するTransformコンポーネントへの参照
-	/// @param vSpeed ドラッグ操作の速度
-	bool EditTransform(
-		SceneComponent& transform, const float vSpeed
-	) {
-		bool       isEditing  = false;
-		Vec3       localPos   = transform.GetLocalPos();
-		Quaternion localRot   = transform.GetLocalRot();
-		Vec3       localScale = transform.GetLocalScale();
-
-		if (ImGui::CollapsingHeader(
-			("Transform##" + transform.GetOwner()->GetName()).c_str(),
-			ImGuiTreeNodeFlags_DefaultOpen
-		)) {
-			// Position 編集
-			if (ImGuiWidgets::DragVec3(
-				"Position",
-				localPos,
-				Vec3::zero,
-				vSpeed,
-				"%.3f"
-			)) {
-				transform.SetLocalPos(localPos);
-				isEditing = true;
-			}
-
-			// Rotation 編集
-			Vec3 eulerDegrees = localRot.ToEulerDegrees();
-			if (ImGuiWidgets::DragVec3(
-					"Rotation",
-					eulerDegrees,
-					Vec3::zero,
-					vSpeed * 10.0f,
-					"%.3f"
-				)
-			) {
-				// 編集された Euler 角を Quaternion に変換
-				localRot = Quaternion::EulerDegrees(eulerDegrees);
-				transform.SetLocalRot(localRot);
-				isEditing = true;
-			}
-
-			// Scale 編集
-			if (ImGuiWidgets::DragVec3(
-					"Scale",
-					localScale,
-					Vec3::one,
-					vSpeed,
-					"%.3f"
-				)
-			) {
-				transform.SetLocalScale(localScale);
-				isEditing = true;
-			}
-		}
-		return isEditing;
-	}
-
-	/// @brief Vec3型の値をドラッグで編集するウィジェットを表示します。
-	/// @param name ウィジェットの名前
-	/// @param v 編集するVec3型の参照
-	/// @param vSpeed ドラッグ操作の速度
-	/// @param format 表示フォーマット
-	/// @return 編集された場合はtrueを返す
-	bool DragVec3(
-		const std::string& name, Vec3& v, const float vSpeed,
-		const char*        format
-	) {
-		// 編集中かどうか
-		bool isEditing = false;
-
-		// XYZの3つ分
-		constexpr int components = 3;
-
-		// 幅を取得
-		const float width = ImGui::GetCurrentContext()->Style.ItemInnerSpacing.
-			x;
-
-		constexpr ImVec4 xBg        = {0.72f, 0.11f, 0.11f, 0.75f};
-		constexpr ImVec4 xBgHovered = {0.83f, 0.18f, 0.18f, 0.75f};
-		constexpr ImVec4 xBgActive  = {0.96f, 0.26f, 0.21f, 0.75f};
-
-		constexpr ImVec4 yBg        = {0.11f, 0.37f, 0.13f, 0.75f};
-		constexpr ImVec4 yBgHovered = {0.22f, 0.56f, 0.24f, 0.75f};
-		constexpr ImVec4 yBgActive  = {0.30f, 0.69f, 0.31f, 0.75f};
-
-		constexpr ImVec4 zBg        = {0.05f, 0.28f, 0.63f, 0.75f};
-		constexpr ImVec4 zBgHovered = {0.10f, 0.46f, 0.82f, 0.75f};
-		constexpr ImVec4 zBgActive  = {0.13f, 0.59f, 0.95f, 0.75f};
-
-		// 幅を決定
-		ImGui::PushMultiItemsWidths(components, ImGui::CalcItemWidth());
-
-		/* --- 座標 --- */
-		// 色を送る
-		ImGui::PushID("X");
-		PushStyleColorForDrag(xBg, xBgHovered, xBgActive);
-		isEditing |= ImGui::DragFloat(
-			("##X" + name).c_str(), &v.x, vSpeed,
-			0.0f,
-			0.0f, format
-		);
-		ImGui::PopStyleColor(components);
-		ImGui::PopID();
-		ImGui::SameLine(0, width);
-
-		ImGui::PushID("Y");
-		PushStyleColorForDrag(yBg, yBgHovered, yBgActive);
-		isEditing |= ImGui::DragFloat(
-			("##Y" + name).c_str(), &v.y, vSpeed,
-			0.0f,
-			0.0f, format
-		);
-		ImGui::PopStyleColor(components);
-		ImGui::PopID();
-		ImGui::SameLine(0, width);
-
-		ImGui::PushID("Z");
-		PushStyleColorForDrag(zBg, zBgHovered, zBgActive);
-		isEditing |= ImGui::DragFloat(
-			("##Z" + name).c_str(), &v.z, vSpeed,
-			0.0f,
-			0.0f, format
-		);
-		ImGui::PopStyleColor(components);
-		ImGui::PopID();
-		ImGui::SameLine(0, width);
-
-		ImGui::Text(name.c_str());
-
-		for (int i = 0; i < components; i++) { ImGui::PopItemWidth(); }
-
-		return isEditing;
 	}
 
 	/// @brief アウトライン付きのテキストを描画します。
@@ -336,13 +198,11 @@ namespace ImGuiUtil {
 		const char* label, bool* v, const ImGuiTreeNodeFlags flags
 	) {
 		ImGui::PushID(label);
-		const bool isOpen = ImGui::CollapsingHeader(
-			"##CollapsingHeader", flags | ImGuiTreeNodeFlags_AllowOverlap
-		);
-		ImGui::SameLine();
+		ImGui::BeginGroup();
 		ImGui::Checkbox("##Checkbox", v);
 		ImGui::SameLine();
-		ImGui::Text(label);
+		const bool isOpen = ImGui::CollapsingHeader(label, flags);
+		ImGui::EndGroup();
 		ImGui::PopID();
 		return isOpen;
 	}

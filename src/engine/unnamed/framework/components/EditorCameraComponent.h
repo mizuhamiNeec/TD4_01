@@ -2,6 +2,7 @@
 #include "base/UBaseComponent.h"
 
 #include "engine/render/frame/RenderFrameInputs.h"
+#include "engine/unnamed/subsystem/input/UInputSystem.h"
 
 namespace Unnamed {
 	class TransformComponent;
@@ -19,23 +20,58 @@ namespace Unnamed {
 		}
 
 		void OnAttached() override;
+		void PrePhysicsTick(float deltaTime) override;
 		void OnTick(float deltaTime) override;
 
 		void Deserialize(const JsonReader& reader) override;
 		void Serialize(JsonWriter& writer) const override;
 
-		bool BuildCameraInput(
-			float                      aspect,
-			Render::RenderCameraInput& outCamera
-		) const;
+#ifdef _DEBUG
+		void DrawInspectorImGui() override;
+#endif
+
+		void SetAspectRatio(float aspectRatio);
+		[[nodiscard]] float GetAspectRatio() const { return mAspectRatio; }
+		void SetLookEnabled(bool enabled) noexcept;
+		[[nodiscard]] bool IsLookEnabled() const noexcept;
+		bool BuildViewProjectionMatrices(Mat4& outView, Mat4& outProj) const;
+
+		bool BuildCameraInput(Render::RenderCameraInput& outCamera) const;
 
 	private:
+		/// @brief 入力を処理し、移動方向を更新します。
+		void ProcessInput();
+
+		void Friction(float amount, float deltaTime);
+
+		/// @brief 空中での加速処理を行います。
+		/// @param dir プレイヤーが移動したい方向の単位ベクトル
+		/// @param speed プレイヤーが移動したい速度
+		/// @param accel 加速率
+		/// @param deltaTime 前のフレームからの経過時間 [秒]
+		void Accelerate(
+			Vec3 dir, float speed, float accel, float deltaTime
+		);
+
+		/// @brief TransformComponentを取得します。存在しない場合はnullptrを返します。
+		/// @return TransformComponentへのポインタ、存在しない場合はnullptr
 		[[nodiscard]] TransformComponent* GetTransform() const;
+
+		UInputSystem*        mInput   = nullptr;
+		class ConsoleSystem* mConsole = nullptr;
+
+		Vec3 mMoveInput = Vec3::zero;
+		Vec3 mWishDir   = Vec3::zero;
+		Vec3 mVelocity  = Vec3::zero;
+
+		Vec3 mRotation = Vec3::zero; // pitch (x), yaw (y), roll (z)
 
 		float mFovYDegrees = 90.0f;
 		float mNearZ       = 0.001f;
 		float mFarZ        = 10000.0f;
-		float mMoveSpeed   = 5.0f;
+		float mMoveSpeed   = 320.0f;
 		float mRotateSpeed = 1.5f;
+		float mAspectRatio = 16.0f / 9.0f;
+		bool  mLookEnabled = false;
 	};
 }

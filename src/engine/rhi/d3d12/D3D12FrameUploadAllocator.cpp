@@ -40,7 +40,7 @@ namespace Unnamed::Rhi {
 			return;
 		}
 
-		const D3D12_RANGE range = {0, 0}; // CPUのみ書き込み
+		constexpr D3D12_RANGE range = {0, 0}; // CPUのみ書き込み
 		if (FAILED(
 			mResource->Map(0, &range, reinterpret_cast<void**>(&mMapped))
 		)) {

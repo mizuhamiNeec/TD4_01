@@ -10,7 +10,9 @@ namespace Unnamed::Rhi {
 		Mat4  viewProj    = Mat4::identity; // 64 +
 		Vec3  cameraPos   = Vec3::zero;     // 16 + 
 		float time        = 0.0f;           // 4 +
-		float padding[12] = {};             // 48 = 256
+		Vec4  portalClipPlane = Vec4::zero; // 16 +
+		float portalClipEnabled = 0.0f;     // 4 +
+		float padding[7] = {};              // 28 = 256
 	};
 
 	static_assert(

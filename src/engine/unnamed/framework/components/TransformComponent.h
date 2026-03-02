@@ -8,6 +8,8 @@
 #include "core/math/Vec3.h"
 
 namespace Unnamed {
+	class UScene;
+
 	class TransformComponent : public UBaseComponent {
 	public:
 		//---------------------------------------------------------------------
@@ -23,11 +25,13 @@ namespace Unnamed {
 		void SetPosition(Vec3 position) noexcept;
 		void SetRotation(Quaternion rotation) noexcept;
 		void SetScale(Vec3 scale) noexcept;
-		void SetParent(TransformComponent* parent);
+		void SetParent(TransformComponent* parent, bool preserveWorld = true);
+		void ResolveDeferredParent(const UScene& scene);
 
 		//---------------------------------------------------------------------
 		// UBaseComponent
 		//---------------------------------------------------------------------
+		void OnDetached() override;
 		void OnTick(float deltaTime) override;
 
 		[[nodiscard]] std::string_view GetStableName() const override {
@@ -37,6 +41,10 @@ namespace Unnamed {
 		[[nodiscard]] std::string_view GetComponentName() const override {
 			return "Transform";
 		}
+
+#ifdef _DEBUG
+		void DrawInspectorImGui() override;
+#endif
 
 		void Deserialize(const JsonReader& reader) override;
 		void Serialize(JsonWriter& writer) const override;
@@ -53,6 +61,7 @@ namespace Unnamed {
 
 		TransformComponent*              mParent = nullptr;
 		std::vector<TransformComponent*> mChildren;
+		uint64_t                        mPendingParentEntityGuid = 0;
 
 		bool mIsDirty = false;
 	};

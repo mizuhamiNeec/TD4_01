@@ -4,6 +4,9 @@
 #include "core/json/JsonReader.h"
 #include "core/json/JsonWriter.h"
 
+#include "engine/ImGui/ImGuiWidgets.h"
+#include "engine/scene/UScene.h"
+#include "engine/unnamed/framework/entity/UEntity.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 
 namespace Unnamed {
@@ -38,7 +41,9 @@ namespace Unnamed {
 		MarkDirty();
 	}
 
-	void TransformComponent::SetParent(TransformComponent* parent) {
+	void TransformComponent::SetParent(
+		TransformComponent* parent, const bool preserveWorld
+	) {
 		if (mParent == parent) {
 			Warning(
 				GetComponentName(), "SetParent: 新しい親が現在の親と同じです。"
@@ -51,11 +56,61 @@ namespace Unnamed {
 			std::erase(children, this);
 		}
 
+		Vec3       preservedPosition = mLocalPos;
+		Quaternion preservedRotation = mLocalRot;
+		Vec3       preservedScale    = mLocalScale;
+		if (preserveWorld) {
+			Mat4 localWorld = mWorldMat;
+			if (mIsDirty) {
+				localWorld = Mat4::Affine(mLocalScale, mLocalRot, mLocalPos);
+				if (mParent) { localWorld = localWorld * mParent->WorldMat(); }
+			}
+
+			Mat4 newLocal = localWorld;
+			if (parent) { newLocal = localWorld * parent->WorldMat().Inverse(); }
+			preservedPosition = newLocal.GetTranslate();
+			preservedRotation = newLocal.ToQuaternion();
+			preservedScale    = newLocal.GetScale();
+		}
+
 		// 新しい親を設定
 		mParent = parent;
 		if (mParent) { mParent->mChildren.emplace_back(this); }
+		if (preserveWorld) {
+			mLocalPos   = preservedPosition;
+			mLocalRot   = preservedRotation;
+			mLocalScale = preservedScale;
+		}
+		mPendingParentEntityGuid = 0;
 
 		MarkDirty();
+	}
+
+	void TransformComponent::ResolveDeferredParent(const UScene& scene) {
+		if (mPendingParentEntityGuid == 0) { return; }
+		const UEntity* parentEntity = scene.FindEntity(mPendingParentEntityGuid);
+		if (!parentEntity) {
+			mPendingParentEntityGuid = 0;
+			return;
+		}
+		auto* parentTransform = const_cast<UEntity*>(parentEntity)->GetComponent<
+			TransformComponent>();
+		SetParent(parentTransform, false);
+		mPendingParentEntityGuid = 0;
+	}
+
+	void TransformComponent::OnDetached() {
+		auto children = mChildren;
+		for (TransformComponent* child : children) {
+			if (!child) { continue; }
+			child->SetParent(nullptr);
+		}
+		if (mParent) {
+			auto& siblings = mParent->mChildren;
+			std::erase(siblings, this);
+			mParent = nullptr;
+		}
+		mChildren.clear();
 	}
 
 	void TransformComponent::OnTick(float) {
@@ -101,6 +156,11 @@ namespace Unnamed {
 		writer.Write(mLocalScale.y);
 		writer.Write(mLocalScale.z);
 		writer.EndArray();
+
+		writer.Key("parentEntityGuid");
+		writer.Write(
+			mParent && mParent->GetOwner() ? mParent->GetOwner()->GetGuid() : 0ull
+		);
 	}
 
 	void TransformComponent::MarkDirty() {
@@ -141,10 +201,46 @@ namespace Unnamed {
 		}
 	}
 
+#ifdef _DEBUG
+	void TransformComponent::DrawInspectorImGui() {
+		Vec3       localPos   = mLocalPos;
+		Quaternion localRot   = mLocalRot;
+		Vec3       localScale = mLocalScale;
+
+		// Position 編集
+		if (
+			ImGuiWidgets::DragVec3(
+				"Position", localPos, Vec3::zero, 0.1f, "%.3f"
+			)
+		) { SetPosition(localPos); }
+
+		// Rotation 編集
+		Vec3 eulerDegrees = localRot.ToEulerDegrees();
+		if (
+			ImGuiWidgets::DragVec3(
+				"Rotation", eulerDegrees, Vec3::zero, 0.1f, "%.3f"
+			)
+		) {
+			// 編集された Euler 角を Quaternion に変換
+			localRot = Quaternion::EulerDegrees(eulerDegrees);
+			SetRotation(localRot);
+		}
+
+		// Scale 編集
+		if (
+			ImGuiWidgets::DragVec3(
+				"Scale", localScale, Vec3::one, 0.1f, "%.3f"
+			)
+		) { SetScale(localScale); }
+	}
+#endif
+
 	void TransformComponent::Deserialize(const JsonReader& reader) {
 		mLocalPos   = ReadVec3(reader, "position", mLocalPos);
 		mLocalRot   = ReadQuat(reader, "rotation", mLocalRot);
 		mLocalScale = ReadVec3(reader, "scale", mLocalScale);
+		mPendingParentEntityGuid =
+			reader.ReadUint64("parentEntityGuid").value_or(0ull);
 
 		MarkDirty();
 	}

@@ -19,20 +19,23 @@ namespace Unnamed {
 			"./content/core/settings/imconfig.json",
 			FCVAR::NONE, "Path to ImGui config file."
 		);
+
+		static UnnamedConVar<std::string> im_guizmoconfigpath(
+			"im_guizmoconfigpath",
+			"./content/core/settings/imguizmo.json",
+			FCVAR::NONE, "Path to ImGuizmo config file."
+		);
+
+		static UnnamedConVar host_timescale(
+			"host_timescale", 1.0f, FCVAR::NONE,
+			"Prescale the clock by this amount."
+		);
 	}
 
 	void EditorConVar() {
-		static UnnamedConVar ed_gridcolor_r(
-			"ed_gridcolor_r", 0.28f, FCVAR::ARCHIVE,
-			"Editor grid r color."
-		);
-		static UnnamedConVar ed_gridcolor_g(
-			"ed_gridcolor_g", 0.28f, FCVAR::ARCHIVE,
-			"Editor grid g color."
-		);
-		static UnnamedConVar ed_gridcolor_b(
-			"ed_gridcolor_b", 0.28f, FCVAR::ARCHIVE,
-			"Editor grid b color."
+		static UnnamedConVar ed_gridcolor(
+			"ed_gridcolor", Vec3(0.28f, 0.28f, 0.28f), FCVAR::ARCHIVE,
+			"Editor grid color."
 		);
 
 		static UnnamedConVar ed_gridmajorcolor_r(
@@ -110,8 +113,16 @@ namespace Unnamed {
 			"sensitivity", 1.0f, FCVAR::ARCHIVE,
 			"Mouse sensitivity."
 		);
+		static UnnamedConVar m_pitch(
+			"m_pitch", 0.022f, FCVAR::ARCHIVE,
+			"Mouse pitch factor."
+		);
+		static UnnamedConVar m_yaw(
+			"m_yaw", 0.022f, FCVAR::ARCHIVE,
+			"Mouse yaw factor."
+		);
 		static UnnamedConVar cl_pitchdown(
-			"cl_pitchdown", 89.0f, FCVAR::CHEAT,
+			"cl_pitchdown", -89.0f, FCVAR::CHEAT,
 			"Maximum downward pitch angle."
 		);
 		static UnnamedConVar cl_pitchup(
@@ -151,6 +162,19 @@ namespace Unnamed {
 			"r_vsync", false, FCVAR::ARCHIVE,
 			"Vertical sync"
 		);
+
+		//---------------------------------------------------------------------
+		// Debug
+		//---------------------------------------------------------------------
+		static UnnamedConVar ent_axis(
+			"ent_axis", false, FCVAR::CHEAT,
+			"Draw axis for entities."
+		);
+
+		static UnnamedConVar ent_bbox(
+			"ent_bbox", false, FCVAR::CHEAT,
+			"Draw bounding box for entities."
+		);
 	}
 
 	void ServerConVar() {
@@ -162,6 +186,11 @@ namespace Unnamed {
 		static UnnamedConVar sv_maxvelocity(
 			"sv_maxvelocity", 3500.0f, FCVAR::NONE,
 			"Maximum speed any ballistically moving object is allowed to attain per axis."
+		);
+
+		static UnnamedConVar sv_stopspeed(
+			"sv_stopspeed", 100.0f, FCVAR::NONE,
+			"Minimum stopping speed when on ground."
 		);
 	}
 }

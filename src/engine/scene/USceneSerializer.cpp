@@ -7,6 +7,7 @@
 #include "core/json/JsonReader.h"
 #include "core/json/JsonWriter.h"
 
+#include <chrono>
 #include <json.hpp>
 
 #include "engine/unnamed/framework/entity/UEntity.h"
@@ -62,6 +63,15 @@ namespace Unnamed {
 	) {
 		scene.Reset();
 
+		const JsonReader folders = root["folders"];
+		if (folders.Valid()) {
+			for (size_t i = 0; i < folders.Size(); ++i) {
+				const JsonReader folder = folders[i];
+				if (!folder.Valid()) { continue; }
+				scene.AddFolder(folder.GetString());
+			}
+		}
+
 		const JsonReader entities = root["entities"];
 
 		// エンティティ配列の検証 
@@ -73,9 +83,11 @@ namespace Unnamed {
 			if (!e.Valid()) { continue; }
 
 			const std::string name = ReadStringOr(e, "name", "unnamed");
+			const std::string folderPath = ReadStringOr(e, "folderPath", "");
 			const uint64_t guid = ReadU64Or(e, "guid", 0);
 			const bool isEditorOnly = ReadBoolOr(e, "isEditorOnly", false);
 			const bool entityActive = ReadBoolOr(e, "active", true);
+			const bool entityVisible = ReadBoolOr(e, "visible", true);
 
 			uint64_t finalGuid = guid != 0 ? guid : guidGen.Alloc();
 			while (finalGuid == 0 || scene.FindEntity(finalGuid) != nullptr) {
@@ -84,6 +96,8 @@ namespace Unnamed {
 
 			UEntity& entity = scene.CreateEntity(name, finalGuid, isEditorOnly);
 			entity.SetActive(entityActive);
+			entity.SetVisible(entityVisible);
+			entity.SetFolderPath(folderPath);
 
 			const JsonReader comps = e["components"];
 			if (!comps.Valid()) { continue; }
@@ -131,6 +145,13 @@ namespace Unnamed {
 		writer.Key("version");
 		writer.Write(1);
 
+		writer.Key("folders");
+		writer.BeginArray();
+		for (const std::string& folder : scene.GetFolders()) {
+			writer.Write(folder);
+		}
+		writer.EndArray();
+
 		writer.Key("entities");
 		writer.BeginArray();
 
@@ -146,11 +167,17 @@ namespace Unnamed {
 			writer.Key("guid");
 			writer.Write(e.GetGuid());
 
+			writer.Key("folderPath");
+			writer.Write(std::string(e.GetFolderPath()));
+
 			writer.Key("isEditorOnly");
 			writer.Write(e.IsEditorOnly());
 
 			writer.Key("active");
 			writer.Write(e.IsActive());
+
+			writer.Key("visible");
+			writer.Write(e.IsVisible());
 
 			writer.Key("components");
 			writer.BeginArray();
@@ -189,12 +216,38 @@ namespace Unnamed {
 		const UScene& src, UScene& dst, GuidGenerator& guidGen
 	) {
 		try {
+			const auto start = std::chrono::steady_clock::now();
 			JsonWriter writer("__clone__.json");
+			const auto serializeStart = std::chrono::steady_clock::now();
 			Serialize(src, writer);
+			const auto serializeEnd = std::chrono::steady_clock::now();
 
-			const auto       root = nlohmann::json::parse(writer.ToString());
+			const auto parseStart = std::chrono::steady_clock::now();
+			const auto root = nlohmann::json::parse(writer.ToString());
+			const auto parseEnd = std::chrono::steady_clock::now();
 			const JsonReader reader(root);
-			return Deserialize(dst, reader, guidGen);
+			const auto deserializeStart = std::chrono::steady_clock::now();
+			const bool ok = Deserialize(dst, reader, guidGen);
+			const auto deserializeEnd = std::chrono::steady_clock::now();
+
+			DevMsg(
+				kChannel,
+				"CloneScene timing: serialize={}ms parse={}ms deserialize={}ms total={}ms",
+				std::chrono::duration_cast<std::chrono::milliseconds>(
+					serializeEnd - serializeStart
+				).count(),
+				std::chrono::duration_cast<std::chrono::milliseconds>(
+					parseEnd - parseStart
+				).count(),
+				std::chrono::duration_cast<std::chrono::milliseconds>(
+					deserializeEnd - deserializeStart
+				).count(),
+				std::chrono::duration_cast<std::chrono::milliseconds>(
+					deserializeEnd - start
+				).count()
+			);
+
+			return ok;
 		} catch (...) {
 			Error(kChannel, "Failed to clone scene");
 			return false;

@@ -29,6 +29,6 @@ VsOut VsMain(VsIn input) {
 	VsOut output;
 	const float4 worldPos = mul(float4(input.pos, 1.0f), gWorld);
 	output.pos = mul(worldPos, gViewProj);
-	output.uv = input.uv;
+	output.uv = float2(input.uv.x, 1.0f - input.uv.y);
 	return output;
 }

@@ -33,6 +33,49 @@ namespace Unnamed::Render {
 
 	PipelineCache& RenderDevice::GetPipelineCache() { return mPipelineCache; }
 
+	void RenderDevice::InvalidateAssetDerivedState(const AssetID id) {
+		const auto& meta = mAssetManager.Meta(id);
+		switch (meta.type) {
+			case ASSET_TYPE::SHADER_SOURCE: {
+				mShaderLibrary.InvalidateByShaderSource(id);
+				mPipelineCache.InvalidateAll();
+				break;
+			}
+			case ASSET_TYPE::SHADER_PROGRAM: {
+				mPipelineCache.InvalidateAll();
+				break;
+			}
+			case ASSET_TYPE::MESH: {
+				mDirtyMeshAssets.emplace(id);
+				break;
+			}
+			case ASSET_TYPE::TEXTURE:
+			case ASSET_TYPE::MATERIAL:
+			case ASSET_TYPE::MATERIAL_INSTANCE: {
+				mMaterialsDirty = true;
+				break;
+			}
+			case ASSET_TYPE::POST_FX_CHAIN: {
+				mPostFxDirty = true;
+				break;
+			}
+			default: break;
+		}
+	}
+
+	void RenderDevice::ConsumeDirtyAssets(
+		std::unordered_set<AssetID>& outMeshAssets,
+		bool&                        outMaterialsDirty,
+		bool&                        outPostFxDirty
+	) {
+		outMeshAssets = std::move(mDirtyMeshAssets);
+		mDirtyMeshAssets.clear();
+		outMaterialsDirty = mMaterialsDirty;
+		outPostFxDirty    = mPostFxDirty;
+		mMaterialsDirty   = false;
+		mPostFxDirty      = false;
+	}
+
 	void RenderDevice::OnResize(const uint32_t width, const uint32_t height) {
 		mRhiDevice.OnResize(width, height);
 
@@ -43,13 +86,7 @@ namespace Unnamed::Render {
 
 	void RenderDevice::HookHotReload() {
 		mAssetManager.RegisterReload(
-			[this](AssetID id) {
-				const auto& meta = mAssetManager.Meta(id);
-				if (meta.type == ASSET_TYPE::SHADER_SOURCE) {
-					mShaderLibrary.InvalidateByShaderSource(id);
-					mPipelineCache.InvalidateAll();
-				}
-			}
+			[this](AssetID id) { InvalidateAssetDerivedState(id); }
 		);
 	}
 }

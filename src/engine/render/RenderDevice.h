@@ -4,6 +4,8 @@
 #include "shaders/PipelineCache.h"
 #include "shaders/ShaderLibrary.h"
 
+#include <unordered_set>
+
 namespace Unnamed {
 	class AssetManager;
 }
@@ -23,6 +25,12 @@ namespace Unnamed::Render {
 
 		ShaderLibrary& GetShaderLibrary();
 		PipelineCache& GetPipelineCache();
+		void           InvalidateAssetDerivedState(AssetID id);
+		void           ConsumeDirtyAssets(
+			std::unordered_set<AssetID>& outMeshAssets,
+			bool&                        outMaterialsDirty,
+			bool&                        outPostFxDirty
+		);
 
 		void                OnResize(uint32_t width, uint32_t height);
 		RgResourceRegistry& GetRegistry();
@@ -36,6 +44,9 @@ namespace Unnamed::Render {
 		ShaderLibrary mShaderLibrary;
 		PipelineCache mPipelineCache;
 
-		RgResourceRegistry mRegistry;
+		RgResourceRegistry          mRegistry;
+		std::unordered_set<AssetID> mDirtyMeshAssets;
+		bool                        mMaterialsDirty = false;
+		bool                        mPostFxDirty    = false;
 	};
 }

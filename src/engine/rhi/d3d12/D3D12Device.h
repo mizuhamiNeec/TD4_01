@@ -134,13 +134,13 @@ namespace Unnamed::Rhi {
 
 		std::unique_ptr<UploadContext> mUploadContext;
 
-		// スワチE�Eチェーン
+		// スワップチェーン
 		std::unique_ptr<D3D12SwapChain> mSwapChain;
 
-		// コマンドリスチE
+		// コマンドリスト
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> mCommandList;
 
-		// フレームコンチE��スチE
+		// フレームコンテキスト
 		struct FrameContext {
 			Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator;
 			uint64_t                                       fenceValue = 0;
@@ -158,7 +158,7 @@ namespace Unnamed::Rhi {
 
 		HWND mHwnd = nullptr;
 
-		// アダプタ変更イベンチE
+		// アダプタ変更イベント
 		HANDLE                                mAdapterChangeEvent = nullptr;
 		Microsoft::WRL::ComPtr<IDXGIFactory7> mFactory7;
 		DWORD                                 mAdapterChangeEventCookie = 0;
@@ -167,7 +167,7 @@ namespace Unnamed::Rhi {
 
 		DxcShaderCompiler mDxcCompiler;
 
-		// CBV/SRV/UAV のヒ�EチE
+		// CBV/SRV/UAV のヒープ
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mSrvUavHeap;
 		uint32_t                                     mSrvUavDescriptorSize = 0;
 		uint32_t                                     mSrvUavHeapCapacity   = 0;
@@ -176,7 +176,7 @@ namespace Unnamed::Rhi {
 		uint32_t                                     mImguiSrvHeapCapacity = 0;
 		uint32_t                                     mImguiNextSlot        = 0;
 
-		// RTVのヒ�EチE
+		// RTVのヒープ
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mRtvHeap;
 		uint32_t                                     mRtvDescriptorSize = 0;
 		uint32_t                                     mRtvHeapCapacity   = 0;

@@ -41,8 +41,19 @@ namespace Unnamed::Rhi {
 		[[nodiscard]] class D3D12SwapChain*      GetD3D12SwapChain() const;
 
 		[[nodiscard]] ID3D12DescriptorHeap* GetSrvUavHeap() const;
-		[[nodiscard]] uint32_t              GetSrvUavDescriptorSize() const;
-		[[nodiscard]] uint32_t              GetSrvUavHeapCapacity() const;
+		[[nodiscard]] uint32_t GetSrvUavDescriptorSize() const;
+		[[nodiscard]] uint32_t GetSrvUavHeapCapacity() const;
+		[[nodiscard]] uint32_t GetSrvUavTotalHeapCapacity() const;
+		[[nodiscard]] uint32_t GetImguiSrvHeapBase() const;
+		[[nodiscard]] uint32_t GetImguiSrvHeapCapacity() const;
+		[[nodiscard]] uint32_t AllocateImguiSrvSlot();
+		[[nodiscard]] uint32_t GetCurrentFrameIndex() const;
+		[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE GetSrvUavCpuHandle(
+			uint32_t absoluteSlot
+		) const;
+		[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE GetSrvUavGpuHandle(
+			uint32_t absoluteSlot
+		) const;
 
 		[[nodiscard]] ID3D12DescriptorHeap* GetRtvHeap() const;
 		[[nodiscard]] uint32_t              GetRtvDescriptorSize() const;
@@ -107,6 +118,15 @@ namespace Unnamed::Rhi {
 		void        SignalFrame(uint32_t frameIndex);
 		void        WaitForGpuIdle();
 
+	public:
+		[[nodiscard]] uint64_t GetCompletedFenceValue() const;
+		[[nodiscard]] uint64_t GetCurrentFrameFenceValue() const;
+		[[nodiscard]] uint64_t GetLastSubmittedFenceValue(
+			uint32_t frameIndex
+		) const;
+		[[nodiscard]] uint64_t GetNextSignalFenceValue() const;
+
+	private:
 		// D3D12
 		Microsoft::WRL::ComPtr<IDXGIFactory6>      mFactory;
 		Microsoft::WRL::ComPtr<ID3D12Device>       mDevice;
@@ -114,13 +134,13 @@ namespace Unnamed::Rhi {
 
 		std::unique_ptr<UploadContext> mUploadContext;
 
-		// スワップチェーン
+		// スワチE�Eチェーン
 		std::unique_ptr<D3D12SwapChain> mSwapChain;
 
-		// コマンドリスト
+		// コマンドリスチE
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> mCommandList;
 
-		// フレームコンテキスト
+		// フレームコンチE��スチE
 		struct FrameContext {
 			Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator;
 			uint64_t                                       fenceValue = 0;
@@ -138,7 +158,7 @@ namespace Unnamed::Rhi {
 
 		HWND mHwnd = nullptr;
 
-		// アダプタ変更イベント
+		// アダプタ変更イベンチE
 		HANDLE                                mAdapterChangeEvent = nullptr;
 		Microsoft::WRL::ComPtr<IDXGIFactory7> mFactory7;
 		DWORD                                 mAdapterChangeEventCookie = 0;
@@ -147,12 +167,16 @@ namespace Unnamed::Rhi {
 
 		DxcShaderCompiler mDxcCompiler;
 
-		// CBV/SRV/UAV のヒープ
+		// CBV/SRV/UAV のヒ�EチE
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mSrvUavHeap;
 		uint32_t                                     mSrvUavDescriptorSize = 0;
 		uint32_t                                     mSrvUavHeapCapacity   = 0;
+		uint32_t                                     mSrvUavTotalCapacity  = 0;
+		uint32_t                                     mImguiSrvHeapBase     = 0;
+		uint32_t                                     mImguiSrvHeapCapacity = 0;
+		uint32_t                                     mImguiNextSlot        = 0;
 
-		// RTVのヒープ
+		// RTVのヒ�EチE
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mRtvHeap;
 		uint32_t                                     mRtvDescriptorSize = 0;
 		uint32_t                                     mRtvHeapCapacity   = 0;

@@ -35,7 +35,7 @@ namespace Unnamed::Rhi {
 		const DeviceDesc&    deviceDesc,
 		const SwapChainDesc& swapChainDesc
 	) {
-		// D3D12デバイスを作成して返す
+		// D3D12チE��イスを作�Eして返す
 		return std::make_unique<D3D12Device>(
 			static_cast<HWND>(hwnd), deviceDesc, swapChainDesc
 		);
@@ -49,7 +49,7 @@ namespace Unnamed::Rhi {
 		mEnableVsync    = swapChainDesc.vSync;
 		UASSERT(
 			mFramesInFlight >= 2 && mFramesInFlight <= kMaxFramesInFlight &&
-			"フレーム数が不正です"
+			"Invalid frame count."
 		);
 
 		if (!mDxcCompiler.Initialize()) {
@@ -83,7 +83,7 @@ namespace Unnamed::Rhi {
 	}
 
 	D3D12Device::~D3D12Device() {
-		// 待つ
+		// 征E��
 		WaitForGpuIdle();
 
 		// リソースの解放
@@ -103,7 +103,7 @@ namespace Unnamed::Rhi {
 
 		mUploadContext.reset();
 
-		// アダプタ変更イベントの解放
+		// アダプタ変更イベント�E解放
 		if (mAdapterChangeEventCookie != 0) {
 			if (mFactory7) {
 				mFactory7->UnregisterAdaptersChangedEvent(
@@ -143,7 +143,7 @@ namespace Unnamed::Rhi {
 
 		WaitForFrame(frameIndex);
 
-		// アロケータをリセットしてコマンドリストを開始する
+		// アロケータをリセチE��してコマンドリストを開始すめE
 		mFrames[frameIndex].upload.BeginFrame();
 		Throw(mFrames[frameIndex].commandAllocator->Reset());
 		Throw(
@@ -156,10 +156,10 @@ namespace Unnamed::Rhi {
 	void D3D12Device::EndFrame() {
 		const uint32_t frameIndex = mSwapChain->GetCurrentBackBufferIndex();
 
-		// コマンドリストを閉じる
+		// コマンドリストを閉じめE
 		Throw(mCommandList->Close());
 
-		// コマンドリスト実行
+		// コマンドリスト実衁E
 		ID3D12CommandList* lists[] = {mCommandList.Get()};
 		mGraphicsQueue->ExecuteCommandLists(1, lists);
 
@@ -171,7 +171,7 @@ namespace Unnamed::Rhi {
 	void D3D12Device::OnResize(const uint32_t width, const uint32_t height) {
 		if (width == 0 || height == 0) { return; }
 
-		// 待っとく
+		// 征E��とぁE
 		WaitForGpuIdle();
 
 		mSwapChain->Resize(width, height);
@@ -205,6 +205,53 @@ namespace Unnamed::Rhi {
 
 	uint32_t D3D12Device::GetSrvUavHeapCapacity() const {
 		return mSrvUavHeapCapacity;
+	}
+
+	uint32_t D3D12Device::GetSrvUavTotalHeapCapacity() const {
+		return mSrvUavTotalCapacity;
+	}
+
+	uint32_t D3D12Device::GetImguiSrvHeapBase() const {
+		return mImguiSrvHeapBase;
+	}
+
+	uint32_t D3D12Device::GetImguiSrvHeapCapacity() const {
+		return mImguiSrvHeapCapacity;
+	}
+
+	uint32_t D3D12Device::AllocateImguiSrvSlot() {
+		if (mImguiNextSlot >= mImguiSrvHeapCapacity) {
+			Fatal(
+				kChannel,
+				"ImGui descriptor heap range exhausted: next={}, capacity={}",
+				mImguiNextSlot,
+				mImguiSrvHeapCapacity
+			);
+			return mImguiSrvHeapBase + (mImguiSrvHeapCapacity - 1);
+		}
+		return mImguiSrvHeapBase + mImguiNextSlot++;
+	}
+
+	uint32_t D3D12Device::GetCurrentFrameIndex() const {
+		return mSwapChain ? mSwapChain->GetCurrentBackBufferIndex() : 0;
+	}
+
+	D3D12_CPU_DESCRIPTOR_HANDLE D3D12Device::GetSrvUavCpuHandle(
+		const uint32_t absoluteSlot
+	) const {
+		D3D12_CPU_DESCRIPTOR_HANDLE handle =
+			mSrvUavHeap->GetCPUDescriptorHandleForHeapStart();
+		handle.ptr += static_cast<SIZE_T>(absoluteSlot) * mSrvUavDescriptorSize;
+		return handle;
+	}
+
+	D3D12_GPU_DESCRIPTOR_HANDLE D3D12Device::GetSrvUavGpuHandle(
+		const uint32_t absoluteSlot
+	) const {
+		D3D12_GPU_DESCRIPTOR_HANDLE handle =
+			mSrvUavHeap->GetGPUDescriptorHandleForHeapStart();
+		handle.ptr += static_cast<UINT64>(absoluteSlot) * mSrvUavDescriptorSize;
+		return handle;
 	}
 
 	ID3D12DescriptorHeap* D3D12Device::GetRtvHeap() const {
@@ -254,6 +301,28 @@ namespace Unnamed::Rhi {
 
 	uint32_t D3D12Device::GetFramesInFlight() const { return mFramesInFlight; }
 
+	uint64_t D3D12Device::GetCompletedFenceValue() const {
+		return mFence ? mFence->GetCompletedValue() : 0;
+	}
+
+	uint64_t D3D12Device::GetCurrentFrameFenceValue() const {
+		if (!mSwapChain) { return 0; }
+		return GetLastSubmittedFenceValue(
+			mSwapChain->GetCurrentBackBufferIndex()
+		);
+	}
+
+	uint64_t D3D12Device::GetLastSubmittedFenceValue(
+		const uint32_t frameIndex
+	) const {
+		if (frameIndex >= mFramesInFlight) { return 0; }
+		return mFrames[frameIndex].fenceValue;
+	}
+
+	uint64_t D3D12Device::GetNextSignalFenceValue() const {
+		return mNextFenceValue;
+	}
+
 	D3D12Device::UploadContext::UploadContext(D3D12Device& device) : mDevice(
 		device
 	) {
@@ -274,7 +343,7 @@ namespace Unnamed::Rhi {
 			)
 		);
 
-		// コマンドリストは開いた状態で作成されるので閉じる
+		// コマンドリスト�E開いた状態で作�Eされる�Eで閉じめE
 		Throw(mCommandList->Close());
 
 		Throw(
@@ -285,11 +354,9 @@ namespace Unnamed::Rhi {
 			)
 		);
 
-		mFenceEvent = CreateEvent(nullptr, FALSE,FALSE, nullptr);
+		mFenceEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 		if (!mFenceEvent) {
-			Fatal(
-				"UploadContext", "フェンスイベントでイベント作成に失敗しました。"
-			);
+			Fatal("UploadContext", "Failed to create upload fence event.");
 		}
 	}
 
@@ -350,7 +417,7 @@ namespace Unnamed::Rhi {
 	}
 
 	void D3D12Device::CreateDevice() {
-		// --- ファクトリーの生成 ---
+		// --- ファクトリーの生�E ---
 		UINT factoryFlags = 0;
 #ifdef _DEBUG
 		factoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
@@ -358,7 +425,7 @@ namespace Unnamed::Rhi {
 
 		Throw(CreateDXGIFactory2(factoryFlags, IID_PPV_ARGS(&mFactory)));
 
-		// --- アダプタの確認 ---
+		// --- アダプタの確誁E---
 		constexpr std::array gpuPreferences = {
 			DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE,
 			DXGI_GPU_PREFERENCE_MINIMUM_POWER,
@@ -369,13 +436,13 @@ namespace Unnamed::Rhi {
 		if (const auto factory6 = QueryInterface<IDXGIFactory6>(mFactory)) {
 			bool found = false;
 			for (const auto preference : gpuPreferences) {
-				UINT i = 0; // アダプタ列挙用インデックス
+				UINT i = 0; // アダプタ列挙用インチE��クス
 				while (
 					factory6->EnumAdapterByGpuPreference(
 						i, preference, IID_PPV_ARGS(&adapter)
 					) != DXGI_ERROR_NOT_FOUND
 				) {
-					// アダプタの情報を取得
+					// アダプタの惁E��を取征E
 					DXGI_ADAPTER_DESC3 adapterDesc3;
 					Throw(adapter->GetDesc3(&adapterDesc3));
 					Msg(
@@ -424,20 +491,20 @@ namespace Unnamed::Rhi {
 				}
 				if (found) { break; }
 			}
-			UASSERT(adapter != nullptr && "適切なアダプタが見つかりませんでした");
+			UASSERT(adapter != nullptr && "適刁E��アダプタが見つかりませんでした");
 		} else {
-			Fatal(kChannel, "それはちょっとねぇ、世間は許してくrえゃすぇんよ");
+			Fatal(kChannel, "それはちめE��とねぁE��世間は許してくrえゃすぇんよ");
 			UASSERT(false && "IDXGIFactory6の取得に失敗しました");
 		}
 
-		// --- アダプタ変更イベントの登録（できれば） ---
+		// --- アダプタ変更イベント�E登録�E�できれば�E�E---
 		ComPtr<IDXGIFactory7> factory7;
 		if (SUCCEEDED(mFactory.As(&factory7))) {
 			mFactory7           = factory7;
 			mAdapterChangeEvent = CreateEventW(
 				nullptr, FALSE, FALSE, nullptr
 			);
-			UASSERT(mAdapterChangeEvent != nullptr && "アダプタ変更イベントの作成に失敗しました");
+			UASSERT(mAdapterChangeEvent != nullptr && "アダプタ変更イベント�E作�Eに失敗しました");
 
 			Throw(
 				mFactory7->RegisterAdaptersChangedEvent(
@@ -448,7 +515,7 @@ namespace Unnamed::Rhi {
 			DevMsg(kChannel, "アダプタ変更イベントが登録されました");
 		}
 
-		// 最新の機能レベルから順に対応しているか確認
+		// 最新の機�Eレベルから頁E��対応してぁE��か確誁E
 		constexpr std::array featureLevels = {
 			D3D_FEATURE_LEVEL_12_2,
 			D3D_FEATURE_LEVEL_12_1,
@@ -457,7 +524,7 @@ namespace Unnamed::Rhi {
 			D3D_FEATURE_LEVEL_11_0,
 		};
 
-		// --- デバイスの生成 ---
+		// --- チE��イスの生�E ---
 		for (size_t i = 0; i < featureLevels.size(); ++i) {
 			const HRESULT hr = D3D12CreateDevice(
 				adapter.Get(),
@@ -481,27 +548,27 @@ namespace Unnamed::Rhi {
 			mDevice.Reset();
 		}
 
-		UASSERT(mDevice != nullptr && "D3D12デバイスの作成に失敗しました");
+		UASSERT(mDevice != nullptr && "D3D12チE��イスの作�Eに失敗しました");
 	}
 
 	void D3D12Device::EnableValidationLayer() const {
 		ComPtr<ID3D12InfoQueue> queue;
 		if (SUCCEEDED(mDevice->QueryInterface(IID_PPV_ARGS(&queue)))) {
-			// やばいエラー時に止まる
+			// めE�EぁE��ラー時に止まめE
 			queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
-			// エラー時に止まる
+			// エラー時に止まめE
 			queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
-			// 警告時に止まる
+			// 警告時に止まめE
 			queue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
 
 			std::array denyIds = {
-				// Windows11でのDXGIデバッグレイヤーとDX12デバッグレイヤーの相互作用バグによるエラーメッセージ
+				// Windows11でのDXGIチE��チE��レイヤーとDX12チE��チE��レイヤーの相互作用バグによるエラーメチE��ージ
 				// https://stackoverflow.com/questions/69805245/directx-12-application-is-crashing-in-windows-11
 				D3D12_MESSAGE_ID_RESOURCE_BARRIER_MISMATCHING_COMMAND_LIST_TYPE,
-				// これはオーバーレイ系を使うと出るので抑制しておく
+				// これはオーバ�Eレイ系を使ぁE��出る�Eで抑制しておく
 				D3D12_MESSAGE_ID_CREATERESOURCE_STATE_IGNORED,
 
-				// お口チャック
+				// お口チャチE��
 				D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE,
 			};
 
@@ -513,13 +580,13 @@ namespace Unnamed::Rhi {
 			filter.DenyList.NumSeverities =
 				static_cast<UINT>(severities.size());
 			filter.DenyList.pSeverityList = severities.data();
-			// 指定したメッセージの表示を抑制
+			// 持E��したメチE��ージの表示を抑制
 			Throw(queue->PushStorageFilter(&filter));
 		}
 	}
 
 	void D3D12Device::CreateQueue() {
-		// コマンドキューの生成
+		// コマンドキューの生�E
 		D3D12_COMMAND_QUEUE_DESC desc;
 		desc.Type     = D3D12_COMMAND_LIST_TYPE_DIRECT;
 		desc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
@@ -538,10 +605,14 @@ namespace Unnamed::Rhi {
 	void D3D12Device::CreateSrvUavHeap() {
 		D3D12_DESCRIPTOR_HEAP_DESC desc = {};
 		desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		desc.NumDescriptors = 8192; // とりあえず大きめに確保
+		desc.NumDescriptors = 8192; // とりあえず大きめに確俁E
 		desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-
-		mSrvUavHeapCapacity = desc.NumDescriptors; // キャパシティを保存
+		mSrvUavTotalCapacity = desc.NumDescriptors;
+		mImguiSrvHeapCapacity = 2048;
+		UASSERT(mSrvUavTotalCapacity > mImguiSrvHeapCapacity);
+		mSrvUavHeapCapacity = mSrvUavTotalCapacity - mImguiSrvHeapCapacity;
+		mImguiSrvHeapBase   = mSrvUavHeapCapacity;
+		mImguiNextSlot      = 0;
 
 		Throw(
 			mDevice->CreateDescriptorHeap(
@@ -551,15 +622,24 @@ namespace Unnamed::Rhi {
 		mSrvUavDescriptorSize = mDevice->GetDescriptorHandleIncrementSize(
 			D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
 		);
+
+		DevMsg(
+			kChannel,
+			"Created SRV/UAV heap: total={}, render={}, imgui={}, imguiBase={}",
+			mSrvUavTotalCapacity,
+			mSrvUavHeapCapacity,
+			mImguiSrvHeapCapacity,
+			mImguiSrvHeapBase
+		);
 	}
 
 	void D3D12Device::CreateRtvHeap() {
 		D3D12_DESCRIPTOR_HEAP_DESC desc = {};
 		desc.Type                       = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-		desc.NumDescriptors             = 1024; // 必要に応じて増やす
+		desc.NumDescriptors             = 1024; // 忁E��に応じて増やぁE
 		desc.Flags                      = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 
-		mRtvHeapCapacity = desc.NumDescriptors; // キャパシティを保存
+		mRtvHeapCapacity = desc.NumDescriptors; // キャパシチE��を保孁E
 
 		Throw(
 			mDevice->CreateDescriptorHeap(
@@ -574,7 +654,7 @@ namespace Unnamed::Rhi {
 	void D3D12Device::CreateDsvHeap() {
 		D3D12_DESCRIPTOR_HEAP_DESC desc = {};
 		desc.Type                       = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-		desc.NumDescriptors             = 1024; // 必要に応じて増やす
+		desc.NumDescriptors             = 1024; // 忁E��に応じて増やぁE
 		desc.Flags                      = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 
 		mDsvHeapCapacity = desc.NumDescriptors;
@@ -590,7 +670,7 @@ namespace Unnamed::Rhi {
 	}
 
 	void D3D12Device::CreatePipelines() {
-		// コンピュート ルートシグネチャ UAV(u0)
+		// コンピューチEルートシグネチャ UAV(u0)
 		{
 			D3D12_DESCRIPTOR_RANGE range = {};
 			range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
@@ -770,7 +850,7 @@ namespace Unnamed::Rhi {
 				)
 			);
 
-			// 256KBのアップロードアロケータを作成
+			// 256KBのアチE�Eロードアロケータを作�E
 			mFrames[i].upload.Initialize(mDevice.Get(), 256 * 1024);
 
 			mFrames[i].fenceValue = 0;
@@ -788,7 +868,7 @@ namespace Unnamed::Rhi {
 			)
 		);
 
-		// 作成時は開いているので閉じとく
+		// 作�E時�E開いてぁE��ので閉じとぁE
 		Throw(mCommandList->Close());
 	}
 
@@ -822,7 +902,7 @@ namespace Unnamed::Rhi {
 	}
 
 	void D3D12Device::WaitForGpuIdle() {
-		// すべてのフレームが完了するまで待つ
+		// すべてのフレームが完亁E��るまで征E��
 		for (uint32_t i = 0; i < mFramesInFlight; ++i) { SignalFrame(i); }
 		for (uint32_t i = 0; i < mFramesInFlight; ++i) { WaitForFrame(i); }
 	}

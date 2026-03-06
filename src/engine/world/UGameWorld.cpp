@@ -1,57 +1,88 @@
 #include "UGameWorld.h"
 
-#include "core/string/StrUtil.h"
-
-#include "engine/scene/USceneSerializer.h"
-#include "engine/render/frame/RenderFrameContext.h"
 #include "engine/render/frame/RenderFrameInputs.h"
+#include "engine/scene/USceneSerializer.h"
 
-#include "game/parkour/ParkourRuntime.h"
+#include "engine/unnamed/subsystem/console/Log.h"
+
+#include <chrono>
 
 namespace Unnamed {
 	UGameWorld::~UGameWorld() = default;
 
 	void UGameWorld::Initialize() {
+		const auto start = std::chrono::steady_clock::now();
 		UWorld::Initialize();
-		if (!mRuntime) { mRuntime = std::make_unique<ParkourRuntime>(*this); }
-		mRuntime->Initialize();
-		LoadSceneFromFile(ResolveScenePath(mActiveSceneId));
+		const auto worldInitEnd = std::chrono::steady_clock::now();
+
+		Msg(
+			"UGameWorld",
+			"Initialize timing: worldInit={}ms",
+			std::chrono::duration_cast<std::chrono::milliseconds>(
+				worldInitEnd - start
+			).count()
+		);
 	}
 
-	void UGameWorld::Shutdown() {
-		if (mRuntime) { mRuntime->OnSceneUnloaded(); }
-		UWorld::Shutdown();
-	}
+	void UGameWorld::Shutdown() { UWorld::Shutdown(); }
 
-	void UGameWorld::Tick(const float deltaTime) {
-		AttachRuntimeToCurrentScene();
-		if (mRuntime) { mRuntime->PreWorldTick(deltaTime); }
-		UWorld::Tick(deltaTime);
-		if (mRuntime) { mRuntime->PostWorldTick(deltaTime); }
-		ApplyPendingSceneChange();
-	}
+	void UGameWorld::Tick(const float deltaTime) { UWorld::Tick(deltaTime); }
 
 	bool UGameWorld::LoadSceneFromFile(const char* path) {
-		if (!path || std::string_view(path).empty()) { return false; }
+		const auto start = std::chrono::steady_clock::now();
+		const bool ok    = [&]() {
+			if (!path || std::string_view(path).empty()) { return false; }
 
-		auto       newScene = std::make_unique<UScene>();
-		const bool ok       = USceneSerializer::LoadFromFile(
-			*newScene, path, mGuidGenerator
-		);
-		if (!ok) { return false; }
+			auto       newScene = std::make_unique<UScene>();
+			const bool loadOk   = USceneSerializer::LoadFromFile(
+				*newScene, path, mGuidGenerator
+			);
+			if (!loadOk) { return false; }
 
-		UnloadScene();
-		UWorld::SetScene(std::move(newScene));
-		mLoadedScenePath       = StrUtil::NormalizePath(path);
-		mSceneRuntimeAttached  = false;
-		AttachRuntimeToCurrentScene();
-		return true;
+			const auto beforeUnload = std::chrono::steady_clock::now();
+			UnloadScene();
+			const auto afterUnload = std::chrono::steady_clock::now();
+
+			UWorld::SetScene(std::move(newScene));
+			const auto afterSetScene = std::chrono::steady_clock::now();
+
+			Msg(
+				"UGameWorld",
+				"LoadSceneFromFile timing: load={}ms unload={}ms setScene={}ms total={}ms path={}",
+				std::chrono::duration_cast<std::chrono::milliseconds>(
+					beforeUnload - start
+				).count(),
+				std::chrono::duration_cast<std::chrono::milliseconds>(
+					afterUnload - beforeUnload
+				).count(),
+				std::chrono::duration_cast<std::chrono::milliseconds>(
+					afterSetScene - afterUnload
+				).count(),
+				std::chrono::duration_cast<std::chrono::milliseconds>(
+					afterSetScene - start
+				).count(),
+				std::string(path)
+			);
+
+			return true;
+		}();
+
+		if (!ok) {
+			const auto end = std::chrono::steady_clock::now();
+			Msg(
+				"UGameWorld",
+				"LoadSceneFromFile timing: failed total={}ms path={}",
+				std::chrono::duration_cast<std::chrono::milliseconds>(
+					end - start
+				).count(),
+				(path ? std::string(path) : std::string("<null>"))
+			);
+		}
+		return ok;
 	}
 
 	void UGameWorld::UnloadScene() {
 		if (!mScene) { return; }
-		if (mRuntime) { mRuntime->OnSceneUnloaded(); }
-		mSceneRuntimeAttached = false;
 		UWorld::UnloadScene();
 	}
 
@@ -60,41 +91,34 @@ namespace Unnamed {
 		Render::RenderFrameContext& frameContext,
 		AssetManager&               assetManager
 	) {
-		if (mRuntime) { mRuntime->PrepareRender(inputs.sceneRenderRequest); }
 		UWorld::FillRenderFrameInputs(inputs, frameContext, assetManager);
-		if (mRuntime) { mRuntime->BuildRenderContributions(inputs, assetManager); }
 	}
 
 	void UGameWorld::SetScene(std::unique_ptr<UScene> scene) {
-		if (mScene) { UnloadScene(); }
-		UWorld::SetScene(std::move(scene));
-		mSceneRuntimeAttached = false;
-		AttachRuntimeToCurrentScene();
-	}
-
-	void UGameWorld::RequestSceneChange(const GameSceneId target) {
-		mPendingSceneId         = target;
-		mHasPendingSceneChange  = true;
-	}
-
-	void UGameWorld::ApplyPendingSceneChange() {
-		if (!mHasPendingSceneChange) { return; }
-		mHasPendingSceneChange = false;
-		mActiveSceneId         = mPendingSceneId;
-		LoadSceneFromFile(ResolveScenePath(mActiveSceneId));
-	}
-
-	void UGameWorld::AttachRuntimeToCurrentScene() {
-		if (mSceneRuntimeAttached || !mScene || !mRuntime) { return; }
-		mRuntime->OnSceneLoaded(*mScene);
-		mSceneRuntimeAttached = true;
-	}
-
-	const char* UGameWorld::ResolveScenePath(const GameSceneId sceneId) const {
-		switch (sceneId) {
-			case GameSceneId::Title: return mTitleScenePath.c_str();
-			case GameSceneId::Game: return mGameplayScenePath.c_str();
-			default: return mGameplayScenePath.c_str();
+		const auto start = std::chrono::steady_clock::now();
+		if (mScene) {
+			const auto unloadStart = std::chrono::steady_clock::now();
+			UnloadScene();
+			const auto unloadEnd = std::chrono::steady_clock::now();
+			Msg(
+				"UGameWorld",
+				"SetScene timing: UnloadScene={}ms",
+				std::chrono::duration_cast<std::chrono::milliseconds>(
+					unloadEnd - unloadStart
+				).count()
+			);
 		}
+
+		const auto setStart = std::chrono::steady_clock::now();
+		UWorld::SetScene(std::move(scene));
+		const auto setEnd = std::chrono::steady_clock::now();
+
+		Msg(
+			"UGameWorld",
+			"SetScene timing: setScene={}ms",
+			std::chrono::duration_cast<std::chrono::milliseconds>(
+				setEnd - setStart
+			).count()
+		);
 	}
 }

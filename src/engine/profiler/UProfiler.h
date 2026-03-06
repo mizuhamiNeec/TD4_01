@@ -8,6 +8,7 @@
 #include <vector>
 
 namespace Unnamed {
+	/// @brief パフォーマンスプロファイラー。フレームごとのサンプルを記録し、履歴を保持します。
 	class UProfiler {
 	public:
 		struct SampleView {
@@ -25,6 +26,7 @@ namespace Unnamed {
 			ScopeTimer(UProfiler* profiler, std::string_view name);
 			~ScopeTimer();
 
+			// コピー禁止
 			ScopeTimer(const ScopeTimer&)            = delete;
 			ScopeTimer& operator=(const ScopeTimer&) = delete;
 
@@ -36,13 +38,28 @@ namespace Unnamed {
 			Clock::time_point mStart = {};
 		};
 
+		/// @brief フレーム開始
 		void BeginFrame();
+
+		/// @brief フレーム終了。サンプルの履歴を更新します。
 		void EndFrame();
+
+		/// @brief サンプルを追加します。サンプルはフレームごとに記録され、履歴に保存されます。
+		/// @param name サンプルの名前。プロファイラー内で識別されます。
+		/// @param milliseconds サンプルの値。通常は処理にかかった時間をミリ秒単位で表します。
 		void AddSample(std::string_view name, float milliseconds);
 
+		/// @brief 登録されたサンプルの一覧を取得します。各サンプルには履歴データへのポインタが含まれます。
+		/// @return 登録されたサンプルの一覧。各サンプルには履歴データへのポインタが含まれます。
 		[[nodiscard]] const std::vector<SampleView>& GetSamples() const;
-		[[nodiscard]] uint32_t                       GetHistorySize() const;
-		[[nodiscard]] uint64_t                       GetFrameCount() const;
+
+		/// @brief サンプルの履歴サイズを取得します。プロファイラーが保持する履歴のフレーム数を表します。
+		/// @return サンプルの履歴サイズ。プロファイラーが保持する履歴のフレーム数を表します。
+		[[nodiscard]] uint32_t GetHistorySize() const;
+
+		/// @brief プロファイラーが記録したフレーム数を取得します。プロファイラーが開始されてからのフレーム数を表します。
+		/// @return プロファイラーが記録したフレーム数。プロファイラーが開始されてからのフレーム数を表します。
+		[[nodiscard]] uint64_t GetFrameCount() const;
 
 	private:
 		struct SampleData {
@@ -55,6 +72,9 @@ namespace Unnamed {
 			uint32_t           colorIndex         = 0;
 		};
 
+		/// @brief 名前に対応するサンプルデータを取得します。存在しない場合は新しいサンプルデータを作成して返します。
+		/// @param name サンプルの名前。プロファイラー内で識別されます。
+		/// @return 名前に対応するサンプルデータ。存在しない場合は新しいサンプルデータを作成して返します。
 		SampleData& GetOrCreateSample(std::string_view name);
 
 		static constexpr uint32_t kHistorySize = 180;
@@ -62,7 +82,7 @@ namespace Unnamed {
 		std::vector<SampleData>                 mSamples;
 		std::unordered_map<std::string, size_t> mSampleIndices;
 		mutable std::vector<SampleView>         mSampleViews;
-		uint32_t                                mHistoryWriteIndex = 0;
 		uint64_t                                mFrameCount        = 0;
+		uint32_t                                mHistoryWriteIndex = 0;
 	};
 }

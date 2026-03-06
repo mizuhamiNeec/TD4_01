@@ -10,7 +10,9 @@ namespace Unnamed {
 	    mStart(Clock::now()) {}
 
 	UProfiler::ScopeTimer::~ScopeTimer() {
-		if (!mProfiler) { return; }
+		if (!mProfiler) {
+			return;
+		}
 		const auto  end       = Clock::now();
 		const float elapsedMs = std::chrono::duration<float, std::milli>(
 			end - mStart
@@ -19,7 +21,9 @@ namespace Unnamed {
 	}
 
 	void UProfiler::BeginFrame() {
-		for (auto& sample : mSamples) { sample.frameAccumulatedMs = 0.0f; }
+		for (auto& sample : mSamples) {
+			sample.frameAccumulatedMs = 0.0f;
+		}
 	}
 
 	void UProfiler::EndFrame() {
@@ -49,7 +53,9 @@ namespace Unnamed {
 
 	void UProfiler::AddSample(
 		const std::string_view name, const float milliseconds
-	) { GetOrCreateSample(name).frameAccumulatedMs += milliseconds; }
+	) {
+		GetOrCreateSample(name).frameAccumulatedMs += milliseconds;
+	}
 
 	const std::vector<UProfiler::SampleView>& UProfiler::GetSamples() const {
 		mSampleViews.clear();
@@ -70,16 +76,22 @@ namespace Unnamed {
 		return mSampleViews;
 	}
 
-	uint32_t UProfiler::GetHistorySize() const { return kHistorySize; }
+	uint32_t UProfiler::GetHistorySize() const {
+		return kHistorySize;
+	}
 
-	uint64_t UProfiler::GetFrameCount() const { return mFrameCount; }
+	uint64_t UProfiler::GetFrameCount() const {
+		return mFrameCount;
+	}
 
 	UProfiler::SampleData& UProfiler::GetOrCreateSample(
 		const std::string_view name
 	) {
 		const std::string key(name);
 		if (const auto it = mSampleIndices.find(key);
-			it != mSampleIndices.end()) { return mSamples[it->second]; }
+			it != mSampleIndices.end()) {
+			return mSamples[it->second];
+		}
 
 		SampleData data = {};
 		data.name       = key;

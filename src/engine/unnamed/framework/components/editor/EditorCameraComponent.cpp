@@ -2,15 +2,13 @@
 
 #include <imgui.h>
 
-#include "TransformComponent.h"
+#include "../TransformComponent.h"
 
 #include "core/ComponentRegistry.h"
 #include "core/json/JsonReader.h"
 #include "core/json/JsonWriter.h"
 #include "core/math/Math.h"
-#include "core/string/StrUtil.h"
 
-#include "engine/ImGui/Icons.h"
 #include "engine/unnamed/framework/entity/UEntity.h"
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
 #include "engine/unnamed/subsystem/console/Log.h"
@@ -21,6 +19,7 @@
 
 namespace Unnamed {
 	static constexpr std::string_view kChannel = "EdCamComp";
+	static constexpr float            kMoveSpeedPopupDurationSeconds = 1.0f;
 
 	namespace {
 		float ReadFloatOr(
@@ -76,7 +75,9 @@ namespace Unnamed {
 		mMoveInput = Vec3::zero;
 		mWishDir   = Vec3::zero;
 		if (mLookEnabled && mInput->
-		    IsHeld("ed_look")) { ProcessInput(); } else {
+		    IsHeld("ed_look")) {
+			ProcessInput();
+		} else {
 			mInput->SetMouseCursorLocked(false);
 			mInput->ClearMouseCursorLockAnchor();
 		}
@@ -84,7 +85,16 @@ namespace Unnamed {
 
 	void EditorCameraComponent::OnTick(const float deltaTime) {
 		auto* transform = GetTransform();
-		if (!transform) { return; }
+		if (!transform) {
+			return;
+		}
+
+		if (mOpenPopup) {
+			mPopupTimer += deltaTime;
+			if (mPopupTimer >= kMoveSpeedPopupDurationSeconds) {
+				mOpenPopup = false;
+			}
+		}
 
 		Friction(6.0f, deltaTime);
 
@@ -94,50 +104,6 @@ namespace Unnamed {
 		pos      += mVelocity * deltaTime;
 
 		transform->SetPosition(pos);
-
-		if (mOpenPopup) {
-			constexpr auto windowSize = ImVec2(256.0f, 32.0f);
-
-			ImVec2 windowPos(
-				viewportPos.x + (viewportSize.x) * 0.5f,
-				viewportPos.y + (viewportSize.y) * iconScale
-			);
-
-			windowPos.x -= windowSize.x * 0.5f;
-			windowPos.y -= windowSize.y * 0.5f;
-
-			ImGui::SetNextWindowPos(windowPos, ImGuiCond_Always);
-			ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
-
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 16.0f);
-
-			ImGui::Begin(
-				"##moveSpeedPopup", nullptr,
-				ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-				ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
-				ImGuiWindowFlags_NoBringToFrontOnFocus |
-				ImGuiWindowFlags_NoFocusOnAppearing |
-				ImGuiWindowFlags_NoScrollbar
-			);
-
-			ImGui::SetCursorPos(
-				ImVec2(
-					(windowSize.x - ImGui::CalcTextSize(
-						 (StrUtil::ConvertToUtf8(kIconSpeed) + std::format(
-							  " {:.2f}", mMoveSpeed
-						  )).c_str()
-					 ).x) * 0.5f, (windowSize.y - ImGui::GetFontSize()) * 0.5f
-				)
-			);
-
-			ImGui::Text(
-				(
-					StrUtil::ConvertToUtf8(kIconSpeed) + std::format(
-						" {:.2f}", mMoveSpeed
-					)
-				).c_str()
-			);
-		}
 	}
 
 	void EditorCameraComponent::Deserialize(const JsonReader& reader) {
@@ -180,11 +146,21 @@ namespace Unnamed {
 		return mLookEnabled;
 	}
 
+	float EditorCameraComponent::GetMoveSpeed() const noexcept {
+		return mMoveSpeed;
+	}
+
+	bool EditorCameraComponent::IsMoveSpeedPopupVisible() const noexcept {
+		return mOpenPopup;
+	}
+
 	bool EditorCameraComponent::BuildViewProjectionMatrices(
 		Mat4& outView, Mat4& outProj
 	) const {
 		const auto* transform = GetTransform();
-		if (!transform) { return false; }
+		if (!transform) {
+			return false;
+		}
 
 		const Vec3       position = transform->Position();
 		const Quaternion rotation = transform->Rotation();
@@ -208,11 +184,15 @@ namespace Unnamed {
 		Render::RenderCameraInput& outCamera
 	) const {
 		const auto* transform = GetTransform();
-		if (!transform) { return false; }
+		if (!transform) {
+			return false;
+		}
 
 		Mat4 view = Mat4::identity;
 		Mat4 proj = Mat4::identity;
-		if (!BuildViewProjectionMatrices(view, proj)) { return false; }
+		if (!BuildViewProjectionMatrices(view, proj)) {
+			return false;
+		}
 
 		outCamera.view      = view;
 		outCamera.proj      = proj;
@@ -243,10 +223,14 @@ namespace Unnamed {
 	}
 
 	void EditorCameraComponent::ProcessInput() {
-		if (!mInput) { return; }
+		if (!mInput) {
+			return;
+		}
 
 		auto* transform = GetTransform();
-		if (!transform) { return; }
+		if (!transform) {
+			return;
+		}
 
 		// マウスカーソルをロック（毎フレーム強制するとコンソールのトグルが効かないため、必要時のみ）
 		if (!mInput->IsMouseCursorLocked()) {
@@ -300,7 +284,7 @@ namespace Unnamed {
 			mMoveSpeed = RoundToNearestPowerOfTwo(mMoveSpeed);
 		}
 
-		if (mInput->IsPressed(("ed_speeddown"))) {
+		if (mInput->IsPressed("ed_slowdown")) {
 			mMoveSpeed *= 0.5f;
 			mMoveSpeed = RoundToNearestPowerOfTwo(mMoveSpeed);
 		}

@@ -1,5 +1,5 @@
 #pragma once
-#include "base/UBaseComponent.h"
+#include "../base/UBaseComponent.h"
 
 #include "engine/render/frame/RenderFrameInputs.h"
 #include "engine/unnamed/subsystem/input/UInputSystem.h"
@@ -11,6 +11,26 @@ namespace Unnamed {
 
 	class EditorCameraComponent final : public UBaseComponent {
 	public:
+		// ---- EditorCameraComponent -----------------------------------------
+		void SetAspectRatio(float aspectRatio);
+
+		[[nodiscard]] float GetAspectRatio() const {
+			return mAspectRatio;
+		}
+
+		void SetLookEnabled(bool enabled) noexcept;
+		[[nodiscard]] bool IsLookEnabled() const noexcept;
+		[[nodiscard]] float GetMoveSpeed() const noexcept;
+		[[nodiscard]] bool IsMoveSpeedPopupVisible() const noexcept;
+		bool BuildViewProjectionMatrices(Mat4& outView, Mat4& outProj) const;
+
+		bool BuildCameraInput(Render::RenderCameraInput& outCamera) const;
+
+		// ---- UBaseComponent ------------------------------------------------
+		void OnAttached() override;
+		void PrePhysicsTick(float deltaTime) override;
+		void OnTick(float deltaTime) override;
+
 		[[nodiscard]] std::string_view GetStableName() const override {
 			return "engine.EditorCamera";
 		}
@@ -19,29 +39,20 @@ namespace Unnamed {
 			return "EditorCamera";
 		}
 
-		void OnAttached() override;
-		void PrePhysicsTick(float deltaTime) override;
-		void OnTick(float deltaTime) override;
-
-		void Deserialize(const JsonReader& reader) override;
-		void Serialize(JsonWriter& writer) const override;
-
 #ifdef _DEBUG
 		void DrawInspectorImGui() override;
 #endif
 
-		void SetAspectRatio(float aspectRatio);
-		[[nodiscard]] float GetAspectRatio() const { return mAspectRatio; }
-		void SetLookEnabled(bool enabled) noexcept;
-		[[nodiscard]] bool IsLookEnabled() const noexcept;
-		bool BuildViewProjectionMatrices(Mat4& outView, Mat4& outProj) const;
-
-		bool BuildCameraInput(Render::RenderCameraInput& outCamera) const;
+		void Deserialize(const JsonReader& reader) override;
+		void Serialize(JsonWriter& writer) const override;
 
 	private:
 		/// @brief 入力を処理し、移動方向を更新します。
 		void ProcessInput();
 
+		/// @brief 摩擦を適用して速度を減衰させます。
+		/// @param amount 摩擦の強さ。大きいほど速く減衰します。
+		/// @param deltaTime 前のフレームからの経過時間 [秒]
 		void Friction(float amount, float deltaTime);
 
 		/// @brief 空中での加速処理を行います。

@@ -68,22 +68,32 @@ namespace Unnamed::Gui {
 
 	void UiRoot::BuildDrawCommands(
 		std::vector<UiDrawCommand>& out
-	) const { mRootWidget->BuildDrawCommands(out); }
+	) const {
+		mRootWidget->BuildDrawCommands(out);
+	}
 
-	UiWidget* UiRoot::GetRootWidget() const { return mRootWidget.get(); }
+	UiWidget* UiRoot::GetRootWidget() const {
+		return mRootWidget.get();
+	}
 
 	void UiRoot::ProcessMouse(
 		const float mouseX, const float  mouseY,
 		const bool  leftDown, const bool leftPressed, const bool leftReleased
 	) {
 		UiWidget* hitWidget = nullptr;
-		if (mRootWidget) { hitWidget = mRootWidget->HitTest(mouseX, mouseY); }
+		if (mRootWidget) {
+			hitWidget = mRootWidget->HitTest(mouseX, mouseY);
+		}
 
 		// Hover 状態の更新
 		if (hitWidget != mHoveredWidget) {
-			if (mHoveredWidget) { mHoveredWidget->OnMouseLeave(); }
+			if (mHoveredWidget) {
+				mHoveredWidget->OnMouseLeave();
+			}
 			mHoveredWidget = hitWidget;
-			if (mHoveredWidget) { mHoveredWidget->OnMouseEnter(); }
+			if (mHoveredWidget) {
+				mHoveredWidget->OnMouseEnter();
+			}
 		}
 
 		// マウス押下の開始
@@ -98,7 +108,9 @@ namespace Unnamed::Gui {
 				mPressedWidget->OnMouseUp();
 
 				// 押し始めたウィジェットの上で離されたら Click
-				if (mPressedWidget == hitWidget) { mPressedWidget->OnClick(); }
+				if (mPressedWidget == hitWidget) {
+					mPressedWidget->OnClick();
+				}
 			}
 			mPressedWidget = nullptr;
 		}

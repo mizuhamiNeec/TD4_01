@@ -130,6 +130,48 @@ namespace Unnamed {
 				v.boneWeights[minIndex] = weight;
 			}
 		}
+
+		/// @brief スキン無しメッシュの頂点に、階層トランスフォームを焼き込む
+		/// Assimpのシーン構造を再帰的にたどり、各ノードの変換を子ノードとメッシュ頂点に適用する。
+		void BakeNodeTransformsIntoMesh(
+			const aiNode*      node,
+			const aiMatrix4x4& parentTransform,
+			const aiScene*     scene
+		) {
+			if (!node || !scene) { return; }
+
+			const aiMatrix4x4 global = parentTransform * node->mTransformation;
+
+			for (uint32_t mi = 0; mi < node->mNumMeshes; ++mi) {
+				const uint32_t meshIndex = node->mMeshes[mi];
+				if (meshIndex >= scene->mNumMeshes) { continue; }
+				aiMesh* mesh = scene->mMeshes[meshIndex];
+				if (!mesh) { continue; }
+
+				// スキン無しだけで呼ばれる想定だが、混在ファイルの安全のためボーン付きは触らない
+				if (mesh->HasBones()) { continue; }
+
+				// 位置
+				for (uint32_t v = 0; v < mesh->mNumVertices; ++v) {
+					mesh->mVertices[v] = global * mesh->mVertices[v];
+				}
+
+				// 法線（方向ベクトルとして変換）
+				if (mesh->HasNormals()) {
+					aiMatrix4x4 rotScale = global;
+					rotScale.a4          = rotScale.b4 = rotScale.c4 = 0.0f;
+					// translation 제거
+					for (uint32_t v = 0; v < mesh->mNumVertices; ++v) {
+						mesh->mNormals[v] = rotScale * mesh->mNormals[v];
+						mesh->mNormals[v].Normalize();
+					}
+				}
+			}
+
+			for (uint32_t c = 0; c < node->mNumChildren; ++c) {
+				BakeNodeTransformsIntoMesh(node->mChildren[c], global, scene);
+			}
+		}
 	}
 
 	bool MeshAssetLoader::CanLoad(
@@ -157,17 +199,15 @@ namespace Unnamed {
 		UProfiler*            profiler = ServiceLocator::Get<UProfiler>();
 		UProfiler::ScopeTimer assimpScope(profiler, "MeshImport.Assimp");
 
-		Assimp::Importer   importer;
+		Assimp::Importer importer;
+		// ここでは ReadFile を1回に統一する。
+		// 以前はスキン無しのとき aiProcess_PreTransformVertices を付けて再読込していたが、
+		// 代わりにローダ側でノード変換を焼き込む。
 		constexpr uint32_t kBaseFlags =
-			aiProcess_JoinIdenticalVertices |
 			aiProcess_ImproveCacheLocality |
-			aiProcess_SortByPType |
 			aiProcess_ConvertToLeftHanded;
 
-		const aiScene* scene = importer.ReadFile(
-			path,
-			kBaseFlags
-		);
+		const aiScene* scene = importer.ReadFile(path, kBaseFlags);
 
 		if (!scene) {
 			Error(
@@ -190,18 +230,10 @@ namespace Unnamed {
 			}
 		}
 
-		// スキン無しメッシュは従来どおりプリトランスフォームで使う
-		if (!hasBones) {
-			scene = importer.ReadFile(
-				path, kBaseFlags | aiProcess_PreTransformVertices
-			);
-			if (!scene) {
-				Error(
-					kChannel, "メッシュの再読み込みに失敗しました: path={}, err={}",
-					path, importer.GetErrorString()
-				);
-				return r;
-			}
+		// スキン無しメッシュは従来どおり「階層トランスフォームを焼き込んだ頂点」を使いたいので、
+		// Importer内部のシーンを直接変換する（ReadFileの二重呼び出しを回避）。
+		if (!hasBones && scene->mRootNode) {
+			BakeNodeTransformsIntoMesh(scene->mRootNode, aiMatrix4x4(), scene);
 		}
 
 		MeshAssetData out = {};
@@ -218,7 +250,9 @@ namespace Unnamed {
 
 			const uint32_t baseVertex = static_cast<uint32_t>(out.vertices.
 				size());
-			out.vertices.reserve(out.vertices.size() + mesh->mNumVertices);
+			out.vertices.reserve(
+				out.vertices.size() + static_cast<size_t>(mesh->mNumVertices)
+			);
 
 			for (uint32_t i = 0; i < mesh->mNumVertices; ++i) {
 				MeshVertex v{};
@@ -284,7 +318,9 @@ namespace Unnamed {
 				}
 			}
 
-			out.indices.reserve(out.indices.size() + mesh->mNumFaces * 3);
+			out.indices.reserve(
+				out.indices.size() + static_cast<size_t>(mesh->mNumFaces) * 3u
+			);
 			for (uint32_t faceIndex = 0; faceIndex < mesh->mNumFaces; ++
 			     faceIndex) {
 				const aiFace& face = mesh->mFaces[faceIndex];

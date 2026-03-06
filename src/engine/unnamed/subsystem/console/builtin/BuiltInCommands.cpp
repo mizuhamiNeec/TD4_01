@@ -37,7 +37,9 @@ namespace Unnamed {
 			"toggle",
 			[ToggleSequence](std::vector<std::string> args) {
 				// 引数がなければ何もせず終了。
-				if (args.empty()) { return false; }
+				if (args.empty()) {
+					return false;
+				}
 
 				auto* console = ServiceLocator::Get<ConsoleSystem>();
 				// 最初の引数がCVar名、その後が切り替えたい値のリスト

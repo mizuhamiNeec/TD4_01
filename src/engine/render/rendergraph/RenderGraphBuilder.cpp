@@ -22,8 +22,9 @@ namespace Unnamed::Render {
 		RgResourceRegistry& registry
 	) : mRegistry(registry) {}
 
-	uint32_t
-	RenderGraphBuilder::CreateTexture(const RgTextureDesc& desc) const {
+	uint32_t RenderGraphBuilder::CreateTexture(
+		const RgTextureDesc& desc
+	) const {
 		return mRegistry.CreateTexture(desc);
 	}
 
@@ -55,7 +56,9 @@ namespace Unnamed::Render {
 
 		const auto it = std::ranges::find_if(
 			mClearCommands,
-			[&](const RgClearCmd& c) { return c.textureId == texId; }
+			[&](const RgClearCmd& c) {
+				return c.textureId == texId;
+			}
 		);
 
 		if (it != mClearCommands.end()) {
@@ -71,7 +74,9 @@ namespace Unnamed::Render {
 		}
 	}
 
-	void RenderGraphBuilder::WriteDepth(uint32_t texId) { SetDepthRt(texId); }
+	void RenderGraphBuilder::WriteDepth(uint32_t texId) {
+		SetDepthRt(texId);
+	}
 
 	void RenderGraphBuilder::ClearDepth(
 		uint32_t texId, float depth, uint8_t stencil
@@ -80,7 +85,9 @@ namespace Unnamed::Render {
 
 		const auto it = std::ranges::find_if(
 			mClearDepthCommands,
-			[&](const RgDepthClearCmd& c) { return c.textureId == texId; }
+			[&](const RgDepthClearCmd& c) {
+				return c.textureId == texId;
+			}
 		);
 
 		if (it != mClearDepthCommands.end()) {
@@ -97,14 +104,18 @@ namespace Unnamed::Render {
 		}
 	}
 
-	const std::vector<RgUse>& RenderGraphBuilder::GetUses() { return mUses; }
+	const std::vector<RgUse>& RenderGraphBuilder::GetUses() {
+		return mUses;
+	}
 
 	const std::vector<RgClearCmd>& RenderGraphBuilder::GetClearColors() const {
 		return mClearCommands;
 	}
 
 	const std::vector<RgDepthClearCmd>& RenderGraphBuilder::
-	GetClearDepths() const { return mClearDepthCommands; }
+	GetClearDepths() const {
+		return mClearDepthCommands;
+	}
 
 	const std::vector<uint32_t>& RenderGraphBuilder::GetColorRts() const {
 		return mColorRts;
@@ -127,7 +138,9 @@ namespace Unnamed::Render {
 	}
 
 	void RenderGraphBuilder::MarkUse(uint32_t texId, RG_ACCESS access) {
-		if (HasUse(mUses, texId, access)) { return; }
+		if (HasUse(mUses, texId, access)) {
+			return;
+		}
 
 		mUses.emplace_back(texId, access);
 	}

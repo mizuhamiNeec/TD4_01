@@ -23,7 +23,9 @@ namespace Unnamed {
 	namespace {
 		void BindMouseAxisOnce(UInputSystem* input) {
 			static bool sBound = false;
-			if (sBound || !input) { return; }
+			if (sBound || !input) {
+				return;
+			}
 
 			constexpr InputKey mouseX = {
 				.device = InputDeviceType::MOUSE,
@@ -52,9 +54,13 @@ namespace Unnamed {
 
 	void CameraRotatorComponent::PrePhysicsTick(const float) {
 		auto* transform = GetTransform();
-		if (!transform) { return; }
+		if (!transform) {
+			return;
+		}
 		const UWorld* world = UWorld::GetTickingWorld();
-		if (!world || !world->IsGameSimulationEnabled()) { return; }
+		if (!world || !world->IsGameSimulationEnabled()) {
+			return;
+		}
 
 		float sensi          = 1.0f;
 		float m_pitch        = 0.022f;
@@ -68,10 +74,14 @@ namespace Unnamed {
 			}
 			if (const auto* pitch = console->GetConVarAs<UnnamedConVar<float>>(
 				"m_pitch"
-			)) { m_pitch = pitch->GetValue(); }
+			)) {
+				m_pitch = pitch->GetValue();
+			}
 			if (const auto* yaw = console->GetConVarAs<UnnamedConVar<float>>(
 				"m_yaw"
-			)) { m_yaw = yaw->GetValue(); }
+			)) {
+				m_yaw = yaw->GetValue();
+			}
 
 			if (const auto* pitchUp =
 				console->GetConVarAs<UnnamedConVar<float>>("cl_pitchup")) {
@@ -80,7 +90,9 @@ namespace Unnamed {
 			if (const auto* pitchDown = console->GetConVarAs<UnnamedConVar<
 				float>>(
 				"cl_pitchdown"
-			)) { pitchDownLimit = std::abs(pitchDown->GetValue()); }
+			)) {
+				pitchDownLimit = std::abs(pitchDown->GetValue());
+			}
 		}
 
 		if (mReplayLookPending) {
@@ -92,7 +104,9 @@ namespace Unnamed {
 			if (mLiveLookPending) {
 				delta            = mLiveLookDelta;
 				mLiveLookPending = false;
-			} else if (mInput) { delta = mInput->Axis2D("Mouse"); }
+			} else if (mInput) {
+				delta = mInput->Axis2D("Mouse");
+			}
 			mPitch += delta.y * sensi * m_pitch;
 			mYaw   += delta.x * sensi * m_yaw;
 		}
@@ -108,9 +122,15 @@ namespace Unnamed {
 		const JsonReader pitch       = reader["pitchDegrees"];
 		const JsonReader yaw         = reader["yawDegrees"];
 		const JsonReader sensitivity = reader["sensitivity"];
-		if (pitch.Valid()) { mPitch = pitch.GetFloat(); }
-		if (yaw.Valid()) { mYaw = yaw.GetFloat(); }
-		if (sensitivity.Valid()) { mSensitivity = sensitivity.GetFloat(); }
+		if (pitch.Valid()) {
+			mPitch = pitch.GetFloat();
+		}
+		if (yaw.Valid()) {
+			mYaw = yaw.GetFloat();
+		}
+		if (sensitivity.Valid()) {
+			mSensitivity = sensitivity.GetFloat();
+		}
 	}
 
 	void CameraRotatorComponent::Serialize(JsonWriter& writer) const {

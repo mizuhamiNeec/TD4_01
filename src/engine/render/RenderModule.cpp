@@ -36,14 +36,18 @@ namespace Unnamed::Render {
 		URenderer::UiMainRenderCallback     mainRenderCallback,
 		URenderer::UiPlatformRenderCallback platformRenderCallback
 	) const {
-		if (!mRenderer) { return; }
+		if (!mRenderer) {
+			return;
+		}
 		mRenderer->SetUiCallbacks(
 			std::move(mainRenderCallback), std::move(platformRenderCallback)
 		);
 	}
 
 	SceneOutputView RenderModule::GetSceneOutputView() const {
-		if (!mRenderer || !mRenderDevice) { return {}; }
+		if (!mRenderer || !mRenderDevice) {
+			return {};
+		}
 		return mRenderer->GetSceneOutputView(*mRenderDevice);
 	}
 
@@ -52,9 +56,13 @@ namespace Unnamed::Render {
 	}
 
 	D3D12_CPU_DESCRIPTOR_HANDLE RenderModule::GetSceneOutputSrvCpu() const {
-		if (!mRenderer || !mRenderDevice) { return {}; }
+		if (!mRenderer || !mRenderDevice) {
+			return {};
+		}
 		const uint32_t textureId = mRenderer->GetSceneOutputTextureId();
-		if (textureId == 0) { return {}; }
+		if (textureId == 0) {
+			return {};
+		}
 		return mRenderDevice->GetRegistry().GetSrvCpu(textureId);
 	}
 
@@ -65,7 +73,9 @@ namespace Unnamed::Render {
 	void RenderModule::SetSceneRenderRequest(
 		const SceneRenderRequest& request
 	) const {
-		if (!mRenderer) { return; }
+		if (!mRenderer) {
+			return;
+		}
 		mRenderer->SetSceneRenderRequest(request);
 	}
 }

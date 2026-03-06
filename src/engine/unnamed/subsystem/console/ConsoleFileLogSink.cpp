@@ -13,7 +13,9 @@ namespace Unnamed {
 
 	ConsoleFileLogSink::ConsoleFileLogSink() = default;
 
-	ConsoleFileLogSink::~ConsoleFileLogSink() { Stop(); }
+	ConsoleFileLogSink::~ConsoleFileLogSink() {
+		Stop();
+	}
 
 	bool ConsoleFileLogSink::Start(const Config& cfg) {
 		Stop();
@@ -26,7 +28,9 @@ namespace Unnamed {
 			std::filesystem::remove(mCfg.path, ec);
 		}
 
-		if (!OpenFile()) { return false; }
+		if (!OpenFile()) {
+			return false;
+		}
 
 		mRunning.store(true, std::memory_order_release);
 		mThread = std::thread(&ConsoleFileLogSink::ThreadMain, this);
@@ -41,10 +45,14 @@ namespace Unnamed {
 
 	void ConsoleFileLogSink::Stop() {
 		const bool wasRunning = mRunning.exchange(false);
-		if (!wasRunning) { return; }
+		if (!wasRunning) {
+			return;
+		}
 
 		mCv.notify_all();
-		if (mThread.joinable()) { mThread.join(); }
+		if (mThread.joinable()) {
+			mThread.join();
+		}
 
 		// 念のため残りを同期で書き出し
 		std::vector<Event> remaining;
@@ -60,31 +68,10 @@ namespace Unnamed {
 		}
 	}
 
-	bool ConsoleFileLogSink::OpenFile() {
-		mFile.open(mCfg.path, std::ios::out | std::ios::binary);
-		if (!mFile.is_open()) { return false; }
-
-		// ヘッダーを書き込み
-		const auto now = SystemClock::GetDateTime(SystemClock::StartTime());
-		const std::string header = std::format(
-			"//-----------------------------------------------------------------------------\n"
-			"// BuildDate: {}-{}\n"
-			"// Engine: {} Ver. {}\n"
-			"// LaunchDate: {:02}-{:02}-{:02} {:02}:{:02}:{:02}\n"
-			"//-----------------------------------------------------------------------------\n\n",
-			__DATE__, __TIME__,
-			ENGINE_NAME, ENGINE_VERSION,
-			now.year, now.month, now.day, now.hour, now.minute, now.second
-		);
-		mFile.write(
-			header.c_str(), static_cast<std::streamsize>(header.size())
-		);
-		mFile.flush();
-		return true;
-	}
-
 	void ConsoleFileLogSink::Enqueue(Event&& e) {
-		if (!mRunning.load(std::memory_order_acquire)) { return; }
+		if (!mRunning.load(std::memory_order_acquire)) {
+			return;
+		}
 
 		e.sequence = mSequence.fetch_add(1, std::memory_order_relaxed) + 1;
 		{
@@ -95,7 +82,9 @@ namespace Unnamed {
 	}
 
 	void ConsoleFileLogSink::FlushNow(const uint32_t timeoutMs) {
-		if (!mRunning.load(std::memory_order_acquire)) { return; }
+		if (!mRunning.load(std::memory_order_acquire)) {
+			return;
+		}
 
 		uint64_t targetSeq;
 		{
@@ -155,7 +144,9 @@ namespace Unnamed {
 	}
 
 	void ConsoleFileLogSink::WriteBatch(std::vector<Event>& batch) {
-		if (batch.empty() || !mFile.is_open()) { return; }
+		if (batch.empty() || !mFile.is_open()) {
+			return;
+		}
 
 		static std::atomic channelWidth = {0};
 
@@ -201,5 +192,30 @@ namespace Unnamed {
 		}
 
 		mFlushCv.notify_all();
+	}
+
+	bool ConsoleFileLogSink::OpenFile() {
+		mFile.open(mCfg.path, std::ios::out | std::ios::binary);
+		if (!mFile.is_open()) {
+			return false;
+		}
+
+		// ヘッダーを書き込み
+		const auto now = SystemClock::GetDateTime(SystemClock::StartTime());
+		const std::string header = std::format(
+			"//-----------------------------------------------------------------------------\n"
+			"// BuildDate: {}-{}\n"
+			"// Engine: {} Ver. {}\n"
+			"// LaunchDate: {:02}-{:02}-{:02} {:02}:{:02}:{:02}\n"
+			"//-----------------------------------------------------------------------------\n\n",
+			__DATE__, __TIME__,
+			ENGINE_NAME, ENGINE_VERSION,
+			now.year, now.month, now.day, now.hour, now.minute, now.second
+		);
+		mFile.write(
+			header.c_str(), static_cast<std::streamsize>(header.size())
+		);
+		mFile.flush();
+		return true;
 	}
 }

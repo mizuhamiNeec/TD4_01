@@ -58,7 +58,9 @@ namespace Unnamed {
 		void FlushNow(uint32_t timeoutMs = 50);
 
 		/// @brief 設定取得
-		[[nodiscard]] const Config& GetConfig() const { return mCfg; }
+		[[nodiscard]] const Config& GetConfig() const {
+			return mCfg;
+		}
 
 	private:
 		/// @brief バックグラウンドスレッドのメインループ

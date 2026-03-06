@@ -23,7 +23,9 @@ namespace Unnamed {
 		bool Push(const T& value) {
 			std::lock_guard lock(mMutex);
 
-			if (mSize == Capacity) { mTail = (mTail + 1) % Capacity; } else {
+			if (mSize == Capacity) {
+				mTail = (mTail + 1) % Capacity;
+			} else {
 				++mSize;
 			}
 
@@ -37,7 +39,9 @@ namespace Unnamed {
 		/// @return 成功した場合true、バッファが空の場合false
 		bool Pop(T& out) {
 			std::lock_guard lock(mMutex);
-			if (mSize == 0) { return false; }
+			if (mSize == 0) {
+				return false;
+			}
 
 			out   = mBuffer[mTail];
 			mTail = (mTail + 1) % Capacity;
@@ -78,7 +82,9 @@ namespace Unnamed {
 		/// @return 最後に書き込まれたインデックス
 		[[nodiscard]] std::optional<size_t> LastWrittenIndex() const {
 			std::lock_guard lock(mMutex);
-			if (mSize == 0) { return std::nullopt; }
+			if (mSize == 0) {
+				return std::nullopt;
+			}
 			return (mHead + Capacity - 1) % Capacity;
 		}
 
@@ -103,7 +109,9 @@ namespace Unnamed {
 			const size_t logicalIndex
 		) const {
 			std::lock_guard lock(mMutex);
-			if (logicalIndex >= mSize) { return std::nullopt; }
+			if (logicalIndex >= mSize) {
+				return std::nullopt;
+			}
 			const size_t physicalIndex = (mTail + logicalIndex) % Capacity;
 			return std::cref(mBuffer[physicalIndex]);
 		}
@@ -113,7 +121,9 @@ namespace Unnamed {
 			const size_t logicalIndex
 		) {
 			std::lock_guard lock(mMutex);
-			if (logicalIndex >= mSize) { return std::nullopt; }
+			if (logicalIndex >= mSize) {
+				return std::nullopt;
+			}
 			const size_t physicalIndex = (mTail + logicalIndex) % Capacity;
 			return std::ref(mBuffer[physicalIndex]);
 		}
@@ -132,7 +142,9 @@ namespace Unnamed {
 				  mIndex(index),
 				  mCount(count) {}
 
-			const T& operator*() const { return mBuffer->mBuffer[mIndex]; }
+			const T& operator*() const {
+				return mBuffer->mBuffer[mIndex];
+			}
 
 			Iterator& operator++() {
 				mIndex = (mIndex + 1) % Capacity;
@@ -144,7 +156,9 @@ namespace Unnamed {
 				return mCount != other.mCount;
 			}
 
-			[[nodiscard]] size_t Index() const { return mIndex; }
+			[[nodiscard]] size_t Index() const {
+				return mIndex;
+			}
 
 		private:
 			const RingBuffer* mBuffer;

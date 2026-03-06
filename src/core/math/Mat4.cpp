@@ -12,13 +12,17 @@
 
 Mat4::Mat4() {
 	for (int i = 0; i < 4; ++i) {
-		for (int j = 0; j < 4; ++j) { m[i][j] = i == j ? 1.0f : 0.0f; }
+		for (int j = 0; j < 4; ++j) {
+			m[i][j] = i == j ? 1.0f : 0.0f;
+		}
 	}
 }
 
 Mat4::Mat4(const Mat4& other) {
 	for (int i = 0; i < 4; ++i) {
-		for (int j = 0; j < 4; ++j) { m[i][j] = other.m[i][j]; }
+		for (int j = 0; j < 4; ++j) {
+			m[i][j] = other.m[i][j];
+		}
 	}
 }
 
@@ -27,7 +31,9 @@ Mat4::Mat4(const std::initializer_list<std::initializer_list<float>> list) {
 	for (const auto& sublist : list) {
 		int col = 0;
 		for (const float value : sublist) {
-			if (row < 4 && col < 4) { m[row][col] = value; }
+			if (row < 4 && col < 4) {
+				m[row][col] = value;
+			}
 			++col;
 		}
 		++row;
@@ -36,7 +42,9 @@ Mat4::Mat4(const std::initializer_list<std::initializer_list<float>> list) {
 	for (int i = 0; i < 4; ++i) {
 		for (int j = 0; j < 4; ++j) {
 			if (i >= static_cast<int>(list.size()) || j >= static_cast<int>((
-				    list.begin() + i)->size())) { m[i][j] = 0.0f; }
+				    list.begin() + i)->size())) {
+				m[i][j] = 0.0f;
+			}
 		}
 	}
 }
@@ -45,119 +53,6 @@ const Mat4 Mat4::identity = Mat4();
 const Mat4 Mat4::zero     = {
 	{{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}
 };
-
-Mat4 Mat4::operator+(const Mat4& rhs) const {
-	return {
-		{
-			{
-				m[0][0] + rhs.m[0][0], m[0][1] + rhs.m[0][1],
-				m[0][2] + rhs.m[0][2], m[0][3] + rhs.m[0][3]
-			},
-			{
-				m[1][0] + rhs.m[1][0], m[1][1] + rhs.m[1][1],
-				m[1][2] + rhs.m[1][2], m[1][3] + rhs.m[1][3]
-			},
-			{
-				m[2][0] + rhs.m[2][0], m[2][1] + rhs.m[2][1],
-				m[2][2] + rhs.m[2][2], m[2][3] + rhs.m[2][3]
-			},
-			{
-				m[3][0] + rhs.m[3][0], m[3][1] + rhs.m[3][1],
-				m[3][2] + rhs.m[3][2], m[3][3] + rhs.m[3][3]
-			},
-		}
-	};
-}
-
-Mat4 Mat4::operator-(const Mat4& rhs) const {
-	return {
-		{
-			{
-				m[0][0] - rhs.m[0][0], m[0][1] - rhs.m[0][1],
-				m[0][2] - rhs.m[0][2], m[0][3] - rhs.m[0][3]
-			},
-			{
-				m[1][0] - rhs.m[1][0], m[1][1] - rhs.m[1][1],
-				m[1][2] - rhs.m[1][2], m[1][3] - rhs.m[1][3]
-			},
-			{
-				m[2][0] - rhs.m[2][0], m[2][1] - rhs.m[2][1],
-				m[2][2] - rhs.m[2][2], m[2][3] - rhs.m[2][3]
-			},
-			{
-				m[3][0] - rhs.m[3][0], m[3][1] - rhs.m[3][1],
-				m[3][2] - rhs.m[3][2], m[3][3] - rhs.m[3][3]
-			},
-		},
-	};
-}
-
-Mat4 Mat4::operator*(const Mat4& rhs) const {
-	Mat4  result;
-	float rhsColumn[4][4];
-	for (int i = 0; i < 4; ++i) {
-		for (int j = 0; j < 4; ++j) { rhsColumn[i][j] = rhs.m[j][i]; }
-	}
-
-	for (int row = 0; row < 4; ++row) {
-		for (int col = 0; col < 4; ++col) {
-			result.m[row][col] = m[row][0] * rhsColumn[col][0] +
-			                     m[row][1] * rhsColumn[col][1] +
-			                     m[row][2] * rhsColumn[col][2] +
-			                     m[row][3] * rhsColumn[col][3];
-		}
-	}
-	return result;
-}
-
-Vec4 Mat4::operator*(const Vec4& vec) const {
-	return Vec4(
-		m[0][0] * vec.x + m[0][1] * vec.y + m[0][2] * vec.z + m[0][3] * vec.w,
-		m[1][0] * vec.x + m[1][1] * vec.y + m[1][2] * vec.z + m[1][3] * vec.w,
-		m[2][0] * vec.x + m[2][1] * vec.y + m[2][2] * vec.z + m[2][3] * vec.w,
-		m[3][0] * vec.x + m[3][1] * vec.y + m[3][2] * vec.z + m[3][3] * vec.w
-	);
-}
-
-Mat4& Mat4::operator*=(const Mat4& mat4) {
-	*this = *this * mat4;
-	return *this;
-}
-
-bool Mat4::operator==(const Mat4& mat4) const {
-	for (int i = 0; i < 4; ++i) {
-		for (int j = 0; j < 4; ++j) {
-			if (std::abs(m[i][j] - mat4.m[i][j]) > std::numeric_limits<
-				    float>::epsilon()) { return false; }
-		}
-	}
-	return true;
-}
-
-float Mat4::Determinant() const {
-	return m[0][0] * (m[1][1] * (m[2][2] * m[3][3] - m[2][3] * m[3][2]) - m[1][
-		                  2] * (m[2][1] * m[3][3] - m[2][3] * m[3][
-			                        1]) + m[1][3] * (
-		                  m[2][1] * m[3][2] - m[2][2] * m[3][1])) - m[0][1] *
-	       (m[1][0] * (m[2][2] * m[3][3] - m[2][3]
-	                   * m
-	                   [3][2]) - m[1][2] * (
-		        m[2][0] * m[3][3] - m[2][3] * m[3][0]) + m[1][
-		        3] * (m[2][0] * m[3][2] - m[2][2] * m[3][
-			              0]))
-	       + m[0][2] * (m[1][0] * (m[2][1] * m[3][3] - m[2][3] * m[3][1]) - m[1]
-	                    [1]
-	                    * (m[2][0] * m[3][3] - m[2][3] * m[3][
-		                       0]) +
-	                    m[1][3] * (m[2][0] * m[3][1] - m[2][1] * m[3][0])) - m[
-		       0][3] * (m[1]
-		                [0] * (m[2][1] * m[3][2] - m[2][2] * m[
-			                       3][
-			                       1]) - m[1][1] * (
-			                m[2][0] * m[3][2] - m[2][2] * m[3][0]) + m[1][
-			                2] * (m[2][0] * m[3][1] - m[2][1] * m[3][
-				                      0]));
-}
 
 Mat4 Mat4::Inverse() const {
 	Mat4        result;
@@ -558,7 +453,9 @@ Vec3 Mat4::TransformPoint(Vec3 vec3) const {
 	return vec3;
 }
 
-Vec3 Mat4::GetTranslate() { return {m[3][0], m[3][1], m[3][2]}; }
+Vec3 Mat4::GetTranslate() {
+	return {m[3][0], m[3][1], m[3][2]};
+}
 
 Vec3 Mat4::GetRotate() const {
 	Vec3 result;
@@ -579,8 +476,131 @@ Vec3 Mat4::GetScale() const {
 	};
 }
 
-Vec3 Mat4::GetRight() const { return {m[0][0], m[0][1], m[0][2]}; }
+Vec3 Mat4::GetRight() const {
+	return {m[0][0], m[0][1], m[0][2]};
+}
 
-Vec3 Mat4::GetUp() const { return {m[1][0], m[1][1], m[1][2]}; }
+Vec3 Mat4::GetUp() const {
+	return {m[1][0], m[1][1], m[1][2]};
+}
 
-Vec3 Mat4::GetForward() const { return {m[2][0], m[2][1], m[2][2]}; }
+Vec3 Mat4::GetForward() const {
+	return {m[2][0], m[2][1], m[2][2]};
+}
+
+Mat4 Mat4::operator+(const Mat4& rhs) const {
+	return {
+		{
+			{
+				m[0][0] + rhs.m[0][0], m[0][1] + rhs.m[0][1],
+				m[0][2] + rhs.m[0][2], m[0][3] + rhs.m[0][3]
+			},
+			{
+				m[1][0] + rhs.m[1][0], m[1][1] + rhs.m[1][1],
+				m[1][2] + rhs.m[1][2], m[1][3] + rhs.m[1][3]
+			},
+			{
+				m[2][0] + rhs.m[2][0], m[2][1] + rhs.m[2][1],
+				m[2][2] + rhs.m[2][2], m[2][3] + rhs.m[2][3]
+			},
+			{
+				m[3][0] + rhs.m[3][0], m[3][1] + rhs.m[3][1],
+				m[3][2] + rhs.m[3][2], m[3][3] + rhs.m[3][3]
+			},
+		}
+	};
+}
+
+Mat4 Mat4::operator-(const Mat4& rhs) const {
+	return {
+		{
+			{
+				m[0][0] - rhs.m[0][0], m[0][1] - rhs.m[0][1],
+				m[0][2] - rhs.m[0][2], m[0][3] - rhs.m[0][3]
+			},
+			{
+				m[1][0] - rhs.m[1][0], m[1][1] - rhs.m[1][1],
+				m[1][2] - rhs.m[1][2], m[1][3] - rhs.m[1][3]
+			},
+			{
+				m[2][0] - rhs.m[2][0], m[2][1] - rhs.m[2][1],
+				m[2][2] - rhs.m[2][2], m[2][3] - rhs.m[2][3]
+			},
+			{
+				m[3][0] - rhs.m[3][0], m[3][1] - rhs.m[3][1],
+				m[3][2] - rhs.m[3][2], m[3][3] - rhs.m[3][3]
+			},
+		},
+	};
+}
+
+Mat4 Mat4::operator*(const Mat4& rhs) const {
+	Mat4  result;
+	float rhsColumn[4][4];
+	for (int i = 0; i < 4; ++i) {
+		for (int j = 0; j < 4; ++j) {
+			rhsColumn[i][j] = rhs.m[j][i];
+		}
+	}
+
+	for (int row = 0; row < 4; ++row) {
+		for (int col = 0; col < 4; ++col) {
+			result.m[row][col] = m[row][0] * rhsColumn[col][0] +
+			                     m[row][1] * rhsColumn[col][1] +
+			                     m[row][2] * rhsColumn[col][2] +
+			                     m[row][3] * rhsColumn[col][3];
+		}
+	}
+	return result;
+}
+
+Vec4 Mat4::operator*(const Vec4& vec) const {
+	return Vec4(
+		m[0][0] * vec.x + m[0][1] * vec.y + m[0][2] * vec.z + m[0][3] * vec.w,
+		m[1][0] * vec.x + m[1][1] * vec.y + m[1][2] * vec.z + m[1][3] * vec.w,
+		m[2][0] * vec.x + m[2][1] * vec.y + m[2][2] * vec.z + m[2][3] * vec.w,
+		m[3][0] * vec.x + m[3][1] * vec.y + m[3][2] * vec.z + m[3][3] * vec.w
+	);
+}
+
+Mat4& Mat4::operator*=(const Mat4& mat4) {
+	*this = *this * mat4;
+	return *this;
+}
+
+bool Mat4::operator==(const Mat4& mat4) const {
+	for (int i = 0; i < 4; ++i) {
+		for (int j = 0; j < 4; ++j) {
+			if (std::abs(m[i][j] - mat4.m[i][j]) > std::numeric_limits<
+				    float>::epsilon()) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+float Mat4::Determinant() const {
+	return m[0][0] * (m[1][1] * (m[2][2] * m[3][3] - m[2][3] * m[3][2]) - m[1][
+		                  2] * (m[2][1] * m[3][3] - m[2][3] * m[3][
+			                        1]) + m[1][3] * (
+		                  m[2][1] * m[3][2] - m[2][2] * m[3][1])) - m[0][1] *
+	       (m[1][0] * (m[2][2] * m[3][3] - m[2][3]
+	                   * m
+	                   [3][2]) - m[1][2] * (
+		        m[2][0] * m[3][3] - m[2][3] * m[3][0]) + m[1][
+		        3] * (m[2][0] * m[3][2] - m[2][2] * m[3][
+			              0]))
+	       + m[0][2] * (m[1][0] * (m[2][1] * m[3][3] - m[2][3] * m[3][1]) - m[1]
+	                    [1]
+	                    * (m[2][0] * m[3][3] - m[2][3] * m[3][
+		                       0]) +
+	                    m[1][3] * (m[2][0] * m[3][1] - m[2][1] * m[3][0])) - m[
+		       0][3] * (m[1]
+		                [0] * (m[2][1] * m[3][2] - m[2][2] * m[
+			                       3][
+			                       1]) - m[1][1] * (
+			                m[2][0] * m[3][2] - m[2][2] * m[3][0]) + m[1][
+			                2] * (m[2][0] * m[3][1] - m[2][1] * m[3][
+				                      0]));
+}

@@ -22,14 +22,26 @@ namespace Unnamed {
 		}
 	}
 
+	std::string_view StaticMeshRendererComponent::GetStableName() const {
+		return "engine.StaticMeshRenderer";
+	}
+
+	std::string_view StaticMeshRendererComponent::GetComponentName() const {
+		return "StaticMeshRenderer";
+	}
+
 	void StaticMeshRendererComponent::Deserialize(const JsonReader& reader) {
 		std::string meshPath = ReadStringOr(reader, "meshPath", "");
-		if (meshPath.empty()) { meshPath = ReadStringOr(reader, "mesh", ""); }
+		if (meshPath.empty()) {
+			meshPath = ReadStringOr(reader, "mesh", "");
+		}
 
 		std::string matPath = ReadStringOr(
 			reader, "materialInstancePath", ""
 		);
-		if (matPath.empty()) { matPath = ReadStringOr(reader, "material", ""); }
+		if (matPath.empty()) {
+			matPath = ReadStringOr(reader, "material", "");
+		}
 
 		SetMeshPath(meshPath);
 		SetMaterialInstancePath(matPath);
@@ -65,7 +77,9 @@ namespace Unnamed {
 			ImGui::InputText(
 				"MaterialInstancePath", matPath.data(), matPath.size()
 			)
-		) { SetMaterialInstancePath(matPath.data()); }
+		) {
+			SetMaterialInstancePath(matPath.data());
+		}
 	}
 #endif
 
@@ -73,7 +87,9 @@ namespace Unnamed {
 		const std::string normalized = path.empty() ?
 			                               std::string() :
 			                               StrUtil::NormalizePath(path);
-		if (mMeshPath == normalized) { return; }
+		if (mMeshPath == normalized) {
+			return;
+		}
 
 		mMeshPath    = normalized;
 		mMeshAssetId = kInvalidAssetID;
@@ -85,7 +101,9 @@ namespace Unnamed {
 		const std::string normalized = path.empty() ?
 			                               std::string() :
 			                               StrUtil::NormalizePath(path);
-		if (mMaterialInstancePath == normalized) { return; }
+		if (mMaterialInstancePath == normalized) {
+			return;
+		}
 
 		mMaterialInstancePath    = normalized;
 		mMaterialInstanceAssetId = kInvalidAssetID;
@@ -104,8 +122,12 @@ namespace Unnamed {
 	AssetID StaticMeshRendererComponent::ResolveMeshAsset(
 		AssetManager& assetManager
 	) {
-		if (mMeshPath.empty()) { return kInvalidAssetID; }
-		if (mMeshAssetId != kInvalidAssetID) { return mMeshAssetId; }
+		if (mMeshPath.empty()) {
+			return kInvalidAssetID;
+		}
+		if (mMeshAssetId != kInvalidAssetID) {
+			return mMeshAssetId;
+		}
 
 		mMeshAssetId = assetManager.LoadFromFile(mMeshPath, ASSET_TYPE::MESH);
 		return mMeshAssetId;
@@ -114,7 +136,9 @@ namespace Unnamed {
 	AssetID StaticMeshRendererComponent::ResolveMaterialInstanceAsset(
 		AssetManager& assetManager
 	) {
-		if (mMaterialInstancePath.empty()) { return kInvalidAssetID; }
+		if (mMaterialInstancePath.empty()) {
+			return kInvalidAssetID;
+		}
 		if (mMaterialInstanceAssetId != kInvalidAssetID) {
 			return mMaterialInstanceAssetId;
 		}

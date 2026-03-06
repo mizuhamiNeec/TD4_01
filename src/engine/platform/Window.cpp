@@ -6,15 +6,25 @@ namespace Unnamed {
 		mDesc(std::move(desc)),
 		mId(id) {}
 
-	WindowId Window::GetId() const { return mId; }
+	WindowId Window::GetId() const {
+		return mId;
+	}
 
-	HWND Window::GetHwnd() const { return mHwnd; }
+	HWND Window::GetHwnd() const {
+		return mHwnd;
+	}
 
-	WindowDesc Window::GetDesc() const { return mDesc; }
+	WindowDesc Window::GetDesc() const {
+		return mDesc;
+	}
 
-	bool Window::ShouldClose() const { return mShouldClose; }
+	bool Window::ShouldClose() const {
+		return mShouldClose;
+	}
 
-	bool Window::IsMinimized() const { return mMinimized; }
+	bool Window::IsMinimized() const {
+		return mMinimized;
+	}
 
 	std::optional<WindowResizeEvent> Window::ConsumeResizeEvent() {
 		if (!mHasPendingResize) return std::nullopt;
@@ -45,7 +55,9 @@ namespace Unnamed {
 				const int32_t width  = LOWORD(lParam);
 				const int32_t height = HIWORD(lParam);
 
-				if (wParam == SIZE_MINIMIZED) { mMinimized = true; } else {
+				if (wParam == SIZE_MINIMIZED) {
+					mMinimized = true;
+				} else {
 					mMinimized                  = false;
 					mHasPendingResize           = true;
 					mPendingResize.width        = width;
@@ -105,5 +117,7 @@ namespace Unnamed {
 		}
 	}
 
-	void Window::MarkCloseRequested() { mShouldClose = true; }
+	void Window::MarkCloseRequested() {
+		mShouldClose = true;
+	}
 }

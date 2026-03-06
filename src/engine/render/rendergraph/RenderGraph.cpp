@@ -75,7 +75,9 @@ namespace Unnamed::Render {
 	}
 
 	void RenderGraph::Compile(Rhi::IRhiDevice&) {
-		if (!mIsDirty) { return; }
+		if (!mIsDirty) {
+			return;
+		}
 
 		mCompiled.clear();
 		mCompiled.reserve(mPasses.size());
@@ -229,7 +231,9 @@ namespace Unnamed::Render {
 			}
 
 			for (const auto& [textureId, req] : requiredStates) {
-				if (req == 0) { continue; }
+				if (req == 0) {
+					continue;
+				}
 
 				// plannedStates になければ初期状態にする
 				auto it = plannedStates.find(textureId);

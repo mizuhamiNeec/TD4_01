@@ -3,7 +3,6 @@
 #ifdef _DEBUG
 #include <imgui.h>
 struct Vec3;
-class SceneComponent;
 struct Vec4;
 
 namespace ImGuiUtil {

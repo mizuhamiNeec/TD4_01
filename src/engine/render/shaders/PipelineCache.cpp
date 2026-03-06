@@ -44,8 +44,8 @@ namespace Unnamed::Render {
 			d.InputSlot                = e.inputSlot;
 			d.AlignedByteOffset        = e.offset;
 			d.InputSlotClass           = e.perInstance ?
-				                             D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA :
-				                             D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+				                   D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA :
+				                   D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
 			d.InstanceDataStepRate = e.perInstance ? e.instanceStepRate : 0;
 
 			out.elements.emplace_back(d);
@@ -62,7 +62,8 @@ namespace Unnamed::Render {
 	ID3D12PipelineState* PipelineCache::GetOrCreateGraphicsPso(
 		const GraphicsPsoKey& key
 	) {
-		if (auto it = mGraphics.find(key); it != mGraphics.end()) {
+		if (auto it = mGraphics.find(key);
+			it != mGraphics.end()) {
 			return it->second.Get();
 		}
 
@@ -75,7 +76,7 @@ namespace Unnamed::Render {
 		desc.VS = {vsDxil.bytes.data(), vsDxil.bytes.size()};
 		desc.PS = {psDxil.bytes.data(), psDxil.bytes.size()};
 
-		desc.BlendState               = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+		desc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 		desc.BlendState.RenderTarget[0].BlendEnable = key.blendEnable;
 		desc.BlendState.RenderTarget[0].SrcBlend = key.srcBlend;
 		desc.BlendState.RenderTarget[0].DestBlend = key.destBlend;
@@ -83,7 +84,7 @@ namespace Unnamed::Render {
 		desc.BlendState.RenderTarget[0].SrcBlendAlpha = key.srcBlendAlpha;
 		desc.BlendState.RenderTarget[0].DestBlendAlpha = key.destBlendAlpha;
 		desc.BlendState.RenderTarget[0].BlendOpAlpha = key.blendOpAlpha;
-		desc.RasterizerState          = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+		desc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 		desc.RasterizerState.CullMode = key.cullMode;
 
 		desc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
@@ -92,13 +93,15 @@ namespace Unnamed::Render {
 
 		desc.NumRenderTargets = key.numRenderTargets;
 		desc.RTVFormats[0]    = key.numRenderTargets > 0 ?
-			                        key.rtvFormat :
-			                        DXGI_FORMAT_UNKNOWN;
+			                     key.rtvFormat :
+			                     DXGI_FORMAT_UNKNOWN;
 		desc.SampleDesc.Count = 1;
 
 		if (key.depthEnable || key.stencilEnable) {
 			desc.DSVFormat = key.dsvFormat;
-		} else { desc.DSVFormat = DXGI_FORMAT_UNKNOWN; }
+		} else {
+			desc.DSVFormat = DXGI_FORMAT_UNKNOWN;
+		}
 
 		if (key.depthEnable) {
 			desc.DepthStencilState.DepthEnable    = TRUE;
@@ -130,7 +133,9 @@ namespace Unnamed::Render {
 			desc.DepthStencilState.BackFace.StencilPassOp =
 				key.stencilBackPassOp;
 			desc.DepthStencilState.BackFace.StencilFunc = key.stencilBackFunc;
-		} else { desc.DepthStencilState.StencilEnable = FALSE; }
+		} else {
+			desc.DepthStencilState.StencilEnable = FALSE;
+		}
 
 		BuiltInputLayout builtInputLayout;
 		if (key.vertexLayout.has_value()) {
@@ -139,7 +144,9 @@ namespace Unnamed::Render {
 				builtInputLayout.elements.data(),
 				static_cast<UINT>(builtInputLayout.elements.size())
 			};
-		} else { desc.InputLayout = {nullptr, 0}; }
+		} else {
+			desc.InputLayout = {nullptr, 0};
+		}
 
 		// 今のところ三角形リスト固定
 		desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
@@ -148,7 +155,9 @@ namespace Unnamed::Render {
 		const HRESULT hr = mDevice->CreateGraphicsPipelineState(
 			&desc, IID_PPV_ARGS(pso.ReleaseAndGetAddressOf())
 		);
-		if (FAILED(hr)) { return nullptr; }
+		if (FAILED(hr)) {
+			return nullptr;
+		}
 
 		auto* raw = pso.Get();
 		mGraphics.emplace(key, std::move(pso));
@@ -158,7 +167,8 @@ namespace Unnamed::Render {
 	ID3D12PipelineState* PipelineCache::GetOrCreateComputePso(
 		const ComputePipelineKey& key
 	) {
-		if (const auto it = mCompute.find(key); it != mCompute.end()) {
+		if (const auto it = mCompute.find(key);
+			it != mCompute.end()) {
 			return it->second.Get();
 		}
 
@@ -172,7 +182,9 @@ namespace Unnamed::Render {
 		const HRESULT hr = mDevice->CreateComputePipelineState(
 			&desc, IID_PPV_ARGS(pso.ReleaseAndGetAddressOf())
 		);
-		if (FAILED(hr)) { return nullptr; }
+		if (FAILED(hr)) {
+			return nullptr;
+		}
 
 		auto* raw = pso.Get();
 		mCompute.emplace(key, std::move(pso));

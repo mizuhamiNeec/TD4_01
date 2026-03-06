@@ -40,15 +40,15 @@ namespace Unnamed::Render {
 		D3D12_STENCIL_OP      stencilBackPassOp = D3D12_STENCIL_OP_KEEP;
 		D3D12_COMPARISON_FUNC stencilBackFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 
-		uint32_t        stencilRef = 0;
-		D3D12_CULL_MODE cullMode   = D3D12_CULL_MODE_BACK;
-		bool            blendEnable = false;
-		D3D12_BLEND     srcBlend = D3D12_BLEND_ONE;
-		D3D12_BLEND     destBlend = D3D12_BLEND_ZERO;
-		D3D12_BLEND_OP  blendOp = D3D12_BLEND_OP_ADD;
-		D3D12_BLEND     srcBlendAlpha = D3D12_BLEND_ONE;
+		uint32_t        stencilRef     = 0;
+		D3D12_CULL_MODE cullMode       = D3D12_CULL_MODE_BACK;
+		bool            blendEnable    = false;
+		D3D12_BLEND     srcBlend       = D3D12_BLEND_ONE;
+		D3D12_BLEND     destBlend      = D3D12_BLEND_ZERO;
+		D3D12_BLEND_OP  blendOp        = D3D12_BLEND_OP_ADD;
+		D3D12_BLEND     srcBlendAlpha  = D3D12_BLEND_ONE;
 		D3D12_BLEND     destBlendAlpha = D3D12_BLEND_ZERO;
-		D3D12_BLEND_OP  blendOpAlpha = D3D12_BLEND_OP_ADD;
+		D3D12_BLEND_OP  blendOpAlpha   = D3D12_BLEND_OP_ADD;
 
 		bool operator==(const GraphicsPsoKey& rhs) const {
 			return vs == rhs.vs &&
@@ -165,43 +165,97 @@ namespace Unnamed::Render {
 		bool operator()(
 			const GraphicsPsoKey& a, const GraphicsPsoKey& b
 		) const {
-			if (a.vs != b.vs) { return false; }
-			if (a.ps != b.ps) { return false; }
-			if (a.rootSignature != b.rootSignature) { return false; }
-			if (a.numRenderTargets != b.numRenderTargets) { return false; }
-			if (a.rtvFormat != b.rtvFormat) { return false; }
-			if (a.depthEnable != b.depthEnable) { return false; }
-			if (a.dsvFormat != b.dsvFormat) { return false; }
-			if (a.depthFunc != b.depthFunc) { return false; }
-			if (a.stencilEnable != b.stencilEnable) { return false; }
-			if (a.stencilReadMask != b.stencilReadMask) { return false; }
-			if (a.stencilWriteMask != b.stencilWriteMask) { return false; }
-			if (a.stencilFrontFailOp != b.stencilFrontFailOp) { return false; }
+			if (a.vs != b.vs) {
+				return false;
+			}
+			if (a.ps != b.ps) {
+				return false;
+			}
+			if (a.rootSignature != b.rootSignature) {
+				return false;
+			}
+			if (a.numRenderTargets != b.numRenderTargets) {
+				return false;
+			}
+			if (a.rtvFormat != b.rtvFormat) {
+				return false;
+			}
+			if (a.depthEnable != b.depthEnable) {
+				return false;
+			}
+			if (a.dsvFormat != b.dsvFormat) {
+				return false;
+			}
+			if (a.depthFunc != b.depthFunc) {
+				return false;
+			}
+			if (a.stencilEnable != b.stencilEnable) {
+				return false;
+			}
+			if (a.stencilReadMask != b.stencilReadMask) {
+				return false;
+			}
+			if (a.stencilWriteMask != b.stencilWriteMask) {
+				return false;
+			}
+			if (a.stencilFrontFailOp != b.stencilFrontFailOp) {
+				return false;
+			}
 			if (a.stencilFrontDepthFailOp != b.stencilFrontDepthFailOp) {
 				return false;
 			}
-			if (a.stencilFrontPassOp != b.stencilFrontPassOp) { return false; }
-			if (a.stencilFrontFunc != b.stencilFrontFunc) { return false; }
-			if (a.stencilBackFailOp != b.stencilBackFailOp) { return false; }
+			if (a.stencilFrontPassOp != b.stencilFrontPassOp) {
+				return false;
+			}
+			if (a.stencilFrontFunc != b.stencilFrontFunc) {
+				return false;
+			}
+			if (a.stencilBackFailOp != b.stencilBackFailOp) {
+				return false;
+			}
 			if (a.stencilBackDepthFailOp != b.stencilBackDepthFailOp) {
 				return false;
 			}
-			if (a.stencilBackPassOp != b.stencilBackPassOp) { return false; }
-			if (a.stencilBackFunc != b.stencilBackFunc) { return false; }
-			if (a.stencilRef != b.stencilRef) { return false; }
-			if (a.cullMode != b.cullMode) { return false; }
-			if (a.blendEnable != b.blendEnable) { return false; }
-			if (a.srcBlend != b.srcBlend) { return false; }
-			if (a.destBlend != b.destBlend) { return false; }
-			if (a.blendOp != b.blendOp) { return false; }
-			if (a.srcBlendAlpha != b.srcBlendAlpha) { return false; }
-			if (a.destBlendAlpha != b.destBlendAlpha) { return false; }
-			if (a.blendOpAlpha != b.blendOpAlpha) { return false; }
+			if (a.stencilBackPassOp != b.stencilBackPassOp) {
+				return false;
+			}
+			if (a.stencilBackFunc != b.stencilBackFunc) {
+				return false;
+			}
+			if (a.stencilRef != b.stencilRef) {
+				return false;
+			}
+			if (a.cullMode != b.cullMode) {
+				return false;
+			}
+			if (a.blendEnable != b.blendEnable) {
+				return false;
+			}
+			if (a.srcBlend != b.srcBlend) {
+				return false;
+			}
+			if (a.destBlend != b.destBlend) {
+				return false;
+			}
+			if (a.blendOp != b.blendOp) {
+				return false;
+			}
+			if (a.srcBlendAlpha != b.srcBlendAlpha) {
+				return false;
+			}
+			if (a.destBlendAlpha != b.destBlendAlpha) {
+				return false;
+			}
+			if (a.blendOpAlpha != b.blendOpAlpha) {
+				return false;
+			}
 			if (a.vertexLayout.has_value() != b.vertexLayout.has_value()) {
 				return false;
 			}
 			if (a.vertexLayout.has_value()) {
-				if (*a.vertexLayout != *b.vertexLayout) { return false; }
+				if (*a.vertexLayout != *b.vertexLayout) {
+					return false;
+				}
 			}
 
 			return true;

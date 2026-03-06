@@ -33,7 +33,9 @@ namespace Unnamed::Gui {
 
 		for (auto& pChild : GetChildren()) {
 			UiWidget* child = pChild.get();
-			if (!child || !child->IsVisible()) { continue; }
+			if (!child || !child->IsVisible()) {
+				continue;
+			}
 
 			const UiSizePolicy       policy     = child->GetSizePolicy();
 			const UiSizeConstraints& constraint = child->GetSizeConstraints();

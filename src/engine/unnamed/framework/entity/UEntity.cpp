@@ -18,7 +18,9 @@ namespace Unnamed {
 		mGuid(guid),
 		mIsEditorOnly(isEditorOnly) {}
 
-	UEntity::~UEntity() { OnDestroy(); };
+	UEntity::~UEntity() {
+		OnDestroy();
+	};
 
 	void UEntity::OnRegister() {
 		DevMsg(
@@ -39,7 +41,9 @@ namespace Unnamed {
 	}
 
 	void UEntity::PrePhysicsTick(const float deltaTime) const {
-		if (!mIsActive) { return; }
+		if (!mIsActive) {
+			return;
+		}
 
 		for (const auto& component : mComponents) {
 			if (!component->IsActive()) continue;
@@ -48,7 +52,9 @@ namespace Unnamed {
 	}
 
 	void UEntity::Tick(const float deltaTime) const {
-		if (!mIsActive) { return; }
+		if (!mIsActive) {
+			return;
+		}
 
 		for (const auto& component : mComponents) {
 			if (!component->IsActive()) continue;
@@ -57,7 +63,9 @@ namespace Unnamed {
 	}
 
 	void UEntity::PostPhysicsTick(const float deltaTime) const {
-		if (!mIsActive) { return; }
+		if (!mIsActive) {
+			return;
+		}
 
 		for (const auto& component : mComponents) {
 			if (!component->IsActive()) continue;
@@ -66,7 +74,9 @@ namespace Unnamed {
 	}
 
 	void UEntity::OnPreRender() const {
-		if (!mIsActive) { return; }
+		if (!mIsActive) {
+			return;
+		}
 
 		for (const auto& component : mComponents) {
 			if (!component->IsActive()) continue;
@@ -75,7 +85,9 @@ namespace Unnamed {
 	}
 
 	void UEntity::OnRender() const {
-		if (!mIsActive) { return; }
+		if (!mIsActive) {
+			return;
+		}
 
 		for (const auto& component : mComponents) {
 			if (!component->IsActive()) continue;
@@ -84,7 +96,9 @@ namespace Unnamed {
 	}
 
 	void UEntity::OnPostRender() const {
-		if (!mIsActive) { return; }
+		if (!mIsActive) {
+			return;
+		}
 
 		for (const auto& component : mComponents) {
 			if (!component->IsActive()) continue;
@@ -93,7 +107,9 @@ namespace Unnamed {
 	}
 
 	void UEntity::OnEditorTick(const float deltaTime) const {
-		if (!mIsActive) { return; }
+		if (!mIsActive) {
+			return;
+		}
 
 		for (const auto& component : mComponents) {
 			component->OnEditorTick(deltaTime);
@@ -101,7 +117,9 @@ namespace Unnamed {
 	}
 
 	void UEntity::OnEditorRender() const {
-		if (!mIsActive) { return; }
+		if (!mIsActive) {
+			return;
+		}
 
 		for (const auto& component : mComponents) {
 			component->OnEditorRender();
@@ -109,7 +127,9 @@ namespace Unnamed {
 	}
 
 	void UEntity::OnDestroy() {
-		if (mDestroyed) { return; }
+		if (mDestroyed) {
+			return;
+		}
 		mDestroyed = true;
 
 		DevMsg(
@@ -119,7 +139,9 @@ namespace Unnamed {
 			std::to_string(mGuid)
 		);
 
-		for (const auto& component : mComponents) { component->OnDetached(); }
+		for (const auto& component : mComponents) {
+			component->OnDetached();
+		}
 		mComponents.clear();
 		mComponentsByType.clear();
 	}
@@ -151,7 +173,9 @@ namespace Unnamed {
 			if (it != mComponentsByType.end()) {
 				auto& vec = it->second;
 				std::erase(vec, component);
-				if (vec.empty()) { mComponentsByType.erase(it); }
+				if (vec.empty()) {
+					mComponentsByType.erase(it);
+				}
 			}
 		}
 
@@ -169,25 +193,37 @@ namespace Unnamed {
 		}
 	}
 
-	std::string_view UEntity::GetName() const { return mName; }
+	std::string_view UEntity::GetName() const {
+		return mName;
+	}
 
-	void UEntity::SetName(const std::string_view& name) { mName = name; }
+	void UEntity::SetName(const std::string_view& name) {
+		mName = name;
+	}
 
-	bool UEntity::IsEditorOnly() const noexcept { return mIsEditorOnly; }
+	bool UEntity::IsEditorOnly() const noexcept {
+		return mIsEditorOnly;
+	}
 
-	bool UEntity::IsActive() const noexcept { return mIsActive; }
+	bool UEntity::IsActive() const noexcept {
+		return mIsActive;
+	}
 
 	void UEntity::SetActive(const bool isActive) noexcept {
 		mIsActive = isActive;
 	}
 
-	bool UEntity::IsVisible() const noexcept { return mIsVisible; }
+	bool UEntity::IsVisible() const noexcept {
+		return mIsVisible;
+	}
 
 	void UEntity::SetVisible(const bool isVisible) noexcept {
 		mIsVisible = isVisible;
 	}
 
-	uint64_t UEntity::GetGuid() const noexcept { return mGuid; }
+	uint64_t UEntity::GetGuid() const noexcept {
+		return mGuid;
+	}
 
 	std::string_view UEntity::GetFolderPath() const noexcept {
 		return mFolderPath;

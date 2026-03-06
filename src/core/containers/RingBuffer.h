@@ -7,7 +7,7 @@ namespace Unnamed {
 	/// @brief スレッドセーフなリングバッファクラス
 	/// @tparam T 格納する要素の型
 	/// @tparam Capacity リングバッファの容量
-	/// @details 固定サイズの循環バッファで、容量に達すると古いデータを上書きします
+	/// @details 固定サイズの循環バッファで、容量に達すると古いデータを上書きします。 めちゃ便利!!
 	template <typename T, size_t Capacity>
 	class RingBuffer {
 	public:

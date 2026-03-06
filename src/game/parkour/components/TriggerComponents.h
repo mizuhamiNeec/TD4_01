@@ -11,8 +11,14 @@ namespace Unnamed {
 
 	class TriggerVolumeComponentBase : public UBaseComponent {
 	public:
-		[[nodiscard]] Vec3 GetLocalCenter() const noexcept { return mLocalCenter; }
-		[[nodiscard]] Vec3 GetExtentsHu() const noexcept { return mExtentsHu; }
+		[[nodiscard]] Vec3 GetLocalCenter() const noexcept {
+			return mLocalCenter;
+		}
+
+		[[nodiscard]] Vec3 GetExtentsHu() const noexcept {
+			return mExtentsHu;
+		}
+
 		[[nodiscard]] Vec3 GetWorldCenter() const noexcept;
 		[[nodiscard]] Vec3 GetWorldHalfExtentsMeters() const noexcept;
 
@@ -30,11 +36,14 @@ namespace Unnamed {
 		[[nodiscard]] std::string_view GetStableName() const override {
 			return "parkour.JumpPad";
 		}
+
 		[[nodiscard]] std::string_view GetComponentName() const override {
 			return "JumpPad";
 		}
+
 		void Deserialize(const JsonReader& reader) override;
 		void Serialize(JsonWriter& writer) const override;
+
 		[[nodiscard]] float GetBoostVelocityHu() const noexcept {
 			return mBoostVelocityHu;
 		}
@@ -48,16 +57,24 @@ namespace Unnamed {
 		[[nodiscard]] std::string_view GetStableName() const override {
 			return "parkour.SpeedBoostArea";
 		}
+
 		[[nodiscard]] std::string_view GetComponentName() const override {
 			return "SpeedBoostArea";
 		}
+
 		void Deserialize(const JsonReader& reader) override;
 		void Serialize(JsonWriter& writer) const override;
-		[[nodiscard]] float GetMultiplier() const noexcept { return mMultiplier; }
-		[[nodiscard]] float GetDurationSec() const noexcept { return mDurationSec; }
+
+		[[nodiscard]] float GetMultiplier() const noexcept {
+			return mMultiplier;
+		}
+
+		[[nodiscard]] float GetDurationSec() const noexcept {
+			return mDurationSec;
+		}
 
 	private:
-		float mMultiplier = 1.5f;
+		float mMultiplier  = 1.5f;
 		float mDurationSec = 3.0f;
 	};
 
@@ -66,18 +83,24 @@ namespace Unnamed {
 		[[nodiscard]] std::string_view GetStableName() const override {
 			return "parkour.Checkpoint";
 		}
+
 		[[nodiscard]] std::string_view GetComponentName() const override {
 			return "Checkpoint";
 		}
+
 		void Deserialize(const JsonReader& reader) override;
 		void Serialize(JsonWriter& writer) const override;
-		[[nodiscard]] int32_t GetIndex() const noexcept { return mIndex; }
+
+		[[nodiscard]] int32_t GetIndex() const noexcept {
+			return mIndex;
+		}
+
 		[[nodiscard]] Vec3 GetRespawnPosition() const noexcept {
 			return mRespawnPosition;
 		}
 
 	private:
-		int32_t mIndex = 0;
+		int32_t mIndex           = 0;
 		Vec3    mRespawnPosition = Vec3::zero;
 	};
 
@@ -86,9 +109,11 @@ namespace Unnamed {
 		[[nodiscard]] std::string_view GetStableName() const override {
 			return "parkour.Goal";
 		}
+
 		[[nodiscard]] std::string_view GetComponentName() const override {
 			return "Goal";
 		}
+
 		void Deserialize(const JsonReader& reader) override;
 		void Serialize(JsonWriter& writer) const override;
 	};
@@ -98,12 +123,17 @@ namespace Unnamed {
 		[[nodiscard]] std::string_view GetStableName() const override {
 			return "parkour.StaticMeshCollider";
 		}
+
 		[[nodiscard]] std::string_view GetComponentName() const override {
 			return "StaticMeshCollider";
 		}
+
 		void Deserialize(const JsonReader& reader) override;
 		void Serialize(JsonWriter& writer) const override;
-		[[nodiscard]] bool IsCollisionEnabled() const noexcept { return mEnabled; }
+
+		[[nodiscard]] bool IsCollisionEnabled() const noexcept {
+			return mEnabled;
+		}
 
 	private:
 		bool mEnabled = true;

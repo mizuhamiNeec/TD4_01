@@ -14,7 +14,9 @@ namespace Unnamed {
 			const JsonReader& reader, const char* key, const Vec3& fallback
 		) {
 			const JsonReader value = reader[key];
-			if (!value.Valid() || value.Size() < 3) { return fallback; }
+			if (!value.Valid() || value.Size() < 3) {
+				return fallback;
+			}
 			return Vec3(
 				value[0].GetFloat(),
 				value[1].GetFloat(),
@@ -39,11 +41,14 @@ namespace Unnamed {
 		return mLocalCenter;
 	}
 
-	Vec3 TriggerVolumeComponentBase::GetWorldHalfExtentsMeters() const noexcept {
+	Vec3
+	TriggerVolumeComponentBase::GetWorldHalfExtentsMeters() const noexcept {
 		return Math::HtoM(mExtentsHu * 0.5f);
 	}
 
-	void TriggerVolumeComponentBase::DeserializeVolume(const JsonReader& reader) {
+	void TriggerVolumeComponentBase::DeserializeVolume(
+		const JsonReader& reader
+	) {
 		mLocalCenter = ReadVec3Or(reader, "localCenter", mLocalCenter);
 		mExtentsHu   = ReadVec3Or(reader, "extentsHu", mExtentsHu);
 	}
@@ -61,7 +66,9 @@ namespace Unnamed {
 	void JumpPadComponent::Deserialize(const JsonReader& reader) {
 		DeserializeVolume(reader);
 		const JsonReader velocity = reader["boostVelocityHu"];
-		if (velocity.Valid()) { mBoostVelocityHu = velocity.GetFloat(); }
+		if (velocity.Valid()) {
+			mBoostVelocityHu = velocity.GetFloat();
+		}
 	}
 
 	void JumpPadComponent::Serialize(JsonWriter& writer) const {
@@ -74,8 +81,12 @@ namespace Unnamed {
 		DeserializeVolume(reader);
 		const JsonReader multiplier = reader["multiplier"];
 		const JsonReader duration   = reader["durationSec"];
-		if (multiplier.Valid()) { mMultiplier = multiplier.GetFloat(); }
-		if (duration.Valid()) { mDurationSec = duration.GetFloat(); }
+		if (multiplier.Valid()) {
+			mMultiplier = multiplier.GetFloat();
+		}
+		if (duration.Valid()) {
+			mDurationSec = duration.GetFloat();
+		}
 	}
 
 	void SpeedBoostAreaComponent::Serialize(JsonWriter& writer) const {
@@ -89,7 +100,9 @@ namespace Unnamed {
 	void CheckpointComponent::Deserialize(const JsonReader& reader) {
 		DeserializeVolume(reader);
 		const JsonReader index = reader["index"];
-		if (index.Valid()) { mIndex = index.GetInt(); }
+		if (index.Valid()) {
+			mIndex = index.GetInt();
+		}
 		mRespawnPosition = ReadVec3Or(
 			reader, "respawnPosition", mRespawnPosition
 		);
@@ -112,7 +125,9 @@ namespace Unnamed {
 
 	void StaticMeshColliderComponent::Deserialize(const JsonReader& reader) {
 		const JsonReader enabled = reader["enabled"];
-		if (enabled.Valid()) { mEnabled = enabled.GetBool(); }
+		if (enabled.Valid()) {
+			mEnabled = enabled.GetBool();
+		}
 	}
 
 	void StaticMeshColliderComponent::Serialize(JsonWriter& writer) const {
@@ -121,8 +136,12 @@ namespace Unnamed {
 	}
 
 	REGISTER_COMPONENT(JumpPadComponent);
+
 	REGISTER_COMPONENT(SpeedBoostAreaComponent);
+
 	REGISTER_COMPONENT(CheckpointComponent);
+
 	REGISTER_COMPONENT(GoalComponent);
+
 	REGISTER_COMPONENT(StaticMeshColliderComponent);
 }

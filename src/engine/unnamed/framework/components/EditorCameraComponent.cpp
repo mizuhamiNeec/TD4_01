@@ -8,7 +8,9 @@
 #include "core/json/JsonReader.h"
 #include "core/json/JsonWriter.h"
 #include "core/math/Math.h"
+#include "core/string/StrUtil.h"
 
+#include "engine/ImGui/Icons.h"
 #include "engine/unnamed/framework/entity/UEntity.h"
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
 #include "engine/unnamed/subsystem/console/Log.h"
@@ -21,32 +23,6 @@ namespace Unnamed {
 	static constexpr std::string_view kChannel = "EdCamComp";
 
 	namespace {
-		void InstallEditorCameraBindingsOnce() {
-			static bool sInstalled = false;
-			if (sInstalled) { return; }
-
-			auto* console = ServiceLocator::Get<ConsoleSystem>();
-			if (!console) { return; }
-
-			static constexpr const char* kBindings[] = {
-				"bind w +forward",
-				"bind s +backward",
-				"bind a +left",
-				"bind d +right",
-				"bind e +up",
-				"bind q +down",
-				"bind uparrow +pitchup",
-				"bind downarrow +pitchdown",
-				"bind leftarrow +yawleft",
-				"bind rightarrow +yawright",
-			};
-
-			for (const char* command : kBindings) {
-				console->ExecuteCommand(command);
-			}
-			sInstalled = true;
-		}
-
 		float ReadFloatOr(
 			const JsonReader& reader, const char* key, const float fallback
 		) {
@@ -56,8 +32,6 @@ namespace Unnamed {
 	}
 
 	void EditorCameraComponent::OnAttached() {
-		InstallEditorCameraBindingsOnce();
-
 		mInput = ServiceLocator::Get<UInputSystem>();
 		if (!mInput) {
 			Error(
@@ -114,14 +88,56 @@ namespace Unnamed {
 
 		Friction(6.0f, deltaTime);
 
-		Accelerate(
-			mWishDir, mMoveSpeed, 20.0f, deltaTime
-		);
+		Accelerate(mWishDir, mMoveSpeed, 20.0f, deltaTime);
 
 		Vec3 pos = transform->Position();
 		pos      += mVelocity * deltaTime;
 
 		transform->SetPosition(pos);
+
+		if (mOpenPopup) {
+			constexpr auto windowSize = ImVec2(256.0f, 32.0f);
+
+			ImVec2 windowPos(
+				viewportPos.x + (viewportSize.x) * 0.5f,
+				viewportPos.y + (viewportSize.y) * iconScale
+			);
+
+			windowPos.x -= windowSize.x * 0.5f;
+			windowPos.y -= windowSize.y * 0.5f;
+
+			ImGui::SetNextWindowPos(windowPos, ImGuiCond_Always);
+			ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
+
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 16.0f);
+
+			ImGui::Begin(
+				"##moveSpeedPopup", nullptr,
+				ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+				ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
+				ImGuiWindowFlags_NoBringToFrontOnFocus |
+				ImGuiWindowFlags_NoFocusOnAppearing |
+				ImGuiWindowFlags_NoScrollbar
+			);
+
+			ImGui::SetCursorPos(
+				ImVec2(
+					(windowSize.x - ImGui::CalcTextSize(
+						 (StrUtil::ConvertToUtf8(kIconSpeed) + std::format(
+							  " {:.2f}", mMoveSpeed
+						  )).c_str()
+					 ).x) * 0.5f, (windowSize.y - ImGui::GetFontSize()) * 0.5f
+				)
+			);
+
+			ImGui::Text(
+				(
+					StrUtil::ConvertToUtf8(kIconSpeed) + std::format(
+						" {:.2f}", mMoveSpeed
+					)
+				).c_str()
+			);
+		}
 	}
 
 	void EditorCameraComponent::Deserialize(const JsonReader& reader) {
@@ -129,7 +145,6 @@ namespace Unnamed {
 		mNearZ       = ReadFloatOr(reader, "nearZ", mNearZ);
 		mFarZ        = ReadFloatOr(reader, "farZ", mFarZ);
 		mMoveSpeed   = ReadFloatOr(reader, "moveSpeed", mMoveSpeed);
-		mRotateSpeed = ReadFloatOr(reader, "rotateSpeed", mRotateSpeed);
 	}
 
 	void EditorCameraComponent::Serialize(JsonWriter& writer) const {
@@ -141,8 +156,6 @@ namespace Unnamed {
 		writer.Write(mFarZ);
 		writer.Key("moveSpeed");
 		writer.Write(mMoveSpeed);
-		writer.Key("rotateSpeed");
-		writer.Write(mRotateSpeed);
 	}
 
 #ifdef _DEBUG
@@ -151,7 +164,6 @@ namespace Unnamed {
 		ImGui::DragFloat("NearZ", &mNearZ, 0.0005f, 0.0001f, mFarZ - 0.001f);
 		ImGui::DragFloat("FarZ", &mFarZ, 1.0f, mNearZ + 0.001f, 1000000.0f);
 		ImGui::DragFloat("MoveSpeed", &mMoveSpeed, 1.0f, 1.0f, 10000.0f);
-		ImGui::DragFloat("RotateSpeed", &mRotateSpeed, 0.01f, 0.01f, 100.0f);
 		ImGui::Text("AspectRatio: %.3f", mAspectRatio);
 	}
 #endif
@@ -213,14 +225,33 @@ namespace Unnamed {
 		return true;
 	}
 
+	/// @brief 値を最も近い2のべき乗に丸めます。例えば、300は256に、400は512になります。
+	/// @param value 丸める値
+	/// @return 最も近い2のべき乗に丸められた値
+	static float RoundToNearestPowerOfTwo(const float value) {
+		const float lowerPowerOfTwo = std::pow(
+			2.0f, std::floor(std::log2(value))
+		);
+		const float upperPowerOfTwo = std::pow(
+			2.0f, std::ceil(std::log2(value))
+		);
+		if (value - lowerPowerOfTwo < upperPowerOfTwo - value) {
+			return lowerPowerOfTwo;
+		}
+
+		return upperPowerOfTwo;
+	}
+
 	void EditorCameraComponent::ProcessInput() {
 		if (!mInput) { return; }
 
 		auto* transform = GetTransform();
 		if (!transform) { return; }
 
-		// マウスカーソルをロック
-		mInput->SetMouseCursorLocked(true);
+		// マウスカーソルをロック（毎フレーム強制するとコンソールのトグルが効かないため、必要時のみ）
+		if (!mInput->IsMouseCursorLocked()) {
+			mInput->SetMouseCursorLocked(true);
+		}
 
 		// 回転はここで決定する
 		const float sensitivity = mConsole->GetConVarAs<UnnamedConVar<float>>(
@@ -264,6 +295,24 @@ namespace Unnamed {
 		if (mInput->IsHeld("ed_up")) mMoveInput.y += 1.0f;
 		if (mInput->IsHeld("ed_down")) mMoveInput.y -= 1.0f;
 
+		if (mInput->IsPressed("ed_speedup")) {
+			mMoveSpeed *= 2.0f;
+			mMoveSpeed = RoundToNearestPowerOfTwo(mMoveSpeed);
+		}
+
+		if (mInput->IsPressed(("ed_speeddown"))) {
+			mMoveSpeed *= 0.5f;
+			mMoveSpeed = RoundToNearestPowerOfTwo(mMoveSpeed);
+		}
+
+		if (mMoveSpeed != mOldMoveSpeed) {
+			mOpenPopup  = true;
+			mPopupTimer = 0.0f;
+		}
+
+		mMoveSpeed    = std::clamp(mMoveSpeed, 0.125f, 65535.0f);
+		mOldMoveSpeed = mMoveSpeed;
+
 		const Quaternion currentRot = transform->Rotation();
 		const Mat4       rotMatrix  = Mat4::FromQuaternion(currentRot);
 
@@ -274,7 +323,10 @@ namespace Unnamed {
 		mWishDir.Normalize();
 	}
 
-	void EditorCameraComponent::Friction(float amount, float deltaTime) {
+	void EditorCameraComponent::Friction(
+		const float amount,
+		const float deltaTime
+	) {
 		const float speed = Math::MtoH(mVelocity.Length());
 
 		const float stop = mConsole->GetConVarAs<UnnamedConVar<float>>(
@@ -284,11 +336,11 @@ namespace Unnamed {
 		const float ctrl = speed < stop ? stop : speed;
 		const float drop = ctrl * amount * deltaTime;
 
-		float newspeed = std::max(0.0f, speed - drop);
+		float newSpeed = std::max(0.0f, speed - drop);
 
-		if (newspeed != speed) {
-			newspeed  /= speed;
-			mVelocity *= newspeed;
+		if (newSpeed != speed) {
+			newSpeed  /= speed;
+			mVelocity *= newSpeed;
 		}
 	}
 

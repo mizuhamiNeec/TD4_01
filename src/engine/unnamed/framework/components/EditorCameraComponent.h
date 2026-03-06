@@ -69,9 +69,14 @@ namespace Unnamed {
 		float mFovYDegrees = 90.0f;
 		float mNearZ       = 0.001f;
 		float mFarZ        = 10000.0f;
-		float mMoveSpeed   = 320.0f;
 		float mRotateSpeed = 1.5f;
 		float mAspectRatio = 16.0f / 9.0f;
-		bool  mLookEnabled = false;
+
+		float mMoveSpeed    = 256.0f;
+		float mOldMoveSpeed = 256.0f;
+		float mPopupTimer   = 0.0f;
+
+		bool mLookEnabled = false;
+		bool mOpenPopup   = false;
 	};
 }

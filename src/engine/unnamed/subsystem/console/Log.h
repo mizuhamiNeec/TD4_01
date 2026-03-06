@@ -29,7 +29,9 @@ namespace Unnamed {
 				std::string(channel) +
 				"] " +
 				std::string(message);
-		} else { out = std::string(message); }
+		} else {
+			out = std::string(message);
+		}
 
 		// コンソールの出力
 		std::cout << out << "\n";
@@ -46,10 +48,10 @@ namespace Unnamed {
 		const size_t pos1 = path.find_last_of('/');
 		const size_t pos2 = path.find_last_of('\\');
 		const size_t pos  = pos1 == std::string_view::npos ?
-			                    pos2 :
-			                    pos2 == std::string_view::npos ?
-			                    pos1 :
-			                    std::max(pos1, pos2);
+			                   pos2 :
+			                   pos2 == std::string_view::npos ?
+			                   pos1 :
+			                   std::max(pos1, pos2);
 		return pos == std::string_view::npos ? path : path.substr(pos + 1);
 	}
 

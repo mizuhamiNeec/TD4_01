@@ -72,7 +72,7 @@ namespace UPhysics {
 
 		void ClearStaticMeshes();
 		bool RegisterStaticMesh(
-			uint64_t ownerGuid,
+			uint64_t                             ownerGuid,
 			std::span<const Unnamed::MeshVertex> vertices,
 			std::span<const uint32_t>            indices,
 			const Mat4&                          world
@@ -104,7 +104,9 @@ namespace UPhysics {
 			const float dirLenSq      = dirNormalized.SqrLength();
 			if (dirLenSq > 1e-12f) {
 				dirNormalized /= std::sqrt(dirLenSq);
-			} else { dirNormalized = Vec3::zero; }
+			} else {
+				dirNormalized = Vec3::zero;
+			}
 
 			for (const auto& bvh : bvhSet) {
 				Unnamed::AABB root = cast.ExpandNode(bvh.nodes[0].bounds);
@@ -121,11 +123,11 @@ namespace UPhysics {
 
 			// 本格的に探索する
 			// 一番近い衝突のTOI (TOI: Time of Impact 衝突までの時間[0.0f ～ 1.0f])
-			float    bestTOI           = 1.0f;
-			uint32_t hitTri            = UINT32_MAX; // ヒットした三角形のインデックス
-			uint64_t hitEntityGuid     = 0;
-			Vec3     hitNormal;                    // ヒットした法線
-			uint32_t stack[64];                    // スタックを使ってBVHを探索(深さ優先探索)
+			float    bestTOI       = 1.0f;
+			uint32_t hitTri        = UINT32_MAX; // ヒットした三角形のインデックス
+			uint64_t hitEntityGuid = 0;
+			Vec3     hitNormal; // ヒットした法線
+			uint32_t stack[64]; // スタックを使ってBVHを探索(深さ優先探索)
 
 			// ブロードフェーズで検知されたBVHを探索する
 			for (auto* bvh : filtered) {
@@ -202,7 +204,9 @@ namespace UPhysics {
 				const float nLenSq      = finalNormal.SqrLength();
 				if (nLenSq > 1e-12f) {
 					finalNormal /= std::sqrt(nLenSq);
-				} else { finalNormal = Vec3::zero; }
+				} else {
+					finalNormal = Vec3::zero;
+				}
 				const float hitDistance = bestTOI * length;
 				outHit->t               = hitDistance;
 				outHit->normal          = finalNormal;

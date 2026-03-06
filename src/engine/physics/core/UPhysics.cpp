@@ -154,7 +154,9 @@ namespace UPhysics {
 		const Unnamed::Box& box,
 		Hit*                outHit
 	) const {
-		if (mBVHs.empty() || mTriangles.empty()) { return false; }
+		if (mBVHs.empty() || mTriangles.empty()) {
+			return false;
+		}
 
 		// ブロードフェーズ：ボックスのAABBと各BVHのルートAABBの重なりをチェック
 		std::vector<const RegisteredBVH*> filtered;
@@ -170,10 +172,14 @@ namespace UPhysics {
 			    boxAABB.max.y >= rootBounds.min.y && boxAABB.min.y <= rootBounds
 			    .max.y &&
 			    boxAABB.max.z >= rootBounds.min.z && boxAABB.min.z <= rootBounds
-			    .max.z) { filtered.emplace_back(&bvh); }
+			    .max.z) {
+				filtered.emplace_back(&bvh);
+			}
 		}
 
-		if (filtered.empty()) { return false; }
+		if (filtered.empty()) {
+			return false;
+		}
 
 		// ナローフェーズ：詳細な重なり判定
 		float    minPenetration = FLT_MAX;
@@ -224,12 +230,12 @@ namespace UPhysics {
 								hitTri = triIdx;
 								hitNormal = separationAxis; // already outward
 								hitPos = box.center + hitNormal * (std::min(
-									         {
-										         box.halfSize.x,
-										         box.halfSize.y,
-										         box.halfSize.z
-									         }
-								         ) - penetrationDepth * 0.5f);
+										         {
+											         box.halfSize.x,
+											         box.halfSize.y,
+											         box.halfSize.z
+										         }
+									         ) - penetrationDepth * 0.5f);
 								hitEntityGuid = bvh->ownerGuid;
 							}
 						}
@@ -278,7 +284,9 @@ namespace UPhysics {
 			    boxAABB.max.y >= rootBounds.min.y && boxAABB.min.y <= rootBounds
 			    .max.y &&
 			    boxAABB.max.z >= rootBounds.min.z && boxAABB.min.z <= rootBounds
-			    .max.z) { filtered.emplace_back(&bvh); }
+			    .max.z) {
+				filtered.emplace_back(&bvh);
+			}
 		}
 
 		if (filtered.empty()) {
@@ -329,13 +337,13 @@ namespace UPhysics {
 							tmpHit.t     = 1.0f;
 							tmpHit.depth = penetrationDepth;
 							tmpHit.pos   = box.center + separationAxis * (
-								               std::min(
-									               {
-										               box.halfSize.x,
-										               box.halfSize.y,
-										               box.halfSize.z
-									               }
-								               ) - penetrationDepth * 0.5f);
+								             std::min(
+									             {
+										             box.halfSize.x,
+										             box.halfSize.y,
+										             box.halfSize.z
+									             }
+								             ) - penetrationDepth * 0.5f);
 							tmpHit.normal        = separationAxis;
 							tmpHit.triIndex      = triIdx;
 							tmpHit.hitEntityGuid = bvh->ownerGuid;
@@ -381,14 +389,18 @@ namespace UPhysics {
 			const uint32_t i1 = indices[i + 1];
 			const uint32_t i2 = indices[i + 2];
 			if (i0 >= vertices.size() || i1 >= vertices.size() || i2 >= vertices
-			    .size()) { continue; }
+			    .size()) {
+				continue;
+			}
 			localTriangles.emplace_back(
 				BuildTriangle(vertices[i0], vertices[i1], vertices[i2], world)
 			);
 		}
 		const auto buildTrisEnd = std::chrono::steady_clock::now();
 
-		if (localTriangles.empty()) { return false; }
+		if (localTriangles.empty()) {
+			return false;
+		}
 
 		const auto insertStart = std::chrono::steady_clock::now();
 		mTriangles.insert(
@@ -440,7 +452,9 @@ namespace UPhysics {
 	}
 
 	void Engine::UnregisterStaticMesh(const uint64_t ownerGuid) {
-		if (ownerGuid == 0) { return; }
+		if (ownerGuid == 0) {
+			return;
+		}
 		const auto it = std::find_if(
 			mBVHs.begin(),
 			mBVHs.end(),
@@ -448,7 +462,9 @@ namespace UPhysics {
 				return bvh.ownerGuid == ownerGuid;
 			}
 		);
-		if (it == mBVHs.end()) { return; }
+		if (it == mBVHs.end()) {
+			return;
+		}
 
 		ClearStaticMeshes();
 	}
@@ -459,5 +475,9 @@ namespace UPhysics {
 	void Engine::AddGlobalOffset(
 		std::vector<uint32_t>& indices,
 		const uint32_t         base
-	) { for (uint32_t& index : indices) { index += base; } }
+	) {
+		for (uint32_t& index : indices) {
+			index += base;
+		}
+	}
 }

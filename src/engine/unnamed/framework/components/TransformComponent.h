@@ -61,7 +61,7 @@ namespace Unnamed {
 
 		TransformComponent*              mParent = nullptr;
 		std::vector<TransformComponent*> mChildren;
-		uint64_t                        mPendingParentEntityGuid = 0;
+		uint64_t                         mPendingParentEntityGuid = 0;
 
 		bool mIsDirty = false;
 	};

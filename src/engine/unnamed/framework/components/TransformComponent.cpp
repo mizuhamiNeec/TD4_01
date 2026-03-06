@@ -10,13 +10,17 @@
 #include "engine/unnamed/subsystem/console/Log.h"
 
 namespace Unnamed {
-	Vec3 TransformComponent::Position() const noexcept { return mLocalPos; }
+	Vec3 TransformComponent::Position() const noexcept {
+		return mLocalPos;
+	}
 
 	Quaternion TransformComponent::Rotation() const noexcept {
 		return mLocalRot;
 	}
 
-	Vec3 TransformComponent::Scale() const noexcept { return mLocalScale; }
+	Vec3 TransformComponent::Scale() const noexcept {
+		return mLocalScale;
+	}
 
 	TransformComponent* TransformComponent::Parent() const noexcept {
 		return mParent;
@@ -63,11 +67,15 @@ namespace Unnamed {
 			Mat4 localWorld = mWorldMat;
 			if (mIsDirty) {
 				localWorld = Mat4::Affine(mLocalScale, mLocalRot, mLocalPos);
-				if (mParent) { localWorld = localWorld * mParent->WorldMat(); }
+				if (mParent) {
+					localWorld = localWorld * mParent->WorldMat();
+				}
 			}
 
 			Mat4 newLocal = localWorld;
-			if (parent) { newLocal = localWorld * parent->WorldMat().Inverse(); }
+			if (parent) {
+				newLocal = localWorld * parent->WorldMat().Inverse();
+			}
 			preservedPosition = newLocal.GetTranslate();
 			preservedRotation = newLocal.ToQuaternion();
 			preservedScale    = newLocal.GetScale();
@@ -75,7 +83,9 @@ namespace Unnamed {
 
 		// 新しい親を設定
 		mParent = parent;
-		if (mParent) { mParent->mChildren.emplace_back(this); }
+		if (mParent) {
+			mParent->mChildren.emplace_back(this);
+		}
 		if (preserveWorld) {
 			mLocalPos   = preservedPosition;
 			mLocalRot   = preservedRotation;
@@ -87,22 +97,29 @@ namespace Unnamed {
 	}
 
 	void TransformComponent::ResolveDeferredParent(const UScene& scene) {
-		if (mPendingParentEntityGuid == 0) { return; }
-		const UEntity* parentEntity = scene.FindEntity(mPendingParentEntityGuid);
+		if (mPendingParentEntityGuid == 0) {
+			return;
+		}
+		const UEntity* parentEntity = scene.FindEntity(
+			mPendingParentEntityGuid
+		);
 		if (!parentEntity) {
 			mPendingParentEntityGuid = 0;
 			return;
 		}
-		auto* parentTransform = const_cast<UEntity*>(parentEntity)->GetComponent<
+		auto* parentTransform = const_cast<UEntity*>(parentEntity)->GetComponent
+		<
 			TransformComponent>();
 		SetParent(parentTransform, false);
 		mPendingParentEntityGuid = 0;
 	}
 
 	void TransformComponent::OnDetached() {
-		auto children = mChildren;
+		const auto children = mChildren;
 		for (TransformComponent* child : children) {
-			if (!child) { continue; }
+			if (!child) {
+				continue;
+			}
 			child->SetParent(nullptr);
 		}
 		if (mParent) {
@@ -159,7 +176,9 @@ namespace Unnamed {
 
 		writer.Key("parentEntityGuid");
 		writer.Write(
-			mParent && mParent->GetOwner() ? mParent->GetOwner()->GetGuid() : 0ull
+			mParent && mParent->GetOwner() ?
+				mParent->GetOwner()->GetGuid() :
+				0ull
 		);
 	}
 
@@ -167,7 +186,9 @@ namespace Unnamed {
 		mIsDirty = true;
 
 		// 子も再計算
-		for (auto* child : mChildren) { child->MarkDirty(); }
+		for (auto* child : mChildren) {
+			child->MarkDirty();
+		}
 	}
 
 	namespace {
@@ -180,7 +201,9 @@ namespace Unnamed {
 			const JsonReader& r, const char* key, const Vec3& fallback
 		) {
 			const JsonReader a = r[key];
-			if (!a.Valid() || a.Size() < 3) { return fallback; }
+			if (!a.Valid() || a.Size() < 3) {
+				return fallback;
+			}
 			return {a[0].GetFloat(), a[1].GetFloat(), a[2].GetFloat()};
 		}
 
@@ -193,7 +216,9 @@ namespace Unnamed {
 			const JsonReader& r, const char* key, const Quaternion& fallback
 		) {
 			const JsonReader a = r[key];
-			if (!a.Valid() || a.Size() < 4) { return fallback; }
+			if (!a.Valid() || a.Size() < 4) {
+				return fallback;
+			}
 			return {
 				a[0].GetFloat(), a[1].GetFloat(),
 				a[2].GetFloat(), a[3].GetFloat()
@@ -212,7 +237,9 @@ namespace Unnamed {
 			ImGuiWidgets::DragVec3(
 				"Position", localPos, Vec3::zero, 0.1f, "%.3f"
 			)
-		) { SetPosition(localPos); }
+		) {
+			SetPosition(localPos);
+		}
 
 		// Rotation 編集
 		Vec3 eulerDegrees = localRot.ToEulerDegrees();
@@ -231,14 +258,16 @@ namespace Unnamed {
 			ImGuiWidgets::DragVec3(
 				"Scale", localScale, Vec3::one, 0.1f, "%.3f"
 			)
-		) { SetScale(localScale); }
+		) {
+			SetScale(localScale);
+		}
 	}
 #endif
 
 	void TransformComponent::Deserialize(const JsonReader& reader) {
-		mLocalPos   = ReadVec3(reader, "position", mLocalPos);
-		mLocalRot   = ReadQuat(reader, "rotation", mLocalRot);
-		mLocalScale = ReadVec3(reader, "scale", mLocalScale);
+		mLocalPos                = ReadVec3(reader, "position", mLocalPos);
+		mLocalRot                = ReadQuat(reader, "rotation", mLocalRot);
+		mLocalScale              = ReadVec3(reader, "scale", mLocalScale);
 		mPendingParentEntityGuid =
 			reader.ReadUint64("parentEntityGuid").value_or(0ull);
 

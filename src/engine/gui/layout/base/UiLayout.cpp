@@ -11,14 +11,18 @@ namespace Unnamed::Gui {
 		MarkDirty(DIRTY_FLAGS::LAYOUT | DIRTY_FLAGS::DRAW);
 	}
 
-	const LayoutPadding& UiLayout::GetPadding() const { return mPadding; }
+	const LayoutPadding& UiLayout::GetPadding() const {
+		return mPadding;
+	}
 
 	void UiLayout::SetSpacing(const float spacing) {
 		mSpacing = spacing;
 		MarkDirty(DIRTY_FLAGS::LAYOUT | DIRTY_FLAGS::DRAW);
 	}
 
-	float UiLayout::GetSpacing() const { return mSpacing; }
+	float UiLayout::GetSpacing() const {
+		return mSpacing;
+	}
 
 	void UiLayout::OnSerialize(JsonWriter& writer) const {
 		writer.Key("padding");
@@ -32,6 +36,8 @@ namespace Unnamed::Gui {
 		if (reader.Has("padding")) {
 			SetPadding(ReadPadding(reader["padding"].GetArray()));
 		}
-		if (reader.Has("spacing")) { SetSpacing(reader["spacing"].GetFloat()); }
+		if (reader.Has("spacing")) {
+			SetSpacing(reader["spacing"].GetFloat());
+		}
 	}
 }

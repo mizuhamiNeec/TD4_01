@@ -29,8 +29,13 @@ namespace Unnamed {
 		void Stop();
 
 		// 状態
-		[[nodiscard]] bool          IsRunning() const { return mRunning; }
-		[[nodiscard]] unsigned long GetExitCode() const { return mExitCode; }
+		[[nodiscard]] bool IsRunning() const {
+			return mRunning;
+		}
+
+		[[nodiscard]] unsigned long GetExitCode() const {
+			return mExitCode;
+		}
 
 		[[nodiscard]] unsigned long GetWin32Error() const {
 			return mWin32Error;

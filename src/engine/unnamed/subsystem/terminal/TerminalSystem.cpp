@@ -12,12 +12,18 @@ namespace Unnamed {
 		console
 	) {}
 
-	TerminalSystem::~TerminalSystem() { Stop(); }
+	TerminalSystem::~TerminalSystem() {
+		Stop();
+	}
 
-	bool TerminalSystem::Init() { return true; }
+	bool TerminalSystem::Init() {
+		return true;
+	}
 
 	void TerminalSystem::Update(float) {
-		if (!mRunning) { return; }
+		if (!mRunning) {
+			return;
+		}
 
 		std::string chunk;
 		while (WindowsUtils::PollProcessOutput(mHandle, chunk)) {
@@ -32,30 +38,8 @@ namespace Unnamed {
 		}
 	}
 
-	void TerminalSystem::Shutdown() { Stop(); }
-
-	void TerminalSystem::Stop() {
-		if (mRunning) {
-			WindowsUtils::CloseProcessHandle(mHandle);
-			mRunning = false;
-		}
-	}
-
-	void TerminalSystem::ClearOutput() { mOutputUtf8.clear(); }
-
-	bool TerminalSystem::StartProcess(
-		const std::wstring& app, const std::wstring& args
-	) {
-		// 実行中なら停止して再実行
+	void TerminalSystem::Shutdown() {
 		Stop();
-
-		mOutputUtf8.clear();
-		mExitCode   = 0;
-		mWin32Error = 0;
-
-		mRunning = WindowsUtils::StartProcessCapture(app, args, mHandle);
-		if (!mRunning) { mWin32Error = GetLastError(); }
-		return mRunning;
 	}
 
 	bool TerminalSystem::StartCmd(const std::string& commandLine) {
@@ -78,5 +62,33 @@ namespace Unnamed {
 			psArgs += argsW;
 		}
 		return StartProcess(L"powershell.exe", psArgs);
+	}
+
+	void TerminalSystem::Stop() {
+		if (mRunning) {
+			WindowsUtils::CloseProcessHandle(mHandle);
+			mRunning = false;
+		}
+	}
+
+	void TerminalSystem::ClearOutput() {
+		mOutputUtf8.clear();
+	}
+
+	bool TerminalSystem::StartProcess(
+		const std::wstring& app, const std::wstring& args
+	) {
+		// 実行中なら停止して再実行
+		Stop();
+
+		mOutputUtf8.clear();
+		mExitCode   = 0;
+		mWin32Error = 0;
+
+		mRunning = WindowsUtils::StartProcessCapture(app, args, mHandle);
+		if (!mRunning) {
+			mWin32Error = GetLastError();
+		}
+		return mRunning;
 	}
 }

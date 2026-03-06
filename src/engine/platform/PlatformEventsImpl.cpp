@@ -7,7 +7,9 @@ namespace Unnamed {
 	/// @param listener 追加するリスナーのポインタ
 	/// @return 追加に成功した場合はtrue、失敗した場合はfalse
 	bool PlatformEventsImpl::AddListener(IWin32MsgListener* listener) {
-		if (!listener) { return false; }
+		if (!listener) {
+			return false;
+		}
 		mListeners.push_back(listener);
 		return true;
 	}

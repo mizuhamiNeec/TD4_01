@@ -20,7 +20,9 @@ namespace Unnamed {
 		/// @param hWnd ウィンドウハンドル
 		/// @return アクティブであればtrue
 		bool IsWindowActuallyActive(const HWND hWnd) {
-			if (!hWnd) { return false; }
+			if (!hWnd) {
+				return false;
+			}
 			const HWND foreground = GetForegroundWindow();
 			return foreground == hWnd;
 		}
@@ -44,16 +46,22 @@ namespace Unnamed {
 			"bind",
 			[&](const std::vector<std::string>& args) {
 				// bind <key> <command...>
-				if (args.size() < 2) { return false; }
+				if (args.size() < 2) {
+					return false;
+				}
 
 				const auto key = KeyNameTable::FromString(args[0]);
-				if (!key.has_value()) { return false; }
+				if (!key.has_value()) {
+					return false;
+				}
 
 				// コマンド部分を結合
 				std::string combined;
 				for (size_t i = 1; i < args.size(); ++i) {
 					combined += args[i];
-					if (i + 1 < args.size()) { combined += " "; }
+					if (i + 1 < args.size()) {
+						combined += " ";
+					}
 				}
 
 				BindCommand(
@@ -72,9 +80,13 @@ namespace Unnamed {
 			"unbind",
 			[&](const std::vector<std::string>& args) {
 				// unbind <key>
-				if (args.empty()) { return false; }
+				if (args.empty()) {
+					return false;
+				}
 				const auto key = KeyNameTable::FromString(args[0]);
-				if (!key.has_value()) { return false; }
+				if (!key.has_value()) {
+					return false;
+				}
 				UnbindCommand({.device = key->device, .code = key->code});
 				return true;
 			},
@@ -98,7 +110,9 @@ namespace Unnamed {
 				mMouseCursorLockOverride     = true;
 				mMouseCursorLockOverrideMode = bNewState;
 			}
-			if (!bNewState) { ClearMouseCursorLockAnchor(); }
+			if (!bNewState) {
+				ClearMouseCursorLockAnchor();
+			}
 			DevMsg(
 				kChannel,
 				"Cursor lock state changed: {}",
@@ -124,7 +138,9 @@ namespace Unnamed {
 
 	/// @brief 更新
 	void UInputSystem::Update(float) {
-		for (const auto& inputDevice : mDevices) { inputDevice->Update(); }
+		for (const auto& inputDevice : mDevices) {
+			inputDevice->Update();
+		}
 
 		// アクション状態をリセット
 		for (auto& state : mActionStates | std::views::values) {
@@ -323,10 +339,10 @@ namespace Unnamed {
 	void UInputSystem::CheckMouseCursorLockAndVisibility(
 		const HWND hWnd
 	) const {
-		static int  cursorCount       = 0;
+		static int  cursorCount        = 0;
 		static bool sLastCursorVisible = true;
 
-		const bool bActive = IsWindowActuallyActive(hWnd);
+		const bool bActive        = IsWindowActuallyActive(hWnd);
 		const bool bCursorLocked  = ResolveMouseCursorLockState();
 		const bool bCursorVisible = ResolveMouseCursorVisibleState();
 
@@ -334,7 +350,7 @@ namespace Unnamed {
 		// カーソルは必ず「表示」に寄せる。
 		if (!bActive && !bCursorVisible) {
 			// const 関数のため、表示状態そのものは変えずに OS 側だけ可視へ収束させる
-			sLastCursorVisible = true;
+			sLastCursorVisible           = true;
 			constexpr int kMaxIterations = 32;
 			int           it             = 0;
 			while (cursorCount < 0 && it++ < kMaxIterations) {
@@ -345,7 +361,9 @@ namespace Unnamed {
 		// マウスカーソルのロックと表示状態の更新
 		if (bCursorLocked) {
 			// 非アクティブ時は必ずロック解除
-			if (!bActive) { ClipCursor(nullptr); } else {
+			if (!bActive) {
+				ClipCursor(nullptr);
+			} else {
 				const HWND anchorHwnd = mMouseLockAnchor.valid &&
 				                        mMouseLockAnchor.hwnd != nullptr ?
 					                        mMouseLockAnchor.hwnd :
@@ -410,7 +428,54 @@ namespace Unnamed {
 	/// @param device 登録する入力デバイスの共有ポインタ
 	void UInputSystem::RegisterDevice(
 		const std::shared_ptr<BaseInputDevice>& device
-	) { mDevices.emplace_back(device); }
+	) {
+		mDevices.emplace_back(device);
+	}
+
+	void UInputSystem::BindCommand(
+		const InputKey& key, const std::string& command
+	) {
+		auto& commands = mCommandBinds[key];
+		if (!std::ranges::contains(commands, command)) {
+			commands.emplace_back(command);
+		}
+		DevMsg(
+			kChannel,
+			"コマンドをバインドしました: key = {}, command = '{}'",
+			KeyNameTable::ToString(key),
+			command
+		);
+	}
+
+	void UInputSystem::UnbindCommand(const InputKey& key) {
+		mCommandBinds.erase(key);
+		DevMsg(
+			kChannel,
+			"コマンドのバインドを解除しました: key = {}",
+			KeyNameTable::ToString(key)
+		);
+	}
+
+	void UInputSystem::UnbindAllCommands() {
+		mCommandBinds.clear();
+		DevMsg(kChannel, "すべてのコマンドバインドを解除しました。");
+	}
+
+	std::string UInputSystem::GetBoundCommand(const InputKey& key) const {
+		const auto it = mCommandBinds.find(key);
+		if (it == mCommandBinds.end() || it->second.empty()) {
+			return {};
+		}
+
+		std::string combined;
+		for (size_t i = 0; i < it->second.size(); ++i) {
+			combined += it->second[i];
+			if (i + 1 < it->second.size()) {
+				combined += "; ";
+			}
+		}
+		return combined;
+	}
 
 	/// @brief アクションをキーにバインドします
 	/// @param action アクション名
@@ -517,7 +582,9 @@ namespace Unnamed {
 	/// @return 押された瞬間に true
 	bool UInputSystem::IsPressed(const std::string& action) const {
 		const auto it = mActionStates.find(action);
-		if (it == mActionStates.end()) { return false; }
+		if (it == mActionStates.end()) {
+			return false;
+		}
 		return it->second.bIsPressed;
 	}
 
@@ -526,7 +593,9 @@ namespace Unnamed {
 	/// @return 押されている間 true
 	bool UInputSystem::IsHeld(const std::string& action) const {
 		const auto it = mActionStates.find(action);
-		if (it == mActionStates.end()) { return false; }
+		if (it == mActionStates.end()) {
+			return false;
+		}
 		return it->second.bIsHeld;
 	}
 
@@ -535,7 +604,9 @@ namespace Unnamed {
 	/// @return 離された瞬間に true
 	bool UInputSystem::IsReleased(const std::string& action) const {
 		const auto it = mActionStates.find(action);
-		if (it == mActionStates.end()) { return false; }
+		if (it == mActionStates.end()) {
+			return false;
+		}
 		return it->second.bIsReleased;
 	}
 
@@ -544,7 +615,9 @@ namespace Unnamed {
 	/// @return 軸の値
 	float UInputSystem::Axis1D(const std::string& axis) const {
 		const auto it = mAxisStates1D.find(axis);
-		if (it == mAxisStates1D.end()) { return 0.0f; }
+		if (it == mAxisStates1D.end()) {
+			return 0.0f;
+		}
 		return it != mAxisStates1D.end() ? it->second.value : 0.0f;
 	}
 
@@ -553,7 +626,9 @@ namespace Unnamed {
 	/// @return 軸の値
 	Vec2 UInputSystem::Axis2D(const std::string& axis) const {
 		const auto it = mAxisStates2D.find(axis);
-		if (it == mAxisStates2D.end()) { return Vec2::zero; }
+		if (it == mAxisStates2D.end()) {
+			return Vec2::zero;
+		}
 		return it != mAxisStates2D.end() ? it->second.value : Vec2::zero;
 	}
 
@@ -563,7 +638,9 @@ namespace Unnamed {
 
 	void UInputSystem::SetMouseCursorLocked(const bool& locked) {
 		mMouseCursorLockRequested = locked;
-		if (!ResolveMouseCursorLockState()) { ClearMouseCursorLockAnchor(); }
+		if (!ResolveMouseCursorLockState()) {
+			ClearMouseCursorLockAnchor();
+		}
 	}
 
 	bool UInputSystem::IsMouseCursorVisible() const {
@@ -582,7 +659,9 @@ namespace Unnamed {
 		mMouseLockAnchor.valid     = hwnd != nullptr;
 	}
 
-	void UInputSystem::ClearMouseCursorLockAnchor() { mMouseLockAnchor = {}; }
+	void UInputSystem::ClearMouseCursorLockAnchor() {
+		mMouseLockAnchor = {};
+	}
 
 	bool UInputSystem::ResolveMouseCursorLockState() const {
 		return mMouseCursorLockOverride ?
@@ -618,7 +697,9 @@ namespace Unnamed {
 			auto& [bIsPressed, bIsHeld, bIsReleased] :
 			mActionStates | std::views::values
 		) {
-			if (bIsHeld) { bIsReleased = true; }
+			if (bIsHeld) {
+				bIsReleased = true;
+			}
 
 			bIsPressed = false;
 			bIsHeld    = false;
@@ -633,7 +714,9 @@ namespace Unnamed {
 		}
 
 		// デバイス状態のリセット
-		for (auto& device : mDevices) { device.get()->ResetStates(); }
+		for (auto& device : mDevices) {
+			device.get()->ResetStates();
+		}
 
 		mMouseLockAnchor.valid = false;
 	}
@@ -699,7 +782,9 @@ namespace Unnamed {
 				name,
 				sizeof(name)
 			)
-		) { return name; }
+		) {
+			return name;
+		}
 		Warning(
 			kChannel,
 			"キーの名前を取得できませんでした: {}",
@@ -708,54 +793,15 @@ namespace Unnamed {
 		return "Unknown";
 	}
 
-	void UInputSystem::BindCommand(
-		const InputKey& key, const std::string& command
-	) {
-		auto& commands = mCommandBinds[key];
-		if (!std::ranges::contains(commands, command)) {
-			commands.emplace_back(command);
-		}
-		DevMsg(
-			kChannel,
-			"コマンドをバインドしました: key = {}, command = '{}'",
-			KeyNameTable::ToString(key),
-			command
-		);
-	}
-
-	void UInputSystem::UnbindCommand(const InputKey& key) {
-		mCommandBinds.erase(key);
-		DevMsg(
-			kChannel,
-			"コマンドのバインドを解除しました: key = {}",
-			KeyNameTable::ToString(key)
-		);
-	}
-
-	void UInputSystem::UnbindAllCommands() {
-		mCommandBinds.clear();
-		DevMsg(kChannel, "すべてのコマンドバインドを解除しました。");
-	}
-
-	std::string UInputSystem::GetBoundCommand(const InputKey& key) const {
-		const auto it = mCommandBinds.find(key);
-		if (it == mCommandBinds.end() || it->second.empty()) { return {}; }
-
-		std::string combined;
-		for (size_t i = 0; i < it->second.size(); ++i) {
-			combined += it->second[i];
-			if (i + 1 < it->second.size()) { combined += "; "; }
-		}
-		return combined;
-	}
-
 	namespace {
 		/// @brief 押下コマンドから離脱コマンドを生成します
 		/// @param cmd 押下コマンド文字列
 		/// @return 離脱コマンド文字列（押下コマンドでない場合は空文字列）
 		std::string MakeReleaseCommandFromPress(const std::string& cmd) {
 			const std::string trimmed = StrUtil::TrimSpaces(cmd);
-			if (trimmed.empty() || trimmed[0] != '+') { return {}; }
+			if (trimmed.empty() || trimmed[0] != '+') {
+				return {};
+			}
 
 			const size_t firstSpace = trimmed.find(' ');
 			const size_t len        =
@@ -773,7 +819,9 @@ namespace Unnamed {
 
 	void UInputSystem::ProcessCommandBinds() {
 		auto* console = ServiceLocator::Get<ConsoleSystem>();
-		if (!console) { return; }
+		if (!console) {
+			return;
+		}
 
 		for (const auto& [key, commands] : mCommandBinds) {
 			const bool bIsDown  = GetHardwareKeyState(key);

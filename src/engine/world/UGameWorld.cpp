@@ -24,20 +24,28 @@ namespace Unnamed {
 		);
 	}
 
-	void UGameWorld::Shutdown() { UWorld::Shutdown(); }
+	void UGameWorld::Shutdown() {
+		UWorld::Shutdown();
+	}
 
-	void UGameWorld::Tick(const float deltaTime) { UWorld::Tick(deltaTime); }
+	void UGameWorld::Tick(const float deltaTime) {
+		UWorld::Tick(deltaTime);
+	}
 
 	bool UGameWorld::LoadSceneFromFile(const char* path) {
 		const auto start = std::chrono::steady_clock::now();
-		const bool ok    = [&]() {
-			if (!path || std::string_view(path).empty()) { return false; }
+		const bool ok    = [&] {
+			if (!path || std::string_view(path).empty()) {
+				return false;
+			}
 
 			auto       newScene = std::make_unique<UScene>();
 			const bool loadOk   = USceneSerializer::LoadFromFile(
 				*newScene, path, mGuidGenerator
 			);
-			if (!loadOk) { return false; }
+			if (!loadOk) {
+				return false;
+			}
 
 			const auto beforeUnload = std::chrono::steady_clock::now();
 			UnloadScene();
@@ -75,14 +83,16 @@ namespace Unnamed {
 				std::chrono::duration_cast<std::chrono::milliseconds>(
 					end - start
 				).count(),
-				(path ? std::string(path) : std::string("<null>"))
+				path ? std::string(path) : std::string("<null>")
 			);
 		}
 		return ok;
 	}
 
 	void UGameWorld::UnloadScene() {
-		if (!mScene) { return; }
+		if (!mScene) {
+			return;
+		}
 		UWorld::UnloadScene();
 	}
 

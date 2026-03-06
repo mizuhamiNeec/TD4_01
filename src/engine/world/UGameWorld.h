@@ -22,7 +22,5 @@ namespace Unnamed {
 		) override;
 
 		void SetScene(std::unique_ptr<UScene> scene) override;
-
-	private:
 	};
 }

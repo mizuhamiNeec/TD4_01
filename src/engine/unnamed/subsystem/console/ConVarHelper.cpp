@@ -22,7 +22,9 @@ namespace Unnamed {
 	static constexpr float    kCellHeight    = 24.0f; // グリッドセルの高さ
 
 	void ConVarHelper::Show(bool& showConVarHelper) {
-		if (!showConVarHelper) { return; }
+		if (!showConVarHelper) {
+			return;
+		}
 
 		ImGui::SetNextWindowSizeConstraints(
 			{172.0f, 0.0f},
@@ -45,7 +47,9 @@ namespace Unnamed {
 			ShowGridSizeControls();
 			ShowGrid();
 
-			if (mShowElementPopup) { ShowElementEditPopup(); }
+			if (mShowElementPopup) {
+				ShowElementEditPopup();
+			}
 		}
 		ImGui::End();
 	}
@@ -61,11 +65,15 @@ namespace Unnamed {
 			if (ImGui::BeginMenu("File")) {
 				if (ImGuiWidgets::MenuItemWithIcon(
 					"Import Page", kIconDownload
-				)) { ImportPage(); }
+				)) {
+					ImportPage();
+				}
 
 				if (ImGuiWidgets::MenuItemWithIcon(
 					"Export Page", kIconUpload
-				)) { ExportPage(); }
+				)) {
+					ExportPage();
+				}
 				ImGui::EndMenu();
 			}
 
@@ -98,7 +106,9 @@ namespace Unnamed {
 					if (ImGui::Selectable(mPages[n].name.c_str(), isSelected)) {
 						mSelectedPageIndex = n;
 					}
-					if (isSelected) { ImGui::SetItemDefaultFocus(); }
+					if (isSelected) {
+						ImGui::SetItemDefaultFocus();
+					}
 				}
 
 				ImGui::EndCombo();
@@ -190,12 +200,16 @@ namespace Unnamed {
 	/// @brief Vec4 を ImVec4 に変換します
 	/// @param v 変換する Vec4
 	/// @return 変換後の ImVec4
-	static ImVec4 ToImVec4Local(const Vec4& v) { return {v.x, v.y, v.z, v.w}; }
+	static ImVec4 ToImVec4Local(const Vec4& v) {
+		return {v.x, v.y, v.z, v.w};
+	}
 
 	/// @brief ImVec4 を Vec4 に変換します
 	/// @param v 変換する ImVec4
 	/// @return 変換後の Vec4
-	static Vec4 ToVec4Local(const ImVec4& v) { return {v.x, v.y, v.z, v.w}; }
+	static Vec4 ToVec4Local(const ImVec4& v) {
+		return {v.x, v.y, v.z, v.w};
+	}
 
 	void ConVarHelper::ShowGrid() {
 		const auto& grid = mPages[mSelectedPageIndex].grid;
@@ -204,7 +218,9 @@ namespace Unnamed {
 		const size_t expectedSize =
 			static_cast<size_t>(grid.width) * grid.height;
 		auto& elements = mPages[mSelectedPageIndex].elements;
-		if (elements.size() != expectedSize) { elements.resize(expectedSize); }
+		if (elements.size() != expectedSize) {
+			elements.resize(expectedSize);
+		}
 
 		if (
 			ImGui::BeginTable(
@@ -320,7 +336,9 @@ namespace Unnamed {
 								}
 								if (ImGuiWidgets::MenuItemWithIcon(
 									"Delete", kIconClose
-								)) { element.element = Empty{}; }
+								)) {
+									element.element = Empty{};
+								}
 								ImGui::Spacing();
 								ImGui::EndPopup();
 							}
@@ -370,7 +388,9 @@ namespace Unnamed {
 								}
 								if (ImGuiWidgets::MenuItemWithIcon(
 									"Delete", kIconClose
-								)) { element.element = Empty{}; }
+								)) {
+									element.element = Empty{};
+								}
 								ImGui::Spacing();
 								ImGui::EndPopup();
 							}
@@ -413,7 +433,9 @@ namespace Unnamed {
 								}
 								if (ImGuiWidgets::MenuItemWithIcon(
 									"Delete", kIconClose
-								)) { element.element = Empty{}; }
+								)) {
+									element.element = Empty{};
+								}
 								ImGui::Spacing();
 								ImGui::EndPopup();
 							}
@@ -450,7 +472,9 @@ namespace Unnamed {
 		const bool changed = ImGui::InputText(
 			label, buf.data(), buf.size(), flags
 		);
-		if (changed) { value = buf.data(); }
+		if (changed) {
+			value = buf.data();
+		}
 		return changed;
 	}
 
@@ -658,10 +682,14 @@ namespace Unnamed {
 		ImVec4 fg = ToImVec4Local(elem.fgColor);
 		if (ImGui::ColorEdit4(
 			"BG##LabelBG", &bg.x, ImGuiColorEditFlags_NoInputs
-		)) { elem.bgColor = ToVec4Local(bg); }
+		)) {
+			elem.bgColor = ToVec4Local(bg);
+		}
 		if (ImGui::ColorEdit4(
 			"FG##LabelFG", &fg.x, ImGuiColorEditFlags_NoInputs
-		)) { elem.fgColor = ToVec4Local(fg); }
+		)) {
+			elem.fgColor = ToVec4Local(fg);
+		}
 
 		// 説明はフラグ無し
 		InputTextStdString(
@@ -685,10 +713,14 @@ namespace Unnamed {
 		ImVec4 fg = ToImVec4Local(elem.fgColor);
 		if (ImGui::ColorEdit4(
 			"BG##BtnBG", &bg.x, ImGuiColorEditFlags_NoInputs
-		)) { elem.bgColor = ToVec4Local(bg); }
+		)) {
+			elem.bgColor = ToVec4Local(bg);
+		}
 		if (ImGui::ColorEdit4(
 			"FG##BtnFG", &fg.x, ImGuiColorEditFlags_NoInputs
-		)) { elem.fgColor = ToVec4Local(fg); }
+		)) {
+			elem.fgColor = ToVec4Local(fg);
+		}
 
 		// 説明
 		InputTextStdString(
@@ -717,10 +749,14 @@ namespace Unnamed {
 		ImVec4 fg = ToImVec4Local(elem.fgColor);
 		if (ImGui::ColorEdit4(
 			"BG##ExeBG", &bg.x, ImGuiColorEditFlags_NoInputs
-		)) { elem.bgColor = ToVec4Local(bg); }
+		)) {
+			elem.bgColor = ToVec4Local(bg);
+		}
 		if (ImGui::ColorEdit4(
 			"FG##ExeFG", &fg.x, ImGuiColorEditFlags_NoInputs
-		)) { elem.fgColor = ToVec4Local(fg); }
+		)) {
+			elem.fgColor = ToVec4Local(fg);
+		}
 
 		(void)InputTextStdString(
 			"Description##ExeDesc", elem.description,

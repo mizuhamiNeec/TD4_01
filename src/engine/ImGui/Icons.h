@@ -43,6 +43,7 @@ constexpr uint32_t kIconPlay  = 0xE037; // プレイ
 constexpr uint32_t kIconPause = 0xE034; // ポーズ
 constexpr uint32_t kIconStop  = 0xE047; // ストップ
 constexpr uint32_t kIconTimer = 0xE425; // タイマー
+constexpr uint32_t kIconSpeed = 0xE9E4; // スピード
 
 // ---- Scene / Data types -----------------------------------------------------
 constexpr uint32_t kIconEntity = 0xEA24; // エンティティ

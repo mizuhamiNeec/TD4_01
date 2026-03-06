@@ -49,7 +49,9 @@ namespace Unnamed {
 				line.empty() ||
 				line[0] == ';' ||
 				line[0] == '/' && line.size() > 1 && line[1] == '/'
-			) { continue; }
+			) {
+				continue;
+			}
 
 			ServiceLocator::Get<ConsoleSystem>()->ExecuteCommand(line);
 		}

@@ -53,16 +53,22 @@ namespace UPhysics {
 		const Vec3      p        = ray.dir.Cross(e2);
 		const float     det      = e1.Dot(p);
 
-		if (fabs(det) < kEpsilon) { return false; }
+		if (fabs(det) < kEpsilon) {
+			return false;
+		}
 		const float invDet = 1.0f / det;
 
 		const Vec3  s = ray.origin - triangle.v0;
 		const float u = s.Dot(p) * invDet;
-		if (u < 0.0f || u > 1.0f) { return false; }
+		if (u < 0.0f || u > 1.0f) {
+			return false;
+		}
 
 		const Vec3  q = s.Cross(e1);
 		const float v = ray.dir.Dot(q) * invDet;
-		if (v < 0.0f || u + v > 1.0f) { return false; }
+		if (v < 0.0f || u + v > 1.0f) {
+			return false;
+		}
 
 		const float t = e2.Dot(q) * invDet;
 		if (t < ray.tMin || t > tHit) {
@@ -206,7 +212,9 @@ namespace UPhysics {
 
 		/* 2-1 三角形法線（最優先軸） */
 		Vec3 triNormal = (tri.v1 - tri.v0).Cross(tri.v2 - tri.v0).Normalized();
-		if (triNormal.Dot(triNormal) > 1e-8f) { axes[axisCount++] = triNormal; }
+		if (triNormal.Dot(triNormal) > 1e-8f) {
+			axes[axisCount++] = triNormal;
+		}
 
 		/* 2-2 球と三角形のVoronoi領域に基づく軸選択 */
 		Vec3 edges[3] = {tri.v1 - tri.v0, tri.v2 - tri.v1, tri.v0 - tri.v2};
@@ -225,7 +233,9 @@ namespace UPhysics {
 
 			if (inVertexRegion) {
 				float len = toVert.Length();
-				if (len > 1e-8f) { axes[axisCount++] = toVert / len; }
+				if (len > 1e-8f) {
+					axes[axisCount++] = toVert / len;
+				}
 			}
 		}
 
@@ -244,7 +254,9 @@ namespace UPhysics {
 				Vec3  toClosest    = C0 - closestPoint;
 				float len          = toClosest.Length();
 
-				if (len > 1e-8f) { axes[axisCount++] = toClosest / len; }
+				if (len > 1e-8f) {
+					axes[axisCount++] = toClosest / len;
+				}
 			}
 		}
 
@@ -325,7 +337,9 @@ namespace UPhysics {
 		Vec3 toTriCenter = triCenter - centerAtTOI;
 
 		// 法線が三角形の表面から球体中心を向くように調整
-		if (bestNrm.Dot(toTriCenter) > 0) { bestNrm = -bestNrm; }
+		if (bestNrm.Dot(toTriCenter) > 0) {
+			bestNrm = -bestNrm;
+		}
 
 		// 三角形法線との一貫性チェック（面接触時の安定性向上）
 		float normalAlignment = bestNrm.Dot(triNormal);

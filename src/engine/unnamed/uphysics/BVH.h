@@ -15,7 +15,7 @@ struct RegisteredBVH {
 	std::vector<UPhysics::FlatNode> nodes;
 	std::vector<uint32_t>           triIndices;
 
-	size_t   triStart      = 0;
-	size_t   triCount      = 0;
-	uint64_t ownerGuid     = 0;
+	size_t   triStart  = 0;
+	size_t   triCount  = 0;
+	uint64_t ownerGuid = 0;
 };

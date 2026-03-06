@@ -28,7 +28,9 @@ namespace Unnamed {
 		FileStamp ReadCurrentFileStamp(const std::string& path) {
 			FileStamp       stamp = {};
 			std::error_code ec;
-			if (!std::filesystem::exists(path, ec)) { return stamp; }
+			if (!std::filesystem::exists(path, ec)) {
+				return stamp;
+			}
 
 			const auto lastWrite = std::filesystem::last_write_time(path, ec);
 			if (!ec) {
@@ -46,7 +48,9 @@ namespace Unnamed {
 			if (
 				completed.sizeInBytes != 0 &&
 				completed.lastWriteTicks != 0
-			) { return completed; }
+			) {
+				return completed;
+			}
 
 			const FileStamp current = ReadCurrentFileStamp(path);
 			if (completed.sizeInBytes == 0) {
@@ -76,15 +80,15 @@ namespace Unnamed {
 		const std::optional<ASSET_TYPE> typeOpt,
 		const AssetLoadPolicy           policy
 	) {
-		UProfiler*       profiler = ServiceLocator::Get<UProfiler>();
-		std::scoped_lock lock(mMutex);
+		UProfiler*        profiler = ServiceLocator::Get<UProfiler>();
+		std::scoped_lock  lock(mMutex);
 		const std::string normalizedPath = StrUtil::NormalizePath(path);
 
 		if (policy == AssetLoadPolicy::UseCachedIfLoaded) {
 			const auto cachedIt = mPathToID.find(normalizedPath);
 			if (cachedIt != mPathToID.end()) {
 				const AssetID cachedId = cachedIt->second;
-				Node&         cached   = mNodes[cachedId];
+				const Node&   cached   = mNodes[cachedId];
 				if (
 					cached.meta.loaded &&
 					(!typeOpt.has_value() || cached.meta.type == *typeOpt ||
@@ -97,11 +101,13 @@ namespace Unnamed {
 				}
 			}
 		}
-		auto             deduced = ASSET_TYPE::UNKNOWN;
+		auto deduced = ASSET_TYPE::UNKNOWN;
 		if (!typeOpt.has_value()) {
 			// 型がわかんねぇので、ローダに読めるか確認させる
 			for (const auto& l : mLoaders) {
-				if (l->CanLoad(normalizedPath, &deduced)) { break; }
+				if (l->CanLoad(normalizedPath, &deduced)) {
+					break;
+				}
 			}
 
 			Warning(
@@ -109,7 +115,9 @@ namespace Unnamed {
 				"型をチェックしました: {}. 型を知っている場合はなるべく指定してください。",
 				ToString(deduced)
 			);
-		} else { deduced = *typeOpt; }
+		} else {
+			deduced = *typeOpt;
+		}
 
 		// 不明の場合はスロットだけ作成
 		const AssetID id = FindOrCreateSlotByPath(normalizedPath, deduced);
@@ -120,15 +128,23 @@ namespace Unnamed {
 			(!typeOpt.has_value() || n.meta.type == *typeOpt ||
 			 n.meta.type == ASSET_TYPE::UNKNOWN)
 		) {
-			if (profiler) { profiler->AddSample("Asset.Load.CacheHit", 1.0f); }
+			if (profiler) {
+				profiler->AddSample("Asset.Load.CacheHit", 1.0f);
+			}
 			return id;
 		}
-		if (profiler) { profiler->AddSample("Asset.Load.CacheMiss", 1.0f); }
+		if (profiler) {
+			profiler->AddSample("Asset.Load.CacheMiss", 1.0f);
+		}
 
 		for (const auto& l : mLoaders) {
 			auto t = ASSET_TYPE::UNKNOWN;
-			if (!l->CanLoad(path, &t)) { continue; }
-			if (typeOpt.has_value() && t != deduced) { continue; }
+			if (!l->CanLoad(path, &t)) {
+				continue;
+			}
+			if (typeOpt.has_value() && t != deduced) {
+				continue;
+			}
 
 			LoadResult r     = l->Load(normalizedPath);
 			n.payload        = std::move(r.payload);
@@ -188,25 +204,35 @@ namespace Unnamed {
 
 	void AssetManager::AddRef(const AssetID id) {
 		std::scoped_lock lock(mMutex);
-		if (id == kInvalidAssetID || id >= mNextID) { return; }
+		if (id == kInvalidAssetID || id >= mNextID) {
+			return;
+		}
 		mNodes[id].meta.strongRefs++;
 	}
 
 	void AssetManager::Release(const AssetID id) {
 		std::scoped_lock lock(mMutex);
-		if (id == kInvalidAssetID || id >= mNextID) { return; }
+		if (id == kInvalidAssetID || id >= mNextID) {
+			return;
+		}
 		auto& n = mNodes[id].meta;
-		if (n.strongRefs > 0) { n.strongRefs--; }
+		if (n.strongRefs > 0) {
+			n.strongRefs--;
+		}
 	}
 
 	void AssetManager::SetDependencies(
 		AssetID id, const std::vector<AssetID>& dependencies
 	) {
-		if (id == kInvalidAssetID || id >= mNextID) { return; }
+		if (id == kInvalidAssetID || id >= mNextID) {
+			return;
+		}
 		Node& n = mNodes[id];
 
 		for (const auto dep : n.dependencies) {
-			if (dep == kInvalidAssetID || dep >= mNextID) { continue; }
+			if (dep == kInvalidAssetID || dep >= mNextID) {
+				continue;
+			}
 			auto& vec = mNodes[dep].dependents;
 			std::erase(vec, id);
 		}
@@ -215,7 +241,9 @@ namespace Unnamed {
 
 		// 依存先のdependentsを更新
 		for (const auto dep : n.dependencies) {
-			if (dep == kInvalidAssetID || dep >= mNextID) { continue; }
+			if (dep == kInvalidAssetID || dep >= mNextID) {
+				continue;
+			}
 			auto& depBy = mNodes[dep].dependents;
 			if (std::ranges::find(depBy, id) == depBy.end()) {
 				depBy.emplace_back(id);
@@ -232,7 +260,9 @@ namespace Unnamed {
 	template <class T>
 	const T* AssetManager::Get(const AssetID id) const {
 		std::scoped_lock lock(mMutex);
-		if (id == kInvalidAssetID || id >= mNextID) { return nullptr; }
+		if (id == kInvalidAssetID || id >= mNextID) {
+			return nullptr;
+		}
 		const auto& v = mNodes[id].payload;
 		return std::get_if<T>(&const_cast<AssetPayload&>(v));
 	}
@@ -265,18 +295,24 @@ namespace Unnamed {
 		std::scoped_lock lock(mMutex);
 
 		// idが無効か?
-		if (id == kInvalidAssetID || id >= mNextID) { return false; }
+		if (id == kInvalidAssetID || id >= mNextID) {
+			return false;
+		}
 
 		Node& n = mNodes[id];
 
 		// ソースパスが空か?
-		if (n.meta.sourcePath.empty()) { return false; }
+		if (n.meta.sourcePath.empty()) {
+			return false;
+		}
 
 		// ローダーを探す
 		for (const auto& l : mLoaders) {
 			auto t = ASSET_TYPE::UNKNOWN;
 			// このローダーで読めるか?
-			if (!l->CanLoad(n.meta.sourcePath, &t)) { continue; }
+			if (!l->CanLoad(n.meta.sourcePath, &t)) {
+				continue;
+			}
 			// アセットタイプが違うか?
 			if (t != n.meta.type && n.meta.type != ASSET_TYPE::UNKNOWN) {
 				continue;
@@ -294,7 +330,9 @@ namespace Unnamed {
 
 			// コールバックの呼び出し
 			const auto callbacks = mReloadCallbacks;
-			for (auto& cb : callbacks) { cb(id); }
+			for (auto& cb : callbacks) {
+				cb(id);
+			}
 			return true;
 		}
 
@@ -304,7 +342,9 @@ namespace Unnamed {
 	bool AssetManager::ReloadWithDependents(const AssetID id) {
 		UProfiler*            profiler = ServiceLocator::Get<UProfiler>();
 		UProfiler::ScopeTimer scope(profiler, "Asset.ReloadWithDependents");
-		if (!Reload(id)) { return false; }
+		if (!Reload(id)) {
+			return false;
+		}
 
 		std::unordered_set<AssetID> visited;
 		std::queue<AssetID>         queue;
@@ -373,7 +413,9 @@ namespace Unnamed {
 		std::vector<AssetID> reloaded;
 		reloaded.reserve(changed.size());
 		for (const AssetID id : changed) {
-			if (ReloadWithDependents(id)) { reloaded.emplace_back(id); }
+			if (ReloadWithDependents(id)) {
+				reloaded.emplace_back(id);
+			}
 		}
 		return reloaded;
 	}
@@ -389,9 +431,13 @@ namespace Unnamed {
 		for (AssetID id = 1; id < mNextID; ++id) {
 			Node& n = mNodes[id];
 			// ロードされていないか?
-			if (!n.meta.loaded) { continue; }
+			if (!n.meta.loaded) {
+				continue;
+			}
 			// 参照されているか?
-			if (n.meta.strongRefs > 0) { continue; }
+			if (n.meta.strongRefs > 0) {
+				continue;
+			}
 
 			// 依存されているか?
 			bool needed = false;
@@ -403,7 +449,9 @@ namespace Unnamed {
 			}
 
 			// 依存されているならスキップ
-			if (needed) { continue; }
+			if (needed) {
+				continue;
+			}
 
 			// アンロード
 			n.payload     = std::monostate{};
@@ -414,9 +462,10 @@ namespace Unnamed {
 	}
 
 	AssetID AssetManager::FindByPath(const std::string_view path) const {
-		std::scoped_lock lock(mMutex);
-		const std::string normalized = StrUtil::NormalizePath(std::string(path));
-		const auto        it = mPathToID.find(normalized);
+		std::scoped_lock  lock(mMutex);
+		const std::string normalized =
+			StrUtil::NormalizePath(std::string(path));
+		const auto it = mPathToID.find(normalized);
 		return it != mPathToID.end() ? it->second : kInvalidAssetID;
 	}
 
@@ -430,13 +479,17 @@ namespace Unnamed {
 		std::scoped_lock     lock(mMutex);
 		std::vector<AssetID> ids;
 		ids.reserve(mNextID - 1);
-		for (AssetID id = 1; id < mNextID; ++id) { ids.emplace_back(id); }
+		for (AssetID id = 1; id < mNextID; ++id) {
+			ids.emplace_back(id);
+		}
 		return ids;
 	}
 
 	AssetID AssetManager::AllocateID() {
 		// ノードのサイズが足りない場合は拡張
-		if (mNextID >= mNodes.size()) { mNodes.resize(mNextID + 64); }
+		if (mNextID >= mNodes.size()) {
+			mNodes.resize(mNextID + 64);
+		}
 		return mNextID++;
 	}
 
@@ -445,7 +498,9 @@ namespace Unnamed {
 	) {
 		const auto normalized = StrUtil::NormalizePath(path);
 		const auto it         = mPathToID.find(normalized);
-		if (it != mPathToID.end()) { return it->second; }
+		if (it != mPathToID.end()) {
+			return it->second;
+		}
 
 		const AssetID id      = AllocateID();
 		mPathToID[normalized] = id;
@@ -464,17 +519,23 @@ namespace Unnamed {
 
 	void AssetManager::RebuildDependents(AssetID id) {
 		std::scoped_lock lock(mMutex);
-		if (id == kInvalidAssetID || id >= mNextID) { return; }
+		if (id == kInvalidAssetID || id >= mNextID) {
+			return;
+		}
 
 		// とりあえず全ノードからidを取り除く
 		for (AssetID i = 1; i < mNextID; ++i) {
 			auto& depBy = mNodes[i].dependents;
-			if (!depBy.empty()) { std::erase(depBy, id); }
+			if (!depBy.empty()) {
+				std::erase(depBy, id);
+			}
 		}
 
 		// idの依存を見て各depの依存に追加
 		for (const AssetID d : mNodes[id].dependencies) {
-			if (d == kInvalidAssetID || d >= mNextID) { continue; }
+			if (d == kInvalidAssetID || d >= mNextID) {
+				continue;
+			}
 			auto& depBy = mNodes[d].dependents;
 			if (std::ranges::find(depBy, id) == depBy.end()) {
 				depBy.emplace_back(id);
@@ -484,11 +545,15 @@ namespace Unnamed {
 
 	void AssetManager::RebuildAllDependents() {
 		std::scoped_lock lock(mMutex);
-		for (AssetID i = 1; i < mNextID; ++i) { mNodes[i].dependents.clear(); }
+		for (AssetID i = 1; i < mNextID; ++i) {
+			mNodes[i].dependents.clear();
+		}
 
 		for (AssetID i = 1; i < mNextID; ++i) {
 			for (const AssetID d : mNodes[i].dependencies) {
-				if (d == kInvalidAssetID || d >= mNextID) { continue; }
+				if (d == kInvalidAssetID || d >= mNextID) {
+					continue;
+				}
 				mNodes[d].dependents.emplace_back(i);
 			}
 		}

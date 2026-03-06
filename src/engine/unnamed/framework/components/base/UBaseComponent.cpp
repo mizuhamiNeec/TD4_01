@@ -19,19 +19,29 @@ namespace Unnamed {
 	void UBaseComponent::DrawInspectorImGui() {}
 #endif
 
-	UEntity* UBaseComponent::GetOwner() const { return mOwner; }
+	UEntity* UBaseComponent::GetOwner() const {
+		return mOwner;
+	}
 
-	void UBaseComponent::SetOwner(UEntity* owner) { mOwner = owner; }
+	void UBaseComponent::SetOwner(UEntity* owner) {
+		mOwner = owner;
+	}
 
-	bool UBaseComponent::IsActive() const noexcept { return mIsActive; }
+	bool UBaseComponent::IsActive() const noexcept {
+		return mIsActive;
+	}
 
 	void UBaseComponent::SetActive(const bool isActive) noexcept {
 		mIsActive = isActive;
 	}
 
-	uint64_t UBaseComponent::GetGuid() const noexcept { return mGuid; }
+	uint64_t UBaseComponent::GetGuid() const noexcept {
+		return mGuid;
+	}
 
-	void UBaseComponent::SetGuid(const uint64_t guid) noexcept { mGuid = guid; }
+	void UBaseComponent::SetGuid(const uint64_t guid) noexcept {
+		mGuid = guid;
+	}
 
 	TypeId UBaseComponent::GetTypeId() const {
 		return HashTypeName(GetStableName());

@@ -31,7 +31,9 @@ namespace Unnamed {
 		while (std::getline(inputFile, line)) {
 			// コメント、空行は無視
 			line = StrUtil::TrimSpaces(line);
-			if (line.empty() || line[0] == ';') { continue; }
+			if (line.empty() || line[0] == ';') {
+				continue;
+			}
 
 			// セクションの判定
 			if (line.front() == '[' && line.back() == ']') {

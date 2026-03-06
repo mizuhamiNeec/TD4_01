@@ -20,20 +20,28 @@ namespace Unnamed {
 		std::string ResolveRelativePath(
 			const std::filesystem::path& baseDir, std::string path
 		) {
-			if (path.empty()) { return path; }
+			if (path.empty()) {
+				return path;
+			}
 			std::filesystem::path p(path);
-			if (p.is_relative()) { p = baseDir / p; }
+			if (p.is_relative()) {
+				p = baseDir / p;
+			}
 			return StrUtil::NormalizePath(p.lexically_normal().string());
 		}
 
 		MATERIAL_DOMAIN ParseDomain(const std::string& s) {
 			const auto v = StrUtil::ToLowerCase(s);
-			if (v == "unlit") { return MATERIAL_DOMAIN::UNLIT; }
+			if (v == "unlit") {
+				return MATERIAL_DOMAIN::UNLIT;
+			}
 			return MATERIAL_DOMAIN::PBR_METAL_ROUGH;
 		}
 
 		Vec4 ParseVec4(const nlohmann::json& j, const Vec4 fallback) {
-			if (!j.is_array() || j.size() < 4) { return fallback; }
+			if (!j.is_array() || j.size() < 4) {
+				return fallback;
+			}
 			return Vec4(
 				j[0].get<float>(),
 				j[1].get<float>(),
@@ -59,10 +67,16 @@ namespace Unnamed {
 	LoadResult MaterialAssetLoader::Load(const std::string& path) {
 		LoadResult    result = {};
 		std::ifstream ifs(path);
-		if (!ifs) { return result; }
+		if (!ifs) {
+			return result;
+		}
 
 		nlohmann::json root;
-		try { ifs >> root; } catch (...) { return result; }
+		try {
+			ifs >> root;
+		} catch (...) {
+			return result;
+		}
 
 		const std::filesystem::path full(path);
 		const std::filesystem::path baseDir = full.parent_path();
@@ -100,7 +114,9 @@ namespace Unnamed {
 
 		if (root.contains("scalars") && root["scalars"].is_object()) {
 			for (const auto& [k, v] : root["scalars"].items()) {
-				if (!v.is_number()) { continue; }
+				if (!v.is_number()) {
+					continue;
+				}
 				data.scalarParams[k] = v.get<float>();
 			}
 		}

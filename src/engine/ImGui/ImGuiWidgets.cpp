@@ -39,7 +39,9 @@ namespace ImGuiWidgets {
 		const float        vSpeed,
 		const char*        format
 	) {
-		if (ImGui::GetCurrentWindow()->SkipItems) { return false; }
+		if (ImGui::GetCurrentWindow()->SkipItems) {
+			return false;
+		}
 
 		bool valueChanged = false;
 
@@ -267,7 +269,9 @@ namespace ImGuiWidgets {
 			}
 		}
 		// マウスボタンリリースでドラッグ終了
-		if (!io.MouseDown[0]) { bIsDraggingCp1 = bIsDraggingCp2 = false; }
+		if (!io.MouseDown[0]) {
+			bIsDraggingCp1 = bIsDraggingCp2 = false;
+		}
 
 		// ドラッグ中なら、マウス位置に応じてコントロールポイントを更新（キャンバス座標を[0,1]に変換）
 		auto clamp = [
@@ -334,7 +338,9 @@ namespace ImGuiWidgets {
 			                            ImVec2(0.0f, 0.0f);
 
 		if (size.x <= 0.0f) {
-			if (iconOnly) { size.x = iconBaseSize.x + pad.x * 2.0f; } else if (
+			if (iconOnly) {
+				size.x = iconBaseSize.x + pad.x * 2.0f;
+			} else if (
 				horizontalLayout) {
 				size.x = iconBaseSize.x + labelSize.x + gap + pad.x * 2.0f;
 			} else {
@@ -343,7 +349,9 @@ namespace ImGuiWidgets {
 		}
 
 		if (size.y <= 0.0f) {
-			if (iconOnly) { size.y = iconBaseSize.y + pad.y * 2.0f; } else if (
+			if (iconOnly) {
+				size.y = iconBaseSize.y + pad.y * 2.0f;
+			} else if (
 				horizontalLayout) {
 				size.y = std::max(iconBaseSize.y, labelSize.y) + pad.y * 2.0f;
 			} else {
@@ -446,7 +454,9 @@ namespace ImGuiWidgets {
 		const ImU32 textColor = ImGui::GetColorU32(ImGuiCol_Text);
 		dl->PushClipRect(itemMin, itemMax, true);
 		dl->AddText(font, iconFontSize, iconPos, textColor, iconUtf8.c_str());
-		if (!iconOnly) { dl->AddText(labelPos, textColor, label); }
+		if (!iconOnly) {
+			dl->AddText(labelPos, textColor, label);
+		}
 		dl->PopClipRect();
 
 		return pressed;
@@ -579,7 +589,9 @@ namespace ImGuiWidgets {
 			is_visible = ImGui::ItemAdd(bb, id, NULL, extra_item_flags);
 			window->ClipRect.Min.x = backup_clip_rect_min_x;
 			window->ClipRect.Max.x = backup_clip_rect_max_x;
-		} else { is_visible = ImGui::ItemAdd(bb, id, NULL, extra_item_flags); }
+		} else {
+			is_visible = ImGui::ItemAdd(bb, id, NULL, extra_item_flags);
+		}
 
 		const bool is_multi_select =
 			(g.LastItemData.ItemFlags & ImGuiItemFlags_IsMultiSelect) != 0;

@@ -10,12 +10,12 @@
 #include "engine/render/frame/RenderFrameInputs.h"
 #include "engine/scene/UScene.h"
 #include "engine/scene/USceneSerializer.h"
-#include "engine/unnamed/framework/components/GameplayCameraComponent.h"
-#include "engine/unnamed/framework/components/EditorCameraComponent.h"
-#include "engine/unnamed/framework/components/PortalComponent.h"
-#include "engine/unnamed/framework/components/SkeletalMeshRendererComponent.h"
-#include "engine/unnamed/framework/components/StaticMeshRendererComponent.h"
+#include "engine/unnamed/framework/components/CameraComponent.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
+#include "engine/unnamed/framework/components/editor/EditorCameraComponent.h"
+#include "engine/unnamed/framework/components/mesh/SkeletalMeshRendererComponent.h"
+#include "engine/unnamed/framework/components/mesh/StaticMeshRendererComponent.h"
+#include "engine/unnamed/framework/components/portal/PortalComponent.h"
 #include "engine/unnamed/framework/entity/UEntity.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 
@@ -23,16 +23,21 @@
 
 namespace Unnamed {
 	static constexpr std::string_view kChannel = "UWorld";
+
 	namespace {
 		thread_local UWorld* gTickingWorld = nullptr;
 
 		class ScopedTickingWorld {
 		public:
-			explicit ScopedTickingWorld(UWorld* world) : mPrevious(gTickingWorld) {
+			explicit ScopedTickingWorld(UWorld* world) : mPrevious(
+				gTickingWorld
+			) {
 				gTickingWorld = world;
 			}
 
-			~ScopedTickingWorld() { gTickingWorld = mPrevious; }
+			~ScopedTickingWorld() {
+				gTickingWorld = mPrevious;
+			}
 
 		private:
 			UWorld* mPrevious = nullptr;
@@ -41,24 +46,34 @@ namespace Unnamed {
 
 	UWorld::~UWorld() = default;
 
-	UWorld* UWorld::GetTickingWorld() noexcept { return gTickingWorld; }
-
-	void UWorld::Initialize() {
-		if (!mScene) { mScene = std::make_unique<UScene>(); }
+	UWorld* UWorld::GetTickingWorld() noexcept {
+		return gTickingWorld;
 	}
 
-	void UWorld::Shutdown() { UnloadScene(); }
+	void UWorld::Initialize() {
+		if (!mScene) {
+			mScene = std::make_unique<UScene>();
+		}
+	}
+
+	void UWorld::Shutdown() {
+		UnloadScene();
+	}
 
 	void UWorld::Tick(const float deltaTime) {
 		mTime.deltaTime         = deltaTime;
 		mTime.unscaledDeltaTime = deltaTime;
 		mTime.timeSeconds       += deltaTime;
 
-		if (!mScene) { return; }
+		if (!mScene) {
+			return;
+		}
 		ScopedTickingWorld tickingWorld(this);
 
 		for (const auto& entity : mScene->GetEntities()) {
-			if (!entity || !entity->IsActive()) { continue; }
+			if (!entity || !entity->IsActive()) {
+				continue;
+			}
 			entity->PrePhysicsTick(deltaTime);
 			entity->Tick(deltaTime);
 			entity->PostPhysicsTick(deltaTime);
@@ -66,13 +81,17 @@ namespace Unnamed {
 	}
 
 	bool UWorld::LoadSceneFromFile(const char* path) {
-		if (!path || std::string_view(path).empty()) { return false; }
+		if (!path || std::string_view(path).empty()) {
+			return false;
+		}
 
 		auto       newScene = std::make_unique<UScene>();
 		const bool ok       = USceneSerializer::LoadFromFile(
 			*newScene, path, mGuidGenerator
 		);
-		if (!ok) { return false; }
+		if (!ok) {
+			return false;
+		}
 
 		UnloadScene();
 		SetScene(std::move(newScene));
@@ -95,7 +114,9 @@ namespace Unnamed {
 	}
 
 	void UWorld::UnloadScene() {
-		if (!mScene) { return; }
+		if (!mScene) {
+			return;
+		}
 
 		OnSceneUnloaded();
 		mScene.reset();
@@ -115,16 +136,20 @@ namespace Unnamed {
 		inputs.worldBillboards.clear();
 		inputs.screenSprites.clear();
 
-		if (!mScene) { return; }
+		if (!mScene) {
+			return;
+		}
 
 		std::set<std::pair<uint64_t, uint64_t>> emittedPortalPairs;
 
 		for (const auto& entity : mScene->GetEntities()) {
-			if (!entity || !entity->IsActive()) { continue; }
+			if (!entity || !entity->IsActive()) {
+				continue;
+			}
 
 			if (!inputs.camera.valid) {
 				const auto* gameplayCamera = entity->GetComponent<
-					GameplayCameraComponent>();
+					CameraComponent>();
 				if (gameplayCamera && gameplayCamera->IsActive() &&
 				    gameplayCamera->IsCameraActive()) {
 					gameplayCamera->BuildCameraInput(inputs.camera);
@@ -139,7 +164,9 @@ namespace Unnamed {
 				}
 			}
 
-			if (entity->IsEditorOnly() || !entity->IsVisible()) { continue; }
+			if (entity->IsEditorOnly() || !entity->IsVisible()) {
+				continue;
+			}
 
 			const auto* transform = entity->GetComponent<TransformComponent>();
 			const auto* portal = entity->GetComponent<PortalComponent>();
@@ -147,7 +174,9 @@ namespace Unnamed {
 				StaticMeshRendererComponent>();
 			auto* skelRenderer = entity->GetComponent<
 				SkeletalMeshRendererComponent>();
-			if (!transform) { continue; }
+			if (!transform) {
+				continue;
+			}
 
 			if (meshRenderer && meshRenderer->IsActive()) {
 				const AssetID meshAssetId = meshRenderer->ResolveMeshAsset(
@@ -175,7 +204,9 @@ namespace Unnamed {
 				const AssetID meshAssetId = skelRenderer->ResolveMeshAsset(
 					assetManager
 				);
-				if (meshAssetId == kInvalidAssetID) { continue; }
+				if (meshAssetId == kInvalidAssetID) {
+					continue;
+				}
 
 				Render::VisibleRenderObject object = {};
 				object.meshAssetId                 = meshAssetId;
@@ -244,7 +275,9 @@ namespace Unnamed {
 				UEntity* linkedEntity = mScene->FindEntity(
 					portal->GetLinkedPortalGuid()
 				);
-				if (!linkedEntity || !linkedEntity->IsActive()) { continue; }
+				if (!linkedEntity || !linkedEntity->IsActive()) {
+					continue;
+				}
 
 				const auto* linkedPortal = linkedEntity->GetComponent<
 					PortalComponent>();
@@ -252,7 +285,9 @@ namespace Unnamed {
 					TransformComponent>();
 				if (!linkedPortal || !linkedTransform || !linkedPortal->
 				    IsActive() ||
-				    !linkedPortal->IsEnabled()) { continue; }
+				    !linkedPortal->IsEnabled()) {
+					continue;
+				}
 				if (linkedPortal->GetLinkedPortalGuid() != entity->GetGuid()) {
 					continue;
 				}
@@ -260,7 +295,9 @@ namespace Unnamed {
 				const auto pairKey = std::minmax(
 					entity->GetGuid(), linkedEntity->GetGuid()
 				);
-				if (!emittedPortalPairs.emplace(pairKey).second) { continue; }
+				if (!emittedPortalPairs.emplace(pairKey).second) {
+					continue;
+				}
 
 				Render::PortalPairInput portalPair = {};
 				portalPair.enabled = true;

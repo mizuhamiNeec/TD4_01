@@ -2,7 +2,6 @@
 #include <memory>
 #include <string>
 #include <string_view>
-#include <utility>
 
 #include <engine/scene/UScene.h>
 
@@ -31,10 +30,14 @@ namespace Unnamed {
 		[[nodiscard]] static UWorld* GetTickingWorld() noexcept;
 
 		/// @brief シーンを取得します。存在しない場合はnullptrを返します。
-		[[nodiscard]] UScene& GetScene() { return *mScene; }
+		[[nodiscard]] UScene& GetScene() {
+			return *mScene;
+		}
 
 		/// @brief シーンを取得します。存在しない場合はnullptrを返します。
-		[[nodiscard]] const UScene& GetScene() const { return *mScene; }
+		[[nodiscard]] const UScene& GetScene() const {
+			return *mScene;
+		}
 
 		/// @brief 初期化します。
 		virtual void Initialize();

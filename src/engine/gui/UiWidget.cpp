@@ -103,7 +103,9 @@ namespace Unnamed::Gui {
 		                                           end(); ++it) {
 			if (*it == child) {
 				// 親の参照を切るかは設計によりますが、通常はnullptrに戻します
-				if ((*it)->mParent == this) { (*it)->mParent = nullptr; }
+				if ((*it)->mParent == this) {
+					(*it)->mParent = nullptr;
+				}
 				mReferenceChildren.erase(it);
 				MarkDirty(DIRTY_FLAGS::LAYOUT | DIRTY_FLAGS::DRAW);
 				return;
@@ -115,35 +117,62 @@ namespace Unnamed::Gui {
 		return mReferenceChildren;
 	}
 
+	const std::vector<std::unique_ptr<UiWidget>>&
+	UiWidget::GetChildren() const {
+		return mChildren;
+	}
+
+	UiWidget* UiWidget::GetParent() const {
+		return mParent;
+	}
+
+	void UiWidget::SetName(const std::string_view& name) {
+		mName = name;
+	}
+
+	std::string_view UiWidget::GetName() const {
+		return mName;
+	}
+
 	void UiWidget::SetLocalRect(const Rect& rect) {
 		mLocalRect = rect;
 		MarkDirty(DIRTY_FLAGS::LAYOUT | DIRTY_FLAGS::DRAW);
 	}
 
-	const Rect& UiWidget::GetLocalRect() const { return mLocalRect; }
+	const Rect& UiWidget::GetLocalRect() const {
+		return mLocalRect;
+	}
 
-	const Rect& UiWidget::GetGlobalRect() const { return mGlobalRect; }
+	const Rect& UiWidget::GetGlobalRect() const {
+		return mGlobalRect;
+	}
 
 	void UiWidget::SetAnchors(const Anchors& anchors) {
 		mAnchors = anchors;
 		MarkDirty(DIRTY_FLAGS::LAYOUT | DIRTY_FLAGS::DRAW);
 	}
 
-	const Anchors& UiWidget::GetAnchors() const { return mAnchors; }
+	const Anchors& UiWidget::GetAnchors() const {
+		return mAnchors;
+	}
 
 	void UiWidget::SetMargins(const Margins& margins) {
 		mMargins = margins;
 		MarkDirty(DIRTY_FLAGS::LAYOUT | DIRTY_FLAGS::DRAW);
 	}
 
-	const Margins& UiWidget::GetMargins() const { return mMargins; }
+	const Margins& UiWidget::GetMargins() const {
+		return mMargins;
+	}
 
 	void UiWidget::SetPivot(const Pivot& pivot) {
 		mPivot = pivot;
 		MarkDirty(DIRTY_FLAGS::LAYOUT | DIRTY_FLAGS::DRAW);
 	}
 
-	const Pivot& UiWidget::GetPivot() const { return mPivot; }
+	const Pivot& UiWidget::GetPivot() const {
+		return mPivot;
+	}
 
 	void UiWidget::SetVisible(const bool visible) {
 		if (mVisible == visible) return;
@@ -151,22 +180,30 @@ namespace Unnamed::Gui {
 		MarkDirty(DIRTY_FLAGS::DRAW);
 	}
 
-	bool UiWidget::IsVisible() const { return mVisible; }
+	bool UiWidget::IsVisible() const {
+		return mVisible;
+	}
 
 	void UiWidget::SetEnabled(const bool enabled) {
 		if (mEnabled == enabled) return;
 		mEnabled = enabled;
 	}
 
-	bool UiWidget::IsEnabled() const { return mEnabled; }
+	bool UiWidget::IsEnabled() const {
+		return mEnabled;
+	}
 
 	void UiWidget::MarkDirty(const DIRTY_FLAGS flags) {
 		const DIRTY_FLAGS oldFlags = mDirtyFlags;
 		mDirtyFlags                |= flags;
-		if (mDirtyFlags != oldFlags) { OnDirtyFlagAdded(flags); }
+		if (mDirtyFlags != oldFlags) {
+			OnDirtyFlagAdded(flags);
+		}
 	}
 
-	DIRTY_FLAGS UiWidget::GetDirtyFlags() const { return mDirtyFlags; }
+	DIRTY_FLAGS UiWidget::GetDirtyFlags() const {
+		return mDirtyFlags;
+	}
 
 	void UiWidget::ClearDirtyFlags(DIRTY_FLAGS flags) {
 		uint32_t       raw   = static_cast<uint32_t>(mDirtyFlags);
@@ -183,7 +220,9 @@ namespace Unnamed::Gui {
 		MarkDirty(DIRTY_FLAGS::LAYOUT | DIRTY_FLAGS::DRAW);
 	}
 
-	UiSizePolicy UiWidget::GetSizePolicy() const { return mSizePolicy; }
+	UiSizePolicy UiWidget::GetSizePolicy() const {
+		return mSizePolicy;
+	}
 
 	void UiWidget::SetSizeConstraints(const UiSizeConstraints& constraints) {
 		mSizeConstraints = constraints;
@@ -194,9 +233,13 @@ namespace Unnamed::Gui {
 		return mSizeConstraints;
 	}
 
-	float UiWidget::GetPreferredWidth() const { return mLocalRect.width; }
+	float UiWidget::GetPreferredWidth() const {
+		return mLocalRect.width;
+	}
 
-	float UiWidget::GetPreferredHeight() const { return mLocalRect.height; }
+	float UiWidget::GetPreferredHeight() const {
+		return mLocalRect.height;
+	}
 
 	void UiWidget::Tick(float) {
 		// DO SOMETHING
@@ -211,27 +254,37 @@ namespace Unnamed::Gui {
 
 		// 所有している子
 		for (auto& child : mChildren) {
-			if (child) { child->UpdateLayoutRecursive(mGlobalRect); }
+			if (child) {
+				child->UpdateLayoutRecursive(mGlobalRect);
+			}
 		}
 
 		// 参照だけ持っている子（AddChildReferenceでぶら下げたやつ）
 		for (auto* refChild : mReferenceChildren) {
-			if (refChild) { refChild->UpdateLayoutRecursive(mGlobalRect); }
+			if (refChild) {
+				refChild->UpdateLayoutRecursive(mGlobalRect);
+			}
 		}
 	}
 
 	void UiWidget::BuildDrawCommands(std::vector<UiDrawCommand>& out) const {
 		// 自分が非表示なら何も描画しない（子も含めて）
-		if (!IsVisible()) { return; }
+		if (!IsVisible()) {
+			return;
+		}
 
 		// 所有している子
 		for (const auto& child : mChildren) {
-			if (child) { child->BuildDrawCommands(out); }
+			if (child) {
+				child->BuildDrawCommands(out);
+			}
 		}
 
 		// 参照だけ持っている子
 		for (const auto* refChild : mReferenceChildren) {
-			if (refChild) { refChild->BuildDrawCommands(out); }
+			if (refChild) {
+				refChild->BuildDrawCommands(out);
+			}
 		}
 	}
 
@@ -258,7 +311,9 @@ namespace Unnamed::Gui {
 
 		// 所有している子
 		for (const auto& child : w->GetChildren()) {
-			if (child) { DebugDrawUi(child.get()); }
+			if (child) {
+				DebugDrawUi(child.get());
+			}
 		}
 
 		// 参照だけ持っている子も再帰
@@ -266,7 +321,9 @@ namespace Unnamed::Gui {
 		// UiWidget 内に追加するか、friend 的にアクセスできるようにする必要あり。
 		for (const auto* refChild : w->mReferenceChildren) {
 			// 同じクラス内なのでアクセス可能
-			if (refChild) { DebugDrawUi(refChild); }
+			if (refChild) {
+				DebugDrawUi(refChild);
+			}
 		}
 #endif
 	}
@@ -277,7 +334,9 @@ namespace Unnamed::Gui {
 		// まず z-order 的に後ろの方から（所有子）
 		for (auto it = mChildren.rbegin(); it != mChildren.rend(); ++it) {
 			if (*it) {
-				if (UiWidget* hit = (*it)->HitTest(x, y)) { return hit; }
+				if (UiWidget* hit = (*it)->HitTest(x, y)) {
+					return hit;
+				}
 			}
 		}
 
@@ -286,7 +345,9 @@ namespace Unnamed::Gui {
 		                                            rend(); ++it) {
 			UiWidget* child = *it;
 			if (child) {
-				if (UiWidget* hit = child->HitTest(x, y)) { return hit; }
+				if (UiWidget* hit = child->HitTest(x, y)) {
+					return hit;
+				}
 			}
 		}
 
@@ -298,23 +359,37 @@ namespace Unnamed::Gui {
 		return inside ? this : nullptr;
 	}
 
-	bool UiWidget::IsHovered() const { return mHovered; }
+	bool UiWidget::IsHovered() const {
+		return mHovered;
+	}
 
-	bool UiWidget::IsPressed() const { return mPressed; }
+	bool UiWidget::IsPressed() const {
+		return mPressed;
+	}
 
-	void UiWidget::OnMouseEnter() { mHovered = true; }
+	void UiWidget::OnMouseEnter() {
+		mHovered = true;
+	}
 
-	void UiWidget::OnMouseLeave() { mHovered = false; }
+	void UiWidget::OnMouseLeave() {
+		mHovered = false;
+	}
 
-	void UiWidget::OnMouseDown() { mPressed = true; }
+	void UiWidget::OnMouseDown() {
+		mPressed = true;
+	}
 
-	void UiWidget::OnMouseUp() { mPressed = false; }
+	void UiWidget::OnMouseUp() {
+		mPressed = false;
+	}
 
 	void UiWidget::OnClick() {
 		// DO SOMETHING
 	}
 
-	const char* UiWidget::GetTypeName() const { return "Widget"; }
+	const char* UiWidget::GetTypeName() const {
+		return "Widget";
+	}
 
 	void UiWidget::SaveToJson(JsonWriter& writer) const {
 		writer.BeginObject();
@@ -358,7 +433,9 @@ namespace Unnamed::Gui {
 		writer.Key("children");
 		writer.BeginArray();
 		for (const auto& child : GetChildren()) {
-			if (child) { child->SaveToJson(writer); }
+			if (child) {
+				child->SaveToJson(writer);
+			}
 		}
 		writer.EndArray();
 
@@ -366,12 +443,20 @@ namespace Unnamed::Gui {
 	}
 
 	void UiWidget::LoadFromJson(const JsonReader& reader) {
-		if (!reader.Valid()) { return; }
+		if (!reader.Valid()) {
+			return;
+		}
 
 		// 基本情報
-		if (reader.Has("name")) { SetName(reader["name"].GetString()); }
-		if (reader.Has("visible")) { SetVisible(reader["visible"].GetBool()); }
-		if (reader.Has("enabled")) { SetEnabled(reader["enabled"].GetBool()); }
+		if (reader.Has("name")) {
+			SetName(reader["name"].GetString());
+		}
+		if (reader.Has("visible")) {
+			SetVisible(reader["visible"].GetBool());
+		}
+		if (reader.Has("enabled")) {
+			SetEnabled(reader["enabled"].GetBool());
+		}
 
 		// Rect
 		if (reader.Has("rect")) {
@@ -406,16 +491,24 @@ namespace Unnamed::Gui {
 
 	std::unique_ptr<UiWidget> UiWidget::
 	CreateFromJson(const JsonReader& reader) {
-		if (!reader.Valid()) { return nullptr; }
+		if (!reader.Valid()) {
+			return nullptr;
+		}
 
 		// type 取得
 		std::string type = "Widget";
-		if (reader.Has("type")) { type = reader["type"].GetString(); }
+		if (reader.Has("type")) {
+			type = reader["type"].GetString();
+		}
 
 		std::unique_ptr<UiWidget> widget;
 
-		if (type == "Panel") { widget = std::make_unique<UiPanel>(); } else if (
-			type == "Button") { widget = std::make_unique<UiButton>(); } else if
+		if (type == "Panel") {
+			widget = std::make_unique<UiPanel>();
+		} else if (
+			type == "Button") {
+			widget = std::make_unique<UiButton>();
+		} else if
 		(type == "VerticalLayout") {
 			widget = std::make_unique<UiVerticalLayout>();
 		} else if (type == "HorizontalLayout") {
@@ -434,7 +527,9 @@ namespace Unnamed::Gui {
 			for (size_t i = 0; i < count; ++i) {
 				JsonReader childNode   = children[i];
 				auto       childWidget = CreateFromJson(childNode);
-				if (childWidget) { widget->AddChild(std::move(childWidget)); }
+				if (childWidget) {
+					widget->AddChild(std::move(childWidget));
+				}
 			}
 		}
 
@@ -489,8 +584,12 @@ namespace Unnamed::Gui {
 		float finalX = x;
 		float finalY = y;
 
-		if (mAnchors.minX == mAnchors.maxX) { finalX = x - w * mPivot.x; }
-		if (mAnchors.minY == mAnchors.maxY) { finalY = y - h * mPivot.y; }
+		if (mAnchors.minX == mAnchors.maxX) {
+			finalX = x - w * mPivot.x;
+		}
+		if (mAnchors.minY == mAnchors.maxY) {
+			finalY = y - h * mPivot.y;
+		}
 
 		mGlobalRect.x      = finalX;
 		mGlobalRect.y      = finalY;
@@ -501,24 +600,23 @@ namespace Unnamed::Gui {
 	void UiWidget::OnDirtyFlagAdded(const DIRTY_FLAGS flags) {
 		if (HasFlag(flags, DIRTY_FLAGS::LAYOUT)) {
 			for (auto& child : mChildren) {
-				if (child) { child->MarkDirty(DIRTY_FLAGS::LAYOUT); }
+				if (child) {
+					child->MarkDirty(DIRTY_FLAGS::LAYOUT);
+				}
 			}
 			for (auto* refChild : mReferenceChildren) {
-				if (refChild) { refChild->MarkDirty(DIRTY_FLAGS::LAYOUT); }
+				if (refChild) {
+					refChild->MarkDirty(DIRTY_FLAGS::LAYOUT);
+				}
 			}
 		}
 	}
 
-	void UiWidget::OnSerialize(JsonWriter& writer) const { (void)writer; }
+	void UiWidget::OnSerialize(JsonWriter& writer) const {
+		(void)writer;
+	}
 
-	void UiWidget::OnDeserialize(const JsonReader& reader) { (void)reader; }
-
-	const std::vector<std::unique_ptr<UiWidget>>&
-	UiWidget::GetChildren() const { return mChildren; }
-
-	UiWidget* UiWidget::GetParent() const { return mParent; }
-
-	void UiWidget::SetName(const std::string_view& name) { mName = name; }
-
-	std::string_view UiWidget::GetName() const { return mName; }
+	void UiWidget::OnDeserialize(const JsonReader& reader) {
+		(void)reader;
+	}
 }

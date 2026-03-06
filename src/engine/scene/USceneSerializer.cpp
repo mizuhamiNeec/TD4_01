@@ -67,7 +67,9 @@ namespace Unnamed {
 		if (folders.Valid()) {
 			for (size_t i = 0; i < folders.Size(); ++i) {
 				const JsonReader folder = folders[i];
-				if (!folder.Valid()) { continue; }
+				if (!folder.Valid()) {
+					continue;
+				}
 				scene.AddFolder(folder.GetString());
 			}
 		}
@@ -75,12 +77,16 @@ namespace Unnamed {
 		const JsonReader entities = root["entities"];
 
 		// エンティティ配列の検証 
-		if (!entities.Valid()) { return false; }
+		if (!entities.Valid()) {
+			return false;
+		}
 
 		// 各エンティティの読み込み
 		for (size_t i = 0; i < entities.Size(); ++i) {
 			const JsonReader e = entities[i];
-			if (!e.Valid()) { continue; }
+			if (!e.Valid()) {
+				continue;
+			}
 
 			const std::string name = ReadStringOr(e, "name", "unnamed");
 			const std::string folderPath = ReadStringOr(e, "folderPath", "");
@@ -100,14 +106,20 @@ namespace Unnamed {
 			entity.SetFolderPath(folderPath);
 
 			const JsonReader comps = e["components"];
-			if (!comps.Valid()) { continue; }
+			if (!comps.Valid()) {
+				continue;
+			}
 
 			for (size_t ci = 0; ci < comps.Size(); ++ci) {
 				const JsonReader c = comps[ci];
-				if (!c.Valid()) { continue; }
+				if (!c.Valid()) {
+					continue;
+				}
 
 				const std::string type = ReadStringOr(c, "type", "");
-				if (type.empty()) { continue; }
+				if (type.empty()) {
+					continue;
+				}
 
 				auto comp = ComponentRegistry::Get().Create(type);
 				if (!comp) {
@@ -156,7 +168,9 @@ namespace Unnamed {
 		writer.BeginArray();
 
 		for (const auto& ePtr : scene.GetEntities()) {
-			if (!ePtr) { continue; }
+			if (!ePtr) {
+				continue;
+			}
 			const UEntity& e = *ePtr;
 
 			writer.BeginObject();

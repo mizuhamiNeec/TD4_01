@@ -9,11 +9,8 @@
 static constexpr std::string_view kChannel = "Audio";
 
 /// @brief コンストラクタ
-Audio::Audio() { mAudioBuffer = {}; }
-
-void Audio::InvalidateVoice() noexcept {
-	mVoiceValid  = false;
-	mSourceVoice = nullptr;
+Audio::Audio() {
+	mAudioBuffer = {};
 }
 
 /// @brief デストラクタ
@@ -31,7 +28,9 @@ Audio::~Audio() {
 /// @return 成功したらtrue、失敗したらfalse
 bool Audio::LoadFromFile(IXAudio2* xAudio2, const char* filename) {
 	SoundData soundData;
-	if (!LoadWavFile(filename, soundData)) { return false; }
+	if (!LoadWavFile(filename, soundData)) {
+		return false;
+	}
 
 	// ソースボイスの作成前にエラーチェック
 	if (!xAudio2) {
@@ -91,7 +90,9 @@ bool Audio::LoadFromFile(IXAudio2* xAudio2, const char* filename) {
 /// @brief オーディオの再生
 /// @param isLoop ループ再生するかどうか
 void Audio::Play(const bool isLoop) {
-	if (!mSourceVoice) { return; }
+	if (!mSourceVoice) {
+		return;
+	}
 
 	Stop();
 	mAudioBuffer.LoopCount = isLoop ? XAUDIO2_LOOP_INFINITE : 0;
@@ -102,7 +103,9 @@ void Audio::Play(const bool isLoop) {
 
 /// @brief オーディオの停止
 void Audio::Stop() {
-	if (!mSourceVoice) { return; }
+	if (!mSourceVoice) {
+		return;
+	}
 	mSourceVoice->Stop();
 	mSourceVoice->FlushSourceBuffers();
 	mIsPlaying = false;
@@ -110,14 +113,18 @@ void Audio::Stop() {
 
 /// @brief オーディオの一時停止
 void Audio::Pause() {
-	if (!mSourceVoice || !mIsPlaying) { return; }
+	if (!mSourceVoice || !mIsPlaying) {
+		return;
+	}
 	mSourceVoice->Stop();
 	mIsPlaying = false;
 }
 
 /// @brief オーディオの再開
 void Audio::Resume() {
-	if (!mSourceVoice || mIsPlaying) { return; }
+	if (!mSourceVoice || mIsPlaying) {
+		return;
+	}
 	mSourceVoice->Start();
 	mIsPlaying = true;
 }
@@ -125,7 +132,9 @@ void Audio::Resume() {
 /// @brief ボリュームの設定
 /// @param volume ボリューム (0.0f から 1.0f)
 void Audio::SetVolume(float volume) const {
-	if (!mSourceVoice) { return; }
+	if (!mSourceVoice) {
+		return;
+	}
 	// 0.0f から 1.0f の範囲にクランプ
 	volume = std::clamp(volume, 0.0f, 1.0f);
 	mSourceVoice->SetVolume(volume);
@@ -134,8 +143,15 @@ void Audio::SetVolume(float volume) const {
 /// @brief ピッチの設定
 /// @param pitch ピッチ (1.0f が標準、2.0f が2倍速、0.5f が半分の速さ)
 void Audio::SetPitch(const float pitch) const {
-	if (!mSourceVoice) { return; }
+	if (!mSourceVoice) {
+		return;
+	}
 	mSourceVoice->SetFrequencyRatio(pitch);
+}
+
+void Audio::InvalidateVoice() noexcept {
+	mVoiceValid  = false;
+	mSourceVoice = nullptr;
 }
 
 /// @brief WAVファイルの読み込み
@@ -200,7 +216,9 @@ bool Audio::LoadWavFile(const std::string& filename, SoundData& outData) {
 		} else if (strncmp(chunkHeader.id, "data", 4) == 0) {
 			foundData = true;
 			break;
-		} else { file.seekg(chunkHeader.size, std::ios_base::cur); }
+		} else {
+			file.seekg(chunkHeader.size, std::ios_base::cur);
+		}
 	}
 
 	if (!foundFmt || !foundData) {

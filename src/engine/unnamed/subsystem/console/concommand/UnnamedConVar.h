@@ -61,25 +61,41 @@ namespace Unnamed {
 		);
 
 		// static_cast(objName)で変換できます やったね
-		explicit operator T() const { return mValue; }
+		explicit operator T() const {
+			return mValue;
+		}
 
 		[[nodiscard]] bool IsCommand() const override;
 
 		UnnamedConVar& operator=(const T& value);
 
-		[[nodiscard]] T GetValue() const { return mValue; }
+		[[nodiscard]] T GetValue() const {
+			return mValue;
+		}
 
-		void SetValue(const T& value) { mValue = value; }
+		void SetValue(const T& value) {
+			mValue = value;
+		}
 
-		[[nodiscard]] T GetDefaultValue() const { return mDefaultValue; }
+		[[nodiscard]] T GetDefaultValue() const {
+			return mDefaultValue;
+		}
 
-		[[nodiscard]] T GetMinValue() const { return mMinValue; }
+		[[nodiscard]] T GetMinValue() const {
+			return mMinValue;
+		}
 
-		[[nodiscard]] T GetMaxValue() const { return mMaxValue; }
+		[[nodiscard]] T GetMaxValue() const {
+			return mMaxValue;
+		}
 
-		[[nodiscard]] bool HasMinValue() const { return mHasMinValue; }
+		[[nodiscard]] bool HasMinValue() const {
+			return mHasMinValue;
+		}
 
-		[[nodiscard]] bool HasMaxValue() const { return mHasMaxValue; }
+		[[nodiscard]] bool HasMaxValue() const {
+			return mHasMaxValue;
+		}
 
 		OnChange onChangeCallback;
 
@@ -94,6 +110,10 @@ namespace Unnamed {
 		bool mHasMaxValue = false;
 	};
 
+	/// @brief デストラクタ
+	template <typename T>
+	UnnamedConVar<T>::~UnnamedConVar() = default;
+
 	/// @brief 名前なしコンソール変数クラスの実装
 	/// @param name 変数名
 	/// @param defaultValue デフォルト値
@@ -107,7 +127,9 @@ namespace Unnamed {
 	    mValue(defaultValue),
 	    mDefaultValue(defaultValue),
 	    mMinValue(T()),
-	    mMaxValue(T()) { RegisterSelf(); }
+	    mMaxValue(T()) {
+		RegisterSelf();
+	}
 
 	/// @brief 名前なしコンソール変数クラスの実装
 	/// @param name 変数名
@@ -125,7 +147,9 @@ namespace Unnamed {
 	    mValue(defaultValue),
 	    mDefaultValue(defaultValue),
 	    mMinValue(T()),
-	    mMaxValue(T()) { RegisterSelf(); }
+	    mMaxValue(T()) {
+		RegisterSelf();
+	}
 
 	/// @brief 名前なしコンソール変数クラスの実装
 	/// @param name 変数名
@@ -151,7 +175,9 @@ namespace Unnamed {
 	    mMinValue(minValue),
 	    mMaxValue(maxValue),
 	    mHasMinValue(bMin),
-	    mHasMaxValue(bMax) { RegisterSelf(); }
+	    mHasMaxValue(bMax) {
+		RegisterSelf();
+	}
 
 	/// @brief 名前なしコンソール変数クラスの実装
 	/// @param name 変数名
@@ -171,7 +197,9 @@ namespace Unnamed {
 	    mValue(defaultValue),
 	    mDefaultValue(defaultValue),
 	    mMinValue(T()),
-	    mMaxValue(T()) { RegisterSelf(); }
+	    mMaxValue(T()) {
+		RegisterSelf();
+	}
 
 	/// @brief 名前なしコンソール変数クラスの実装
 	/// @param name 変数名
@@ -199,14 +227,14 @@ namespace Unnamed {
 	    mMinValue(minValue),
 	    mMaxValue(maxValue),
 	    mHasMinValue(bMin),
-	    mHasMaxValue(bMax) { RegisterSelf(); }
-
-	/// @brief デストラクタ
-	template <typename T>
-	UnnamedConVar<T>::~UnnamedConVar() = default;
+	    mHasMaxValue(bMax) {
+		RegisterSelf();
+	}
 
 	template <typename T>
-	bool UnnamedConVar<T>::IsCommand() const { return false; }
+	bool UnnamedConVar<T>::IsCommand() const {
+		return false;
+	}
 
 	/// @brief 代入演算子のオーバーロード
 	/// @param value 代入する値
@@ -215,7 +243,9 @@ namespace Unnamed {
 	UnnamedConVar<T>& UnnamedConVar<T>::operator=(const T& value) {
 		if (mValue != value) {
 			mValue = value;
-			if (onChangeCallback) { onChangeCallback(mValue); }
+			if (onChangeCallback) {
+				onChangeCallback(mValue);
+			}
 		}
 		return *this;
 	}
@@ -264,15 +294,27 @@ namespace Unnamed {
 			auto type = CVAR_TYPE::NONE;
 
 			if (dynamic_cast<UnnamedConVar<bool>*>(
-				var)) { type = CVAR_TYPE::BOOL; } else if (dynamic_cast<
-				UnnamedConVar<int>*>(var)) { type = CVAR_TYPE::INT; } else if (
+				var)) {
+				type = CVAR_TYPE::BOOL;
+			} else if (dynamic_cast<
+				UnnamedConVar<int>*>(var)) {
+				type = CVAR_TYPE::INT;
+			} else if (
 				dynamic_cast<UnnamedConVar<float>*>(
-					var)) { type = CVAR_TYPE::FLOAT; } else if (dynamic_cast<
+					var)) {
+				type = CVAR_TYPE::FLOAT;
+			} else if (dynamic_cast<
 				UnnamedConVar<double>*>(
-				var)) { type = CVAR_TYPE::DOUBLE; } else if (dynamic_cast<
+				var)) {
+				type = CVAR_TYPE::DOUBLE;
+			} else if (dynamic_cast<
 				UnnamedConVar<std::string>*>(
-				var)) { type = CVAR_TYPE::STRING; } else if (dynamic_cast<
-				UnnamedConVar<Vec3>*>(var)) { type = CVAR_TYPE::VEC3; }
+				var)) {
+				type = CVAR_TYPE::STRING;
+			} else if (dynamic_cast<
+				UnnamedConVar<Vec3>*>(var)) {
+				type = CVAR_TYPE::VEC3;
+			}
 
 			return type;
 		}

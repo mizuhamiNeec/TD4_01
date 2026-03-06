@@ -1,8 +1,5 @@
 #include "KinematicCollisionResolver.h"
 
-#include "engine/unnamed/framework/components/TransformComponent.h"
-#include "engine/unnamed/subsystem/console/Log.h"
-
 namespace Unnamed {
 	// static constexpr std::string_view kChannel = "KCR";
 	//

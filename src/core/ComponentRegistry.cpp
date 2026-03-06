@@ -7,7 +7,9 @@ namespace Unnamed {
 		std::string_view       stableName, const CreateFn createFn,
 		const std::string_view displayName
 	) {
-		if (stableName.empty() || createFn == nullptr) { return false; }
+		if (stableName.empty() || createFn == nullptr) {
+			return false;
+		}
 
 		std::string key(stableName);
 		const auto  it = mEntries.find(key);
@@ -33,26 +35,34 @@ namespace Unnamed {
 		const std::string_view stableName
 	) const {
 		const Entry* e = Find(stableName);
-		if (!e || !e->create) { return nullptr; }
+		if (!e || !e->create) {
+			return nullptr;
+		}
 
 		return e->create();
 	}
 
 	bool ComponentRegistry::IsRegistered(
 		const std::string_view stableName
-	) const { return Find(stableName) != nullptr; }
+	) const {
+		return Find(stableName) != nullptr;
+	}
 
 	const ComponentRegistry::Entry* ComponentRegistry::Find(
 		const std::string_view stableName
 	) const {
-		if (stableName.empty()) { return nullptr; }
+		if (stableName.empty()) {
+			return nullptr;
+		}
 
 		const auto it = mEntries.find(std::string(stableName));
 		if (it == mEntries.end()) return nullptr;
 		return &it->second;
 	}
 
-	void ComponentRegistry::Clear() { mEntries.clear(); }
+	void ComponentRegistry::Clear() {
+		mEntries.clear();
+	}
 
 	ComponentRegistry& ComponentRegistry::Get() {
 		static ComponentRegistry sRegistry;

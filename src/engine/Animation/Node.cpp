@@ -38,7 +38,9 @@ Node ReadNode(const aiNode* node) {
 		uint32_t childIndex = 0;
 		childIndex < node->mNumChildren;
 		++childIndex
-	) { result.children[childIndex] = ReadNode(node->mChildren[childIndex]); }
+	) {
+		result.children[childIndex] = ReadNode(node->mChildren[childIndex]);
+	}
 
 	return result;
 }

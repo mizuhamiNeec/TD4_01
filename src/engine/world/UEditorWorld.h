@@ -9,6 +9,7 @@ namespace Unnamed {
 	}
 
 	class UGameWorld;
+	class EditorCameraComponent;
 	class UEntity;
 
 	class UEditorWorld final : public UWorld {
@@ -16,9 +17,12 @@ namespace Unnamed {
 		void Initialize() override;
 		void Tick(float deltaTime) override;
 
-		void               StartPlayInEditor();
-		void               StopPlayInEditor();
-		[[nodiscard]] bool IsPlaying() const { return mPlayWorld != nullptr; }
+		void StartPlayInEditor();
+		void StopPlayInEditor();
+
+		[[nodiscard]] bool IsPlaying() const {
+			return mPlayWorld != nullptr;
+		}
 
 		void FillRenderFrameInputs(
 			Render::RenderFrameInputs&  inputs,
@@ -27,17 +31,21 @@ namespace Unnamed {
 		) override;
 		[[nodiscard]] bool IsGameSimulationEnabled() const noexcept override;
 
-		[[nodiscard]] UScene* GetEditableScene() { return mScene.get(); }
+		[[nodiscard]] UScene* GetEditableScene() {
+			return mScene.get();
+		}
 
 		[[nodiscard]] const UScene* GetEditableScene() const {
 			return mScene.get();
 		}
 
-		[[nodiscard]] UWorld*       GetRuntimeSceneWorld();
-		[[nodiscard]] const UWorld* GetRuntimeSceneWorld() const;
-		[[nodiscard]] UScene*       GetActiveScene();
-		[[nodiscard]] const UScene* GetActiveScene() const;
-		bool                        BuildEditorCameraMatrices(
+		[[nodiscard]] UWorld*                      GetRuntimeSceneWorld();
+		[[nodiscard]] const UWorld*                GetRuntimeSceneWorld() const;
+		[[nodiscard]] UScene*                      GetActiveScene();
+		[[nodiscard]] const UScene*                GetActiveScene() const;
+		[[nodiscard]] EditorCameraComponent*       GetEditorCamera();
+		[[nodiscard]] const EditorCameraComponent* GetEditorCamera() const;
+		bool                                       BuildEditorCameraMatrices(
 			const Render::SceneRenderRequest& request,
 			Mat4&                             outView,
 			Mat4&                             outProj

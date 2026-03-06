@@ -5,8 +5,8 @@
 
 #include "engine/render/frame/RenderFrameInputs.h"
 #include "engine/scene/USceneSerializer.h"
-#include "engine/unnamed/framework/components/EditorCameraComponent.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
+#include "engine/unnamed/framework/components/editor/EditorCameraComponent.h"
 #include "engine/unnamed/framework/entity/UEntity.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/unnamed/subsystem/input/UInputSystem.h"
@@ -72,7 +72,9 @@ namespace Unnamed {
 	}
 
 	void UEditorWorld::StartPlayInEditor() {
-		if (mPlayWorld || !mScene) { return; }
+		if (mPlayWorld || !mScene) {
+			return;
+		}
 
 		const auto totalStart     = std::chrono::steady_clock::now();
 		auto       playWorld      = std::make_unique<UGameWorld>();
@@ -112,7 +114,9 @@ namespace Unnamed {
 	}
 
 	void UEditorWorld::StopPlayInEditor() {
-		if (!mPlayWorld) { return; }
+		if (!mPlayWorld) {
+			return;
+		}
 		mPlayWorld->Shutdown();
 		mPlayWorld.reset();
 		if (auto* input = ServiceLocator::Get<UInputSystem>()) {
@@ -140,8 +144,11 @@ namespace Unnamed {
 		    IsActive()) {
 			if (
 				const auto* camera = mEditorEntity->GetComponent<
-					EditorCameraComponent>(); camera && camera->IsActive()
-			) { camera->BuildCameraInput(inputs.camera); }
+					EditorCameraComponent>();
+				camera && camera->IsActive()
+			) {
+				camera->BuildCameraInput(inputs.camera);
+			}
 		}
 	}
 
@@ -149,13 +156,84 @@ namespace Unnamed {
 		return false;
 	}
 
+	UWorld* UEditorWorld::GetRuntimeSceneWorld() {
+		return mPlayWorld ? static_cast<UWorld*>(mPlayWorld.get()) : this;
+	}
+
+	const UWorld* UEditorWorld::GetRuntimeSceneWorld() const {
+		return mPlayWorld ? static_cast<const UWorld*>(mPlayWorld.get()) : this;
+	}
+
+	UScene* UEditorWorld::GetActiveScene() {
+		UWorld* runtimeWorld = GetRuntimeSceneWorld();
+		return runtimeWorld ? &runtimeWorld->GetScene() : nullptr;
+	}
+
+	const UScene* UEditorWorld::GetActiveScene() const {
+		const UWorld* runtimeWorld = GetRuntimeSceneWorld();
+		return runtimeWorld ? &runtimeWorld->GetScene() : nullptr;
+	}
+
+	EditorCameraComponent* UEditorWorld::GetEditorCamera() {
+		if (!mEditorEntity || !mEditorEntity->IsActive()) {
+			return nullptr;
+		}
+		auto* camera = mEditorEntity->GetComponent<EditorCameraComponent>();
+		if (!camera || !camera->IsActive()) {
+			return nullptr;
+		}
+		return camera;
+	}
+
+	const EditorCameraComponent* UEditorWorld::GetEditorCamera() const {
+		if (!mEditorEntity || !mEditorEntity->IsActive()) {
+			return nullptr;
+		}
+		const auto* camera =
+			mEditorEntity->GetComponent<EditorCameraComponent>();
+		if (!camera || !camera->IsActive()) {
+			return nullptr;
+		}
+		return camera;
+	}
+
+	bool UEditorWorld::BuildEditorCameraMatrices(
+		const Render::SceneRenderRequest& request,
+		Mat4&                             outView,
+		Mat4&                             outProj
+	) {
+		UpdateEditorCameraAspectIfNeeded(request);
+		if (!mEditorEntity || !mEditorEntity->IsActive()) {
+			return false;
+		}
+
+		const auto* camera = mEditorEntity->GetComponent<
+			EditorCameraComponent>();
+		if (!camera || !camera->IsActive()) {
+			return false;
+		}
+		return camera->BuildViewProjectionMatrices(outView, outProj);
+	}
+
+	void UEditorWorld::SetEditorCameraLookEnabled(const bool enabled) {
+		auto* camera = GetEditorCamera();
+		if (!camera) {
+			return;
+		}
+		camera->SetLookEnabled(enabled);
+	}
+
 	void UEditorWorld::UpdateEditorCameraAspectIfNeeded(
 		const Render::SceneRenderRequest& request
 	) {
-		if (!mEditorEntity || !mEditorEntity->IsActive()) { return; }
+		if (!mEditorEntity || !mEditorEntity->IsActive()) {
+			return;
+		}
 
 		auto* camera = mEditorEntity->GetComponent<EditorCameraComponent>();
-		if (!camera || !camera->IsActive()) { return; }
+		if (!camera || !camera->IsActive()) {
+			return;
+		}
 
 		bool shouldUpdate = false;
 		switch (request.mode) {
@@ -182,44 +260,5 @@ namespace Unnamed {
 		mLastAspectMode           = request.mode;
 		mLastAspectViewportWidth  = request.viewportPanelWidth;
 		mLastAspectViewportHeight = request.viewportPanelHeight;
-	}
-
-	UWorld* UEditorWorld::GetRuntimeSceneWorld() {
-		return mPlayWorld ? static_cast<UWorld*>(mPlayWorld.get()) : this;
-	}
-
-	const UWorld* UEditorWorld::GetRuntimeSceneWorld() const {
-		return mPlayWorld ? static_cast<const UWorld*>(mPlayWorld.get()) : this;
-	}
-
-	UScene* UEditorWorld::GetActiveScene() {
-		UWorld* runtimeWorld = GetRuntimeSceneWorld();
-		return runtimeWorld ? &runtimeWorld->GetScene() : nullptr;
-	}
-
-	const UScene* UEditorWorld::GetActiveScene() const {
-		const UWorld* runtimeWorld = GetRuntimeSceneWorld();
-		return runtimeWorld ? &runtimeWorld->GetScene() : nullptr;
-	}
-
-	bool UEditorWorld::BuildEditorCameraMatrices(
-		const Render::SceneRenderRequest& request,
-		Mat4&                             outView,
-		Mat4&                             outProj
-	) {
-		UpdateEditorCameraAspectIfNeeded(request);
-		if (!mEditorEntity || !mEditorEntity->IsActive()) { return false; }
-
-		const auto* camera = mEditorEntity->GetComponent<
-			EditorCameraComponent>();
-		if (!camera || !camera->IsActive()) { return false; }
-		return camera->BuildViewProjectionMatrices(outView, outProj);
-	}
-
-	void UEditorWorld::SetEditorCameraLookEnabled(const bool enabled) {
-		if (!mEditorEntity || !mEditorEntity->IsActive()) { return; }
-		auto* camera = mEditorEntity->GetComponent<EditorCameraComponent>();
-		if (!camera || !camera->IsActive()) { return; }
-		camera->SetLookEnabled(enabled);
 	}
 }

@@ -165,7 +165,8 @@ namespace Unnamed {
 
 		r.payload     = std::move(out);
 		r.resolveName = std::filesystem::path(path).filename().string();
-		if (std::error_code ec; std::filesystem::exists(path, ec)) {
+		if (std::error_code ec;
+			std::filesystem::exists(path, ec)) {
 			r.stamp.sizeInBytes = std::filesystem::file_size(path, ec);
 		}
 

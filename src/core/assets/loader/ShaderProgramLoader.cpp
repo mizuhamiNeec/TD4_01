@@ -20,10 +20,14 @@ namespace Unnamed {
 		std::string ResolveRelativePath(
 			const std::filesystem::path& baseDir, std::string path
 		) {
-			if (path.empty()) { return path; }
+			if (path.empty()) {
+				return path;
+			}
 
 			std::filesystem::path p(path);
-			if (p.is_relative()) { p = baseDir / p; }
+			if (p.is_relative()) {
+				p = baseDir / p;
+			}
 			return StrUtil::NormalizePath(p.lexically_normal().string());
 		}
 
@@ -33,7 +37,9 @@ namespace Unnamed {
 		) {
 			if (j.is_array()) {
 				for (const auto& v : j) {
-					if (!v.is_string()) { continue; }
+					if (!v.is_string()) {
+						continue;
+					}
 					const std::string s  = v.get<std::string>();
 					const size_t      eq = s.find('=');
 					if (eq == std::string::npos) {
@@ -47,7 +53,9 @@ namespace Unnamed {
 				return;
 			}
 
-			if (!j.is_object()) { return; }
+			if (!j.is_object()) {
+				return;
+			}
 			for (const auto& [k, v] : j.items()) {
 				if (v.is_string()) {
 					outDefines.emplace_back(k, v.get<std::string>());
@@ -66,8 +74,12 @@ namespace Unnamed {
 		std::optional<ShaderProgramStage> ParseStage(
 			const nlohmann::json& j, const std::filesystem::path& baseDir
 		) {
-			if (!j.is_object()) { return std::nullopt; }
-			if (!j.contains("path")) { return std::nullopt; }
+			if (!j.is_object()) {
+				return std::nullopt;
+			}
+			if (!j.contains("path")) {
+				return std::nullopt;
+			}
 
 			ShaderProgramStage stage = {};
 			stage.sourcePath         = ResolveRelativePath(
@@ -99,10 +111,16 @@ namespace Unnamed {
 		LoadResult result = {};
 
 		std::ifstream ifs(path);
-		if (!ifs) { return result; }
+		if (!ifs) {
+			return result;
+		}
 
 		nlohmann::json root;
-		try { ifs >> root; } catch (...) { return result; }
+		try {
+			ifs >> root;
+		} catch (...) {
+			return result;
+		}
 
 		const std::filesystem::path full(path);
 		const std::filesystem::path baseDir = full.parent_path();
@@ -112,13 +130,21 @@ namespace Unnamed {
 			"name", full.filename().string()
 		);
 
-		if (root.contains("vs")) { data.vs = ParseStage(root["vs"], baseDir); }
-		if (root.contains("ps")) { data.ps = ParseStage(root["ps"], baseDir); }
-		if (root.contains("cs")) { data.cs = ParseStage(root["cs"], baseDir); }
+		if (root.contains("vs")) {
+			data.vs = ParseStage(root["vs"], baseDir);
+		}
+		if (root.contains("ps")) {
+			data.ps = ParseStage(root["ps"], baseDir);
+		}
+		if (root.contains("cs")) {
+			data.cs = ParseStage(root["cs"], baseDir);
+		}
 
 		if (root.contains("includeDirs") && root["includeDirs"].is_array()) {
 			for (const auto& v : root["includeDirs"]) {
-				if (!v.is_string()) { continue; }
+				if (!v.is_string()) {
+					continue;
+				}
 				data.includeDirectories.emplace_back(
 					ResolveRelativePath(baseDir, v.get<std::string>())
 				);
@@ -128,7 +154,9 @@ namespace Unnamed {
 		auto addStageDependency = [&](
 			const std::optional<ShaderProgramStage>& stage
 		) {
-			if (!stage.has_value()) { return; }
+			if (!stage.has_value()) {
+				return;
+			}
 			const AssetID dep = mAssetManager.LoadFromFile(
 				stage->sourcePath, ASSET_TYPE::SHADER_SOURCE
 			);

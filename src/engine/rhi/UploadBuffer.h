@@ -76,7 +76,9 @@ namespace Unnamed::Rhi {
 		}
 
 		// デバッグ名の設定
-		if (debugName) { mResource->SetName(debugName); }
+		if (debugName) {
+			mResource->SetName(debugName);
+		}
 
 		// 永続マップ
 		hr = mResource->Map(0, nullptr, reinterpret_cast<void**>(&mMapped));
@@ -99,7 +101,9 @@ namespace Unnamed::Rhi {
 
 	template <typename T>
 	void UploadBuffer<T>::Write(const uint32_t index, const T& data) {
-		if (!mMapped || index >= mElementCount) { return; }
+		if (!mMapped || index >= mElementCount) {
+			return;
+		}
 		std::memcpy(
 			mMapped + static_cast<uint64_t>(index) * mStride, &data,
 			sizeof(T)
@@ -110,7 +114,9 @@ namespace Unnamed::Rhi {
 	D3D12_GPU_VIRTUAL_ADDRESS UploadBuffer<T>::GetGpuAddress(
 		const uint32_t index
 	) const {
-		if (!mResource || index >= mElementCount) { return 0; }
+		if (!mResource || index >= mElementCount) {
+			return 0;
+		}
 		return mResource->GetGPUVirtualAddress() + static_cast<uint64_t>(
 			       index) * mStride;
 	}

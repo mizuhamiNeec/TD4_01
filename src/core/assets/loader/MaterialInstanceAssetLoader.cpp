@@ -20,14 +20,20 @@ namespace Unnamed {
 		std::string ResolveRelativePath(
 			const std::filesystem::path& baseDir, std::string path
 		) {
-			if (path.empty()) { return path; }
+			if (path.empty()) {
+				return path;
+			}
 			std::filesystem::path p(path);
-			if (p.is_relative()) { p = baseDir / p; }
+			if (p.is_relative()) {
+				p = baseDir / p;
+			}
 			return StrUtil::NormalizePath(p.lexically_normal().string());
 		}
 
 		Vec4 ParseVec4(const nlohmann::json& j, const Vec4 fallback) {
-			if (!j.is_array() || j.size() < 4) { return fallback; }
+			if (!j.is_array() || j.size() < 4) {
+				return fallback;
+			}
 			return Vec4(
 				j[0].get<float>(),
 				j[1].get<float>(),
@@ -54,10 +60,16 @@ namespace Unnamed {
 	LoadResult MaterialInstanceAssetLoader::Load(const std::string& path) {
 		LoadResult    result = {};
 		std::ifstream ifs(path);
-		if (!ifs) { return result; }
+		if (!ifs) {
+			return result;
+		}
 
 		nlohmann::json root;
-		try { ifs >> root; } catch (...) { return result; }
+		try {
+			ifs >> root;
+		} catch (...) {
+			return result;
+		}
 
 		const std::filesystem::path full(path);
 		const std::filesystem::path baseDir = full.parent_path();
@@ -81,7 +93,9 @@ namespace Unnamed {
 
 		if (root.contains("textures") && root["textures"].is_object()) {
 			for (const auto& [slot, p] : root["textures"].items()) {
-				if (!p.is_string()) { continue; }
+				if (!p.is_string()) {
+					continue;
+				}
 				std::string texturePath = ResolveRelativePath(
 					baseDir, p.get<std::string>()
 				);
@@ -98,7 +112,9 @@ namespace Unnamed {
 
 		if (root.contains("scalars") && root["scalars"].is_object()) {
 			for (const auto& [k, v] : root["scalars"].items()) {
-				if (!v.is_number()) { continue; }
+				if (!v.is_number()) {
+					continue;
+				}
 				data.scalarOverrides[k] = v.get<float>();
 			}
 		}

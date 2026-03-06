@@ -68,7 +68,9 @@ namespace UPhysics {
 		SAHSplit(start, end, axis, mid);
 
 		// 分割失敗
-		if (mid == start || mid == end) { mid = (start + end) / 2; }
+		if (mid == start || mid == end) {
+			mid = (start + end) / 2;
+		}
 
 		// 子を深度優先でプッシュ
 		const uint32_t left  = Recurse(start, mid, depth + 1);

@@ -61,7 +61,9 @@ namespace Unnamed::Rhi {
 		mOffset   = 0;
 	}
 
-	void D3D12FrameUploadAllocator::BeginFrame() { mOffset = 0; }
+	void D3D12FrameUploadAllocator::BeginFrame() {
+		mOffset = 0;
+	}
 
 	D3D12_GPU_VIRTUAL_ADDRESS D3D12FrameUploadAllocator::AllocateConstantBuffer(
 		const void* srcData, uint32_t bytes

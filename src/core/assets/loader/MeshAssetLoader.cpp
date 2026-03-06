@@ -47,7 +47,9 @@ namespace Unnamed {
 		FileStamp ReadCurrentFileStamp(const std::string& path) {
 			FileStamp       stamp = {};
 			std::error_code ec;
-			if (!std::filesystem::exists(path, ec)) { return stamp; }
+			if (!std::filesystem::exists(path, ec)) {
+				return stamp;
+			}
 
 			const auto lastWrite = std::filesystem::last_write_time(path, ec);
 			if (!ec) {
@@ -138,18 +140,26 @@ namespace Unnamed {
 			const aiMatrix4x4& parentTransform,
 			const aiScene*     scene
 		) {
-			if (!node || !scene) { return; }
+			if (!node || !scene) {
+				return;
+			}
 
 			const aiMatrix4x4 global = parentTransform * node->mTransformation;
 
 			for (uint32_t mi = 0; mi < node->mNumMeshes; ++mi) {
 				const uint32_t meshIndex = node->mMeshes[mi];
-				if (meshIndex >= scene->mNumMeshes) { continue; }
-				aiMesh* mesh = scene->mMeshes[meshIndex];
-				if (!mesh) { continue; }
+				if (meshIndex >= scene->mNumMeshes) {
+					continue;
+				}
+				const aiMesh* mesh = scene->mMeshes[meshIndex];
+				if (!mesh) {
+					continue;
+				}
 
 				// スキン無しだけで呼ばれる想定だが、混在ファイルの安全のためボーン付きは触らない
-				if (mesh->HasBones()) { continue; }
+				if (mesh->HasBones()) {
+					continue;
+				}
 
 				// 位置
 				for (uint32_t v = 0; v < mesh->mNumVertices; ++v) {
@@ -187,14 +197,18 @@ namespace Unnamed {
 			}
 		}
 
-		if (outType) { *outType = ok ? ASSET_TYPE::MESH : ASSET_TYPE::UNKNOWN; }
+		if (outType) {
+			*outType = ok ? ASSET_TYPE::MESH : ASSET_TYPE::UNKNOWN;
+		}
 
 		return ok;
 	}
 
 	LoadResult MeshAssetLoader::Load(const std::string& path) {
 		LoadResult r = {};
-		if (TryLoadDerivedCache(path, r)) { return r; }
+		if (TryLoadDerivedCache(path, r)) {
+			return r;
+		}
 
 		UProfiler*            profiler = ServiceLocator::Get<UProfiler>();
 		UProfiler::ScopeTimer assimpScope(profiler, "MeshImport.Assimp");
@@ -285,7 +299,9 @@ namespace Unnamed {
 				for (uint32_t boneIdx = 0; boneIdx < mesh->mNumBones; ++
 				     boneIdx) {
 					const aiBone* bone = mesh->mBones[boneIdx];
-					if (!bone) { continue; }
+					if (!bone) {
+						continue;
+					}
 
 					const std::string boneName        = bone->mName.C_Str();
 					uint16_t          globalBoneIndex = 0;
@@ -301,14 +317,20 @@ namespace Unnamed {
 						sb.parentIndex           = -1;
 						sb.inverseBindPose       = ToMat4(bone->mOffsetMatrix);
 						out.skeleton.emplace_back(std::move(sb));
-					} else { globalBoneIndex = it->second; }
+					} else {
+						globalBoneIndex = it->second;
+					}
 
 					for (uint32_t w = 0; w < bone->mNumWeights; ++w) {
 						const uint32_t localVertex = bone->mWeights[w].
 							mVertexId;
-						if (localVertex >= mesh->mNumVertices) { continue; }
+						if (localVertex >= mesh->mNumVertices) {
+							continue;
+						}
 						const uint32_t globalVertex = baseVertex + localVertex;
-						if (globalVertex >= out.vertices.size()) { continue; }
+						if (globalVertex >= out.vertices.size()) {
+							continue;
+						}
 						AddBoneWeight(
 							out.vertices[globalVertex],
 							globalBoneIndex,
@@ -324,7 +346,9 @@ namespace Unnamed {
 			for (uint32_t faceIndex = 0; faceIndex < mesh->mNumFaces; ++
 			     faceIndex) {
 				const aiFace& face = mesh->mFaces[faceIndex];
-				if (face.mNumIndices < 3) { continue; }
+				if (face.mNumIndices < 3) {
+					continue;
+				}
 
 				for (uint32_t i = 1; i + 1 < face.mNumIndices; ++i) {
 					out.indices.emplace_back(baseVertex + face.mIndices[0]);
@@ -360,15 +384,23 @@ namespace Unnamed {
 		const std::string& path, LoadResult& out
 	) {
 		const std::filesystem::path cachePath = GetDerivedCachePath(path);
-		if (!std::filesystem::exists(cachePath)) { return false; }
+		if (!std::filesystem::exists(cachePath)) {
+			return false;
+		}
 
 		std::ifstream ifs(cachePath, std::ios::binary);
-		if (!ifs) { return false; }
+		if (!ifs) {
+			return false;
+		}
 
 		MeshCacheHeader header = {};
-		if (!ReadPod(ifs, header)) { return false; }
+		if (!ReadPod(ifs, header)) {
+			return false;
+		}
 		if (header.magic != kMeshCacheMagic || header.version !=
-		    kMeshCacheVersion) { return false; }
+		    kMeshCacheVersion) {
+			return false;
+		}
 
 		const std::string normalized  = StrUtil::NormalizePath(path);
 		const FileStamp   sourceStamp = ReadCurrentFileStamp(path);
@@ -379,7 +411,9 @@ namespace Unnamed {
 			header.sourceLastWriteTicks !=
 			sourceStamp.lastWriteTicks ||
 			header.sourceSizeBytes != sourceStamp.sizeInBytes
-		) { return false; }
+		) {
+			return false;
+		}
 
 		const bool hasSkinning = (header.flags & 0x1u) != 0u;
 		if (header.importerConfigHash != BuildImporterConfigHash(hasSkinning)) {
@@ -404,19 +438,27 @@ namespace Unnamed {
 				 reinterpret_cast<char*>(mesh.indices.data()),
 				 sizeof(uint32_t) * mesh.indices.size()
 			 )))
-		) { return false; }
+		) {
+			return false;
+		}
 
 		for (uint32_t i = 0; i < header.skeletonBoneCount; ++i) {
 			uint32_t nameLen = 0;
-			if (!ReadPod(ifs, nameLen)) { return false; }
+			if (!ReadPod(ifs, nameLen)) {
+				return false;
+			}
 			mesh.skeleton[i].name.resize(nameLen);
 			if (
 				nameLen > 0 &&
 				!static_cast<bool>(ifs.read(
 					mesh.skeleton[i].name.data(), nameLen
 				))
-			) { return false; }
-			if (!ReadPod(ifs, mesh.skeleton[i].parentIndex)) { return false; }
+			) {
+				return false;
+			}
+			if (!ReadPod(ifs, mesh.skeleton[i].parentIndex)) {
+				return false;
+			}
 			if (!ReadPod(ifs, mesh.skeleton[i].inverseBindPose)) {
 				return false;
 			}
@@ -447,14 +489,18 @@ namespace Unnamed {
 		const auto* mesh = std::get_if<MeshAssetData>(
 			&const_cast<AssetPayload&>(in.payload)
 		);
-		if (!mesh) { return false; }
+		if (!mesh) {
+			return false;
+		}
 
 		const std::filesystem::path cachePath = GetDerivedCachePath(path);
 		std::error_code             ec;
 		std::filesystem::create_directories(cachePath.parent_path(), ec);
 
 		std::ofstream ofs(cachePath, std::ios::binary | std::ios::trunc);
-		if (!ofs) { return false; }
+		if (!ofs) {
+			return false;
+		}
 
 		MeshCacheHeader header = {};
 		header.sourcePathHash  = std::hash<std::string>{}(
@@ -468,7 +514,9 @@ namespace Unnamed {
 		header.skeletonBoneCount = static_cast<uint32_t>(mesh->skeleton.size());
 		header.flags = mesh->hasSkinning ? 0x1u : 0u;
 
-		if (!WritePod(ofs, header)) { return false; }
+		if (!WritePod(ofs, header)) {
+			return false;
+		}
 		if (
 			(header.vertexCount > 0 &&
 			 !static_cast<bool>(ofs.write(
@@ -480,17 +528,27 @@ namespace Unnamed {
 				 reinterpret_cast<const char*>(mesh->indices.data()),
 				 sizeof(uint32_t) * mesh->indices.size()
 			 )))
-		) { return false; }
+		) {
+			return false;
+		}
 
 		for (const auto& bone : mesh->skeleton) {
 			const uint32_t nameLen = static_cast<uint32_t>(bone.name.size());
-			if (!WritePod(ofs, nameLen)) { return false; }
+			if (!WritePod(ofs, nameLen)) {
+				return false;
+			}
 			if (
 				nameLen > 0 &&
 				!static_cast<bool>(ofs.write(bone.name.data(), nameLen))
-			) { return false; }
-			if (!WritePod(ofs, bone.parentIndex)) { return false; }
-			if (!WritePod(ofs, bone.inverseBindPose)) { return false; }
+			) {
+				return false;
+			}
+			if (!WritePod(ofs, bone.parentIndex)) {
+				return false;
+			}
+			if (!WritePod(ofs, bone.inverseBindPose)) {
+				return false;
+			}
 		}
 
 		if (UProfiler* profiler = ServiceLocator::Get<UProfiler>()) {

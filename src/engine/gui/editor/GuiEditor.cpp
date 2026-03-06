@@ -27,10 +27,14 @@ namespace Unnamed::Gui {
 			flags |= ImGuiTreeNodeFlags_Leaf |
 				ImGuiTreeNodeFlags_NoTreePushOnOpen;
 		}
-		if (isSelected) { flags |= ImGuiTreeNodeFlags_Selected; }
+		if (isSelected) {
+			flags |= ImGuiTreeNodeFlags_Selected;
+		}
 
 		std::string label;
-		if (widget->GetName().empty()) { label = "(unnamed)"; } else {
+		if (widget->GetName().empty()) {
+			label = "(unnamed)";
+		} else {
 			label = std::string(widget->GetName());
 		}
 
@@ -47,14 +51,18 @@ namespace Unnamed::Gui {
 			// 所有している子を描画
 			if (!widget->GetChildren().empty()) {
 				for (const auto& child : widget->GetChildren()) {
-					if (child) { DrawWidgetTreeNode(child.get()); }
+					if (child) {
+						DrawWidgetTreeNode(child.get());
+					}
 				}
 			}
 
 			// 参照している子も描画
 			if (!widget->GetReferenceChildren().empty()) {
 				for (auto* child : widget->GetReferenceChildren()) {
-					if (child) { DrawWidgetTreeNode(child); }
+					if (child) {
+						DrawWidgetTreeNode(child);
+					}
 				}
 			}
 
@@ -71,7 +79,9 @@ namespace Unnamed::Gui {
 		}
 
 		UiWidget* rootWidget = uiRoot.GetRootWidget();
-		if (rootWidget) { DrawWidgetTreeNode(rootWidget); } else {
+		if (rootWidget) {
+			DrawWidgetTreeNode(rootWidget);
+		} else {
 			ImGui::TextUnformatted("No root widget.");
 		}
 
@@ -301,7 +311,9 @@ namespace Unnamed::Gui {
 						kChannelNone, "Failed to save document: {}", pathBuffer
 					);
 				}
-			} else { Warning(kChannelNone, "No active document to save"); }
+			} else {
+				Warning(kChannelNone, "No active document to save");
+			}
 		}
 
 		// Load

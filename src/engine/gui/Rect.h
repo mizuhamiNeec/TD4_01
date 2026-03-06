@@ -9,8 +9,13 @@ namespace Unnamed::Gui {
 		float width  = 0.0f; // 幅
 		float height = 0.0f; // 高さ
 
-		[[nodiscard]] Vec2 Position() const { return Vec2{x, y}; }
-		[[nodiscard]] Vec2 Size() const { return Vec2{width, height}; }
+		[[nodiscard]] Vec2 Position() const {
+			return Vec2{x, y};
+		}
+
+		[[nodiscard]] Vec2 Size() const {
+			return Vec2{width, height};
+		}
 
 		[[nodiscard]] Vec2 Center() const {
 			return Vec2{x + width * 0.5f, y + height * 0.5f};

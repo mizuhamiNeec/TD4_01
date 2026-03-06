@@ -67,9 +67,19 @@ namespace Unnamed {
 
 		UnnamedConVar& operator=(const T& value);
 
+		[[nodiscard]] T GetValue() const { return mValue; }
+
 		void SetValue(const T& value) { mValue = value; }
 
-		[[nodiscard]] T GetValue() const { return mValue; }
+		[[nodiscard]] T GetDefaultValue() const { return mDefaultValue; }
+
+		[[nodiscard]] T GetMinValue() const { return mMinValue; }
+
+		[[nodiscard]] T GetMaxValue() const { return mMaxValue; }
+
+		[[nodiscard]] bool HasMinValue() const { return mHasMinValue; }
+
+		[[nodiscard]] bool HasMaxValue() const { return mHasMaxValue; }
 
 		OnChange onChangeCallback;
 

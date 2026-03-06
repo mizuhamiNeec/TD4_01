@@ -1,4 +1,4 @@
-#include "GameplayCameraComponent.h"
+#include "CameraComponent.h"
 
 #include <imgui.h>
 
@@ -28,14 +28,14 @@ namespace Unnamed {
 		}
 	}
 
-	void GameplayCameraComponent::Deserialize(const JsonReader& reader) {
+	void CameraComponent::Deserialize(const JsonReader& reader) {
 		mFovYDegrees  = ReadFloatOr(reader, "fovYDegrees", mFovYDegrees);
 		mNearZ        = ReadFloatOr(reader, "nearZ", mNearZ);
 		mFarZ         = ReadFloatOr(reader, "farZ", mFarZ);
 		mCameraActive = ReadBoolOr(reader, "cameraActive", mCameraActive);
 	}
 
-	void GameplayCameraComponent::Serialize(JsonWriter& writer) const {
+	void CameraComponent::Serialize(JsonWriter& writer) const {
 		writer.Key("fovYDegrees");
 		writer.Write(mFovYDegrees);
 		writer.Key("nearZ");
@@ -47,7 +47,7 @@ namespace Unnamed {
 	}
 
 #ifdef _DEBUG
-	void GameplayCameraComponent::DrawInspectorImGui() {
+	void CameraComponent::DrawInspectorImGui() {
 		ImGui::Checkbox("Camera Active", &mCameraActive);
 		ImGui::DragFloat("FovYDegrees", &mFovYDegrees, 0.1f, 1.0f, 179.0f);
 		ImGui::DragFloat("NearZ", &mNearZ, 0.001f, 0.001f, mFarZ - 0.01f);
@@ -56,21 +56,37 @@ namespace Unnamed {
 	}
 #endif
 
-	void GameplayCameraComponent::SetAspectRatio(const float aspectRatio) {
+	void CameraComponent::SetAspectRatio(const float aspectRatio) {
 		mAspectRatio = aspectRatio > 0.0f ? aspectRatio : 16.0f / 9.0f;
 	}
 
-	bool GameplayCameraComponent::BuildCameraInput(
+	void CameraComponent::SetCameraActive(bool active) noexcept {
+		mCameraActive = active;
+	}
+
+	float CameraComponent::GetAspectRatio() const noexcept {
+		return mAspectRatio;
+	}
+
+	bool CameraComponent::IsCameraActive() const noexcept {
+		return mCameraActive;
+	}
+
+	bool CameraComponent::BuildCameraInput(
 		Render::RenderCameraInput& outCamera
 	) const {
-		if (!mCameraActive) { return false; }
+		if (!mCameraActive) {
+			return false;
+		}
 
 		const auto* transform = GetTransform();
-		if (!transform) { return false; }
+		if (!transform) {
+			return false;
+		}
 
 		const Mat4 world = transform->WorldMat();
-		outCamera.view      = world.Inverse();
-		outCamera.proj      = Mat4::PerspectiveFovD3D(
+		outCamera.view   = world.Inverse();
+		outCamera.proj   = Mat4::PerspectiveFovD3D(
 			mFovYDegrees * Math::deg2Rad,
 			mAspectRatio,
 			mNearZ,
@@ -86,10 +102,18 @@ namespace Unnamed {
 		return true;
 	}
 
-	TransformComponent* GameplayCameraComponent::GetTransform() const {
+	std::string_view CameraComponent::GetStableName() const {
+		return "game.Camera";
+	}
+
+	std::string_view CameraComponent::GetComponentName() const {
+		return "Camera";
+	}
+
+	TransformComponent* CameraComponent::GetTransform() const {
 		UEntity* owner = GetOwner();
 		return owner ? owner->GetComponent<TransformComponent>() : nullptr;
 	}
 
-	REGISTER_COMPONENT(GameplayCameraComponent);
+	REGISTER_COMPONENT(CameraComponent);
 }

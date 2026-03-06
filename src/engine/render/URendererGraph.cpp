@@ -16,51 +16,10 @@
 #include "rendergraph/RenderPassContext.h"
 
 namespace Unnamed::Render {
-	void URenderer::LoadPostFxChain(RenderDevice& renderDevice) {
-		auto& assetManager = renderDevice.GetAssetManager();
-		mPostFxChainAsset  = assetManager.LoadFromFile(
-			"./content/core/postfx/default.postfx.json",
-			ASSET_TYPE::POST_FX_CHAIN
-		);
-		mPostFxPasses.clear();
-
-		const auto* chain = assetManager.Get<PostFxChainAssetData>(
-			mPostFxChainAsset
-		);
-		if (!chain) { return; }
-
-		auto& dx = static_cast<Rhi::D3D12Device&>(renderDevice.GetRhiDevice());
-		for (const auto& p : chain->passes) {
-			if (!p.enabled || p.shaderProgramId == kInvalidAssetID) {
-				continue;
-			}
-
-			PostFxRuntimePass runtime         = {};
-			runtime.name                      = p.name;
-			runtime.enabled                   = p.enabled;
-			runtime.pass.rootSig              = dx.GetFsRootSignature();
-			runtime.pass.psoKey.rootSignature = runtime.pass.rootSig;
-			runtime.pass.psoKey.vertexLayout  = std::nullopt;
-			runtime.pass.psoKey.rtvFormat     = Rhi::ToDxgiFormat(
-				dx.GetSwapChain().GetFormat()
-			);
-			runtime.pass.psoKey.depthEnable = false;
-			runtime.pass.psoKey.dsvFormat   = DXGI_FORMAT_UNKNOWN;
-			runtime.pass.psoKey.depthFunc   = D3D12_COMPARISON_FUNC_ALWAYS;
-
-			if (!ResolveShaderProgramStageKey(
-				renderDevice, p.shaderProgramId, "vs", runtime.pass.psoKey.vs
-			)) { continue; }
-			if (!ResolveShaderProgramStageKey(
-				renderDevice, p.shaderProgramId, "ps", runtime.pass.psoKey.ps
-			)) { continue; }
-
-			mPostFxPasses.emplace_back(std::move(runtime));
-		}
-	}
-
 	void URenderer::BuildGraph(RenderDevice& renderDevice) {
-		if (mGraphBuilt) { return; }
+		if (mGraphBuilt) {
+			return;
+		}
 		mGraphBuilt = true;
 
 		mGraph.SetRenderDevice(renderDevice);
@@ -227,7 +186,9 @@ namespace Unnamed::Render {
 					pass.SetIndexBuffer(batch.items[0].ibv);
 
 					for (const auto& item : batch.items) {
-						if (item.isPortalSurface != 0) { continue; }
+						if (item.isPortalSurface != 0) {
+							continue;
+						}
 						pass.BindGraphicsCbv(
 							1, mObjectCb.GetGpuAddress(item.objectCbIndex)
 						);
@@ -282,14 +243,18 @@ namespace Unnamed::Render {
 						if (
 							directionIndex >= mActivePortalViews.size() ||
 							directionIndex >= kPortalDirections
-						) { return; }
+						) {
+							return;
+						}
 
 						const auto& recursiveView =
 							mPortalRecursionViews[directionIndex][depthIndex];
 						if (
 							depthIndex > 0 &&
 							!recursiveView.visibleFromPrevious
-						) { return; }
+						) {
+							return;
+						}
 						pass.SetViewportAndScissor(
 							0.0f,
 							0.0f,
@@ -319,7 +284,9 @@ namespace Unnamed::Render {
 							pass.SetIndexBuffer(batch.items[0].ibv);
 
 							for (const auto& item : batch.items) {
-								if (item.isPortalSurface != 0) { continue; }
+								if (item.isPortalSurface != 0) {
+									continue;
+								}
 								pass.BindGraphicsCbv(
 									1, mObjectCb.GetGpuAddress(
 										item.objectCbIndex
@@ -361,12 +328,16 @@ namespace Unnamed::Render {
 							if (
 								directionIndex >= mActivePortalViews.size() ||
 								directionIndex >= kPortalDirections
-							) { return; }
+							) {
+								return;
+							}
 
 							const auto& maskView =
 								mPortalRecursionViews[directionIndex][
 									depthIndex + 1];
-							if (!maskView.visibleFromPrevious) { return; }
+							if (!maskView.visibleFromPrevious) {
+								return;
+							}
 							pass.SetViewportAndScissor(
 								0.0f,
 								0.0f,
@@ -418,12 +389,16 @@ namespace Unnamed::Render {
 							if (
 								directionIndex >= mActivePortalViews.size() ||
 								directionIndex >= kPortalDirections
-							) { return; }
+							) {
+								return;
+							}
 
 							const auto& maskView =
 								mPortalRecursionViews[directionIndex][
 									depthIndex + 1];
-							if (!maskView.visibleFromPrevious) { return; }
+							if (!maskView.visibleFromPrevious) {
+								return;
+							}
 							pass.SetViewportAndScissor(
 								0.0f,
 								0.0f,
@@ -473,9 +448,13 @@ namespace Unnamed::Render {
 
 		mGraph.AddPass(
 			"PortalMaskPass",
-			[this](RenderGraphBuilder& b) { b.WriteDepth(mDepthTextureId); },
+			[this](RenderGraphBuilder& b) {
+				b.WriteDepth(mDepthTextureId);
+			},
 			[this, &renderDevice](RenderPassContext& pass) {
-				if (mActivePortalViews.empty()) { return; }
+				if (mActivePortalViews.empty()) {
+					return;
+				}
 
 				pass.SetViewportAndScissor(
 					0.0f,
@@ -530,7 +509,9 @@ namespace Unnamed::Render {
 				b.WriteDepth(mDepthTextureId);
 			},
 			[this, &renderDevice](RenderPassContext& pass) {
-				if (mActivePortalViews.empty()) { return; }
+				if (mActivePortalViews.empty()) {
+					return;
+				}
 
 				auto&          rhi        = renderDevice.GetRhiDevice();
 				const uint32_t frameIndex =
@@ -585,7 +566,9 @@ namespace Unnamed::Render {
 				b.WriteDepth(mDepthTextureId);
 			},
 			[this, &renderDevice](RenderPassContext& pass) {
-				if (mWorldBillboards.empty()) { return; }
+				if (mWorldBillboards.empty()) {
+					return;
+				}
 
 				auto&          rhi        = renderDevice.GetRhiDevice();
 				const uint32_t frameIndex =
@@ -593,11 +576,12 @@ namespace Unnamed::Render {
 				const uint32_t frameSlot =
 					frameIndex % rhi.GetSwapChain().GetBufferCount();
 				auto& allocator = static_cast<Rhi::D3D12Device&>(rhi).
-				                  GetFrameUploadAllocator();
+					GetFrameUploadAllocator();
 
 				const Vec3 cameraRight = mBillboardCameraWorld.GetRight().
-				                         Normalized();
-				const Vec3 cameraUp = mBillboardCameraWorld.GetUp().Normalized();
+					Normalized();
+				const Vec3 cameraUp = mBillboardCameraWorld.GetUp().
+					Normalized();
 				const Vec3 cameraForward =
 					mBillboardCameraWorld.GetForward().Normalized();
 
@@ -621,39 +605,49 @@ namespace Unnamed::Render {
 				pass.SetIndexBuffer(mBillboardPass.geom.ibv);
 
 				for (const auto& billboard : mWorldBillboards) {
-					const float cosine = std::cos(billboard.rotationRad);
-					const float sine = std::sin(billboard.rotationRad);
-					const Vec3 rotatedRight =
+					const float cosine       = std::cos(billboard.rotationRad);
+					const float sine         = std::sin(billboard.rotationRad);
+					const Vec3  rotatedRight =
 						cameraRight * cosine + cameraUp * sine;
 					const Vec3 rotatedUp =
 						cameraRight * -sine + cameraUp * cosine;
 
 					Rhi::ObjectConstants object = {};
-					object.world = Mat4::identity;
-					object.world.m[0][0] = rotatedRight.x * billboard.sizeWorld.x * 0.5f;
-					object.world.m[0][1] = rotatedRight.y * billboard.sizeWorld.x * 0.5f;
-					object.world.m[0][2] = rotatedRight.z * billboard.sizeWorld.x * 0.5f;
-					object.world.m[1][0] = rotatedUp.x * billboard.sizeWorld.y * 0.5f;
-					object.world.m[1][1] = rotatedUp.y * billboard.sizeWorld.y * 0.5f;
-					object.world.m[1][2] = rotatedUp.z * billboard.sizeWorld.y * 0.5f;
-					object.world.m[2][0] = cameraForward.x;
-					object.world.m[2][1] = cameraForward.y;
-					object.world.m[2][2] = cameraForward.z;
-					object.world.m[3][0] = billboard.worldPosition.x;
-					object.world.m[3][1] = billboard.worldPosition.y;
-					object.world.m[3][2] = billboard.worldPosition.z;
+					object.world                = Mat4::identity;
+					object.world.m[0][0]        =
+						rotatedRight.x * billboard.sizeWorld.x * 0.5f;
+					object.world.m[0][1] =
+						rotatedRight.y * billboard.sizeWorld.x * 0.5f;
+					object.world.m[0][2] =
+						rotatedRight.z * billboard.sizeWorld.x * 0.5f;
+					object.world.m[1][0] =
+						rotatedUp.x * billboard.sizeWorld.y * 0.5f;
+					object.world.m[1][1] =
+						rotatedUp.y * billboard.sizeWorld.y * 0.5f;
+					object.world.m[1][2] =
+						rotatedUp.z * billboard.sizeWorld.y * 0.5f;
+					object.world.m[2][0]         = cameraForward.x;
+					object.world.m[2][1]         = cameraForward.y;
+					object.world.m[2][2]         = cameraForward.z;
+					object.world.m[3][0]         = billboard.worldPosition.x;
+					object.world.m[3][1]         = billboard.worldPosition.y;
+					object.world.m[3][2]         = billboard.worldPosition.z;
 					object.worldInverseTranspose =
 						object.world.Inverse().Transpose();
 
 					Rhi::MaterialConstants material = {};
-					material.baseColor = billboard.color;
-					material.opacity = billboard.color.w;
-					material.domainMode = 0.0f;
+					material.baseColor              = billboard.color;
+					material.opacity                = billboard.color.w;
+					material.domainMode             = 0.0f;
 
 					const D3D12_GPU_VIRTUAL_ADDRESS objectCb =
-						allocator.AllocateConstantBuffer(&object, sizeof(object));
+						allocator.AllocateConstantBuffer(
+							&object, sizeof(object)
+						);
 					const D3D12_GPU_VIRTUAL_ADDRESS materialCb =
-						allocator.AllocateConstantBuffer(&material, sizeof(material));
+						allocator.AllocateConstantBuffer(
+							&material, sizeof(material)
+						);
 
 					pass.BindGraphicsCbv(1, objectCb);
 					pass.BindGraphicsCbv(2, materialCb);
@@ -715,7 +709,9 @@ namespace Unnamed::Render {
 				b.WriteRt(postFxInputId);
 			},
 			[this, postFxInputId, &renderDevice](RenderPassContext& pass) {
-				if (mScreenSprites.empty()) { return; }
+				if (mScreenSprites.empty()) {
+					return;
+				}
 
 				auto& dx = static_cast<Rhi::D3D12Device&>(
 					renderDevice.GetRhiDevice()
@@ -723,8 +719,8 @@ namespace Unnamed::Render {
 				auto& allocator = dx.GetFrameUploadAllocator();
 
 				Rhi::FrameConstants frame = {};
-				frame.view = Mat4::identity;
-				frame.proj = Mat4::MakeOrthographicMat(
+				frame.view                = Mat4::identity;
+				frame.proj                = Mat4::MakeOrthographicMat(
 					0.0f,
 					0.0f,
 					static_cast<float>(mSceneRenderWidth),
@@ -754,35 +750,54 @@ namespace Unnamed::Render {
 
 				for (const auto& sprite : mScreenSprites) {
 					const Vec2 center = Vec2(
-						sprite.positionPx.x + (0.5f - sprite.anchor.x) * sprite.sizePx.x,
-						sprite.positionPx.y + (0.5f - sprite.anchor.y) * sprite.sizePx.y
+						sprite.positionPx.x + (0.5f - sprite.anchor.x) * sprite.
+						sizePx.x,
+						sprite.positionPx.y + (0.5f - sprite.anchor.y) * sprite.
+						sizePx.y
 					);
 
 					Rhi::ObjectConstants object = {};
-					object.world = Mat4::Scale(
-						Vec3(sprite.sizePx.x * 0.5f, sprite.sizePx.y * 0.5f, 1.0f)
-					) * Mat4::RotateZ(sprite.rotationRad) * Mat4::Translate(
-						Vec3(center.x, center.y, 0.0f)
-					);
+					object.world                = Mat4::Scale(
+						                              Vec3(
+							                              sprite.sizePx.x *
+							                              0.5f,
+							                              sprite.sizePx.y *
+							                              0.5f, 1.0f
+						                              )
+					                              ) * Mat4::RotateZ(
+						                              sprite.rotationRad
+					                              ) *
+					                              Mat4::Translate(
+						                              Vec3(
+							                              center.x, center.y,
+							                              0.0f
+						                              )
+					                              );
 					object.worldInverseTranspose =
 						object.world.Inverse().Transpose();
 
 					Rhi::MaterialConstants material = {};
-					material.baseColor = sprite.color;
-					material.opacity = sprite.color.w;
-					material.domainMode = 0.0f;
+					material.baseColor              = sprite.color;
+					material.opacity                = sprite.color.w;
+					material.domainMode             = 0.0f;
 
 					const D3D12_GPU_VIRTUAL_ADDRESS objectCb =
-						allocator.AllocateConstantBuffer(&object, sizeof(object));
+						allocator.AllocateConstantBuffer(
+							&object, sizeof(object)
+						);
 					const D3D12_GPU_VIRTUAL_ADDRESS materialCb =
-						allocator.AllocateConstantBuffer(&material, sizeof(material));
+						allocator.AllocateConstantBuffer(
+							&material, sizeof(material)
+						);
 
 					pass.BindGraphicsCbv(1, objectCb);
 					pass.BindGraphicsCbv(2, materialCb);
 					pass.BindGraphicsCbv(3, objectCb);
 					pass.BindGraphicsSrvTable(
 						4,
-						EnsureSpriteTextureLoaded(renderDevice, sprite.textureAssetId)
+						EnsureSpriteTextureLoaded(
+							renderDevice, sprite.textureAssetId
+						)
 					);
 					pass.DrawIndexedTest(mSpritePass.geom.indexCount);
 				}
@@ -839,10 +854,63 @@ namespace Unnamed::Render {
 
 		mGraph.AddPass(
 			"ImGuiMainPass",
-			[](RenderGraphBuilder& b) { b.WriteBackBufferRt(); },
+			[](RenderGraphBuilder& b) {
+				b.WriteBackBufferRt();
+			},
 			[this](RenderPassContext& pass) {
-				if (mUiMainRenderCallback) { mUiMainRenderCallback(pass); }
+				if (mUiMainRenderCallback) {
+					mUiMainRenderCallback(pass);
+				}
 			}
 		);
+	}
+
+	void URenderer::LoadPostFxChain(RenderDevice& renderDevice) {
+		auto& assetManager = renderDevice.GetAssetManager();
+		mPostFxChainAsset  = assetManager.LoadFromFile(
+			"./content/core/postfx/default.postfx.json",
+			ASSET_TYPE::POST_FX_CHAIN
+		);
+		mPostFxPasses.clear();
+
+		const auto* chain = assetManager.Get<PostFxChainAssetData>(
+			mPostFxChainAsset
+		);
+		if (!chain) {
+			return;
+		}
+
+		auto& dx = static_cast<Rhi::D3D12Device&>(renderDevice.GetRhiDevice());
+		for (const auto& p : chain->passes) {
+			if (!p.enabled || p.shaderProgramId == kInvalidAssetID) {
+				continue;
+			}
+
+			PostFxRuntimePass runtime         = {};
+			runtime.name                      = p.name;
+			runtime.enabled                   = p.enabled;
+			runtime.pass.rootSig              = dx.GetFsRootSignature();
+			runtime.pass.psoKey.rootSignature = runtime.pass.rootSig;
+			runtime.pass.psoKey.vertexLayout  = std::nullopt;
+			runtime.pass.psoKey.rtvFormat     = Rhi::ToDxgiFormat(
+				dx.GetSwapChain().GetFormat()
+			);
+			runtime.pass.psoKey.depthEnable = false;
+			runtime.pass.psoKey.dsvFormat   = DXGI_FORMAT_UNKNOWN;
+			runtime.pass.psoKey.depthFunc   = D3D12_COMPARISON_FUNC_ALWAYS;
+
+			if (!ResolveShaderProgramStageKey(
+				renderDevice, p.shaderProgramId, "vs", runtime.pass.psoKey.vs
+			)) {
+				continue;
+			}
+			if (!ResolveShaderProgramStageKey(
+				renderDevice, p.shaderProgramId, "ps", runtime.pass.psoKey.ps
+			)) {
+				continue;
+			}
+
+			mPostFxPasses.emplace_back(std::move(runtime));
+		}
 	}
 }

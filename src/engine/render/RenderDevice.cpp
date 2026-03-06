@@ -21,17 +21,25 @@ namespace Unnamed::Render {
 		HookHotReload();
 	}
 
-	RenderDevice::~RenderDevice() { mShaderLibrary.InvalidateAll(); }
+	RenderDevice::~RenderDevice() {
+		mShaderLibrary.InvalidateAll();
+	}
 
 	AssetManager& RenderDevice::GetAssetManager() const {
 		return mAssetManager;
 	}
 
-	Rhi::IRhiDevice& RenderDevice::GetRhiDevice() const { return mRhiDevice; }
+	Rhi::IRhiDevice& RenderDevice::GetRhiDevice() const {
+		return mRhiDevice;
+	}
 
-	ShaderLibrary& RenderDevice::GetShaderLibrary() { return mShaderLibrary; }
+	ShaderLibrary& RenderDevice::GetShaderLibrary() {
+		return mShaderLibrary;
+	}
 
-	PipelineCache& RenderDevice::GetPipelineCache() { return mPipelineCache; }
+	PipelineCache& RenderDevice::GetPipelineCache() {
+		return mPipelineCache;
+	}
 
 	void RenderDevice::InvalidateAssetDerivedState(const AssetID id) {
 		const auto& meta = mAssetManager.Meta(id);
@@ -82,11 +90,15 @@ namespace Unnamed::Render {
 		mPipelineCache.InvalidateAll();
 	}
 
-	RgResourceRegistry& RenderDevice::GetRegistry() { return mRegistry; }
+	RgResourceRegistry& RenderDevice::GetRegistry() {
+		return mRegistry;
+	}
 
 	void RenderDevice::HookHotReload() {
 		mAssetManager.RegisterReload(
-			[this](AssetID id) { InvalidateAssetDerivedState(id); }
+			[this](AssetID id) {
+				InvalidateAssetDerivedState(id);
+			}
 		);
 	}
 }

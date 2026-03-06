@@ -185,6 +185,9 @@ namespace Unnamed {
 		void ClearMouseCursorLockAnchor();
 
 	private:
+		[[nodiscard]] bool ResolveMouseCursorLockState() const;
+		[[nodiscard]] bool ResolveMouseCursorVisibleState() const;
+
 		/// @brief 入力状態をリセットします
 		void ResetInputStates();
 
@@ -228,8 +231,10 @@ namespace Unnamed {
 			bool valid     = false;
 		};
 
-		MouseLockAnchor mMouseLockAnchor    = {};
-		bool            mMouseCursorLocked  = false;
-		bool            mMouseCursorVisible = false;
+		MouseLockAnchor mMouseLockAnchor             = {};
+		bool            mMouseCursorLockRequested    = false;
+		bool            mMouseCursorLockOverride     = false;
+		bool            mMouseCursorLockOverrideMode = false;
+		bool            mMouseCursorVisible          = false;
 	};
 }

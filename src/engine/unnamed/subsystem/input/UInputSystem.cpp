@@ -32,6 +32,13 @@ namespace Unnamed {
 	bool UInputSystem::Init() {
 		ServiceLocator::Register<UInputSystem>(this);
 
+		// 起動直後に何も触っていなくてもカーソルが消えるのを防ぐため、
+		// 入力システム側のデフォルトは「表示・ロック解除」に寄せておく。
+		mMouseCursorLockRequested    = false;
+		mMouseCursorLockOverride     = false;
+		mMouseCursorLockOverrideMode = false;
+		mMouseCursorVisible          = true;
+
 		// 組み込みコマンドの登録
 		static UnnamedConCommand bind(
 			"bind",
@@ -85,7 +92,13 @@ namespace Unnamed {
 
 		auto toggleCursorLockHandler = [&](const std::vector<std::string>&) {
 			const bool bNewState = !IsMouseCursorLocked();
-			SetMouseCursorLocked(bNewState);
+			if (bNewState == mMouseCursorLockRequested) {
+				mMouseCursorLockOverride = false;
+			} else {
+				mMouseCursorLockOverride     = true;
+				mMouseCursorLockOverrideMode = bNewState;
+			}
+			if (!bNewState) { ClearMouseCursorLockAnchor(); }
 			DevMsg(
 				kChannel,
 				"Cursor lock state changed: {}",
@@ -102,16 +115,7 @@ namespace Unnamed {
 
 		static UnnamedConCommand togglecursorlock(
 			"togglecursorlock",
-			[&](const std::vector<std::string>&) {
-				const bool bNewState = !IsMouseCursorLocked();
-				SetMouseCursorLocked(bNewState);
-				DevMsg(
-					kChannel,
-					"Cursor lock state changed: {}",
-					bNewState ? "Locked" : "Unlocked"
-				);
-				return true;
-			},
+			toggleCursorLockHandler,
 			"Toggle the cursor lock state."
 		);
 
@@ -319,19 +323,34 @@ namespace Unnamed {
 	void UInputSystem::CheckMouseCursorLockAndVisibility(
 		const HWND hWnd
 	) const {
-		static int cursorCount = 0;
+		static int  cursorCount       = 0;
+		static bool sLastCursorVisible = true;
 
 		const bool bActive = IsWindowActuallyActive(hWnd);
+		const bool bCursorLocked  = ResolveMouseCursorLockState();
+		const bool bCursorVisible = ResolveMouseCursorVisibleState();
+
+		// 非アクティブ中は OS 側の挙動や他 UI による ShowCursor 操作と競合しやすいので、
+		// カーソルは必ず「表示」に寄せる。
+		if (!bActive && !bCursorVisible) {
+			// const 関数のため、表示状態そのものは変えずに OS 側だけ可視へ収束させる
+			sLastCursorVisible = true;
+			constexpr int kMaxIterations = 32;
+			int           it             = 0;
+			while (cursorCount < 0 && it++ < kMaxIterations) {
+				cursorCount = ShowCursor(TRUE);
+			}
+		}
 
 		// マウスカーソルのロックと表示状態の更新
-		if (mMouseCursorLocked) {
+		if (bCursorLocked) {
 			// 非アクティブ時は必ずロック解除
 			if (!bActive) { ClipCursor(nullptr); } else {
 				const HWND anchorHwnd = mMouseLockAnchor.valid &&
 				                        mMouseLockAnchor.hwnd != nullptr ?
 					                        mMouseLockAnchor.hwnd :
 					                        hWnd;
-				POINT lockPos = {};
+				POINT lockPos;
 				if (mMouseLockAnchor.valid) {
 					lockPos.x = static_cast<LONG>(mMouseLockAnchor.clientPos.x);
 					lockPos.y = static_cast<LONG>(mMouseLockAnchor.clientPos.y);
@@ -359,9 +378,32 @@ namespace Unnamed {
 			ClipCursor(nullptr);
 		}
 
-		if (mMouseCursorVisible) {
-			while (cursorCount >= 0) { cursorCount = ShowCursor(TRUE); }
-		} else { while (cursorCount < 0) { cursorCount = ShowCursor(FALSE); } }
+		if (bCursorVisible != sLastCursorVisible) {
+			sLastCursorVisible = bCursorVisible;
+
+			// ShowCursor の戻り値: 0 以上なら表示、0 未満なら非表示
+			constexpr int kMaxIterations = 32;
+			int           it             = 0;
+
+			if (bCursorVisible) {
+				while (cursorCount < 0 && it++ < kMaxIterations) {
+					cursorCount = ShowCursor(TRUE);
+				}
+			} else {
+				while (cursorCount >= 0 && it++ < kMaxIterations) {
+					cursorCount = ShowCursor(FALSE);
+				}
+			}
+
+			if (it >= kMaxIterations) {
+				Warning(
+					kChannel,
+					"ShowCursor のカウントが収束しませんでした (targetVisible={}, lastCount={}).",
+					bCursorVisible,
+					cursorCount
+				);
+			}
+		}
 	}
 
 	/// @brief 入力デバイスを登録します
@@ -516,16 +558,16 @@ namespace Unnamed {
 	}
 
 	bool UInputSystem::IsMouseCursorLocked() const {
-		return mMouseCursorLocked;
+		return ResolveMouseCursorLockState();
 	}
 
 	void UInputSystem::SetMouseCursorLocked(const bool& locked) {
-		mMouseCursorLocked = locked;
-		if (!locked) { ClearMouseCursorLockAnchor(); }
+		mMouseCursorLockRequested = locked;
+		if (!ResolveMouseCursorLockState()) { ClearMouseCursorLockAnchor(); }
 	}
 
 	bool UInputSystem::IsMouseCursorVisible() const {
-		return mMouseCursorVisible;
+		return ResolveMouseCursorVisibleState();
 	}
 
 	void UInputSystem::SetMouseCursorVisible(const bool& visible) {
@@ -541,6 +583,19 @@ namespace Unnamed {
 	}
 
 	void UInputSystem::ClearMouseCursorLockAnchor() { mMouseLockAnchor = {}; }
+
+	bool UInputSystem::ResolveMouseCursorLockState() const {
+		return mMouseCursorLockOverride ?
+			       mMouseCursorLockOverrideMode :
+			       mMouseCursorLockRequested;
+	}
+
+	bool UInputSystem::ResolveMouseCursorVisibleState() const {
+		if (mMouseCursorLockOverride && !mMouseCursorLockOverrideMode) {
+			return true;
+		}
+		return mMouseCursorVisible;
+	}
 
 	/// @brief 入力状態をリセットします
 	void UInputSystem::ResetInputStates() {

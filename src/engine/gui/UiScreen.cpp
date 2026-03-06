@@ -7,11 +7,15 @@ namespace Unnamed::Gui {
 
 	UiScreen::~UiScreen() = default;
 
-	UiDocument* UiScreen::GetDocument() const { return mDocument.get(); }
+	UiDocument* UiScreen::GetDocument() const {
+		return mDocument.get();
+	}
 
 	void UiScreen::OnShow() {}
 
 	void UiScreen::OnHide() {}
 
-	void UiScreen::OnUpdate(const float deltaTime) { (void)deltaTime; }
+	void UiScreen::OnUpdate(const float deltaTime) {
+		(void)deltaTime;
+	}
 }

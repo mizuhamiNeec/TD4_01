@@ -63,7 +63,9 @@ namespace Unnamed::Rhi {
 
 		CreateDevice();
 
-		if (deviceDesc.enableDebugLayer) { EnableValidationLayer(); }
+		if (deviceDesc.enableDebugLayer) {
+			EnableValidationLayer();
+		}
 
 		CreateQueue();
 		CreateSrvUavHeap();
@@ -169,7 +171,9 @@ namespace Unnamed::Rhi {
 	}
 
 	void D3D12Device::OnResize(const uint32_t width, const uint32_t height) {
-		if (width == 0 || height == 0) { return; }
+		if (width == 0 || height == 0) {
+			return;
+		}
 
 		// GPUの完了待ち
 		WaitForGpuIdle();
@@ -181,7 +185,9 @@ namespace Unnamed::Rhi {
 		return BACKEND_TYPE::D3D12;
 	}
 
-	IRhiSwapChain& D3D12Device::GetSwapChain() { return *mSwapChain; }
+	IRhiSwapChain& D3D12Device::GetSwapChain() {
+		return *mSwapChain;
+	}
 
 	ID3D12GraphicsCommandList* D3D12Device::GetCommandList() const {
 		return mCommandList.Get();
@@ -290,37 +296,21 @@ namespace Unnamed::Rhi {
 		return mGeomRootSignature.Get();
 	}
 
-	ID3D12Device* D3D12Device::GetDevice() const { return mDevice.Get(); }
+	ID3D12Device* D3D12Device::GetDevice() const {
+		return mDevice.Get();
+	}
 
-	DxcShaderCompiler& D3D12Device::GetDxcCompiler() { return mDxcCompiler; }
+	DxcShaderCompiler& D3D12Device::GetDxcCompiler() {
+		return mDxcCompiler;
+	}
 
 	D3D12FrameUploadAllocator& D3D12Device::GetFrameUploadAllocator() {
 		const uint32_t frameIndex = mSwapChain->GetCurrentBackBufferIndex();
 		return mFrames[frameIndex].upload;
 	}
 
-	uint32_t D3D12Device::GetFramesInFlight() const { return mFramesInFlight; }
-
-	uint64_t D3D12Device::GetCompletedFenceValue() const {
-		return mFence ? mFence->GetCompletedValue() : 0;
-	}
-
-	uint64_t D3D12Device::GetCurrentFrameFenceValue() const {
-		if (!mSwapChain) { return 0; }
-		return GetLastSubmittedFenceValue(
-			mSwapChain->GetCurrentBackBufferIndex()
-		);
-	}
-
-	uint64_t D3D12Device::GetLastSubmittedFenceValue(
-		const uint32_t frameIndex
-	) const {
-		if (frameIndex >= mFramesInFlight) { return 0; }
-		return mFrames[frameIndex].fenceValue;
-	}
-
-	uint64_t D3D12Device::GetNextSignalFenceValue() const {
-		return mNextFenceValue;
+	uint32_t D3D12Device::GetFramesInFlight() const {
+		return mFramesInFlight;
 	}
 
 	D3D12Device::UploadContext::UploadContext(D3D12Device& device) : mDevice(
@@ -489,7 +479,9 @@ namespace Unnamed::Rhi {
 					adapter.Reset();
 					++i;
 				}
-				if (found) { break; }
+				if (found) {
+					break;
+				}
 			}
 			UASSERT(adapter != nullptr && "適切なアダプタが見つかりませんでした");
 		} else {
@@ -881,13 +873,17 @@ namespace Unnamed::Rhi {
 			)
 		);
 		mFenceEvent = CreateEventW(nullptr, FALSE, FALSE, nullptr);
-		if (!mFenceEvent) { throw std::runtime_error("Create Event failed."); }
+		if (!mFenceEvent) {
+			throw std::runtime_error("Create Event failed.");
+		}
 		mNextFenceValue = 1;
 	}
 
 	void D3D12Device::WaitForFrame(const uint32_t frameIndex) const {
 		const uint64_t fenceValue = mFrames[frameIndex].fenceValue;
-		if (fenceValue == 0) { return; }
+		if (fenceValue == 0) {
+			return;
+		}
 
 		if (mFence->GetCompletedValue() < fenceValue) {
 			Throw(mFence->SetEventOnCompletion(fenceValue, mFenceEvent));
@@ -903,7 +899,37 @@ namespace Unnamed::Rhi {
 
 	void D3D12Device::WaitForGpuIdle() {
 		// すべてのフレームが完了するまで待機
-		for (uint32_t i = 0; i < mFramesInFlight; ++i) { SignalFrame(i); }
-		for (uint32_t i = 0; i < mFramesInFlight; ++i) { WaitForFrame(i); }
+		for (uint32_t i = 0; i < mFramesInFlight; ++i) {
+			SignalFrame(i);
+		}
+		for (uint32_t i = 0; i < mFramesInFlight; ++i) {
+			WaitForFrame(i);
+		}
+	}
+
+	uint64_t D3D12Device::GetCompletedFenceValue() const {
+		return mFence ? mFence->GetCompletedValue() : 0;
+	}
+
+	uint64_t D3D12Device::GetCurrentFrameFenceValue() const {
+		if (!mSwapChain) {
+			return 0;
+		}
+		return GetLastSubmittedFenceValue(
+			mSwapChain->GetCurrentBackBufferIndex()
+		);
+	}
+
+	uint64_t D3D12Device::GetLastSubmittedFenceValue(
+		const uint32_t frameIndex
+	) const {
+		if (frameIndex >= mFramesInFlight) {
+			return 0;
+		}
+		return mFrames[frameIndex].fenceValue;
+	}
+
+	uint64_t D3D12Device::GetNextSignalFenceValue() const {
+		return mNextFenceValue;
 	}
 }

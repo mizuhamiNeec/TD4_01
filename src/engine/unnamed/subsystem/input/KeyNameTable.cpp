@@ -36,7 +36,9 @@ namespace Unnamed {
 	}
 
 	const std::unordered_map<InputKey, std::string_view, KeyHash>&
-	KeyNameTable::KeyToName() { return kSKeyToName; }
+	KeyNameTable::KeyToName() {
+		return kSKeyToName;
+	}
 
 	std::string KeyNameTable::Normalize(std::string_view str) {
 		std::string ret;

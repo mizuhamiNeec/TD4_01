@@ -44,16 +44,15 @@
 
 #include <utility>
 
+#include "unnamed/subsystem/console/concommand/UnnamedConVar.h"
+
 namespace Unnamed {
 	namespace Rhi {
 		class D3D12CommandContext;
 		class D3D12Device;
 	}
 
-	/// @brief コンストラクタ
-	Engine::Engine() = default;
-
-	/// @brief デストラクタ
+	Engine::Engine()  = default;
 	Engine::~Engine() = default;
 
 	int Engine::Run() {
@@ -303,12 +302,19 @@ namespace Unnamed {
 			mInputSystem->Update(deltaTime);
 		}
 
+		// アセットのホットリロードのポーリング
 		{
 			mAssetHotReloadPollAccumulator += deltaTime;
+
+			auto hotreloadpollinterval = mConsoleSystem->GetConVarAs<
+				UnnamedConVar<float>>(
+				"asset_hotreloadpollinterval"
+			);
+
 			if (
 				mAssetManager &&
 				mAssetHotReloadPollAccumulator >=
-				kAssetHotReloadPollIntervalSeconds
+				hotreloadpollinterval->GetValue()
 			) {
 				UProfiler::ScopeTimer scope(
 					mProfiler.get(), "Asset.PollHotReload"
@@ -317,6 +323,7 @@ namespace Unnamed {
 				mAssetHotReloadPollAccumulator = 0.0f;
 			}
 		}
+
 		// マウスカーソルのロックと表示状態の確認
 		{
 			UProfiler::ScopeTimer scope(mProfiler.get(), "Input.MouseLock");
@@ -422,7 +429,7 @@ namespace Unnamed {
 			mProfiler->EndFrame();
 		}
 
-		mTimeSystem->EndFrame();
+		mTimeSystem->EndFrame(); // フレーム終了
 	}
 
 	/// @brief シャットダウン

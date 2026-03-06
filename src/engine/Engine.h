@@ -12,14 +12,13 @@ class AudioManager;
 namespace Unnamed {
 	class UEditorRuntime;
 	class UImGuiLayer;
+	class ConsoleSystem;
+	class UWorld;
 
 	namespace Render {
 		class RenderModule;
 		struct RenderFrameContext;
 	}
-
-	class ConsoleSystem;
-	class UWorld;
 
 	namespace Rhi {
 		class IRhiDevice;
@@ -28,15 +27,15 @@ namespace Unnamed {
 	/// @brief エンジンクラス
 	class Engine {
 	public:
+		/// @brief コンストラクタ
 		Engine();
+
+		/// @brief デストラクタ
 		~Engine();
 
 		/// @brief エンジンの実行
 		/// @return 終了コード
 		int Run();
-
-		/// @brief フルスクリーンの切り替えを行います。
-		void ToggleFullscreen() const;
 
 		/// @brief エディターモードの画面表示モードを切り替えます。
 		void ToggleEditorScreenMode() const;
@@ -52,6 +51,9 @@ namespace Unnamed {
 		/// @brief コンソールコマンドとコンソール変数を登録します。
 		void RegisterConsoleCommandsAndVariables();
 
+		/// @brief フルスクリーンの切り替えを行います。
+		void ToggleFullscreen() const;
+
 		/// @brief ワールドを切り替えます。
 		/// @tparam TWorld 切り替えるワールドの型
 		/// @tparam Args コンストラクタに渡す引数の型
@@ -62,7 +64,7 @@ namespace Unnamed {
 
 		/// @brief 現在のワールドを取得します。
 		/// @return 現在のワールドの参照
-		UWorld* GetWorld() const;
+		[[nodiscard]] UWorld* GetWorld() const;
 
 		EngineConfig mConfig;
 
@@ -92,6 +94,12 @@ namespace Unnamed {
 		std::unique_ptr<AudioManager> mAudioManager;
 
 
+		std::unique_ptr<Render::RenderFrameContext> mRenderFrameContext;
+		float mAssetHotReloadPollAccumulator = 0.0f;
+		uint32_t mFrameIndex = 0;
+		uint32_t mLastResizeWidth = 0;
+		uint32_t mLastResizeHeight = 0;
+
 #ifdef _DEBUG
 		bool mIsEditorMode = true;
 #else
@@ -99,13 +107,5 @@ namespace Unnamed {
 #endif
 
 		bool mWishShutdown = false;
-
-		uint32_t               mFrameIndex                        = 0;
-		uint32_t               mLastResizeWidth                   = 0;
-		uint32_t               mLastResizeHeight                  = 0;
-		float                  mAssetHotReloadPollAccumulator     = 0.0f;
-		static constexpr float kAssetHotReloadPollIntervalSeconds = 0.25f;
-
-		std::unique_ptr<Render::RenderFrameContext> mRenderFrameContext;
 	};
 }

@@ -30,6 +30,20 @@ namespace Unnamed {
 			"host_timescale", 1.0f, FCVAR::NONE,
 			"Prescale the clock by this amount."
 		);
+
+		//---------------------------------------------------------------------
+		// Asset
+		//---------------------------------------------------------------------
+		static UnnamedConVar asset_hotreloadpollinterval(
+			"asset_hotreloadpollinterval",
+			0.25f, // まあリアルタイムといえるでしょう
+			FCVAR::ARCHIVE,
+			"アセットのホットリロード確認の間隔（秒）",
+			true,
+			0.125f, // 0.125s = 8回/s
+			true,
+			5.0f // 適当に上限を設ける
+		);
 	}
 
 	void EditorConVar() {
@@ -179,7 +193,7 @@ namespace Unnamed {
 
 	void ServerConVar() {
 		static UnnamedConVar sv_gravity(
-			"sv_gravity", 800.0f, FCVAR::NONE,
+			"sv_gravity", 1200.0f, FCVAR::NONE,
 			"World gravity."
 		);
 

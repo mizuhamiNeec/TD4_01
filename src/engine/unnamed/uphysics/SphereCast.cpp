@@ -155,7 +155,9 @@ namespace UPhysics {
 		const Vec3  impactCenter = start + dirNormalized * travel;
 		Vec3        n            = normal;
 		const float nLenSq       = n.SqrLength();
-		if (nLenSq > 1e-12f) { n /= std::sqrt(nLenSq); } else {
+		if (nLenSq > 1e-12f) {
+			n /= std::sqrt(nLenSq);
+		} else {
 			return impactCenter;
 		}
 		return impactCenter - n * radius;

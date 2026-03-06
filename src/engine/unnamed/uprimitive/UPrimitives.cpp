@@ -74,7 +74,9 @@ namespace Unnamed {
 
 	/// @brief AABBの中心を取得します
 	/// @return AABBの中心座標
-	Vec3 AABB::Center() const { return (min + max) * 0.5f; }
+	Vec3 AABB::Center() const {
+		return (min + max) * 0.5f;
+	}
 
 	/// @brief AABBの表面積を取得します
 	/// @return AABBの表面積
@@ -87,14 +89,20 @@ namespace Unnamed {
 	/// @return 最も長い軸のインデックス(0=x, 1=y, 2=z)
 	int AABB::LongestAxis() const {
 		const Vec3 d = max - min;
-		if (d.x >= d.y && d.x >= d.z) { return 0; }
-		if (d.y >= d.x && d.y >= d.z) { return 1; }
+		if (d.x >= d.y && d.x >= d.z) {
+			return 0;
+		}
+		if (d.y >= d.x && d.y >= d.z) {
+			return 1;
+		}
 		return 2;
 	}
 
 	/// @brief AABBのサイズを取得します
 	/// @return AABBのサイズベクトル
-	Vec3 AABB::Size() const { return max - min; }
+	Vec3 AABB::Size() const {
+		return max - min;
+	}
 
 	AABB TransformAABB(const AABB& local, const Mat4& world) {
 		const Vec3 c[8]{
@@ -130,9 +138,15 @@ namespace Unnamed {
 
 	bool IsAABBOutsidePlane(const AABB& aabb, const Plane& p) {
 		Vec3 v = aabb.min;
-		if (p.normal.x >= 0) { v.x = aabb.max.x; }
-		if (p.normal.y >= 0) { v.y = aabb.max.y; }
-		if (p.normal.z >= 0) { v.z = aabb.max.z; }
+		if (p.normal.x >= 0) {
+			v.x = aabb.max.x;
+		}
+		if (p.normal.y >= 0) {
+			v.y = aabb.max.y;
+		}
+		if (p.normal.z >= 0) {
+			v.z = aabb.max.z;
+		}
 		return p.normal.Dot(v) + p.d < 0.0f;
 	}
 
@@ -174,9 +188,15 @@ namespace Unnamed {
 		const float radius    = std::max(0.0f, worldSphere.radius);
 		const float nearLimit = std::max(nearZ, 0.0001f);
 
-		if (centerView.z + radius <= 0.0f) { return false; }
-		if (centerView.z + radius < nearLimit) { return false; }
-		if (farZ > nearLimit && centerView.z - radius > farZ) { return false; }
+		if (centerView.z + radius <= 0.0f) {
+			return false;
+		}
+		if (centerView.z + radius < nearLimit) {
+			return false;
+		}
+		if (farZ > nearLimit && centerView.z - radius > farZ) {
+			return false;
+		}
 
 		const float tanHalfFovX =
 			proj.m[0][0] != 0.0f ? 1.0f / proj.m[0][0] : 1000000.0f;
@@ -186,8 +206,12 @@ namespace Unnamed {
 		const float xLimit = depth * tanHalfFovX + radius;
 		const float yLimit = depth * tanHalfFovY + radius;
 
-		if (centerView.x < -xLimit || centerView.x > xLimit) { return false; }
-		if (centerView.y < -yLimit || centerView.y > yLimit) { return false; }
+		if (centerView.x < -xLimit || centerView.x > xLimit) {
+			return false;
+		}
+		if (centerView.y < -yLimit || centerView.y > yLimit) {
+			return false;
+		}
 		return true;
 	}
 }

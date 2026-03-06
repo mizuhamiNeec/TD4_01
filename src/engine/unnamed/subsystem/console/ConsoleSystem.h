@@ -13,8 +13,9 @@
 #include <engine/unnamed/subsystem/interface/ISubsystem.h>
 
 namespace Unnamed {
+	constexpr uint32_t kConsoleBufferSize = 1024; // ログバッファのサイズ
+
 	class UnnamedConCommandBase;
-	constexpr uint32_t kConsoleBufferSize = 1024;
 
 	/// @brief コンソールログテキスト構造体
 	struct ConsoleLogText {
@@ -66,6 +67,7 @@ namespace Unnamed {
 		bool Init() override;
 
 		/// @brief 更新
+		/// @note ImGuiのコンテキスト内で呼んでください。
 		void Update(float deltaTime) override;
 
 		/// @brief シャットダウン

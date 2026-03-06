@@ -237,19 +237,27 @@ namespace Unnamed::Render {
 		RenderDevice& renderDevice, Rhi::D3D12Device& dx,
 		const AssetID meshAssetId
 	) {
-		if (meshAssetId == kInvalidAssetID) { return false; }
-		if (mSceneMeshesByAsset.contains(meshAssetId)) { return true; }
+		if (meshAssetId == kInvalidAssetID) {
+			return false;
+		}
+		if (mSceneMeshesByAsset.contains(meshAssetId)) {
+			return true;
+		}
 
 		const auto& assetManager = renderDevice.GetAssetManager();
 		const auto* meshAsset    = assetManager.Get<MeshAssetData>(meshAssetId);
 		if (!meshAsset || meshAsset->vertices.empty() || meshAsset->indices.
-		    empty()) { return false; }
+		    empty()) {
+			return false;
+		}
 
 		std::vector<VertexGeom> vertices;
 		vertices.reserve(meshAsset->vertices.size());
 		for (const auto& v : meshAsset->vertices) {
 			float weightSum = 0.0f;
-			for (const float w : v.boneWeights) { weightSum += w; }
+			for (const float w : v.boneWeights) {
+				weightSum += w;
+			}
 			const float w0 = weightSum > 0.0f ? v.boneWeights[0] : 1.0f;
 			const float w1 = weightSum > 0.0f ? v.boneWeights[1] : 0.0f;
 			const float w2 = weightSum > 0.0f ? v.boneWeights[2] : 0.0f;
@@ -347,8 +355,12 @@ namespace Unnamed::Render {
 		const auto [it, inserted] = mSceneMeshesByAsset.emplace(
 			meshAssetId, std::move(meshBuffer)
 		);
-		if (inserted) { mLoadedMeshAsset = meshAssetId; }
-		if (mSceneMeshes.empty()) { mSceneMeshes.emplace_back(it->second); }
+		if (inserted) {
+			mLoadedMeshAsset = meshAssetId;
+		}
+		if (mSceneMeshes.empty()) {
+			mSceneMeshes.emplace_back(it->second);
+		}
 		return true;
 	}
 
@@ -366,6 +378,7 @@ namespace Unnamed::Render {
 	void URenderer::LoadMaterialResources(
 		RenderDevice& renderDevice, Rhi::D3D12Device&
 
+
 	
 	) {
 		auto& assetManager = renderDevice.GetAssetManager();
@@ -376,17 +389,23 @@ namespace Unnamed::Render {
 		const AssetID materialInstanceId = assetManager.LoadFromFile(
 			std::string(kDefaultMaterialInstance), ASSET_TYPE::MATERIAL_INSTANCE
 		);
-		if (materialInstanceId == kInvalidAssetID) { return; }
+		if (materialInstanceId == kInvalidAssetID) {
+			return;
+		}
 
 		const auto* matInst = assetManager.Get<MaterialInstanceAssetData>(
 			materialInstanceId
 		);
-		if (!matInst || matInst->materialId == kInvalidAssetID) { return; }
+		if (!matInst || matInst->materialId == kInvalidAssetID) {
+			return;
+		}
 
 		const auto* mat = assetManager.Get<MaterialAssetData>(
 			matInst->materialId
 		);
-		if (!mat) { return; }
+		if (!mat) {
+			return;
+		}
 
 		MaterialBinding binding    = {};
 		binding.materialInstanceId = materialInstanceId;
@@ -493,8 +512,8 @@ namespace Unnamed::Render {
 			return it->second;
 		}
 
-		auto& assetManager = renderDevice.GetAssetManager();
-		auto& registry     = renderDevice.GetRegistry();
+		const auto& assetManager = renderDevice.GetAssetManager();
+		auto&       registry = renderDevice.GetRegistry();
 		const auto* tex = assetManager.Get<TextureAssetData>(textureAssetId);
 		if (!tex) {
 			EnsureSpriteFallbackTexture(renderDevice);
@@ -509,7 +528,9 @@ namespace Unnamed::Render {
 	}
 
 	void URenderer::EnsureSpriteFallbackTexture(RenderDevice& renderDevice) {
-		if (mSpriteFallbackTextureId != 0) { return; }
+		if (mSpriteFallbackTextureId != 0) {
+			return;
+		}
 
 		TextureAssetData white = {};
 		white.width            = 1;
@@ -521,8 +542,10 @@ namespace Unnamed::Render {
 		mip.rowPitch           = 4;
 		mip.bytes              = {255, 255, 255, 255};
 		white.mips.emplace_back(std::move(mip));
-		mSpriteFallbackTextureId = renderDevice.GetRegistry().CreateTexture2DFromAsset(
-			white, "SpriteOverlayFallbackWhite"
-		);
+		mSpriteFallbackTextureId = renderDevice.GetRegistry().
+		                                        CreateTexture2DFromAsset(
+			                                        white,
+			                                        "SpriteOverlayFallbackWhite"
+		                                        );
 	}
 }

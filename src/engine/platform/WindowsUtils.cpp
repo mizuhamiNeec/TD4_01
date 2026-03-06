@@ -20,7 +20,11 @@ std::string WindowsUtils::GetWindowsUserName() {
 	if (GetUserNameA(buffer.data(), &bufferSize)) {
 		std::string userName(buffer.data());
 		// 空白をアンダースコアに置き換える
-		for (char& ch : userName) { if (ch == ' ') { ch = '_'; } }
+		for (char& ch : userName) {
+			if (ch == ' ') {
+				ch = '_';
+			}
+		}
 		return userName;
 	}
 	return std::string("Windowsから取得できませんでした。");
@@ -44,16 +48,22 @@ std::string WindowsUtils::GetWindowsVersion() {
 	using RtlGetVersionFn = LONG(WINAPI*)(PRTL_OSVERSIONINFOW);
 
 	const HMODULE ntdll = GetModuleHandleW(L"ntdll.dll");
-	if (!ntdll) { return "Windows"; }
+	if (!ntdll) {
+		return "Windows";
+	}
 
 	const auto rtlGetVersion = reinterpret_cast<RtlGetVersionFn>(
 		GetProcAddress(ntdll, "RtlGetVersion")
 	);
-	if (!rtlGetVersion) { return "Windows"; }
+	if (!rtlGetVersion) {
+		return "Windows";
+	}
 
 	RTL_OSVERSIONINFOW osvi{};
 	osvi.dwOSVersionInfoSize = sizeof(osvi);
-	if (rtlGetVersion(&osvi) != 0) { return "Windows"; }
+	if (rtlGetVersion(&osvi) != 0) {
+		return "Windows";
+	}
 
 	// Windows 11 は major=10, minor=0 で、build >= 22000 で判定するのが一般的らしい
 	const bool isWindows11 = osvi.dwMajorVersion == 10 && osvi.dwMinorVersion
@@ -158,10 +168,14 @@ std::string WindowsUtils::GetHresultMessage(const HRESULT hr) {
 	std::string message;
 	if (messageLength > 0) {
 		message = std::string(messageBuffer, messageLength);
-	} else { message = "Unknown error code : " + std::to_string(hr); }
+	} else {
+		message = "Unknown error code : " + std::to_string(hr);
+	}
 
 	// メモリ解放
-	if (messageBuffer) { LocalFree(messageBuffer); }
+	if (messageBuffer) {
+		LocalFree(messageBuffer);
+	}
 
 	return message;
 }
@@ -262,7 +276,9 @@ WindowsUtils::ProcessResult WindowsUtils::RunProcessCapture(
 			cmdLine += L" ";
 			cmdLine += arguments;
 		}
-	} else { cmdLine = arguments; }
+	} else {
+		cmdLine = arguments;
+	}
 	std::vector<wchar_t> cmdBuf(cmdLine.begin(), cmdLine.end());
 	cmdBuf.push_back(L'\0');
 
@@ -298,7 +314,9 @@ WindowsUtils::ProcessResult WindowsUtils::RunProcessCapture(
 		DWORD       read = 0;
 		while (true) {
 			const BOOL r = ReadFile(h, buf, sizeof(buf), &read, nullptr);
-			if (!r || read == 0) { break; }
+			if (!r || read == 0) {
+				break;
+			}
 			out.append(buf, buf + read);
 		}
 		return out;
@@ -307,8 +325,12 @@ WindowsUtils::ProcessResult WindowsUtils::RunProcessCapture(
 	DWORD wait = WAIT_OBJECT_0;
 	if (timeoutMs > 0) {
 		wait = WaitForSingleObject(pi.hProcess, timeoutMs);
-		if (wait == WAIT_TIMEOUT) { result.timedOut = true; }
-	} else { WaitForSingleObject(pi.hProcess, INFINITE); }
+		if (wait == WAIT_TIMEOUT) {
+			result.timedOut = true;
+		}
+	} else {
+		WaitForSingleObject(pi.hProcess, INFINITE);
+	}
 
 	if (!result.timedOut) {
 		// stderr も同じパイプにしているので全部 stdoutText に入れる
@@ -354,7 +376,9 @@ WindowsUtils::ProcessResult WindowsUtils::RunPowerShellFileCapture(
 }
 
 static std::string WideToUtf8(const std::wstring_view w) {
-	if (w.empty()) { return {}; }
+	if (w.empty()) {
+		return {};
+	}
 	const int len = WideCharToMultiByte(
 		CP_UTF8, 0, w.data(), static_cast<int>(w.size()), nullptr, 0, nullptr,
 		nullptr
@@ -365,20 +389,6 @@ static std::string WideToUtf8(const std::wstring_view w) {
 		nullptr, nullptr
 	);
 	return out;
-}
-
-std::string WindowsUtils::ConvertCP932ToUtf8(const std::string& s) {
-	if (s.empty()) { return {}; }
-	// CP932 -> UTF-16
-	const int wlen = MultiByteToWideChar(
-		932 /*CP932*/, 0, s.data(), static_cast<int>(s.size()), nullptr, 0
-	);
-	std::wstring w(wlen, L'\0');
-	MultiByteToWideChar(
-		932, 0, s.data(), static_cast<int>(s.size()), w.data(), wlen
-	);
-	// UTF-16 -> UTF-8
-	return WideToUtf8(w);
 }
 
 bool WindowsUtils::StartProcessCapture(
@@ -395,7 +405,9 @@ bool WindowsUtils::StartProcessCapture(
 
 	HANDLE readPipe  = nullptr;
 	HANDLE writePipe = nullptr;
-	if (!CreatePipe(&readPipe, &writePipe, &sa, 0)) { return false; }
+	if (!CreatePipe(&readPipe, &writePipe, &sa, 0)) {
+		return false;
+	}
 	if (!SetHandleInformation(readPipe, HANDLE_FLAG_INHERIT, 0)) {
 		CloseHandle(readPipe);
 		CloseHandle(writePipe);
@@ -452,13 +464,19 @@ bool WindowsUtils::PollProcessOutput(
 	const ProcessHandle& handle, std::string& outChunk
 ) {
 	outChunk.clear();
-	if (!handle.hReadPipe) { return false; }
+	if (!handle.hReadPipe) {
+		return false;
+	}
 
 	DWORD avail = 0;
 	if (!PeekNamedPipe(
 		handle.hReadPipe, nullptr, 0, nullptr, &avail, nullptr
-	)) { return false; }
-	if (avail == 0) { return false; }
+	)) {
+		return false;
+	}
+	if (avail == 0) {
+		return false;
+	}
 
 	std::string buf;
 	buf.resize(std::min<DWORD>(avail, 4096));
@@ -466,7 +484,9 @@ bool WindowsUtils::PollProcessOutput(
 	if (!ReadFile(
 		    handle.hReadPipe, buf.data(), static_cast<DWORD>(buf.size()), &read,
 		    nullptr
-	    ) || read == 0) { return false; }
+	    ) || read == 0) {
+		return false;
+	}
 	buf.resize(read);
 	outChunk = std::move(buf);
 	return true;
@@ -475,17 +495,45 @@ bool WindowsUtils::PollProcessOutput(
 bool WindowsUtils::TryGetProcessExitCode(
 	const ProcessHandle& handle, unsigned long& exitCode
 ) {
-	if (!handle.hProcess) { return false; }
+	if (!handle.hProcess) {
+		return false;
+	}
 	DWORD code = STILL_ACTIVE;
-	if (!GetExitCodeProcess(handle.hProcess, &code)) { return false; }
-	if (code == STILL_ACTIVE) { return false; }
+	if (!GetExitCodeProcess(handle.hProcess, &code)) {
+		return false;
+	}
+	if (code == STILL_ACTIVE) {
+		return false;
+	}
 	exitCode = code;
 	return true;
 }
 
 void WindowsUtils::CloseProcessHandle(ProcessHandle& handle) {
-	if (handle.hReadPipe) { CloseHandle(handle.hReadPipe); }
-	if (handle.hThread) { CloseHandle(handle.hThread); }
-	if (handle.hProcess) { CloseHandle(handle.hProcess); }
+	if (handle.hReadPipe) {
+		CloseHandle(handle.hReadPipe);
+	}
+	if (handle.hThread) {
+		CloseHandle(handle.hThread);
+	}
+	if (handle.hProcess) {
+		CloseHandle(handle.hProcess);
+	}
 	handle = {};
+}
+
+std::string WindowsUtils::ConvertCP932ToUtf8(const std::string& s) {
+	if (s.empty()) {
+		return {};
+	}
+	// CP932 -> UTF-16
+	const int wlen = MultiByteToWideChar(
+		932 /*CP932*/, 0, s.data(), static_cast<int>(s.size()), nullptr, 0
+	);
+	std::wstring w(wlen, L'\0');
+	MultiByteToWideChar(
+		932, 0, s.data(), static_cast<int>(s.size()), w.data(), wlen
+	);
+	// UTF-16 -> UTF-8
+	return WideToUtf8(w);
 }

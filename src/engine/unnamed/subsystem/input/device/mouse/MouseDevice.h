@@ -41,9 +41,17 @@ namespace Unnamed {
 		[[nodiscard]] InputDeviceType GetDeviceType() const override;
 		void ResetStates() override;
 
-		[[nodiscard]] int GetDeltaX() const { return mDeltaX; }
-		[[nodiscard]] int GetDeltaY() const { return mDeltaY; }
-		[[nodiscard]] int GetWheelDelta() const { return mWheelDelta; }
+		[[nodiscard]] int GetDeltaX() const {
+			return mDeltaX;
+		}
+
+		[[nodiscard]] int GetDeltaY() const {
+			return mDeltaY;
+		}
+
+		[[nodiscard]] int GetWheelDelta() const {
+			return mWheelDelta;
+		}
 
 		void ResetDelta();
 

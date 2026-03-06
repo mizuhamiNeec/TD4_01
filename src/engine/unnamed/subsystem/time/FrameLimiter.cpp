@@ -32,17 +32,23 @@ void FrameLimiter::SetTargetFPS(const double targetFPS) {
 		mTargetFrameDuration = duration_cast<Clock::duration>(
 			duration<double>(1.0 / targetFPS)
 		);
-	} else { mTargetFrameDuration = Clock::duration::zero(); }
+	} else {
+		mTargetFrameDuration = Clock::duration::zero();
+	}
 }
 
 /// @brief フレームの開始を記録します
-void FrameLimiter::BeginFrame() { mFrameStart = Clock::now(); }
+void FrameLimiter::BeginFrame() {
+	mFrameStart = Clock::now();
+}
 
 /// @brief フレームレートを制限します
 void FrameLimiter::Limit() {
 	CheckConVarValue();
 
-	if (mTargetFrameDuration == Clock::duration::zero()) { return; }
+	if (mTargetFrameDuration == Clock::duration::zero()) {
+		return;
+	}
 
 	using namespace std::chrono;
 
@@ -50,7 +56,9 @@ void FrameLimiter::Limit() {
 
 	const auto elapsed = now - mFrameStart;
 
-	if (elapsed >= mTargetFrameDuration) { return; }
+	if (elapsed >= mTargetFrameDuration) {
+		return;
+	}
 
 	const auto remaining = mTargetFrameDuration - elapsed;
 
@@ -61,7 +69,9 @@ void FrameLimiter::Limit() {
 	}
 
 	const auto endTime = mFrameStart + mTargetFrameDuration;
-	while (Clock::now() < endTime) { std::this_thread::yield(); }
+	while (Clock::now() < endTime) {
+		std::this_thread::yield();
+	}
 }
 
 /// @brief コンソール変数の値をチェックして目標FPSを更新します

@@ -30,7 +30,7 @@ namespace Unnamed {
 	private:
 		[[nodiscard]] TransformComponent* GetTransform() const;
 
-		Vec3 mRotationRate = Vec3::zero;
+		Vec3 mRotationRate    = Vec3::zero;
 		bool mRotationEnabled = true;
 	};
 }

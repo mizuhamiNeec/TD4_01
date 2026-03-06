@@ -12,9 +12,13 @@
 
 namespace Unnamed {
 	void RotateComponent::PrePhysicsTick(const float deltaTime) {
-		if (!mRotationEnabled) { return; }
+		if (!mRotationEnabled) {
+			return;
+		}
 		auto* transform = GetTransform();
-		if (!transform) { return; }
+		if (!transform) {
+			return;
+		}
 
 		const Quaternion deltaRotation = Quaternion::EulerDegrees(
 			mRotationRate * deltaTime
@@ -32,7 +36,9 @@ namespace Unnamed {
 			);
 		}
 		const JsonReader enabled = reader["enabled"];
-		if (enabled.Valid()) { mRotationEnabled = enabled.GetBool(); }
+		if (enabled.Valid()) {
+			mRotationEnabled = enabled.GetBool();
+		}
 	}
 
 	void RotateComponent::Serialize(JsonWriter& writer) const {

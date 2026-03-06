@@ -20,7 +20,7 @@ public:
 
 
 	[[nodiscard]] double   TotalTime() const;
-	[[nodiscard]] float    TimeScale();
+	[[nodiscard]] float    TimeScale() const;
 	[[nodiscard]] uint64_t FrameCount() const;
 
 private:

@@ -1,5 +1,7 @@
 #include "CameraRotatorComponent.h"
 
+#include <cmath>
+
 #include <imgui.h>
 
 #include "core/ComponentRegistry.h"
@@ -10,6 +12,8 @@
 
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/framework/entity/UEntity.h"
+#include "engine/unnamed/subsystem/console/ConsoleSystem.h"
+#include "engine/unnamed/subsystem/console/concommand/UnnamedConVar.h"
 #include "engine/unnamed/subsystem/input/UInputSystem.h"
 #include "engine/unnamed/subsystem/input/device/mouse/MouseDevice.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
@@ -39,6 +43,11 @@ namespace Unnamed {
 	void CameraRotatorComponent::OnAttached() {
 		mInput = ServiceLocator::Get<UInputSystem>();
 		BindMouseAxisOnce(mInput);
+		if (const TransformComponent* transform = GetTransform()) {
+			const Vec3 eulerDegrees = transform->Rotation().ToEulerDegrees();
+			mPitch                  = eulerDegrees.x;
+			mYaw                    = eulerDegrees.y;
+		}
 	}
 
 	void CameraRotatorComponent::PrePhysicsTick(const float) {
@@ -47,6 +56,33 @@ namespace Unnamed {
 		const UWorld* world = UWorld::GetTickingWorld();
 		if (!world || !world->IsGameSimulationEnabled()) { return; }
 
+		float sensi          = 1.0f;
+		float m_pitch        = 0.022f;
+		float m_yaw          = 0.022f;
+		float pitchUpLimit   = 89.0f;
+		float pitchDownLimit = 89.0f;
+		if (auto* console = ServiceLocator::Get<ConsoleSystem>()) {
+			if (const auto* sensitivity =
+				console->GetConVarAs<UnnamedConVar<float>>("sensitivity")) {
+				sensi = sensitivity->GetValue();
+			}
+			if (const auto* pitch = console->GetConVarAs<UnnamedConVar<float>>(
+				"m_pitch"
+			)) { m_pitch = pitch->GetValue(); }
+			if (const auto* yaw = console->GetConVarAs<UnnamedConVar<float>>(
+				"m_yaw"
+			)) { m_yaw = yaw->GetValue(); }
+
+			if (const auto* pitchUp =
+				console->GetConVarAs<UnnamedConVar<float>>("cl_pitchup")) {
+				pitchUpLimit = std::abs(pitchUp->GetValue());
+			}
+			if (const auto* pitchDown = console->GetConVarAs<UnnamedConVar<
+				float>>(
+				"cl_pitchdown"
+			)) { pitchDownLimit = std::abs(pitchDown->GetValue()); }
+		}
+
 		if (mReplayLookPending) {
 			mPitch             = mReplayPitchDeg;
 			mYaw               = mReplayYawDeg;
@@ -54,16 +90,14 @@ namespace Unnamed {
 		} else {
 			Vec2 delta = Vec2::zero;
 			if (mLiveLookPending) {
-				delta = mLiveLookDelta;
+				delta            = mLiveLookDelta;
 				mLiveLookPending = false;
-			} else if (mInput) {
-				delta = mInput->Axis2D("Mouse");
-			}
-			mPitch += delta.y * mSensitivity;
-			mYaw   += delta.x * mSensitivity;
+			} else if (mInput) { delta = mInput->Axis2D("Mouse"); }
+			mPitch += delta.y * sensi * m_pitch;
+			mYaw   += delta.x * sensi * m_yaw;
 		}
 
-		mPitch = std::clamp(mPitch, -89.0f, 89.0f);
+		mPitch = std::clamp(mPitch, -pitchUpLimit, pitchDownLimit);
 		transform->SetRotation(
 			Quaternion::AxisAngle(Vec3::up, mYaw * Math::deg2Rad) *
 			Quaternion::AxisAngle(Vec3::right, mPitch * Math::deg2Rad)
@@ -71,8 +105,8 @@ namespace Unnamed {
 	}
 
 	void CameraRotatorComponent::Deserialize(const JsonReader& reader) {
-		const JsonReader pitch = reader["pitchDegrees"];
-		const JsonReader yaw   = reader["yawDegrees"];
+		const JsonReader pitch       = reader["pitchDegrees"];
+		const JsonReader yaw         = reader["yawDegrees"];
 		const JsonReader sensitivity = reader["sensitivity"];
 		if (pitch.Valid()) { mPitch = pitch.GetFloat(); }
 		if (yaw.Valid()) { mYaw = yaw.GetFloat(); }

@@ -43,11 +43,17 @@ namespace Unnamed::Rhi {
 		CreateBackBuffersAndRtv();
 	}
 
-	uint32_t D3D12SwapChain::GetWidth() const { return mWidth; }
+	uint32_t D3D12SwapChain::GetWidth() const {
+		return mWidth;
+	}
 
-	uint32_t D3D12SwapChain::GetHeight() const { return mHeight; }
+	uint32_t D3D12SwapChain::GetHeight() const {
+		return mHeight;
+	}
 
-	uint32_t D3D12SwapChain::GetBufferCount() const { return mBufferCount; }
+	uint32_t D3D12SwapChain::GetBufferCount() const {
+		return mBufferCount;
+	}
 
 	uint32_t D3D12SwapChain::GetCurrentBackBufferIndex() const {
 		return mSwapChain->GetCurrentBackBufferIndex();
@@ -61,11 +67,17 @@ namespace Unnamed::Rhi {
 
 	void D3D12SwapChain::Resize(const uint32_t width, const uint32_t height) {
 		// サイズが0の場合は何もしない
-		if (width == 0 || height == 0) { return; }
+		if (width == 0 || height == 0) {
+			return;
+		}
 		// サイズが変わっていなければ何もしない
-		if (width == mWidth && height == mHeight) { return; }
+		if (width == mWidth && height == mHeight) {
+			return;
+		}
 
-		for (uint32_t i = 0; i < mBufferCount; i++) { mBackBuffers[i].Reset(); }
+		for (uint32_t i = 0; i < mBufferCount; i++) {
+			mBackBuffers[i].Reset();
+		}
 
 		mWidth  = width;
 		mHeight = height;

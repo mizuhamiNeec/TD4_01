@@ -84,7 +84,9 @@ namespace Unnamed::Render {
 
 	void RenderPassContext::SetIndexBuffer(
 		const D3D12_INDEX_BUFFER_VIEW& ibv
-	) const { mCommandList->IASetIndexBuffer(&ibv); }
+	) const {
+		mCommandList->IASetIndexBuffer(&ibv);
+	}
 
 	void RenderPassContext::BindGraphicsCbv(
 		const uint32_t rootIndex, const D3D12_GPU_VIRTUAL_ADDRESS gpuVa
@@ -176,7 +178,9 @@ namespace Unnamed::Render {
 					"RDG", "無効なRTVをセットしようとしました: textureId={}", textureIds[i]
 				);
 				rtvs[i] = {};
-			} else { rtvs[i] = rtv; }
+			} else {
+				rtvs[i] = rtv;
+			}
 		}
 
 		mCommandList->OMSetRenderTargets(count, rtvs.data(), FALSE, nullptr);
@@ -185,7 +189,9 @@ namespace Unnamed::Render {
 	void RenderPassContext::SetRenderTargetsByIds(
 		std::span<const uint32_t> textureIds
 	) const {
-		if (textureIds.empty()) { return; }
+		if (textureIds.empty()) {
+			return;
+		}
 
 		constexpr uint32_t kMaxRtvs = 8;
 		const uint32_t     count    = std::min<uint32_t>(
@@ -262,7 +268,9 @@ namespace Unnamed::Render {
 
 	void RenderPassContext::ClearDepthById(
 		uint32_t textureId, float depth
-	) const { ClearDepthStencilById(textureId, depth, 0); }
+	) const {
+		ClearDepthStencilById(textureId, depth, 0);
+	}
 
 	void RenderPassContext::ClearDepthStencilById(
 		uint32_t textureId, float depth, uint8_t stencil
@@ -316,7 +324,9 @@ namespace Unnamed::Render {
 			D3D12_CPU_DESCRIPTOR_HANDLE rtv = {};
 			if (id == RenderGraph::kBackBufferId) {
 				rtv = mContext.GetCurrentBackBufferRtv();
-			} else { rtv = mDescriptorResolver.GetRtvCpu(id); }
+			} else {
+				rtv = mDescriptorResolver.GetRtvCpu(id);
+			}
 
 			if (rtv.ptr == 0) {
 				Fatal(
@@ -346,11 +356,15 @@ namespace Unnamed::Render {
 
 	void RenderPassContext::SetComputePipeline(
 		ID3D12RootSignature* rootSignature, ID3D12PipelineState* pipelineState
-	) const { mContext.SetComputePipeline(rootSignature, pipelineState); }
+	) const {
+		mContext.SetComputePipeline(rootSignature, pipelineState);
+	}
 
 	void RenderPassContext::SetGraphicsPipeline(
 		ID3D12RootSignature* rootSignature, ID3D12PipelineState* pipelineState
-	) const { mContext.SetGraphicsPipeline(rootSignature, pipelineState); }
+	) const {
+		mContext.SetGraphicsPipeline(rootSignature, pipelineState);
+	}
 
 	void RenderPassContext::SetVertexBuffer(
 		const D3D12_VERTEX_BUFFER_VIEW& vbv
@@ -387,7 +401,9 @@ namespace Unnamed::Render {
 
 	void RenderPassContext::Dispatch(
 		const uint32_t x, const uint32_t y, const uint32_t z
-	) const { mContext.Dispatch(x, y, z); }
+	) const {
+		mContext.Dispatch(x, y, z);
+	}
 
 	void RenderPassContext::DrawFullscreenTriangle() const {
 		mContext.DrawFullScreenTriangle();

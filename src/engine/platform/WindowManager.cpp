@@ -81,10 +81,14 @@ namespace Unnamed {
 		std::vector<HWND> hwnds;
 		hwnds.reserve(mWindows.size());
 		for (const auto& wnd : mWindows | std::views::values) {
-			if (wnd && wnd->GetHwnd()) { hwnds.emplace_back(wnd->GetHwnd()); }
+			if (wnd && wnd->GetHwnd()) {
+				hwnds.emplace_back(wnd->GetHwnd());
+			}
 		}
 
-		for (const HWND hwnd : hwnds) { ::DestroyWindow(hwnd); }
+		for (const HWND hwnd : hwnds) {
+			::DestroyWindow(hwnd);
+		}
 
 		mWindows.clear();
 
@@ -116,21 +120,31 @@ namespace Unnamed {
 		// メインウィンドウが閉じられたら終了
 
 		const auto it = mWindows.find(mMainWindowId.value);
-		if (it == mWindows.end() || !it->second) { return true; }
+		if (it == mWindows.end() || !it->second) {
+			return true;
+		}
 
 		return it->second->ShouldClose();
 	}
 
-	WindowId WindowManager::GetMainWindowId() const { return mMainWindowId; }
+	WindowId WindowManager::GetMainWindowId() const {
+		return mMainWindowId;
+	}
 
 	std::optional<WindowId> WindowManager::CreateNewWindow(
 		const WindowDesc& desc
 	) {
-		if (!mInitialized) { return std::nullopt; }
-		if (!EnsureWindowClassRegistered()) { return std::nullopt; }
+		if (!mInitialized) {
+			return std::nullopt;
+		}
+		if (!EnsureWindowClassRegistered()) {
+			return std::nullopt;
+		}
 
 		const auto hwndOpt = CreateNativeWindow(desc);
-		if (!hwndOpt.has_value()) { return std::nullopt; }
+		if (!hwndOpt.has_value()) {
+			return std::nullopt;
+		}
 
 		const WindowId id{mNextWindowId++};
 		auto window = std::make_unique<Window>(id, desc, hwndOpt.value());
@@ -140,22 +154,30 @@ namespace Unnamed {
 
 	void WindowManager::DestroyWindow(const WindowId id) {
 		const auto it = mWindows.find(id.value);
-		if (it == mWindows.end() || !it->second) { return; }
+		if (it == mWindows.end() || !it->second) {
+			return;
+		}
 
-		if (const HWND hwnd = it->second->GetHwnd()) { ::DestroyWindow(hwnd); }
+		if (const HWND hwnd = it->second->GetHwnd()) {
+			::DestroyWindow(hwnd);
+		}
 
 		mWindows.erase(it);
 	}
 
 	Window* WindowManager::FindWindowById(const WindowId id) {
 		const auto it = mWindows.find(id.value);
-		if (it == mWindows.end()) { return nullptr; }
+		if (it == mWindows.end()) {
+			return nullptr;
+		}
 		return it->second.get();
 	}
 
 	const Window* WindowManager::FindWindowById(const WindowId id) const {
 		const auto it = mWindows.find(id.value);
-		if (it == mWindows.end()) { return nullptr; }
+		if (it == mWindows.end()) {
+			return nullptr;
+		}
 		return it->second.get();
 	}
 
@@ -170,10 +192,14 @@ namespace Unnamed {
 
 	void WindowManager::RegisterPlatformEvents(
 		IPlatformEvents* events
-	) { mPlatformEvents = events; }
+	) {
+		mPlatformEvents = events;
+	}
 
 	bool WindowManager::EnsureWindowClassRegistered() {
-		if (mWindowClassRegistered) { return true; }
+		if (mWindowClassRegistered) {
+			return true;
+		}
 
 		WNDCLASSEXW wc   = {};
 		wc.cbSize        = sizeof(WNDCLASSEXW);
@@ -186,7 +212,9 @@ namespace Unnamed {
 		wc.hIcon         = LoadIcon(nullptr, IDI_APPLICATION);
 		wc.hIconSm       = LoadIcon(wc.hInstance, IDI_APPLICATION);
 
-		if (!RegisterClassExW(&wc)) { return false; }
+		if (!RegisterClassExW(&wc)) {
+			return false;
+		}
 
 		mWindowClassRegistered = true;
 		return true;
@@ -196,7 +224,9 @@ namespace Unnamed {
 		const WindowDesc& desc
 	) {
 		DWORD style = WS_OVERLAPPEDWINDOW;
-		if (!desc.resizable) { style &= ~(WS_THICKFRAME | WS_MAXIMIZEBOX); }
+		if (!desc.resizable) {
+			style &= ~(WS_THICKFRAME | WS_MAXIMIZEBOX);
+		}
 
 		RECT rect{0, 0, desc.width, desc.height};
 		AdjustWindowRectEx(&rect, style, FALSE, 0);
@@ -326,7 +356,9 @@ namespace Unnamed {
 					// メイン以外はここで確実に破棄。
 					if (targetId != manager->mMainWindowId) {
 						manager->mWindows.erase(targetId.value);
-					} else { PostQuitMessage(0); }
+					} else {
+						PostQuitMessage(0);
+					}
 				}
 			}
 
@@ -336,7 +368,9 @@ namespace Unnamed {
 		auto* manager = reinterpret_cast<WindowManager*>(GetWindowLongPtrW(
 			hwnd, GWLP_USERDATA
 		));
-		if (!manager) { return DefWindowProcW(hwnd, msg, wParam, lParam); }
+		if (!manager) {
+			return DefWindowProcW(hwnd, msg, wParam, lParam);
+		}
 
 		// hwndからWindowを探す
 		Window* target = nullptr;

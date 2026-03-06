@@ -16,35 +16,9 @@ namespace Unnamed::Render {
 			AssetManager&      assetManager,
 			const std::string& path,
 			const ASSET_TYPE   type
-		) { return assetManager.LoadFromFile(path, type); }
-	}
-
-	bool URenderer::ResolveShaderProgramStageKey(
-		RenderDevice& renderDevice, const AssetID shaderProgramId,
-		const char*   stage, ShaderKey&           outKey
-	) const {
-		auto&       assetManager = renderDevice.GetAssetManager();
-		const auto* program      = assetManager.Get<ShaderProgramAssetData>(
-			shaderProgramId
-		);
-		if (!program) { return false; }
-
-		const std::optional<ShaderProgramStage>* src = nullptr;
-		if (std::string_view(stage) == "vs") { src = &program->vs; }
-		if (std::string_view(stage) == "ps") { src = &program->ps; }
-		if (std::string_view(stage) == "cs") { src = &program->cs; }
-		if (!src || !src->has_value()) { return false; }
-
-		const AssetID shaderSourceId = LoadAsset(
-			assetManager, src->value().sourcePath, ASSET_TYPE::SHADER_SOURCE
-		);
-		if (shaderSourceId == kInvalidAssetID) { return false; }
-
-		outKey.shaderSourceId = shaderSourceId;
-		outKey.entry          = src->value().entry;
-		outKey.profile        = src->value().profile;
-		outKey.defines        = src->value().defines;
-		return true;
+		) {
+			return assetManager.LoadFromFile(path, type);
+		}
 	}
 
 	void URenderer::Init(RenderDevice& renderDevice) {
@@ -326,17 +300,18 @@ namespace Unnamed::Render {
 			mSpritePass.geom.psoKey.ps
 		);
 		mSpritePass.geom.psoKey.rootSignature = mSpritePass.geom.rootSig;
-		mSpritePass.geom.psoKey.vertexLayout = mPortalPass.maskPassGeom.psoKey.vertexLayout;
+		mSpritePass.geom.psoKey.vertexLayout  = mPortalPass.maskPassGeom.psoKey.
+			vertexLayout;
 		mSpritePass.geom.psoKey.rtvFormat = Rhi::ToDxgiFormat(
 			dx.GetSwapChain().GetFormat()
 		);
-		mSpritePass.geom.psoKey.depthEnable = false;
-		mSpritePass.geom.psoKey.dsvFormat   = DXGI_FORMAT_UNKNOWN;
-		mSpritePass.geom.psoKey.cullMode    = D3D12_CULL_MODE_NONE;
-		mSpritePass.geom.psoKey.blendEnable = true;
-		mSpritePass.geom.psoKey.srcBlend = D3D12_BLEND_SRC_ALPHA;
-		mSpritePass.geom.psoKey.destBlend = D3D12_BLEND_INV_SRC_ALPHA;
-		mSpritePass.geom.psoKey.srcBlendAlpha = D3D12_BLEND_ONE;
+		mSpritePass.geom.psoKey.depthEnable    = false;
+		mSpritePass.geom.psoKey.dsvFormat      = DXGI_FORMAT_UNKNOWN;
+		mSpritePass.geom.psoKey.cullMode       = D3D12_CULL_MODE_NONE;
+		mSpritePass.geom.psoKey.blendEnable    = true;
+		mSpritePass.geom.psoKey.srcBlend       = D3D12_BLEND_SRC_ALPHA;
+		mSpritePass.geom.psoKey.destBlend      = D3D12_BLEND_INV_SRC_ALPHA;
+		mSpritePass.geom.psoKey.srcBlendAlpha  = D3D12_BLEND_ONE;
 		mSpritePass.geom.psoKey.destBlendAlpha = D3D12_BLEND_INV_SRC_ALPHA;
 
 		mBillboardPass.geom.rootSig = dx.GetGeomRootSignature();
@@ -370,11 +345,11 @@ namespace Unnamed::Render {
 
 		CreateTriangleTestResources(dx);
 		CreatePortalQuadResources(dx);
-		mSpritePass.geom.vb         = mPortalPass.maskPassGeom.vb;
-		mSpritePass.geom.ib         = mPortalPass.maskPassGeom.ib;
-		mSpritePass.geom.vbv        = mPortalPass.maskPassGeom.vbv;
-		mSpritePass.geom.ibv        = mPortalPass.maskPassGeom.ibv;
-		mSpritePass.geom.indexCount = mPortalPass.maskPassGeom.indexCount;
+		mSpritePass.geom.vb            = mPortalPass.maskPassGeom.vb;
+		mSpritePass.geom.ib            = mPortalPass.maskPassGeom.ib;
+		mSpritePass.geom.vbv           = mPortalPass.maskPassGeom.vbv;
+		mSpritePass.geom.ibv           = mPortalPass.maskPassGeom.ibv;
+		mSpritePass.geom.indexCount    = mPortalPass.maskPassGeom.indexCount;
 		mBillboardPass.geom.vb         = mPortalPass.maskPassGeom.vb;
 		mBillboardPass.geom.ib         = mPortalPass.maskPassGeom.ib;
 		mBillboardPass.geom.vbv        = mPortalPass.maskPassGeom.vbv;
@@ -391,5 +366,45 @@ namespace Unnamed::Render {
 			dx.GetSwapChain().GetCurrentBackBufferIndex()
 		);
 		BuildGraph(renderDevice);
+	}
+
+	bool URenderer::ResolveShaderProgramStageKey(
+		RenderDevice& renderDevice, const AssetID shaderProgramId,
+		const char*   stage, ShaderKey&           outKey
+	) const {
+		auto&       assetManager = renderDevice.GetAssetManager();
+		const auto* program      = assetManager.Get<ShaderProgramAssetData>(
+			shaderProgramId
+		);
+		if (!program) {
+			return false;
+		}
+
+		const std::optional<ShaderProgramStage>* src = nullptr;
+		if (std::string_view(stage) == "vs") {
+			src = &program->vs;
+		}
+		if (std::string_view(stage) == "ps") {
+			src = &program->ps;
+		}
+		if (std::string_view(stage) == "cs") {
+			src = &program->cs;
+		}
+		if (!src || !src->has_value()) {
+			return false;
+		}
+
+		const AssetID shaderSourceId = LoadAsset(
+			assetManager, src->value().sourcePath, ASSET_TYPE::SHADER_SOURCE
+		);
+		if (shaderSourceId == kInvalidAssetID) {
+			return false;
+		}
+
+		outKey.shaderSourceId = shaderSourceId;
+		outKey.entry          = src->value().entry;
+		outKey.profile        = src->value().profile;
+		outKey.defines        = src->value().defines;
+		return true;
 	}
 }

@@ -76,12 +76,18 @@ template float  GameTime::ScaledDeltaTime<float>();
 
 /// @brief ゲームの起動から経過した時間を取得します。
 /// @return ゲームの起動から経過した時間（秒単位）
-double GameTime::TotalTime() const { return static_cast<float>(mTotalTime); }
+double GameTime::TotalTime() const {
+	return static_cast<float>(mTotalTime);
+}
 
 /// @brief ゲームの時間スケールを取得します。
 /// @return ゲームの時間スケール
-float GameTime::TimeScale() { return mTimeScale; }
+float GameTime::TimeScale() const {
+	return mTimeScale;
+}
 
 /// @brief 現在のフレーム数を取得します。
 /// @return 現在のフレーム数
-uint64_t GameTime::FrameCount() const { return mFrameCount; }
+uint64_t GameTime::FrameCount() const {
+	return mFrameCount;
+}

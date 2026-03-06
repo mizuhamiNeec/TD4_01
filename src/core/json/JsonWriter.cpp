@@ -106,7 +106,9 @@ namespace Unnamed {
 	}
 
 	bool JsonWriter::Save() const {
-		if (mPath.empty()) { throw std::runtime_error("Save path is empty"); }
+		if (mPath.empty()) {
+			throw std::runtime_error("Save path is empty");
+		}
 
 		const std::filesystem::path filePath(mPath);
 		if (filePath.has_parent_path()) {
@@ -126,7 +128,9 @@ namespace Unnamed {
 	}
 
 	std::string_view JsonWriter::ToString() const {
-		if (mStringCache.empty()) { mStringCache = mRoot.dump(4); }
+		if (mStringCache.empty()) {
+			mStringCache = mRoot.dump(4);
+		}
 		return mStringCache;
 	}
 }

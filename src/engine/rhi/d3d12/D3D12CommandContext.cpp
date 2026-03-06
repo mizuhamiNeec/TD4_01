@@ -69,7 +69,9 @@ namespace Unnamed::Rhi {
 		ID3D12Resource* resource, const D3D12_RESOURCE_STATES before,
 		const D3D12_RESOURCE_STATES after
 	) {
-		if (before == after) { return; }
+		if (before == after) {
+			return;
+		}
 
 		D3D12_RESOURCE_BARRIER b = {};
 		b.Type                   = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -97,15 +99,21 @@ namespace Unnamed::Rhi {
 
 	void D3D12CommandContext::SetComputeRootUavTable(
 		const uint32_t rootIndex, const D3D12_GPU_DESCRIPTOR_HANDLE handle
-	) { mCommandList->SetComputeRootDescriptorTable(rootIndex, handle); }
+	) {
+		mCommandList->SetComputeRootDescriptorTable(rootIndex, handle);
+	}
 
 	void D3D12CommandContext::SetGraphicsRootSrvTable(
 		const uint32_t rootIndex, const D3D12_GPU_DESCRIPTOR_HANDLE handle
-	) { mCommandList->SetGraphicsRootDescriptorTable(rootIndex, handle); }
+	) {
+		mCommandList->SetGraphicsRootDescriptorTable(rootIndex, handle);
+	}
 
 	void D3D12CommandContext::Dispatch(
 		const uint32_t x, const uint32_t y, const uint32_t z
-	) { mCommandList->Dispatch(x, y, z); }
+	) {
+		mCommandList->Dispatch(x, y, z);
+	}
 
 	void D3D12CommandContext::DrawFullScreenTriangle() {
 		mCommandList->IASetPrimitiveTopology(

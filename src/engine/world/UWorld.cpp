@@ -283,6 +283,18 @@ namespace Unnamed {
 		}
 	}
 
+	bool UWorld::IsGameSimulationEnabled() const noexcept {
+		return true;
+	}
+
+	std::string_view UWorld::GetLoadedScenePath() const {
+		return mLoadedScenePath;
+	}
+
+	void UWorld::SetLoadedScenePath(std::string path) {
+		mLoadedScenePath = std::move(path);
+	}
+
 	void UWorld::SetScene(std::unique_ptr<UScene> scene) {
 		mScene = std::move(scene);
 	}

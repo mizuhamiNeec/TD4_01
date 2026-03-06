@@ -9,6 +9,7 @@ constexpr uint32_t kIconClose    = 0xE5CD; // 閉じる
 
 // ---- Navigation / App -------------------------------------------------------
 constexpr uint32_t kIconArrowBack = 0xE5C4; // 戻る/ロゴ(仮)
+constexpr uint32_t kIconAdd       = 0xE145; // 追加
 
 // ---- Help / Info ------------------------------------------------------------
 constexpr uint32_t kIconInfo    = 0xE88E; // 情報

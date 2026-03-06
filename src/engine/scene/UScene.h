@@ -55,7 +55,7 @@ namespace Unnamed {
 
 		/// @brief シーン内のすべてのエンティティを取得します。
 		[[nodiscard]]
-		const std::vector<std::unique_ptr<UEntity>>& GetEntities() const;
+		const std::vector<std::unique_ptr<UEntity>>&  GetEntities() const;
 		[[nodiscard]] const std::vector<std::string>& GetFolders() const;
 
 		void AddFolder(std::string_view folderPath);

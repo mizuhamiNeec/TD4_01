@@ -59,7 +59,9 @@ namespace Unnamed {
 
 #ifdef _DEBUG // デバッグビルドではコンソールUIを有効化
 		mConsoleUI = std::make_unique<ConsoleUI>(this);
-		if (mConsoleUI) { mConsoleUI->Init(); }
+		if (mConsoleUI) {
+			mConsoleUI->Init();
+		}
 #endif
 
 		// 共通コマンドの登録
@@ -75,7 +77,9 @@ namespace Unnamed {
 	void ConsoleSystem::Update(float) {
 #ifdef _DEBUG
 		// コンソールUIの更新
-		if (mConsoleUI) { mConsoleUI->Show(); }
+		if (mConsoleUI) {
+			mConsoleUI->Show();
+		}
 #endif
 	}
 
@@ -87,10 +91,14 @@ namespace Unnamed {
 		mFileLogSink.Stop();
 	}
 
-	const std::string_view ConsoleSystem::GetName() const { return "Console"; }
+	const std::string_view ConsoleSystem::GetName() const {
+		return "Console";
+	}
 
 	RingBuffer<ConsoleLogText, kConsoleBufferSize>&
-	ConsoleSystem::GetLogBuffer() { return mLogBuffer; }
+	ConsoleSystem::GetLogBuffer() {
+		return mLogBuffer;
+	}
 
 	void ConsoleSystem::Print(
 		const LogLevel             level,
@@ -119,13 +127,17 @@ namespace Unnamed {
 			mFileLogSink.Enqueue(std::move(e));
 
 			// Error以上は今すぐ書き出す
-			if (level >= LogLevel::Error) { mFileLogSink.FlushNow(50); }
+			if (level >= LogLevel::Error) {
+				mFileLogSink.FlushNow(50);
+			}
 		}
 
 		std::string out;
 		if (!logText.channel.empty()) {
 			out = "[" + logText.channel + "] " + logText.message;
-		} else { out = logText.message; }
+		} else {
+			out = logText.message;
+		}
 
 		// コンソールの出力
 		std::cout << out << "\n";
@@ -136,7 +148,9 @@ namespace Unnamed {
 
 #ifdef _DEBUG
 		// UIの更新
-		if (mConsoleUI) { mConsoleUI->OnConsoleUpdate(); }
+		if (mConsoleUI) {
+			mConsoleUI->OnConsoleUpdate();
+		}
 #endif
 	}
 
@@ -181,13 +195,17 @@ namespace Unnamed {
 		UnnamedConCommandBase* var, const std::vector<std::string>& args
 	) {
 		// 変数が存在しない、または引数が空の場合は何もしない
-		if (!var || args.empty()) { return; }
+		if (!var || args.empty()) {
+			return;
+		}
 
 		switch (GetConVarType(var)) {
 			case CVAR_TYPE::BOOL: {
 				if (
 					auto* cBool = dynamic_cast<UnnamedConVar<bool>*>(var)
-				) { cBool->SetValue(StrUtil::CheckBoolString(args[0])); }
+				) {
+					cBool->SetValue(StrUtil::CheckBoolString(args[0]));
+				}
 				break;
 			}
 			case CVAR_TYPE::INT: {
@@ -252,7 +270,9 @@ namespace Unnamed {
 					std::string combined;
 					for (size_t i = 0; i < args.size(); ++i) {
 						combined += args[i];
-						if (i + 1 < args.size()) { combined += " "; }
+						if (i + 1 < args.size()) {
+							combined += " ";
+						}
 					}
 					cs->SetValue(combined);
 				}
@@ -292,48 +312,62 @@ namespace Unnamed {
 	}
 
 	static std::string GetVarValueString(UnnamedConCommandBase* var) {
-		if (!var) { return {}; }
+		if (!var) {
+			return {};
+		}
 
 		switch (GetConVarType(var)) {
 			case CVAR_TYPE::BOOL: {
 				if (
 					const auto* cBool =
 						dynamic_cast<UnnamedConVar<bool>*>(var)
-				) { return cBool->GetValue() ? "true" : "false"; }
+				) {
+					return cBool->GetValue() ? "true" : "false";
+				}
 				break;
 			}
 			case CVAR_TYPE::INT: {
 				if (
 					const auto* ci = dynamic_cast<UnnamedConVar<int>*>(var)
-				) { return std::to_string(ci->GetValue()); }
+				) {
+					return std::to_string(ci->GetValue());
+				}
 				break;
 			}
 			case CVAR_TYPE::FLOAT: {
 				if (
 					const auto* cf =
 						dynamic_cast<UnnamedConVar<float>*>(var)
-				) { return std::to_string(cf->GetValue()); }
+				) {
+					return std::to_string(cf->GetValue());
+				}
 				break;
 			}
 			case CVAR_TYPE::DOUBLE: {
 				if (
 					const auto* cd = dynamic_cast<UnnamedConVar<double>*>(
 						var)
-				) { return std::to_string(cd->GetValue()); }
+				) {
+					return std::to_string(cd->GetValue());
+				}
 				break;
 			}
 			case CVAR_TYPE::STRING: {
 				if (
 					const auto* cs =
 						dynamic_cast<UnnamedConVar<std::string>*>(var)
-				) { return cs->GetValue(); }
+				) {
+					return cs->GetValue();
+				}
 				break;
 			}
 			case CVAR_TYPE::VEC3: {
 				if (
 					const auto* cv3 =
 						dynamic_cast<UnnamedConVar<Vec3>*>(var)
-				) { return cv3->GetValue().ToString(); }
+				) {
+					return cv3->GetValue().ToString();
+				}
 				break;
 			}
 			case CVAR_TYPE::NONE:
@@ -374,27 +408,35 @@ namespace Unnamed {
 			);
 #ifdef _DEBUG
 			// UIに通知
-			if (mConsoleUI) { mConsoleUI->OnConsoleUpdate(); }
+			if (mConsoleUI) {
+				mConsoleUI->OnConsoleUpdate();
+			}
 #endif
 		}
 
 		// コマンドを順に処理
 		for (const auto& singleCommand : commands) {
 			// 空のコマンドは無視
-			if (singleCommand.empty()) { continue; }
+			if (singleCommand.empty()) {
+				continue;
+			}
 
 			// コマンドをトークンに分割
 			std::vector<std::string> tokens = StrUtil::Tokenize(singleCommand);
 
 			// トークンがない場合は無視
-			if (tokens.empty()) { continue; }
+			if (tokens.empty()) {
+				continue;
+			}
 
 			// 最初がコマンドで、残りが引数
 			std::vector args(tokens.begin() + 1, tokens.end());
 
 			// ダブルクォートがある場合は取り除いておく
 			for (auto& arg : args) {
-				if (arg.find('"') == std::string::npos) { continue; }
+				if (arg.find('"') == std::string::npos) {
+					continue;
+				}
 				// 引数から両端のダブルクォートを削除
 				arg = StrUtil::RemoveDoubleQuotes(arg);
 			}
@@ -438,7 +480,9 @@ namespace Unnamed {
 				// コールバックを実行
 				if (cmd->onExecute(args)) {
 					// 実行が完了したら完了時のコールバックを呼ぶ
-					if (cmd->onComplete) { cmd->onComplete(); }
+					if (cmd->onComplete) {
+						cmd->onComplete();
+					}
 				} else {
 					// 失敗したらとりあえず説明を出しておく
 					SpecialMsg(
@@ -458,7 +502,9 @@ namespace Unnamed {
 				auto* var = mConVars[tokens[0]];
 
 				// 引数がある場合は値を設定 / 無い場合は表示
-				if (!args.empty()) { SetVarFromArgs(var, args); } else {
+				if (!args.empty()) {
+					SetVarFromArgs(var, args);
+				} else {
 					const auto        cvarType = GetConVarType(var);
 					const std::string type     = ToString(cvarType);
 					const std::string value    = GetVarValueString(var);
@@ -485,10 +531,13 @@ namespace Unnamed {
 	}
 
 	std::unordered_map<std::string, UnnamedConCommandBase*>
-	ConsoleSystem::GetConVars() { return mConVars; }
+	ConsoleSystem::GetConVars() {
+		return mConVars;
+	}
 
-	UnnamedConCommandBase*
-	ConsoleSystem::GetConVar(const std::string_view name) {
+	UnnamedConCommandBase* ConsoleSystem::GetConVar(
+		const std::string_view name
+	) {
 		return mConVars.contains(name.data()) ?
 			       mConVars[std::string(name)] :
 			       nullptr;
@@ -498,11 +547,19 @@ namespace Unnamed {
 		auto type = CVAR_TYPE::NONE;
 
 		if (dynamic_cast<UnnamedConVar<bool>*>(
-			var)) { type = CVAR_TYPE::BOOL; } else if (dynamic_cast<
-			UnnamedConVar<int>*>(var)) { type = CVAR_TYPE::INT; } else if (
+			var)) {
+			type = CVAR_TYPE::BOOL;
+		} else if (dynamic_cast<
+			UnnamedConVar<int>*>(var)) {
+			type = CVAR_TYPE::INT;
+		} else if (
 			dynamic_cast<UnnamedConVar<float>*>(
-				var)) { type = CVAR_TYPE::FLOAT; } else if (dynamic_cast<
-			UnnamedConVar<double>*>(var)) { type = CVAR_TYPE::DOUBLE; } else if
+				var)) {
+			type = CVAR_TYPE::FLOAT;
+		} else if (dynamic_cast<
+			UnnamedConVar<double>*>(var)) {
+			type = CVAR_TYPE::DOUBLE;
+		} else if
 		(dynamic_cast<UnnamedConVar<std::string>*>(var)) {
 			type = CVAR_TYPE::STRING;
 		} else if (dynamic_cast<UnnamedConVar<Vec3>*>(var)) {

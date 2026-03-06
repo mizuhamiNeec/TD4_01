@@ -137,7 +137,9 @@ namespace Unnamed {
 			);
 
 			auto* base = GetConVar(name);
-			if (!base) { return nullptr; }
+			if (!base) {
+				return nullptr;
+			}
 
 			return static_cast<TVar*>(base);
 		}

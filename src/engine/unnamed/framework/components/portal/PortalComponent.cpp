@@ -28,7 +28,9 @@ namespace Unnamed {
 			const JsonReader& reader, const char* key, const Vec2 fallback
 		) {
 			const JsonReader value = reader[key];
-			if (!value.Valid() || value.Size() < 2) { return fallback; }
+			if (!value.Valid() || value.Size() < 2) {
+				return fallback;
+			}
 			return Vec2(value[0].GetFloat(), value[1].GetFloat());
 		}
 	}
@@ -59,14 +61,18 @@ namespace Unnamed {
 #ifdef _DEBUG
 	void PortalComponent::DrawInspectorImGui() {
 		bool enabled = mEnabled;
-		if (ImGui::Checkbox("Enabled", &enabled)) { mEnabled = enabled; }
+		if (ImGui::Checkbox("Enabled", &enabled)) {
+			mEnabled = enabled;
+		}
 		bool useAsPortalSurface = mUseAsPortalSurface;
 		if (
 			ImGui::Checkbox(
 				"UseAsPortalSurface",
 				&useAsPortalSurface
 			)
-		) { mUseAsPortalSurface = useAsPortalSurface; }
+		) {
+			mUseAsPortalSurface = useAsPortalSurface;
+		}
 
 		long long linkedGuid = static_cast<long long>(mLinkedPortalGuid);
 		if (ImGui::InputScalar(
@@ -107,7 +113,9 @@ namespace Unnamed {
 		mEnabled = enabled;
 	}
 
-	bool PortalComponent::IsEnabled() const noexcept { return mEnabled; }
+	bool PortalComponent::IsEnabled() const noexcept {
+		return mEnabled;
+	}
 
 	void PortalComponent::SetHalfExtents(const Vec2 halfExtents) noexcept {
 		mHalfExtents.x = std::max(0.01f, halfExtents.x);

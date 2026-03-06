@@ -45,11 +45,15 @@ bool AudioManager::Init() {
 /// @brief シャットダウン
 void AudioManager::Shutdown() {
 	// すでにShutdown済みか?
-	if (!mXAudio2 && !mAsterVoice && mAudioCache.empty()) { return; }
+	if (!mXAudio2 && !mAsterVoice && mAudioCache.empty()) {
+		return;
+	}
 
 	// 外部参照が残っていても安全になるよう、まず全AudioのVoiceを無効化
 	for (auto& audio : mAudioCache | std::views::values) {
-		if (audio) { audio->InvalidateVoice(); }
+		if (audio) {
+			audio->InvalidateVoice();
+		}
 	}
 
 	// SourceVoice を保持しているAudioを先に破棄（shared_ptrを解放）
@@ -71,7 +75,9 @@ void AudioManager::Shutdown() {
 std::shared_ptr<Audio> AudioManager::GetAudio(const std::string& filePath) {
 	// キャッシュを検索
 	const auto it = mAudioCache.find(filePath);
-	if (it != mAudioCache.end()) { return it->second; }
+	if (it != mAudioCache.end()) {
+		return it->second;
+	}
 
 	// 音声を新しく読み込む
 	auto audio = std::make_shared<Audio>();
@@ -89,7 +95,9 @@ std::shared_ptr<Audio> AudioManager::GetAudio(const std::string& filePath) {
 /// @param filePath 音声ファイルのパス
 void AudioManager::UnloadAudio(const std::string& filePath) {
 	// 検索してあったら削除
-	if (mAudioCache.contains(filePath)) { mAudioCache.erase(filePath); } else {
+	if (mAudioCache.contains(filePath)) {
+		mAudioCache.erase(filePath);
+	} else {
 		Error(kChannel, "音声のアンロードに失敗しました: {}", filePath);
 	}
 }

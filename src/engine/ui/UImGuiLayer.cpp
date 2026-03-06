@@ -10,7 +10,6 @@
 #include "engine/platform/WindowsUtils.h"
 #include "engine/render/rendergraph/RenderPassContext.h"
 #include "engine/rhi/d3d12/D3D12Device.h"
-#include "engine/rhi/d3d12/D3D12Util.h"
 
 namespace Unnamed {
 	UImGuiLayer::UImGuiLayer(
@@ -63,7 +62,9 @@ namespace Unnamed {
 
 		if (WindowsUtils::IsAppDarkTheme()) {
 			ImGuiUtil::StyleColorsDark();
-		} else { ImGuiUtil::StyleColorsLight(); }
+		} else {
+			ImGuiUtil::StyleColorsLight();
+		}
 
 		mCapacity       = device.GetImguiSrvHeapCapacity();
 		mFramesInFlight = std::max(1u, framesInFlight);
@@ -119,14 +120,20 @@ namespace Unnamed {
 		ImGui::NewFrame();
 	}
 
-	void UImGuiLayer::EndFrame() const { ImGui::Render(); }
+	void UImGuiLayer::EndFrame() const {
+		ImGui::Render();
+	}
 
 	void UImGuiLayer::RenderMainDrawData(
 		const Render::RenderPassContext& passContext
 	) const {
-		if (!ImGui::GetCurrentContext()) { return; }
+		if (!ImGui::GetCurrentContext()) {
+			return;
+		}
 		ImDrawData* drawData = ImGui::GetDrawData();
-		if (!drawData || drawData->CmdListsCount <= 0) { return; }
+		if (!drawData || drawData->CmdListsCount <= 0) {
+			return;
+		}
 
 		FlushPendingTextureCopies();
 
@@ -139,7 +146,9 @@ namespace Unnamed {
 		if (
 			(ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) ==
 			0
-		) { return; }
+		) {
+			return;
+		}
 
 		ImGui::UpdatePlatformWindows();
 		ImGui::RenderPlatformWindowsDefault();
@@ -150,15 +159,21 @@ namespace Unnamed {
 		const uint64_t                    revision,
 		const D3D12_CPU_DESCRIPTOR_HANDLE sourceSrv
 	) {
-		if (sourceSrv.ptr == 0) { return 0; }
+		if (sourceSrv.ptr == 0) {
+			return 0;
+		}
 
 		auto& textureSlots = mTextureSlotsByKey[key];
 		auto& frameSlots   = textureSlots.frameSlots;
-		if (frameSlots.empty()) { frameSlots.resize(mFramesInFlight); }
+		if (frameSlots.empty()) {
+			frameSlots.resize(mFramesInFlight);
+		}
 
 		const uint32_t frameSlotIndex = mFrameIndex % mFramesInFlight;
 		auto&          frameSlot      = frameSlots[frameSlotIndex];
-		if (frameSlot.slot == UINT32_MAX) { frameSlot.slot = AllocateSlot(); }
+		if (frameSlot.slot == UINT32_MAX) {
+			frameSlot.slot = AllocateSlot();
+		}
 
 		if (frameSlot.revision != revision) {
 			frameSlot.pendingSource   = sourceSrv;
@@ -170,16 +185,24 @@ namespace Unnamed {
 		return gpu.ptr;
 	}
 
+	ID3D12DescriptorHeap* UImGuiLayer::GetDescriptorHeap() const {
+		return mDevice.GetSrvUavHeap();
+	}
+
 	void UImGuiLayer::FlushPendingTextureCopies() const {
 		auto& self = const_cast<UImGuiLayer&>(*this);
 		for (auto& [_, textureSlots] : self.mTextureSlotsByKey) {
-			if (textureSlots.frameSlots.empty()) { continue; }
+			if (textureSlots.frameSlots.empty()) {
+				continue;
+			}
 
 			auto& frameSlot = textureSlots.frameSlots[
 				self.mFrameIndex % self.mFramesInFlight
 			];
 			if (!frameSlot.hasPendingCopy || frameSlot.pendingSource.ptr == 0 ||
-			    frameSlot.slot == UINT32_MAX) { continue; }
+			    frameSlot.slot == UINT32_MAX) {
+				continue;
+			}
 
 			const D3D12_CPU_DESCRIPTOR_HANDLE dst = CpuHandleAt(frameSlot.slot);
 			mDevice.GetDevice()->CopyDescriptorsSimple(
@@ -200,14 +223,14 @@ namespace Unnamed {
 
 	D3D12_CPU_DESCRIPTOR_HANDLE UImGuiLayer::CpuHandleAt(
 		const uint32_t slot
-	) const { return mDevice.GetSrvUavCpuHandle(slot); }
+	) const {
+		return mDevice.GetSrvUavCpuHandle(slot);
+	}
 
 	D3D12_GPU_DESCRIPTOR_HANDLE UImGuiLayer::GpuHandleAt(
 		const uint32_t slot
-	) const { return mDevice.GetSrvUavGpuHandle(slot); }
-
-	ID3D12DescriptorHeap* UImGuiLayer::GetDescriptorHeap() const {
-		return mDevice.GetSrvUavHeap();
+	) const {
+		return mDevice.GetSrvUavGpuHandle(slot);
 	}
 }
 

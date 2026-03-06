@@ -30,7 +30,9 @@ namespace Unnamed::Gui {
 			const Color& pressed
 		);
 
-		const char* GetTypeName() const override { return "Button"; }
+		const char* GetTypeName() const override {
+			return "Button";
+		}
 
 	protected:
 		/// @brief 描画コマンドを構築します。

@@ -32,14 +32,16 @@ namespace Math {
 		for (int i = 0; i < kMaxItr; i++) {
 			const float oneMinusU = 1.0f - u;
 			const float bezierX   = 3.0f * oneMinusU * oneMinusU * u * p1.x +
-			                        3.0f * oneMinusU * u * u * p2.x +
-			                        u * u * u;
+			                      3.0f * oneMinusU * u * u * p2.x +
+			                      u * u * u;
 
 			const float derivative = 3.0f * oneMinusU * oneMinusU * p1.x +
 			                         6.0f * oneMinusU * u * (p2.x - p1.x) +
 			                         3.0f * u * u * (1.0f - p2.x);
 
-			if (std::fabs(derivative) < 1e-6f) { break; }
+			if (std::fabs(derivative) < 1e-6f) {
+				break;
+			}
 
 			const float diff = bezierX - t;
 			u                -= diff / derivative;
@@ -48,8 +50,8 @@ namespace Math {
 		// u を用いて y(u) を計算
 		const float oneMinusU = 1.0f - u;
 		const float bezierY   = 3.0f * oneMinusU * oneMinusU * u * p1.y +
-		                        3.0f * oneMinusU * u * u * p2.y +
-		                        u * u * u;
+		                      3.0f * oneMinusU * u * u * p2.y +
+		                      u * u * u;
 		return bezierY;
 	}
 
@@ -64,7 +66,9 @@ namespace Math {
 		const float t,
 		const float p1, const float p2,
 		const float p3, const float p4
-	) { return CubicBezier(t, Vec2(p1, p2), Vec2(p3, p4)); }
+	) {
+		return CubicBezier(t, Vec2(p1, p2), Vec2(p3, p4));
+	}
 
 	/// @brief 線形補間を行います
 	/// @param a 開始値
@@ -95,7 +99,9 @@ namespace Math {
 		outIsOffscreen;
 		outAngle;
 
-		if (true) { return Vec2::zero; }
+		if (true) {
+			return Vec2::zero;
+		}
 
 		// const Vec4 viewSpace = Vec4(worldPos, 1.0f) * camera->GetViewMat();
 		// const Vec4 clipSpace = viewSpace * camera->GetProjMat();
@@ -254,17 +260,28 @@ namespace Math {
 	/// @brief インチをメートルに変換します
 	/// @param vec 変換するベクトル
 	/// @return 変換後のベクトル
-	Vec3 HtoM(const Vec3& vec) { return vec * 0.0254f; }
+	Vec3 HtoM(const Vec3& vec) {
+		return vec * 0.0254f;
+	}
+
 	/// @brief インチをメートルに変換します
 	/// @param val 変換する値
 	/// @return 変換後の値
-	float HtoM(const float val) { return val * 0.0254f; }
+	float HtoM(const float val) {
+		return val * 0.0254f;
+	}
+
 	/// @brief メートルをインチに変換します
 	/// @param vec 変換するベクトル
 	/// @return 変換後のベクトル
-	Vec3 MtoH(const Vec3& vec) { return vec * 39.3701f; }
+	Vec3 MtoH(const Vec3& vec) {
+		return vec * 39.3701f;
+	}
+
 	/// @brief メートルをインチに変換します
 	/// @param val 変換する値
 	/// @return 変換後の値
-	float MtoH(const float val) { return val * 39.3701f; }
+	float MtoH(const float val) {
+		return val * 39.3701f;
+	}
 }

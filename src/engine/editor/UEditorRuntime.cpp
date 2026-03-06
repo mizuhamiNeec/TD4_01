@@ -1145,7 +1145,21 @@ namespace Unnamed {
 			ImGui::EndPopup();
 		}
 
-		if (ImGui::Button("+##OutlinerAdd")) {
+		float iconScale = 1.5f;
+
+		auto addButtonSize = ImVec2(
+			ImGui::GetFontSize() * iconScale,
+			ImGui::GetFontSize() * iconScale
+		);
+
+		if (
+			ImGuiWidgets::IconButton(
+				kIconAdd,
+				nullptr,
+				addButtonSize,
+				iconScale
+			)
+		) {
 			ImGui::OpenPopup("OutlinerAddPopup");
 		}
 		if (ImGui::BeginPopup("OutlinerAddPopup")) {
@@ -1303,23 +1317,34 @@ namespace Unnamed {
 					ImGui::EndPopup();
 				}
 
+				auto fontSize = ImVec2(
+					ImGui::GetFontSize(), ImGui::GetFontSize()
+				);
+
 				ImGui::TableNextColumn();
 				const bool visible = entity->IsVisible();
-				if (ImGuiWidgets::IconButton(
-					visible ? kIconVisibility : kIconVisibilityOff,
-					nullptr,
-					ImVec2(28.0f, 28.0f)
-				)) {
+				if (
+					ImGui::InvisibleButton(
+						StrUtil::ConvertToUtf8(
+							visible ? kIconVisibility : kIconVisibilityOff
+						).c_str(),
+						fontSize
+					)
+				) {
 					entity->SetVisible(!visible);
 				}
 
 				ImGui::TableNextColumn();
 				const bool active = entity->IsActive();
-				if (ImGuiWidgets::IconButton(
-					active ? kIconCheckBoxOn : kIconCheckBoxOff,
-					nullptr,
-					ImVec2(28.0f, 28.0f)
-				)) {
+				if (
+					ImGui::ButtonEx(
+						StrUtil::ConvertToUtf8(
+							active ? kIconCheckBoxOn : kIconCheckBoxOff
+						).c_str(),
+						fontSize,
+						ImGuiButtonFlags_
+					)
+				) {
 					entity->SetActive(!active);
 				}
 

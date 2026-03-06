@@ -91,7 +91,9 @@ namespace Unnamed::Rhi {
 		std::vector<std::wstring> owned;
 		owned.reserve(16 + includeDirs.size() * 2 + extraArgs.size());
 
-		auto Push = [&](const std::wstring& s) { owned.emplace_back(s); };
+		auto Push = [&](const std::wstring& s) {
+			owned.emplace_back(s);
+		};
 
 		// 必須
 		// DXC は先頭にソースパスを渡す形式を前提にする実装があるため明示する
@@ -115,7 +117,9 @@ namespace Unnamed::Rhi {
 		}
 
 		// 追加引数
-		for (const auto& a : extraArgs) { Push(a); }
+		for (const auto& a : extraArgs) {
+			Push(a);
+		}
 
 		std::vector<LPCWSTR> argv;
 		argv.reserve(owned.size());
@@ -127,7 +131,9 @@ namespace Unnamed::Rhi {
 					size()),
 				mIncludeHandler.Get(), IID_PPV_ARGS(result.
 					ReleaseAndGetAddressOf()))
-		)) { return false; }
+		)) {
+			return false;
+		}
 
 		HRESULT status = S_OK;
 		result->GetStatus(&status);
@@ -149,13 +155,17 @@ namespace Unnamed::Rhi {
 			}
 		}
 
-		if (FAILED(status)) { return false; }
+		if (FAILED(status)) {
+			return false;
+		}
 
 		Microsoft::WRL::ComPtr<IDxcBlob> objectBlob;
 		if (FAILED(
 			result->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(objectBlob.
 				ReleaseAndGetAddressOf()), nullptr)
-		)) { return false; }
+		)) {
+			return false;
+		}
 
 		const auto outputDirectory = std::filesystem::path(outputPath).
 			parent_path();

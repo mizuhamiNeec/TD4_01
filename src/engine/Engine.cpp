@@ -63,7 +63,9 @@ namespace Unnamed {
 		timeBeginPeriod(1); // システムタイマーの分解能を上げる
 
 		// 初期化
-		if (!Init()) { UASSERT(false && "Failed to initialize Engine"); }
+		if (!Init()) {
+			UASSERT(false && "Failed to initialize Engine");
+		}
 
 		// メインループ
 		while (true) {
@@ -72,7 +74,9 @@ namespace Unnamed {
 			// ウィンドウのリサイズ処理
 			for (const WindowId id : mWindowManager->GetAllWindowIds()) {
 				Window* wnd = mWindowManager->FindWindowById(id);
-				if (!wnd) { continue; }
+				if (!wnd) {
+					continue;
+				}
 				if (const auto resize = wnd->ConsumeResizeEvent()) {
 					if (
 						resize->width > 0 && resize->height > 0 &&
@@ -91,7 +95,9 @@ namespace Unnamed {
 				}
 			}
 
-			if (mWindowManager->ShouldQuit() || mWishShutdown) { break; }
+			if (mWindowManager->ShouldQuit() || mWishShutdown) {
+				break;
+			}
 
 			Tick();
 		}
@@ -101,14 +107,6 @@ namespace Unnamed {
 		timeEndPeriod(1);
 		CoUninitialize();
 		return EXIT_SUCCESS;
-	}
-
-	void Engine::ToggleFullscreen() const {
-		if (mWindowManager) {
-			if (const Window* window = mWindowManager->FindWindowById(
-				mWindowManager->GetMainWindowId()
-			)) { window->ToggleFullscreen(); }
-		}
 	}
 
 	void Engine::ToggleEditorScreenMode() const {
@@ -143,7 +141,9 @@ namespace Unnamed {
 
 		// WindowManagerの初期化メインウィンドウ作成
 		mWindowManager = std::make_unique<WindowManager>();
-		if (!mWindowManager->Init(mConfig.window)) { return false; }
+		if (!mWindowManager->Init(mConfig.window)) {
+			return false;
+		}
 
 		// メインウィンドウのID取得
 		const auto id = mWindowManager->GetMainWindowId();
@@ -154,12 +154,16 @@ namespace Unnamed {
 
 		// ConsoleSystemの初期化
 		mConsoleSystem = std::make_unique<ConsoleSystem>();
-		if (!mConsoleSystem->Init()) { return false; }
+		if (!mConsoleSystem->Init()) {
+			return false;
+		}
 
 		// TerminalSystem の初期化（ConsoleSystem 経由で操作するため Console を渡す）
 		mTerminalSystem = std::make_unique<
 			TerminalSystem>(mConsoleSystem.get());
-		if (!mTerminalSystem->Init()) { return false; }
+		if (!mTerminalSystem->Init()) {
+			return false;
+		}
 
 		mAssetManager = std::make_unique<AssetManager>();
 		ServiceLocator::Register<AssetManager>(mAssetManager.get());
@@ -191,14 +195,18 @@ namespace Unnamed {
 
 		// TimeSystemの初期化
 		mTimeSystem = std::make_unique<TimeSystem>();
-		if (!mTimeSystem->Init()) { return false; }
+		if (!mTimeSystem->Init()) {
+			return false;
+		}
 
 		mProfiler = std::make_unique<UProfiler>();
 		ServiceLocator::Register<UProfiler>(mProfiler.get());
 
 		// InputSystemの初期化
 		mInputSystem = std::make_unique<UInputSystem>();
-		if (!mInputSystem->Init()) { return false; }
+		if (!mInputSystem->Init()) {
+			return false;
+		}
 
 		// デバイス登録
 		const auto keyboardDevice = std::make_shared<KeyboardDevice>(hwnd);
@@ -262,7 +270,9 @@ namespace Unnamed {
 				}
 			},
 			[this] {
-				if (mUImGuiLayer) { mUImGuiLayer->RenderPlatformWindows(); }
+				if (mUImGuiLayer) {
+					mUImGuiLayer->RenderPlatformWindows();
+				}
 			}
 		);
 #endif
@@ -284,7 +294,9 @@ namespace Unnamed {
 				"exec ./content/core/cfg/editor.cfg"
 			);
 #endif
-		} else { (void)SwitchWorld<UGameWorld>(); }
+		} else {
+			(void)SwitchWorld<UGameWorld>();
+		}
 
 		return true;
 	}
@@ -294,7 +306,11 @@ namespace Unnamed {
 		const auto frameStart = std::chrono::steady_clock::now();
 		mTimeSystem->BeginFrame();
 		const float deltaTime = mTimeSystem->GetGameTime()->DeltaTime<float>();
-		if (mProfiler) { mProfiler->BeginFrame(); }
+
+		// プロファイラのフレーム開始
+		if (mProfiler) {
+			mProfiler->BeginFrame();
+		}
 
 		// 入力システムの更新
 		{
@@ -366,7 +382,9 @@ namespace Unnamed {
 		// ワールドの更新
 		{
 			UProfiler::ScopeTimer scope(mProfiler.get(), "World.Tick");
-			if (mWorld) { mWorld->Tick(deltaTime); }
+			if (mWorld) {
+				mWorld->Tick(deltaTime);
+			}
 		}
 
 		Render::RenderFrameInputs inputs = {};
@@ -440,7 +458,9 @@ namespace Unnamed {
 		}
 
 #ifdef _DEBUG
-		if (mRenderModule) { mRenderModule->SetUiCallbacks({}, {}); }
+		if (mRenderModule) {
+			mRenderModule->SetUiCallbacks({}, {});
+		}
 		mUEditorRuntime.reset();
 		mUImGuiLayer.reset();
 #endif
@@ -455,8 +475,12 @@ namespace Unnamed {
 			mPlatformEvents->RemoveListener(mInputSystem.get());
 		}
 
-		if (mInputSystem) { mInputSystem->Shutdown(); }
-		if (mTerminalSystem) { mTerminalSystem->Shutdown(); }
+		if (mInputSystem) {
+			mInputSystem->Shutdown();
+		}
+		if (mTerminalSystem) {
+			mTerminalSystem->Shutdown();
+		}
 
 		SpecialMsg(
 			LogLevel::Success,
@@ -464,9 +488,15 @@ namespace Unnamed {
 			"アリーヴェ帰ルチ! (さよナランチャ"
 		);
 
-		if (mConsoleSystem) { mConsoleSystem->Shutdown(); }
-		if (mTimeSystem) { mTimeSystem->Shutdown(); }
-		if (mWindowManager) { mWindowManager->Shutdown(); }
+		if (mConsoleSystem) {
+			mConsoleSystem->Shutdown();
+		}
+		if (mTimeSystem) {
+			mTimeSystem->Shutdown();
+		}
+		if (mWindowManager) {
+			mWindowManager->Shutdown();
+		}
 	}
 
 	/// @brief コンソールコマンドと変数の登録
@@ -507,6 +537,16 @@ namespace Unnamed {
 		);
 	}
 
+	void Engine::ToggleFullscreen() const {
+		if (mWindowManager) {
+			if (const Window* window = mWindowManager->FindWindowById(
+				mWindowManager->GetMainWindowId()
+			)) {
+				window->ToggleFullscreen();
+			}
+		}
+	}
+
 	template <class TWorld, class... Args>
 	TWorld& Engine::SwitchWorld(Args&&... args) {
 		static_assert(std::is_base_of_v<UWorld, TWorld>);
@@ -527,5 +567,7 @@ namespace Unnamed {
 		return *raw;
 	}
 
-	UWorld* Engine::GetWorld() const { return mWorld.get(); }
+	UWorld* Engine::GetWorld() const {
+		return mWorld.get();
+	}
 }

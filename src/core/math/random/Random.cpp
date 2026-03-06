@@ -5,15 +5,13 @@
 #include <random>
 #include <utility>
 
-// 静的メンバ変数の定義
-std::mt19937_64 Random::randomEngine_{std::random_device{}()}; // 初期化リストでシード値を設定
-std::mutex      Random::mtx_;                                  // mutexも定義
-
 //-----------------------------------------------------------------------------
 // 指定された範囲の乱数を生成します
 //-----------------------------------------------------------------------------
 int Random::IntRange(const int& min, const int& max) {
-	if (min == max) { return min; }
+	if (min == max) {
+		return min;
+	}
 	const int                          validMin = std::min(min, max);
 	const int                          validMax = std::max(min, max);
 	std::uniform_int_distribution<int> distribution(validMin, validMax);
@@ -25,7 +23,9 @@ int Random::IntRange(const int& min, const int& max) {
 // 指定された範囲の乱数を生成します
 //-----------------------------------------------------------------------------
 float Random::FloatRange(const float& min, const float& max) {
-	if (min == max) { return min; }
+	if (min == max) {
+		return min;
+	}
 	const float                           validMin = std::min(min, max);
 	const float                           validMax = std::max(min, max);
 	std::uniform_real_distribution<float> distribution(validMin, validMax);
@@ -43,3 +43,8 @@ Vec3 Random::Vec3Range(const Vec3& min, const Vec3& max) {
 		FloatRange(min.z, max.z)
 	};
 }
+
+// 静的メンバ変数の定義
+std::mt19937_64 Random::randomEngine_{std::random_device{}()}; // 初期化リストでシード値を設定
+
+std::mutex Random::mtx_; // mutexも定義

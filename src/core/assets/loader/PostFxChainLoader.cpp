@@ -20,9 +20,13 @@ namespace Unnamed {
 		std::string ResolveRelativePath(
 			const std::filesystem::path& baseDir, std::string path
 		) {
-			if (path.empty()) { return path; }
+			if (path.empty()) {
+				return path;
+			}
 			std::filesystem::path p(path);
-			if (p.is_relative()) { p = baseDir / p; }
+			if (p.is_relative()) {
+				p = baseDir / p;
+			}
 			return StrUtil::NormalizePath(p.lexically_normal().string());
 		}
 	}
@@ -43,10 +47,16 @@ namespace Unnamed {
 	LoadResult PostFxChainLoader::Load(const std::string& path) {
 		LoadResult    result = {};
 		std::ifstream ifs(path);
-		if (!ifs) { return result; }
+		if (!ifs) {
+			return result;
+		}
 
 		nlohmann::json root;
-		try { ifs >> root; } catch (...) { return result; }
+		try {
+			ifs >> root;
+		} catch (...) {
+			return result;
+		}
 
 		const std::filesystem::path full(path);
 		const std::filesystem::path baseDir = full.parent_path();
@@ -56,7 +66,9 @@ namespace Unnamed {
 
 		if (root.contains("passes") && root["passes"].is_array()) {
 			for (const auto& p : root["passes"]) {
-				if (!p.is_object()) { continue; }
+				if (!p.is_object()) {
+					continue;
+				}
 
 				PostFxPassAssetData pass = {};
 				pass.name                = p.value("name", std::string("Pass"));
@@ -76,7 +88,9 @@ namespace Unnamed {
 
 				if (p.contains("scalars") && p["scalars"].is_object()) {
 					for (const auto& [k, v] : p["scalars"].items()) {
-						if (!v.is_number()) { continue; }
+						if (!v.is_number()) {
+							continue;
+						}
 						pass.scalarParams[k] = v.get<float>();
 					}
 				}

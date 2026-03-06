@@ -8,7 +8,9 @@ namespace ImGuiUtil {
 	/// @brief Vec4型をImVec4型に変換します。
 	/// @param vec 変換するVec4型のベクトル
 	/// @return 変換後のImVec4型のベクトル
-	ImVec4 ToImVec4(const Vec4& vec) { return {vec.x, vec.y, vec.z, vec.w}; }
+	ImVec4 ToImVec4(const Vec4& vec) {
+		return {vec.x, vec.y, vec.z, vec.w};
+	}
 
 	/// @brief ImGuiのダークテーマスタイルを設定します。
 	void StyleColorsDark() {
@@ -123,7 +125,9 @@ namespace ImGuiUtil {
 	}
 
 	/// @brief ImGuiのライトテーマスタイルを設定します。
-	void StyleColorsLight() { ImGui::StyleColorsLight(); }
+	void StyleColorsLight() {
+		ImGui::StyleColorsLight();
+	}
 
 	///	@brief Drag用のスタイルカラーをプッシュします。
 	/// @param bg 通常時の背景色

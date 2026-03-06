@@ -67,7 +67,9 @@ namespace Unnamed::Render {
 	uint32_t RgResourceRegistry::CreateTexture(const RgTextureDesc& desc) {
 		const uint32_t id = AllocateId();
 
-		if (mEntries.size() <= id) { mEntries.resize(id + 1); }
+		if (mEntries.size() <= id) {
+			mEntries.resize(id + 1);
+		}
 
 		auto resolved = desc;
 		if (resolved.extentMode == RG_EXTENT_MODE::MATCH_BACK_BUFFER) {
@@ -96,7 +98,9 @@ namespace Unnamed::Render {
 		}
 
 		const uint32_t id = AllocateId();
-		if (mEntries.size() <= id) { mEntries.resize(id + 1); }
+		if (mEntries.size() <= id) {
+			mEntries.resize(id + 1);
+		}
 
 		auto& e = mEntries[id];
 		e.desc  = RgTextureDesc{
@@ -237,50 +241,70 @@ namespace Unnamed::Render {
 	}
 
 	ID3D12Resource* RgResourceRegistry::GetResource(uint32_t textureId) const {
-		if (textureId == 0 || textureId >= mEntries.size()) { return nullptr; }
+		if (textureId == 0 || textureId >= mEntries.size()) {
+			return nullptr;
+		}
 		return mEntries[textureId].resource.Get();
 	}
 
 	D3D12_GPU_DESCRIPTOR_HANDLE RgResourceRegistry::GetSrv(
 		const uint32_t textureId
 	) const {
-		if (textureId == 0 || textureId >= mEntries.size()) { return {}; }
+		if (textureId == 0 || textureId >= mEntries.size()) {
+			return {};
+		}
 		const auto& e = mEntries[textureId];
-		if (e.srvLocal == UINT32_MAX) { return {}; }
+		if (e.srvLocal == UINT32_MAX) {
+			return {};
+		}
 		return GetSrvUavGpuAt(mCurrentFrameIndex, e.srvLocal);
 	}
 
 	D3D12_CPU_DESCRIPTOR_HANDLE RgResourceRegistry::GetSrvCpu(
 		const uint32_t textureId
 	) const {
-		if (textureId == 0 || textureId >= mEntries.size()) { return {}; }
+		if (textureId == 0 || textureId >= mEntries.size()) {
+			return {};
+		}
 		const auto& e = mEntries[textureId];
-		if (e.srvCpu.ptr == 0) { return {}; }
+		if (e.srvCpu.ptr == 0) {
+			return {};
+		}
 		return e.srvCpu;
 	}
 
 	uint64_t RgResourceRegistry::GetSrvRevision(
 		const uint32_t textureId
 	) const {
-		if (textureId == 0 || textureId >= mEntries.size()) { return 0; }
+		if (textureId == 0 || textureId >= mEntries.size()) {
+			return 0;
+		}
 		return mEntries[textureId].srvRevision;
 	}
 
 	D3D12_GPU_DESCRIPTOR_HANDLE RgResourceRegistry::GetUav(
 		const uint32_t textureId
 	) const {
-		if (textureId == 0 || textureId >= mEntries.size()) { return {}; }
+		if (textureId == 0 || textureId >= mEntries.size()) {
+			return {};
+		}
 		const auto& e = mEntries[textureId];
-		if (e.uavLocal == UINT32_MAX) { return {}; }
+		if (e.uavLocal == UINT32_MAX) {
+			return {};
+		}
 		return GetSrvUavGpuAt(mCurrentFrameIndex, e.uavLocal);
 	}
 
 	D3D12_CPU_DESCRIPTOR_HANDLE RgResourceRegistry::GetRtvCpu(
 		const uint32_t textureId
 	) const {
-		if (textureId == 0 || textureId >= mEntries.size()) { return {}; }
+		if (textureId == 0 || textureId >= mEntries.size()) {
+			return {};
+		}
 		const auto& e = mEntries[textureId];
-		if (e.rtvLocal == UINT32_MAX) { return {}; }
+		if (e.rtvLocal == UINT32_MAX) {
+			return {};
+		}
 
 		auto*      rtvHeap = mDx.GetRtvHeap();
 		const auto cpuBase = rtvHeap->GetCPUDescriptorHandleForHeapStart();
@@ -296,7 +320,9 @@ namespace Unnamed::Render {
 	D3D12_CPU_DESCRIPTOR_HANDLE RgResourceRegistry::GetDsvCpu(
 		const uint32_t textureId
 	) const {
-		if (textureId == 0 || textureId >= mEntries.size()) { return {}; }
+		if (textureId == 0 || textureId >= mEntries.size()) {
+			return {};
+		}
 		return mEntries[textureId].dsvCpu;
 	}
 
@@ -310,13 +336,17 @@ namespace Unnamed::Render {
 		ResetFrame(frameIndex);
 
 		for (auto& e : mEntries) {
-			if (!e.resource) { continue; }
+			if (!e.resource) {
+				continue;
+			}
 
 			if (e.desc.extentMode != RG_EXTENT_MODE::MATCH_BACK_BUFFER) {
 				continue;
 			}
 
-			if (e.desc.width == width && e.desc.height == height) { continue; }
+			if (e.desc.width == width && e.desc.height == height) {
+				continue;
+			}
 
 			e.desc.width  = width;
 			e.desc.height = height;
@@ -453,7 +483,9 @@ namespace Unnamed::Render {
 		);
 	}
 
-	uint32_t RgResourceRegistry::AllocateId() { return mNextId++; }
+	uint32_t RgResourceRegistry::AllocateId() {
+		return mNextId++;
+	}
 
 	uint64_t RgResourceRegistry::GetSafeRetireFenceValue() const {
 		uint64_t       retireFenceValue = 0;
@@ -582,8 +614,12 @@ namespace Unnamed::Render {
 	void RgResourceRegistry::CreateDescriptors(TexEntry& e) {
 		auto* device = mDx.GetDevice();
 
-		if (e.srvLocal == UINT32_MAX) { e.srvLocal = AllocSrvUavSlot(); }
-		if (e.srvCpuLocal == UINT32_MAX) { e.srvCpuLocal = AllocCpuSlot(); }
+		if (e.srvLocal == UINT32_MAX) {
+			e.srvLocal = AllocSrvUavSlot();
+		}
+		if (e.srvCpuLocal == UINT32_MAX) {
+			e.srvCpuLocal = AllocCpuSlot();
+		}
 		if (e.desc.allowUav && e.uavLocal == UINT32_MAX) {
 			e.uavLocal = AllocSrvUavSlot();
 		}
@@ -660,7 +696,9 @@ namespace Unnamed::Render {
 		}
 
 		if (e.desc.allowDsv) {
-			if (e.dsvLocal == UINT32_MAX) { e.dsvLocal = AllocDsvSlot(); }
+			if (e.dsvLocal == UINT32_MAX) {
+				e.dsvLocal = AllocDsvSlot();
+			}
 
 			auto*      dsvHeap = mDx.GetDsvHeap();
 			auto       cpuBase = dsvHeap->GetCPUDescriptorHandleForHeapStart();

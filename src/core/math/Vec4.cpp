@@ -20,7 +20,9 @@ Vec4 Vec4::orange    = Vec4(1.0f, 0.5f, 0.0f, 1.0f);
 Vec4 Vec4::purple    = Vec4(0.5f, 0.0f, 0.5f, 1.0f);
 Vec4 Vec4::brown     = Vec4(0.6f, 0.3f, 0.0f, 1.0f);
 
-constexpr float& Vec4::operator[](const int index) { return *(&x + index); }
+constexpr float& Vec4::operator[](const int index) {
+	return *(&x + index);
+}
 
 constexpr const float& Vec4::operator[](const int index) const {
 	return *(&x + index);
@@ -56,5 +58,7 @@ Vec4 Vec4::operator/(const float rhs) const {
 }
 
 #ifdef _DEBUG
-ImVec4 ToImVec4(const Vec4& vec) { return {vec.x, vec.y, vec.z, vec.w}; }
+ImVec4 ToImVec4(const Vec4& vec) {
+	return {vec.x, vec.y, vec.z, vec.w};
+}
 #endif

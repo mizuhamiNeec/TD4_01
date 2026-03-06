@@ -7,7 +7,9 @@ namespace Unnamed::Render {
 	void AdvancedRenderFoundation::Initialize(
 		RenderGraph& graph, const uint32_t width, const uint32_t height
 	) {
-		if (mInitialized) { return; }
+		if (mInitialized) {
+			return;
+		}
 		mInitialized = true;
 
 		// RT出力の最小土台
@@ -72,8 +74,12 @@ namespace Unnamed::Render {
 
 	VirtualGeometryFrameState&
 	AdvancedRenderFoundation::GetVirtualGeometryState(
-	) { return mVirtualGeometryFrameState; }
+	) {
+		return mVirtualGeometryFrameState;
+	}
 
 	const VirtualGeometryConfig& AdvancedRenderFoundation::
-	GetVirtualGeometryConfig() const { return mVirtualGeometryConfig; }
+	GetVirtualGeometryConfig() const {
+		return mVirtualGeometryConfig;
+	}
 }

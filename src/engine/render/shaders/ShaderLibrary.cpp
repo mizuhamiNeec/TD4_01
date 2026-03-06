@@ -33,7 +33,9 @@ namespace Unnamed::Render {
 
 	const ShaderDxil& ShaderLibrary::GetOrCreateDxil(const ShaderKey& key) {
 		if (const auto it = mRuntimeCache.find(key);
-			it != mRuntimeCache.end()) { return it->second; }
+			it != mRuntimeCache.end()) {
+			return it->second;
+		}
 
 		const auto dxilPath = GetDxilCachePath(key);
 		ShaderDxil out      = {};
@@ -67,7 +69,9 @@ namespace Unnamed::Render {
 				dxilPath.wstring()
 			);
 
-			if (ok) { out.bytes = ReadFileBytes(dxilPath); }
+			if (ok) {
+				out.bytes = ReadFileBytes(dxilPath);
+			}
 		}
 
 		mReverse[key.shaderSourceId].emplace_back(key);
@@ -78,9 +82,13 @@ namespace Unnamed::Render {
 
 	void ShaderLibrary::InvalidateByShaderSource(AssetID shaderSourceId) {
 		const auto it = mReverse.find(shaderSourceId);
-		if (it == mReverse.end()) { return; }
+		if (it == mReverse.end()) {
+			return;
+		}
 
-		for (const auto& key : it->second) { mRuntimeCache.erase(key); }
+		for (const auto& key : it->second) {
+			mRuntimeCache.erase(key);
+		}
 		it->second.clear();
 	}
 

@@ -17,9 +17,13 @@ namespace Unnamed::Gui {
 		void Tick(float deltaTime);
 
 		[[nodiscard]] const std::vector<std::shared_ptr<UiScreen>>&
-		GetScreens() const { return mScreens; }
+		GetScreens() const {
+			return mScreens;
+		}
 
-		[[nodiscard]] UiRoot* GetUiRoot() const { return mUiRoot; }
+		[[nodiscard]] UiRoot* GetUiRoot() const {
+			return mUiRoot;
+		}
 
 	private:
 		UiRoot*                                mUiRoot = nullptr;

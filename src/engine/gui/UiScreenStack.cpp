@@ -28,7 +28,9 @@ namespace Unnamed::Gui {
 	}
 
 	void UiScreenStack::PopScreen() {
-		if (mScreens.empty()) { return; }
+		if (mScreens.empty()) {
+			return;
+		}
 
 		const auto screen = mScreens.back();
 
@@ -42,7 +44,9 @@ namespace Unnamed::Gui {
 		}
 
 		mScreens.pop_back();
-		if (screen) { screen->OnHide(); }
+		if (screen) {
+			screen->OnHide();
+		}
 
 		DevMsg(kChannel, "PopScreen: now {} screens\n", mScreens.size());
 	}
@@ -75,7 +79,9 @@ namespace Unnamed::Gui {
 
 	void UiScreenStack::Tick(const float deltaTime) {
 		for (auto& screen : mScreens) {
-			if (screen) { screen->OnUpdate(deltaTime); }
+			if (screen) {
+				screen->OnUpdate(deltaTime);
+			}
 		}
 	}
 }

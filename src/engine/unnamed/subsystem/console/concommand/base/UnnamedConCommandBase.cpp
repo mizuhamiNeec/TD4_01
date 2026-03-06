@@ -51,7 +51,9 @@ namespace Unnamed {
 
 	/// @brief フラグを追加します。
 	/// @param flag 追加するフラグ
-	void UnnamedConCommandBase::AddFlag(const FCVAR& flag) { mFlags |= flag; }
+	void UnnamedConCommandBase::AddFlag(const FCVAR& flag) {
+		mFlags |= flag;
+	}
 
 	/// @brief フラグを削除します。
 	/// @param flag 削除するフラグ 
@@ -70,7 +72,9 @@ namespace Unnamed {
 
 	/// @brief 名前を取得します。
 	/// @return 名前
-	std::string_view UnnamedConCommandBase::GetName() const { return mName; }
+	std::string_view UnnamedConCommandBase::GetName() const {
+		return mName;
+	}
 
 	/// @brief 説明を取得します。
 	/// @return 説明

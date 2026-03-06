@@ -247,7 +247,7 @@ namespace Unnamed::Render {
 		UiMainRenderCallback      mUiMainRenderCallback;
 		UiPlatformRenderCallback  mUiPlatformRenderCallback;
 
-		bool mGraphBuilt = false;
+		bool mGraphBuilt           = false;
 		Mat4 mBillboardCameraWorld = Mat4::identity;
 
 		uint32_t EnsureSpriteTextureLoaded(

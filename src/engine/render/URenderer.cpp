@@ -25,8 +25,8 @@ namespace Unnamed::Render {
 	namespace {
 		Vec3 TransformPoint(const Mat4& transform, const Vec3& point) {
 			const Vec4 transformed = transform * Vec4(
-				point.x, point.y, point.z, 1.0f
-			);
+				                         point.x, point.y, point.z, 1.0f
+			                         );
 			const float w = std::abs(transformed.w) > 1e-6f ?
 				                transformed.w :
 				                1.0f;
@@ -44,11 +44,13 @@ namespace Unnamed::Render {
 			);
 		}
 
-		bool IsPortalFrontFacing(const Mat4& portalWorld, const Vec3& cameraPos) {
-			Mat4 rigidWorld = ToRigidTransform(portalWorld);
-			Vec3 portalPos = rigidWorld.GetTranslate();
-			Vec3 portalNormal = rigidWorld.GetForward().Normalized();
-			Vec3 toCamera = (cameraPos - portalPos).Normalized();
+		bool IsPortalFrontFacing(
+			const Mat4& portalWorld, const Vec3& cameraPos
+		) {
+			Mat4       rigidWorld   = ToRigidTransform(portalWorld);
+			const Vec3 portalPos    = rigidWorld.GetTranslate();
+			const Vec3 portalNormal = rigidWorld.GetForward().Normalized();
+			const Vec3 toCamera     = (cameraPos - portalPos).Normalized();
 			return portalNormal.Dot(toCamera) > 0.0f;
 		}
 
@@ -87,19 +89,19 @@ namespace Unnamed::Render {
 		}
 
 		bool BuildPortalProjection(
-			const Mat4&            portalView,
-			const PortalPairInput& portalPair,
-			const float            nearClip,
-			const float            farClip,
+			const Mat4&               portalView,
+			const PortalPairInput&    portalPair,
+			const float               nearClip,
+			const float               farClip,
 			const ProjectionDepthMode depthMode,
-			Mat4&                  outProj
+			Mat4&                     outProj
 		) {
 			Mat4 targetPortalWorld = ToRigidTransform(
 				portalPair.toPortalWorld
 			);
-			const Vec3 center = targetPortalWorld.GetTranslate();
-			const Vec3 right = targetPortalWorld.GetRight().Normalized();
-			const Vec3 up = targetPortalWorld.GetUp().Normalized();
+			const Vec3  center    = targetPortalWorld.GetTranslate();
+			const Vec3  right     = targetPortalWorld.GetRight().Normalized();
+			const Vec3  up        = targetPortalWorld.GetUp().Normalized();
 			const float halfWidth = std::max(
 				portalPair.toPortalHalfExtents.x, 1e-4f
 			);
@@ -121,7 +123,9 @@ namespace Unnamed::Render {
 
 			for (const Vec3& worldCorner : worldCorners) {
 				const Vec3 viewCorner = TransformPoint(portalView, worldCorner);
-				if (viewCorner.z <= 1e-4f) { return false; }
+				if (viewCorner.z <= 1e-4f) {
+					return false;
+				}
 
 				const float projectedX = nearClip * viewCorner.x / viewCorner.z;
 				const float projectedY = nearClip * viewCorner.y / viewCorner.z;
@@ -151,10 +155,12 @@ namespace Unnamed::Render {
 			Vec3       normal = targetPortalWorld.GetForward().Normalized();
 
 			constexpr float sampleOffset = 0.01f;
-			const float centerDepth = TransformPoint(portalView, center).z;
-			const float forwardDepth =
+			const float     centerDepth  = TransformPoint(portalView, center).z;
+			const float     forwardDepth =
 				TransformPoint(portalView, center + normal * sampleOffset).z;
-			if (forwardDepth < centerDepth) { normal = -normal; }
+			if (forwardDepth < centerDepth) {
+				normal = -normal;
+			}
 
 			const Vec3 planePoint = center + normal * sampleOffset;
 			return Vec4(
@@ -164,20 +170,6 @@ namespace Unnamed::Render {
 				-normal.Dot(planePoint)
 			);
 		}
-	}
-
-	SceneOutputView URenderer::GetSceneOutputView(
-		const RenderDevice& renderDevice
-	) const {
-		SceneOutputView view = {};
-		view.textureId       = mSceneOutputTextureId;
-		if (mSceneOutputTextureId == 0) { return view; }
-
-		const auto& registry = const_cast<RenderDevice&>(renderDevice).
-			GetRegistry();
-		view.srvCpu      = registry.GetSrvCpu(mSceneOutputTextureId);
-		view.srvRevision = registry.GetSrvRevision(mSceneOutputTextureId);
-		return view;
 	}
 
 	void URenderer::RenderFrame(
@@ -203,7 +195,9 @@ namespace Unnamed::Render {
 				}
 			}
 		}
-		if (materialsDirty) { LoadMaterialResources(renderDevice, dx); }
+		if (materialsDirty) {
+			LoadMaterialResources(renderDevice, dx);
+		}
 		if (postFxDirty) {
 			LoadPostFxChain(renderDevice);
 			mGraph.Reset();
@@ -263,7 +257,9 @@ namespace Unnamed::Render {
 				mPendingSceneRenderWidth        = resolvedWidth;
 				mPendingSceneRenderHeight       = resolvedHeight;
 				mPendingSceneExtentStableFrames = 1;
-			} else { ++mPendingSceneExtentStableFrames; }
+			} else {
+				++mPendingSceneExtentStableFrames;
+			}
 
 			if (
 				mPendingSceneExtentStableFrames >=
@@ -328,7 +324,9 @@ namespace Unnamed::Render {
 				);
 			}
 			for (const auto& sprite : mScreenSprites) {
-				(void)EnsureSpriteTextureLoaded(renderDevice, sprite.textureAssetId);
+				(void)EnsureSpriteTextureLoaded(
+					renderDevice, sprite.textureAssetId
+				);
 			}
 		}
 
@@ -361,7 +359,7 @@ namespace Unnamed::Render {
 				              fallbackProj;
 			currentCameraPos =
 				inputs.camera.valid ? inputs.camera.cameraPos : Vec3::zero;
-			viewProjection = currentView * currentProj;
+			viewProjection        = currentView * currentProj;
 			mBillboardCameraWorld = currentView.Inverse();
 			mActivePortalViews.clear();
 			mPortalEnabled = false;
@@ -377,7 +375,9 @@ namespace Unnamed::Render {
 			std::map<std::pair<uint64_t, uint64_t>, PairSelection>
 				pairSelections;
 			for (const auto& portal : inputs.portalPairs) {
-				if (!portal.enabled) { continue; }
+				if (!portal.enabled) {
+					continue;
+				}
 				Mat4       portalWorld = portal.fromPortalWorld;
 				const Vec3 portalPos   = portalWorld.GetTranslate();
 
@@ -406,14 +406,18 @@ namespace Unnamed::Render {
 						inputs.camera.nearZ,
 						inputs.camera.farZ
 					)
-				) { continue; }
+				) {
+					continue;
+				}
 
 				const Vec3  delta      = portalPos - currentCameraPos;
 				const float distanceSq = delta.Dot(delta);
-				if (!IsPortalFrontFacing(portal.fromPortalWorld, currentCameraPos)) {
+				if (!IsPortalFrontFacing(
+					portal.fromPortalWorld, currentCameraPos
+				)) {
 					continue;
 				}
-				const auto  pairKey    = std::minmax(
+				const auto pairKey = std::minmax(
 					portal.fromPortalGuid, portal.toPortalGuid
 				);
 				auto& selection          = pairSelections[pairKey];
@@ -432,11 +436,15 @@ namespace Unnamed::Render {
 
 			PairSelection* activeSelection = nullptr;
 			for (auto& [_, selection] : pairSelections) {
-				if (!selection.valid) { continue; }
+				if (!selection.valid) {
+					continue;
+				}
 				if (
 					!activeSelection ||
 					selection.bestDistanceSq < activeSelection->bestDistanceSq
-				) { activeSelection = &selection; }
+				) {
+					activeSelection = &selection;
+				}
 			}
 			if (activeSelection) {
 				if (activeSelection->hasForward) {
@@ -473,7 +481,7 @@ namespace Unnamed::Render {
 				currentPair.toPortalWorld = ToRigidTransform(
 					currentPair.toPortalWorld
 				);
-				Mat4 parentCameraWorld = currentView.Inverse();
+				Mat4 parentCameraWorld  = currentView.Inverse();
 				Mat4 currentCameraWorld =
 					parentCameraWorld *
 					currentPair.fromPortalWorld.Inverse() *
@@ -496,13 +504,13 @@ namespace Unnamed::Render {
 						);
 
 					const PortalPairInput nextPair = {
-						.enabled               = currentPair.enabled,
-						.fromPortalGuid        = currentPair.toPortalGuid,
-						.toPortalGuid          = currentPair.fromPortalGuid,
-						.fromPortalWorld       = ToRigidTransform(
+						.enabled         = currentPair.enabled,
+						.fromPortalGuid  = currentPair.toPortalGuid,
+						.toPortalGuid    = currentPair.fromPortalGuid,
+						.fromPortalWorld = ToRigidTransform(
 							currentPair.toPortalWorld
 						),
-						.toPortalWorld         = ToRigidTransform(
+						.toPortalWorld = ToRigidTransform(
 							currentPair.fromPortalWorld
 						),
 						.fromPortalHalfExtents = currentPair.
@@ -510,7 +518,7 @@ namespace Unnamed::Render {
 						.toPortalHalfExtents = currentPair.
 						fromPortalHalfExtents,
 					};
-					parentCameraWorld = currentCameraWorld;
+					parentCameraWorld  = currentCameraWorld;
 					currentCameraWorld =
 						parentCameraWorld *
 						nextPair.fromPortalWorld.Inverse() *
@@ -536,12 +544,12 @@ namespace Unnamed::Render {
 			UProfiler::ScopeTimer scope(profiler, "Render.BuildVisibleSet");
 
 			Rhi::FrameConstants frame{};
-			frame.view      = currentView;
-			frame.proj      = currentProj;
-			frame.viewProj  = viewProjection;
-			frame.cameraPos = currentCameraPos;
-			frame.time      = inputs.time;
-			frame.portalClipPlane = Vec4::zero;
+			frame.view              = currentView;
+			frame.proj              = currentProj;
+			frame.viewProj          = viewProjection;
+			frame.cameraPos         = currentCameraPos;
+			frame.time              = inputs.time;
+			frame.portalClipPlane   = Vec4::zero;
 			frame.portalClipEnabled = 0.0f;
 			mFrameCb.Write(frameSlot, frame);
 
@@ -562,10 +570,14 @@ namespace Unnamed::Render {
 			     skinningWriteCount < kMaxDrawObjects;
 			     ++i) {
 				const auto& inPalette = inputs.skinningPalettes[i];
-				if (inPalette.boneMatrices.empty()) { continue; }
+				if (inPalette.boneMatrices.empty()) {
+					continue;
+				}
 
 				Rhi::SkinningPaletteConstants outPalette = {};
-				for (auto& bone : outPalette.bones) { bone = Mat4::identity; }
+				for (auto& bone : outPalette.bones) {
+					bone = Mat4::identity;
+				}
 
 				const uint32_t maxBones = std::min<uint32_t>(
 					static_cast<uint32_t>(inPalette.boneMatrices.size()),
@@ -588,7 +600,8 @@ namespace Unnamed::Render {
 
 			const MaterialBinding* fallbackMaterial = nullptr;
 			if (const auto it = mMaterialBindings.find(mDefaultMaterialInstance)
-				; it != mMaterialBindings.end()) {
+				;
+				it != mMaterialBindings.end()) {
 				fallbackMaterial = &it->second;
 			}
 
@@ -609,7 +622,9 @@ namespace Unnamed::Render {
 				const uint32_t                  skinningPaletteId
 			) {
 				if (allocatedObjectCount >= kMaxDrawObjects -
-				    portalObjectReserve) { return; }
+				    portalObjectReserve) {
+					return;
+				}
 				const auto skinIt = skinningCbByPalette.find(skinningPaletteId);
 				const bool hasSkinningPalette =
 					isSkinned && skinIt != skinningCbByPalette.end();
@@ -622,7 +637,7 @@ namespace Unnamed::Render {
 					0.0f
 				);
 
-				const AABB worldAabb = TransformAABB(localBounds, obj.world);
+				const AABB   worldAabb = TransformAABB(localBounds, obj.world);
 				const Sphere worldBounds = BuildBoundingSphere(worldAabb);
 
 				const uint32_t objectCbIndex = frameBase + allocatedObjectCount;
@@ -640,7 +655,8 @@ namespace Unnamed::Render {
 					textureId = materialBinding->albedoTextureId;
 				}
 
-				const uint32_t materialCbIndex = frameBase + allocatedObjectCount;
+				const uint32_t materialCbIndex =
+					frameBase + allocatedObjectCount;
 				mMaterialCb.Write(materialCbIndex, material);
 
 				MeshDrawItem item{};
@@ -692,12 +708,15 @@ namespace Unnamed::Render {
 						    renderDevice, dx, obj.meshAssetId
 					    )) {
 						if (const auto it = mSceneMeshesByAsset.find(
-							obj.meshAssetId
-						); it != mSceneMeshesByAsset.end()) {
+								obj.meshAssetId
+							);
+							it != mSceneMeshesByAsset.end()) {
 							mesh = &it->second;
 						}
 					}
-					if (!mesh) { continue; }
+					if (!mesh) {
+						continue;
+					}
 
 					addDraws(
 						mesh->vbv,
@@ -744,7 +763,9 @@ namespace Unnamed::Render {
 							              fromPortalHalfExtents.y,
 							1.0f
 						)
-					) * ToRigidTransform(recursiveView.pair.fromPortalWorld);
+					) * ToRigidTransform(
+						recursiveView.pair.fromPortalWorld
+					);
 					portalObject.worldInverseTranspose =
 						portalObject.world.Inverse().Transpose();
 					mObjectCb.Write(
@@ -754,14 +775,14 @@ namespace Unnamed::Render {
 					const Mat4 portalView = recursiveView.cameraWorld.Inverse();
 					const ProjectionDepthMode portalDepthMode =
 						inputs.camera.depthMode ==
-								PROJECTION_DEPTH_MODE::ReverseZ ?
+						PROJECTION_DEPTH_MODE::ReverseZ ?
 							ProjectionDepthMode::ReverseZ :
 							ProjectionDepthMode::ForwardZ;
 					Rhi::FrameConstants portalFrame = {};
-					portalFrame.view = portalView;
-					portalFrame.proj = currentProj;
-					portalFrame.portalClipPlane = Vec4::zero;
-					portalFrame.portalClipEnabled = 0.0f;
+					portalFrame.view                = portalView;
+					portalFrame.proj                = currentProj;
+					portalFrame.portalClipPlane     = Vec4::zero;
+					portalFrame.portalClipEnabled   = 0.0f;
 					if (
 						BuildPortalProjection(
 							portalView,
@@ -777,7 +798,7 @@ namespace Unnamed::Render {
 						);
 						portalFrame.portalClipEnabled = 1.0f;
 					}
-					portalFrame.viewProj = portalView * portalFrame.proj;
+					portalFrame.viewProj  = portalView * portalFrame.proj;
 					portalFrame.cameraPos = recursiveView.cameraWorld.
 						GetTranslate();
 					portalFrame.time = inputs.time;
@@ -819,7 +840,9 @@ namespace Unnamed::Render {
 			UProfiler::ScopeTimer scope(profiler, "Render.GraphExecute");
 			mGraph.Execute(rhi);
 		}
-		if (mUiPlatformRenderCallback) { mUiPlatformRenderCallback(); }
+		if (mUiPlatformRenderCallback) {
+			mUiPlatformRenderCallback();
+		}
 
 		rhi.EndFrame();
 	}
@@ -830,17 +853,6 @@ namespace Unnamed::Render {
 		// RESOURCE_BARRIER_BEFORE_AFTER_MISMATCH が発生する。
 		// Scene描画解像度変更時の再生成経路(RenderFrame内)でのみ Invalidate する。
 		mAdvancedFoundation.OnResize(width, height);
-	}
-
-	void URenderer::BuildDrawBatches() {
-		DrawKey baseKey   = {};
-		baseKey.pso       = mGeometryPass.pso;
-		baseKey.rootSig   = mGeometryPass.rootSig;
-		baseKey.rtvFormat = mGeometryPass.rtvFormat;
-		baseKey.dsvFormat = mGeometryPass.dsvFormat;
-
-		mMainBatches = BuildDrawBatchesFromItems(mMainDrawList, baseKey);
-		mPortalBatches = BuildDrawBatchesFromItems(mPortalDrawList, baseKey);
 	}
 
 	void URenderer::SetUiCallbacks(
@@ -867,6 +879,22 @@ namespace Unnamed::Render {
 		mHasExternalSceneRenderRequest = true;
 	}
 
+	SceneOutputView URenderer::GetSceneOutputView(
+		const RenderDevice& renderDevice
+	) const {
+		SceneOutputView view = {};
+		view.textureId       = mSceneOutputTextureId;
+		if (mSceneOutputTextureId == 0) {
+			return view;
+		}
+
+		const auto& registry = const_cast<RenderDevice&>(renderDevice).
+			GetRegistry();
+		view.srvCpu      = registry.GetSrvCpu(mSceneOutputTextureId);
+		view.srvRevision = registry.GetSrvRevision(mSceneOutputTextureId);
+		return view;
+	}
+
 	std::pair<uint32_t, uint32_t> URenderer::ResolveSceneRenderExtent(
 		const uint32_t            backBufferWidth,
 		const uint32_t            backBufferHeight,
@@ -891,7 +919,9 @@ namespace Unnamed::Render {
 			case SCENE_RENDER_MODE::FIXED_ASPECT_16X9: {
 				width  = panelWidth;
 				height = panelHeight;
-				if (width * 9 > height * 16) { width = height * 16 / 9; } else {
+				if (width * 9 > height * 16) {
+					width = height * 16 / 9;
+				} else {
 					height = width * 9 / 16;
 				}
 				break;
@@ -912,12 +942,27 @@ namespace Unnamed::Render {
 		width  = std::clamp(width, 2u, 8192u);
 		height = std::clamp(height, 2u, 8192u);
 
-		if ((width & 1u) != 0u) { --width; }
-		if ((height & 1u) != 0u) { --height; }
+		if ((width & 1u) != 0u) {
+			--width;
+		}
+		if ((height & 1u) != 0u) {
+			--height;
+		}
 
 		width  = std::max(2u, width);
 		height = std::max(2u, height);
 
 		return {width, height};
+	}
+
+	void URenderer::BuildDrawBatches() {
+		DrawKey baseKey   = {};
+		baseKey.pso       = mGeometryPass.pso;
+		baseKey.rootSig   = mGeometryPass.rootSig;
+		baseKey.rtvFormat = mGeometryPass.rtvFormat;
+		baseKey.dsvFormat = mGeometryPass.dsvFormat;
+
+		mMainBatches   = BuildDrawBatchesFromItems(mMainDrawList, baseKey);
+		mPortalBatches = BuildDrawBatchesFromItems(mPortalDrawList, baseKey);
 	}
 }

@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <array>
+#include <format>
 #include <functional>
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -12,7 +13,6 @@
 #include "core/json/JsonReader.h"
 #include "core/string/StrUtil.h"
 
-#include "engine/Engine.h"
 #include "engine/Properties.h"
 #include "engine/ImGui/Icons.h"
 #include "engine/ImGui/ImGuiUtil.h"
@@ -23,10 +23,11 @@
 #include "engine/render/RenderModule.h"
 #include "engine/scene/USceneSerializer.h"
 #include "engine/ui/UImGuiLayer.h"
-#include "engine/unnamed/framework/components/PortalComponent.h"
-#include "engine/unnamed/framework/components/SkeletalMeshRendererComponent.h"
-#include "engine/unnamed/framework/components/StaticMeshRendererComponent.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
+#include "engine/unnamed/framework/components/editor/EditorCameraComponent.h"
+#include "engine/unnamed/framework/components/mesh/SkeletalMeshRendererComponent.h"
+#include "engine/unnamed/framework/components/mesh/StaticMeshRendererComponent.h"
+#include "engine/unnamed/framework/components/portal/PortalComponent.h"
 #include "engine/unnamed/framework/entity/UEntity.h"
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
 #include "engine/unnamed/subsystem/console/concommand/UnnamedConVar.h"
@@ -53,7 +54,9 @@ namespace Unnamed {
 				if (len > 0) {
 					parts.emplace_back(folderPath.substr(begin, len));
 				}
-				if (end == std::string_view::npos) { break; }
+				if (end == std::string_view::npos) {
+					break;
+				}
 				begin = end + 1;
 			}
 			return parts;
@@ -65,15 +68,21 @@ namespace Unnamed {
 			while (!path.empty() && path.front() == '/') {
 				path.erase(path.begin());
 			}
-			while (!path.empty() && path.back() == '/') { path.pop_back(); }
+			while (!path.empty() && path.back() == '/') {
+				path.pop_back();
+			}
 			return path;
 		}
 
 		std::string JoinFolderPath(
 			std::string_view parent, std::string_view child
 		) {
-			if (parent.empty()) { return std::string(child); }
-			if (child.empty()) { return std::string(parent); }
+			if (parent.empty()) {
+				return std::string(child);
+			}
+			if (child.empty()) {
+				return std::string(parent);
+			}
 			return std::string(parent) + "/" + std::string(child);
 		}
 
@@ -87,9 +96,15 @@ namespace Unnamed {
 		bool IsFolderEqualOrDescendant(
 			std::string_view path, std::string_view ancestor
 		) {
-			if (ancestor.empty()) { return true; }
-			if (path == ancestor) { return true; }
-			if (path.size() <= ancestor.size()) { return false; }
+			if (ancestor.empty()) {
+				return true;
+			}
+			if (path == ancestor) {
+				return true;
+			}
+			if (path.size() <= ancestor.size()) {
+				return false;
+			}
 			return path.substr(0, ancestor.size()) == ancestor &&
 			       path[ancestor.size()] == '/';
 		}
@@ -104,14 +119,18 @@ namespace Unnamed {
 			return node;
 		}
 
-		void BuildHierarchyTree(HierarchyFolderNode& root, const UScene& scene) {
+		void BuildHierarchyTree(
+			HierarchyFolderNode& root, const UScene& scene
+		) {
 			for (const std::string& folder : scene.GetFolders()) {
 				EnsureFolderNode(root, folder);
 			}
 			for (const auto& ePtr : scene.GetEntities()) {
-				if (!ePtr) { continue; }
+				if (!ePtr) {
+					continue;
+				}
 				UEntity*             entity = ePtr.get();
-				HierarchyFolderNode* node = EnsureFolderNode(
+				HierarchyFolderNode* node   = EnsureFolderNode(
 					root, entity->GetFolderPath()
 				);
 				node->entities.emplace_back(entity);
@@ -125,7 +144,9 @@ namespace Unnamed {
 			int               suffix = 0;
 			for (;;) {
 				const std::string candidateName =
-					suffix == 0 ? "NewFolder" : "NewFolder" + std::to_string(suffix);
+					suffix == 0 ?
+						"NewFolder" :
+						"NewFolder" + std::to_string(suffix);
 				const std::string candidatePath = JoinFolderPath(
 					parent, candidateName
 				);
@@ -145,7 +166,9 @@ namespace Unnamed {
 		) {
 			const TransformComponent* current = node;
 			while (current) {
-				if (current == possibleAncestor) { return true; }
+				if (current == possibleAncestor) {
+					return true;
+				}
 				current = current->Parent();
 			}
 			return false;
@@ -161,116 +184,7 @@ namespace Unnamed {
 	    mWindowManager(windowManager),
 	    mRenderModule(renderModule),
 	    mImGuiLayer(imGuiLayer) {
-		auto guizmoConfig = ServiceLocator::Get<ConsoleSystem>()->GetConVarAs<
-			UnnamedConVar<std::string>>("im_guizmoconfigpath");
-		if (guizmoConfig) {
-			JsonReader reader(guizmoConfig->GetValue());
-			auto&      style  = ImGuizmo::GetStyle();
-			auto&      colors = style.Colors;
-
-			// Style
-			{
-				const auto rs                  = reader["style"];
-				style.TranslationLineThickness = rs["translationLineThickness"].
-					GetFloat();
-				style.TranslationLineArrowSize = rs["translationLineArrowSize"].
-					GetFloat();
-				style.RotationLineThickness = rs["rotationLineThickness"].
-					GetFloat();
-				style.RotationOuterLineThickness = rs[
-					"rotationOuterLineThickness"].GetFloat();
-				style.ScaleLineThickness  = rs["scaleLineThickness"].GetFloat();
-				style.ScaleLineCircleSize = rs["scaleLineCircleSize"].
-					GetFloat();
-				style.HatchedAxisLineThickness = rs["hatchedAxisLineThickness"].
-					GetFloat();
-				style.CenterCircleSize = rs["centerCircleSize"].GetFloat();
-			}
-
-			// Color
-			{
-				using namespace ImGuizmo;
-				auto       rc = reader["color"];
-				const auto dx = rc["directionX"].GetArray();
-				colors[DIRECTION_X].x = dx[0].GetFloat();
-				colors[DIRECTION_X].y = dx[1].GetFloat();
-				colors[DIRECTION_X].z = dx[2].GetFloat();
-				colors[DIRECTION_X].w = dx[3].GetFloat();
-				const auto dy = rc["directionY"].GetArray();
-				colors[DIRECTION_Y].x = dy[0].GetFloat();
-				colors[DIRECTION_Y].y = dy[1].GetFloat();
-				colors[DIRECTION_Y].z = dy[2].GetFloat();
-				colors[DIRECTION_Y].w = dy[3].GetFloat();
-				const auto dz = rc["directionZ"].GetArray();
-				colors[DIRECTION_Z].x = dz[0].GetFloat();
-				colors[DIRECTION_Z].y = dz[1].GetFloat();
-				colors[DIRECTION_Z].z = dz[2].GetFloat();
-				colors[DIRECTION_Z].w = dz[3].GetFloat();
-				const auto px = rc["planeX"].GetArray();
-				colors[PLANE_X].x = px[0].GetFloat();
-				colors[PLANE_X].y = px[1].GetFloat();
-				colors[PLANE_X].z = px[2].GetFloat();
-				colors[PLANE_X].w = px[3].GetFloat();
-				const auto py = rc["planeY"].GetArray();
-				colors[PLANE_Y].x = py[0].GetFloat();
-				colors[PLANE_Y].y = py[1].GetFloat();
-				colors[PLANE_Y].z = py[2].GetFloat();
-				colors[PLANE_Y].w = py[3].GetFloat();
-				const auto pz = rc["planeZ"].GetArray();
-				colors[PLANE_Z].x = pz[0].GetFloat();
-				colors[PLANE_Z].y = pz[1].GetFloat();
-				colors[PLANE_Z].z = pz[2].GetFloat();
-				colors[PLANE_Z].w = pz[3].GetFloat();
-				const auto sel = rc["selection"].GetArray();
-				colors[SELECTION].x = sel[0].GetFloat();
-				colors[SELECTION].y = sel[1].GetFloat();
-				colors[SELECTION].z = sel[2].GetFloat();
-				colors[SELECTION].w = sel[3].GetFloat();
-				const auto inact = rc["inactive"].GetArray();
-				colors[INACTIVE].x = inact[0].GetFloat();
-				colors[INACTIVE].y = inact[1].GetFloat();
-				colors[INACTIVE].z = inact[2].GetFloat();
-				colors[INACTIVE].w = inact[3].GetFloat();
-				const auto tline = rc["translationLine"].GetArray();
-				colors[TRANSLATION_LINE].x = tline[0].GetFloat();
-				colors[TRANSLATION_LINE].y = tline[1].GetFloat();
-				colors[TRANSLATION_LINE].z = tline[2].GetFloat();
-				colors[TRANSLATION_LINE].w = tline[3].GetFloat();
-				const auto sline = rc["scaleLine"].GetArray();
-				colors[SCALE_LINE].x = sline[0].GetFloat();
-				colors[SCALE_LINE].y = sline[1].GetFloat();
-				colors[SCALE_LINE].z = sline[2].GetFloat();
-				colors[SCALE_LINE].w = sline[3].GetFloat();
-				const auto rborder = rc["rotationUsingBorder"].GetArray();
-				colors[ROTATION_USING_BORDER].x = rborder[0].GetFloat();
-				colors[ROTATION_USING_BORDER].y = rborder[1].GetFloat();
-				colors[ROTATION_USING_BORDER].z = rborder[2].GetFloat();
-				colors[ROTATION_USING_BORDER].w = rborder[3].GetFloat();
-				const auto rfill = rc["rotationUsingFill"].GetArray();
-				colors[ROTATION_USING_FILL].x = rfill[0].GetFloat();
-				colors[ROTATION_USING_FILL].y = rfill[1].GetFloat();
-				colors[ROTATION_USING_FILL].z = rfill[2].GetFloat();
-				colors[ROTATION_USING_FILL].w = rfill[3].GetFloat();
-				const auto hatch = rc["hatchedAxisLines"].GetArray();
-				colors[HATCHED_AXIS_LINES].x = hatch[0].GetFloat();
-				colors[HATCHED_AXIS_LINES].y = hatch[1].GetFloat();
-				colors[HATCHED_AXIS_LINES].z = hatch[2].GetFloat();
-				colors[HATCHED_AXIS_LINES].w = hatch[3].GetFloat();
-				const auto text = rc["text"].GetArray();
-				colors[TEXT].x = text[0].GetFloat();
-				colors[TEXT].y = text[1].GetFloat();
-				colors[TEXT].z = text[2].GetFloat();
-				colors[TEXT].w = text[3].GetFloat();
-				const auto textShadow = rc["textShadow"].GetArray();
-				colors[TEXT_SHADOW].x = textShadow[0].GetFloat();
-				colors[TEXT_SHADOW].y = textShadow[1].GetFloat();
-				colors[TEXT_SHADOW].z = textShadow[2].GetFloat();
-				colors[TEXT_SHADOW].w = textShadow[3].GetFloat();
-			}
-
-			// どっちが正方向かわからんくなるので禁止
-			ImGuizmo::AllowAxisFlip(false);
-		}
+		LoadImGuizmoSettings();
 	}
 
 	void UEditorRuntime::BeginUI() {
@@ -321,15 +235,6 @@ namespace Unnamed {
 		ImGui::ShowDemoWindow();
 	}
 
-	void UEditorRuntime::SetSceneOutput(
-		const Render::SceneOutputView& sceneOutput, const Vec2 size
-	) {
-		mSceneTextureId   = sceneOutput.textureId;
-		mSceneSrvCpu      = sceneOutput.srvCpu;
-		mSceneSrvRevision = sceneOutput.srvRevision;
-		mSceneSize        = size;
-	}
-
 	void UEditorRuntime::BuildUi() {
 		mViewportSizeChangedThisFrame = false;
 
@@ -357,7 +262,9 @@ namespace Unnamed {
 							)
 						);
 					}
-				} else { input->ClearMouseCursorLockAnchor(); }
+				} else {
+					input->ClearMouseCursorLockAnchor();
+				}
 			}
 
 			DrawSceneHierarchy();
@@ -377,7 +284,9 @@ namespace Unnamed {
 				mLastSceneRenderRequest.presentToSwapChain ||
 				sceneRequest.clearSwapChainWhenNotPresenting !=
 				mLastSceneRenderRequest.clearSwapChainWhenNotPresenting;
-			if (requestChanged) { mLastSceneRenderRequest = sceneRequest; }
+			if (requestChanged) {
+				mLastSceneRenderRequest = sceneRequest;
+			}
 			mRenderModule.SetSceneRenderRequest(sceneRequest);
 
 			const auto input = ServiceLocator::Get<UInputSystem>();
@@ -417,6 +326,235 @@ namespace Unnamed {
 			               EDITOR_PRESENT_MODE::VIEWPORT_PANEL;
 	}
 
+	EDITOR_PRESENT_MODE UEditorRuntime::GetPresentMode() const {
+		return mPresentMode;
+	}
+
+	void UEditorRuntime::SetSceneOutput(
+		const Render::SceneOutputView& sceneOutput, const Vec2 size
+	) {
+		mSceneTextureId   = sceneOutput.textureId;
+		mSceneSrvCpu      = sceneOutput.srvCpu;
+		mSceneSrvRevision = sceneOutput.srvRevision;
+		mSceneSize        = size;
+	}
+
+	void UEditorRuntime::LoadImGuizmoSettings() {
+		auto guizmoConfig = ServiceLocator::Get<ConsoleSystem>()->GetConVarAs<
+			UnnamedConVar<std::string>>("im_guizmoconfigpath");
+
+		auto Vec4ToImVec4 = [](const Vec4& vec) {
+			return ImVec4(vec.x, vec.y, vec.z, vec.w);
+		};
+
+		if (guizmoConfig) {
+			JsonReader reader(guizmoConfig->GetValue());
+			auto&      style  = ImGuizmo::GetStyle();
+			auto&      colors = style.Colors;
+
+			// Style
+			{
+				const auto rs                  = reader["style"];
+				style.TranslationLineThickness =
+					rs["translationLineThickness"].GetFloat();
+				style.TranslationLineArrowSize =
+					rs["translationLineArrowSize"].GetFloat();
+				style.RotationLineThickness =
+					rs["rotationLineThickness"].GetFloat();
+				style.RotationOuterLineThickness =
+					rs["rotationOuterLineThickness"].GetFloat();
+				style.ScaleLineThickness =
+					rs["scaleLineThickness"].GetFloat();
+				style.ScaleLineCircleSize =
+					rs["scaleLineCircleSize"].GetFloat();
+				style.HatchedAxisLineThickness =
+					rs["hatchedAxisLineThickness"].GetFloat();
+				style.CenterCircleSize =
+					rs["centerCircleSize"].GetFloat();
+			}
+
+			// Color
+			{
+				using namespace ImGuizmo;
+				auto       rc = reader["color"];
+				const auto dx = rc["directionX"].GetArray();
+				colors[DIRECTION_X] = Vec4ToImVec4(dx.GetVec4());
+				const auto dy = rc["directionY"].GetArray();
+				colors[DIRECTION_Y] = Vec4ToImVec4(dy.GetVec4());
+				const auto dz = rc["directionZ"].GetArray();
+				colors[DIRECTION_Z] = Vec4ToImVec4(dz.GetVec4());
+				const auto px = rc["planeX"].GetArray();
+				colors[PLANE_X] = Vec4ToImVec4(px.GetVec4());
+				const auto py = rc["planeY"].GetArray();
+				colors[PLANE_Y] = Vec4ToImVec4(py.GetVec4());
+				const auto pz = rc["planeZ"].GetArray();
+				colors[PLANE_Z] = Vec4ToImVec4(pz.GetVec4());
+				const auto sel = rc["selection"].GetArray();
+				colors[SELECTION] = Vec4ToImVec4(sel.GetVec4());
+				const auto inact = rc["inactive"].GetArray();
+				colors[INACTIVE] = Vec4ToImVec4(inact.GetVec4());
+				const auto tline = rc["translationLine"].GetArray();
+				colors[TRANSLATION_LINE] = Vec4ToImVec4(tline.GetVec4());
+				const auto sline = rc["scaleLine"].GetArray();
+				colors[SCALE_LINE] = Vec4ToImVec4(sline.GetVec4());
+				const auto rborder = rc["rotationUsingBorder"].GetArray();
+				colors[ROTATION_USING_BORDER] = Vec4ToImVec4(rborder.GetVec4());
+				const auto rfill = rc["rotationUsingFill"].GetArray();
+				colors[ROTATION_USING_FILL] = Vec4ToImVec4(rfill.GetVec4());
+				const auto hatch = rc["hatchedAxisLines"].GetArray();
+				colors[HATCHED_AXIS_LINES] = Vec4ToImVec4(hatch.GetVec4());
+				const auto text = rc["text"].GetArray();
+				colors[TEXT] = Vec4ToImVec4(text.GetVec4());
+				const auto textShadow = rc["textShadow"].GetArray();
+				colors[TEXT_SHADOW] = Vec4ToImVec4(textShadow.GetVec4());
+			}
+
+			// どっちが正方向かわからんくなるので禁止
+			ImGuizmo::AllowAxisFlip(false);
+		}
+	}
+
+	Render::SceneRenderRequest UEditorRuntime::BuildSceneRenderRequest() const {
+		Render::SceneRenderRequest sceneRequest = {};
+		sceneRequest.preferRealtimeResize       = true;
+		sceneRequest.presentToSwapChain         =
+			mPresentMode == EDITOR_PRESENT_MODE::FULLSCREEN_SWAP_CHAIN;
+		sceneRequest.clearSwapChainWhenNotPresenting =
+			!sceneRequest.presentToSwapChain;
+
+		float width  = mViewportPanelWidth;
+		float height = mViewportPanelHeight;
+		if (mPresentMode == EDITOR_PRESENT_MODE::FULLSCREEN_SWAP_CHAIN) {
+			if (
+				const Window* window = mWindowManager.FindWindowById(
+					mWindowManager.GetMainWindowId()
+				)
+			) {
+				const WindowDesc desc = window->GetDesc();
+				width = static_cast<float>(std::max(1, desc.width));
+				height = static_cast<float>(std::max(1, desc.height));
+			}
+		}
+
+		sceneRequest.viewportPanelWidth  = static_cast<uint32_t>(width);
+		sceneRequest.viewportPanelHeight = static_cast<uint32_t>(height);
+
+		switch (mViewportRenderMode) {
+			case EDITOR_VIEWPORT_RENDER_MODE::FIT_VIEWPORT
+			: sceneRequest.mode = Render::SCENE_RENDER_MODE::FIT_VIEWPORT;
+				break;
+			case EDITOR_VIEWPORT_RENDER_MODE::FIXED_ASPECT_16_9
+			: sceneRequest.mode = Render::SCENE_RENDER_MODE::FIXED_ASPECT_16X9;
+				break;
+			case EDITOR_VIEWPORT_RENDER_MODE::HD720
+			: sceneRequest.mode = Render::SCENE_RENDER_MODE::HD_720P;
+				break;
+			case EDITOR_VIEWPORT_RENDER_MODE::FHD1080
+			: sceneRequest.mode = Render::SCENE_RENDER_MODE::FHD_1080P;
+				break;
+			default: break;
+		}
+
+		const bool dynamicMode = sceneRequest.mode ==
+		                         Render::SCENE_RENDER_MODE::FIT_VIEWPORT ||
+		                         sceneRequest.mode ==
+		                         Render::SCENE_RENDER_MODE::FIXED_ASPECT_16X9;
+		if (dynamicMode) {
+			sceneRequest.viewportPanelWidth = std::max(
+				8u, sceneRequest.viewportPanelWidth / 8u * 8u
+			);
+			sceneRequest.viewportPanelHeight = std::max(
+				8u, sceneRequest.viewportPanelHeight / 8u * 8u
+			);
+		}
+
+		return sceneRequest;
+	}
+
+	UScene* UEditorRuntime::GetHierarchyScene() {
+		return mEditorWorld.IsPlaying() ?
+			       mEditorWorld.GetActiveScene() :
+			       mEditorWorld.GetEditableScene();
+	}
+
+	const UScene* UEditorRuntime::GetHierarchyScene() const {
+		return mEditorWorld.IsPlaying() ?
+			       mEditorWorld.GetActiveScene() :
+			       mEditorWorld.GetEditableScene();
+	}
+
+	void UEditorRuntime::DrawViewportGizmo(
+		const Render::SceneRenderRequest& sceneRequest,
+		const Vec2&                       imagePos,
+		const float                       drawWidth,
+		const float                       drawHeight
+	) {
+		UEntity* entity = GetSelectedEntity();
+		if (!entity) {
+			return;
+		}
+
+		auto* transform = entity->GetComponent<TransformComponent>();
+		if (!transform) {
+			return;
+		}
+		Mat4 world = transform->WorldMat();
+
+		Mat4 view = Mat4::identity;
+		Mat4 proj = Mat4::identity;
+		if (!mEditorWorld.BuildEditorCameraMatrices(sceneRequest, view, proj)) {
+			return;
+		}
+
+		static ImGuizmo::OPERATION sOperation = ImGuizmo::TRANSLATE;
+		static ImGuizmo::MODE      sMode      = ImGuizmo::WORLD;
+
+		if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) {
+			if (ImGui::IsKeyPressed(ImGuiKey_W)) {
+				sOperation = ImGuizmo::TRANSLATE;
+			}
+			if (ImGui::IsKeyPressed(ImGuiKey_E)) {
+				sOperation = ImGuizmo::ROTATE;
+			}
+			if (ImGui::IsKeyPressed(ImGuiKey_R)) {
+				sOperation = ImGuizmo::SCALE;
+			}
+		}
+
+		ImGuizmo::SetOrthographic(false);
+		ImGuizmo::SetDrawlist();
+		ImGuizmo::SetRect(imagePos.x, imagePos.y, drawWidth, drawHeight);
+
+		const bool  useSnap = sOperation != ImGuizmo::SCALE;
+		const float snap[3] = {
+			sOperation == ImGuizmo::ROTATE ? mAngleSnapDegree : mGridSnap,
+			sOperation == ImGuizmo::ROTATE ? mAngleSnapDegree : mGridSnap,
+			sOperation == ImGuizmo::ROTATE ? mAngleSnapDegree : mGridSnap
+		};
+
+		if (
+			ImGuizmo::Manipulate(
+				*view.m,
+				*proj.m,
+				sOperation,
+				sMode,
+				*world.m,
+				nullptr,
+				useSnap ? snap : nullptr
+			)
+		) {
+			const Mat4 editedWorld = world;
+			Mat4       localMat    = editedWorld;
+
+			const Vec3 localScale  = localMat.GetScale();
+			const Mat4 rotationMat = localMat;
+
+			transform->SetPosition(localMat.GetTranslate());
+			transform->SetRotation(rotationMat.ToQuaternion());
+			transform->SetScale(localScale);
+		}
+	}
+
 	void UEditorRuntime::DrawMainMenu() {
 		// メニューバーを少し高くする
 
@@ -449,7 +587,9 @@ namespace Unnamed {
 					"About Unnamed", kIconInfo
 				)) {}
 				ImGui::EndMenu();
-			} else { ImGui::PopStyleColor(); }
+			} else {
+				ImGui::PopStyleColor();
+			}
 
 			if (ImGuiWidgets::BeginMainMenu("File")) {
 				const auto currentPath =
@@ -468,7 +608,9 @@ namespace Unnamed {
 					ImGuiWidgets::MenuItemWithIcon(
 						"Save As (sandbox.json)", kIconSaveAs
 					)
-				) { SaveSceneAs("./content/core/scenes/sandbox.json"); }
+				) {
+					SaveSceneAs("./content/core/scenes/sandbox.json");
+				}
 
 				ImGui::Separator();
 
@@ -495,7 +637,9 @@ namespace Unnamed {
 			if (ImGuiWidgets::BeginMainMenu("Window")) {
 				if (ImGuiWidgets::MenuItemWithIcon(
 					"Profiler", kIconAvgTime, nullptr, mShowProfilerWindow
-				)) { mShowProfilerWindow = !mShowProfilerWindow; }
+				)) {
+					mShowProfilerWindow = !mShowProfilerWindow;
+				}
 
 				ImGui::EndMenu();
 			}
@@ -524,7 +668,9 @@ namespace Unnamed {
 							{availableHeight, availableHeight},
 							3.0f
 						)
-					) { mEditorWorld.StartPlayInEditor(); }
+					) {
+						mEditorWorld.StartPlayInEditor();
+					}
 					ImGui::PopStyleColor();
 				} else {
 					ImGui::PushStyleColor(
@@ -534,7 +680,9 @@ namespace Unnamed {
 					if (ImGuiWidgets::IconButton(
 						kIconStop, nullptr, {availableHeight, availableHeight},
 						3.0f
-					)) { mEditorWorld.StopPlayInEditor(); }
+					)) {
+						mEditorWorld.StopPlayInEditor();
+					}
 					ImGui::PopStyleColor();
 				}
 
@@ -856,7 +1004,9 @@ namespace Unnamed {
 						if (ImGui::Selectable(items[n], isSelected)) {
 							itemCurrentIndex = n;
 						}
-						if (isSelected) { ImGui::SetItemDefaultFocus(); }
+						if (isSelected) {
+							ImGui::SetItemDefaultFocus();
+						}
 					}
 					ImGui::EndCombo();
 				}
@@ -897,7 +1047,9 @@ namespace Unnamed {
 						if (ImGui::Selectable(items[n], isSelected)) {
 							itemCurrentIndex = n;
 						}
-						if (isSelected) { ImGui::SetItemDefaultFocus(); }
+						if (isSelected) {
+							ImGui::SetItemDefaultFocus();
+						}
 					}
 					ImGui::EndCombo();
 				}
@@ -918,15 +1070,17 @@ namespace Unnamed {
 
 	void UEditorRuntime::DrawSceneHierarchy() {
 		UScene* scene = GetHierarchyScene();
-		if (!scene) { return; }
+		if (!scene) {
+			return;
+		}
 
 		if (!ImGui::Begin("Outliner")) {
 			ImGui::End();
 			return;
 		}
 
-		static uint64_t renameEntityId = 0;
-		static std::string renameFolderPath;
+		static uint64_t              renameEntityId = 0;
+		static std::string           renameFolderPath;
 		static std::array<char, 256> renameBuffer = {};
 
 		auto openRenameEntity = [&](UEntity& entity) {
@@ -943,7 +1097,7 @@ namespace Unnamed {
 		};
 
 		auto openRenameFolder = [&](std::string_view folderPath) {
-			renameEntityId = 0;
+			renameEntityId   = 0;
 			renameFolderPath = std::string(folderPath);
 			std::fill(renameBuffer.begin(), renameBuffer.end(), '\0');
 			const std::string leafName = GetFolderLeafName(folderPath);
@@ -982,8 +1136,12 @@ namespace Unnamed {
 			ImGuiPopupFlags_MouseButtonRight |
 			ImGuiPopupFlags_NoOpenOverItems
 		)) {
-			if (ImGui::MenuItem("Add Entity")) { createEntity(""); }
-			if (ImGui::MenuItem("Add Folder")) { createFolder(""); }
+			if (ImGui::MenuItem("Add Entity")) {
+				createEntity("");
+			}
+			if (ImGui::MenuItem("Add Folder")) {
+				createFolder("");
+			}
 			ImGui::EndPopup();
 		}
 
@@ -991,8 +1149,12 @@ namespace Unnamed {
 			ImGui::OpenPopup("OutlinerAddPopup");
 		}
 		if (ImGui::BeginPopup("OutlinerAddPopup")) {
-			if (ImGui::MenuItem("Add Entity")) { createEntity(""); }
-			if (ImGui::MenuItem("Add Folder")) { createFolder(""); }
+			if (ImGui::MenuItem("Add Entity")) {
+				createEntity("");
+			}
+			if (ImGui::MenuItem("Add Folder")) {
+				createFolder("");
+			}
 			ImGui::EndPopup();
 		}
 
@@ -1010,8 +1172,8 @@ namespace Unnamed {
 			BuildHierarchyTree(root, *scene);
 			uint64_t    pendingDeleteEntityId = 0;
 			std::string pendingDeleteFolderPath;
-			bool        pendingCreateEntity   = false;
-			bool        pendingCreateFolder   = false;
+			bool        pendingCreateEntity = false;
+			bool        pendingCreateFolder = false;
 			std::string pendingCreateFolderPath;
 			uint64_t    pendingParentChildEntityId  = 0;
 			uint64_t    pendingParentTargetEntityId = 0;
@@ -1019,23 +1181,32 @@ namespace Unnamed {
 			std::string pendingMoveEntityFolderPath;
 			std::string pendingMoveFolderSourcePath;
 			std::string pendingMoveFolderTargetPath;
-			std::unordered_map<uint64_t, std::vector<UEntity*>> childEntitiesByParent;
+			std::unordered_map<uint64_t, std::vector<UEntity*>>
+				childEntitiesByParent;
 			for (const auto& entityPtr : scene->GetEntities()) {
-				if (!entityPtr) { continue; }
-				UEntity* entity = entityPtr.get();
-				const auto* transform = entity->GetComponent<TransformComponent>();
-				if (!transform || !transform->Parent() || !transform->Parent()->GetOwner()) {
+				if (!entityPtr) {
 					continue;
 				}
-				childEntitiesByParent[transform->Parent()->GetOwner()->GetGuid()]
+				UEntity*    entity    = entityPtr.get();
+				const auto* transform = entity->GetComponent<
+					TransformComponent>();
+				if (!transform || !transform->Parent() || !transform->Parent()->
+				    GetOwner()) {
+					continue;
+				}
+				childEntitiesByParent[transform->Parent()->GetOwner()->
+				                                 GetGuid()]
 					.emplace_back(entity);
 			}
 
 			std::function<void(UEntity*)> drawEntityNode;
 			drawEntityNode = [&](UEntity* entity) {
-				if (!entity) { return; }
+				if (!entity) {
+					return;
+				}
 				std::vector<UEntity*> childrenInSameFolder;
-				if (const auto it = childEntitiesByParent.find(entity->GetGuid());
+				if (const auto it = childEntitiesByParent.
+						find(entity->GetGuid());
 					it != childEntitiesByParent.end()) {
 					for (UEntity* child : it->second) {
 						if (
@@ -1056,8 +1227,10 @@ namespace Unnamed {
 				const bool hasChildren = !childrenInSameFolder.empty();
 				const ImGuiTreeNodeFlags nodeFlags =
 					ImGuiTreeNodeFlags_SpanFullWidth |
-					(hasChildren ? ImGuiTreeNodeFlags_DefaultOpen :
-					 ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen) |
+					(hasChildren ?
+						 ImGuiTreeNodeFlags_DefaultOpen :
+						 ImGuiTreeNodeFlags_Leaf |
+						 ImGuiTreeNodeFlags_NoTreePushOnOpen) |
 					(isSelected ? ImGuiTreeNodeFlags_Selected : 0);
 				const bool opened = ImGui::TreeNodeEx(
 					reinterpret_cast<void*>(
@@ -1079,10 +1252,12 @@ namespace Unnamed {
 					ImGui::EndDragDropSource();
 				}
 				if (ImGui::BeginDragDropTarget()) {
-					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(
-						"OUTLINER_ENTITY"
-					)) {
-						const uint64_t draggedGuid = *static_cast<const uint64_t*>(
+					if (const ImGuiPayload* payload =
+						ImGui::AcceptDragDropPayload(
+							"OUTLINER_ENTITY"
+						)) {
+						const uint64_t draggedGuid = *static_cast<const uint64_t
+							*>(
 							payload->Data
 						);
 						if (draggedGuid != entity->GetGuid()) {
@@ -1090,9 +1265,10 @@ namespace Unnamed {
 							pendingParentTargetEntityId = entity->GetGuid();
 						}
 					}
-					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(
-						"OUTLINER_FOLDER"
-					)) {
+					if (const ImGuiPayload* payload =
+						ImGui::AcceptDragDropPayload(
+							"OUTLINER_FOLDER"
+						)) {
 						const char* sourcePath = static_cast<const char*>(
 							payload->Data
 						);
@@ -1118,7 +1294,9 @@ namespace Unnamed {
 							entity->GetFolderPath()
 						);
 					}
-					if (ImGui::MenuItem("Rename")) { openRenameEntity(*entity); }
+					if (ImGui::MenuItem("Rename")) {
+						openRenameEntity(*entity);
+					}
 					if (ImGui::MenuItem("Delete")) {
 						pendingDeleteEntityId = entity->GetGuid();
 					}
@@ -1131,7 +1309,9 @@ namespace Unnamed {
 					visible ? kIconVisibility : kIconVisibilityOff,
 					nullptr,
 					ImVec2(28.0f, 28.0f)
-				)) { entity->SetVisible(!visible); }
+				)) {
+					entity->SetVisible(!visible);
+				}
 
 				ImGui::TableNextColumn();
 				const bool active = entity->IsActive();
@@ -1139,7 +1319,9 @@ namespace Unnamed {
 					active ? kIconCheckBoxOn : kIconCheckBoxOff,
 					nullptr,
 					ImVec2(28.0f, 28.0f)
-				)) { entity->SetActive(!active); }
+				)) {
+					entity->SetActive(!active);
+				}
 
 				if (opened && hasChildren) {
 					for (UEntity* child : childrenInSameFolder) {
@@ -1153,103 +1335,120 @@ namespace Unnamed {
 
 			std::function<void(const HierarchyFolderNode&, const std::string&)>
 				drawFolder;
-			drawFolder = [&](const HierarchyFolderNode& node,
-			                 const std::string&       folderPath) {
-				bool opened = true;
-				if (!folderPath.empty()) {
-					const std::string displayName = GetFolderLeafName(folderPath);
-					ImGui::TableNextRow();
-					ImGui::TableNextColumn();
-					opened = ImGui::TreeNodeEx(
-						folderPath.c_str(),
-						ImGuiTreeNodeFlags_SpanFullWidth |
-						ImGuiTreeNodeFlags_DefaultOpen,
-						"%s",
-						displayName.c_str()
-					);
-					if (ImGui::BeginDragDropSource()) {
-						ImGui::SetDragDropPayload(
-							"OUTLINER_FOLDER",
-							folderPath.c_str(),
-							folderPath.size() + 1
+			drawFolder = [&](
+				const HierarchyFolderNode& node,
+				const std::string&         folderPath
+			) {
+					bool opened = true;
+					if (!folderPath.empty()) {
+						const std::string displayName = GetFolderLeafName(
+							folderPath
 						);
-						ImGui::TextUnformatted(displayName.c_str());
-						ImGui::EndDragDropSource();
-					}
-					if (ImGui::BeginDragDropTarget()) {
-						if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(
-							"OUTLINER_ENTITY"
-						)) {
-							const uint64_t draggedGuid = *static_cast<
-								const uint64_t*>(payload->Data);
-							pendingMoveEntityId         = draggedGuid;
-							pendingMoveEntityFolderPath = folderPath;
-						}
-						if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(
-							"OUTLINER_FOLDER"
-						)) {
-							const char* sourcePath = static_cast<const char*>(
-								payload->Data
+						ImGui::TableNextRow();
+						ImGui::TableNextColumn();
+						opened = ImGui::TreeNodeEx(
+							folderPath.c_str(),
+							ImGuiTreeNodeFlags_SpanFullWidth |
+							ImGuiTreeNodeFlags_DefaultOpen,
+							"%s",
+							displayName.c_str()
+						);
+						if (ImGui::BeginDragDropSource()) {
+							ImGui::SetDragDropPayload(
+								"OUTLINER_FOLDER",
+								folderPath.c_str(),
+								folderPath.size() + 1
 							);
-							if (
-								sourcePath &&
-								folderPath != sourcePath &&
-								!IsFolderEqualOrDescendant(folderPath, sourcePath)
-							) {
-								pendingMoveFolderSourcePath = sourcePath;
-								pendingMoveFolderTargetPath = folderPath;
+							ImGui::TextUnformatted(displayName.c_str());
+							ImGui::EndDragDropSource();
+						}
+						if (ImGui::BeginDragDropTarget()) {
+							if (const ImGuiPayload* payload =
+								ImGui::AcceptDragDropPayload(
+									"OUTLINER_ENTITY"
+								)) {
+								const uint64_t draggedGuid = *static_cast<
+									const uint64_t*>(payload->Data);
+								pendingMoveEntityId         = draggedGuid;
+								pendingMoveEntityFolderPath = folderPath;
 							}
+							if (const ImGuiPayload* payload =
+								ImGui::AcceptDragDropPayload(
+									"OUTLINER_FOLDER"
+								)) {
+								const char* sourcePath = static_cast<const char
+									*>(
+									payload->Data
+								);
+								if (
+									sourcePath &&
+									folderPath != sourcePath &&
+									!IsFolderEqualOrDescendant(
+										folderPath, sourcePath
+									)
+								) {
+									pendingMoveFolderSourcePath = sourcePath;
+									pendingMoveFolderTargetPath = folderPath;
+								}
+							}
+							ImGui::EndDragDropTarget();
 						}
-						ImGui::EndDragDropTarget();
+						if (ImGui::BeginPopupContextItem("FolderContext")) {
+							if (ImGui::MenuItem("Add Entity")) {
+								pendingCreateEntity     = true;
+								pendingCreateFolderPath = folderPath;
+							}
+							if (ImGui::MenuItem("Add Folder")) {
+								pendingCreateFolder     = true;
+								pendingCreateFolderPath = folderPath;
+							}
+							if (ImGui::MenuItem("Rename")) {
+								openRenameFolder(folderPath);
+							}
+							if (ImGui::MenuItem("Delete")) {
+								pendingDeleteFolderPath = folderPath;
+							}
+							ImGui::EndPopup();
+						}
+						ImGui::TableNextColumn();
+						ImGui::TableNextColumn();
+						if (!opened) {
+							return;
+						}
 					}
-					if (ImGui::BeginPopupContextItem("FolderContext")) {
-						if (ImGui::MenuItem("Add Entity")) {
-							pendingCreateEntity     = true;
-							pendingCreateFolderPath = folderPath;
-						}
-						if (ImGui::MenuItem("Add Folder")) {
-							pendingCreateFolder     = true;
-							pendingCreateFolderPath = folderPath;
-						}
-						if (ImGui::MenuItem("Rename")) {
-							openRenameFolder(folderPath);
-						}
-						if (ImGui::MenuItem("Delete")) {
-							pendingDeleteFolderPath = folderPath;
-						}
-						ImGui::EndPopup();
+
+					for (const auto& [childName, childNode] : node.children) {
+						const std::string childPath = folderPath.empty() ?
+								childName :
+								folderPath + "/" + childName;
+						drawFolder(childNode, childPath);
 					}
-					ImGui::TableNextColumn();
-					ImGui::TableNextColumn();
-					if (!opened) { return; }
-				}
 
-				for (const auto& [childName, childNode] : node.children) {
-					const std::string childPath = folderPath.empty() ?
-						childName :
-						folderPath + "/" + childName;
-					drawFolder(childNode, childPath);
-				}
-
-				for (UEntity* entity : node.entities) {
-					const auto* transform = entity ? entity->GetComponent<
-						TransformComponent>() : nullptr;
-					const auto* parentTransform = transform ? transform->Parent() : nullptr;
-					const UEntity* parentEntity = parentTransform ?
-						parentTransform->GetOwner() :
-						nullptr;
-					if (
-						parentEntity &&
-						std::string(parentEntity->GetFolderPath()) ==
-						std::string(entity->GetFolderPath())
-					) {
-						continue;
+					for (UEntity* entity : node.entities) {
+						const auto* transform = entity ?
+							                        entity->GetComponent<
+								                        TransformComponent>() :
+							                        nullptr;
+						const auto* parentTransform = transform ?
+								transform->Parent() :
+								nullptr;
+						const UEntity* parentEntity = parentTransform ?
+								parentTransform->GetOwner() :
+								nullptr;
+						if (
+							parentEntity &&
+							std::string(parentEntity->GetFolderPath()) ==
+							std::string(entity->GetFolderPath())
+						) {
+							continue;
+						}
+						drawEntityNode(entity);
 					}
-					drawEntityNode(entity);
-				}
 
-				if (!folderPath.empty()) { ImGui::TreePop(); }
-			};
+					if (!folderPath.empty()) {
+						ImGui::TreePop();
+					}
+				};
 
 			ImGui::TableNextRow();
 			ImGui::TableNextColumn();
@@ -1264,7 +1463,8 @@ namespace Unnamed {
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(
 					"OUTLINER_FOLDER"
 				)) {
-					const char* sourcePath = static_cast<const char*>(payload->Data);
+					const char* sourcePath = static_cast<const char*>(payload->
+						Data);
 					if (sourcePath) {
 						pendingMoveFolderSourcePath = sourcePath;
 						pendingMoveFolderTargetPath.clear();
@@ -1282,8 +1482,12 @@ namespace Unnamed {
 				ImGui::EndDragDropTarget();
 			}
 			if (ImGui::BeginPopupContextItem("RootContext")) {
-				if (ImGui::MenuItem("Add Entity")) { pendingCreateEntity = true; }
-				if (ImGui::MenuItem("Add Folder")) { pendingCreateFolder = true; }
+				if (ImGui::MenuItem("Add Entity")) {
+					pendingCreateEntity = true;
+				}
+				if (ImGui::MenuItem("Add Folder")) {
+					pendingCreateFolder = true;
+				}
 				ImGui::EndPopup();
 			}
 			ImGui::TableNextColumn();
@@ -1293,8 +1497,12 @@ namespace Unnamed {
 
 			ImGui::EndTable();
 
-			if (pendingCreateEntity) { createEntity(pendingCreateFolderPath); }
-			if (pendingCreateFolder) { createFolder(pendingCreateFolderPath); }
+			if (pendingCreateEntity) {
+				createEntity(pendingCreateFolderPath);
+			}
+			if (pendingCreateFolder) {
+				createFolder(pendingCreateFolderPath);
+			}
 			if (pendingMoveEntityId != 0) {
 				if (UEntity* entity = scene->FindEntity(pendingMoveEntityId)) {
 					entity->SetFolderPath(pendingMoveEntityFolderPath);
@@ -1310,7 +1518,9 @@ namespace Unnamed {
 				pendingParentChildEntityId != 0 &&
 				pendingParentTargetEntityId != 0
 			) {
-				UEntity* childEntity = scene->FindEntity(pendingParentChildEntityId);
+				UEntity* childEntity = scene->FindEntity(
+					pendingParentChildEntityId
+				);
 				UEntity* parentEntity = scene->FindEntity(
 					pendingParentTargetEntityId
 				);
@@ -1326,7 +1536,9 @@ namespace Unnamed {
 						!IsTransformAncestor(childTransform, parentTransform)
 					) {
 						childTransform->SetParent(parentTransform);
-						childEntity->SetFolderPath(parentEntity->GetFolderPath());
+						childEntity->SetFolderPath(
+							parentEntity->GetFolderPath()
+						);
 						scene->AddFolder(parentEntity->GetFolderPath());
 					}
 				}
@@ -1343,14 +1555,18 @@ namespace Unnamed {
 		}
 
 		if (ImGui::BeginPopup("OutlinerRenamePopup")) {
-			ImGui::InputText("##Rename", renameBuffer.data(), renameBuffer.size());
+			ImGui::InputText(
+				"##Rename", renameBuffer.data(), renameBuffer.size()
+			);
 			if (ImGui::Button("Apply")) {
 				if (renameEntityId != 0) {
 					if (UEntity* entity = scene->FindEntity(renameEntityId)) {
 						entity->SetName(renameBuffer.data());
 					}
 				} else if (!renameFolderPath.empty()) {
-					scene->RenameFolderSubtree(renameFolderPath, renameBuffer.data());
+					scene->RenameFolderSubtree(
+						renameFolderPath, renameBuffer.data()
+					);
 				}
 				renameEntityId = 0;
 				renameFolderPath.clear();
@@ -1409,7 +1625,9 @@ namespace Unnamed {
 		}
 
 		bool active = entity->IsActive();
-		if (ImGui::Checkbox("Active", &active)) { entity->SetActive(active); }
+		if (ImGui::Checkbox("Active", &active)) {
+			entity->SetActive(active);
+		}
 
 		if (!entity->GetComponent<TransformComponent>()) {
 			if (ImGui::Button("Add Transform")) {
@@ -1457,7 +1675,9 @@ namespace Unnamed {
 				if (componentActive != component.IsActive()) {
 					component.SetActive(componentActive);
 				}
-				if (open) { component.DrawInspectorImGui(); }
+				if (open) {
+					component.DrawInspectorImGui();
+				}
 			}
 		);
 
@@ -1465,7 +1685,9 @@ namespace Unnamed {
 	}
 
 	void UEditorRuntime::DrawProfilerWindow() {
-		if (!mShowProfilerWindow) { return; }
+		if (!mShowProfilerWindow) {
+			return;
+		}
 
 		const bool bOpen = ImGui::Begin("Profiler", &mShowProfilerWindow);
 
@@ -1487,7 +1709,9 @@ namespace Unnamed {
 			const auto& samples   = profiler->GetSamples();
 			float       globalMax = 1.0f;
 			for (const auto& sample : samples) {
-				if (!sample.history || sample.history->empty()) { continue; }
+				if (!sample.history || sample.history->empty()) {
+					continue;
+				}
 				globalMax = std::max(globalMax, sample.maxMs);
 			}
 
@@ -1532,7 +1756,9 @@ namespace Unnamed {
 
 			const size_t colorCount = std::max<size_t>(1, samples.size());
 			for (const auto& sample : samples) {
-				if (!sample.history || sample.history->size() < 2) { continue; }
+				if (!sample.history || sample.history->size() < 2) {
+					continue;
+				}
 
 				const ImU32 color = ImColor::HSV(
 					static_cast<float>(sample.colorIndex % colorCount) /
@@ -1548,11 +1774,11 @@ namespace Unnamed {
 						(sample.historyWriteIndex + i) % sample.history->size();
 					const float value = (*sample.history)[historyIndex];
 					const float x     = paddedMinX +
-					                    static_cast<float>(i) /
-					                    static_cast<float>(
-						                    sample.history->size() -
-						                    1) *
-					                    graphWidth;
+					                static_cast<float>(i) /
+					                static_cast<float>(
+						                sample.history->size() -
+						                1) *
+					                graphWidth;
 					const float y = paddedMaxY -
 					                value / (globalMax * 1.1f) * graphHeight;
 					const ImVec2 point(
@@ -1567,7 +1793,9 @@ namespace Unnamed {
 			}
 
 			for (const auto& sample : samples) {
-				if (!sample.history || sample.history->empty()) { continue; }
+				if (!sample.history || sample.history->empty()) {
+					continue;
+				}
 
 				const ImVec4 color = ImColor::HSV(
 					static_cast<float>(sample.colorIndex % colorCount) /
@@ -1628,7 +1856,9 @@ namespace Unnamed {
 			mLastSceneRenderRequest.presentToSwapChain ||
 			sceneRequest.clearSwapChainWhenNotPresenting !=
 			mLastSceneRenderRequest.clearSwapChainWhenNotPresenting;
-		if (requestChanged) { mLastSceneRenderRequest = sceneRequest; }
+		if (requestChanged) {
+			mLastSceneRenderRequest = sceneRequest;
+		}
 
 		mRenderModule.SetSceneRenderRequest(sceneRequest);
 
@@ -1640,7 +1870,9 @@ namespace Unnamed {
 				constexpr float targetAspect = 16.0f / 9.0f;
 				if (drawWidth / drawHeight > targetAspect) {
 					drawWidth = drawHeight * targetAspect;
-				} else { drawHeight = drawWidth / targetAspect; }
+				} else {
+					drawHeight = drawWidth / targetAspect;
+				}
 
 				const ImVec2 cursor = ImGui::GetCursorPos();
 				ImGui::SetCursorPos(
@@ -1676,6 +1908,7 @@ namespace Unnamed {
 
 			mViewportPosition = {imagePos.x, imagePos.y};
 			mViewportSize     = Vec2(drawWidth, drawHeight);
+			DrawViewportOverlay();
 		} else {
 			mViewportLookActive = false;
 			ImGui::TextUnformatted("Scene output is not ready.");
@@ -1686,153 +1919,70 @@ namespace Unnamed {
 		ImGui::End();
 	}
 
-	Render::SceneRenderRequest UEditorRuntime::BuildSceneRenderRequest() const {
-		Render::SceneRenderRequest sceneRequest = {};
-		sceneRequest.preferRealtimeResize       = true;
-		sceneRequest.presentToSwapChain         =
-			mPresentMode == EDITOR_PRESENT_MODE::FULLSCREEN_SWAP_CHAIN;
-		sceneRequest.clearSwapChainWhenNotPresenting =
-			!sceneRequest.presentToSwapChain;
-
-		float width  = mViewportPanelWidth;
-		float height = mViewportPanelHeight;
-		if (mPresentMode == EDITOR_PRESENT_MODE::FULLSCREEN_SWAP_CHAIN) {
-			if (
-				const Window* window = mWindowManager.FindWindowById(
-					mWindowManager.GetMainWindowId()
-				)
-			) {
-				const WindowDesc desc = window->GetDesc();
-				width = static_cast<float>(std::max(1, desc.width));
-				height = static_cast<float>(std::max(1, desc.height));
-			}
+	void UEditorRuntime::DrawViewportOverlay() {
+		const EditorCameraComponent* camera = mEditorWorld.GetEditorCamera();
+		if (!camera || !camera->IsMoveSpeedPopupVisible()) {
+			return;
 		}
 
-		sceneRequest.viewportPanelWidth  = static_cast<uint32_t>(width);
-		sceneRequest.viewportPanelHeight = static_cast<uint32_t>(height);
+		constexpr ImVec2 windowSize(256.0f, 32.0f);
+		constexpr float  iconScale = 0.1f;
 
-		switch (mViewportRenderMode) {
-			case EDITOR_VIEWPORT_RENDER_MODE::FIT_VIEWPORT
-			: sceneRequest.mode = Render::SCENE_RENDER_MODE::FIT_VIEWPORT;
-				break;
-			case EDITOR_VIEWPORT_RENDER_MODE::FIXED_ASPECT_16_9
-			: sceneRequest.mode = Render::SCENE_RENDER_MODE::FIXED_ASPECT_16X9;
-				break;
-			case EDITOR_VIEWPORT_RENDER_MODE::HD720
-			: sceneRequest.mode = Render::SCENE_RENDER_MODE::HD_720P;
-				break;
-			case EDITOR_VIEWPORT_RENDER_MODE::FHD1080
-			: sceneRequest.mode = Render::SCENE_RENDER_MODE::FHD_1080P;
-				break;
-			default: break;
-		}
+		ImVec2 windowPos(
+			mViewportPosition.x + mViewportSize.x * 0.5f,
+			mViewportPosition.y + mViewportSize.y * iconScale
+		);
+		windowPos.x -= windowSize.x * 0.5f;
+		windowPos.y -= windowSize.y * 0.5f;
 
-		const bool dynamicMode = sceneRequest.mode ==
-		                         Render::SCENE_RENDER_MODE::FIT_VIEWPORT ||
-		                         sceneRequest.mode ==
-		                         Render::SCENE_RENDER_MODE::FIXED_ASPECT_16X9;
-		if (dynamicMode) {
-			sceneRequest.viewportPanelWidth = std::max(
-				8u, sceneRequest.viewportPanelWidth / 8u * 8u
-			);
-			sceneRequest.viewportPanelHeight = std::max(
-				8u, sceneRequest.viewportPanelHeight / 8u * 8u
-			);
-		}
+		const std::string text = StrUtil::ConvertToUtf8(kIconSpeed) +
+		                         std::format(" {:.2f}", camera->GetMoveSpeed());
+		const ImVec2 textSize = ImGui::CalcTextSize(text.c_str());
 
-		return sceneRequest;
+		ImGui::SetNextWindowPos(windowPos, ImGuiCond_Always);
+		ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
+		ImGui::SetNextWindowViewport(ImGui::GetWindowViewport()->ID);
+		ImGui::SetNextWindowBgAlpha(0.9f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 16.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+		ImGui::Begin(
+			"##editorCameraMoveSpeedPopup", nullptr,
+			ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+			ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
+			ImGuiWindowFlags_NoBringToFrontOnFocus |
+			ImGuiWindowFlags_NoFocusOnAppearing |
+			ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoInputs
+		);
+
+		ImGui::SetCursorPos(
+			ImVec2(
+				(windowSize.x - textSize.x) * 0.5f,
+				(windowSize.y - textSize.y) * 0.5f
+			)
+		);
+		ImGui::TextUnformatted(text.c_str());
+
+		ImGui::End();
+		ImGui::PopStyleVar(2);
 	}
 
 	UEntity* UEditorRuntime::GetSelectedEntity() const {
 		const UScene* scene = GetHierarchyScene();
-		if (!scene || mSelectedEntityId == 0) { return nullptr; }
+		if (!scene || mSelectedEntityId == 0) {
+			return nullptr;
+		}
 		return const_cast<UScene*>(scene)->FindEntity(mSelectedEntityId);
-	}
-
-	UScene* UEditorRuntime::GetHierarchyScene() {
-		return mEditorWorld.IsPlaying() ?
-			       mEditorWorld.GetActiveScene() :
-			       mEditorWorld.GetEditableScene();
-	}
-
-	const UScene* UEditorRuntime::GetHierarchyScene() const {
-		return mEditorWorld.IsPlaying() ?
-			       mEditorWorld.GetActiveScene() :
-			       mEditorWorld.GetEditableScene();
-	}
-
-	void UEditorRuntime::DrawViewportGizmo(
-		const Render::SceneRenderRequest& sceneRequest,
-		const Vec2&                       imagePos,
-		const float                       drawWidth,
-		const float                       drawHeight
-	) {
-		UEntity* entity = GetSelectedEntity();
-		if (!entity) { return; }
-
-		auto* transform = entity->GetComponent<TransformComponent>();
-		if (!transform) { return; }
-		Mat4 world = transform->WorldMat();
-
-		Mat4 view = Mat4::identity;
-		Mat4 proj = Mat4::identity;
-		if (!mEditorWorld.BuildEditorCameraMatrices(sceneRequest, view, proj)) {
-			return;
-		}
-
-		static ImGuizmo::OPERATION sOperation = ImGuizmo::TRANSLATE;
-		static ImGuizmo::MODE      sMode      = ImGuizmo::WORLD;
-
-		if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) {
-			if (ImGui::IsKeyPressed(ImGuiKey_W)) {
-				sOperation = ImGuizmo::TRANSLATE;
-			}
-			if (ImGui::IsKeyPressed(ImGuiKey_E)) {
-				sOperation = ImGuizmo::ROTATE;
-			}
-			if (ImGui::IsKeyPressed(ImGuiKey_R)) {
-				sOperation = ImGuizmo::SCALE;
-			}
-		}
-
-		ImGuizmo::SetOrthographic(false);
-		ImGuizmo::SetDrawlist();
-		ImGuizmo::SetRect(imagePos.x, imagePos.y, drawWidth, drawHeight);
-
-		const bool  useSnap = sOperation != ImGuizmo::SCALE;
-		const float snap[3] = {
-			sOperation == ImGuizmo::ROTATE ? mAngleSnapDegree : mGridSnap,
-			sOperation == ImGuizmo::ROTATE ? mAngleSnapDegree : mGridSnap,
-			sOperation == ImGuizmo::ROTATE ? mAngleSnapDegree : mGridSnap
-		};
-
-		if (
-			ImGuizmo::Manipulate(
-				*view.m,
-				*proj.m,
-				sOperation,
-				sMode,
-				*world.m,
-				nullptr,
-				useSnap ? snap : nullptr
-			)
-		) {
-			const Mat4 editedWorld = world;
-			Mat4       localMat    = editedWorld;
-
-			const Vec3 localScale  = localMat.GetScale();
-			const Mat4 rotationMat = localMat;
-
-			transform->SetPosition(localMat.GetTranslate());
-			transform->SetRotation(rotationMat.ToQuaternion());
-			transform->SetScale(localScale);
-		}
 	}
 
 	bool UEditorRuntime::SaveSceneAs(const std::string& path) {
 		const UScene* scene = mEditorWorld.GetEditableScene();
-		if (!scene) { return false; }
-		if (!USceneSerializer::SaveToFile(*scene, path)) { return false; }
+		if (!scene) {
+			return false;
+		}
+		if (!USceneSerializer::SaveToFile(*scene, path)) {
+			return false;
+		}
 		mEditorWorld.SetLoadedScenePath(path);
 		return true;
 	}

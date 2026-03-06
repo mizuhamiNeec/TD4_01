@@ -22,15 +22,15 @@ namespace Unnamed {
 	}
 
 	enum class EDITOR_PRESENT_MODE : uint8_t {
-		VIEWPORT_PANEL,
-		FULLSCREEN_SWAP_CHAIN,
+		VIEWPORT_PANEL,        // ビューポートパネルに描画
+		FULLSCREEN_SWAP_CHAIN, // フルスクリーンでスワップチェーンに直接描画
 	};
 
 	enum class EDITOR_VIEWPORT_RENDER_MODE : uint8_t {
-		FIT_VIEWPORT,
-		FIXED_ASPECT_16_9,
-		HD720,
-		FHD1080,
+		FIT_VIEWPORT,      // ビューポートに合わせて描画
+		FIXED_ASPECT_16_9, // 16:9のアスペクト比で描画
+		HD720,             // 1280x720で描画
+		FHD1080,           // 1920x1080で描画
 	};
 
 	class UEditorRuntime {
@@ -46,13 +46,17 @@ namespace Unnamed {
 		void BeginUI();
 
 		/// @brief UIの構築と描画を行います。
-		void                                     BuildUi();
-		[[nodiscard]] Render::SceneRenderRequest GetSceneRenderRequest() const;
-		void                                     TogglePresentMode();
+		void BuildUi();
 
-		[[nodiscard]] EDITOR_PRESENT_MODE GetPresentMode() const {
-			return mPresentMode;
-		}
+		/// @brief 現在のシーンレンダリング要求を取得します。
+		/// @return 現在のシーンレンダリング要求
+		[[nodiscard]] Render::SceneRenderRequest GetSceneRenderRequest() const;
+
+		/// @brief プレゼントモードを切り替えます。
+		void TogglePresentMode();
+
+		/// @brief 現在のプレゼントモードを取得します。
+		[[nodiscard]] EDITOR_PRESENT_MODE GetPresentMode() const;
 
 		/// @brief シーンのレンダリング結果を設定します。
 		void SetSceneOutput(
@@ -61,27 +65,58 @@ namespace Unnamed {
 		);
 
 	private:
-		[[nodiscard]] Render::SceneRenderRequest
-		BuildSceneRenderRequest() const;
-		[[nodiscard]] UScene*       GetHierarchyScene();
+		/// @brief ImGuizmoの設定をロードします。
+		void LoadImGuizmoSettings();
+
+
+		/// @brief 現在のシーンとエディタ状態に基づいて、シーンのレンダリング要求を構築します。
+		/// @return シーンのレンダリング要求
+		[[nodiscard]]
+		Render::SceneRenderRequest BuildSceneRenderRequest() const;
+
+		/// @brief シーン階層を取得します。
+		[[nodiscard]] UScene* GetHierarchyScene();
+
+		/// @brief シーン階層を取得します（constバージョン）。
 		[[nodiscard]] const UScene* GetHierarchyScene() const;
-		void                        DrawViewportGizmo(
+
+		/// @brief ビューポート上にギズモを描画します。
+		/// @param sceneRequest 現在のシーンレンダリング要求
+		/// @param imagePos ビューポートの描画開始位置
+		/// @param drawWidth ビューポートの描画幅
+		/// @param drawHeight ビューポートの描画高さ
+		void DrawViewportGizmo(
 			const Render::SceneRenderRequest& sceneRequest,
 			const Vec2&                       imagePos,
 			float                             drawWidth,
 			float                             drawHeight
 		);
-		void DrawMainMenu();
-		void DrawViewportTopBar();
-		void DrawSideBar();
-		void DrawStatusBar();
-		void DrawSceneHierarchy();
-		void DrawInspector();
-		void DrawProfilerWindow();
-		void DrawViewport();
 
+		/// @brief メインメニューを描画します。
+		void DrawMainMenu();
+		/// @brief ビューポートの上部にツールバーを描画します。
+		void DrawViewportTopBar();
+		/// @brief サイドバーを描画します。
+		void DrawSideBar();
+		/// @brief ステータスバーを描画します。
+		void DrawStatusBar();
+		/// @brief シーン階層ウィンドウを描画します。
+		void DrawSceneHierarchy();
+		/// @brief インスペクタウィンドウを描画します。
+		void DrawInspector();
+		/// @brief プロファイラウィンドウを描画します。
+		void DrawProfilerWindow();
+		/// @brief ビューポートを描画します。
+		void DrawViewport();
+		/// @brief ビューポート上のオーバーレイを描画します。
+		void DrawViewportOverlay();
+
+		/// @brief 現在選択されているエンティティを取得します。
 		[[nodiscard]] UEntity* GetSelectedEntity() const;
 
+		/// @brief シーンを指定されたパスに保存します。
+		/// @param path シーンを保存するパス
+		/// @return 保存に成功した場合はtrue、失敗した場合はfalse
 		bool SaveSceneAs(const std::string& path);
 
 		UEditorWorld&         mEditorWorld;

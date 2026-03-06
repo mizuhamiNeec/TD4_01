@@ -19,7 +19,9 @@ namespace Unnamed::Gui {
 
 	inline Rect ReadRect(const JsonReader& node) {
 		Rect r{};
-		if (!node.Valid() || node.Size() < 4) { return r; }
+		if (!node.Valid() || node.Size() < 4) {
+			return r;
+		}
 		r.x      = node[0].GetFloat();
 		r.y      = node[1].GetFloat();
 		r.width  = node[2].GetFloat();
@@ -38,7 +40,9 @@ namespace Unnamed::Gui {
 
 	inline Anchors ReadAnchors(const JsonReader& node) {
 		Anchors a{0, 0, 0, 0};
-		if (!node.Valid() || node.Size() < 4) { return a; }
+		if (!node.Valid() || node.Size() < 4) {
+			return a;
+		}
 		a.minX = node[0].GetFloat();
 		a.minY = node[1].GetFloat();
 		a.maxX = node[2].GetFloat();
@@ -57,7 +61,9 @@ namespace Unnamed::Gui {
 
 	inline LayoutPadding ReadPadding(const JsonReader& node) {
 		LayoutPadding p{};
-		if (!node.Valid() || node.Size() < 4) { return p; }
+		if (!node.Valid() || node.Size() < 4) {
+			return p;
+		}
 		p.left   = node[0].GetFloat();
 		p.top    = node[1].GetFloat();
 		p.right  = node[2].GetFloat();
@@ -74,7 +80,9 @@ namespace Unnamed::Gui {
 
 	inline Pivot ReadPivot(const JsonReader& node) {
 		Pivot p{0, 0};
-		if (!node.Valid() || node.Size() < 2) { return p; }
+		if (!node.Valid() || node.Size() < 2) {
+			return p;
+		}
 		p.x = node[0].GetFloat();
 		p.y = node[1].GetFloat();
 		return p;
@@ -91,7 +99,9 @@ namespace Unnamed::Gui {
 
 	inline Margins ReadMargins(const JsonReader& node) {
 		Margins m{};
-		if (!node.Valid() || node.Size() < 4) { return m; }
+		if (!node.Valid() || node.Size() < 4) {
+			return m;
+		}
 		m.left   = node[0].GetFloat();
 		m.top    = node[1].GetFloat();
 		m.right  = node[2].GetFloat();
@@ -119,7 +129,9 @@ namespace Unnamed::Gui {
 
 	inline UiSizePolicy ReadSizePolicy(const JsonReader& node) {
 		UiSizePolicy policy{};
-		if (!node.Valid() || node.Size() < 2) { return policy; }
+		if (!node.Valid() || node.Size() < 2) {
+			return policy;
+		}
 		const auto h      = node[0].GetString();
 		const auto v      = node[1].GetString();
 		policy.horizontal = h == "Expand" ?

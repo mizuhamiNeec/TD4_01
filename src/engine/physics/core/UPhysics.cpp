@@ -1,7 +1,8 @@
 #include "UPhysics.h"
 
-#include <pch.h>
 #include <algorithm>
+#include <chrono>
+#include <pch.h>
 #include <vector>
 
 #include <engine/unnamed/subsystem/console/Log.h>
@@ -175,11 +176,11 @@ namespace UPhysics {
 		if (filtered.empty()) { return false; }
 
 		// ナローフェーズ：詳細な重なり判定
-		float         minPenetration = FLT_MAX;
-		uint32_t      hitTri         = UINT32_MAX;
-		Vec3          hitNormal;
-		Vec3          hitPos;
-		uint32_t      stack[64];
+		float    minPenetration = FLT_MAX;
+		uint32_t hitTri         = UINT32_MAX;
+		Vec3     hitNormal;
+		Vec3     hitPos;
+		uint32_t stack[64];
 		uint64_t hitEntityGuid = 0;
 
 		for (auto* bvh : filtered) {
@@ -242,15 +243,16 @@ namespace UPhysics {
 		}
 
 		if (outHit) {
-			outHit->t        = 1.0f;           // sweep 用でないので 1
-			outHit->depth    = minPenetration; // ← depth をセット
-			outHit->pos      = hitPos;
-			outHit->normal   = hitNormal;
-			outHit->triIndex = hitTri;
+			outHit->t             = 1.0f;           // sweep 用でないので 1
+			outHit->depth         = minPenetration; // ← depth をセット
+			outHit->pos           = hitPos;
+			outHit->normal        = hitNormal;
+			outHit->triIndex      = hitTri;
 			outHit->hitEntityGuid = hitEntityGuid;
 		}
 		return true;
 	}
+
 
 	int Engine::BoxOverlap(
 		const Unnamed::Box& box,
@@ -334,8 +336,8 @@ namespace UPhysics {
 										               box.halfSize.z
 									               }
 								               ) - penetrationDepth * 0.5f);
-							tmpHit.normal   = separationAxis;
-							tmpHit.triIndex = triIdx;
+							tmpHit.normal        = separationAxis;
+							tmpHit.triIndex      = triIdx;
 							tmpHit.hitEntityGuid = bvh->ownerGuid;
 
 							outHits[hitCount] = tmpHit;
@@ -349,6 +351,7 @@ namespace UPhysics {
 		return hitCount;
 	}
 
+	// --- Static mesh registration (single definition) ---
 	void Engine::ClearStaticMeshes() {
 		mTriangles.clear();
 		mNodes.clear();
@@ -357,7 +360,7 @@ namespace UPhysics {
 	}
 
 	bool Engine::RegisterStaticMesh(
-		const uint64_t ownerGuid,
+		const uint64_t                             ownerGuid,
 		const std::span<const Unnamed::MeshVertex> vertices,
 		const std::span<const uint32_t>            indices,
 		const Mat4&                                world
@@ -366,36 +369,42 @@ namespace UPhysics {
 			return false;
 		}
 
-		const size_t triStart = mTriangles.size();
+		const auto start = std::chrono::steady_clock::now();
+
+		const size_t                   triStart = mTriangles.size();
 		std::vector<Unnamed::Triangle> localTriangles;
 		localTriangles.reserve(indices.size() / 3);
 
+		const auto buildTrisStart = std::chrono::steady_clock::now();
 		for (size_t i = 0; i + 2 < indices.size(); i += 3) {
 			const uint32_t i0 = indices[i + 0];
 			const uint32_t i1 = indices[i + 1];
 			const uint32_t i2 = indices[i + 2];
-			if (i0 >= vertices.size() || i1 >= vertices.size() || i2 >= vertices.
-			    size()) {
-				continue;
-			}
+			if (i0 >= vertices.size() || i1 >= vertices.size() || i2 >= vertices
+			    .size()) { continue; }
 			localTriangles.emplace_back(
 				BuildTriangle(vertices[i0], vertices[i1], vertices[i2], world)
 			);
 		}
+		const auto buildTrisEnd = std::chrono::steady_clock::now();
 
 		if (localTriangles.empty()) { return false; }
 
+		const auto insertStart = std::chrono::steady_clock::now();
 		mTriangles.insert(
 			mTriangles.end(),
 			localTriangles.begin(),
 			localTriangles.end()
 		);
+		const auto insertEnd = std::chrono::steady_clock::now();
 
-		BVHBuilder             builder;
-		std::vector<FlatNode>  nodes;
-		std::vector<uint32_t>  triIndices;
+		const auto            bvhStart = std::chrono::steady_clock::now();
+		BVHBuilder            builder;
+		std::vector<FlatNode> nodes;
+		std::vector<uint32_t> triIndices;
 		builder.Build(localTriangles, nodes, triIndices);
 		AddGlobalOffset(triIndices, static_cast<uint32_t>(triStart));
+		const auto bvhEnd = std::chrono::steady_clock::now();
 
 		RegisteredBVH registered = {};
 		registered.nodes         = std::move(nodes);
@@ -404,6 +413,29 @@ namespace UPhysics {
 		registered.triCount      = localTriangles.size();
 		registered.ownerGuid     = ownerGuid;
 		mBVHs.emplace_back(std::move(registered));
+
+		const auto end = std::chrono::steady_clock::now();
+		Msg(
+			"UPhysics",
+			"RegisterStaticMesh timing: buildTris={}ms insert={}ms bvhBuild={}ms total={}ms (ownerGuid={} verts={} idx={} tris={})",
+			std::chrono::duration_cast<std::chrono::milliseconds>(
+				buildTrisEnd - buildTrisStart
+			).count(),
+			std::chrono::duration_cast<std::chrono::milliseconds>(
+				insertEnd - insertStart
+			).count(),
+			std::chrono::duration_cast<std::chrono::milliseconds>(
+				bvhEnd - bvhStart
+			).count(),
+			std::chrono::duration_cast<std::chrono::milliseconds>(
+				end - start
+			).count(),
+			ownerGuid,
+			vertices.size(),
+			indices.size(),
+			localTriangles.size()
+		);
+
 		return true;
 	}
 
@@ -418,8 +450,6 @@ namespace UPhysics {
 		);
 		if (it == mBVHs.end()) { return; }
 
-		// The current runtime rebuilds static physics on scene load, so a full reset
-		// keeps ownership data coherent without incremental BVH compaction.
 		ClearStaticMeshes();
 	}
 

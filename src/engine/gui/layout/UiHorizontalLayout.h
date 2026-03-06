@@ -7,7 +7,9 @@ namespace Unnamed::Gui {
 		UiHorizontalLayout()           = default;
 		~UiHorizontalLayout() override = default;
 
-		const char* GetTypeName() const override { return "HorizontalLayout"; }
+		const char* GetTypeName() const override {
+			return "HorizontalLayout";
+		}
 
 	protected:
 		void UpdateLayout(const Rect& parentGlobalRect) override;

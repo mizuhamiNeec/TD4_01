@@ -46,7 +46,9 @@ namespace UPhysics {
 		const Unnamed::Triangle& triangle,
 		float&                   depth,
 		Vec3&                    normal
-	) const { return BoxVsTriangleOverlap(box, triangle, normal, depth); }
+	) const {
+		return BoxVsTriangleOverlap(box, triangle, normal, depth);
+	}
 
 	/// @brief 衝突点を計算します
 	/// @param start キャスト開始位置
@@ -66,7 +68,11 @@ namespace UPhysics {
 		const Vec3  center = start + dirNormalized * travel;
 		Vec3        n      = normal;
 		const float nLenSq = n.SqrLength();
-		if (nLenSq > 1e-12f) { n /= std::sqrt(nLenSq); } else { return center; }
+		if (nLenSq > 1e-12f) {
+			n /= std::sqrt(nLenSq);
+		} else {
+			return center;
+		}
 		const Vec3  absN{std::fabs(n.x), std::fabs(n.y), std::fabs(n.z)};
 		const float support = absN.x * half.x + absN.y * half.y + absN.z * half.
 		                      z;

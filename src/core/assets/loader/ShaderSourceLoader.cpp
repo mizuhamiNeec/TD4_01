@@ -18,7 +18,9 @@ namespace Unnamed {
 		const std::string_view path, ASSET_TYPE* outType
 	) const {
 		// outTypeがnullptrならfalseを返す
-		if (!outType) { return false; }
+		if (!outType) {
+			return false;
+		}
 		// 拡張子がサポートされているかを確認
 		if (StrUtil::HasExtension(path, kSupportedExtension)) {
 			*outType = ASSET_TYPE::SHADER_SOURCE;
@@ -62,7 +64,8 @@ namespace Unnamed {
 
 		r.payload     = std::move(data);
 		r.resolveName = std::filesystem::path(path).filename().string();
-		if (std::error_code ec; std::filesystem::exists(path, ec)) {
+		if (std::error_code ec;
+			std::filesystem::exists(path, ec)) {
 			r.stamp.sizeInBytes = std::filesystem::file_size(path);
 		}
 
@@ -77,7 +80,9 @@ namespace Unnamed {
 
 		while (true) {
 			pos = text.find("#include", pos);
-			if (pos == std::string::npos) { break; }
+			if (pos == std::string::npos) {
+				break;
+			}
 
 			const auto quote0 = text.find('"', pos);
 			if (quote0 == std::string::npos) {

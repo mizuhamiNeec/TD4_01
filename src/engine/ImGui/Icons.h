@@ -12,9 +12,12 @@ constexpr uint32_t kIconArrowBack = 0xE5C4; // 戻る/ロゴ(仮)
 constexpr uint32_t kIconAdd       = 0xE145; // 追加
 
 // ---- Help / Info ------------------------------------------------------------
-constexpr uint32_t kIconInfo    = 0xE88E; // 情報
-constexpr uint32_t kIconHelp    = 0xE887; // ヘルプ
-constexpr uint32_t kIconAvgTime = 0xF813; // 平均時間 (プロファイラー用)
+constexpr uint32_t kIconInfo         = 0xE88E; // 情報
+constexpr uint32_t kIconWarning      = 0xE002; // 警告
+constexpr uint32_t kIconError        = 0xE000; // エラー
+constexpr uint32_t kIconQuestionMark = 0xEB8b; // クエスチョンマーク
+constexpr uint32_t kIconHelp         = 0xE887; // ヘルプ
+constexpr uint32_t kIconAvgTime      = 0xF813; // 平均時間 (プロファイラー用)
 
 // ---- Console ----------------------------------------------------------------
 constexpr uint32_t kIconTerminal = 0xEB8E; // ターミナル

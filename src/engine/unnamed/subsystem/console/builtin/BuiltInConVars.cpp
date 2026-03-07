@@ -94,7 +94,7 @@ namespace Unnamed {
 
 	void ClientConVar() {
 		static UnnamedConVar<std::string> name(
-			"name", "unnamed", FCVAR::NONE,
+			"name", "unnamed", FCVAR::NOTIFY,
 			"Current user name."
 		);
 

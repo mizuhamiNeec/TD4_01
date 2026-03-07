@@ -16,7 +16,7 @@ namespace Unnamed {
 
 		virtual ~UnnamedConCommandBase() = default;
 
-		[[nodiscard]] virtual bool IsCommand() const = 0;
+		[[nodiscard]] virtual bool IsCommand() const { return false; };
 
 		[[nodiscard]] bool HasFlags(const FCVAR& flags) const;
 		void               AddFlag(const FCVAR& flag);

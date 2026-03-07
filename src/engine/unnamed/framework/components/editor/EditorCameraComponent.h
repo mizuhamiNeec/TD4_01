@@ -22,6 +22,7 @@ namespace Unnamed {
 		[[nodiscard]] bool IsLookEnabled() const noexcept;
 		[[nodiscard]] float GetMoveSpeed() const noexcept;
 		[[nodiscard]] bool IsMoveSpeedPopupVisible() const noexcept;
+		[[nodiscard]] float GetMoveSpeedPopupTimer() const noexcept;
 		bool BuildViewProjectionMatrices(Mat4& outView, Mat4& outProj) const;
 
 		bool BuildCameraInput(Render::RenderCameraInput& outCamera) const;

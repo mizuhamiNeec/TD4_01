@@ -154,6 +154,10 @@ namespace Unnamed {
 		return mOpenPopup;
 	}
 
+	float EditorCameraComponent::GetMoveSpeedPopupTimer() const noexcept {
+		return mPopupTimer;
+	}
+
 	bool EditorCameraComponent::BuildViewProjectionMatrices(
 		Mat4& outView, Mat4& outProj
 	) const {
@@ -272,12 +276,24 @@ namespace Unnamed {
 		transform->SetRotation(rotation);
 
 		// 移動入力の処理
-		if (mInput->IsHeld("ed_forward")) mMoveInput.z += 1.0f;
-		if (mInput->IsHeld("ed_backward")) mMoveInput.z -= 1.0f;
-		if (mInput->IsHeld("ed_left")) mMoveInput.x -= 1.0f;
-		if (mInput->IsHeld("ed_right")) mMoveInput.x += 1.0f;
-		if (mInput->IsHeld("ed_up")) mMoveInput.y += 1.0f;
-		if (mInput->IsHeld("ed_down")) mMoveInput.y -= 1.0f;
+		if (mInput->IsHeld("ed_forward")) {
+			mMoveInput.z += 1.0f;
+		}
+		if (mInput->IsHeld("ed_backward")) {
+			mMoveInput.z -= 1.0f;
+		}
+		if (mInput->IsHeld("ed_left")) {
+			mMoveInput.x -= 1.0f;
+		}
+		if (mInput->IsHeld("ed_right")) {
+			mMoveInput.x += 1.0f;
+		}
+		if (mInput->IsHeld("ed_up")) {
+			mMoveInput.y += 1.0f;
+		}
+		if (mInput->IsHeld("ed_down")) {
+			mMoveInput.y -= 1.0f;
+		}
 
 		if (mInput->IsPressed("ed_speedup")) {
 			mMoveSpeed *= 2.0f;
@@ -332,10 +348,14 @@ namespace Unnamed {
 		const Vec3  dir, const float speed, const float accel,
 		const float deltaTime
 	) {
-		if (dir.IsZero() || speed <= 0.0f || accel <= 0.0f) return;
+		if (dir.IsZero() || speed <= 0.0f || accel <= 0.0f) {
+			return;
+		}
 		const float cur = Math::MtoH(mVelocity).Dot(dir);
 		const float add = speed - cur;
-		if (add <= 0.f) return;
+		if (add <= 0.f) {
+			return;
+		}
 		const float acc = std::min(accel * speed * deltaTime, add);
 		mVelocity       += Math::HtoM(acc) * dir;
 	}

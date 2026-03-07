@@ -10,6 +10,8 @@
 #include <map>
 #include <set>
 
+#include "EditorNotification.h"
+
 #include "core/json/JsonReader.h"
 #include "core/string/StrUtil.h"
 
@@ -185,6 +187,7 @@ namespace Unnamed {
 	    mRenderModule(renderModule),
 	    mImGuiLayer(imGuiLayer) {
 		LoadImGuizmoSettings();
+		mNotification = std::make_unique<EditorNotification>();
 	}
 
 	void UEditorRuntime::BeginUI() {
@@ -235,11 +238,11 @@ namespace Unnamed {
 		ImGui::ShowDemoWindow();
 	}
 
-	void UEditorRuntime::BuildUi() {
+	void UEditorRuntime::BuildUi(const float deltaTime) {
 		mViewportSizeChangedThisFrame = false;
 
 		if (mPresentMode == EDITOR_PRESENT_MODE::VIEWPORT_PANEL) {
-			DrawViewport();
+			DrawViewport(deltaTime);
 			const auto input = ServiceLocator::Get<UInputSystem>();
 			mEditorWorld.SetEditorCameraLookEnabled(mViewportLookActive);
 			if (input) {
@@ -314,6 +317,8 @@ namespace Unnamed {
 		}
 
 		DrawProfilerWindow();
+
+		mNotification->Update(deltaTime);
 	}
 
 	Render::SceneRenderRequest UEditorRuntime::GetSceneRenderRequest() const {
@@ -734,13 +739,22 @@ namespace Unnamed {
 		{
 			constexpr float iconScale = 1.0f;
 
-			ImGuiWidgets::IconButton(
-				kIconVertex,
-				"Vertices",
-				toolbarIconSize,
-				iconScale,
-				ImGuiDir_Right
-			);
+			if (
+				ImGuiWidgets::IconButton(
+					kIconVertex,
+					"Vertices",
+					toolbarIconSize,
+					iconScale,
+					ImGuiDir_Right
+				)
+			) {
+				mNotification->PushNotification(
+					"未実装",
+					"頂点選択はまだ実装されていません。",
+					NOTIFY_TYPE::WARNING,
+					10.0f
+				);
+			}
 
 			ImGui::SameLine();
 
@@ -1324,7 +1338,7 @@ namespace Unnamed {
 				ImGui::TableNextColumn();
 				const bool visible = entity->IsVisible();
 				if (
-					ImGui::InvisibleButton(
+					ImGui::Button(
 						StrUtil::ConvertToUtf8(
 							visible ? kIconVisibility : kIconVisibilityOff
 						).c_str(),
@@ -1337,12 +1351,11 @@ namespace Unnamed {
 				ImGui::TableNextColumn();
 				const bool active = entity->IsActive();
 				if (
-					ImGui::ButtonEx(
+					ImGui::Button(
 						StrUtil::ConvertToUtf8(
 							active ? kIconCheckBoxOn : kIconCheckBoxOff
 						).c_str(),
-						fontSize,
-						ImGuiButtonFlags_
+						fontSize
 					)
 				) {
 					entity->SetActive(!active);
@@ -1364,14 +1377,13 @@ namespace Unnamed {
 				const HierarchyFolderNode& node,
 				const std::string&         folderPath
 			) {
-					bool opened = true;
 					if (!folderPath.empty()) {
 						const std::string displayName = GetFolderLeafName(
 							folderPath
 						);
 						ImGui::TableNextRow();
 						ImGui::TableNextColumn();
-						opened = ImGui::TreeNodeEx(
+						bool opened = ImGui::TreeNodeEx(
 							folderPath.c_str(),
 							ImGuiTreeNodeFlags_SpanFullWidth |
 							ImGuiTreeNodeFlags_DefaultOpen,
@@ -1444,8 +1456,8 @@ namespace Unnamed {
 
 					for (const auto& [childName, childNode] : node.children) {
 						const std::string childPath = folderPath.empty() ?
-								childName :
-								folderPath + "/" + childName;
+							childName :
+							folderPath + "/" + childName;
 						drawFolder(childNode, childPath);
 					}
 
@@ -1455,11 +1467,11 @@ namespace Unnamed {
 								                        TransformComponent>() :
 							                        nullptr;
 						const auto* parentTransform = transform ?
-								transform->Parent() :
-								nullptr;
+							transform->Parent() :
+							nullptr;
 						const UEntity* parentEntity = parentTransform ?
-								parentTransform->GetOwner() :
-								nullptr;
+							parentTransform->GetOwner() :
+							nullptr;
 						if (
 							parentEntity &&
 							std::string(parentEntity->GetFolderPath()) ==
@@ -1799,11 +1811,11 @@ namespace Unnamed {
 						(sample.historyWriteIndex + i) % sample.history->size();
 					const float value = (*sample.history)[historyIndex];
 					const float x     = paddedMinX +
-					                static_cast<float>(i) /
-					                static_cast<float>(
-						                sample.history->size() -
-						                1) *
-					                graphWidth;
+					                    static_cast<float>(i) /
+					                    static_cast<float>(
+						                    sample.history->size() -
+						                    1) *
+					                    graphWidth;
 					const float y = paddedMaxY -
 					                value / (globalMax * 1.1f) * graphHeight;
 					const ImVec2 point(
@@ -1844,7 +1856,7 @@ namespace Unnamed {
 		ImGui::End();
 	}
 
-	void UEditorRuntime::DrawViewport() {
+	void UEditorRuntime::DrawViewport(const float deltaTime) {
 		if (!ImGui::Begin("Viewport")) {
 			ImGui::End();
 			return;
@@ -1933,7 +1945,8 @@ namespace Unnamed {
 
 			mViewportPosition = {imagePos.x, imagePos.y};
 			mViewportSize     = Vec2(drawWidth, drawHeight);
-			DrawViewportOverlay();
+
+			DrawViewportOverlay(deltaTime);
 		} else {
 			mViewportLookActive = false;
 			ImGui::TextUnformatted("Scene output is not ready.");
@@ -1944,52 +1957,126 @@ namespace Unnamed {
 		ImGui::End();
 	}
 
-	void UEditorRuntime::DrawViewportOverlay() {
-		const EditorCameraComponent* camera = mEditorWorld.GetEditorCamera();
-		if (!camera || !camera->IsMoveSpeedPopupVisible()) {
-			return;
+	void UEditorRuntime::DrawViewportOverlay(const float deltaTime) {
+		{
+			const EditorCameraComponent* camera = mEditorWorld.
+				GetEditorCamera();
+			if (!camera || !camera->IsMoveSpeedPopupVisible()) {
+				return;
+			}
+
+			constexpr float windowMinWidth = 256.0f;
+
+			// 表示するテキストを作成
+			const std::string text =
+				StrUtil::ConvertToUtf8(kIconSpeed) +
+				std::format(" {:.2f}", camera->GetMoveSpeed());
+
+			// 先にテキストサイズを計算
+			const auto textSize = ImGui::CalcTextSize(text.c_str());
+
+			// ウィンドウのパディングを取得
+			const auto windowPadding = ImGui::GetStyle().WindowPadding;
+
+			// ウィンドウサイズを計算
+			const ImVec2 windowSize(
+				// 通常は最小幅を使うが、テキストが反逆してきたら媚びへつらう
+				std::max(textSize.x, windowMinWidth) + windowPadding.x,
+				textSize.y + windowPadding.y
+			);
+
+			// ウィンドウの位置をビューポートの下中央に設定
+			ImVec2 windowPos(
+				mViewportPosition.x + mViewportSize.x * 0.5f,
+				mViewportPosition.y + mViewportSize.y * 0.9f
+			);
+			windowPos.x -= windowSize.x * 0.5f;
+			windowPos.y -= windowSize.y - 8.0f;
+
+			ImGui::SetNextWindowPos(windowPos, ImGuiCond_Always);
+			ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
+
+			// camera->GetMoveSpeedPopupTimer() は 0.0f から 1.0f までの値が返る
+			// 0.75から1.0の間はフェードアウトする
+			constexpr float fadeOutStart       = 0.5f;
+			constexpr float invFadeOutDuration = 1.0f / (1.0f - fadeOutStart);
+
+			const float alphaMultiplier =
+				camera->GetMoveSpeedPopupTimer() < fadeOutStart ?
+					1.0f :
+					1.0f - (camera->GetMoveSpeedPopupTimer() - fadeOutStart) *
+					invFadeOutDuration;
+
+			// フェードもリッチに行こうズ!
+			const float alpha = Math::CubicBezier(
+				alphaMultiplier,
+				0.2f, 0.0f, 0.0f, 1.0f
+			);
+
+			ImGui::SetNextWindowBgAlpha(alpha * 0.9f);
+
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 8.0f);
+			ImGui::PushStyleVar(
+				ImGuiStyleVar_WindowPadding, ImVec2(8.0f, 8.0f)
+			);
+
+			ImGui::Begin(
+				"##editorCameraMoveSpeedPopup", nullptr,
+				ImGuiWindowFlags_NoTitleBar |
+				ImGuiWindowFlags_NoResize |
+				ImGuiWindowFlags_NoMove |
+				ImGuiWindowFlags_NoSavedSettings |
+				ImGuiWindowFlags_NoFocusOnAppearing |
+				ImGuiWindowFlags_NoScrollbar |
+				ImGuiWindowFlags_NoInputs
+			);
+
+			// テキストをウィンドウの中央に配置
+			ImGui::SetCursorPos(
+				ImVec2(
+					(windowSize.x - textSize.x) * 0.5f,
+					(windowSize.y - textSize.y) * 0.25f
+				)
+			);
+			ImGui::TextUnformatted(text.c_str());
+
+			// 速度は0.125fから65536.0f までの範囲。
+			// 0.125fのときはバーが空、65536.0fのときはバーが満タンになるようにする。
+			static float currentProgress = 0.0f;
+			float        progress;
+			if (camera->GetMoveSpeed() <= 0.125f) {
+				progress = 0.0f;
+			} else if (
+				camera->GetMoveSpeed() >= 65536.0f) {
+				progress = 1.0f;
+			} else {
+				const float logMin   = std::log2(0.125f);
+				const float logMax   = std::log2(65536.0f);
+				const float logValue = std::log2(camera->GetMoveSpeed());
+				progress             = (logValue - logMin) / (logMax - logMin);
+			}
+
+			float t = Math::CubicBezier(
+				20.0f * deltaTime, 0.2f, 0.0f, 0.0f, 1.0f
+			);
+
+			currentProgress = std::lerp(currentProgress, progress, t);
+
+			ImGui::SetCursorPosY(
+				ImGui::GetCursorPosY() + ImGui::GetContentRegionAvail().y - 4.0f
+			);
+
+			ImGui::ProgressBar(
+				currentProgress, ImVec2(
+					ImGui::GetContentRegionAvail().x,
+					4.0f
+				),
+				""
+			);
+
+			ImGui::End();
+			ImGui::PopStyleVar(2);
 		}
-
-		constexpr ImVec2 windowSize(256.0f, 32.0f);
-		constexpr float  iconScale = 0.1f;
-
-		ImVec2 windowPos(
-			mViewportPosition.x + mViewportSize.x * 0.5f,
-			mViewportPosition.y + mViewportSize.y * iconScale
-		);
-		windowPos.x -= windowSize.x * 0.5f;
-		windowPos.y -= windowSize.y * 0.5f;
-
-		const std::string text = StrUtil::ConvertToUtf8(kIconSpeed) +
-		                         std::format(" {:.2f}", camera->GetMoveSpeed());
-		const ImVec2 textSize = ImGui::CalcTextSize(text.c_str());
-
-		ImGui::SetNextWindowPos(windowPos, ImGuiCond_Always);
-		ImGui::SetNextWindowSize(windowSize, ImGuiCond_Always);
-		ImGui::SetNextWindowViewport(ImGui::GetWindowViewport()->ID);
-		ImGui::SetNextWindowBgAlpha(0.9f);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 16.0f);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-
-		ImGui::Begin(
-			"##editorCameraMoveSpeedPopup", nullptr,
-			ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-			ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
-			ImGuiWindowFlags_NoBringToFrontOnFocus |
-			ImGuiWindowFlags_NoFocusOnAppearing |
-			ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoInputs
-		);
-
-		ImGui::SetCursorPos(
-			ImVec2(
-				(windowSize.x - textSize.x) * 0.5f,
-				(windowSize.y - textSize.y) * 0.5f
-			)
-		);
-		ImGui::TextUnformatted(text.c_str());
-
-		ImGui::End();
-		ImGui::PopStyleVar(2);
 	}
 
 	UEntity* UEditorRuntime::GetSelectedEntity() const {

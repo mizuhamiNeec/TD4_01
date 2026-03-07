@@ -5,6 +5,8 @@
 #include <d3d12.h>
 #include <string>
 
+#include "EditorNotification.h"
+
 #include "core/math/Vec2.h"
 
 #include "engine/Properties.h"
@@ -46,7 +48,7 @@ namespace Unnamed {
 		void BeginUI();
 
 		/// @brief UIの構築と描画を行います。
-		void BuildUi();
+		void BuildUi(float deltaTime);
 
 		/// @brief 現在のシーンレンダリング要求を取得します。
 		/// @return 現在のシーンレンダリング要求
@@ -107,9 +109,9 @@ namespace Unnamed {
 		/// @brief プロファイラウィンドウを描画します。
 		void DrawProfilerWindow();
 		/// @brief ビューポートを描画します。
-		void DrawViewport();
+		void DrawViewport(float deltaTime);
 		/// @brief ビューポート上のオーバーレイを描画します。
-		void DrawViewportOverlay();
+		void DrawViewportOverlay(float deltaTime);
 
 		/// @brief 現在選択されているエンティティを取得します。
 		[[nodiscard]] UEntity* GetSelectedEntity() const;
@@ -142,10 +144,15 @@ namespace Unnamed {
 		Vec2 mSceneSize = Vec2(kClientWidth, kClientHeight);
 		uint32_t mSceneTextureId = 0;
 
-		float mGridSnap           = 64.0f;
-		float mAngleSnapDegree    = 15.0f;
-		bool  mShowProfilerWindow = false;
-		bool  mViewportLookActive = false;
+		std::unique_ptr<EditorNotification> mNotification;
+
+		float mGridSnap        = 64.0f;
+		float mAngleSnapDegree = 15.0f;
+
+		float mCameraSpeedPopupTimer = 0.0f;
+
+		bool mShowProfilerWindow = false;
+		bool mViewportLookActive = false;
 	};
 }
 

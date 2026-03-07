@@ -61,6 +61,8 @@ namespace ImGuiUtil {
 		colors[ImGuiCol_NavWindowingHighlight] = {0.89f, 0.49f, 0.02f, 0.70f};
 		colors[ImGuiCol_NavWindowingDimBg]     = {0.17f, 0.17f, 0.17f, 0.86f};
 		colors[ImGuiCol_ModalWindowDimBg]      = {0.17f, 0.17f, 0.17f, 0.86f};
+		colors[ImGuiCol_DragDropTarget]        = {0.89f, 0.49f, 0.02f, 0.90f};
+		colors[ImGuiCol_PlotHistogram]         = {0.89f, 0.49f, 0.02f, 1.00f};
 
 		// Main
 		style.WindowPadding    = {4, 4};

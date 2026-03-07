@@ -18,15 +18,6 @@ namespace Unnamed {
 	static constexpr uint32_t kHistoryBufferSize = 64;
 	static constexpr auto kConsoleUIContextPopupId = "##ConsoleUIContextMenu";
 
-	constexpr Vec4 kConTextColor        = {0.71f, 0.71f, 0.72f, 1.0f};
-	constexpr Vec4 kConTextColorDev     = {0.18f, 0.55f, 0.18f, 1.0f};
-	constexpr Vec4 kConTextColorWarn    = {0.93f, 0.79f, 0.09f, 1.0f};
-	constexpr Vec4 kConTextColorError   = {0.71f, 0.25f, 0.25f, 1.0f};
-	constexpr Vec4 kConTextColorFatal   = {0.71f, 0.0f, 0.0f, 1.0f};
-	constexpr Vec4 kConTextColorExec    = {0.8f, 1.0f, 1.0f, 1.0f};
-	constexpr Vec4 kConTextColorWait    = {0.93f, 0.79f, 0.09f, 1.0f};
-	constexpr Vec4 kConTextColorSuccess = {0.48f, 0.76f, 0.26f, 1.0f};
-
 	namespace {
 		/// @brief コンソールUIのデータ構造体
 		struct ConsoleUIData {

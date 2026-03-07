@@ -188,129 +188,6 @@ namespace Unnamed {
 		return value;
 	}
 
-	/// @brief コマンド引数から変数に値をセットします。
-	/// @param var 対象の変数
-	/// @param args コマンド引数のベクター
-	void SetVarFromArgs(
-		UnnamedConCommandBase* var, const std::vector<std::string>& args
-	) {
-		// 変数が存在しない、または引数が空の場合は何もしない
-		if (!var || args.empty()) {
-			return;
-		}
-
-		switch (GetConVarType(var)) {
-			case CVAR_TYPE::BOOL: {
-				if (
-					auto* cBool = dynamic_cast<UnnamedConVar<bool>*>(var)
-				) {
-					cBool->SetValue(StrUtil::CheckBoolString(args[0]));
-				}
-				break;
-			}
-			case CVAR_TYPE::INT: {
-				if (
-					auto* ci = dynamic_cast<UnnamedConVar<int>*>(var)
-				) {
-					int value = std::stoi(args[0]);
-					// 最小値または最大値が設定されている場合はクランプする
-					if (ci->HasMinValue() || ci->HasMaxValue()) {
-						value = ClampConVarValue(
-							ci,
-							value,
-							ci->GetMinValue(),
-							ci->GetMaxValue()
-						);
-					}
-					ci->SetValue(value);
-				}
-				break;
-			}
-			case CVAR_TYPE::FLOAT: {
-				if (
-					auto* cf = dynamic_cast<UnnamedConVar<float>*>(var)
-				) {
-					float value = std::stof(args[0]);
-					// 最小値または最大値が設定されている場合はクランプする
-					if (cf->HasMinValue() || cf->HasMaxValue()) {
-						value = ClampConVarValue(
-							cf,
-							value,
-							cf->GetMinValue(),
-							cf->GetMaxValue()
-						);
-					}
-					cf->SetValue(value);
-				}
-				break;
-			}
-			case CVAR_TYPE::DOUBLE: {
-				if (
-					auto* cd = dynamic_cast<UnnamedConVar<double>*>(var)
-				) {
-					double value = std::stof(args[0]);
-					// 最小値または最大値が設定されている場合はクランプする
-					if (cd->HasMinValue() || cd->HasMaxValue()) {
-						value = ClampConVarValue(
-							cd,
-							value,
-							cd->GetMinValue(),
-							cd->GetMaxValue()
-						);
-					}
-					cd->SetValue(value);
-				}
-				break;
-			}
-			case CVAR_TYPE::STRING: {
-				if (
-					auto* cs =
-						dynamic_cast<UnnamedConVar<std::string>*>(var)
-				) {
-					std::string combined;
-					for (size_t i = 0; i < args.size(); ++i) {
-						combined += args[i];
-						if (i + 1 < args.size()) {
-							combined += " ";
-						}
-					}
-					cs->SetValue(combined);
-				}
-				break;
-			}
-			case CVAR_TYPE::VEC3: {
-				if (args.size() >= 3) {
-					if (
-						auto* cv3 = dynamic_cast<UnnamedConVar<Vec3>*>(var)
-					) {
-						bool ok = true;
-						for (const auto& arg : args | std::views::take(3)) {
-							ok &= StrUtil::IsFloat(arg);
-						}
-						if (ok) {
-							cv3->SetValue(
-								Vec3(
-									std::stof(args[0]),
-									std::stof(args[1]),
-									std::stof(args[2])
-								)
-							);
-						}
-					}
-				}
-				break;
-			}
-			case CVAR_TYPE::NONE:
-			default: {
-				SpecialMsg(
-					LogLevel::Error, "", "Unknown variable type for '{}'.",
-					var->GetName()
-				);
-				break;
-			}
-		}
-	}
-
 	static std::string GetVarValueString(UnnamedConCommandBase* var) {
 		if (!var) {
 			return {};
@@ -477,6 +354,17 @@ namespace Unnamed {
 
 				const auto* cmd = dynamic_cast<UnnamedConCommand*>(base);
 
+				if (cmd->HasFlags(FCVAR::NOTIFY)) {
+					ExecuteCommand(
+						std::format(
+							"notify info 5 Command '{}' executed.",
+							cmd->GetName()
+						),
+						EXEC_FLAG::SILENT
+
+					);
+				}
+
 				// コールバックを実行
 				if (cmd->onExecute(args)) {
 					// 実行が完了したら完了時のコールバックを呼ぶ
@@ -623,5 +511,193 @@ namespace Unnamed {
 			},
 			"Clears the console output."
 		);
+	}
+
+	void ConsoleSystem::SetVarFromArgs(
+		UnnamedConCommandBase* var, const std::vector<std::string>& args
+	) {
+		// 変数が存在しない、または引数が空の場合は何もしない
+		if (!var || args.empty()) {
+			return;
+		}
+
+		switch (GetConVarType(var)) {
+			case CVAR_TYPE::BOOL: {
+				if (
+					auto* cBool = dynamic_cast<UnnamedConVar<bool>*>(var)
+				) {
+					const bool newValue = StrUtil::CheckBoolString(args[0]);
+
+					if (cBool->HasFlags(FCVAR::NOTIFY)) {
+						ExecuteCommand(
+							std::format(
+								"notify info 5 ConVar '{}' changed | '{}' → '{}'",
+								cBool->GetName(),
+								cBool->GetValue() ? "true" : "false",
+								newValue ?
+									"true" :
+									"false"
+							),
+							EXEC_FLAG::SILENT
+						);
+					}
+
+					cBool->SetValue(newValue);
+				}
+				break;
+			}
+			case CVAR_TYPE::INT: {
+				if (
+					auto* ci = dynamic_cast<UnnamedConVar<int>*>(var)
+				) {
+					int value = std::stoi(args[0]);
+					// 最小値または最大値が設定されている場合はクランプする
+					if (ci->HasMinValue() || ci->HasMaxValue()) {
+						value = ClampConVarValue(
+							ci,
+							value,
+							ci->GetMinValue(),
+							ci->GetMaxValue()
+						);
+					}
+
+					if (ci->HasFlags(FCVAR::NOTIFY)) {
+						ExecuteCommand(
+							std::format(
+								"notify info 5 ConVar '{}' changed | '{}' → '{}'",
+								ci->GetName(),
+								ci->GetValue(),
+								value
+							),
+							EXEC_FLAG::SILENT
+						);
+					}
+
+					ci->SetValue(value);
+				}
+				break;
+			}
+			case CVAR_TYPE::FLOAT: {
+				if (
+					auto* cf = dynamic_cast<UnnamedConVar<float>*>(var)
+				) {
+					float value = std::stof(args[0]);
+					// 最小値または最大値が設定されている場合はクランプする
+					if (cf->HasMinValue() || cf->HasMaxValue()) {
+						value = ClampConVarValue(
+							cf,
+							value,
+							cf->GetMinValue(),
+							cf->GetMaxValue()
+						);
+					}
+
+					if (cf->HasFlags(FCVAR::NOTIFY)) {
+						ExecuteCommand(
+							std::format(
+								"notify info 5 ConVar '{}' changed | '{}' → '{}'",
+								cf->GetName(),
+								cf->GetValue(),
+								value
+							),
+							EXEC_FLAG::SILENT
+						);
+					}
+
+					cf->SetValue(value);
+				}
+				break;
+			}
+			case CVAR_TYPE::DOUBLE: {
+				if (
+					auto* cd = dynamic_cast<UnnamedConVar<double>*>(var)
+				) {
+					double value = std::stof(args[0]);
+					// 最小値または最大値が設定されている場合はクランプする
+					if (cd->HasMinValue() || cd->HasMaxValue()) {
+						value = ClampConVarValue(
+							cd,
+							value,
+							cd->GetMinValue(),
+							cd->GetMaxValue()
+						);
+					}
+
+					if (cd->HasFlags(FCVAR::NOTIFY)) {
+						ExecuteCommand(
+							std::format(
+								"notify info 5 ConVar '{}' changed | '{}' → '{}'",
+								cd->GetName(),
+								cd->GetValue(),
+								value
+							),
+							EXEC_FLAG::SILENT
+						);
+					}
+
+					cd->SetValue(value);
+				}
+				break;
+			}
+			case CVAR_TYPE::STRING: {
+				if (
+					auto* cs =
+						dynamic_cast<UnnamedConVar<std::string>*>(var)
+				) {
+					std::string combined;
+					for (size_t i = 0; i < args.size(); ++i) {
+						combined += args[i];
+						if (i + 1 < args.size()) {
+							combined += " ";
+						}
+					}
+
+					if (cs->HasFlags(FCVAR::NOTIFY)) {
+						ExecuteCommand(
+							std::format(
+								"notify info 5 ConVar '{}' changed | '{}' → '{}'",
+								cs->GetName(),
+								cs->GetValue(),
+								combined
+							),
+							EXEC_FLAG::SILENT
+						);
+					}
+
+					cs->SetValue(combined);
+				}
+				break;
+			}
+			case CVAR_TYPE::VEC3: {
+				if (args.size() >= 3) {
+					if (
+						auto* cv3 = dynamic_cast<UnnamedConVar<Vec3>*>(var)
+					) {
+						bool ok = true;
+						for (const auto& arg : args | std::views::take(3)) {
+							ok &= StrUtil::IsFloat(arg);
+						}
+						if (ok) {
+							cv3->SetValue(
+								Vec3(
+									std::stof(args[0]),
+									std::stof(args[1]),
+									std::stof(args[2])
+								)
+							);
+						}
+					}
+				}
+				break;
+			}
+			case CVAR_TYPE::NONE:
+			default: {
+				SpecialMsg(
+					LogLevel::Error, "", "Unknown variable type for '{}'.",
+					var->GetName()
+				);
+				break;
+			}
+		}
 	}
 }

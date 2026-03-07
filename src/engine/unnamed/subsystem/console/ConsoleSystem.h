@@ -148,6 +148,13 @@ namespace Unnamed {
 		/// @brief 一般コマンドを登録します
 		void RegisterCommonCommands();
 
+		/// @brief コマンド引数から変数に値をセットします。
+		/// @param var 対象の変数
+		/// @param args コマンド引数のベクター
+		void SetVarFromArgs(
+			UnnamedConCommandBase* var, const std::vector<std::string>& args
+		);
+
 		// ログのリングバッファ
 		RingBuffer<ConsoleLogText, kConsoleBufferSize> mLogBuffer;
 

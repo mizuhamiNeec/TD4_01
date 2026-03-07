@@ -424,7 +424,7 @@ namespace Unnamed {
 					UProfiler::ScopeTimer scope(
 						mProfiler.get(), "Editor.BuildUi"
 					);
-					mUEditorRuntime->BuildUi();
+					mUEditorRuntime->BuildUi(deltaTime);
 				}
 			}
 			{

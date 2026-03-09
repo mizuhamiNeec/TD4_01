@@ -80,6 +80,7 @@ namespace Unnamed {
 		std::unique_ptr<class TimeSystem>   mTimeSystem;
 		std::unique_ptr<class UInputSystem> mInputSystem;
 		std::unique_ptr<class UProfiler>    mProfiler;
+		std::unique_ptr<class Profiler>    mProfiler;
 
 		std::unique_ptr<Rhi::IRhiDevice>      mRhiDevice;
 		std::unique_ptr<Render::RenderModule> mRenderModule;

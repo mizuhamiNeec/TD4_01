@@ -20,7 +20,7 @@
 #include <engine/editor/UEditorRuntime.h>
 #include <engine/Platform/PlatformEventsImpl.h>
 #include <engine/Platform/WindowManager.h>
-#include <engine/profiler/UProfiler.h>
+#include <engine/profiler/Profiler.h>
 #include <engine/render/RenderModule.h>
 #include <engine/render/frame/RenderFrameContext.h>
 #include <engine/render/frame/RenderFrameInputs.h>
@@ -201,6 +201,8 @@ namespace Unnamed {
 
 		mProfiler = std::make_unique<UProfiler>();
 		ServiceLocator::Register<UProfiler>(mProfiler.get());
+		mProfiler = std::make_unique<Profiler>();
+		ServiceLocator::Register<Profiler>(mProfiler.get());
 
 		// InputSystemの初期化
 		mInputSystem = std::make_unique<UInputSystem>();
@@ -314,8 +316,8 @@ namespace Unnamed {
 
 		// 入力システムの更新
 		{
-			UProfiler::ScopeTimer scope(mProfiler.get(), "Input.Update");
-			mInputSystem->Update(deltaTime);
+			Profiler::ScopeTimer scope(mProfiler.get(), "Input.Update");
+			mInputSystem->Update(unscaledDeltaTime);
 		}
 
 		// アセットのホットリロードのポーリング
@@ -332,7 +334,7 @@ namespace Unnamed {
 				mAssetHotReloadPollAccumulator >=
 				hotreloadpollinterval->GetValue()
 			) {
-				UProfiler::ScopeTimer scope(
+				Profiler::ScopeTimer scope(
 					mProfiler.get(), "Asset.PollHotReload"
 				);
 				mAssetManager->PollSourceChanges();
@@ -342,7 +344,7 @@ namespace Unnamed {
 
 		// マウスカーソルのロックと表示状態の確認
 		{
-			UProfiler::ScopeTimer scope(mProfiler.get(), "Input.MouseLock");
+			Profiler::ScopeTimer scope(mProfiler.get(), "Input.MouseLock");
 			mInputSystem->CheckMouseCursorLockAndVisibility(
 				mWindowManager->FindWindowById(
 					mWindowManager->GetMainWindowId()
@@ -353,7 +355,7 @@ namespace Unnamed {
 #ifdef _DEBUG
 		// Update内でImGuiを使えるように更新前にフレーム開始
 		if (mUImGuiLayer) {
-			UProfiler::ScopeTimer scope(mProfiler.get(), "ImGui.BeginFrame");
+			Profiler::ScopeTimer scope(mProfiler.get(), "ImGui.BeginFrame");
 			auto& dx = dynamic_cast<Rhi::D3D12Device&>(*mRhiDevice);
 			mUImGuiLayer->BeginFrame(dx.GetCurrentFrameIndex());
 		}
@@ -362,7 +364,7 @@ namespace Unnamed {
 				mUEditorRuntime->GetPresentMode() ==
 				EDITOR_PRESENT_MODE::VIEWPORT_PANEL
 			) {
-				UProfiler::ScopeTimer scope(mProfiler.get(), "Editor.BeginUI");
+				Profiler::ScopeTimer scope(mProfiler.get(), "Editor.BeginUI");
 				mUEditorRuntime->BeginUI();
 			}
 		}
@@ -371,17 +373,23 @@ namespace Unnamed {
 		/* ----------- 更新処理 ---------- */
 
 		{
-			UProfiler::ScopeTimer scope(mProfiler.get(), "Console.Update");
-			mConsoleSystem->Update(deltaTime);
+			Profiler::ScopeTimer scope(mProfiler.get(), "Console.Update");
+			mConsoleSystem->Update(unscaledDeltaTime);
 		}
 		{
-			UProfiler::ScopeTimer scope(mProfiler.get(), "Terminal.Update");
-			mTerminalSystem->Update(deltaTime);
+			Profiler::ScopeTimer scope(mProfiler.get(), "Terminal.Update");
+			mTerminalSystem->Update(unscaledDeltaTime);
+		}
+		{
+			Profiler::ScopeTimer scope(mProfiler.get(), "Physics.Update");
+			if (mPhysicsEngine) {
+				mPhysicsEngine->Update(unscaledDeltaTime);
+			}
 		}
 
 		// ワールドの更新
 		{
-			UProfiler::ScopeTimer scope(mProfiler.get(), "World.Tick");
+			Profiler::ScopeTimer scope(mProfiler.get(), "World.Tick");
 			if (mWorld) {
 				mWorld->Tick(deltaTime);
 			}
@@ -402,7 +410,7 @@ namespace Unnamed {
 		}
 #endif
 		if (mWorld && mRenderFrameContext) {
-			UProfiler::ScopeTimer scope(
+			Profiler::ScopeTimer scope(
 				mProfiler.get(), "World.FillRenderFrameInputs"
 			);
 			mWorld->FillRenderFrameInputs(
@@ -421,21 +429,21 @@ namespace Unnamed {
 						mRenderModule->GetSceneOutputView(),
 						mRenderModule->GetSceneOutputSize()
 					);
-					UProfiler::ScopeTimer scope(
+					Profiler::ScopeTimer scope(
 						mProfiler.get(), "Editor.BuildUi"
 					);
 					mUEditorRuntime->BuildUi(deltaTime);
 				}
 			}
 			{
-				UProfiler::ScopeTimer scope(mProfiler.get(), "ImGui.EndFrame");
+				Profiler::ScopeTimer scope(mProfiler.get(), "ImGui.EndFrame");
 				mUImGuiLayer->EndFrame();
 			}
 		}
 #endif
 
 		{
-			UProfiler::ScopeTimer scope(mProfiler.get(), "Render.Tick");
+			Profiler::ScopeTimer scope(mProfiler.get(), "Render.Tick");
 			mRenderModule->Tick(inputs);
 		}
 

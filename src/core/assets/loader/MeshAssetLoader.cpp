@@ -14,7 +14,7 @@
 #include "core/assets/types/MeshAssetData.h"
 #include "core/string/StrUtil.h"
 
-#include "engine/profiler/UProfiler.h"
+#include "engine/profiler/Profiler.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 
@@ -210,8 +210,8 @@ namespace Unnamed {
 			return r;
 		}
 
-		UProfiler*            profiler = ServiceLocator::Get<UProfiler>();
-		UProfiler::ScopeTimer assimpScope(profiler, "MeshImport.Assimp");
+		Profiler*            profiler = ServiceLocator::Get<Profiler>();
+		Profiler::ScopeTimer assimpScope(profiler, "MeshImport.Assimp");
 
 		Assimp::Importer importer;
 		// ここでは ReadFile を1回に統一する。
@@ -477,7 +477,7 @@ namespace Unnamed {
 		out.resolveName = std::filesystem::path(path).filename().string();
 		out.stamp       = sourceStamp;
 
-		if (UProfiler* profiler = ServiceLocator::Get<UProfiler>()) {
+		if (Profiler* profiler = ServiceLocator::Get<Profiler>()) {
 			profiler->AddSample("MeshImport.CacheRead", 1.0f);
 		}
 		return true;
@@ -551,7 +551,7 @@ namespace Unnamed {
 			}
 		}
 
-		if (UProfiler* profiler = ServiceLocator::Get<UProfiler>()) {
+		if (Profiler* profiler = ServiceLocator::Get<Profiler>()) {
 			profiler->AddSample("MeshImport.CacheWrite", 1.0f);
 		}
 		return static_cast<bool>(ofs);

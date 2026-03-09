@@ -8,7 +8,7 @@
 #include <core/UnnamedMacro.h>
 #include <core/string/StrUtil.h>
 
-#include <engine/profiler/UProfiler.h>
+#include <engine/profiler/Profiler.h>
 #include <engine/unnamed/subsystem/console/Log.h>
 #include <engine/unnamed/subsystem/interface/ServiceLocator.h>
 
@@ -80,7 +80,7 @@ namespace Unnamed {
 		const std::optional<ASSET_TYPE> typeOpt,
 		const AssetLoadPolicy           policy
 	) {
-		UProfiler*        profiler = ServiceLocator::Get<UProfiler>();
+		Profiler*        profiler = ServiceLocator::Get<Profiler>();
 		std::scoped_lock  lock(mMutex);
 		const std::string normalizedPath = StrUtil::NormalizePath(path);
 
@@ -340,8 +340,8 @@ namespace Unnamed {
 	}
 
 	bool AssetManager::ReloadWithDependents(const AssetID id) {
-		UProfiler*            profiler = ServiceLocator::Get<UProfiler>();
-		UProfiler::ScopeTimer scope(profiler, "Asset.ReloadWithDependents");
+		Profiler*            profiler = ServiceLocator::Get<Profiler>();
+		Profiler::ScopeTimer scope(profiler, "Asset.ReloadWithDependents");
 		if (!Reload(id)) {
 			return false;
 		}

@@ -30,7 +30,7 @@
 #include <engine/rhi/d3d12/D3D12Util.h>
 #include <engine/rhi/interface/IRhiDevice.h>
 #include <engine/ui/UImGuiLayer.h>
-#include <engine/unnamed/framework/entity/UEntity.h>
+#include <engine/unnamed/framework/entity/Entity.h>
 #include <engine/unnamed/subsystem/console/concommand/UnnamedConCommand.h>
 #include <engine/unnamed/subsystem/input/device/keyboard/KeyboardDevice.h>
 #include <engine/unnamed/subsystem/input/device/mouse/MouseDevice.h>

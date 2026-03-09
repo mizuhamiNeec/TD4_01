@@ -7,7 +7,7 @@
 namespace Unnamed {
 	class UWorld;
 	class UScene;
-	class UEntity;
+	class Entity;
 	class JsonWriter;
 	class JsonReader;
 
@@ -66,11 +66,11 @@ namespace Unnamed {
 
 		/// @brief このコンポーネントを所有しているエンティティを取得します。
 		/// @return 所有しているエンティティのポインタ
-		[[nodiscard]] UEntity* GetOwner() const;
+		[[nodiscard]] Entity* GetOwner() const;
 
 		/// @brief このコンポーネントを所有しているエンティティを設定します。
 		/// @param owner 所有するエンティティのポインタ
-		void SetOwner(UEntity* owner);
+		void SetOwner(Entity* owner);
 
 		/// @brief このコンポーネントが所属するシーンを取得します。
 		/// @return 所属するシーンのポインタ
@@ -101,7 +101,7 @@ namespace Unnamed {
 		[[nodiscard]] TypeId GetTypeId() const;
 
 	protected:
-		UEntity* mOwner = nullptr; // 所有しているエンティティ
+		Entity* mOwner = nullptr; // 所有しているエンティティ
 		uint64_t mGuid  = 0;       // GUID
 
 		bool mIsActive = true; // アクティブか?

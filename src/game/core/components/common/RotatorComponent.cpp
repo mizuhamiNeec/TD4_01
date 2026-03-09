@@ -8,7 +8,7 @@
 #include "core/math/Quaternion.h"
 
 #include "engine/unnamed/framework/components/TransformComponent.h"
-#include "engine/unnamed/framework/entity/UEntity.h"
+#include "engine/unnamed/framework/entity/Entity.h"
 
 namespace Unnamed {
 	void RotateComponent::PrePhysicsTick(const float deltaTime) {

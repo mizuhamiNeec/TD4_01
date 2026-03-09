@@ -11,7 +11,7 @@
 #include "core/math/Quaternion.h"
 
 #include "engine/unnamed/framework/components/TransformComponent.h"
-#include "engine/unnamed/framework/entity/UEntity.h"
+#include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
 #include "engine/unnamed/subsystem/console/concommand/UnnamedConVar.h"
 #include "engine/unnamed/subsystem/input/UInputSystem.h"
@@ -184,7 +184,7 @@ namespace Unnamed {
 	}
 
 	TransformComponent* CameraRotatorComponent::GetTransform() const {
-		UEntity* owner = GetOwner();
+		Entity* owner = GetOwner();
 		return owner ? owner->GetComponent<TransformComponent>() : nullptr;
 	}
 

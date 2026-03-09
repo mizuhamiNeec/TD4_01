@@ -12,22 +12,25 @@
 
 
 namespace Unnamed {
-	/// @class UEntity
+	class UWorld;
+	class UScene;
+
+	/// @class Entity
 	/// @brief エンティティはゲームの基本オブジェクトです。
 	/// ゲーム内に登場したり、ロジックを持つオブジェクトを表します。
 	/// "ECSとは一切関係ありません"
-	class UEntity {
+	class Entity {
 	public:
 		/// @brief コンストラクタ
 		/// @param name エンティティの名前
 		/// @param guid エンティティのGUID
 		/// @param isEditorOnly エディター専用か?
-		explicit UEntity(
+		explicit Entity(
 			const std::string_view& name, uint64_t guid,
 			bool                    isEditorOnly = false
 		);
 
-		~UEntity();
+		~Entity();
 
 		/// @brief エンティティが登録されたときに呼び出されます。
 		void OnRegister();
@@ -107,10 +110,47 @@ namespace Unnamed {
 		template <typename ComponentType, typename... Args>
 		[[nodiscard]] ComponentType* GetOrAddComponent(Args&&... args);
 
+		/// @brief 指定した型のコンポーネントを検索します。
+		/// @tparam ComponentType 検索するコンポーネントの型
+		/// @return 見つかったコンポーネントのポインタ。存在しない場合は nullptr。
+		template <typename ComponentType>
+		[[nodiscard]] ComponentType* FindComponentByBase();
+
+		/// @brief 指定した型のコンポーネントを検索します。(const版)
+		/// @tparam ComponentType 検索するコンポーネントの型
+		/// @return 見つかったコンポーネントのポインタ。存在しない場合は nullptr。
+		template <typename ComponentType>
+		[[nodiscard]] const ComponentType* FindComponentByBase() const;
+
+		/// @brief 指定した型のすべてのコンポーネントを検索します。
+		/// @tparam ComponentType 検索するコンポーネントの型
+		/// @param out 見つかったコンポーネントのポインタを格納するベクター
+		template <typename ComponentType>
+		void FindComponentsByBase(std::vector<ComponentType*>& out);
+
+		/// @brief 指定した型のすべてのコンポーネントを検索します。(const版)
+		/// @tparam ComponentType 検索するコンポーネントの型
+		/// @param out 見つかったコンポーネントのポインタを格納するベクター
+		template <typename ComponentType>
+		void FindComponentsByBase(std::vector<const ComponentType*>& out) const;
+
+		template <typename ComponentType>
+
 		/// @brief コンポーネントを削除します。
 		/// @param component 削除するコンポーネントのポインタ
-		void RemoveComponent(UBaseComponent* component);
 		void RemoveComponent(BaseComponent* component);
+
+		/// @brief エンティティが所属するシーンを取得します。
+		/// @return 所属するシーンのポインタ。存在しない場合は nullptr。
+		[[nodiscard]] UScene* GetScene() const noexcept;
+
+		/// @brief エンティティが所属するシーンを設定します。
+		/// @param scene 所属するシーンのポインタ
+		void SetScene(UScene* scene) noexcept;
+
+		/// @brief エンティティが所属するワールドを取得します。
+		/// @return 所属するワールドのポインタ。存在しない場合は nullptr。
+		[[nodiscard]] UWorld* GetWorld() const noexcept;
 
 		/// @brief エンティティの名前を取得します。
 		/// @return エンティティの名前
@@ -178,17 +218,18 @@ namespace Unnamed {
 		std::unordered_map<TypeId, std::vector<BaseComponent*>>
 		mComponentsByType;
 
-		std::string mName = "unnamed";     // 名前
-		std::string mFolderPath;           // エディタ階層上のフォルダパス
-		uint64_t    mGuid         = 0;     // GUID
-		bool        mIsEditorOnly = false; // エディター専用か?
-		bool        mIsActive     = true;  // アクティブか?
-		bool        mIsVisible    = true;  // レンダリング上の可視状態
-		bool        mDestroyed    = false; // OnDestroy二重呼び出し防止
+		std::string mName = "unnamed";       // 名前
+		std::string mFolderPath;             // エディタ階層上のフォルダパス
+		UScene*     mScene        = nullptr; // 所属しているシーン
+		uint64_t    mGuid         = 0;       // GUID
+		bool        mIsEditorOnly = false;   // エディター専用か?
+		bool        mIsActive     = true;    // アクティブか?
+		bool        mIsVisible    = true;    // レンダリング上の可視状態
+		bool        mDestroyed    = false;   // OnDestroy二重呼び出し防止
 	};
 
 	template <typename ComponentType, typename... Args>
-	ComponentType* UEntity::AddComponent(Args&&... args) {
+	ComponentType* Entity::AddComponent(Args&&... args) {
 		static_assert(
 			std::is_base_of_v<BaseComponent, ComponentType>,
 			"T は BaseComponent の派生クラスでなければなりません。"
@@ -217,7 +258,7 @@ namespace Unnamed {
 	}
 
 	template <typename ComponentType>
-	ComponentType* UEntity::GetComponent() {
+	ComponentType* Entity::GetComponent() {
 		static_assert(
 			std::is_base_of_v<BaseComponent, ComponentType>,
 			"ComponentType は BaseComponent の派生クラスでなければなりません。"
@@ -237,7 +278,7 @@ namespace Unnamed {
 	}
 
 	template <typename ComponentType>
-	const ComponentType* UEntity::GetComponent() const {
+	const ComponentType* Entity::GetComponent() const {
 		static_assert(
 			std::is_base_of_v<BaseComponent, ComponentType>,
 			"T は BaseComponent の派生クラスでなければなりません。"
@@ -257,7 +298,7 @@ namespace Unnamed {
 	}
 
 	template <typename ComponentType>
-	void UEntity::GetComponents(std::vector<ComponentType*>& out) {
+	void Entity::GetComponents(std::vector<ComponentType*>& out) {
 		static_assert(
 			std::is_base_of_v<BaseComponent, ComponentType>,
 			"T は BaseComponent の派生クラスでなければなりません。"
@@ -281,7 +322,7 @@ namespace Unnamed {
 	}
 
 	template <typename ComponentType>
-	void UEntity::GetComponents(std::vector<const ComponentType*>& out) const {
+	void Entity::GetComponents(std::vector<const ComponentType*>& out) const {
 		static_assert(
 			std::is_base_of_v<BaseComponent, ComponentType>,
 			"T は BaseComponent の派生クラスでなければなりません。"
@@ -305,15 +346,127 @@ namespace Unnamed {
 	}
 
 	template <typename ComponentType, typename... Args>
-	ComponentType* UEntity::GetOrAddComponent(Args&&... args) {
+	ComponentType* Entity::GetOrAddComponent(Args&&... args) {
 		if (auto* component = GetComponent<ComponentType>()) {
 			return component;
 		}
 		return AddComponent<ComponentType>(std::forward<Args>(args)...);
 	}
 
+	template <typename ComponentType>
+	ComponentType* Entity::FindComponentByBase() {
+		static_assert(
+			std::is_base_of_v<BaseComponent, ComponentType>,
+			"ComponentType は BaseComponent の派生クラスでなければなりません。"
+		);
+
+		for (const auto& uptr : mComponents) {
+			BaseComponent* c = uptr.get();
+			if (!c) {
+				continue;
+			}
+			if (auto* casted = dynamic_cast<ComponentType*>(c)) {
+				return casted;
+			}
+		}
+		return nullptr;
+	}
+
+	template <typename ComponentType>
+	const ComponentType* Entity::FindComponentByBase() const {
+		static_assert(
+			std::is_base_of_v<BaseComponent, ComponentType>,
+			"ComponentType は BaseComponent の派生クラスでなければなりません。"
+		);
+
+		for (const auto& uptr : mComponents) {
+			const BaseComponent* c = uptr.get();
+			if (!c) {
+				continue;
+			}
+			if (auto* casted = dynamic_cast<const ComponentType*>(c)) {
+				return casted;
+			}
+		}
+		return nullptr;
+	}
+
+	template <typename ComponentType>
+	void Entity::FindComponentsByBase(std::vector<ComponentType*>& out) {
+		static_assert(
+			std::is_base_of_v<BaseComponent, ComponentType>,
+			"ComponentType は BaseComponent の派生クラスでなければなりません。"
+		);
+
+		out.clear();
+		for (const auto& uptr : mComponents) {
+			BaseComponent* c = uptr.get();
+			if (!c) {
+				continue;
+			}
+			if (auto* casted = dynamic_cast<ComponentType*>(c)) {
+				out.push_back(casted);
+			}
+		}
+	}
+
+	template <typename ComponentType>
+	void Entity::FindComponentsByBase(
+		std::vector<const ComponentType*>& out
+	) const {
+		static_assert(
+			std::is_base_of_v<BaseComponent, ComponentType>,
+			"ComponentType は BaseComponent の派生クラスでなければなりません。"
+		);
+
+		out.clear();
+		for (const auto& uptr : mComponents) {
+			const BaseComponent* c = uptr.get();
+			if (!c) {
+				continue;
+			}
+			if (auto* casted = dynamic_cast<const ComponentType*>(c)) {
+				out.push_back(casted);
+			}
+		}
+	}
+
+	template <typename ComponentType>
+	void Entity::RemoveComponent(BaseComponent* component) {
+		static_assert(
+			std::is_base_of_v<BaseComponent, ComponentType>,
+			"ComponentType は BaseComponent の派生クラスでなければなりません。"
+		);
+
+		if (!component) {
+			return;
+		}
+
+		// 所有から削除
+		auto it = std::remove_if(
+			mComponents.begin(), mComponents.end(),
+			[component](const std::unique_ptr<BaseComponent>& uptr) {
+				return uptr.get() == component;
+			}
+		);
+		if (it != mComponents.end()) {
+			mComponents.erase(it, mComponents.end());
+		}
+
+		// 型索引から削除
+		const TypeId typeId = HashTypeName(component->GetStableName());
+		auto         mapIt  = mComponentsByType.find(typeId);
+		if (mapIt != mComponentsByType.end()) {
+			auto& vec = mapIt->second;
+			std::erase(vec, component);
+			if (vec.empty()) {
+				mComponentsByType.erase(mapIt);
+			}
+		}
+	}
+
 	template <typename Func>
-	bool UEntity::ForEachComponent(Func&& func) {
+	bool Entity::ForEachComponent(Func&& func) {
 		// RemoveComponent 等で mComponents が変更される可能性に備えてスナップショットを取る
 		std::vector<BaseComponent*> snapshot;
 		snapshot.reserve(mComponents.size());
@@ -338,7 +491,7 @@ namespace Unnamed {
 	}
 
 	template <typename Func>
-	bool UEntity::ForEachComponent(Func&& func) const {
+	bool Entity::ForEachComponent(Func&& func) const {
 		std::vector<const BaseComponent*> snapshot;
 		snapshot.reserve(mComponents.size());
 		for (const auto& uptr : mComponents) {
@@ -362,7 +515,7 @@ namespace Unnamed {
 	}
 
 	template <typename ComponentType, typename Func>
-	bool UEntity::ForEachComponent(Func&& func) {
+	bool Entity::ForEachComponent(Func&& func) {
 		static_assert(
 			std::is_base_of_v<BaseComponent, ComponentType>,
 			"ComponentType は BaseComponent の派生クラスでなければなりません。"
@@ -398,7 +551,7 @@ namespace Unnamed {
 	}
 
 	template <typename ComponentType, typename Func>
-	bool UEntity::ForEachComponent(Func&& func) const {
+	bool Entity::ForEachComponent(Func&& func) const {
 		static_assert(
 			std::is_base_of_v<BaseComponent, ComponentType>,
 			"ComponentType は BaseComponent の派生クラスでなければなりません。"

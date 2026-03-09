@@ -1,6 +1,6 @@
 #include "BaseComponent.h"
 
-#include "../../entity/UEntity.h"
+#include "../../entity/Entity.h"
 
 namespace Unnamed {
 	BaseComponent::BaseComponent()  = default;
@@ -21,11 +21,11 @@ namespace Unnamed {
 	void BaseComponent::DrawInspectorImGui() {}
 #endif
 
-	UEntity* BaseComponent::GetOwner() const {
+	Entity* BaseComponent::GetOwner() const {
 		return mOwner;
 	}
 
-	void BaseComponent::SetOwner(UEntity* owner) {
+	void BaseComponent::SetOwner(Entity* owner) {
 		mOwner = owner;
 	}
 

@@ -6,7 +6,7 @@
 
 #include "engine/ImGui/ImGuiWidgets.h"
 #include "engine/scene/UScene.h"
-#include "engine/unnamed/framework/entity/UEntity.h"
+#include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 
 namespace Unnamed {
@@ -100,14 +100,14 @@ namespace Unnamed {
 		if (mPendingParentEntityGuid == 0) {
 			return;
 		}
-		const UEntity* parentEntity = scene.FindEntity(
+		const Entity* parentEntity = scene.FindEntity(
 			mPendingParentEntityGuid
 		);
 		if (!parentEntity) {
 			mPendingParentEntityGuid = 0;
 			return;
 		}
-		auto* parentTransform = const_cast<UEntity*>(parentEntity)->GetComponent
+		auto* parentTransform = const_cast<Entity*>(parentEntity)->GetComponent
 		<
 			TransformComponent>();
 		SetParent(parentTransform, false);

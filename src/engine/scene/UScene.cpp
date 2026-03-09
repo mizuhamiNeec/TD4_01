@@ -4,7 +4,7 @@
 #include <string>
 
 #include "engine/unnamed/framework/components/TransformComponent.h"
-#include "engine/unnamed/framework/entity/UEntity.h"
+#include "engine/unnamed/framework/entity/Entity.h"
 
 namespace Unnamed {
 	namespace {
@@ -86,17 +86,17 @@ namespace Unnamed {
 	UScene::UScene()  = default;
 	UScene::~UScene() = default;
 
-	UEntity& UScene::CreateEntity(
+	Entity& UScene::CreateEntity(
 		const std::string_view name, uint64_t id, bool isEditorOnly
 	) {
 		if (id == 0 || mEntityById.contains(id)) {
 			id = AllocateEntityId();
 		}
 
-		auto entity = std::make_unique<UEntity>(
+		auto entity = std::make_unique<Entity>(
 			std::string(name), id, isEditorOnly
 		);
-		UEntity* raw = entity.get();
+		Entity* raw = entity.get();
 
 		mEntities.emplace_back(std::move(entity));
 		mEntityById[id] = raw;
@@ -110,7 +110,7 @@ namespace Unnamed {
 			return;
 		}
 
-		UEntity* target = it->second;
+		Entity* target = it->second;
 
 		target->OnDestroy();
 
@@ -126,12 +126,12 @@ namespace Unnamed {
 		mEntityById.erase(it);
 	}
 
-	UEntity* UScene::FindEntity(const EntityId id) {
+	Entity* UScene::FindEntity(const EntityId id) {
 		const auto it = mEntityById.find(id);
 		return it != mEntityById.end() ? it->second : nullptr;
 	}
 
-	const UEntity* UScene::FindEntity(const EntityId id) const {
+	const Entity* UScene::FindEntity(const EntityId id) const {
 		const auto it = mEntityById.find(id);
 		return it != mEntityById.end() ? it->second : nullptr;
 	}
@@ -140,7 +140,7 @@ namespace Unnamed {
 		return mEntities.size();
 	}
 
-	const std::vector<std::unique_ptr<UEntity>>& UScene::GetEntities() const {
+	const std::vector<std::unique_ptr<Entity>>& UScene::GetEntities() const {
 		return mEntities;
 	}
 

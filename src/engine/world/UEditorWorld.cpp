@@ -7,7 +7,7 @@
 #include "engine/scene/USceneSerializer.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/framework/components/editor/EditorCameraComponent.h"
-#include "engine/unnamed/framework/entity/UEntity.h"
+#include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/unnamed/subsystem/input/UInputSystem.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
@@ -46,7 +46,7 @@ namespace Unnamed {
 		UWorld::Initialize();
 
 		if (!mEditorEntity) {
-			mEditorEntity = std::make_unique<UEntity>(
+			mEditorEntity = std::make_unique<Entity>(
 				"__EditorCameraEntity", mGuidGenerator.Alloc(), true
 			);
 			auto* transform = mEditorEntity->AddComponent<TransformComponent>();

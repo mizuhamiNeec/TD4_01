@@ -10,7 +10,7 @@ namespace Unnamed {
 
 	class UGameWorld;
 	class EditorCameraComponent;
-	class UEntity;
+	class Entity;
 
 	class UEditorWorld final : public UWorld {
 	public:
@@ -57,7 +57,7 @@ namespace Unnamed {
 			const Render::SceneRenderRequest& request
 		);
 
-		std::unique_ptr<UEntity>    mEditorEntity;
+		std::unique_ptr<Entity>    mEditorEntity;
 		std::unique_ptr<UGameWorld> mPlayWorld;
 		Render::SCENE_RENDER_MODE   mLastAspectMode =
 			Render::SCENE_RENDER_MODE::FIT_VIEWPORT;

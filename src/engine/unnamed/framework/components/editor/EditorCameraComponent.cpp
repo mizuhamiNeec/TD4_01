@@ -9,7 +9,7 @@
 #include "core/json/JsonWriter.h"
 #include "core/math/Math.h"
 
-#include "engine/unnamed/framework/entity/UEntity.h"
+#include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/unnamed/subsystem/console/concommand/UnnamedConVar.h"
@@ -361,7 +361,7 @@ namespace Unnamed {
 	}
 
 	TransformComponent* EditorCameraComponent::GetTransform() const {
-		UEntity* owner = GetOwner();
+		Entity* owner = GetOwner();
 		return owner ? owner->GetComponent<TransformComponent>() : nullptr;
 	}
 

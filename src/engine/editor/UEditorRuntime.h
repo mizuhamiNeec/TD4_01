@@ -114,7 +114,7 @@ namespace Unnamed {
 		void DrawViewportOverlay(float deltaTime);
 
 		/// @brief 現在選択されているエンティティを取得します。
-		[[nodiscard]] UEntity* GetSelectedEntity() const;
+		[[nodiscard]] Entity* GetSelectedEntity() const;
 
 		/// @brief シーンを指定されたパスに保存します。
 		/// @param path シーンを保存するパス

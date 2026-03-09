@@ -1,15 +1,16 @@
-#include "UEntity.h"
+#include "Entity.h"
 
 #include <algorithm>
 
 #include "core/guidgenerator/GuidGenerator.h"
 
+#include "engine/scene/UScene.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 
 namespace Unnamed {
-	static constexpr std::string_view kChannel = "UEntity";
+	static constexpr std::string_view kChannel = "Entity";
 
-	UEntity::UEntity(
+	Entity::Entity(
 		const std::string_view& name,
 		const uint64_t          guid,
 		const bool              isEditorOnly
@@ -18,11 +19,11 @@ namespace Unnamed {
 		mGuid(guid),
 		mIsEditorOnly(isEditorOnly) {}
 
-	UEntity::~UEntity() {
+	Entity::~Entity() {
 		OnDestroy();
 	};
 
-	void UEntity::OnRegister() {
+	void Entity::OnRegister() {
 		DevMsg(
 			kChannel,
 			"Entity '{}' (GUID: {}) registered.",
@@ -31,7 +32,7 @@ namespace Unnamed {
 		);
 	}
 
-	void UEntity::PostRegister() {
+	void Entity::PostRegister() {
 		DevMsg(
 			kChannel,
 			"Entity '{}' (GUID: {}) post-registered.",
@@ -40,73 +41,85 @@ namespace Unnamed {
 		);
 	}
 
-	void UEntity::PrePhysicsTick(const float deltaTime) const {
+	void Entity::PrePhysicsTick(const float deltaTime) const {
 		if (!mIsActive) {
 			return;
 		}
 
 		for (const auto& component : mComponents) {
-			if (!component->IsActive()) continue;
+			if (!component->IsActive()) {
+				continue;
+			}
 			component->PrePhysicsTick(deltaTime);
 		}
 	}
 
-	void UEntity::Tick(const float deltaTime) const {
+	void Entity::Tick(const float deltaTime) const {
 		if (!mIsActive) {
 			return;
 		}
 
 		for (const auto& component : mComponents) {
-			if (!component->IsActive()) continue;
+			if (!component->IsActive()) {
+				continue;
+			}
 			component->OnTick(deltaTime);
 		}
 	}
 
-	void UEntity::PostPhysicsTick(const float deltaTime) const {
+	void Entity::PostPhysicsTick(const float deltaTime) const {
 		if (!mIsActive) {
 			return;
 		}
 
 		for (const auto& component : mComponents) {
-			if (!component->IsActive()) continue;
+			if (!component->IsActive()) {
+				continue;
+			}
 			component->PostPhysicsTick(deltaTime);
 		}
 	}
 
-	void UEntity::OnPreRender() const {
+	void Entity::OnPreRender() const {
 		if (!mIsActive) {
 			return;
 		}
 
 		for (const auto& component : mComponents) {
-			if (!component->IsActive()) continue;
+			if (!component->IsActive()) {
+				continue;
+			}
 			component->OnPreRender();
 		}
 	}
 
-	void UEntity::OnRender() const {
+	void Entity::OnRender() const {
 		if (!mIsActive) {
 			return;
 		}
 
 		for (const auto& component : mComponents) {
-			if (!component->IsActive()) continue;
+			if (!component->IsActive()) {
+				continue;
+			}
 			component->OnRender();
 		}
 	}
 
-	void UEntity::OnPostRender() const {
+	void Entity::OnPostRender() const {
 		if (!mIsActive) {
 			return;
 		}
 
 		for (const auto& component : mComponents) {
-			if (!component->IsActive()) continue;
+			if (!component->IsActive()) {
+				continue;
+			}
 			component->OnPostRender();
 		}
 	}
 
-	void UEntity::OnEditorTick(const float deltaTime) const {
+	void Entity::OnEditorTick(const float deltaTime) const {
 		if (!mIsActive) {
 			return;
 		}
@@ -116,7 +129,7 @@ namespace Unnamed {
 		}
 	}
 
-	void UEntity::OnEditorRender() const {
+	void Entity::OnEditorRender() const {
 		if (!mIsActive) {
 			return;
 		}
@@ -126,7 +139,7 @@ namespace Unnamed {
 		}
 	}
 
-	void UEntity::OnDestroy() {
+	void Entity::OnDestroy() {
 		if (mDestroyed) {
 			return;
 		}
@@ -146,10 +159,12 @@ namespace Unnamed {
 		mComponentsByType.clear();
 	}
 
-	BaseComponent* UEntity::AddComponentInstance(
+	BaseComponent* Entity::AddComponentInstance(
 		std::unique_ptr<BaseComponent> component
 	) {
-		if (!component) return nullptr;
+		if (!component) {
+			return nullptr;
+		}
 
 		component->SetOwner(this);
 		BaseComponent* raw = component.get();
@@ -163,75 +178,57 @@ namespace Unnamed {
 		return raw;
 	}
 
-	void UEntity::RemoveComponent(UBaseComponent* component) {
-		if (!component) return;
-
-		// 索引から抜く
-		{
-			const auto key = component->GetTypeId();
-			const auto it  = mComponentsByType.find(key);
-			if (it != mComponentsByType.end()) {
-				auto& vec = it->second;
-				std::erase(vec, component);
-				if (vec.empty()) {
-					mComponentsByType.erase(it);
-				}
-			}
-		}
-
-		// 所有配列から抜く
-		const auto it = std::ranges::find_if(
-			mComponents,
-			[component](const std::unique_ptr<UBaseComponent>& comp) {
-				return comp.get() == component;
-			}
-		);
-
-		if (it != mComponents.end()) {
-			(*it)->OnDetached();
-			mComponents.erase(it);
-		}
+	UScene* Entity::GetScene() const noexcept {
+		return mScene;
 	}
 
-	std::string_view UEntity::GetName() const {
+	void Entity::SetScene(UScene* scene) noexcept {
+		mScene = scene;
+	}
+
+	UWorld* Entity::GetWorld() const noexcept {
+		return mScene ? mScene->GetWorld() : nullptr;
+	}
+
+	std::string_view Entity::GetName() const {
 		return mName;
 	}
 
-	void UEntity::SetName(const std::string_view& name) {
+	void Entity::SetName(const std::string_view& name) {
 		mName = name;
 	}
 
-	bool UEntity::IsEditorOnly() const noexcept {
+	bool Entity::IsEditorOnly() const noexcept {
 		return mIsEditorOnly;
 	}
 
-	bool UEntity::IsActive() const noexcept {
+	bool Entity::IsActive() const noexcept {
 		return mIsActive;
 	}
 
-	void UEntity::SetActive(const bool isActive) noexcept {
+	void Entity::SetActive(const bool isActive) noexcept {
 		mIsActive = isActive;
 	}
 
-	bool UEntity::IsVisible() const noexcept {
+	bool Entity::IsVisible() const noexcept {
 		return mIsVisible;
 	}
 
-	void UEntity::SetVisible(const bool isVisible) noexcept {
+	void Entity::SetVisible(const bool isVisible) noexcept {
 		mIsVisible = isVisible;
 	}
 
-	uint64_t UEntity::GetGuid() const noexcept {
+	uint64_t Entity::GetGuid() const noexcept {
 		return mGuid;
 	}
 
-	std::string_view UEntity::GetFolderPath() const noexcept {
+	std::string_view Entity::GetFolderPath() const noexcept {
 		return mFolderPath;
 	}
 
-	void UEntity::SetFolderPath(const std::string_view folderPath) {
+	void Entity::SetFolderPath(const std::string_view folderPath) {
 		mFolderPath = folderPath;
-		std::replace(mFolderPath.begin(), mFolderPath.end(), '\\', '/');
+		std::ranges::replace(mFolderPath, '\\', '/');
 		while (!mFolderPath.empty() && mFolderPath.front() == '/') {
 			mFolderPath.erase(mFolderPath.begin());
 		}

@@ -16,7 +16,7 @@
 #include "engine/unnamed/framework/components/mesh/SkeletalMeshRendererComponent.h"
 #include "engine/unnamed/framework/components/mesh/StaticMeshRendererComponent.h"
 #include "engine/unnamed/framework/components/portal/PortalComponent.h"
-#include "engine/unnamed/framework/entity/UEntity.h"
+#include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 
 #include <set>
@@ -272,7 +272,7 @@ namespace Unnamed {
 					continue;
 				}
 
-				UEntity* linkedEntity = mScene->FindEntity(
+				Entity* linkedEntity = mScene->FindEntity(
 					portal->GetLinkedPortalGuid()
 				);
 				if (!linkedEntity || !linkedEntity->IsActive()) {

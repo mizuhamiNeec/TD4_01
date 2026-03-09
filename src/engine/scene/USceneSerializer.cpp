@@ -10,7 +10,7 @@
 #include <chrono>
 #include <json.hpp>
 
-#include "engine/unnamed/framework/entity/UEntity.h"
+#include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 
 namespace Unnamed {
@@ -100,7 +100,7 @@ namespace Unnamed {
 				finalGuid = guidGen.Alloc();
 			}
 
-			UEntity& entity = scene.CreateEntity(name, finalGuid, isEditorOnly);
+			Entity& entity = scene.CreateEntity(name, finalGuid, isEditorOnly);
 			entity.SetActive(entityActive);
 			entity.SetVisible(entityVisible);
 			entity.SetFolderPath(folderPath);
@@ -171,7 +171,7 @@ namespace Unnamed {
 			if (!ePtr) {
 				continue;
 			}
-			const UEntity& e = *ePtr;
+			const Entity& e = *ePtr;
 
 			writer.BeginObject();
 

@@ -30,7 +30,7 @@
 #include "engine/unnamed/framework/components/mesh/SkeletalMeshRendererComponent.h"
 #include "engine/unnamed/framework/components/mesh/StaticMeshRendererComponent.h"
 #include "engine/unnamed/framework/components/portal/PortalComponent.h"
-#include "engine/unnamed/framework/entity/UEntity.h"
+#include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
 #include "engine/unnamed/subsystem/console/concommand/UnnamedConVar.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
@@ -42,7 +42,7 @@ namespace Unnamed {
 	namespace {
 		struct HierarchyFolderNode {
 			std::map<std::string, HierarchyFolderNode> children;
-			std::vector<UEntity*>                      entities;
+			std::vector<Entity*>                      entities;
 		};
 
 		std::vector<std::string> SplitFolderPath(std::string_view folderPath) {
@@ -131,7 +131,7 @@ namespace Unnamed {
 				if (!ePtr) {
 					continue;
 				}
-				UEntity*             entity = ePtr.get();
+				Entity*             entity = ePtr.get();
 				HierarchyFolderNode* node   = EnsureFolderNode(
 					root, entity->GetFolderPath()
 				);
@@ -494,7 +494,7 @@ namespace Unnamed {
 		const float                       drawWidth,
 		const float                       drawHeight
 	) {
-		UEntity* entity = GetSelectedEntity();
+		Entity* entity = GetSelectedEntity();
 		if (!entity) {
 			return;
 		}
@@ -1097,7 +1097,7 @@ namespace Unnamed {
 		static std::string           renameFolderPath;
 		static std::array<char, 256> renameBuffer = {};
 
-		auto openRenameEntity = [&](UEntity& entity) {
+		auto openRenameEntity = [&](Entity& entity) {
 			renameEntityId = entity.GetGuid();
 			renameFolderPath.clear();
 			std::fill(renameBuffer.begin(), renameBuffer.end(), '\0');
@@ -1131,7 +1131,7 @@ namespace Unnamed {
 			ImGuiTableFlags_NoBordersInBodyUntilResize;
 
 		auto createEntity = [&](std::string_view folderPath) {
-			UEntity& entity = scene->CreateEntity(
+			Entity& entity = scene->CreateEntity(
 				"Entity", scene->AllocateEntityId(), false
 			);
 			entity.SetFolderPath(folderPath);
@@ -1209,13 +1209,13 @@ namespace Unnamed {
 			std::string pendingMoveEntityFolderPath;
 			std::string pendingMoveFolderSourcePath;
 			std::string pendingMoveFolderTargetPath;
-			std::unordered_map<uint64_t, std::vector<UEntity*>>
+			std::unordered_map<uint64_t, std::vector<Entity*>>
 				childEntitiesByParent;
 			for (const auto& entityPtr : scene->GetEntities()) {
 				if (!entityPtr) {
 					continue;
 				}
-				UEntity*    entity    = entityPtr.get();
+				Entity*    entity    = entityPtr.get();
 				const auto* transform = entity->GetComponent<
 					TransformComponent>();
 				if (!transform || !transform->Parent() || !transform->Parent()->
@@ -1227,16 +1227,16 @@ namespace Unnamed {
 					.emplace_back(entity);
 			}
 
-			std::function<void(UEntity*)> drawEntityNode;
-			drawEntityNode = [&](UEntity* entity) {
+			std::function<void(Entity*)> drawEntityNode;
+			drawEntityNode = [&](Entity* entity) {
 				if (!entity) {
 					return;
 				}
-				std::vector<UEntity*> childrenInSameFolder;
+				std::vector<Entity*> childrenInSameFolder;
 				if (const auto it = childEntitiesByParent.
 						find(entity->GetGuid());
 					it != childEntitiesByParent.end()) {
-					for (UEntity* child : it->second) {
+					for (Entity* child : it->second) {
 						if (
 							child &&
 							std::string(child->GetFolderPath()) ==
@@ -1362,7 +1362,7 @@ namespace Unnamed {
 				}
 
 				if (opened && hasChildren) {
-					for (UEntity* child : childrenInSameFolder) {
+					for (Entity* child : childrenInSameFolder) {
 						drawEntityNode(child);
 					}
 					ImGui::TreePop();
@@ -1461,7 +1461,7 @@ namespace Unnamed {
 						drawFolder(childNode, childPath);
 					}
 
-					for (UEntity* entity : node.entities) {
+					for (Entity* entity : node.entities) {
 						const auto* transform = entity ?
 							                        entity->GetComponent<
 								                        TransformComponent>() :
@@ -1469,7 +1469,7 @@ namespace Unnamed {
 						const auto* parentTransform = transform ?
 							transform->Parent() :
 							nullptr;
-						const UEntity* parentEntity = parentTransform ?
+						const Entity* parentEntity = parentTransform ?
 							parentTransform->GetOwner() :
 							nullptr;
 						if (
@@ -1541,7 +1541,7 @@ namespace Unnamed {
 				createFolder(pendingCreateFolderPath);
 			}
 			if (pendingMoveEntityId != 0) {
-				if (UEntity* entity = scene->FindEntity(pendingMoveEntityId)) {
+				if (Entity* entity = scene->FindEntity(pendingMoveEntityId)) {
 					entity->SetFolderPath(pendingMoveEntityFolderPath);
 					scene->AddFolder(pendingMoveEntityFolderPath);
 				}
@@ -1555,10 +1555,10 @@ namespace Unnamed {
 				pendingParentChildEntityId != 0 &&
 				pendingParentTargetEntityId != 0
 			) {
-				UEntity* childEntity = scene->FindEntity(
+				Entity* childEntity = scene->FindEntity(
 					pendingParentChildEntityId
 				);
-				UEntity* parentEntity = scene->FindEntity(
+				Entity* parentEntity = scene->FindEntity(
 					pendingParentTargetEntityId
 				);
 				if (childEntity && parentEntity) {
@@ -1597,7 +1597,7 @@ namespace Unnamed {
 			);
 			if (ImGui::Button("Apply")) {
 				if (renameEntityId != 0) {
-					if (UEntity* entity = scene->FindEntity(renameEntityId)) {
+					if (Entity* entity = scene->FindEntity(renameEntityId)) {
 						entity->SetName(renameBuffer.data());
 					}
 				} else if (!renameFolderPath.empty()) {
@@ -1627,7 +1627,7 @@ namespace Unnamed {
 			return;
 		}
 
-		UEntity* entity = GetSelectedEntity();
+		Entity* entity = GetSelectedEntity();
 		if (!entity) {
 			ImGui::TextUnformatted("No selected entity.");
 			ImGui::End();
@@ -2079,7 +2079,7 @@ namespace Unnamed {
 		}
 	}
 
-	UEntity* UEditorRuntime::GetSelectedEntity() const {
+	Entity* UEditorRuntime::GetSelectedEntity() const {
 		const UScene* scene = GetHierarchyScene();
 		if (!scene || mSelectedEntityId == 0) {
 			return nullptr;

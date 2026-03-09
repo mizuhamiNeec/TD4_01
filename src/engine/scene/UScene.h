@@ -8,6 +8,7 @@
 
 namespace Unnamed {
 	class UEntity;
+	class Entity;
 	class BaseComponent;
 	class JsonReader;
 	class JsonWriter;
@@ -32,7 +33,7 @@ namespace Unnamed {
 		/// @param id
 		/// @param isEditorOnly
 		/// @return 作成されたエンティティの参照
-		[[nodiscard]] UEntity& CreateEntity(
+		[[nodiscard]] Entity& CreateEntity(
 			std::string_view name, uint64_t id, bool isEditorOnly
 		);
 
@@ -43,19 +44,19 @@ namespace Unnamed {
 		/// @brief 指定したIDのエンティティをシーン内で検索します。
 		/// @param id エンティティID
 		/// @return エンティティのポインタ。存在しない場合は nullptr。
-		[[nodiscard]] UEntity* FindEntity(EntityId id);
+		[[nodiscard]] Entity* FindEntity(EntityId id);
 
 		/// @brief 指定したIDのエンティティをシーン内で検索します。(const版)
 		/// @param id エンティティID
 		/// @return エンティティのポインタ。存在しない場合は nullptr。
-		[[nodiscard]] const UEntity* FindEntity(EntityId id) const;
+		[[nodiscard]] const Entity* FindEntity(EntityId id) const;
 
 		/// @brief シーン内のエンティティ数を取得します。
 		[[nodiscard]] size_t GetEntityCount() const;
 
 		/// @brief シーン内のすべてのエンティティを取得します。
 		[[nodiscard]]
-		const std::vector<std::unique_ptr<UEntity>>&  GetEntities() const;
+		const std::vector<std::unique_ptr<Entity>>&  GetEntities() const;
 		[[nodiscard]] const std::vector<std::string>& GetFolders() const;
 
 		void AddFolder(std::string_view folderPath);
@@ -90,6 +91,8 @@ namespace Unnamed {
 		EntityId                               mNextEntityId = 1;
 		std::vector<std::unique_ptr<UEntity>>  mEntities;
 		std::unordered_map<EntityId, UEntity*> mEntityById;
+		std::vector<std::unique_ptr<Entity>>  mEntities;
+		std::unordered_map<EntityId, Entity*> mEntityById;
 		std::vector<std::string>               mFolders;
 	};
 }

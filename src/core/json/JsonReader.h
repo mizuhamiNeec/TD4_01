@@ -128,9 +128,9 @@ namespace Unnamed {
 			return 0;
 		}
 
-		[[nodiscard]] Vec3 GetVec3() const {
+		[[nodiscard]] Vec3 GetVec3(const Vec3 fallback = Vec3::zero) const {
 			if (!mNode || !mNode->is_array() || mNode->size() != 3) {
-				return Vec3::zero;
+				return fallback;
 			}
 			try {
 				return Vec3(
@@ -139,13 +139,13 @@ namespace Unnamed {
 					mNode->at(2).get<float>()
 				);
 			} catch (...) {
-				return Vec3::zero;
+				return fallback;
 			}
 		}
 
-		[[nodiscard]] Vec4 GetVec4() const {
+		[[nodiscard]] Vec4 GetVec4(const Vec4 fallback = Vec4::zero) const {
 			if (!mNode || !mNode->is_array() || mNode->size() != 4) {
-				return Vec4::zero;
+				return fallback;
 			}
 			try {
 				return Vec4(
@@ -155,12 +155,11 @@ namespace Unnamed {
 					mNode->at(3).get<float>()
 				);
 			} catch (...) {
-				return Vec4::zero;
+				return fallback;
 			}
 		}
 
 		[[nodiscard]] uint64_t GetUint64() const {
-			// 互換: 失敗時は 0 を返す
 			return TryGetUint64().value_or(0ull);
 		}
 

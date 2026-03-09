@@ -4,7 +4,7 @@
 
 #include "core/math/Mat4.h"
 
-#include "engine/unnamed/uprimitive/UPrimitives.h"
+#include "engine/unnamed/uprimitive/Primitives.h"
 
 namespace Unnamed::Render {
 	class RenderGraph;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <engine/unnamed/uprimitive/UPrimitives.h>
+#include <engine/unnamed/uprimitive/Primitives.h>
 
 namespace UPhysics {
 	/// @brief 形状キャストインターフェース

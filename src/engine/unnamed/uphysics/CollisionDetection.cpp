@@ -2,9 +2,7 @@
 
 #include <algorithm>
 
-#include <assimp/mesh.h>
-
-#include "engine/unnamed/uprimitive/UPrimitives.h"
+#include "engine/unnamed/uprimitive/Primitives.h"
 
 namespace UPhysics {
 	/// @brief レイとAABBの交差判定を行います

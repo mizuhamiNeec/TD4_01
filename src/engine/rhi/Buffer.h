@@ -4,7 +4,7 @@
 
 #include <wrl/client.h>
 
-#include "engine/unnamed/uprimitive/UPrimitives.h"
+#include "engine/unnamed/uprimitive/Primitives.h"
 
 namespace Unnamed::Render {
 	struct MeshBuffer {

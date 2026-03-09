@@ -2,7 +2,7 @@
 
 #include <core/math/Math.h>
 
-#include <engine/unnamed/uprimitive/UPrimitives.h>
+#include <engine/unnamed/uprimitive/Primitives.h>
 
 namespace UPhysics {
 	// ヒット情報

@@ -19,7 +19,7 @@
 #include "engine/rhi/interface/IRhiDevice.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
-#include "engine/unnamed/uprimitive/UPrimitives.h"
+#include "engine/unnamed/uprimitive/Primitives.h"
 
 namespace Unnamed::Render {
 	namespace {

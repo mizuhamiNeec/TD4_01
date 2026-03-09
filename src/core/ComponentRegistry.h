@@ -28,7 +28,7 @@ namespace Unnamed {
 			std::string_view displayName
 		);
 
-		std::unique_ptr<BaseComponent> Create(
+		[[nodiscard]] std::unique_ptr<BaseComponent> Create(
 			std::string_view stableName
 		) const;
 

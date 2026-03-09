@@ -1,17 +1,17 @@
-#include "UPhysics.h"
+#include "Physics.h"
 
 #include <algorithm>
 #include <chrono>
 #include <pch.h>
 #include <vector>
 
+#include <engine/unnamed/physics/BoxCast.h>
+#include <engine/unnamed/physics/PhysicsTypes.h>
+#include <engine/unnamed/physics/RayCast.h>
+#include <engine/unnamed/physics/SphereCast.h>
 #include <engine/unnamed/subsystem/console/Log.h>
-#include <engine/unnamed/uphysics/BoxCast.h>
-#include <engine/unnamed/uphysics/PhysicsTypes.h>
-#include <engine/unnamed/uphysics/RayCast.h>
-#include <engine/unnamed/uphysics/SphereCast.h>
 
-namespace UPhysics {
+namespace Unnamed::Physics {
 	namespace {
 		Unnamed::Triangle BuildTriangle(
 			const Unnamed::MeshVertex& a,
@@ -79,7 +79,7 @@ namespace UPhysics {
 	/// @param outHit 衝突情報の出力先
 	/// @return 衝突した場合trueを返す
 	bool Engine::RayCast(const Unnamed::Ray& ray, Hit* outHit) const {
-		UPhysics::RayCast cast;
+		Unnamed::Physics::RayCast cast;
 		cast.start  = ray.origin;
 		cast.invDir = ray.invDir;
 		return CastBVH(
@@ -111,7 +111,7 @@ namespace UPhysics {
 			return false; // ゼロ方向なら衝突無し
 		}
 
-		UPhysics::BoxCast caster;
+		Unnamed::Physics::BoxCast caster;
 		caster.box  = box;
 		caster.half = box.halfSize;
 
@@ -139,7 +139,7 @@ namespace UPhysics {
 		const float length,
 		Hit*        outHit
 	) const {
-		UPhysics::SphereCast cast;
+		Unnamed::Physics::SphereCast cast;
 		cast.center = start;
 		cast.radius = radius;
 
@@ -428,7 +428,7 @@ namespace UPhysics {
 
 		const auto end = std::chrono::steady_clock::now();
 		Msg(
-			"UPhysics",
+			"Physics",
 			"RegisterStaticMesh timing: buildTris={}ms insert={}ms bvhBuild={}ms total={}ms (ownerGuid={} verts={} idx={} tris={})",
 			std::chrono::duration_cast<std::chrono::milliseconds>(
 				buildTrisEnd - buildTrisStart

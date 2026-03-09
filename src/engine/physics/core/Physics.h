@@ -1,13 +1,13 @@
 #pragma once
 #include <cmath>
 #include <span>
-#include <engine/unnamed/uphysics/BVH.h>
-#include <engine/unnamed/uphysics/BVHBuilder.h>
-#include <engine/unnamed/uphysics/CollisionDetection.h>
+#include <engine/unnamed/physics/BVH.h>
+#include <engine/unnamed/physics/BVHBuilder.h>
+#include <engine/unnamed/physics/CollisionDetection.h>
 
 #include "core/assets/types/MeshAssetData.h"
 
-namespace UPhysics {
+namespace Unnamed::Physics {
 	/// @brief 物理エンジン
 	class Engine {
 	public:
@@ -207,9 +207,9 @@ namespace UPhysics {
 				} else {
 					finalNormal = Vec3::zero;
 				}
-				outHit->t               = bestTOI;
-				outHit->normal          = finalNormal;
-				outHit->pos             = cast.ComputeImpactPoint(
+				outHit->t      = bestTOI;
+				outHit->normal = finalNormal;
+				outHit->pos    = cast.ComputeImpactPoint(
 					start,
 					dirNormalized,
 					length,

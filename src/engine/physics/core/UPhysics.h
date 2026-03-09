@@ -207,8 +207,7 @@ namespace UPhysics {
 				} else {
 					finalNormal = Vec3::zero;
 				}
-				const float hitDistance = bestTOI * length;
-				outHit->t               = hitDistance;
+				outHit->t               = bestTOI;
 				outHit->normal          = finalNormal;
 				outHit->pos             = cast.ComputeImpactPoint(
 					start,

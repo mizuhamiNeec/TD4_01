@@ -1,5 +1,5 @@
 #pragma once
-#include "../base/UBaseComponent.h"
+#include "../base/BaseComponent.h"
 
 #include "engine/render/frame/RenderFrameInputs.h"
 #include "engine/unnamed/subsystem/input/UInputSystem.h"
@@ -9,7 +9,7 @@ namespace Unnamed {
 	class JsonReader;
 	class JsonWriter;
 
-	class EditorCameraComponent final : public UBaseComponent {
+	class EditorCameraComponent final : public BaseComponent {
 	public:
 		// ---- EditorCameraComponent -----------------------------------------
 		void SetAspectRatio(float aspectRatio);
@@ -27,7 +27,7 @@ namespace Unnamed {
 
 		bool BuildCameraInput(Render::RenderCameraInput& outCamera) const;
 
-		// ---- UBaseComponent ------------------------------------------------
+		// ---- BaseComponent ------------------------------------------------
 		void OnAttached() override;
 		void PrePhysicsTick(float deltaTime) override;
 		void OnTick(float deltaTime) override;

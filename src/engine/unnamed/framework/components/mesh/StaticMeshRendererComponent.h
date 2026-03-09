@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 
-#include "../base/UBaseComponent.h"
+#include "../base/BaseComponent.h"
 
 #include "core/assets/AssetID.h"
 
@@ -10,7 +10,7 @@ namespace Unnamed {
 	class JsonReader;
 	class JsonWriter;
 
-	class StaticMeshRendererComponent final : public UBaseComponent {
+	class StaticMeshRendererComponent final : public BaseComponent {
 	public:
 		// ---- StaticMeshRendererComponent -----------------------------------
 		/// @brief メッシュのファイルパスを設定します。
@@ -49,7 +49,7 @@ namespace Unnamed {
 		[[nodiscard]] AssetID GetMaterialInstanceAssetId() const noexcept;
 
 
-		// ---- UBaseComponent ------------------------------------------------
+		// ---- BaseComponent ------------------------------------------------
 		[[nodiscard]] std::string_view GetStableName() const override;
 		[[nodiscard]] std::string_view GetComponentName() const override;
 

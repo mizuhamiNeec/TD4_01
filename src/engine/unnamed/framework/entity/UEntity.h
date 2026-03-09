@@ -8,7 +8,7 @@
 
 #include "core/TypeId.h"
 
-#include "../components/base/UBaseComponent.h"
+#include "../components/base/BaseComponent.h"
 
 
 namespace Unnamed {
@@ -71,8 +71,8 @@ namespace Unnamed {
 		/// @brief コンポーネントインスタンスを追加します。
 		/// @param component 追加するコンポーネントのユニークポインタ
 		/// @return 追加されたコンポーネントのポインタ
-		UBaseComponent* AddComponentInstance(
-			std::unique_ptr<UBaseComponent> component
+		BaseComponent* AddComponentInstance(
+			std::unique_ptr<BaseComponent> component
 		);
 
 		/// @brief 指定した型のコンポーネントを取得します。
@@ -110,6 +110,7 @@ namespace Unnamed {
 		/// @brief コンポーネントを削除します。
 		/// @param component 削除するコンポーネントのポインタ
 		void RemoveComponent(UBaseComponent* component);
+		void RemoveComponent(BaseComponent* component);
 
 		/// @brief エンティティの名前を取得します。
 		/// @return エンティティの名前
@@ -141,14 +142,14 @@ namespace Unnamed {
 		void SetFolderPath(std::string_view folderPath);
 
 		/// @brief 全てのコンポーネントに対して関数を実行します。
-		/// @tparam Func 呼び出し可能オブジェクト型（`void(UBaseComponent&)` 等）
+		/// @tparam Func 呼び出し可能オブジェクト型（`void(BaseComponent&)` 等）
 		/// @param func 各コンポーネントに対して呼ばれる関数
 		/// @return 全て走査した場合 true。途中で中断された場合 false。
 		template <typename Func>
 		bool ForEachComponent(Func&& func);
 
 		/// @brief 全てのコンポーネントに対して関数を実行します。(const版)
-		/// @tparam Func 呼び出し可能オブジェクト型（`void(const UBaseComponent&)` 等）
+		/// @tparam Func 呼び出し可能オブジェクト型（`void(const BaseComponent&)` 等）
 		/// @param func 各コンポーネントに対して呼ばれる関数
 		/// @return 全て走査した場合 true。途中で中断された場合 false。
 		template <typename Func>
@@ -172,9 +173,9 @@ namespace Unnamed {
 
 	protected:
 		// 所有しているコンポーネント
-		std::vector<std::unique_ptr<UBaseComponent>> mComponents;
+		std::vector<std::unique_ptr<BaseComponent>> mComponents;
 
-		std::unordered_map<TypeId, std::vector<UBaseComponent*>>
+		std::unordered_map<TypeId, std::vector<BaseComponent*>>
 		mComponentsByType;
 
 		std::string mName = "unnamed";     // 名前
@@ -189,8 +190,8 @@ namespace Unnamed {
 	template <typename ComponentType, typename... Args>
 	ComponentType* UEntity::AddComponent(Args&&... args) {
 		static_assert(
-			std::is_base_of_v<UBaseComponent, ComponentType>,
-			"T は UBaseComponent の派生クラスでなければなりません。"
+			std::is_base_of_v<BaseComponent, ComponentType>,
+			"T は BaseComponent の派生クラスでなければなりません。"
 		);
 		static_assert(
 			requires { ComponentType{}.GetStableName(); },
@@ -218,8 +219,8 @@ namespace Unnamed {
 	template <typename ComponentType>
 	ComponentType* UEntity::GetComponent() {
 		static_assert(
-			std::is_base_of_v<UBaseComponent, ComponentType>,
-			"ComponentType は UBaseComponent の派生クラスでなければなりません。"
+			std::is_base_of_v<BaseComponent, ComponentType>,
+			"ComponentType は BaseComponent の派生クラスでなければなりません。"
 		);
 		static_assert(
 			requires { ComponentType{}.GetStableName(); },
@@ -238,8 +239,8 @@ namespace Unnamed {
 	template <typename ComponentType>
 	const ComponentType* UEntity::GetComponent() const {
 		static_assert(
-			std::is_base_of_v<UBaseComponent, ComponentType>,
-			"T は UBaseComponent の派生クラスでなければなりません。"
+			std::is_base_of_v<BaseComponent, ComponentType>,
+			"T は BaseComponent の派生クラスでなければなりません。"
 		);
 		static_assert(
 			requires { ComponentType{}.GetStableName(); },
@@ -258,8 +259,8 @@ namespace Unnamed {
 	template <typename ComponentType>
 	void UEntity::GetComponents(std::vector<ComponentType*>& out) {
 		static_assert(
-			std::is_base_of_v<UBaseComponent, ComponentType>,
-			"T は UBaseComponent の派生クラスでなければなりません。"
+			std::is_base_of_v<BaseComponent, ComponentType>,
+			"T は BaseComponent の派生クラスでなければなりません。"
 		);
 		static_assert(
 			requires { ComponentType{}.GetStableName(); },
@@ -274,7 +275,7 @@ namespace Unnamed {
 		}
 
 		out.reserve(it->second.size());
-		for (UBaseComponent* c : it->second) {
+		for (BaseComponent* c : it->second) {
 			out.push_back(static_cast<ComponentType*>(c));
 		}
 	}
@@ -282,8 +283,8 @@ namespace Unnamed {
 	template <typename ComponentType>
 	void UEntity::GetComponents(std::vector<const ComponentType*>& out) const {
 		static_assert(
-			std::is_base_of_v<UBaseComponent, ComponentType>,
-			"T は UBaseComponent の派生クラスでなければなりません。"
+			std::is_base_of_v<BaseComponent, ComponentType>,
+			"T は BaseComponent の派生クラスでなければなりません。"
 		);
 		static_assert(
 			requires { ComponentType{}.GetStableName(); },
@@ -298,7 +299,7 @@ namespace Unnamed {
 		}
 
 		out.reserve(it->second.size());
-		for (UBaseComponent* c : it->second) {
+		for (BaseComponent* c : it->second) {
 			out.push_back(static_cast<const ComponentType*>(c));
 		}
 	}
@@ -314,18 +315,18 @@ namespace Unnamed {
 	template <typename Func>
 	bool UEntity::ForEachComponent(Func&& func) {
 		// RemoveComponent 等で mComponents が変更される可能性に備えてスナップショットを取る
-		std::vector<UBaseComponent*> snapshot;
+		std::vector<BaseComponent*> snapshot;
 		snapshot.reserve(mComponents.size());
 		for (auto& uptr : mComponents) {
 			snapshot.push_back(uptr.get());
 		}
 
-		for (UBaseComponent* c : snapshot) {
+		for (BaseComponent* c : snapshot) {
 			if (!c) {
 				continue;
 			}
 			if constexpr (std::is_same_v<
-				std::invoke_result_t<Func, UBaseComponent&>, bool>) {
+				std::invoke_result_t<Func, BaseComponent&>, bool>) {
 				if (!std::forward<Func>(func)(*c)) {
 					return false;
 				}
@@ -338,18 +339,18 @@ namespace Unnamed {
 
 	template <typename Func>
 	bool UEntity::ForEachComponent(Func&& func) const {
-		std::vector<const UBaseComponent*> snapshot;
+		std::vector<const BaseComponent*> snapshot;
 		snapshot.reserve(mComponents.size());
 		for (const auto& uptr : mComponents) {
 			snapshot.push_back(uptr.get());
 		}
 
-		for (const UBaseComponent* c : snapshot) {
+		for (const BaseComponent* c : snapshot) {
 			if (!c) {
 				continue;
 			}
 			if constexpr (std::is_same_v<
-				std::invoke_result_t<Func, const UBaseComponent&>, bool>) {
+				std::invoke_result_t<Func, const BaseComponent&>, bool>) {
 				if (!std::forward<Func>(func)(*c)) {
 					return false;
 				}
@@ -363,8 +364,8 @@ namespace Unnamed {
 	template <typename ComponentType, typename Func>
 	bool UEntity::ForEachComponent(Func&& func) {
 		static_assert(
-			std::is_base_of_v<UBaseComponent, ComponentType>,
-			"ComponentType は UBaseComponent の派生クラスでなければなりません。"
+			std::is_base_of_v<BaseComponent, ComponentType>,
+			"ComponentType は BaseComponent の派生クラスでなければなりません。"
 		);
 		static_assert(
 			requires { ComponentType{}.GetStableName(); },
@@ -378,8 +379,8 @@ namespace Unnamed {
 		}
 
 		// RemoveComponent 等で vector が変わる可能性に備えてスナップショットを取る
-		const std::vector<UBaseComponent*> snapshot = it->second;
-		for (UBaseComponent* base : snapshot) {
+		const std::vector<BaseComponent*> snapshot = it->second;
+		for (BaseComponent* base : snapshot) {
 			if (!base) {
 				continue;
 			}
@@ -399,8 +400,8 @@ namespace Unnamed {
 	template <typename ComponentType, typename Func>
 	bool UEntity::ForEachComponent(Func&& func) const {
 		static_assert(
-			std::is_base_of_v<UBaseComponent, ComponentType>,
-			"ComponentType は UBaseComponent の派生クラスでなければなりません。"
+			std::is_base_of_v<BaseComponent, ComponentType>,
+			"ComponentType は BaseComponent の派生クラスでなければなりません。"
 		);
 		static_assert(
 			requires { ComponentType{}.GetStableName(); },
@@ -413,8 +414,8 @@ namespace Unnamed {
 			return true;
 		}
 
-		const std::vector<UBaseComponent*> snapshot = it->second;
-		for (UBaseComponent* base : snapshot) {
+		const std::vector<BaseComponent*> snapshot = it->second;
+		for (BaseComponent* base : snapshot) {
 			if (!base) {
 				continue;
 			}

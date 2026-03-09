@@ -1696,7 +1696,7 @@ namespace Unnamed {
 
 		// すべてのコンポーネントのインスペクタUIを描画
 		entity->ForEachComponent(
-			[&](UBaseComponent& component) {
+			[&](BaseComponent& component) {
 				const std::string label = std::string(
 					                          component.GetComponentName()
 				                          ) +

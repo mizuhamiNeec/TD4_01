@@ -197,7 +197,7 @@ namespace Unnamed {
 			writer.BeginArray();
 
 			e.ForEachComponent(
-				[&writer](const UBaseComponent& c) {
+				[&writer](const BaseComponent& c) {
 					writer.BeginObject();
 
 					writer.Key("type");

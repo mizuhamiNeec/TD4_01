@@ -146,13 +146,13 @@ namespace Unnamed {
 		mComponentsByType.clear();
 	}
 
-	UBaseComponent* UEntity::AddComponentInstance(
-		std::unique_ptr<UBaseComponent> component
+	BaseComponent* UEntity::AddComponentInstance(
+		std::unique_ptr<BaseComponent> component
 	) {
 		if (!component) return nullptr;
 
 		component->SetOwner(this);
-		UBaseComponent* raw = component.get();
+		BaseComponent* raw = component.get();
 
 		mComponents.emplace_back(std::move(component));
 

@@ -8,7 +8,7 @@
 
 namespace Unnamed {
 	class UEntity;
-	class UBaseComponent;
+	class BaseComponent;
 	class JsonReader;
 	class JsonWriter;
 

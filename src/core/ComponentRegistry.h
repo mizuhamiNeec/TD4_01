@@ -3,14 +3,14 @@
 #include <string>
 #include <unordered_map>
 
-#include "engine/unnamed/framework/components/base/UBaseComponent.h"
+#include "engine/unnamed/framework/components/base/BaseComponent.h"
 
 namespace Unnamed {
 	/// @brief コンポーネントレジストリ
 	/// @details 
 	class ComponentRegistry {
 	public:
-		using CreateFn = std::unique_ptr<UBaseComponent>(*)();
+		using CreateFn = std::unique_ptr<BaseComponent>(*)();
 
 		struct Entry {
 			CreateFn    create = nullptr;
@@ -28,7 +28,7 @@ namespace Unnamed {
 			std::string_view displayName
 		);
 
-		std::unique_ptr<UBaseComponent> Create(
+		std::unique_ptr<BaseComponent> Create(
 			std::string_view stableName
 		) const;
 
@@ -58,7 +58,7 @@ namespace Unnamed {
 // コンポーネント登録マクロ
 #define REGISTER_COMPONENT(T)								\
 namespace {													\
-std::unique_ptr<Unnamed::UBaseComponent> Create_##T() {		\
+std::unique_ptr<Unnamed::BaseComponent> Create_##T() {		\
 return std::make_unique<T>();								\
 }															\
 const Unnamed::detail::AutoComponentRegister gAutoReg_##T(	\
@@ -68,7 +68,7 @@ T{}.GetStableName(), T{}.GetComponentName(), &Create_##T);	\
 // 拡張コンポーネント登録マクロ
 #define REGISTER_COMPONENT_EX(T, stableNameLiteral, displayNameLiteral) \
 namespace {																\
-std::unique_ptr<Unnamed::UBaseComponent> Create_##T() {					\
+std::unique_ptr<Unnamed::BaseComponent> Create_##T() {					\
 return std::make_unique<T>();											\
 }																		\
 const Unnamed::detail::AutoComponentRegister gAutoReg_##T(				\

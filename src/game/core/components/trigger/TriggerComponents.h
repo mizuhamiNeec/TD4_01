@@ -4,12 +4,14 @@
 
 #include "core/math/Vec3.h"
 
+#include "engine/unnamed/framework/components/base/BaseComponent.h"
+
 namespace Unnamed {
 	class JsonReader;
 	class JsonWriter;
 	class TransformComponent;
 
-	class TriggerVolumeComponentBase : public UBaseComponent {
+	class TriggerVolumeComponentBase : public BaseComponent {
 	public:
 		[[nodiscard]] Vec3 GetLocalCenter() const noexcept {
 			return mLocalCenter;
@@ -118,7 +120,7 @@ namespace Unnamed {
 		void Serialize(JsonWriter& writer) const override;
 	};
 
-	class StaticMeshColliderComponent final : public UBaseComponent {
+	class StaticMeshColliderComponent final : public BaseComponent {
 	public:
 		[[nodiscard]] std::string_view GetStableName() const override {
 			return "parkour.StaticMeshCollider";

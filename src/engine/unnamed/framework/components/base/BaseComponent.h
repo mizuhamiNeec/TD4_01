@@ -5,16 +5,18 @@
 #include "core/TypeId.h"
 
 namespace Unnamed {
+	class UWorld;
+	class UScene;
 	class UEntity;
 	class JsonWriter;
 	class JsonReader;
 
 	/// @brief Component は Entity に取り付けられるオブジェクトです。
 	/// 取り付けられた Entity にどの用に振る舞わせるかを定義します。
-	class UBaseComponent {
+	class BaseComponent {
 	public:
-		explicit UBaseComponent();
-		virtual  ~UBaseComponent();
+		explicit BaseComponent();
+		virtual  ~BaseComponent();
 
 		/// @brief コンポーネントがエンティティに取り付けられたときに呼び出されます。
 		virtual void OnAttached();
@@ -52,7 +54,7 @@ namespace Unnamed {
 
 #ifdef _DEBUG
 		/// @brief エディタのインスペクターでこのコンポーネントのプロパティを描画します。
-		/// @details デフォルトの実装は何も描画しません。必要に応じてオーバーライドしてください。
+		/// @details ImGuiはReleaseに含まれないので_DEBUGで囲んでください。必要に応じてオーバーライドしてください。
 		virtual void DrawInspectorImGui();
 #endif
 
@@ -69,6 +71,14 @@ namespace Unnamed {
 		/// @brief このコンポーネントを所有しているエンティティを設定します。
 		/// @param owner 所有するエンティティのポインタ
 		void SetOwner(UEntity* owner);
+
+		/// @brief このコンポーネントが所属するシーンを取得します。
+		/// @return 所属するシーンのポインタ
+		[[nodiscard]] UScene* GetScene() const noexcept;
+
+		/// @brief このコンポーネントが所属するワールドを取得します。
+		/// @return 所属するワールドのポインタ
+		[[nodiscard]] UWorld* GetWorld() const noexcept;
 
 		/// @brief コンポーネントがアクティブかどうかを取得します。
 		/// @return アクティブな場合は true、非アクティブな場合は false
@@ -91,8 +101,8 @@ namespace Unnamed {
 		[[nodiscard]] TypeId GetTypeId() const;
 
 	protected:
-		uint64_t mGuid  = 0;       // GUID
 		UEntity* mOwner = nullptr; // 所有しているエンティティ
+		uint64_t mGuid  = 0;       // GUID
 
 		bool mIsActive = true; // アクティブか?
 	};

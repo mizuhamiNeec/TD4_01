@@ -1,6 +1,6 @@
 #pragma once
 
-#include "base/UBaseComponent.h"
+#include "base/BaseComponent.h"
 
 #include "engine/render/frame/RenderFrameInputs.h"
 
@@ -9,7 +9,7 @@ namespace Unnamed {
 	class JsonReader;
 	class JsonWriter;
 
-	class CameraComponent final : public UBaseComponent {
+	class CameraComponent final : public BaseComponent {
 	public:
 		// ---- CameraComponent -----------------------------------------------
 		/// @brief アスペクト比を設定します。
@@ -33,7 +33,7 @@ namespace Unnamed {
 		/// @return カメラ入力の構築に成功したかどうか。
 		bool BuildCameraInput(Render::RenderCameraInput& outCamera) const;
 
-		// ---- UBaseComponent ------------------------------------------------
+		// ---- BaseComponent ------------------------------------------------
 		[[nodiscard]] std::string_view GetStableName() const override;
 		[[nodiscard]] std::string_view GetComponentName() const override;
 

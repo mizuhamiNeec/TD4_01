@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../base/UBaseComponent.h"
+#include "../base/BaseComponent.h"
 
 #include "core/math/Vec2.h"
 
@@ -8,7 +8,7 @@ namespace Unnamed {
 	class JsonReader;
 	class JsonWriter;
 
-	class PortalComponent final : public UBaseComponent {
+	class PortalComponent final : public BaseComponent {
 	public:
 		// ---- PortalComponent -----------------------------------------------
 		void                   SetLinkedPortalGuid(uint64_t guid) noexcept;
@@ -23,7 +23,7 @@ namespace Unnamed {
 		[[nodiscard]] bool GetUseAsPortalSurface() const noexcept;
 
 
-		// ---- UBaseComponent ------------------------------------------------
+		// ---- BaseComponent ------------------------------------------------
 		[[nodiscard]] std::string_view GetStableName() const override {
 			return "engine.Portal";
 		}

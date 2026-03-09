@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 
-#include "base/UBaseComponent.h"
+#include "base/BaseComponent.h"
 
 #include "core/math/Mat4.h"
 #include "core/math/Quaternion.h"
@@ -10,7 +10,7 @@
 namespace Unnamed {
 	class UScene;
 
-	class TransformComponent : public UBaseComponent {
+	class TransformComponent : public BaseComponent {
 	public:
 		//---------------------------------------------------------------------
 		// TransformComponent
@@ -29,7 +29,7 @@ namespace Unnamed {
 		void ResolveDeferredParent(const UScene& scene);
 
 		//---------------------------------------------------------------------
-		// UBaseComponent
+		// BaseComponent
 		//---------------------------------------------------------------------
 		void OnDetached() override;
 		void OnTick(float deltaTime) override;

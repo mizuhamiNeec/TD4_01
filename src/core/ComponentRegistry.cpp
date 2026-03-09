@@ -31,7 +31,7 @@ namespace Unnamed {
 	}
 
 
-	std::unique_ptr<UBaseComponent> ComponentRegistry::Create(
+	std::unique_ptr<BaseComponent> ComponentRegistry::Create(
 		const std::string_view stableName
 	) const {
 		const Entry* e = Find(stableName);

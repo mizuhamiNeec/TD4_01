@@ -1,6 +1,6 @@
 #pragma once
 
-#include "engine/unnamed/framework/components/base/UBaseComponent.h"
+#include "engine/unnamed/framework/components/base/BaseComponent.h"
 
 #include "core/math/Vec2.h"
 
@@ -10,7 +10,7 @@ namespace Unnamed {
 	class JsonReader;
 	class JsonWriter;
 
-	class CameraRotatorComponent final : public UBaseComponent {
+	class CameraRotatorComponent final : public BaseComponent {
 	public:
 		[[nodiscard]] std::string_view GetStableName() const override {
 			return "parkour.CameraRotator";

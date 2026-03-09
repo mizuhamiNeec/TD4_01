@@ -14,6 +14,7 @@
 #include <engine/unnamed/subsystem/console/concommand/UnnamedConVar.h>
 #include <engine/unnamed/subsystem/console/concommand/base/UnnamedConCommandBase.h>
 #include <engine/unnamed/subsystem/input/UInputSystem.h>
+#include <engine/unnamed/subsystem/console/concommand/ConCommand.h>
 #include <engine/unnamed/subsystem/interface/ServiceLocator.h>
 #include <engine/unnamed/subsystem/time/SystemClock.h>
 
@@ -154,17 +155,17 @@ namespace Unnamed {
 #endif
 	}
 
-	void ConsoleSystem::RegisterConCommand(UnnamedConCommandBase* conCommand) {
+	void ConsoleSystem::RegisterConCommand(ConCommandBase* conCommand) {
 		mConCommands[std::string(conCommand->GetName())] = conCommand;
 	}
 
-	void ConsoleSystem::RegisterConVar(UnnamedConCommandBase* conVar) {
+	void ConsoleSystem::RegisterConVar(ConCommandBase* conVar) {
 		mConVars[std::string(conVar->GetName())] = conVar;
 	}
 
 	template <typename T>
 	T ClampConVarValue(
-		UnnamedConCommandBase* var,
+		ConCommandBase* var,
 		const T&               value,
 		const T&               minValue,
 		const T&               maxValue
@@ -188,7 +189,7 @@ namespace Unnamed {
 		return value;
 	}
 
-	static std::string GetVarValueString(UnnamedConCommandBase* var) {
+	static std::string GetVarValueString(ConCommandBase* var) {
 		if (!var) {
 			return {};
 		}
@@ -352,7 +353,7 @@ namespace Unnamed {
 					break;
 				}
 
-				const auto* cmd = dynamic_cast<UnnamedConCommand*>(base);
+				const auto* cmd = dynamic_cast<ConCommand*>(base);
 
 				if (cmd->HasFlags(FCVAR::NOTIFY)) {
 					ExecuteCommand(
@@ -418,12 +419,12 @@ namespace Unnamed {
 		}
 	}
 
-	std::unordered_map<std::string, UnnamedConCommandBase*>
+	std::unordered_map<std::string, ConCommandBase*>
 	ConsoleSystem::GetConVars() {
 		return mConVars;
 	}
 
-	UnnamedConCommandBase* ConsoleSystem::GetConVar(
+	ConCommandBase* ConsoleSystem::GetConVar(
 		const std::string_view name
 	) {
 		return mConVars.contains(name.data()) ?
@@ -431,7 +432,7 @@ namespace Unnamed {
 			       nullptr;
 	}
 
-	CVAR_TYPE ConsoleSystem::GetConVarType(UnnamedConCommandBase* var) {
+	CVAR_TYPE ConsoleSystem::GetConVarType(ConCommandBase* var) {
 		auto type = CVAR_TYPE::NONE;
 
 		if (dynamic_cast<UnnamedConVar<bool>*>(
@@ -459,7 +460,7 @@ namespace Unnamed {
 
 	void ConsoleSystem::RegisterCommonCommands() {
 		// ヘルプコマンド
-		static UnnamedConCommand help(
+		static ConCommand help(
 			"help",
 			[&](const std::vector<std::string>& args) {
 				// 引数がある場合はそのコマンド・変数の説明を表示する
@@ -503,7 +504,7 @@ namespace Unnamed {
 		);
 
 		// コンソール出力をクリアするコマンド
-		static UnnamedConCommand clear(
+		static ConCommand clear(
 			"clear",
 			[&](const std::vector<std::string>&) {
 				GetLogBuffer().Clear();
@@ -514,7 +515,7 @@ namespace Unnamed {
 	}
 
 	void ConsoleSystem::SetVarFromArgs(
-		UnnamedConCommandBase* var, const std::vector<std::string>& args
+		ConCommandBase* var, const std::vector<std::string>& args
 	) {
 		// 変数が存在しない、または引数が空の場合は何もしない
 		if (!var || args.empty()) {

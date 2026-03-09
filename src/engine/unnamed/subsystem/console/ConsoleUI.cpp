@@ -10,7 +10,7 @@
 #include <engine/ImGui/ImGuiWidgets.h>
 #include <engine/unnamed/subsystem/console/ConsoleUI.h>
 #include <engine/unnamed/subsystem/console/ConVarHelper.h>
-#include <engine/unnamed/subsystem/console/concommand/UnnamedConCommand.h>
+#include <engine/unnamed/subsystem/console/concommand/ConCommand.h>
 
 #include "engine/Properties.h"
 
@@ -65,7 +65,7 @@ namespace Unnamed {
 	ConsoleUI::~ConsoleUI() {};
 
 	void ConsoleUI::Init() {
-		static UnnamedConCommand toggleconsole(
+		static ConCommand toggleconsole(
 			"toggleconsole",
 			[&](const std::vector<std::string>&) {
 				mShowConsole = !mShowConsole;

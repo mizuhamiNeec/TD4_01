@@ -8,14 +8,14 @@
 
 #include <engine/unnamed/subsystem/console/ConsoleFileLogSink.h>
 #include <engine/unnamed/subsystem/console/ConsoleUI.h>
-#include <engine/unnamed/subsystem/console/concommand/base/UnnamedConCommandBase.h>
+#include <engine/unnamed/subsystem/console/concommand/base/ConCommandBase.h>
 #include <engine/unnamed/subsystem/console/interface/IConsole.h>
 #include <engine/unnamed/subsystem/interface/ISubsystem.h>
 
 namespace Unnamed {
 	constexpr uint32_t kConsoleBufferSize = 1024; // ログバッファのサイズ
 
-	class UnnamedConCommandBase;
+	class ConCommandBase;
 
 	/// @brief コンソールログテキスト構造体
 	struct ConsoleLogText {
@@ -96,11 +96,11 @@ namespace Unnamed {
 
 		/// @brief コンソールコマンドを登録します
 		/// @param conCommand 登録するコマンドへのポインタ
-		void RegisterConCommand(UnnamedConCommandBase* conCommand);
+		void RegisterConCommand(ConCommandBase* conCommand);
 
 		/// @brief コンソール変数を登録します
 		/// @param conVar 登録する変数へのポインタ
-		void RegisterConVar(UnnamedConCommandBase* conVar);
+		void RegisterConVar(ConCommandBase* conVar);
 
 		/// @brief コンソールにコマンドを送信します。
 		/// @param command コマンド文字列
@@ -112,18 +112,18 @@ namespace Unnamed {
 
 		/// @brief 登録されている全てのコンソールコマンドを取得します
 		[[nodiscard]]
-		std::unordered_map<std::string, UnnamedConCommandBase*> GetConVars();
+		std::unordered_map<std::string, ConCommandBase*> GetConVars();
 
 		/// @brief 名前からコンソール変数を取得します
 		/// @param name 変数名
 		/// @return 変数へのポインタ（存在しない場合はnullptr）
-		UnnamedConCommandBase* GetConVar(std::string_view name);
+		ConCommandBase* GetConVar(std::string_view name);
 
-		/// @brief UnnamedConCommandBaseからCVAR_TYPEを取得します
+		/// @brief ConCommandBaseからCVAR_TYPEを取得します
 		/// @param var 変数へのポインタ
 		/// @return 変数の型
 		[[nodiscard]]
-		static enum class CVAR_TYPE GetConVarType(UnnamedConCommandBase* var);
+		static enum class CVAR_TYPE GetConVarType(ConCommandBase* var);
 
 		/// @brief 指定した型のコンソール変数を名前から取得します
 		/// @tparam TVar 取得する変数の型
@@ -132,8 +132,8 @@ namespace Unnamed {
 		template <class TVar>
 		[[nodiscard]] TVar* GetConVarAs(const std::string_view name) {
 			static_assert(
-				std::is_base_of_v<UnnamedConCommandBase, TVar>,
-				"TVar must be derived from UnnamedConCommandBase"
+				std::is_base_of_v<ConCommandBase, TVar>,
+				"TVar must be derived from ConCommandBase"
 			);
 
 			auto* base = GetConVar(name);
@@ -152,7 +152,7 @@ namespace Unnamed {
 		/// @param var 対象の変数
 		/// @param args コマンド引数のベクター
 		void SetVarFromArgs(
-			UnnamedConCommandBase* var, const std::vector<std::string>& args
+			ConCommandBase* var, const std::vector<std::string>& args
 		);
 
 		// ログのリングバッファ
@@ -163,8 +163,8 @@ namespace Unnamed {
 		bool               mEnableFileLog = true;
 
 		// 登録されているコマンドと変数のマップ
-		std::unordered_map<std::string, UnnamedConCommandBase*> mConCommands;
-		std::unordered_map<std::string, UnnamedConCommandBase*> mConVars;
+		std::unordered_map<std::string, ConCommandBase*> mConCommands;
+		std::unordered_map<std::string, ConCommandBase*> mConVars;
 
 #ifdef _DEBUG // デバッグ時(ImGui有効化時)にはコンソールUIを有効化
 		std::unique_ptr<ConsoleUI> mConsoleUI;

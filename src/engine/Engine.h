@@ -78,8 +78,7 @@ namespace Unnamed {
 		std::unique_ptr<class TerminalSystem> mTerminalSystem;
 
 		std::unique_ptr<class TimeSystem>   mTimeSystem;
-		std::unique_ptr<class UInputSystem> mInputSystem;
-		std::unique_ptr<class UProfiler>    mProfiler;
+		std::unique_ptr<class InputSystem> mInputSystem;
 		std::unique_ptr<class Profiler>    mProfiler;
 
 		std::unique_ptr<Rhi::IRhiDevice>      mRhiDevice;

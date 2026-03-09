@@ -16,7 +16,7 @@
 #include "engine/ImGui/Icons.h"
 #include "engine/unnamed/subsystem/console/ConsoleUI.h"
 #include "engine/unnamed/subsystem/console/Log.h"
-#include "engine/unnamed/subsystem/console/concommand/UnnamedConCommand.h"
+#include "engine/unnamed/subsystem/console/concommand/ConCommand.h"
 
 namespace Unnamed {
 	struct EditorNotification::NotificationState {
@@ -367,7 +367,7 @@ namespace Unnamed {
 	}
 
 	EditorNotification::EditorNotification() {
-		static UnnamedConCommand notify(
+		static ConCommand notify(
 			"notify",
 			[this](const std::vector<std::string>& args) {
 				NOTIFY_TYPE type;

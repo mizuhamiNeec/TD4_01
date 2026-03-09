@@ -31,7 +31,7 @@
 #include <engine/rhi/interface/IRhiDevice.h>
 #include <engine/ui/UImGuiLayer.h>
 #include <engine/unnamed/framework/entity/Entity.h>
-#include <engine/unnamed/subsystem/console/concommand/UnnamedConCommand.h>
+#include <engine/unnamed/subsystem/console/concommand/ConCommand.h>
 #include <engine/unnamed/subsystem/input/device/keyboard/KeyboardDevice.h>
 #include <engine/unnamed/subsystem/input/device/mouse/MouseDevice.h>
 #include <engine/unnamed/subsystem/interface/ServiceLocator.h>
@@ -199,10 +199,11 @@ namespace Unnamed {
 			return false;
 		}
 
-		mProfiler = std::make_unique<UProfiler>();
-		ServiceLocator::Register<UProfiler>(mProfiler.get());
 		mProfiler = std::make_unique<Profiler>();
 		ServiceLocator::Register<Profiler>(mProfiler.get());
+
+		mPhysicsEngine = std::make_unique<Unnamed::Physics::Engine>();
+		mPhysicsEngine->Init();
 
 		// InputSystemの初期化
 		mInputSystem = std::make_unique<UInputSystem>();
@@ -510,7 +511,7 @@ namespace Unnamed {
 	/// @brief コンソールコマンドと変数の登録
 	void Engine::RegisterConsoleCommandsAndVariables() {
 		// コンソールコマンドを登録
-		static UnnamedConCommand quit(
+		static ConCommand quit(
 			"quit",
 			[this](const std::vector<std::string>&) {
 				mWishShutdown = true;
@@ -520,7 +521,7 @@ namespace Unnamed {
 		);
 
 #ifdef _DEBUG
-		static UnnamedConCommand toggleeditor(
+		static ConCommand toggleeditor(
 			"toggleeditor",
 			[this](const std::vector<std::string>&) {
 				ToggleEditorScreenMode();
@@ -529,7 +530,7 @@ namespace Unnamed {
 			"Toggle editor mode."
 		);
 
-		static UnnamedConCommand togglefullscreen(
+		static ConCommand togglefullscreen(
 			"togglefullscreen",
 			[this](const std::vector<std::string>&) {
 				ToggleFullscreen();

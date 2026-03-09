@@ -3,6 +3,7 @@
 #include <engine/unnamed/subsystem/console/ConsoleSystem.h>
 #include <engine/unnamed/subsystem/console/concommand/UnnamedConCommand.h>
 #include <engine/unnamed/subsystem/console/concommand/UnnamedConVar.h>
+#include <engine/unnamed/subsystem/console/concommand/ConCommand.h>
 #include <engine/unnamed/subsystem/interface/ServiceLocator.h>
 
 #include "engine/unnamed/subsystem/console/ConsoleScriptParser.h"
@@ -114,7 +115,7 @@ namespace Unnamed {
 			"Usage: toggle <cvar> <value 1> <value 2> <value 3> ..."
 		);
 
-		static UnnamedConCommand exec(
+		static ConCommand exec(
 			"exec",
 			[](const std::vector<std::string>& args) {
 				if (args.empty()) {

@@ -105,6 +105,25 @@ namespace Unnamed {
 		mPendingKey = key;
 	}
 
+	void JsonWriter::WriteVec3(const char* key, const Vec3& value) {
+		Key(key);
+		BeginArray();
+		Write(value.x);
+		Write(value.y);
+		Write(value.z);
+		EndArray();
+	}
+
+	void JsonWriter::WriteVec4(const char* key, const Vec4& value) {
+		Key(key);
+		BeginArray();
+		Write(value.x);
+		Write(value.y);
+		Write(value.z);
+		Write(value.w);
+		EndArray();
+	}
+
 	bool JsonWriter::Save() const {
 		if (mPath.empty()) {
 			throw std::runtime_error("Save path is empty");

@@ -4,6 +4,10 @@
 #include <string>
 #include <vector>
 
+
+struct Vec4;
+struct Vec3;
+
 namespace Unnamed {
 	/// @brief JSON書き込みクラス
 	/// @details JSON形式のデータを構築し、ファイルに保存するためのクラスです。
@@ -78,6 +82,9 @@ namespace Unnamed {
 				"Current JSON container is neither object nor array"
 			);
 		}
+
+		void WriteVec3(const char* key, const Vec3& value);
+		void WriteVec4(const char* key, const Vec4& value);
 
 		/// @brief ファイルに保存する
 		/// @return 成功した場合true

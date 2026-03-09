@@ -108,7 +108,7 @@ namespace ImGuiUtil {
 		style.TreeLinesRounding = 0.0f;
 
 		// Windows
-		style.WindowTitleAlign         = {0.5f, 0.5f};
+		style.WindowTitleAlign         = {0.0f, 0.5f};
 		style.WindowBorderHoverPadding = 4.0f;
 		style.WindowMenuButtonPosition = ImGuiDir_Left;
 

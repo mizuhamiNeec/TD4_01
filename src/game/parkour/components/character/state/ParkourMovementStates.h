@@ -7,17 +7,6 @@ namespace Unnamed {
 	class BaseKinematicCollisionResolver;
 	class GameMovementStateMachine;
 
-	struct ParkourMovementTuning {
-		float jumpVelocityHu = 420.0f;
-
-		float slideEnterSpeedHu   = 220.0f;
-		float slideExitSpeedHu    = 110.0f;
-		float slideBoostHu        = 90.0f;
-		float slideFrictionScale  = 0.35f;
-		float slideSteerAccelRate = 0.45f;
-		float slideMaxDurationSec = 0.85f;
-	};
-
 	namespace {
 		constexpr char kStateAirMove[]    = "AirMove";
 		constexpr char kStateGroundMove[] = "GroundMove";
@@ -34,7 +23,7 @@ namespace Unnamed {
 	}
 
 	void RegisterParkourMovementStates(
-		GameMovementStateMachine&    stateMachine,
-		const ParkourMovementTuning& tuning
+		GameMovementStateMachine& stateMachine
+
 	);
 }

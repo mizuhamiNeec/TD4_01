@@ -7,10 +7,9 @@
 
 namespace Unnamed {
 	void RegisterParkourMovementStates(
-		GameMovementStateMachine&    stateMachine,
-		const ParkourMovementTuning& tuning
+		GameMovementStateMachine& stateMachine
 	) {
 		// "GroundMove" を上書きし、入力遷移をパルクール向けに拡張する。
-		stateMachine.AddState(std::make_shared<ParkourGroundMove>(tuning));
+		stateMachine.AddState(std::make_shared<ParkourGroundMove>());
 	}
 }

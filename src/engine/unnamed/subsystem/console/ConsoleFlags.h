@@ -34,6 +34,7 @@ namespace Unnamed {
 	const char* ToString(FCVAR e);
 
 	FCVAR& operator|=(FCVAR& lhs, const FCVAR& rhs);
+	FCVAR operator|(const FCVAR& lhs, const FCVAR& rhs);
 	bool   operator&(const FCVAR& lhs, const FCVAR& rhs);
 	bool   operator!=(const FCVAR& lhs, const FCVAR& rhs);
 }

@@ -15,9 +15,11 @@ namespace Unnamed {
 			const std::vector<std::string>& values,
 			auto                            parse
 		) {
-			if (!var || values.empty()) return;
-			using T         = decltype(var->GetValue());
-			const T current = static_cast<T>(*var);
+			if (!var || values.empty()) {
+				return;
+			}
+			using t         = decltype(var->GetValue());
+			const t current = static_cast<t>(*var);
 
 			for (size_t i = 0; i < values.size(); ++i) {
 				if (current == parse(values[i])) {
@@ -33,7 +35,7 @@ namespace Unnamed {
 			Msg(kChannelNone, "Toggle: {}", var->GetValue());
 		};
 
-		static UnnamedConCommand toggle(
+		static ConCommand toggle(
 			"toggle",
 			[ToggleSequence](std::vector<std::string> args) {
 				// 引数がなければ何もせず終了。
@@ -43,7 +45,7 @@ namespace Unnamed {
 
 				auto* console = ServiceLocator::Get<ConsoleSystem>();
 				// 最初の引数がCVar名、その後が切り替えたい値のリスト
-				const std::vector<std::string> argValues(
+				const std::vector argValues(
 					args.begin() + 1, args.end()
 				);
 				const auto argSize = argValues.size();            // 値の数
@@ -53,7 +55,7 @@ namespace Unnamed {
 					case CVAR_TYPE::NONE: break;
 
 					case CVAR_TYPE::BOOL: {
-						const auto bVar = dynamic_cast<UnnamedConVar<bool>*>(
+						const auto bVar = dynamic_cast<ConVar<bool>*>(
 							var);
 						const bool bValue = static_cast<bool>(*bVar);
 						bVar->SetValue(!bValue);
@@ -62,8 +64,10 @@ namespace Unnamed {
 					break;
 
 					case CVAR_TYPE::INT: {
-						if (argSize == 0) return false;
-						auto* iVar = dynamic_cast<UnnamedConVar<int>*>(var);
+						if (argSize == 0) {
+							return false;
+						}
+						auto* iVar = dynamic_cast<ConVar<int>*>(var);
 						ToggleSequence(
 							iVar, argValues, [](const std::string& s) {
 								return std::stoi(s);
@@ -73,8 +77,10 @@ namespace Unnamed {
 					break;
 
 					case CVAR_TYPE::FLOAT: {
-						if (argSize == 0) return false;
-						auto* fVar = dynamic_cast<UnnamedConVar<float>*>(var);
+						if (argSize == 0) {
+							return false;
+						}
+						auto* fVar = dynamic_cast<ConVar<float>*>(var);
 						ToggleSequence(
 							fVar, argValues, [](const std::string& s) {
 								return std::stof(s);
@@ -84,8 +90,10 @@ namespace Unnamed {
 					break;
 
 					case CVAR_TYPE::DOUBLE: {
-						if (argSize == 0) return false;
-						auto* dVar = dynamic_cast<UnnamedConVar<double>*>(var);
+						if (argSize == 0) {
+							return false;
+						}
+						auto* dVar = dynamic_cast<ConVar<double>*>(var);
 						ToggleSequence(
 							dVar, argValues, [](const std::string& s) {
 								return std::stod(s);
@@ -95,8 +103,10 @@ namespace Unnamed {
 					break;
 
 					case CVAR_TYPE::STRING: {
-						if (argSize == 0) return false;
-						auto* sVar = dynamic_cast<UnnamedConVar<std::string>*>(
+						if (argSize == 0) {
+							return false;
+						}
+						auto* sVar = dynamic_cast<ConVar<std::string>*>(
 							var);
 						ToggleSequence(
 							sVar, argValues, [](const std::string& s) {
@@ -107,6 +117,10 @@ namespace Unnamed {
 					break;
 					case CVAR_TYPE::VEC3:
 						// 使う...か?
+						Error(
+							"Toggle",
+							"Vec3 type is not supported for toggle command."
+						);
 						break;
 				}
 				return true;
@@ -127,5 +141,9 @@ namespace Unnamed {
 			},
 			"Execute a console script file."
 		);
+
+		ServerCommand();
 	}
+
+	void ServerCommand() {}
 }

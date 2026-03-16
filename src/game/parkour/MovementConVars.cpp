@@ -1,6 +1,6 @@
 ﻿#include "MovementConVars.h"
 
-#include "engine/unnamed/subsystem/console/concommand/UnnamedConVar.h"
+#include "engine/unnamed/subsystem/console/concommand/ConVar.h"
 
 namespace Unnamed {
 	//-------------------------------------------------------------------------
@@ -8,14 +8,14 @@ namespace Unnamed {
 	//-------------------------------------------------------------------------
 	void RegisterMovementConVars() {
 		// General
-		//static UnnamedConVar 
+		//static ConVar 
 
 		// Jump
-		static UnnamedConVar mv_jumpvelocity(
+		static ConVar mv_jumpvelocity(
 			"mv_jumpvelocity", 400.0f,
 			FCVAR::NONE, "プレイヤーのジャンプ初速 (hu/s)"
 		);
-		static UnnamedConVar mv_jumpsnapdisabletime(
+		static ConVar mv_jumpsnapdisabletime(
 			"mv_jumpsnapdisabletime", 0.25f,
 			FCVAR::NONE, "ジャンプ後に地面へのスナップを無効にする時間 (秒)"
 		);

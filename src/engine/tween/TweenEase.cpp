@@ -15,34 +15,54 @@ float Unnamed::TweenEase::Evaluate(const EASE_TYPE easeType, float x) {
 
 	switch (easeType) {
 		case EASE_TYPE::LINEAR: return x;
-		case EASE_TYPE::IN_SINE: { return 1.0f - cos(x * Math::pi * 0.5f); }
-		case EASE_TYPE::OUT_SINE: { return sin(x * Math::pi * 0.5f); }
+		case EASE_TYPE::IN_SINE: {
+			return 1.0f - cos(x * Math::pi * 0.5f);
+		}
+		case EASE_TYPE::OUT_SINE: {
+			return sin(x * Math::pi * 0.5f);
+		}
 		case EASE_TYPE::IN_OUT_SINE: {
 			return -(cos(Math::pi * x) - 1.0f) * 0.5f;
 		}
-		case EASE_TYPE::IN_QUAD: { return x * x; }
-		case EASE_TYPE::OUT_QUAD: { return 1.0f - (1.0f - x) * (1.0f - x); }
+		case EASE_TYPE::IN_QUAD: {
+			return x * x;
+		}
+		case EASE_TYPE::OUT_QUAD: {
+			return 1.0f - (1.0f - x) * (1.0f - x);
+		}
 		case EASE_TYPE::IN_OUT_QUAD: {
 			return x < 0.5f ?
 				       2.0f * x * x :
 				       1.0f - pow(-2.0f * x + 2.0f, 2.0f) * 0.5f;
 		}
-		case EASE_TYPE::IN_CUBIC: { return x * x * x; }
-		case EASE_TYPE::OUT_CUBIC: { return 1.0f - pow(1.0f - x, 3.0f); }
+		case EASE_TYPE::IN_CUBIC: {
+			return x * x * x;
+		}
+		case EASE_TYPE::OUT_CUBIC: {
+			return 1.0f - pow(1.0f - x, 3.0f);
+		}
 		case EASE_TYPE::IN_OUT_CUBIC: {
 			return x < 0.5f ?
 				       4.0f * x * x * x :
 				       1.0f - pow(-2.0f * x + 2.0f, 3.0f) * 0.5f;
 		}
-		case EASE_TYPE::IN_QUART: { return x * x * x * x; }
-		case EASE_TYPE::OUT_QUART: { return 1.0f - pow(1.0f - x, 4.0f); }
+		case EASE_TYPE::IN_QUART: {
+			return x * x * x * x;
+		}
+		case EASE_TYPE::OUT_QUART: {
+			return 1.0f - pow(1.0f - x, 4.0f);
+		}
 		case EASE_TYPE::IN_OUT_QUART: {
 			return x < 0.5f ?
 				       8 * x * x * x * x :
 				       1.0f - pow(-2.0f * x + 2.0f, 4.0f) * 0.5f;
 		}
-		case EASE_TYPE::IN_QUINT: { return x * x * x * x * x; }
-		case EASE_TYPE::OUT_QUINT: { return 1.0f - pow(1.0f - x, 5.0f); }
+		case EASE_TYPE::IN_QUINT: {
+			return x * x * x * x * x;
+		}
+		case EASE_TYPE::OUT_QUINT: {
+			return 1.0f - pow(1.0f - x, 5.0f);
+		}
 		case EASE_TYPE::IN_OUT_QUINT: {
 			return x < 0.5f ?
 				       16.0f * x * x * x * x * x :
@@ -63,8 +83,12 @@ float Unnamed::TweenEase::Evaluate(const EASE_TYPE easeType, float x) {
 				       pow(2.0f, 20.0f * x - 10.0f) * 0.5f :
 				       (2.0f - pow(2.0f, -20.0f * x + 10.0f)) * 0.5f;
 		}
-		case EASE_TYPE::IN_CIRC: { return 1.0f - sqrt(1.0f - pow(x, 2.0f)); }
-		case EASE_TYPE::OUT_CIRC: { return sqrt(1.0f - pow(x - 1.0f, 2.0f)); }
+		case EASE_TYPE::IN_CIRC: {
+			return 1.0f - sqrt(1.0f - pow(x, 2.0f));
+		}
+		case EASE_TYPE::OUT_CIRC: {
+			return sqrt(1.0f - pow(x - 1.0f, 2.0f));
+		}
 		case EASE_TYPE::IN_OUT_CIRC: {
 			return x < 0.5f ?
 				       (1.0f - sqrt(1.0f - pow(2.0f * x, 2.0f))) * 0.5f :
@@ -72,7 +96,9 @@ float Unnamed::TweenEase::Evaluate(const EASE_TYPE easeType, float x) {
 					        1.0f - pow(-2.0f * x + 2.0f, 2.0f)
 				        ) + 1.0f) * 0.5f;
 		}
-		case EASE_TYPE::IN_BACK: { return c3 * x * x * x - c1 * x * x; }
+		case EASE_TYPE::IN_BACK: {
+			return c3 * x * x * x - c1 * x * x;
+		}
 		case EASE_TYPE::OUT_BACK: {
 			return 1.0f + c3 * pow(x - 1.0f, 3.0f) + c1 * pow(
 				       x - 1.0f, 2.0f
@@ -124,7 +150,9 @@ float Unnamed::TweenEase::Evaluate(const EASE_TYPE easeType, float x) {
 			constexpr auto n1 = 7.5625f;
 			constexpr auto d1 = 2.75f;
 
-			if (x < 1.0f / d1) { return n1 * x * x; }
+			if (x < 1.0f / d1) {
+				return n1 * x * x;
+			}
 			if (
 				x < 2.0f / d1) {
 				return n1 * (x - 1.0f / d1) * (x - 1.0f / d1) +
@@ -146,6 +174,8 @@ float Unnamed::TweenEase::Evaluate(const EASE_TYPE easeType, float x) {
 					       EASE_TYPE::OUT_BOUNCE, 2.0f * x - 1.0f
 				       ) * 0.5f + 0.5f;
 		}
-		default: { return x; }
+		default: {
+			return x;
+		}
 	}
 }

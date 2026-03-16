@@ -1,12 +1,11 @@
 #include "ShaderProgramLoader.h"
 
 #include <filesystem>
-#include <fstream>
-
-#include <json.hpp>
 
 #include "core/assets/AssetManager.h"
 #include "core/assets/types/ShaderProgramAssetData.h"
+#include "core/json/JsonReader.h"
+#include "core/path/PathUtil.h"
 #include "core/string/StrUtil.h"
 
 namespace Unnamed {
@@ -17,30 +16,17 @@ namespace Unnamed {
 			);
 		}
 
-		std::string ResolveRelativePath(
-			const std::filesystem::path& baseDir, std::string path
-		) {
-			if (path.empty()) {
-				return path;
-			}
-
-			std::filesystem::path p(path);
-			if (p.is_relative()) {
-				p = baseDir / p;
-			}
-			return StrUtil::NormalizePath(p.lexically_normal().string());
-		}
-
 		void ParseDefines(
-			const nlohmann::json&                             j,
+			const JsonReader&                                 j,
 			std::vector<std::pair<std::string, std::string>>& outDefines
 		) {
-			if (j.is_array()) {
-				for (const auto& v : j) {
-					if (!v.is_string()) {
+			if (j.IsArray()) {
+				for (size_t i = 0; i < j.Size(); ++i) {
+					const JsonReader v = j[i];
+					if (!v.Valid() || !v.IsString()) {
 						continue;
 					}
-					const std::string s  = v.get<std::string>();
+					const std::string s  = v.GetString();
 					const size_t      eq = s.find('=');
 					if (eq == std::string::npos) {
 						outDefines.emplace_back(s, "1");
@@ -53,48 +39,54 @@ namespace Unnamed {
 				return;
 			}
 
-			if (!j.is_object()) {
+			if (!j.IsObject()) {
 				return;
 			}
-			for (const auto& [k, v] : j.items()) {
-				if (v.is_string()) {
-					outDefines.emplace_back(k, v.get<std::string>());
-				} else if (v.is_number_integer()) {
-					outDefines.emplace_back(k, std::to_string(v.get<int>()));
-				} else if (v.is_number_float()) {
-					outDefines.emplace_back(
-						k, std::to_string(v.get<float>())
-					);
-				} else if (v.is_boolean()) {
-					outDefines.emplace_back(k, v.get<bool>() ? "1" : "0");
+			j.ForEachObject(
+				[&outDefines](const std::string& k, const JsonReader& v) {
+					if (v.IsString()) {
+						outDefines.emplace_back(k, v.GetString());
+					} else if (v.IsNumberInteger()) {
+						outDefines.emplace_back(k, std::to_string(v.GetInt()));
+					} else if (v.IsNumberFloat()) {
+						outDefines.emplace_back(
+							k, std::to_string(v.GetFloat())
+						);
+					} else if (v.IsBoolean()) {
+						outDefines.emplace_back(k, v.GetBool() ? "1" : "0");
+					}
 				}
-			}
+			);
 		}
 
 		std::optional<ShaderProgramStage> ParseStage(
-			const nlohmann::json& j, const std::filesystem::path& baseDir
+			const JsonReader& j, const std::filesystem::path& baseDir
 		) {
-			if (!j.is_object()) {
+			if (!j.Valid() || !j.IsObject()) {
 				return std::nullopt;
 			}
-			if (!j.contains("path")) {
+
+			const auto sourcePath = j.Read<std::string>("path");
+			if (!sourcePath.has_value() || sourcePath->empty()) {
 				return std::nullopt;
 			}
 
 			ShaderProgramStage stage = {};
-			stage.sourcePath         = ResolveRelativePath(
-				baseDir, j["path"].get<std::string>()
+			stage.sourcePath         = Path::ResolveRelativePath(
+				baseDir, *sourcePath
 			);
-			stage.entry   = j.value("entry", std::string("Main"));
-			stage.profile = j.value("profile", std::string());
-			if (j.contains("defines")) {
+			stage.entry   = j.Read<std::string>("entry").value_or("Main");
+			stage.profile = j.Read<std::string>("profile").value_or(
+				std::string()
+			);
+			if (j.Has("defines")) {
 				ParseDefines(j["defines"], stage.defines);
 			}
 			return stage;
 		}
 	}
 
-	ShaderProgramLoader::ShaderProgramLoader(AssetManager& assetManager) :
+	ShaderProgramLoader::ShaderProgramLoader(AssetManager* assetManager) :
 		mAssetManager(assetManager) {}
 
 	bool ShaderProgramLoader::CanLoad(
@@ -108,17 +100,9 @@ namespace Unnamed {
 	}
 
 	LoadResult ShaderProgramLoader::Load(const std::string& path) {
-		LoadResult result = {};
-
-		std::ifstream ifs(path);
-		if (!ifs) {
-			return result;
-		}
-
-		nlohmann::json root;
-		try {
-			ifs >> root;
-		} catch (...) {
+		LoadResult       result = {};
+		const JsonReader root(path);
+		if (!root.Valid()) {
 			return result;
 		}
 
@@ -126,27 +110,29 @@ namespace Unnamed {
 		const std::filesystem::path baseDir = full.parent_path();
 
 		ShaderProgramAssetData data = {};
-		data.name                   = root.value(
-			"name", full.filename().string()
+		data.name                   = root.Read<std::string>("name").value_or(
+			full.filename().string()
 		);
 
-		if (root.contains("vs")) {
+		if (root.Has("vs")) {
 			data.vs = ParseStage(root["vs"], baseDir);
 		}
-		if (root.contains("ps")) {
+		if (root.Has("ps")) {
 			data.ps = ParseStage(root["ps"], baseDir);
 		}
-		if (root.contains("cs")) {
+		if (root.Has("cs")) {
 			data.cs = ParseStage(root["cs"], baseDir);
 		}
 
-		if (root.contains("includeDirs") && root["includeDirs"].is_array()) {
-			for (const auto& v : root["includeDirs"]) {
-				if (!v.is_string()) {
+		const JsonReader includeDirs = root["includeDirs"];
+		if (includeDirs.Valid() && includeDirs.IsArray()) {
+			for (size_t i = 0; i < includeDirs.Size(); ++i) {
+				const JsonReader v = includeDirs[i];
+				if (!v.Valid() || !v.IsString()) {
 					continue;
 				}
 				data.includeDirectories.emplace_back(
-					ResolveRelativePath(baseDir, v.get<std::string>())
+					Path::ResolveRelativePath(baseDir, v.GetString())
 				);
 			}
 		}
@@ -157,7 +143,7 @@ namespace Unnamed {
 			if (!stage.has_value()) {
 				return;
 			}
-			const AssetID dep = mAssetManager.LoadFromFile(
+			const AssetID dep = mAssetManager->LoadFromFile(
 				stage->sourcePath, ASSET_TYPE::SHADER_SOURCE
 			);
 			if (dep != kInvalidAssetID) {

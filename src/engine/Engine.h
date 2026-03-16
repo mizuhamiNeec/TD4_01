@@ -9,11 +9,15 @@ class IPostProcess;
 class SrvManager;
 class AudioManager;
 
+namespace Unnamed::Physics {
+	class Engine;
+}
+
 namespace Unnamed {
-	class UEditorRuntime;
-	class UImGuiLayer;
+	class EditorRuntime;
+	class ImGuiLayer;
 	class ConsoleSystem;
-	class UWorld;
+	class World;
 
 	namespace Render {
 		class RenderModule;
@@ -38,7 +42,8 @@ namespace Unnamed {
 		int Run();
 
 		/// @brief エディターモードの画面表示モードを切り替えます。
-		void ToggleEditorScreenMode() const;
+		void                           ToggleEditorScreenMode() const;
+		[[nodiscard]] Physics::Engine* GetPhysicsEngine() const;
 
 	private:
 		/// @brief 初期化処理
@@ -64,7 +69,7 @@ namespace Unnamed {
 
 		/// @brief 現在のワールドを取得します。
 		/// @return 現在のワールドの参照
-		[[nodiscard]] UWorld* GetWorld() const;
+		[[nodiscard]] World* GetWorld() const;
 
 		EngineConfig mConfig;
 
@@ -77,18 +82,19 @@ namespace Unnamed {
 		std::unique_ptr<ConsoleSystem>        mConsoleSystem;
 		std::unique_ptr<class TerminalSystem> mTerminalSystem;
 
-		std::unique_ptr<class TimeSystem>   mTimeSystem;
+		std::unique_ptr<class TimeSystem>  mTimeSystem;
 		std::unique_ptr<class InputSystem> mInputSystem;
 		std::unique_ptr<class Profiler>    mProfiler;
 
 		std::unique_ptr<Rhi::IRhiDevice>      mRhiDevice;
 		std::unique_ptr<Render::RenderModule> mRenderModule;
+		std::unique_ptr<Physics::Engine>      mPhysicsEngine;
 
-		std::unique_ptr<UWorld> mWorld;
+		std::unique_ptr<World> mWorld;
 
 #ifdef _DEBUG
-		std::unique_ptr<UImGuiLayer>    mUImGuiLayer;
-		std::unique_ptr<UEditorRuntime> mUEditorRuntime;
+		std::unique_ptr<ImGuiLayer>    mUImGuiLayer;
+		std::unique_ptr<EditorRuntime> mUEditorRuntime;
 #endif
 
 		std::unique_ptr<AudioManager> mAudioManager;

@@ -1,12 +1,13 @@
 #include "Engine.h"
 
-#include <pch.h>
-
 #include <chrono>
+#include <pch.h>
 
 // ReSharper disable CppUnusedIncludeDirective
 #include <engine/ResourceSystem/Audio/AudioManager.h>
 // ReSharper restore CppUnusedIncludeDirective
+
+#include <utility>
 
 #include <core/assets/AssetManager.h>
 #include <core/assets/loader/MaterialAssetLoader.h>
@@ -16,8 +17,11 @@
 #include <core/assets/loader/ShaderProgramLoader.h>
 #include <core/assets/loader/ShaderSourceLoader.h>
 #include <core/assets/loader/TextureLoaderDirectXTex.h>
+#include <core/assets/loader/UiDocumentAssetLoader.h>
+#include "engine/scene/Scene.h"
 
-#include <engine/editor/UEditorRuntime.h>
+#include <engine/editor/EditorRuntime.h>
+#include <engine/physics/core/Physics.h>
 #include <engine/Platform/PlatformEventsImpl.h>
 #include <engine/Platform/WindowManager.h>
 #include <engine/profiler/Profiler.h>
@@ -29,7 +33,7 @@
 #include <engine/rhi/d3d12/D3D12Device.h>
 #include <engine/rhi/d3d12/D3D12Util.h>
 #include <engine/rhi/interface/IRhiDevice.h>
-#include <engine/ui/UImGuiLayer.h>
+#include <engine/ui/ImGuiLayer.h>
 #include <engine/unnamed/framework/entity/Entity.h>
 #include <engine/unnamed/subsystem/console/concommand/ConCommand.h>
 #include <engine/unnamed/subsystem/input/device/keyboard/KeyboardDevice.h>
@@ -38,13 +42,11 @@
 #include <engine/unnamed/subsystem/terminal/TerminalSystem.h>
 #include <engine/unnamed/subsystem/time/SystemClock.h>
 #include <engine/unnamed/subsystem/time/TimeSystem.h>
-#include <engine/world/UEditorWorld.h>
-#include <engine/world/UGameWorld.h>
-#include <engine/world/UWorld.h>
+#include <engine/world/EditorWorld.h>
+#include <engine/world/GameWorld.h>
+#include <engine/world/World.h>
 
-#include <utility>
-
-#include "unnamed/subsystem/console/concommand/UnnamedConVar.h"
+#include <engine/unnamed/subsystem/console/concommand/ConVar.h>
 
 namespace Unnamed {
 	namespace Rhi {
@@ -117,6 +119,10 @@ namespace Unnamed {
 #endif
 	}
 
+	Physics::Engine* Engine::GetPhysicsEngine() const {
+		return mPhysicsEngine.get();
+	}
+
 	/// @brief 初期化
 	/// @return 成功したらtrueを返す
 	bool Engine::Init() {
@@ -176,21 +182,30 @@ namespace Unnamed {
 			std::move(std::make_unique<MeshAssetLoader>())
 		);
 		mAssetManager->RegisterLoader(
-			std::move(std::make_unique<ShaderProgramLoader>(*mAssetManager))
-		);
-		mAssetManager->RegisterLoader(
-			std::move(std::make_unique<MaterialAssetLoader>(*mAssetManager))
-		);
-		mAssetManager->RegisterLoader(
 			std::move(
-				std::make_unique<MaterialInstanceAssetLoader>(*mAssetManager)
+				std::make_unique<ShaderProgramLoader>(mAssetManager.get())
 			)
 		);
 		mAssetManager->RegisterLoader(
-			std::move(std::make_unique<PostFxChainLoader>(*mAssetManager))
+			std::move(
+				std::make_unique<MaterialAssetLoader>(mAssetManager.get())
+			)
 		);
 		mAssetManager->RegisterLoader(
-			std::move(std::make_unique<ShaderSourceLoader>(*mAssetManager))
+			std::move(
+				std::make_unique<MaterialInstanceAssetLoader>(
+					mAssetManager.get()
+				)
+			)
+		);
+		mAssetManager->RegisterLoader(
+			std::move(std::make_unique<PostFxChainLoader>(mAssetManager.get()))
+		);
+		mAssetManager->RegisterLoader(
+			std::move(std::make_unique<ShaderSourceLoader>(mAssetManager.get()))
+		);
+		mAssetManager->RegisterLoader(
+			std::move(std::make_unique<UiDocumentAssetLoader>())
 		);
 
 		// TimeSystemの初期化
@@ -202,11 +217,11 @@ namespace Unnamed {
 		mProfiler = std::make_unique<Profiler>();
 		ServiceLocator::Register<Profiler>(mProfiler.get());
 
-		mPhysicsEngine = std::make_unique<Unnamed::Physics::Engine>();
+		mPhysicsEngine = std::make_unique<Physics::Engine>();
 		mPhysicsEngine->Init();
 
 		// InputSystemの初期化
-		mInputSystem = std::make_unique<UInputSystem>();
+		mInputSystem = std::make_unique<InputSystem>();
 		if (!mInputSystem->Init()) {
 			return false;
 		}
@@ -259,7 +274,7 @@ namespace Unnamed {
 
 #ifdef _DEBUG
 		auto& dx     = dynamic_cast<Rhi::D3D12Device&>(*mRhiDevice);
-		mUImGuiLayer = std::make_unique<UImGuiLayer>(
+		mUImGuiLayer = std::make_unique<ImGuiLayer>(
 			hwnd,
 			dx,
 			dx.GetSwapChain().GetBufferCount(),
@@ -267,7 +282,7 @@ namespace Unnamed {
 		);
 
 		mRenderModule->SetUiCallbacks(
-			[this](Render::RenderPassContext& passContext) {
+			[this](const Render::RenderPassContext& passContext) {
 				if (mUImGuiLayer) {
 					mUImGuiLayer->RenderMainDrawData(passContext);
 				}
@@ -283,10 +298,10 @@ namespace Unnamed {
 		RegisterConsoleCommandsAndVariables();
 
 		if (mConfig.mode == RUN_MODE::EDITOR) {
-			auto& editorWorld = SwitchWorld<UEditorWorld>();
+			auto& editorWorld = SwitchWorld<EditorWorld>();
 			editorWorld.LoadSceneFromFile("./content/parkour/scenes/game.json");
 #ifdef _DEBUG
-			mUEditorRuntime = std::make_unique<UEditorRuntime>(
+			mUEditorRuntime = std::make_unique<EditorRuntime>(
 				editorWorld,
 				*mWindowManager,
 				*mRenderModule,
@@ -298,8 +313,14 @@ namespace Unnamed {
 			);
 #endif
 		} else {
-			(void)SwitchWorld<UGameWorld>();
+			auto& world = SwitchWorld<GameWorld>();
+			world.LoadSceneFromFile("./content/parkour/scenes/game.json");
 		}
+
+		// ユーザー名をコンソール変数に設定
+		mConsoleSystem->ExecuteCommand(
+			"name " + WindowsUtils::GetWindowsUserName(), EXEC_FLAG::SILENT
+		);
 
 		return true;
 	}
@@ -308,7 +329,10 @@ namespace Unnamed {
 	void Engine::Tick() {
 		const auto frameStart = std::chrono::steady_clock::now();
 		mTimeSystem->BeginFrame();
-		const float deltaTime = mTimeSystem->GetGameTime()->DeltaTime<float>();
+		const float unscaledDeltaTime = mTimeSystem->GetGameTime()->DeltaTime<
+			float>();
+		const float scaledDeltaTime = mTimeSystem->GetGameTime()->
+		                                           ScaledDeltaTime<float>();
 
 		// プロファイラのフレーム開始
 		if (mProfiler) {
@@ -323,10 +347,10 @@ namespace Unnamed {
 
 		// アセットのホットリロードのポーリング
 		{
-			mAssetHotReloadPollAccumulator += deltaTime;
+			mAssetHotReloadPollAccumulator += unscaledDeltaTime;
 
 			auto hotreloadpollinterval = mConsoleSystem->GetConVarAs<
-				UnnamedConVar<float>>(
+				ConVar<float>>(
 				"asset_hotreloadpollinterval"
 			);
 
@@ -392,24 +416,20 @@ namespace Unnamed {
 		{
 			Profiler::ScopeTimer scope(mProfiler.get(), "World.Tick");
 			if (mWorld) {
-				mWorld->Tick(deltaTime);
+				mWorld->Tick(unscaledDeltaTime, scaledDeltaTime);
 			}
 		}
+
+		Box box = {
+			.center   = Vec3::zero,
+			.halfSize = Vec3::one * 2.0f * 0.5f,
+		};
 
 		Render::RenderFrameInputs inputs = {};
 		// フレームインデックスとゲーム時間を設定
 		inputs.frameIndex = mFrameIndex++;
 		inputs.time       =
 			static_cast<float>(mTimeSystem->GetGameTime()->TotalTime());
-#ifdef _DEBUG
-		if (mUEditorRuntime && mIsEditorMode) {
-			inputs.sceneRenderRequest = mUEditorRuntime->
-				GetSceneRenderRequest();
-			if (mRenderModule) {
-				mRenderModule->SetSceneRenderRequest(inputs.sceneRenderRequest);
-			}
-		}
-#endif
 		if (mWorld && mRenderFrameContext) {
 			Profiler::ScopeTimer scope(
 				mProfiler.get(), "World.FillRenderFrameInputs"
@@ -422,24 +442,39 @@ namespace Unnamed {
 #ifdef _DEBUG
 		if (mUImGuiLayer) {
 			if (mUEditorRuntime && mIsEditorMode) {
+				if (mRenderModule) {
+					auto updateViewOutput = [this](
+						const std::string_view viewKey
+					) {
+						mUEditorRuntime->SetViewOutput(
+							viewKey,
+							mRenderModule->GetViewOutputView(viewKey),
+							mRenderModule->GetViewOutputSize(viewKey)
+						);
+					};
+					updateViewOutput(EditorRuntime::kViewScenePerspective);
+					updateViewOutput(EditorRuntime::kViewSceneTop);
+					updateViewOutput(EditorRuntime::kViewSceneFront);
+					updateViewOutput(EditorRuntime::kViewSceneRight);
+					updateViewOutput(EditorRuntime::kViewGuiPreview);
+				}
 				if (
 					mUEditorRuntime->GetPresentMode() ==
 					EDITOR_PRESENT_MODE::VIEWPORT_PANEL
 				) {
-					mUEditorRuntime->SetSceneOutput(
-						mRenderModule->GetSceneOutputView(),
-						mRenderModule->GetSceneOutputSize()
-					);
 					Profiler::ScopeTimer scope(
 						mProfiler.get(), "Editor.BuildUi"
 					);
-					mUEditorRuntime->BuildUi(deltaTime);
+					mUEditorRuntime->BuildUi(unscaledDeltaTime);
 				}
 			}
 			{
 				Profiler::ScopeTimer scope(mProfiler.get(), "ImGui.EndFrame");
 				mUImGuiLayer->EndFrame();
 			}
+		}
+		if (mUEditorRuntime && mIsEditorMode) {
+			mUEditorRuntime->FillEditorRenderViews(inputs);
 		}
 #endif
 
@@ -465,6 +500,8 @@ namespace Unnamed {
 			mWorld->Shutdown();
 			mWorld.reset();
 		}
+
+		mPhysicsEngine.reset();
 
 #ifdef _DEBUG
 		if (mRenderModule) {
@@ -539,11 +576,6 @@ namespace Unnamed {
 			"Toggle editor viewport/swapchain presentation mode."
 		);
 #endif
-
-		// コンソール変数を登録
-		mConsoleSystem->ExecuteCommand(
-			"name " + WindowsUtils::GetWindowsUserName(), EXEC_FLAG::SILENT
-		);
 	}
 
 	void Engine::ToggleFullscreen() const {
@@ -558,7 +590,7 @@ namespace Unnamed {
 
 	template <class TWorld, class... Args>
 	TWorld& Engine::SwitchWorld(Args&&... args) {
-		static_assert(std::is_base_of_v<UWorld, TWorld>);
+		static_assert(std::is_base_of_v<World, TWorld>);
 
 		if (mWorld) {
 			mWorld->Shutdown();
@@ -576,7 +608,7 @@ namespace Unnamed {
 		return *raw;
 	}
 
-	UWorld* Engine::GetWorld() const {
+	World* Engine::GetWorld() const {
 		return mWorld.get();
 	}
 }

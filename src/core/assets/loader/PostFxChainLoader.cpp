@@ -1,37 +1,26 @@
 #include "PostFxChainLoader.h"
 
 #include <filesystem>
-#include <fstream>
-
-#include <json.hpp>
 
 #include "core/assets/AssetManager.h"
 #include "core/assets/types/PostFxChainAssetData.h"
+#include "core/json/JsonReader.h"
+#include "core/path/PathUtil.h"
 #include "core/string/StrUtil.h"
 
 namespace Unnamed {
 	namespace {
+		/// @brief パスがPostFxChainアセットとして適切かどうかを判定する。拡張子ベースで判定する。
+		/// @param path 判定するパス
+		/// @return パスがPostFxChainアセットとして適切であればtrue、そうでなければfalse
 		bool IsPostFxPath(const std::string_view path) {
 			return StrUtil::ToLowerCase(std::string(path)).ends_with(
 				".postfx.json"
 			);
 		}
-
-		std::string ResolveRelativePath(
-			const std::filesystem::path& baseDir, std::string path
-		) {
-			if (path.empty()) {
-				return path;
-			}
-			std::filesystem::path p(path);
-			if (p.is_relative()) {
-				p = baseDir / p;
-			}
-			return StrUtil::NormalizePath(p.lexically_normal().string());
-		}
 	}
 
-	PostFxChainLoader::PostFxChainLoader(AssetManager& assetManager) :
+	PostFxChainLoader::PostFxChainLoader(AssetManager* assetManager) :
 		mAssetManager(assetManager) {}
 
 	bool PostFxChainLoader::CanLoad(
@@ -45,16 +34,9 @@ namespace Unnamed {
 	}
 
 	LoadResult PostFxChainLoader::Load(const std::string& path) {
-		LoadResult    result = {};
-		std::ifstream ifs(path);
-		if (!ifs) {
-			return result;
-		}
-
-		nlohmann::json root;
-		try {
-			ifs >> root;
-		} catch (...) {
+		LoadResult       result = {};
+		const JsonReader root(path);
+		if (!root.Valid()) {
 			return result;
 		}
 
@@ -62,23 +44,28 @@ namespace Unnamed {
 		const std::filesystem::path baseDir = full.parent_path();
 
 		PostFxChainAssetData data = {};
-		data.name = root.value("name", full.filename().string());
+		data.name                 = root.Read<std::string>("name").value_or(
+			full.filename().string()
+		);
 
-		if (root.contains("passes") && root["passes"].is_array()) {
-			for (const auto& p : root["passes"]) {
-				if (!p.is_object()) {
+		const JsonReader passes = root["passes"];
+		if (passes.Valid() && passes.IsArray()) {
+			for (size_t i = 0; i < passes.Size(); ++i) {
+				const JsonReader p = passes[i];
+				if (!p.Valid() || !p.IsObject()) {
 					continue;
 				}
 
 				PostFxPassAssetData pass = {};
-				pass.name                = p.value("name", std::string("Pass"));
-				pass.enabled             = p.value("enabled", true);
+				pass.name = p.Read<std::string>("name").value_or("Pass");
+				pass.enabled = p.Read<bool>("enabled").value_or(true);
 
-				if (p.contains("shader")) {
-					pass.shaderProgramPath = ResolveRelativePath(
-						baseDir, p["shader"].get<std::string>()
+				if (const auto shaderPath = p.Read<std::string>("shader");
+					shaderPath.has_value() && !shaderPath->empty()) {
+					pass.shaderProgramPath = Path::ResolveRelativePath(
+						baseDir, *shaderPath
 					);
-					pass.shaderProgramId = mAssetManager.LoadFromFile(
+					pass.shaderProgramId = mAssetManager->LoadFromFile(
 						pass.shaderProgramPath, ASSET_TYPE::SHADER_PROGRAM
 					);
 					if (pass.shaderProgramId != kInvalidAssetID) {
@@ -86,13 +73,16 @@ namespace Unnamed {
 					}
 				}
 
-				if (p.contains("scalars") && p["scalars"].is_object()) {
-					for (const auto& [k, v] : p["scalars"].items()) {
-						if (!v.is_number()) {
-							continue;
+				const JsonReader scalars = p["scalars"];
+				if (scalars.Valid() && scalars.IsObject()) {
+					scalars.ForEachObject(
+						[&pass](const std::string& k, const JsonReader& v) {
+							if (!v.IsNumber()) {
+								return;
+							}
+							pass.scalarParams[k] = v.GetFloat();
 						}
-						pass.scalarParams[k] = v.get<float>();
-					}
+					);
 				}
 
 				data.passes.emplace_back(std::move(pass));

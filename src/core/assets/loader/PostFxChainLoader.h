@@ -6,12 +6,12 @@ namespace Unnamed {
 
 	class PostFxChainLoader : public IAssetLoader {
 	public:
-		explicit PostFxChainLoader(AssetManager& assetManager);
+		explicit PostFxChainLoader(AssetManager* assetManager);
 
 		bool CanLoad(std::string_view path, ASSET_TYPE* outType) const override;
 		LoadResult Load(const std::string& path) override;
 
 	private:
-		AssetManager& mAssetManager;
+		AssetManager* mAssetManager = nullptr;
 	};
 }

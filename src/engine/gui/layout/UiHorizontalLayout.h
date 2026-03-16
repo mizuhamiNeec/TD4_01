@@ -4,14 +4,11 @@
 namespace Unnamed::Gui {
 	class UiHorizontalLayout : public UiLayout {
 	public:
-		UiHorizontalLayout()           = default;
-		~UiHorizontalLayout() override = default;
+		UiHorizontalLayout();
+		~UiHorizontalLayout() override;
 
 		const char* GetTypeName() const override {
-			return "HorizontalLayout";
+			return "HorizontalLayoutPreset";
 		}
-
-	protected:
-		void UpdateLayout(const Rect& parentGlobalRect) override;
 	};
 }

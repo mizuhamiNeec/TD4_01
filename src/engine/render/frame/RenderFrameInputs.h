@@ -8,7 +8,7 @@
 #include "core/math/Vec3.h"
 #include "core/math/Vec4.h"
 
-#include "engine/unnamed/uprimitive/Primitives.h"
+#include "engine/unnamed/primitive/Primitives.h"
 
 namespace Unnamed::Render {
 	enum class PROJECTION_DEPTH_MODE : uint8_t {

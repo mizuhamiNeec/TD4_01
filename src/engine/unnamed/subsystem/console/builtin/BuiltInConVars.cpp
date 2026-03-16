@@ -1,6 +1,6 @@
 #include "BuiltInConVars.h"
 
-#include <engine/unnamed/subsystem/console/concommand/UnnamedConVar.h>
+#include <engine/unnamed/subsystem/console/concommand/ConVar.h>
 
 namespace Unnamed {
 	void RegisterBuiltInConVars() {
@@ -14,19 +14,19 @@ namespace Unnamed {
 	}
 
 	void EngineConVar() {
-		static UnnamedConVar<std::string> im_configpath(
+		static ConVar<std::string> im_configpath(
 			"im_configpath",
 			"./content/core/settings/imconfig.json",
 			FCVAR::NONE, "Path to ImGui config file."
 		);
 
-		static UnnamedConVar<std::string> im_guizmoconfigpath(
+		static ConVar<std::string> im_guizmoconfigpath(
 			"im_guizmoconfigpath",
 			"./content/core/settings/imguizmo.json",
 			FCVAR::NONE, "Path to ImGuizmo config file."
 		);
 
-		static UnnamedConVar host_timescale(
+		static ConVar host_timescale(
 			"host_timescale", 1.0f, FCVAR::NONE,
 			"Prescale the clock by this amount."
 		);
@@ -34,7 +34,7 @@ namespace Unnamed {
 		//---------------------------------------------------------------------
 		// Asset
 		//---------------------------------------------------------------------
-		static UnnamedConVar asset_hotreloadpollinterval(
+		static ConVar asset_hotreloadpollinterval(
 			"asset_hotreloadpollinterval",
 			0.25f, // まあリアルタイムといえるでしょう
 			FCVAR::ARCHIVE,
@@ -47,58 +47,58 @@ namespace Unnamed {
 	}
 
 	void EditorConVar() {
-		static UnnamedConVar ed_gridcolor(
+		static ConVar ed_gridcolor(
 			"ed_gridcolor", Vec3(0.28f, 0.28f, 0.28f), FCVAR::ARCHIVE,
 			"Editor grid color."
 		);
 
-		static UnnamedConVar ed_gridmajorcolor_r(
+		static ConVar ed_gridmajorcolor_r(
 			"ed_gridmajorcolor_r", 0.39f, FCVAR::ARCHIVE,
 			"Editor grid major line r color."
 		);
-		static UnnamedConVar ed_gridmajorcolor_g(
+		static ConVar ed_gridmajorcolor_g(
 			"ed_gridmajorcolor_g", 0.2f, FCVAR::ARCHIVE,
 			"Editor grid major line g color."
 		);
-		static UnnamedConVar ed_gridmajorcolor_b(
+		static ConVar ed_gridmajorcolor_b(
 			"ed_gridmajorcolor_b", 0.02f, FCVAR::ARCHIVE,
 			"Editor grid major line b color."
 		);
 
-		static UnnamedConVar ed_gridaxiscolor_r(
+		static ConVar ed_gridaxiscolor_r(
 			"ed_gridaxiscolor_r", 0.0f, FCVAR::ARCHIVE,
 			"Editor grid axis line r color."
 		);
-		static UnnamedConVar ed_gridaxiscolor_g(
+		static ConVar ed_gridaxiscolor_g(
 			"ed_gridaxiscolor_g", 0.39f, FCVAR::ARCHIVE,
 			"Editor grid axis line g color."
 		);
-		static UnnamedConVar ed_gridaxiscolor_b(
+		static ConVar ed_gridaxiscolor_b(
 			"ed_gridaxiscolor_b", 0.39f, FCVAR::ARCHIVE,
 			"Editor grid axis line b color."
 		);
 
-		static UnnamedConVar ed_gridminorcolor_r(
+		static ConVar ed_gridminorcolor_r(
 			"ed_gridminorcolor_r", 0.39f, FCVAR::ARCHIVE,
 			"Editor grid minor line r color."
 		);
-		static UnnamedConVar ed_gridminorcolor_g(
+		static ConVar ed_gridminorcolor_g(
 			"ed_gridminorcolor_g", 0.39f, FCVAR::ARCHIVE,
 			"Editor grid minor line g color."
 		);
-		static UnnamedConVar ed_gridminorcolor_b(
+		static ConVar ed_gridminorcolor_b(
 			"ed_gridminorcolor_b", 0.39f, FCVAR::ARCHIVE,
 			"Editor grid minor line b color."
 		);
 	}
 
 	void ClientConVar() {
-		static UnnamedConVar<std::string> name(
+		static ConVar<std::string> name(
 			"name", "unnamed", FCVAR::NOTIFY,
 			"Current user name."
 		);
 
-		static UnnamedConVar cl_showpos(
+		static ConVar cl_showpos(
 			"cl_showpos",
 #ifdef _DEBUG
 			1,
@@ -109,7 +109,7 @@ namespace Unnamed {
 			"Draw current position at top of screen (1 = meter, 2 = hammer)"
 		);
 
-		static UnnamedConVar cl_showfps(
+		static ConVar cl_showfps(
 			"cl_showfps",
 #ifdef _DEBUG
 			2,
@@ -121,37 +121,49 @@ namespace Unnamed {
 		);
 
 		//---------------------------------------------------------------------
-		// Camera 
+		// Mouse
 		//---------------------------------------------------------------------
-		static UnnamedConVar sensitivity(
+		static ConVar sensitivity(
 			"sensitivity", 1.0f, FCVAR::ARCHIVE,
 			"Mouse sensitivity."
 		);
-		static UnnamedConVar m_pitch(
+
+		static ConVar m_pitch(
 			"m_pitch", 0.022f, FCVAR::ARCHIVE,
 			"Mouse pitch factor."
 		);
-		static UnnamedConVar m_yaw(
+		static ConVar m_yaw(
 			"m_yaw", 0.022f, FCVAR::ARCHIVE,
 			"Mouse yaw factor."
 		);
-		static UnnamedConVar cl_pitchdown(
-			"cl_pitchdown", -89.0f, FCVAR::CHEAT,
+
+		//---------------------------------------------------------------------
+		// Camera 
+		//---------------------------------------------------------------------
+
+		static ConVar cl_pitchdown(
+			"cl_pitchdown", 89.0f, FCVAR::CHEAT,
 			"Maximum downward pitch angle."
 		);
-		static UnnamedConVar cl_pitchup(
+		static ConVar cl_pitchup(
 			"cl_pitchup", 89.0f, FCVAR::CHEAT,
 			"Maximum upward pitch angle."
 		);
-		static UnnamedConVar cl_fov(
+
+		static ConVar cl_fov(
 			"cl_fov", 90.0f, FCVAR::ARCHIVE,
 			"Player Camera field of view."
 		);
-		static UnnamedConVar cl_maxfov(
+		static ConVar viewmodel_fov(
+			"viewmodel_fov", 54.0f, FCVAR::CHEAT,
+			"Viewmodel field of view."
+		);
+
+		static ConVar cl_maxfov(
 			"cl_maxfov", 179.9f, FCVAR::CHEAT,
 			"Maximum allowed field of view."
 		);
-		static UnnamedConVar cl_minfov(
+		static ConVar cl_minfov(
 			"cl_minfov", 0.1f, FCVAR::CHEAT,
 			"Minimum allowed field of view."
 		);
@@ -159,7 +171,7 @@ namespace Unnamed {
 		//---------------------------------------------------------------------
 		// Map 
 		//---------------------------------------------------------------------
-		static UnnamedConVar r_mapextents(
+		static ConVar r_mapextents(
 			"r_mapextents", 16384.0f, FCVAR::CHEAT,
 			"Set the max dimension for the map."
 		);
@@ -167,12 +179,12 @@ namespace Unnamed {
 		//---------------------------------------------------------------------
 		// Graphics
 		//---------------------------------------------------------------------
-		static UnnamedConVar fps_max(
+		static ConVar fps_max(
 			"fps_max", 360.0, FCVAR::ARCHIVE,
 			"Frame rate limiter. 0 = unlimited."
 		);
 
-		static UnnamedConVar r_vsync(
+		static ConVar r_vsync(
 			"r_vsync", false, FCVAR::ARCHIVE,
 			"Vertical sync"
 		);
@@ -180,31 +192,89 @@ namespace Unnamed {
 		//---------------------------------------------------------------------
 		// Debug
 		//---------------------------------------------------------------------
-		static UnnamedConVar ent_axis(
+		static ConVar ent_axis(
 			"ent_axis", false, FCVAR::CHEAT,
 			"Draw axis for entities."
 		);
 
-		static UnnamedConVar ent_bbox(
+		static ConVar ent_bbox(
 			"ent_bbox", false, FCVAR::CHEAT,
 			"Draw bounding box for entities."
 		);
+
+		static ConVar noclipenabled(
+			"noclipenabled", false, FCVAR::CHEAT | FCVAR::NOTIFY,
+			"Enable noclip mode."
+		);
 	}
 
+	/// @brief サーバー側のConVarを登録します。
+	/// @details このエンジンはネットワーク・マルチプレイ非対応です。ロマン。
 	void ServerConVar() {
-		static UnnamedConVar sv_gravity(
-			"sv_gravity", 1200.0f, FCVAR::NONE,
+		static ConVar noclip(
+			"noclip", false, FCVAR::CHEAT | FCVAR::NOTIFY,
+			"Enable noclip mode."
+		);
+
+		// World
+		static ConVar sv_gravity(
+			"sv_gravity", 800.0f, FCVAR::NOTIFY | FCVAR::REPLICATED,
 			"World gravity."
 		);
 
-		static UnnamedConVar sv_maxvelocity(
-			"sv_maxvelocity", 3500.0f, FCVAR::NONE,
+		static ConVar sv_maxvelocity(
+			"sv_maxvelocity", 3500.0f, FCVAR::REPLICATED,
 			"Maximum speed any ballistically moving object is allowed to attain per axis."
 		);
 
-		static UnnamedConVar sv_stopspeed(
-			"sv_stopspeed", 100.0f, FCVAR::NONE,
+		// Cheat
+		static ConVar sv_cheats(
+			"sv_cheats", false, FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Allow cheats on server"
+		);
+
+		// Player movement
+		static ConVar sv_accelerate(
+			"sv_accelerate", 10.0f, FCVAR::NOTIFY | FCVAR::REPLICATED,
+			""
+		);
+
+		static ConVar sv_airaccelerate(
+			"sv_airaccelerate", 10.0f, FCVAR::NOTIFY | FCVAR::REPLICATED,
+			""
+		);
+
+		static ConVar sv_maxspeed(
+			"sv_maxspeed", 320.0f, FCVAR::NOTIFY | FCVAR::REPLICATED,
+			""
+		);
+
+		static ConVar sv_stopspeed(
+			"sv_stopspeed", 100.0f, FCVAR::NOTIFY | FCVAR::REPLICATED,
 			"Minimum stopping speed when on ground."
+		);
+
+		static ConVar sv_friction(
+			"sv_friction", 5.2f, FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"World friction."
+		);
+
+		static ConVar sv_airspeedcap(
+			"sv_airspeedcap", 30.0f, FCVAR::CHEAT | FCVAR::REPLICATED,
+			""
+		);
+
+		static ConVar sv_duckspeed(
+			"sv_duckspeed", 63.3f, FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Duck speed in HU/s."
+		);
+		static ConVar sv_walkspeed(
+			"sv_walkspeed", 150.0f, FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Walk speed in HU/s."
+		);
+		static ConVar sv_sprintspeed(
+			"sv_sprintspeed", 320.0f, FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Sprint speed in HU/s."
 		);
 	}
 }

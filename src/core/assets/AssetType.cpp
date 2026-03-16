@@ -12,6 +12,7 @@ std::string Unnamed::ToString(const ASSET_TYPE e) {
 		case ASSET_TYPE::SHADER_PROGRAM: return "SHADER_PROGRAM";
 		case ASSET_TYPE::MATERIAL_INSTANCE: return "MATERIAL_INSTANCE";
 		case ASSET_TYPE::POST_FX_CHAIN: return "POST_FX_CHAIN";
+		case ASSET_TYPE::UI_DOCUMENT: return "UI_DOCUMENT";
 		default: return "unknown";
 	}
 }

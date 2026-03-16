@@ -1,7 +1,7 @@
 #include "FrameLimiter.h"
 
 #include <engine/unnamed/subsystem/console/ConsoleSystem.h>
-#include <engine/unnamed/subsystem/console/concommand/UnnamedConVar.h>
+#include <engine/unnamed/subsystem/console/concommand/ConVar.h>
 #include <engine/unnamed/subsystem/interface/ServiceLocator.h>
 
 static constexpr std::string_view kChannel = "FrmLim";
@@ -11,7 +11,7 @@ static constexpr std::string_view kChannel = "FrmLim";
 FrameLimiter::FrameLimiter(GameTime* gameTime) :
 	mGameTime(gameTime) {
 	mConsoleSystem    = ServiceLocator::Get<Unnamed::ConsoleSystem>();
-	const auto fpsmax = mConsoleSystem->GetConVarAs<Unnamed::UnnamedConVar<
+	const auto fpsmax = mConsoleSystem->GetConVarAs<Unnamed::ConVar<
 		double>>("fps_max");
 
 	if (fpsmax) {
@@ -76,7 +76,7 @@ void FrameLimiter::Limit() {
 
 /// @brief コンソール変数の値をチェックして目標FPSを更新します
 void FrameLimiter::CheckConVarValue() {
-	const auto fpsmax = mConsoleSystem->GetConVarAs<Unnamed::UnnamedConVar<
+	const auto fpsmax = mConsoleSystem->GetConVarAs<Unnamed::ConVar<
 		double>>("fps_max");
 	SetTargetFPS(fpsmax->GetValue());
 }

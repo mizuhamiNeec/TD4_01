@@ -1,15 +1,22 @@
 #include "UiDocument.h"
 
+#include "engine/unnamed/subsystem/console/Log.h"
+
 namespace Unnamed::Gui {
+	namespace {
+		static constexpr std::string_view kChannel = "UiDocument";
+	}
+
 	UiDocument::UiDocument() = default;
 
 	UiDocument::~UiDocument() = default;
 
 	bool UiDocument::Save(const std::string& path) const {
 		JsonWriter writer(path);
-		// pathはコンストラクタで受け取るスタイル
 
 		writer.BeginObject();
+		writer.Key("version");
+		writer.Write(2);
 		writer.Key("name");
 		writer.Write(mName);
 
@@ -24,25 +31,51 @@ namespace Unnamed::Gui {
 	}
 
 	std::shared_ptr<UiDocument> UiDocument::Load(const std::string& path) {
-		const JsonReader reader(path); // ファイル読み込みコンストラクタ
+		const JsonReader reader(path);
 		if (!reader.Valid()) {
+			Error(kChannel, "Failed to open UI document '{}'.", path);
+			return nullptr;
+		}
+		return LoadFromJson(reader, path);
+	}
+
+	std::shared_ptr<UiDocument> UiDocument::LoadFromJson(
+		const JsonReader& reader,
+		const std::string& sourceLabel
+	) {
+		if (!reader.Valid()) {
+			Error(kChannel, "Invalid UI document source: '{}'.", sourceLabel);
+			return nullptr;
+		}
+
+		const JsonReader versionNode = reader["version"];
+		if (!versionNode.Valid() || versionNode.GetInt() != 2) {
+			Error(
+				kChannel,
+				"UI document '{}' is not supported. version=2 only.",
+				sourceLabel
+			);
 			return nullptr;
 		}
 
 		auto doc = std::make_shared<UiDocument>();
-
 		if (reader.Has("name")) {
 			doc->SetName(reader["name"].GetString());
 		}
 
-		if (reader.Has("root")) {
-			const JsonReader rootNode   = reader["root"];
-			auto             rootWidget = UiWidget::CreateFromJson(rootNode);
-			if (rootWidget) {
-				doc->SetRootWidget(std::move(rootWidget));
-			}
+		if (!reader.Has("root")) {
+			Error(kChannel, "UI root is missing: '{}'.", sourceLabel);
+			return nullptr;
 		}
 
+		const JsonReader rootNode   = reader["root"];
+		auto             rootWidget = UiWidget::CreateFromJson(rootNode);
+		if (!rootWidget) {
+			Error(kChannel, "UI root parse failed: '{}'.", sourceLabel);
+			return nullptr;
+		}
+
+		doc->SetRootWidget(std::move(rootWidget));
 		return doc;
 	}
 

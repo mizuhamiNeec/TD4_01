@@ -2,7 +2,7 @@
 #include "../base/BaseComponent.h"
 
 #include "engine/render/frame/RenderFrameInputs.h"
-#include "engine/unnamed/subsystem/input/UInputSystem.h"
+#include "engine/unnamed/subsystem/input/InputSystem.h"
 
 namespace Unnamed {
 	class TransformComponent;
@@ -29,8 +29,8 @@ namespace Unnamed {
 
 		// ---- BaseComponent ------------------------------------------------
 		void OnAttached() override;
-		void PrePhysicsTick(float deltaTime) override;
-		void OnTick(float deltaTime) override;
+
+		void OnEditorTick(float deltaTime) override;
 
 		[[nodiscard]] std::string_view GetStableName() const override {
 			return "engine.EditorCamera";
@@ -69,7 +69,7 @@ namespace Unnamed {
 		/// @return TransformComponentへのポインタ、存在しない場合はnullptr
 		[[nodiscard]] TransformComponent* GetTransform() const;
 
-		UInputSystem*        mInput   = nullptr;
+		InputSystem*         mInput   = nullptr;
 		class ConsoleSystem* mConsole = nullptr;
 
 		Vec3 mMoveInput = Vec3::zero;

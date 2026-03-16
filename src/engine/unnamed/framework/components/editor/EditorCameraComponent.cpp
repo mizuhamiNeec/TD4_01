@@ -12,8 +12,8 @@
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
 #include "engine/unnamed/subsystem/console/Log.h"
-#include "engine/unnamed/subsystem/console/concommand/UnnamedConVar.h"
-#include "engine/unnamed/subsystem/input/UInputSystem.h"
+#include "engine/unnamed/subsystem/console/concommand/ConVar.h"
+#include "engine/unnamed/subsystem/input/InputSystem.h"
 #include "engine/unnamed/subsystem/input/device/mouse/MouseDevice.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 
@@ -31,7 +31,7 @@ namespace Unnamed {
 	}
 
 	void EditorCameraComponent::OnAttached() {
-		mInput = ServiceLocator::Get<UInputSystem>();
+		mInput = ServiceLocator::Get<InputSystem>();
 		if (!mInput) {
 			Error(
 				kChannel,
@@ -71,7 +71,8 @@ namespace Unnamed {
 		}
 	}
 
-	void EditorCameraComponent::PrePhysicsTick(float) {
+	void EditorCameraComponent::OnEditorTick(float deltaTime) {
+		// まずは入力を処理して、カメラの向きと移動方向を更新します。
 		mMoveInput = Vec3::zero;
 		mWishDir   = Vec3::zero;
 		if (mLookEnabled && mInput->
@@ -81,9 +82,8 @@ namespace Unnamed {
 			mInput->SetMouseCursorLocked(false);
 			mInput->ClearMouseCursorLockAnchor();
 		}
-	}
 
-	void EditorCameraComponent::OnTick(const float deltaTime) {
+		// 次に、移動速度を更新して、カメラの位置を移動させます。
 		auto* transform = GetTransform();
 		if (!transform) {
 			return;
@@ -242,19 +242,19 @@ namespace Unnamed {
 		}
 
 		// 回転はここで決定する
-		const float sensitivity = mConsole->GetConVarAs<UnnamedConVar<float>>(
+		const float sensitivity = mConsole->GetConVarAs<ConVar<float>>(
 			"sensitivity"
 		)->GetValue();
-		const float pitch = mConsole->GetConVarAs<UnnamedConVar<float>>(
+		const float pitch = mConsole->GetConVarAs<ConVar<float>>(
 			"m_pitch"
 		)->GetValue();
-		const float yaw = mConsole->GetConVarAs<UnnamedConVar<float>>(
+		const float yaw = mConsole->GetConVarAs<ConVar<float>>(
 			"m_yaw"
 		)->GetValue();
-		const float pitchDown = mConsole->GetConVarAs<UnnamedConVar<float>>(
+		const float pitchDown = mConsole->GetConVarAs<ConVar<float>>(
 			"cl_pitchdown"
 		)->GetValue();
-		const float pitchUp = mConsole->GetConVarAs<UnnamedConVar<float>>(
+		const float pitchUp = mConsole->GetConVarAs<ConVar<float>>(
 			"cl_pitchup"
 		)->GetValue();
 
@@ -263,7 +263,7 @@ namespace Unnamed {
 		mRotation.x += delta.y * sensitivity * pitch;
 		mRotation.y += delta.x * sensitivity * yaw;
 
-		mRotation.x = std::clamp(mRotation.x, pitchDown, pitchUp);
+		mRotation.x = std::clamp(mRotation.x, -pitchDown, pitchUp);
 
 		const Quaternion pitchRotation = Quaternion::AxisAngle(
 			Vec3::right, mRotation.x * Math::deg2Rad
@@ -329,7 +329,7 @@ namespace Unnamed {
 	) {
 		const float speed = Math::MtoH(mVelocity.Length());
 
-		const float stop = mConsole->GetConVarAs<UnnamedConVar<float>>(
+		const float stop = mConsole->GetConVarAs<ConVar<float>>(
 			"sv_stopspeed"
 		)->GetValue();
 

@@ -1,7 +1,9 @@
 #pragma once
+#include <cstdint>
 #include <d3d12.h>
 #include <functional>
 #include <string>
+#include <unordered_map>
 
 #include "RenderGraphBuilder.h"
 
@@ -103,6 +105,7 @@ namespace Unnamed::Render {
 		std::vector<RgPass> mPasses;
 		std::unordered_map<uint32_t, D3D12_RESOURCE_STATES>
 		mGlobalStates;
+		std::unordered_map<uint32_t, uint64_t> mKnownResourceRevisions;
 
 		std::vector<CompiledPass> mCompiled;
 		bool                      mIsDirty           = true;

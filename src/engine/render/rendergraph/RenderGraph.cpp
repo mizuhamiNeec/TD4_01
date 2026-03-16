@@ -84,8 +84,10 @@ namespace Unnamed::Render {
 
 		if (!mStatesInitialized) {
 			mGlobalStates.clear();
-			mGlobalStates[kBackBufferId] = D3D12_RESOURCE_STATE_PRESENT;
-			mStatesInitialized           = true; // Intermediate
+			mKnownResourceRevisions.clear();
+			mGlobalStates[kBackBufferId]          = D3D12_RESOURCE_STATE_PRESENT;
+			mKnownResourceRevisions[kBackBufferId] = 0;
+			mStatesInitialized                    = true;
 		}
 
 		std::unordered_map<uint32_t, D3D12_RESOURCE_STATES> plannedStates =
@@ -93,6 +95,29 @@ namespace Unnamed::Render {
 
 		// BackBufferは毎フレームPresent状態から開始する
 		plannedStates[kBackBufferId] = D3D12_RESOURCE_STATE_PRESENT;
+		mGlobalStates[kBackBufferId] = D3D12_RESOURCE_STATE_PRESENT;
+
+		const auto ensureTrackedResourceState =
+			[this, &plannedStates](const uint32_t textureId) {
+				if (textureId == kBackBufferId) {
+					return;
+				}
+
+				const uint64_t currentRevision = mRenderDevice->GetRegistry().
+					GetResourceRevision(textureId);
+				const auto revIt = mKnownResourceRevisions.find(textureId);
+				if (
+					revIt != mKnownResourceRevisions.end() &&
+					revIt->second == currentRevision
+				) {
+					return;
+				}
+
+				const D3D12_RESOURCE_STATES resetState = DefaultInitState(textureId);
+				plannedStates[textureId]              = resetState;
+				mGlobalStates[textureId]              = resetState;
+				mKnownResourceRevisions[textureId]    = currentRevision;
+			};
 
 		std::unordered_set<uint32_t> uavWrittenPendingBarrier;
 
@@ -235,6 +260,8 @@ namespace Unnamed::Render {
 					continue;
 				}
 
+				ensureTrackedResourceState(textureId);
+
 				// plannedStates になければ初期状態にする
 				auto it = plannedStates.find(textureId);
 				if (it == plannedStates.end()) {
@@ -320,6 +347,8 @@ namespace Unnamed::Render {
 	}
 
 	void RenderGraph::Invalidate() {
+		mGlobalStates.clear();
+		mKnownResourceRevisions.clear();
 		mStatesInitialized = false;
 		mIsDirty           = true;
 	}

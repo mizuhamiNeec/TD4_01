@@ -8,6 +8,8 @@ namespace Unnamed {
 	public:
 		~ParkourMovementComponent() override;
 
+		void OnAttached() override;
+
 		[[nodiscard]] std::string_view GetStableName() const override;
 		[[nodiscard]] std::string_view GetComponentName() const override;
 
@@ -22,15 +24,5 @@ namespace Unnamed {
 		void RegisterMovementStates(
 			GameMovementStateMachine& stateMachine
 		) override;
-
-	private:
-		float mParkourJumpVelocityHu = 420.0f;
-
-		float mSlideEnterSpeedHu   = 220.0f;
-		float mSlideExitSpeedHu    = 110.0f;
-		float mSlideBoostHu        = 90.0f;
-		float mSlideFrictionScale  = 0.35f;
-		float mSlideSteerAccelRate = 0.45f;
-		float mSlideMaxDurationSec = 0.85f;
 	};
 }

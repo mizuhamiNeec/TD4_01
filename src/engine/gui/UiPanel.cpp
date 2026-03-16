@@ -1,50 +1,49 @@
 #include "UiPanel.h"
 
-#include "engine/unnamed/subsystem/console/Log.h"
+#include "components/UiPanelStyleComponent.h"
 
-namespace Unnamed::Gui {
-	UiPanel::UiPanel() = default;
+	namespace Unnamed::Gui {
+	UiPanel::UiPanel() {
+		(void)GetOrAddComponent<UiPanelStyleComponent>();
+	}
 
 	UiPanel::~UiPanel() = default;
 
-	void UiPanel::SetBackgroundColor(const Color& c) {
-		mBackgroundColor = c;
+	void UiPanel::SetBackgroundColor(const Color& color) {
+		if (auto* style = GetStyleComponent()) {
+			style->SetBackgroundColor(color);
+		}
 	}
 
 	const Color& UiPanel::GetBackgroundColor() const {
-		return mBackgroundColor;
+		static const Color fallback = {
+			.r = 0.15f, .g = 0.15f, .b = 0.18f, .a = 1.0f
+		};
+		if (const auto* style = GetStyleComponent()) {
+			return style->GetBackgroundColor();
+		}
+		return fallback;
 	}
 
-	void UiPanel::SetCornerRadius(const float r) {
-		mCornerRadius = r;
+	void UiPanel::SetCornerRadius(const float radius) {
+		if (auto* style = GetStyleComponent()) {
+			style->SetCornerRadius(radius);
+		}
 	}
 
 	float UiPanel::GetCornerRadius() const {
-		return mCornerRadius;
+		if (const auto* style = GetStyleComponent()) {
+			return style->GetCornerRadius();
+		}
+		return 4.0f;
 	}
 
 	const char* UiPanel::GetTypeName() const {
-		return "Panel";
+		return "PanelPreset";
 	}
 
-	void UiPanel::BuildDrawCommands(std::vector<UiDrawCommand>& out) const {
-		if (!IsVisible()) {
-			return;
-		}
-
-		// 背景を描画
-		const Rect& r = GetGlobalRect();
-
-		UiDrawCommand cmd;
-		cmd.type                 = UiDrawCommandType::RECT;
-		cmd.rect.rect            = r;
-		cmd.rect.fillColor       = mBackgroundColor;
-		cmd.rect.cornerRadius    = mCornerRadius;
-		cmd.rect.borderThickness = 0.0f;
-
-		out.emplace_back(cmd);
-
-		// 子も
-		UiWidget::BuildDrawCommands(out);
+	UiPanelStyleComponent* UiPanel::GetStyleComponent() const {
+		return const_cast<UiPanel*>(this)->GetOrAddComponent<
+			UiPanelStyleComponent>();
 	}
 }

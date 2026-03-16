@@ -11,6 +11,7 @@ namespace Unnamed {
 		size_t               rowPitch = 0; // 1行あたりのバイト数
 	};
 
+	/// @brief テクスチャアセットのデータ構造体
 	struct TextureAssetData {
 		std::vector<uint8_t>    bytes;          // 元のファイルデータ
 		std::vector<TextureMip> mips;           // ミップマップ情報

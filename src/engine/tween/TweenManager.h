@@ -16,10 +16,10 @@ namespace Unnamed {
 
 		template <typename TValue>
 		std::shared_ptr<TweenInstance<TValue>> Create(
-			typename TweenInstance<TValue>::GetterFunc getter,
-			typename TweenInstance<TValue>::SetterFunc setter,
-			const TValue&                              endValue,
-			float                                      duration
+			TweenInstance<TValue>::GetterFunc getter,
+			TweenInstance<TValue>::SetterFunc setter,
+			const TValue&                     endValue,
+			float                             duration
 		) {
 			auto tween = std::make_shared<TweenInstance<TValue>>(
 				std::move(getter), std::move(setter), endValue, duration
@@ -35,8 +35,12 @@ namespace Unnamed {
 			float         duration
 		) {
 			auto tween = Create<TValue>(
-				[&target]()-> TValue { return target; },
-				[&target](const TValue& value) { target = value; },
+				[&target]()-> TValue {
+					return target;
+				},
+				[&target](const TValue& value) {
+					target = value;
+				},
 				endValue,
 				duration
 			);
@@ -51,8 +55,12 @@ namespace Unnamed {
 			float         duration
 		) {
 			return Create<TValue>(
-				[&target]() -> TValue { return target; },
-				[&target](const TValue& value) { target = value; },
+				[&target]() -> TValue {
+					return target;
+				},
+				[&target](const TValue& value) {
+					target = value;
+				},
 				endValue,
 				duration
 			);
@@ -68,12 +76,16 @@ namespace Unnamed {
 			auto tween = Create<TValue>(
 				[object, member]() -> TValue {
 					const auto lockedObject = object.lock();
-					if (!lockedObject) { return TValue{}; }
+					if (!lockedObject) {
+						return TValue{};
+					}
 					return lockedObject.get()->*member;
 				},
 				[object, member](const TValue& value) {
 					const auto lockedObject = object.lock();
-					if (!lockedObject) { return; }
+					if (!lockedObject) {
+						return;
+					}
 					lockedObject.get()->*member = value;
 				},
 				endValue,

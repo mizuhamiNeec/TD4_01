@@ -13,11 +13,11 @@
 
 namespace Unnamed::Physics {
 	namespace {
-		Unnamed::Triangle BuildTriangle(
-			const Unnamed::MeshVertex& a,
-			const Unnamed::MeshVertex& b,
-			const Unnamed::MeshVertex& c,
-			const Mat4&                world
+		Triangle BuildTriangle(
+			const MeshVertex& a,
+			const MeshVertex& b,
+			const MeshVertex& c,
+			const Mat4&       world
 		) {
 			return {
 				.v0 = world.TransformPoint(a.position),
@@ -78,8 +78,8 @@ namespace Unnamed::Physics {
 	/// @param ray レイ情報
 	/// @param outHit 衝突情報の出力先
 	/// @return 衝突した場合trueを返す
-	bool Engine::RayCast(const Unnamed::Ray& ray, Hit* outHit) const {
-		Unnamed::Physics::RayCast cast;
+	bool Engine::RayCast(const Ray& ray, Hit* outHit) const {
+		Physics::RayCast cast;
 		cast.start  = ray.origin;
 		cast.invDir = ray.invDir;
 		return CastBVH(
@@ -95,10 +95,10 @@ namespace Unnamed::Physics {
 	/// @param outHit 衝突情報の出力先
 	/// @return 衝突した場合trueを返す
 	bool Engine::BoxCast(
-		const Unnamed::Box& box,
-		const Vec3&         dir,
-		const float         length,
-		Hit*                outHit
+		const Box&  box,
+		const Vec3& dir,
+		const float length,
+		Hit*        outHit
 	) const {
 		Vec3  dirN = dir;
 		float len  = length;
@@ -106,12 +106,14 @@ namespace Unnamed::Physics {
 		const float dirLen = dirN.Length();
 		if (dirLen > 1e-6f) {
 			dirN /= dirLen;
-			if (fabs(len - dirLen) < 1e-4f) len = dirLen;
+			if (fabs(len - dirLen) < 1e-4f) {
+				len = dirLen;
+			}
 		} else {
 			return false; // ゼロ方向なら衝突無し
 		}
 
-		Unnamed::Physics::BoxCast caster;
+		Physics::BoxCast caster;
 		caster.box  = box;
 		caster.half = box.halfSize;
 
@@ -139,7 +141,7 @@ namespace Unnamed::Physics {
 		const float length,
 		Hit*        outHit
 	) const {
-		Unnamed::Physics::SphereCast cast;
+		Physics::SphereCast cast;
 		cast.center = start;
 		cast.radius = radius;
 
@@ -151,8 +153,8 @@ namespace Unnamed::Physics {
 	/// @param outHit 衝突情報の出力先
 	/// @return 重なりがあった場合trueを返す
 	bool Engine::BoxOverlap(
-		const Unnamed::Box& box,
-		Hit*                outHit
+		const Box& box,
+		Hit*       outHit
 	) const {
 		if (mBVHs.empty() || mTriangles.empty()) {
 			return false;
@@ -160,12 +162,12 @@ namespace Unnamed::Physics {
 
 		// ブロードフェーズ：ボックスのAABBと各BVHのルートAABBの重なりをチェック
 		std::vector<const RegisteredBVH*> filtered;
-		Unnamed::AABB                     boxAABB;
+		AABB                              boxAABB;
 		boxAABB.min = box.center - box.halfSize;
 		boxAABB.max = box.center + box.halfSize;
 
 		for (const auto& bvh : mBVHs) {
-			const Unnamed::AABB& rootBounds = bvh.nodes[0].bounds;
+			const AABB& rootBounds = bvh.nodes[0].bounds;
 			// AABB同士の重なり判定
 			if (boxAABB.max.x >= rootBounds.min.x && boxAABB.min.x <= rootBounds
 			    .max.x &&
@@ -217,8 +219,8 @@ namespace Unnamed::Physics {
 					// 葉ノード：三角形との詳細判定
 					const uint32_t first = node.leftFirst;
 					for (uint32_t i = 0; i < node.primCount; ++i) {
-						const uint32_t triIdx = bvh->triIndices[first + i];
-						const Unnamed::Triangle& tri = mTriangles[triIdx];
+						const uint32_t  triIdx = bvh->triIndices[first + i];
+						const Triangle& tri    = mTriangles[triIdx];
 
 						Vec3  separationAxis;
 						float penetrationDepth;
@@ -261,9 +263,9 @@ namespace Unnamed::Physics {
 
 
 	int Engine::BoxOverlap(
-		const Unnamed::Box& box,
-		Hit*                outHits,
-		const int           maxHits
+		const Box& box,
+		Hit*       outHits,
+		const int  maxHits
 	) const {
 		int hitCount = 0;
 		if (mBVHs.empty() || mTriangles.empty() || maxHits <= 0) {
@@ -272,12 +274,12 @@ namespace Unnamed::Physics {
 
 		// ブロードフェーズ：ボックスのAABBと各BVHのルートAABBの重なりをチェック
 		std::vector<const RegisteredBVH*> filtered;
-		Unnamed::AABB                     boxAABB;
+		AABB                              boxAABB;
 		boxAABB.min = box.center - box.halfSize;
 		boxAABB.max = box.center + box.halfSize;
 
 		for (const auto& bvh : mBVHs) {
-			const Unnamed::AABB& rootBounds = bvh.nodes[0].bounds;
+			const AABB& rootBounds = bvh.nodes[0].bounds;
 			// AABB同士の重なり判定
 			if (boxAABB.max.x >= rootBounds.min.x && boxAABB.min.x <= rootBounds
 			    .max.x &&
@@ -325,8 +327,8 @@ namespace Unnamed::Physics {
 					const uint32_t first = node.leftFirst;
 					for (uint32_t i = 0; i < node.primCount && hitCount <
 					                     maxHits; ++i) {
-						const uint32_t triIdx = bvh->triIndices[first + i];
-						const Unnamed::Triangle& tri = mTriangles[triIdx];
+						const uint32_t  triIdx = bvh->triIndices[first + i];
+						const Triangle& tri    = mTriangles[triIdx];
 
 						Vec3  separationAxis;
 						float penetrationDepth;
@@ -368,10 +370,10 @@ namespace Unnamed::Physics {
 	}
 
 	bool Engine::RegisterStaticMesh(
-		const uint64_t                             ownerGuid,
-		const std::span<const Unnamed::MeshVertex> vertices,
-		const std::span<const uint32_t>            indices,
-		const Mat4&                                world
+		const uint64_t                    ownerGuid,
+		const std::span<const MeshVertex> vertices,
+		const std::span<const uint32_t>   indices,
+		const Mat4&                       world
 	) {
 		if (ownerGuid == 0 || vertices.empty() || indices.size() < 3) {
 			return false;
@@ -379,8 +381,8 @@ namespace Unnamed::Physics {
 
 		const auto start = std::chrono::steady_clock::now();
 
-		const size_t                   triStart = mTriangles.size();
-		std::vector<Unnamed::Triangle> localTriangles;
+		const size_t          triStart = mTriangles.size();
+		std::vector<Triangle> localTriangles;
 		localTriangles.reserve(indices.size() / 3);
 
 		const auto buildTrisStart = std::chrono::steady_clock::now();
@@ -392,9 +394,18 @@ namespace Unnamed::Physics {
 			    .size()) {
 				continue;
 			}
-			localTriangles.emplace_back(
-				BuildTriangle(vertices[i0], vertices[i1], vertices[i2], world)
+			const Triangle tri = BuildTriangle(
+				vertices[i0],
+				vertices[i1],
+				vertices[i2],
+				world
 			);
+			const Vec3 edge01 = tri.v1 - tri.v0;
+			const Vec3 edge02 = tri.v2 - tri.v0;
+			if (edge01.Cross(edge02).SqrLength() <= 1e-12f) {
+				continue; // 退化三角形はCCD法線不安定の原因になるため除外
+			}
+			localTriangles.emplace_back(tri);
 		}
 		const auto buildTrisEnd = std::chrono::steady_clock::now();
 

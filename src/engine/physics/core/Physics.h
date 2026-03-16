@@ -19,8 +19,8 @@ namespace Unnamed::Physics {
 		/// @param outHit 衝突情報の出力先
 		/// @return 衝突した場合trueを返す
 		bool RayCast(
-			const Unnamed::Ray& ray,
-			Hit*                outHit
+			const Ray& ray,
+			Hit*       outHit
 		) const;
 
 		/// @brief ボックスキャストを行う関数
@@ -30,9 +30,9 @@ namespace Unnamed::Physics {
 		/// @param outHit 衝突情報の出力先
 		/// @return 衝突した場合trueを返す
 		bool BoxCast(
-			const Unnamed::Box& box,
-			const Vec3&         dir,
-			float               length, Hit* outHit
+			const Box&  box,
+			const Vec3& dir,
+			float       length, Hit* outHit
 		) const;
 
 		/// @brief スフィアキャストを行う関数
@@ -55,8 +55,8 @@ namespace Unnamed::Physics {
 		/// @param outHit 衝突情報の出力先
 		/// @return 重なりがあった場合trueを返す
 		bool BoxOverlap(
-			const Unnamed::Box& box,
-			Hit*                outHit
+			const Box& box,
+			Hit*       outHit
 		) const;
 
 		/// @brief ボックスとメッシュの重なり判定を行う関数（複数ヒット版）
@@ -65,35 +65,35 @@ namespace Unnamed::Physics {
 		/// @param maxHits 出力先配列の最大ヒット数
 		/// @return ヒットした数を返す
 		int BoxOverlap(
-			const Unnamed::Box& box,
-			Hit*                outHits,
-			int                 maxHits
+			const Box& box,
+			Hit*       outHits,
+			int        maxHits
 		) const;
 
 		void ClearStaticMeshes();
 		bool RegisterStaticMesh(
-			uint64_t                             ownerGuid,
-			std::span<const Unnamed::MeshVertex> vertices,
-			std::span<const uint32_t>            indices,
-			const Mat4&                          world
+			uint64_t                    ownerGuid,
+			std::span<const MeshVertex> vertices,
+			std::span<const uint32_t>   indices,
+			const Mat4&                 world
 		);
 		void UnregisterStaticMesh(uint64_t ownerGuid);
 
 	private:
 		template <class CastType>
 		static bool CastBVH(
-			const CastType&                       cast,
-			const Vec3&                           start,
-			const Vec3&                           dir,
-			float                                 length,
-			Hit*                                  outHit,
-			const std::vector<RegisteredBVH>&     bvhSet,
-			const std::vector<Unnamed::Triangle>& allTriangles
+			const CastType&                   cast,
+			const Vec3&                       start,
+			const Vec3&                       dir,
+			float                             length,
+			Hit*                              outHit,
+			const std::vector<RegisteredBVH>& bvhSet,
+			const std::vector<Triangle>&      allTriangles
 		) {
 			// まずは各BVHのルートのAABBとレイが交差するかを確認
 			// してなきゃ意味ないからね! これが噂のブロードフェーズ!
 			std::vector<const RegisteredBVH*> filtered;
-			const Unnamed::Ray                broadRay = {
+			const Ray                         broadRay = {
 				.origin = start,
 				.dir    = dir,
 				.invDir = Vec3::one / dir,
@@ -109,8 +109,8 @@ namespace Unnamed::Physics {
 			}
 
 			for (const auto& bvh : bvhSet) {
-				Unnamed::AABB root = cast.ExpandNode(bvh.nodes[0].bounds);
-				float         t    = length;
+				AABB  root = cast.ExpandNode(bvh.nodes[0].bounds);
+				float t    = length;
 				if (RayVsAABB(broadRay, root, t)) {
 					filtered.emplace_back(&bvh);
 				}
@@ -120,6 +120,10 @@ namespace Unnamed::Physics {
 				// 交差しなかった...
 				return false;
 			}
+
+			constexpr float kStartSolidToiEpsilon = 1e-6f;
+			constexpr float kNormalEpsilon        = 1e-12f;
+			constexpr float kOverlapDepthEpsilon  = 1e-6f;
 
 			// 本格的に探索する
 			// 一番近い衝突のTOI (TOI: Time of Impact 衝突までの時間[0.0f ～ 1.0f])
@@ -153,9 +157,9 @@ namespace Unnamed::Physics {
 #endif
 
 					// 現在の最良TOIを使った早期終了
-					Unnamed::Ray pruneRay = broadRay;
-					pruneRay.tMax         = bestTOI * length;
-					float tBox            = bestTOI * length;
+					Ray pruneRay  = broadRay;
+					pruneRay.tMax = bestTOI * length;
+					float tBox    = bestTOI * length;
 					if (
 						!RayVsAABB(
 							pruneRay,
@@ -200,14 +204,51 @@ namespace Unnamed::Physics {
 				return false; // 残念!
 			}
 			if (outHit) {
+				float overlapDepth = 0.0f;
+				Vec3  overlapNrm   = Vec3::zero;
+				bool  startSolid   = false;
+				if (
+					bestTOI <= kStartSolidToiEpsilon ||
+					hitNormal.SqrLength() <= kNormalEpsilon
+				) {
+					startSolid = cast.OverlapAtStart(
+						allTriangles[hitTri],
+						overlapDepth,
+						overlapNrm
+					);
+					if (startSolid && overlapDepth <= kOverlapDepthEpsilon) {
+						startSolid  = false;
+						overlapDepth = 0.0f;
+					}
+					if (
+						startSolid &&
+						overlapNrm.SqrLength() > kNormalEpsilon
+					) {
+						hitNormal = overlapNrm;
+					}
+				}
+
 				Vec3        finalNormal = hitNormal;
 				const float nLenSq      = finalNormal.SqrLength();
 				if (nLenSq > 1e-12f) {
 					finalNormal /= std::sqrt(nLenSq);
 				} else {
-					finalNormal = Vec3::zero;
+					const Triangle& tri = allTriangles[hitTri];
+					finalNormal         = (tri.v1 - tri.v0).Cross(tri.v2 - tri.v0);
+					const float triNLenSq = finalNormal.SqrLength();
+					if (triNLenSq > kNormalEpsilon) {
+						finalNormal /= std::sqrt(triNLenSq);
+						if (finalNormal.Dot(dirNormalized) > 0.0f) {
+							finalNormal = -finalNormal;
+						}
+					} else if (dirLenSq > kNormalEpsilon) {
+						finalNormal = -dirNormalized;
+					} else {
+						finalNormal = Vec3::up;
+					}
 				}
 				outHit->t      = bestTOI;
+				outHit->depth  = startSolid ? overlapDepth : 0.0f;
 				outHit->normal = finalNormal;
 				outHit->pos    = cast.ComputeImpactPoint(
 					start,
@@ -218,6 +259,8 @@ namespace Unnamed::Physics {
 				);
 				outHit->triIndex      = hitTri;
 				outHit->hitEntityGuid = hitEntityGuid;
+				outHit->startSolid    = startSolid;
+				outHit->allsolid      = false;
 			}
 			return true;
 		}
@@ -227,9 +270,9 @@ namespace Unnamed::Physics {
 			uint32_t               base
 		);
 
-		std::vector<Unnamed::Triangle> mTriangles;
-		std::vector<FlatNode>          mNodes;
-		std::vector<uint32_t>          mTriIndices;
+		std::vector<Triangle> mTriangles;
+		std::vector<FlatNode> mNodes;
+		std::vector<uint32_t> mTriIndices;
 
 		std::vector<RegisteredBVH> mBVHs;
 	};

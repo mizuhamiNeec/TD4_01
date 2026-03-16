@@ -11,21 +11,22 @@ namespace Unnamed {
 
 	class RotatorComponent final : public BaseComponent {
 	public:
+		void PrePhysicsTick(float deltaTime) override;
+
 		[[nodiscard]] std::string_view GetStableName() const override {
-			return "parkour.Rotate";
+			return "game.Rotator";
 		}
 
 		[[nodiscard]] std::string_view GetComponentName() const override {
-			return "Rotate";
+			return "Rotator";
 		}
-
-		void PrePhysicsTick(float deltaTime) override;
-		void Deserialize(const JsonReader& reader) override;
-		void Serialize(JsonWriter& writer) const override;
 
 #ifdef _DEBUG
 		void DrawInspectorImGui() override;
 #endif
+
+		void Deserialize(const JsonReader& reader) override;
+		void Serialize(JsonWriter& writer) const override;
 
 	private:
 		[[nodiscard]] TransformComponent* GetTransform() const;

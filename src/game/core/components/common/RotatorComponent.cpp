@@ -1,4 +1,4 @@
-#include "RotateComponent.h"
+#include "RotatorComponent.h"
 
 #include <imgui.h>
 
@@ -11,7 +11,7 @@
 #include "engine/unnamed/framework/entity/Entity.h"
 
 namespace Unnamed {
-	void RotateComponent::PrePhysicsTick(const float deltaTime) {
+	void RotatorComponent::PrePhysicsTick(const float deltaTime) {
 		if (!mRotationEnabled) {
 			return;
 		}
@@ -26,7 +26,7 @@ namespace Unnamed {
 		transform->SetRotation(transform->Rotation() * deltaRotation);
 	}
 
-	void RotateComponent::Deserialize(const JsonReader& reader) {
+	void RotatorComponent::Deserialize(const JsonReader& reader) {
 		const JsonReader rotationRate = reader["rotationRate"];
 		if (rotationRate.Valid() && rotationRate.Size() >= 3) {
 			mRotationRate = Vec3(
@@ -41,7 +41,7 @@ namespace Unnamed {
 		}
 	}
 
-	void RotateComponent::Serialize(JsonWriter& writer) const {
+	void RotatorComponent::Serialize(JsonWriter& writer) const {
 		writer.Key("rotationRate");
 		writer.BeginArray();
 		writer.Write(mRotationRate.x);
@@ -53,16 +53,16 @@ namespace Unnamed {
 	}
 
 #ifdef _DEBUG
-	void RotateComponent::DrawInspectorImGui() {
+	void RotatorComponent::DrawInspectorImGui() {
 		ImGui::Checkbox("Enabled", &mRotationEnabled);
 		ImGui::DragFloat3("RotationRate", &mRotationRate.x, 0.1f);
 	}
 #endif
 
-	TransformComponent* RotateComponent::GetTransform() const {
-		UEntity* owner = GetOwner();
+	TransformComponent* RotatorComponent::GetTransform() const {
+		Entity* owner = GetOwner();
 		return owner ? owner->GetComponent<TransformComponent>() : nullptr;
 	}
 
-	REGISTER_COMPONENT(RotateComponent);
+	REGISTER_COMPONENT(RotatorComponent);
 }

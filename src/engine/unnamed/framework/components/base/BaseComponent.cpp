@@ -29,11 +29,11 @@ namespace Unnamed {
 		mOwner = owner;
 	}
 
-	UScene* BaseComponent::GetScene() const noexcept {
+	Scene* BaseComponent::GetScene() const noexcept {
 		return mOwner ? mOwner->GetScene() : nullptr;
 	}
 
-	UWorld* BaseComponent::GetWorld() const noexcept {
+	World* BaseComponent::GetWorld() const noexcept {
 		return mOwner ? mOwner->GetWorld() : nullptr;
 	}
 

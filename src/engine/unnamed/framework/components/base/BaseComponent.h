@@ -5,8 +5,8 @@
 #include "core/TypeId.h"
 
 namespace Unnamed {
-	class UWorld;
-	class UScene;
+	class World;
+	class Scene;
 	class Entity;
 	class JsonWriter;
 	class JsonReader;
@@ -74,11 +74,11 @@ namespace Unnamed {
 
 		/// @brief このコンポーネントが所属するシーンを取得します。
 		/// @return 所属するシーンのポインタ
-		[[nodiscard]] UScene* GetScene() const noexcept;
+		[[nodiscard]] Scene* GetScene() const noexcept;
 
 		/// @brief このコンポーネントが所属するワールドを取得します。
 		/// @return 所属するワールドのポインタ
-		[[nodiscard]] UWorld* GetWorld() const noexcept;
+		[[nodiscard]] World* GetWorld() const noexcept;
 
 		/// @brief コンポーネントがアクティブかどうかを取得します。
 		/// @return アクティブな場合は true、非アクティブな場合は false
@@ -101,7 +101,7 @@ namespace Unnamed {
 		[[nodiscard]] TypeId GetTypeId() const;
 
 	protected:
-		Entity* mOwner = nullptr; // 所有しているエンティティ
+		Entity*  mOwner = nullptr; // 所有しているエンティティ
 		uint64_t mGuid  = 0;       // GUID
 
 		bool mIsActive = true; // アクティブか?

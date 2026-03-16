@@ -33,7 +33,7 @@ namespace Unnamed {
 		private:
 			using Clock = std::chrono::steady_clock;
 
-			Profiler*        mProfiler = nullptr;
+			Profiler*         mProfiler = nullptr;
 			std::string_view  mName;
 			Clock::time_point mStart = {};
 		};

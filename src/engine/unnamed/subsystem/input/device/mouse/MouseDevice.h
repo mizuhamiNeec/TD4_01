@@ -53,9 +53,14 @@ namespace Unnamed {
 			return mWheelDelta;
 		}
 
+		[[nodiscard]] HWND GetWindowHandle() const {
+			return mWindowHandle;
+		}
+
 		void ResetDelta();
 
 	private:
+		HWND                               mWindowHandle   = nullptr;
 		std::unordered_map<uint32_t, bool> mButtonStates;
 		int                                mDeltaX         = 0;
 		int                                mDeltaY         = 0;

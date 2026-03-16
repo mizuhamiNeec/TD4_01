@@ -5,6 +5,7 @@ namespace Unnamed {
 	/// @brief コンストラクタ
 	/// @param hWnd ウィンドウハンドル
 	MouseDevice::MouseDevice(const HWND hWnd) {
+		mWindowHandle = hWnd;
 		RAWINPUTDEVICE rid;
 		rid.usUsagePage = 0x01;
 		rid.usUsage     = 0x02; // マウス

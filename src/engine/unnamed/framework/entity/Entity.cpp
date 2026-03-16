@@ -4,7 +4,7 @@
 
 #include "core/guidgenerator/GuidGenerator.h"
 
-#include "engine/scene/UScene.h"
+#include "engine/scene/Scene.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 
 namespace Unnamed {
@@ -159,6 +159,14 @@ namespace Unnamed {
 		mComponentsByType.clear();
 	}
 
+	bool Entity::IsPendingDestroy() const noexcept {
+		return mPendingDestroy;
+	}
+
+	void Entity::MarkPendingDestroy() noexcept {
+		mPendingDestroy = true;
+	}
+
 	BaseComponent* Entity::AddComponentInstance(
 		std::unique_ptr<BaseComponent> component
 	) {
@@ -178,15 +186,15 @@ namespace Unnamed {
 		return raw;
 	}
 
-	UScene* Entity::GetScene() const noexcept {
+	Scene* Entity::GetScene() const noexcept {
 		return mScene;
 	}
 
-	void Entity::SetScene(UScene* scene) noexcept {
+	void Entity::SetScene(Scene* scene) noexcept {
 		mScene = scene;
 	}
 
-	UWorld* Entity::GetWorld() const noexcept {
+	World* Entity::GetWorld() const noexcept {
 		return mScene ? mScene->GetWorld() : nullptr;
 	}
 

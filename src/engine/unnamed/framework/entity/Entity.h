@@ -12,8 +12,8 @@
 
 
 namespace Unnamed {
-	class UWorld;
-	class UScene;
+	class World;
+	class Scene;
 
 	/// @class Entity
 	/// @brief エンティティはゲームの基本オブジェクトです。
@@ -62,6 +62,14 @@ namespace Unnamed {
 
 		/// @brief エンティティが破棄されるときに呼び出されます。
 		void OnDestroy();
+
+		/// @brief エンティティが破棄される予定かどうかを取得します。
+		/// @return 破棄される予定であればtrue、そうでなければfalse
+		[[nodiscard]] bool IsPendingDestroy() const noexcept;
+
+		/// @brief エンティティを破棄する予定であることをマークします。
+		/// 破棄はシーンの更新ループの最後に行われるため、安全にエンティティを削除できます。
+		void MarkPendingDestroy() noexcept;
 
 		/// @brief コンポーネントを追加します。
 		/// @tparam ComponentType 追加するコンポーネントの型
@@ -142,15 +150,15 @@ namespace Unnamed {
 
 		/// @brief エンティティが所属するシーンを取得します。
 		/// @return 所属するシーンのポインタ。存在しない場合は nullptr。
-		[[nodiscard]] UScene* GetScene() const noexcept;
+		[[nodiscard]] Scene* GetScene() const noexcept;
 
 		/// @brief エンティティが所属するシーンを設定します。
 		/// @param scene 所属するシーンのポインタ
-		void SetScene(UScene* scene) noexcept;
+		void SetScene(Scene* scene) noexcept;
 
 		/// @brief エンティティが所属するワールドを取得します。
 		/// @return 所属するワールドのポインタ。存在しない場合は nullptr。
-		[[nodiscard]] UWorld* GetWorld() const noexcept;
+		[[nodiscard]] World* GetWorld() const noexcept;
 
 		/// @brief エンティティの名前を取得します。
 		/// @return エンティティの名前
@@ -218,14 +226,15 @@ namespace Unnamed {
 		std::unordered_map<TypeId, std::vector<BaseComponent*>>
 		mComponentsByType;
 
-		std::string mName = "unnamed";       // 名前
-		std::string mFolderPath;             // エディタ階層上のフォルダパス
-		UScene*     mScene        = nullptr; // 所属しているシーン
-		uint64_t    mGuid         = 0;       // GUID
-		bool        mIsEditorOnly = false;   // エディター専用か?
-		bool        mIsActive     = true;    // アクティブか?
-		bool        mIsVisible    = true;    // レンダリング上の可視状態
-		bool        mDestroyed    = false;   // OnDestroy二重呼び出し防止
+		std::string mName = "unnamed";         // 名前
+		std::string mFolderPath;               // エディタ階層上のフォルダパス
+		Scene*      mScene          = nullptr; // 所属しているシーン
+		uint64_t    mGuid           = 0;       // GUID
+		bool        mIsEditorOnly   = false;   // エディター専用か?
+		bool        mIsActive       = true;    // アクティブか?
+		bool        mIsVisible      = true;    // レンダリング上の可視状態
+		bool        mDestroyed      = false;   // OnDestroy二重呼び出し防止
+		bool        mPendingDestroy = false;   // 破棄予定か?
 	};
 
 	template <typename ComponentType, typename... Args>
@@ -455,7 +464,7 @@ namespace Unnamed {
 
 		// 型索引から削除
 		const TypeId typeId = HashTypeName(component->GetStableName());
-		auto         mapIt  = mComponentsByType.find(typeId);
+		const auto   mapIt  = mComponentsByType.find(typeId);
 		if (mapIt != mComponentsByType.end()) {
 			auto& vec = mapIt->second;
 			std::erase(vec, component);

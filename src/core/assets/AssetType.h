@@ -14,6 +14,7 @@ namespace Unnamed {
 		SHADER_PROGRAM    = 1 << 7, // シェーダープログラム
 		MATERIAL_INSTANCE = 1 << 8, // マテリアルインスタンス
 		POST_FX_CHAIN     = 1 << 9, // ポストFXチェーン
+		UI_DOCUMENT       = 1 << 10, // UIドキュメント
 	};
 
 	std::string ToString(ASSET_TYPE e);

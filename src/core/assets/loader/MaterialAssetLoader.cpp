@@ -5,6 +5,7 @@
 #include "core/assets/AssetManager.h"
 #include "core/assets/types/MaterialAssetData.h"
 #include "core/json/JsonReader.h"
+#include "core/path/PathUtil.h"
 #include "core/string/StrUtil.h"
 
 namespace Unnamed {
@@ -16,23 +17,6 @@ namespace Unnamed {
 			return StrUtil::ToLowerCase(std::string(path)).ends_with(
 				".material.json"
 			);
-		}
-
-		/// @brief ベースディレクトリからの相対パスを解決する
-		/// @param baseDir ベースディレクトリ
-		/// @param path 解決するパス
-		/// @return 解決されたパス
-		std::string ResolveRelativePath(
-			const std::filesystem::path& baseDir, std::string path
-		) {
-			if (path.empty()) {
-				return path;
-			}
-			std::filesystem::path p(path);
-			if (p.is_relative()) {
-				p = baseDir / p;
-			}
-			return StrUtil::NormalizePath(p.lexically_normal().string());
 		}
 
 		/// @brief マテリアルドメインを文字列から解析する
@@ -86,7 +70,7 @@ namespace Unnamed {
 		// "shader" フィールドがあればシェーダープログラムを読み込む。
 		if (const auto shader = root.Read<std::string>("shader");
 			shader.has_value() && !shader->empty()) {
-			data.shaderProgramPath = ResolveRelativePath(baseDir, *shader);
+			data.shaderProgramPath = Path::ResolveRelativePath(baseDir, *shader);
 			data.shaderProgramId   = mAssetManager->LoadFromFile(
 				data.shaderProgramPath, ASSET_TYPE::SHADER_PROGRAM
 			);

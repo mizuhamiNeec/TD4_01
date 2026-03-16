@@ -22,7 +22,7 @@
 #include "types/ShaderSourceAssetData.h"
 
 namespace Unnamed {
-	constexpr std::string_view kChannel = "AssetManager";
+	constexpr std::string_view kChannel = "AstMgr";
 
 	namespace {
 		FileStamp ReadCurrentFileStamp(const std::string& path) {
@@ -80,7 +80,7 @@ namespace Unnamed {
 		const std::optional<ASSET_TYPE> typeOpt,
 		const AssetLoadPolicy           policy
 	) {
-		Profiler*        profiler = ServiceLocator::Get<Profiler>();
+		Profiler*         profiler = ServiceLocator::Get<Profiler>();
 		std::scoped_lock  lock(mMutex);
 		const std::string normalizedPath = StrUtil::NormalizePath(path);
 
@@ -274,6 +274,7 @@ namespace Unnamed {
 	template const MaterialAssetData*         AssetManager::Get(AssetID) const;
 	template const MaterialInstanceAssetData* AssetManager::Get(AssetID) const;
 	template const PostFxChainAssetData*      AssetManager::Get(AssetID) const;
+	template const UiDocumentAssetData*       AssetManager::Get(AssetID) const;
 
 	const std::vector<AssetID>& AssetManager::GetDependencies(
 		const AssetID id

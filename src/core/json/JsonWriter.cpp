@@ -1,6 +1,9 @@
 #include <fstream>
 #include <stdexcept>
 
+#include "core/math/Vec3.h"
+#include "core/math/Vec4.h"
+
 #include "JsonWriter.h"
 
 #include "engine/unnamed/subsystem/console/Log.h"

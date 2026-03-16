@@ -61,7 +61,7 @@ namespace Unnamed {
 		// キーボード
 		//---------------------------------------------------------------------
 
-		KEY("`", KEYBOARD, VK_OEM_3), // ` <-- 1の左のキー
+		KEY("`", KEYBOARD, VK_OEM_3), // ` ← 1の左のキー
 
 		// 数字キー
 		KEY("0", KEYBOARD, 0x30), // 0
@@ -188,7 +188,9 @@ namespace Unnamed {
 	const std::unordered_map<InputKey, std::string_view, KeyHash>
 	KeyNameTable::kSKeyToName = [] {
 		std::unordered_map<InputKey, std::string_view, KeyHash> rev;
-		for (const auto& [name, key] : kSNameToKey) rev.emplace(key, name);
+		for (const auto& [name, key] : kSNameToKey) {
+			rev.emplace(key, name);
+		}
 		return rev;
 	}();
 }

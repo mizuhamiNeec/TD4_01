@@ -4,14 +4,11 @@
 namespace Unnamed::Gui {
 	class UiVerticalLayout : public UiLayout {
 	public:
-		UiVerticalLayout()           = default;
-		~UiVerticalLayout() override = default;
+		UiVerticalLayout();
+		~UiVerticalLayout() override;
 
 		const char* GetTypeName() const override {
-			return "VerticalLayout";
+			return "VerticalLayoutPreset";
 		}
-
-	protected:
-		void UpdateLayout(const Rect& parentGlobalRect) override;
 	};
 }

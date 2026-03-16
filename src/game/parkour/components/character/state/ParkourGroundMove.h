@@ -9,17 +9,15 @@
 namespace Unnamed {
 	class ParkourGroundMove final : public GroundMove {
 	public:
-		explicit ParkourGroundMove(const ParkourMovementTuning& tuning);
+		explicit ParkourGroundMove();
 
 		void Enter(ConsoleSystem* console) override;
-
-		void Tick(MovementContext& context, const float deltaTime) override;
-
+		void Tick(MovementContext& context, float deltaTime) override;
 		void Exit() override;
 
 		std::string GetStateName() override;
 
 	private:
-		ParkourMovementTuning mTuning;
+		ConVar<float>* mJumpVelocity = nullptr;
 	};
 }

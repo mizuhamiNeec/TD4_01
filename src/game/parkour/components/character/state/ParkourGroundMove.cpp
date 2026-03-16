@@ -4,7 +4,6 @@
 
 #include "game/core/collision/kinematic/base/BaseKinematicCollisionResolver.h"
 
-
 namespace Unnamed {
 	namespace {
 		[[nodiscard]] Vec3 ComputeWishDir(const MovementFrameInput& input) {
@@ -19,13 +18,13 @@ namespace Unnamed {
 		}
 	}
 
-	ParkourGroundMove::ParkourGroundMove(
-		const ParkourMovementTuning& tuning
-	) : mTuning(tuning) {}
+	ParkourGroundMove::ParkourGroundMove() = default;
 
 	void ParkourGroundMove::Enter(ConsoleSystem* console) {
 		// GroundMoveに任せる
 		GroundMove::Enter(console);
+
+		mJumpVelocity = GetConVarSafe<float>(console, "sv_jumpvelocity");
 	}
 
 	void ParkourGroundMove::Tick(
@@ -68,7 +67,7 @@ namespace Unnamed {
 		context.velocity.y = 0.0f;
 
 		if (context.input.jumpPressed) {
-			context.velocity.y     = Math::HtoM(mTuning.jumpVelocityHu);
+			context.velocity.y     = Math::HtoM(mJumpVelocity->GetValue());
 			context.requestedState = kStateAirMove;
 		}
 	}

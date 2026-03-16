@@ -51,6 +51,7 @@ namespace Unnamed::Rhi {
 		uint32_t mWidth       = 0;
 		uint32_t mHeight      = 0;
 		uint32_t mBufferCount = 2;
+		bool     mAllowTearing = false;
 
 		// 最大トリプルバッファ対応
 		std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, 3> mBackBuffers = {};

@@ -13,6 +13,23 @@ namespace Unnamed::Rhi {
 
 	using namespace Microsoft::WRL;
 
+	namespace {
+		bool CheckTearingSupport(const ComPtr<IDXGIFactory4>& factory) {
+			ComPtr<IDXGIFactory5> factory5;
+			if (FAILED(factory.As(&factory5))) {
+				return false;
+			}
+
+			BOOL allowTearing = FALSE;
+			const HRESULT hr  = factory5->CheckFeatureSupport(
+				DXGI_FEATURE_PRESENT_ALLOW_TEARING,
+				&allowTearing,
+				sizeof(allowTearing)
+			);
+			return SUCCEEDED(hr) && allowTearing == TRUE;
+		}
+	}
+
 	D3D12SwapChain::D3D12SwapChain(
 		ComPtr<IDXGIFactory4>      factory,
 		ComPtr<ID3D12Device>       device,
@@ -25,6 +42,7 @@ namespace Unnamed::Rhi {
 		mWidth       = desc.width;
 		mHeight      = desc.height;
 		mBufferCount = desc.bufferCount;
+		mAllowTearing = CheckTearingSupport(mFactory);
 
 		D3D12_DESCRIPTOR_HEAP_DESC rtvDesc = {};
 		rtvDesc.Type                       = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
@@ -99,7 +117,7 @@ namespace Unnamed::Rhi {
 	void D3D12SwapChain::Present(const bool vSync) {
 		const UINT syncInterval = vSync ? 1u : 0u;
 		UINT       flags        = 0u;
-		if (vSync) {
+		if (!vSync && mAllowTearing) {
 			flags |= DXGI_PRESENT_ALLOW_TEARING;
 		}
 		Throw(mSwapChain->Present(syncInterval, flags));
@@ -140,7 +158,9 @@ namespace Unnamed::Rhi {
 		scDesc.Scaling = DXGI_SCALING_STRETCH;
 		scDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 		scDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
-		scDesc.Flags = desc.vSync ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
+		scDesc.Flags = (!desc.vSync && mAllowTearing)
+			               ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING
+			               : 0;
 
 		ComPtr<IDXGISwapChain1> swapChain1;
 		Throw(

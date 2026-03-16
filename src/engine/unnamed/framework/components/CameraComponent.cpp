@@ -10,6 +10,7 @@
 #include "core/math/Math.h"
 
 #include "engine/unnamed/framework/entity/Entity.h"
+#include "engine/world/World.h"
 
 namespace Unnamed {
 	namespace {
@@ -100,6 +101,39 @@ namespace Unnamed {
 		outCamera.depthMode = Render::PROJECTION_DEPTH_MODE::ReverseZ;
 		outCamera.valid     = true;
 		return true;
+	}
+
+	bool CameraComponent::SetAsCurrentCamera() {
+		Entity* owner = GetOwner();
+		if (!owner) {
+			return false;
+		}
+
+		World* world = GetWorld();
+		if (!world) {
+			return false;
+		}
+
+		return world->GetCameraManager().SetCurrentCamera(owner->GetGuid());
+	}
+
+	bool CameraComponent::IsCurrentCamera() const {
+		const Entity* owner = GetOwner();
+		if (!owner) {
+			return false;
+		}
+
+		const World* world = GetWorld();
+		if (!world) {
+			return false;
+		}
+
+		const auto& manager = world->GetCameraManager();
+		if (!manager.HasCurrentCamera()) {
+			return false;
+		}
+
+		return manager.GetCurrentCameraGuid() == owner->GetGuid();
 	}
 
 	std::string_view CameraComponent::GetStableName() const {

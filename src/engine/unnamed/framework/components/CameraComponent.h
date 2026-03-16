@@ -33,6 +33,9 @@ namespace Unnamed {
 		/// @return カメラ入力の構築に成功したかどうか。
 		bool BuildCameraInput(Render::RenderCameraInput& outCamera) const;
 
+		bool SetAsCurrentCamera();
+		[[nodiscard]] bool IsCurrentCamera() const;
+
 		// ---- BaseComponent ------------------------------------------------
 		[[nodiscard]] std::string_view GetStableName() const override;
 		[[nodiscard]] std::string_view GetComponentName() const override;

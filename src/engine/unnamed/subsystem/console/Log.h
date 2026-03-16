@@ -80,6 +80,21 @@ namespace Unnamed {
 		}
 
 		console->Print(level, channel, body, location);
+
+		// エラー以上のレベルのメッセージはエディタ通知も出す
+		switch (level) {
+			case LogLevel::Error: console->ExecuteCommand(
+					"notify error 20 Error | " + body,
+					EXEC_FLAG::FROM_CONSOLE | EXEC_FLAG::SILENT
+				);
+				break;
+			case LogLevel::Fatal: console->ExecuteCommand(
+					"notify fatal 0 Fatal | " + body,
+					EXEC_FLAG::FROM_CONSOLE | EXEC_FLAG::SILENT
+				);
+				break;
+			default: ;
+		}
 	}
 }
 

@@ -51,7 +51,7 @@ namespace ImGuiWidgets {
 	/// @param icon アイコン（フォントアイコン）
 	/// @param label ラベル文字列（省略可能）
 	/// @param size ボタンのサイズ（(0,0)で自動調整）
-	/// @param iconScale アイコンのスケーリング（高さに対する比率）
+	/// @param iconScale アイコンのスケーリング
 	/// @param labelDir ラベルの配置方向
 	/// @return ボタンが押された場合にtrueを返します。
 	bool IconButton(

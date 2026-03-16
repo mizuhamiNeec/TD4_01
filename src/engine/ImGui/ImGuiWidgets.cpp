@@ -327,35 +327,62 @@ namespace ImGuiWidgets {
 		const bool        horizontalLayout =
 			labelDir == ImGuiDir_Left || labelDir == ImGuiDir_Right;
 		const bool  iconOnly = !hasLabel || labelDir == ImGuiDir_None;
+		const bool  autoWidth = size.x <= 0.0f;
+		const bool  autoHeight = size.y <= 0.0f;
 		const float gap      = horizontalLayout ?
 			                       style.ItemSpacing.x :
 			                       style
 			                       .ItemSpacing.y;
 		const ImVec2 pad          = style.FramePadding;
+		const float  baseFontSize = ImGui::GetFontSize();
+		const float  baseFontSizeSafe = std::max(1.0f, baseFontSize);
 		const ImVec2 iconBaseSize = ImGui::CalcTextSize(iconUtf8.c_str());
 		const ImVec2 labelSize    = hasLabel ?
 			                            ImGui::CalcTextSize(label) :
 			                            ImVec2(0.0f, 0.0f);
+		const float  autoIconFontSize =
+			std::max(1.0f, baseFontSize * iconScale);
+		const float autoFontScale = autoIconFontSize / baseFontSizeSafe;
+		ImVec2      layoutIconSize = ImVec2(
+			iconBaseSize.x * autoFontScale, iconBaseSize.y * autoFontScale
+		);
 
-		if (size.x <= 0.0f) {
+		if (!autoHeight) {
+			const float explicitInnerHeight =
+				std::max(1.0f, size.y - pad.y * 2.0f);
+			const float explicitIconFontSize =
+				std::max(1.0f, explicitInnerHeight * iconScale);
+			const float explicitFontScale =
+				explicitIconFontSize / baseFontSizeSafe;
+			layoutIconSize = ImVec2(
+				iconBaseSize.x * explicitFontScale,
+				iconBaseSize.y * explicitFontScale
+			);
+		}
+
+		if (autoWidth) {
 			if (iconOnly) {
-				size.x = iconBaseSize.x + pad.x * 2.0f;
+				size.x = layoutIconSize.x + pad.x * 2.0f;
 			} else if (
 				horizontalLayout) {
-				size.x = iconBaseSize.x + labelSize.x + gap + pad.x * 2.0f;
+				size.x =
+					layoutIconSize.x + labelSize.x + gap + pad.x * 2.0f;
 			} else {
-				size.x = std::max(iconBaseSize.x, labelSize.x) + pad.x * 2.0f;
+				size.x =
+					std::max(layoutIconSize.x, labelSize.x) + pad.x * 2.0f;
 			}
 		}
 
-		if (size.y <= 0.0f) {
+		if (autoHeight) {
 			if (iconOnly) {
-				size.y = iconBaseSize.y + pad.y * 2.0f;
+				size.y = layoutIconSize.y + pad.y * 2.0f;
 			} else if (
 				horizontalLayout) {
-				size.y = std::max(iconBaseSize.y, labelSize.y) + pad.y * 2.0f;
+				size.y =
+					std::max(layoutIconSize.y, labelSize.y) + pad.y * 2.0f;
 			} else {
-				size.y = iconBaseSize.y + labelSize.y + gap + pad.y * 2.0f;
+				size.y =
+					layoutIconSize.y + labelSize.y + gap + pad.y * 2.0f;
 			}
 		}
 
@@ -387,9 +414,10 @@ namespace ImGuiWidgets {
 			itemMin, itemMax, bgColor, true, style.FrameRounding
 		);
 
-		const float  baseFontSize = ImGui::GetFontSize();
-		const float  iconFontSize = std::max(1.0f, innerSize.y * iconScale);
-		const float  fontScale    = iconFontSize / std::max(1.0f, baseFontSize);
+		const float  iconFontSize = autoHeight ?
+				                         autoIconFontSize :
+				                         std::max(1.0f, innerSize.y * iconScale);
+		const float  fontScale    = iconFontSize / baseFontSizeSafe;
 		const ImVec2 iconSize     = ImVec2(
 			iconBaseSize.x * fontScale, iconBaseSize.y * fontScale
 		);
@@ -515,7 +543,9 @@ namespace ImGuiWidgets {
 			}
 
 			const float wheel = ImGui::GetIO().MouseWheel;
-			if (wheel == 0.0f) return;
+			if (wheel == 0.0f) {
+				return;
+			}
 
 			const int delta = static_cast<int>(wheel);
 
@@ -532,7 +562,9 @@ namespace ImGuiWidgets {
 		const ImVec2& sizeArg, const float rounding
 	) {
 		ImGuiWindow* window = ImGui::GetCurrentWindow();
-		if (window->SkipItems) return false;
+		if (window->SkipItems) {
+			return false;
+		}
 
 		ImGuiContext&     g     = *GImGui;
 		const ImGuiStyle& style = g.Style;
@@ -556,10 +588,11 @@ namespace ImGuiWidgets {
 		const float max_x = span_all_columns ?
 			                    window->ParentWorkRect.Max.x :
 			                    window->WorkRect.Max.x;
-		if (sizeArg.x == 0.0f || flags & ImGuiSelectableFlags_SpanAvailWidth)
+		if (sizeArg.x == 0.0f || flags & ImGuiSelectableFlags_SpanAvailWidth) {
 			size.x = ImMax(
 				label_size.x, max_x - min_x
 			);
+		}
 
 		ImRect bb(min_x, pos.y, min_x + size.x, pos.y + size.y);
 		if ((flags & ImGuiSelectableFlags_NoPadWithHalfSpacing) == 0) {
@@ -595,18 +628,25 @@ namespace ImGuiWidgets {
 
 		const bool is_multi_select =
 			(g.LastItemData.ItemFlags & ImGuiItemFlags_IsMultiSelect) != 0;
-		if (!is_visible)
+		if (!is_visible) {
 			if (!is_multi_select || !g.BoxSelectState.UnclipMode || !g.
-			    BoxSelectState.UnclipRect.Overlaps(bb))
+			    BoxSelectState.UnclipRect.Overlaps(bb)) {
 				return false;
+			}
+		}
 
 		const bool disabled_global =
 			(g.CurrentItemFlags & ImGuiItemFlags_Disabled) != 0;
-		if (disabled_item && !disabled_global) ImGui::BeginDisabled();
+		if (disabled_item && !disabled_global) {
+			ImGui::BeginDisabled();
+		}
 
 		if (span_all_columns) {
-			if (g.CurrentTable) ImGui::TablePushBackgroundChannel();
-			else if (window->DC.CurrentColumns) ImGui::PushColumnsBackground();
+			if (g.CurrentTable) {
+				ImGui::TablePushBackgroundChannel();
+			} else if (window->DC.CurrentColumns) {
+				ImGui::PushColumnsBackground();
+			}
 			g.LastItemData.StatusFlags |= ImGuiItemStatusFlags_HasClipRect;
 			g.LastItemData.ClipRect    = window->ClipRect;
 		}
@@ -648,10 +688,12 @@ namespace ImGuiWidgets {
 			ImGui::MultiSelectItemFooter(id, &selected, &pressed);
 		} else {
 			if (flags & ImGuiSelectableFlags_SelectOnNav && g.NavJustMovedToId
-			    != 0 && g.NavJustMovedToFocusScopeId == g.CurrentFocusScopeId)
+			    != 0 && g.NavJustMovedToFocusScopeId == g.CurrentFocusScopeId) {
 				if (g.NavJustMovedToId == id && (
-					    g.NavJustMovedToKeyMods & ImGuiMod_Ctrl) == 0)
+					    g.NavJustMovedToKeyMods & ImGuiMod_Ctrl) == 0) {
 					selected = pressed = auto_selected = true;
+				}
+			}
 		}
 
 		if (pressed || (hovered && flags &
@@ -662,15 +704,20 @@ namespace ImGuiWidgets {
 					id, window->DC.NavLayerCurrent, g.CurrentFocusScopeId,
 					ImGui::WindowRectAbsToRel(window, bb)
 				);
-				if (g.IO.ConfigNavCursorVisibleAuto) g.NavCursorVisible = false;
+				if (g.IO.ConfigNavCursorVisibleAuto) {
+					g.NavCursorVisible = false;
+				}
 			}
 		}
-		if (pressed) ImGui::MarkItemEdited(id);
+		if (pressed) {
+			ImGui::MarkItemEdited(id);
+		}
 
 		if (selected !=
-		    was_selected)
+		    was_selected) {
 			g.LastItemData.StatusFlags |=
 				ImGuiItemStatusFlags_ToggledSelection;
+		}
 
 		if (is_visible) {
 			const bool highlighted =
@@ -689,33 +736,41 @@ namespace ImGuiWidgets {
 				ImGuiNavRenderCursorFlags nav_render_cursor_flags =
 					ImGuiNavRenderCursorFlags_Compact |
 					ImGuiNavRenderCursorFlags_NoRounding;
-				if (is_multi_select)
+				if (is_multi_select) {
 					nav_render_cursor_flags |=
 						ImGuiNavRenderCursorFlags_AlwaysDraw;
+				}
 				ImGui::RenderNavCursor(bb, id, nav_render_cursor_flags);
 			}
 		}
 
 		if (span_all_columns) {
-			if (g.CurrentTable) ImGui::TablePopBackgroundChannel();
-			else if (window->DC.CurrentColumns) ImGui::PopColumnsBackground();
+			if (g.CurrentTable) {
+				ImGui::TablePopBackgroundChannel();
+			} else if (window->DC.CurrentColumns) {
+				ImGui::PopColumnsBackground();
+			}
 		}
 
-		if (is_visible)
+		if (is_visible) {
 			ImGui::RenderTextClipped(
 				pos, ImVec2(
 					ImMin(pos.x + size.x, window->WorkRect.Max.x),
 					pos.y + size.y
 				), label, NULL, &label_size, style.SelectableTextAlign, &bb
 			);
+		}
 
 		if (pressed && !auto_selected && window->Flags & ImGuiWindowFlags_Popup
 		    && !(
 			    flags & ImGuiSelectableFlags_NoAutoClosePopups) && g.
-		    LastItemData.ItemFlags & ImGuiItemFlags_AutoClosePopups)
+		    LastItemData.ItemFlags & ImGuiItemFlags_AutoClosePopups) {
 			ImGui::CloseCurrentPopup();
+		}
 
-		if (disabled_item && !disabled_global) ImGui::EndDisabled();
+		if (disabled_item && !disabled_global) {
+			ImGui::EndDisabled();
+		}
 
 		IMGUI_TEST_ENGINE_ITEM_INFO(id, label, g.LastItemData.StatusFlags);
 		return pressed; //-V1020
@@ -727,8 +782,9 @@ namespace ImGuiWidgets {
 		ImGuiContext& g      = *GImGui;
 		ImGuiWindow*  window = g.CurrentWindow;
 		if (g.OpenPopupStack.Size <= g.BeginPopupStack.Size || window->Flags &
-		    ImGuiWindowFlags_ChildMenu)
+		    ImGuiWindowFlags_ChildMenu) {
 			return false;
+		}
 
 		const ImGuiPopupData* upperPopup =
 			&g.OpenPopupStack[g.BeginPopupStack.Size];
@@ -753,7 +809,9 @@ namespace ImGuiWidgets {
 		const bool  selected, const bool enabled, const float rounding
 	) {
 		ImGuiWindow* window = ImGui::GetCurrentWindow();
-		if (window->SkipItems) return false;
+		if (window->SkipItems) {
+			return false;
+		}
 
 		const ImGuiContext& g = *GImGui;
 		const ImGuiStyle& style = g.Style;
@@ -767,7 +825,9 @@ namespace ImGuiWidgets {
 
 		bool pressed;
 		ImGui::PushID(label);
-		if (!enabled) ImGui::BeginDisabled();
+		if (!enabled) {
+			ImGui::BeginDisabled();
+		}
 
 		constexpr ImGuiSelectableFlags selectableFlags =
 			ImGuiSelectableFlags_SelectOnRelease |
@@ -790,8 +850,9 @@ namespace ImGuiWidgets {
 			);
 			ImGui::PopStyleVar();
 			if (g.LastItemData.StatusFlags &
-			    ImGuiItemStatusFlags_Visible)
+			    ImGuiItemStatusFlags_Visible) {
 				ImGui::RenderText(text_pos, label);
+			}
 			window->DC.CursorPos.x +=
 				IM_TRUNC(style.ItemSpacing.x * (-1.0f + 0.5f));
 		} else {
@@ -822,10 +883,11 @@ namespace ImGuiWidgets {
 				ImGui::RenderText(
 					textPos + ImVec2(offsets->OffsetLabel, 0.0f), label
 				);
-				if (iconW > 0.0f)
+				if (iconW > 0.0f) {
 					ImGui::RenderText(
 						textPos + ImVec2(offsets->OffsetIcon, 0.0f), icon
 					);
+				}
 				if (shortcutW > 0.0f) {
 					ImGui::PushStyleColor(
 						ImGuiCol_Text, style.Colors[ImGuiCol_TextDisabled]
@@ -838,7 +900,7 @@ namespace ImGuiWidgets {
 					);
 					ImGui::PopStyleColor();
 				}
-				if (selected)
+				if (selected) {
 					ImGui::RenderCheckMark(
 						window->DrawList,
 						textPos + ImVec2(
@@ -848,6 +910,7 @@ namespace ImGuiWidgets {
 						), ImGui::GetColorU32(ImGuiCol_Text),
 						g.FontSize * 0.866f
 					);
+				}
 			}
 		}
 		IMGUI_TEST_ENGINE_ITEM_INFO(
@@ -855,9 +918,13 @@ namespace ImGuiWidgets {
 			g.LastItemData.StatusFlags | ImGuiItemStatusFlags_Checkable | (
 				selected ? ImGuiItemStatusFlags_Checked : 0)
 		);
-		if (!enabled) ImGui::EndDisabled();
+		if (!enabled) {
+			ImGui::EndDisabled();
+		}
 		ImGui::PopID();
-		if (menuSetIsOpen) ImGui::PopItemFlag();
+		if (menuSetIsOpen) {
+			ImGui::PopItemFlag();
+		}
 
 		return pressed;
 	}

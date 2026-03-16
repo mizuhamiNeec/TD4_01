@@ -165,9 +165,9 @@ namespace Unnamed {
 	template <typename T>
 	T ClampConVarValue(
 		ConCommandBase* var,
-		const T&               value,
-		const T&               minValue,
-		const T&               maxValue
+		const T&        value,
+		const T&        minValue,
+		const T&        maxValue
 	) {
 		if (value < minValue) {
 			Warning(
@@ -197,7 +197,7 @@ namespace Unnamed {
 			case CVAR_TYPE::BOOL: {
 				if (
 					const auto* cBool =
-						dynamic_cast<UnnamedConVar<bool>*>(var)
+						dynamic_cast<ConVar<bool>*>(var)
 				) {
 					return cBool->GetValue() ? "true" : "false";
 				}
@@ -205,7 +205,7 @@ namespace Unnamed {
 			}
 			case CVAR_TYPE::INT: {
 				if (
-					const auto* ci = dynamic_cast<UnnamedConVar<int>*>(var)
+					const auto* ci = dynamic_cast<ConVar<int>*>(var)
 				) {
 					return std::to_string(ci->GetValue());
 				}
@@ -214,7 +214,7 @@ namespace Unnamed {
 			case CVAR_TYPE::FLOAT: {
 				if (
 					const auto* cf =
-						dynamic_cast<UnnamedConVar<float>*>(var)
+						dynamic_cast<ConVar<float>*>(var)
 				) {
 					return std::to_string(cf->GetValue());
 				}
@@ -222,7 +222,7 @@ namespace Unnamed {
 			}
 			case CVAR_TYPE::DOUBLE: {
 				if (
-					const auto* cd = dynamic_cast<UnnamedConVar<double>*>(
+					const auto* cd = dynamic_cast<ConVar<double>*>(
 						var)
 				) {
 					return std::to_string(cd->GetValue());
@@ -232,7 +232,7 @@ namespace Unnamed {
 			case CVAR_TYPE::STRING: {
 				if (
 					const auto* cs =
-						dynamic_cast<UnnamedConVar<std::string>*>(var)
+						dynamic_cast<ConVar<std::string>*>(var)
 				) {
 					return cs->GetValue();
 				}
@@ -241,7 +241,7 @@ namespace Unnamed {
 			case CVAR_TYPE::VEC3: {
 				if (
 					const auto* cv3 =
-						dynamic_cast<UnnamedConVar<Vec3>*>(var)
+						dynamic_cast<ConVar<Vec3>*>(var)
 				) {
 					return cv3->GetValue().ToString();
 				}
@@ -328,7 +328,7 @@ namespace Unnamed {
 				if (prefix == '+' || prefix == '-') {
 					const std::string actionName = tokens[0].substr(1);
 					if (!actionName.empty()) {
-						if (auto* input = ServiceLocator::Get<UInputSystem>()) {
+						if (auto* input = ServiceLocator::Get<InputSystem>()) {
 							input->HandleConsoleAction(
 								actionName,
 								prefix == '+'
@@ -407,13 +407,16 @@ namespace Unnamed {
 					);
 				}
 			} else {
-				// 謎な場合
-				SpecialMsg(
-					LogLevel::Error,
-					"",
-					"'{}' is not recognized as a command or variable.",
-					tokens[0]
-				);
+				// Silentフラグがない場合はエラーを表示
+				if (!(flag & EXEC_FLAG::SILENT)) {
+					// 謎な場合
+					SpecialMsg(
+						LogLevel::Error,
+						"",
+						"'{}' is not recognized as a command or variable.",
+						tokens[0]
+					);
+				}
 			}
 		}
 	}
@@ -434,23 +437,23 @@ namespace Unnamed {
 	CVAR_TYPE ConsoleSystem::GetConVarType(ConCommandBase* var) {
 		auto type = CVAR_TYPE::NONE;
 
-		if (dynamic_cast<UnnamedConVar<bool>*>(
+		if (dynamic_cast<ConVar<bool>*>(
 			var)) {
 			type = CVAR_TYPE::BOOL;
 		} else if (dynamic_cast<
-			UnnamedConVar<int>*>(var)) {
+			ConVar<int>*>(var)) {
 			type = CVAR_TYPE::INT;
 		} else if (
-			dynamic_cast<UnnamedConVar<float>*>(
+			dynamic_cast<ConVar<float>*>(
 				var)) {
 			type = CVAR_TYPE::FLOAT;
 		} else if (dynamic_cast<
-			UnnamedConVar<double>*>(var)) {
+			ConVar<double>*>(var)) {
 			type = CVAR_TYPE::DOUBLE;
 		} else if
-		(dynamic_cast<UnnamedConVar<std::string>*>(var)) {
+		(dynamic_cast<ConVar<std::string>*>(var)) {
 			type = CVAR_TYPE::STRING;
-		} else if (dynamic_cast<UnnamedConVar<Vec3>*>(var)) {
+		} else if (dynamic_cast<ConVar<Vec3>*>(var)) {
 			type = CVAR_TYPE::VEC3;
 		}
 
@@ -524,7 +527,7 @@ namespace Unnamed {
 		switch (GetConVarType(var)) {
 			case CVAR_TYPE::BOOL: {
 				if (
-					auto* cBool = dynamic_cast<UnnamedConVar<bool>*>(var)
+					auto* cBool = dynamic_cast<ConVar<bool>*>(var)
 				) {
 					const bool newValue = StrUtil::CheckBoolString(args[0]);
 
@@ -548,9 +551,19 @@ namespace Unnamed {
 			}
 			case CVAR_TYPE::INT: {
 				if (
-					auto* ci = dynamic_cast<UnnamedConVar<int>*>(var)
+					auto* ci = dynamic_cast<ConVar<int>*>(var)
 				) {
-					int value = std::stoi(args[0]);
+					int value = 0;
+					try {
+						value = std::stoi(args[0]);
+					} catch (const std::exception& e) {
+						SpecialMsg(
+							LogLevel::Error, "",
+							"Invalid integer value: '{}'. {}",
+							args[0], e.what()
+						);
+						return;
+					}
 					// 最小値または最大値が設定されている場合はクランプする
 					if (ci->HasMinValue() || ci->HasMaxValue()) {
 						value = ClampConVarValue(
@@ -579,9 +592,19 @@ namespace Unnamed {
 			}
 			case CVAR_TYPE::FLOAT: {
 				if (
-					auto* cf = dynamic_cast<UnnamedConVar<float>*>(var)
+					auto* cf = dynamic_cast<ConVar<float>*>(var)
 				) {
-					float value = std::stof(args[0]);
+					float value = 0.0f;
+					try {
+						value = std::stof(args[0]);
+					} catch (const std::exception& e) {
+						SpecialMsg(
+							LogLevel::Error, "",
+							"Invalid float value: '{}'. {}",
+							args[0], e.what()
+						);
+						return;
+					}
 					// 最小値または最大値が設定されている場合はクランプする
 					if (cf->HasMinValue() || cf->HasMaxValue()) {
 						value = ClampConVarValue(
@@ -610,9 +633,19 @@ namespace Unnamed {
 			}
 			case CVAR_TYPE::DOUBLE: {
 				if (
-					auto* cd = dynamic_cast<UnnamedConVar<double>*>(var)
+					auto* cd = dynamic_cast<ConVar<double>*>(var)
 				) {
-					double value = std::stof(args[0]);
+					double value = 0.0;
+					try {
+						value = std::stof(args[0]);
+					} catch (std::exception& e) {
+						SpecialMsg(
+							LogLevel::Error, "",
+							"Invalid double value: '{}'. {}",
+							args[0], e.what()
+						);
+						return;
+					}
 					// 最小値または最大値が設定されている場合はクランプする
 					if (cd->HasMinValue() || cd->HasMaxValue()) {
 						value = ClampConVarValue(
@@ -642,7 +675,7 @@ namespace Unnamed {
 			case CVAR_TYPE::STRING: {
 				if (
 					auto* cs =
-						dynamic_cast<UnnamedConVar<std::string>*>(var)
+						dynamic_cast<ConVar<std::string>*>(var)
 				) {
 					std::string combined;
 					for (size_t i = 0; i < args.size(); ++i) {
@@ -671,7 +704,7 @@ namespace Unnamed {
 			case CVAR_TYPE::VEC3: {
 				if (args.size() >= 3) {
 					if (
-						auto* cv3 = dynamic_cast<UnnamedConVar<Vec3>*>(var)
+						auto* cv3 = dynamic_cast<ConVar<Vec3>*>(var)
 					) {
 						bool ok = true;
 						for (const auto& arg : args | std::views::take(3)) {

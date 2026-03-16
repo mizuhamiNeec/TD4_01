@@ -110,7 +110,7 @@ namespace Unnamed {
 			EXEC_FLAG          flag = EXEC_FLAG::FROM_ENGINE
 		);
 
-		/// @brief 登録されている全てのコンソールコマンドを取得します
+		/// @brief 登録されている全てのコンソール変数を取得します
 		[[nodiscard]]
 		std::unordered_map<std::string, ConCommandBase*> GetConVars();
 
@@ -128,7 +128,7 @@ namespace Unnamed {
 		/// @brief 指定した型のコンソール変数を名前から取得します
 		/// @tparam TVar 取得する変数の型
 		/// @param name 変数名
-		/// @return 変数へのポインタ（存在しない場合や型が異なる場合はnullptr）
+		/// @return 変数へのポインタ（無効な場合はnullptr）
 		template <class TVar>
 		[[nodiscard]] TVar* GetConVarAs(const std::string_view name) {
 			static_assert(

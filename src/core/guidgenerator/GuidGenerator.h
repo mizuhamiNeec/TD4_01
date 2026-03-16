@@ -16,7 +16,7 @@ namespace Unnamed {
 
 		/// @brief コンストラクタ
 		/// @param m 生成モード（デフォルト: SEQUENTIAL）
-		explicit GuidGenerator(MODE m = MODE::SEQUENTIAL);
+		explicit GuidGenerator(MODE m = MODE::RANDOM64);
 
 		/// @brief 新しいGUIDを割り当てる
 		/// @return 生成された64ビットGUID

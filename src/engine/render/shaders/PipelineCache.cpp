@@ -62,8 +62,7 @@ namespace Unnamed::Render {
 	ID3D12PipelineState* PipelineCache::GetOrCreateGraphicsPso(
 		const GraphicsPsoKey& key
 	) {
-		if (auto it = mGraphics.find(key);
-			it != mGraphics.end()) {
+		if (auto it = mGraphics.find(key); it != mGraphics.end()) {
 			return it->second.Get();
 		}
 
@@ -167,8 +166,7 @@ namespace Unnamed::Render {
 	ID3D12PipelineState* PipelineCache::GetOrCreateComputePso(
 		const ComputePipelineKey& key
 	) {
-		if (const auto it = mCompute.find(key);
-			it != mCompute.end()) {
+		if (const auto it = mCompute.find(key); it != mCompute.end()) {
 			return it->second.Get();
 		}
 

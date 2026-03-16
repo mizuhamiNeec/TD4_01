@@ -13,15 +13,14 @@
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
-#include "engine/unnamed/subsystem/console/concommand/UnnamedConVar.h"
-#include "engine/unnamed/subsystem/input/UInputSystem.h"
+#include "engine/unnamed/subsystem/console/concommand/ConVar.h"
+#include "engine/unnamed/subsystem/input/InputSystem.h"
 #include "engine/unnamed/subsystem/input/device/mouse/MouseDevice.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
-#include "engine/world/UWorld.h"
 
 namespace Unnamed {
 	namespace {
-		void BindMouseAxisOnce(UInputSystem* input) {
+		void BindMouseAxisOnce(InputSystem* input) {
 			static bool sBound = false;
 			if (sBound || !input) {
 				return;
@@ -43,7 +42,7 @@ namespace Unnamed {
 	}
 
 	void CameraRotatorComponent::OnAttached() {
-		mInput = ServiceLocator::Get<UInputSystem>();
+		mInput = ServiceLocator::Get<InputSystem>();
 		BindMouseAxisOnce(mInput);
 		if (const TransformComponent* transform = GetTransform()) {
 			const Vec3 eulerDegrees = transform->Rotation().ToEulerDegrees();
@@ -57,10 +56,6 @@ namespace Unnamed {
 		if (!transform) {
 			return;
 		}
-		const UWorld* world = UWorld::GetTickingWorld();
-		if (!world || !world->IsGameSimulationEnabled()) {
-			return;
-		}
 
 		float sensi          = 1.0f;
 		float m_pitch        = 0.022f;
@@ -69,25 +64,25 @@ namespace Unnamed {
 		float pitchDownLimit = 89.0f;
 		if (auto* console = ServiceLocator::Get<ConsoleSystem>()) {
 			if (const auto* sensitivity =
-				console->GetConVarAs<UnnamedConVar<float>>("sensitivity")) {
+				console->GetConVarAs<ConVar<float>>("sensitivity")) {
 				sensi = sensitivity->GetValue();
 			}
-			if (const auto* pitch = console->GetConVarAs<UnnamedConVar<float>>(
+			if (const auto* pitch = console->GetConVarAs<ConVar<float>>(
 				"m_pitch"
 			)) {
 				m_pitch = pitch->GetValue();
 			}
-			if (const auto* yaw = console->GetConVarAs<UnnamedConVar<float>>(
+			if (const auto* yaw = console->GetConVarAs<ConVar<float>>(
 				"m_yaw"
 			)) {
 				m_yaw = yaw->GetValue();
 			}
 
 			if (const auto* pitchUp =
-				console->GetConVarAs<UnnamedConVar<float>>("cl_pitchup")) {
+				console->GetConVarAs<ConVar<float>>("cl_pitchup")) {
 				pitchUpLimit = std::abs(pitchUp->GetValue());
 			}
-			if (const auto* pitchDown = console->GetConVarAs<UnnamedConVar<
+			if (const auto* pitchDown = console->GetConVarAs<ConVar<
 				float>>(
 				"cl_pitchdown"
 			)) {

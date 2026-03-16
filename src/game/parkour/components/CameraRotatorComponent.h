@@ -5,8 +5,9 @@
 #include "core/math/Vec2.h"
 
 namespace Unnamed {
+	class World;
 	class TransformComponent;
-	class UInputSystem;
+	class InputSystem;
 	class JsonReader;
 	class JsonWriter;
 
@@ -39,14 +40,15 @@ namespace Unnamed {
 	private:
 		[[nodiscard]] TransformComponent* GetTransform() const;
 
-		UInputSystem* mInput             = nullptr;
-		float         mPitch             = 0.0f;
-		float         mYaw               = 0.0f;
-		float         mSensitivity       = 1.0f;
-		bool          mReplayLookPending = false;
-		float         mReplayPitchDeg    = 0.0f;
-		float         mReplayYawDeg      = 0.0f;
-		bool          mLiveLookPending   = false;
-		Vec2          mLiveLookDelta     = Vec2::zero;
+		InputSystem* mInput = nullptr;
+
+		float mPitch             = 0.0f;
+		float mYaw               = 0.0f;
+		float mSensitivity       = 1.0f;
+		bool  mReplayLookPending = false;
+		float mReplayPitchDeg    = 0.0f;
+		float mReplayYawDeg      = 0.0f;
+		bool  mLiveLookPending   = false;
+		Vec2  mLiveLookDelta     = Vec2::zero;
 	};
 }

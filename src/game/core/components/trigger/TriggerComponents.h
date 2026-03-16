@@ -1,7 +1,6 @@
 #pragma once
-
-#include "engine/unnamed/framework/components/base/UBaseComponent.h"
-
+#include "core/assets/AssetID.h"
+#include "core/math/Mat4.h"
 #include "core/math/Vec3.h"
 
 #include "engine/unnamed/framework/components/base/BaseComponent.h"
@@ -122,6 +121,10 @@ namespace Unnamed {
 
 	class StaticMeshColliderComponent final : public BaseComponent {
 	public:
+		void OnAttached() override;
+		void OnDetached() override;
+		void OnTick(float deltaTime) override;
+
 		[[nodiscard]] std::string_view GetStableName() const override {
 			return "parkour.StaticMeshCollider";
 		}
@@ -138,6 +141,12 @@ namespace Unnamed {
 		}
 
 	private:
-		bool mEnabled = true;
+		void RefreshPhysicsRegistration();
+		void UnregisterPhysicsMesh();
+
+		bool    mEnabled               = true;
+		bool    mRegistered            = false;
+		AssetID mRegisteredMeshAssetId = kInvalidAssetID;
+		Mat4    mRegisteredWorld       = Mat4::zero;
 	};
 }

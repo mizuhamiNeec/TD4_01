@@ -19,15 +19,15 @@ namespace Unnamed {
 		using CompleteFunc = std::function<void()>;
 
 		TweenInstance(
-			GetterFunc  getter,
-			SetterFunc  setter,
-			TValue      endValue,
-			const float duration
+			GetterFunc getter,
+			SetterFunc setter,
+			TValue     endValue,
+			float      duration
 		);
 
 		/// @brief イージング関数の種類を設定します。イージング関数は、Tweenの進行に対する値の変化の仕方を定義します。
 		/// @param easeType イージング関数の種類。
-		TweenInstance& SetEase(const EASE_TYPE easeType);
+		TweenInstance& SetEase(EASE_TYPE easeType);
 
 		/// @brief カスタムのイージング関数を設定します。
 		/// @param easeFunc 正規化時間(0.0f ~ 1.0f)を受け取り、補間係数を返す関数。
@@ -40,12 +40,12 @@ namespace Unnamed {
 
 		/// @brief Tweenの開始前の遅延時間を設定します。遅延時間はTweenの開始前に待機する時間で、0以上の値を指定できます。
 		/// @param delay 遅延時間（秒）。0以上の値を指定してください。
-		TweenInstance& SetDelay(const float delay);
+		TweenInstance& SetDelay(float delay);
 
 		/// @brief ループ設定を行います
 		/// @param loopCount ループ回数。0でループなし、-1で無限ループになります。
 		/// @param loopType ループタイプ。
-		TweenInstance& SetLoops(const int loopCount, const LOOP_TYPE loopType);
+		TweenInstance& SetLoops(int loopCount, LOOP_TYPE loopType);
 
 		/// @brief Tweenの完了時に呼び出されるコールバック関数を設定します
 		/// @param onComplete Tweenの完了時に呼び出される関数。引数なし。
@@ -63,7 +63,7 @@ namespace Unnamed {
 
 		/// @brief Tweenを終了させます。completeがtrueの場合はTweenを完了状態にし、falseの場合はTweenを即座に停止します。
 		/// @param complete trueの場合、Tweenを完了状態にしてから終了します。falseの場合、Tweenを即座に終了します。
-		void Kill(const bool complete) override;
+		void Kill(bool complete) override;
 
 		/// @brief Tweenがまだ有効であるかどうかを判定します。Tweenが有効であるとは、Tweenが終了していない状態を指します。
 		/// @return 有効な場合はtrue、そうでない場合はfalse
@@ -124,7 +124,9 @@ namespace Unnamed {
 	) : mGetter(getter),
 	    mSetter(setter),
 	    mEndValue(endValue),
-	    mDuration(duration) { mState = TWEEN_STATE::PLAYING; }
+	    mDuration(duration) {
+		mState = TWEEN_STATE::PLAYING;
+	}
 
 	template <typename TValue>
 	TweenInstance<TValue>& TweenInstance<TValue>::SetEase(
@@ -148,7 +150,9 @@ namespace Unnamed {
 		const Vec2& p1, const Vec2& p2
 	) {
 		return SetEaseFunc(
-			[p1, p2](const float t) { return Math::CubicBezier(t, p1, p2); }
+			[p1, p2](const float t) {
+				return Math::CubicBezier(t, p1, p2);
+			}
 		);
 	}
 
@@ -156,7 +160,9 @@ namespace Unnamed {
 	TweenInstance<TValue>& TweenInstance<TValue>::SetDelay(const float delay) {
 		mDelay          = std::max(delay, 0.0f);
 		mDelayRemaining = mDelay;
-		if (mDelayRemaining > 0.0f) { mState = TWEEN_STATE::DELAYED; }
+		if (mDelayRemaining > 0.0f) {
+			mState = TWEEN_STATE::DELAYED;
+		}
 		return *this;
 	}
 
@@ -179,16 +185,22 @@ namespace Unnamed {
 
 	template <typename TValue>
 	void TweenInstance<TValue>::Update(const float deltaTime) {
-		if (!mIsAlive) { return; }
+		if (!mIsAlive) {
+			return;
+		}
 		if (
 			mState == TWEEN_STATE::PAUSED ||
 			mState == TWEEN_STATE::COMPLETED ||
 			mState == TWEEN_STATE::KILLED
-		) { return; }
+		) {
+			return;
+		}
 
 		if (mState == TWEEN_STATE::DELAYED) {
 			mDelayRemaining -= deltaTime;
-			if (mDelayRemaining > 0.0f) { return; }
+			if (mDelayRemaining > 0.0f) {
+				return;
+			}
 
 			mState = TWEEN_STATE::PLAYING;
 		}
@@ -223,24 +235,32 @@ namespace Unnamed {
 
 		ApplyValue(easedTime);
 
-		if (mElapsedTime < mDuration) { return; }
+		if (mElapsedTime < mDuration) {
+			return;
+		}
 
 		HandleLoopOrComplete();
 	}
 
 	template <typename TValue>
 	void TweenInstance<TValue>::Pause() {
-		if (!mIsAlive) { return; }
+		if (!mIsAlive) {
+			return;
+		}
 
 		if (
 			mState == TWEEN_STATE::PLAYING ||
 			mState == TWEEN_STATE::DELAYED
-		) { mState = TWEEN_STATE::PAUSED; }
+		) {
+			mState = TWEEN_STATE::PAUSED;
+		}
 	}
 
 	template <typename TValue>
 	void TweenInstance<TValue>::Resume() {
-		if (!mIsAlive) { return; }
+		if (!mIsAlive) {
+			return;
+		}
 		if (mState == TWEEN_STATE::PAUSED) {
 			mState = mDelayRemaining > 0.0f ?
 				         TWEEN_STATE::DELAYED :
@@ -250,7 +270,9 @@ namespace Unnamed {
 
 	template <typename TValue>
 	void TweenInstance<TValue>::Kill(const bool complete) {
-		if (!mIsAlive) { return; }
+		if (!mIsAlive) {
+			return;
+		}
 
 		if (complete) {
 			if (!mHasStarted) {
@@ -268,7 +290,9 @@ namespace Unnamed {
 	}
 
 	template <typename TValue>
-	bool TweenInstance<TValue>::IsAlive() const { return mIsAlive; }
+	bool TweenInstance<TValue>::IsAlive() const {
+		return mIsAlive;
+	}
 
 	template <typename TValue>
 	bool TweenInstance<TValue>::IsPlaying() const {
@@ -285,7 +309,9 @@ namespace Unnamed {
 	}
 
 	template <typename TValue>
-	void TweenInstance<TValue>::CaptureStartValue() { mStartValue = mGetter(); }
+	void TweenInstance<TValue>::CaptureStartValue() {
+		mStartValue = mGetter();
+	}
 
 	template <typename TValue>
 	void TweenInstance<TValue>::ApplyValue(float t) {
@@ -318,13 +344,17 @@ namespace Unnamed {
 		}
 
 		// ループ回数が正の値の場合は減らす。
-		if (mLoopCount > 0) { --mLoopCount; }
+		if (mLoopCount > 0) {
+			--mLoopCount;
+		}
 
 		// ループタイプに応じて再生方向を切り替え、時間をリセット
 		mElapsedTime = 0.0f;
 
 		// YOYOループの場合は再生方向を反転
-		if (mLoopType == LOOP_TYPE::YOYO) { mIsReversed = !mIsReversed; }
+		if (mLoopType == LOOP_TYPE::YOYO) {
+			mIsReversed = !mIsReversed;
+		}
 	}
 
 	template <typename TValue>
@@ -332,6 +362,8 @@ namespace Unnamed {
 		mState   = TWEEN_STATE::COMPLETED;
 		mIsAlive = false;
 
-		if (mOnComplete) { mOnComplete(); }
+		if (mOnComplete) {
+			mOnComplete();
+		}
 	}
 }

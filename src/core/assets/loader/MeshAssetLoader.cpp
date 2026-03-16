@@ -26,9 +26,9 @@ namespace Unnamed {
 
 		constexpr std::array kSupportedExtensions = {
 			".obj",
-			".fbx",
 			".gltf",
 			".glb",
+			// FBXはAssimpビルドに含めると重たいので非対応 Gitに上げられない!
 		};
 
 		struct MeshCacheHeader {
@@ -44,6 +44,10 @@ namespace Unnamed {
 			uint32_t flags                = 0;
 		};
 
+		/// @brief ファイルの状態を表すスタンプ。ファイルの存在、更新日時、サイズを組み合わせて、ファイルが同一かどうかを判定するために使う。
+		/// @param path 判定するファイルのパス
+		/// @return ファイルのスタンプ
+		/// @note ファイルの内容までは見ないため、同一のスタンプでも内容が変わっている可能性はある。あくまで「前回読み込んだときと同じファイルかどうか」を判定するためのもの。
 		FileStamp ReadCurrentFileStamp(const std::string& path) {
 			FileStamp       stamp = {};
 			std::error_code ec;
@@ -59,16 +63,22 @@ namespace Unnamed {
 			return stamp;
 		}
 
+		/// @brief 2つの64ビット整数を組み合わせて新しいハッシュ値を生成する。std::hashの組み合わせに使う。
+		/// @param a ハッシュ値1
+		/// @param b ハッシュ値2
+		/// @return 組み合わせたハッシュ値
 		uint64_t HashCombine64(const uint64_t a, const uint64_t b) {
 			return a ^ b + 0x9e3779b97f4a7c15ull + (a << 6) + (a >> 2);
 		}
 
+		/// @brief Assimpのインポート設定を表すハッシュ値を生成する。スキンニングの有無によって、頂点処理のフラット化（PreTransformVertices）を切り替えるため、スキンニングの有無も考慮する。
+		/// @param hasSkinning スキンニングがあるか?
+		/// @return インポート設定を表すハッシュ値
 		uint64_t BuildImporterConfigHash(const bool hasSkinning) {
 			constexpr uint64_t kBaseFlags =
-				aiProcess_JoinIdenticalVertices |
-				aiProcess_ImproveCacheLocality |
-				aiProcess_SortByPType |
-				aiProcess_ConvertToLeftHanded;
+				aiProcess_JoinIdenticalVertices | // 重複頂点の結合
+				aiProcess_ImproveCacheLocality |  // 頂点キャッシュ最適化
+				aiProcess_ConvertToLeftHanded;    // このエンジンは左手座標系
 			uint64_t hash = HashCombine64(kBaseFlags, kMeshCacheVersion);
 			if (!hasSkinning) {
 				hash = HashCombine64(hash, aiProcess_PreTransformVertices);
@@ -76,39 +86,44 @@ namespace Unnamed {
 			return hash;
 		}
 
+		/// @brief ポッド型の値をバイナリストリームに書き込む。テンプレートで任意の型に対応する。
+		/// @param ofs 出力ストリーム
+		/// @param value 書き込む値
+		/// @return 書き込みに成功したか?
 		template <typename T>
 		bool WritePod(std::ofstream& ofs, const T& value) {
 			ofs.write(reinterpret_cast<const char*>(&value), sizeof(T));
 			return static_cast<bool>(ofs);
 		}
 
+		/// @brief ポッド型の値をバイナリストリームから読み込む。テンプレートで任意の型に対応する。
+		/// @param ifs 入力ストリーム
+		/// @param value 読み込んだ値の格納先
+		/// @return 読み込みに成功したか?
 		template <typename T>
 		bool ReadPod(std::ifstream& ifs, T& value) {
 			ifs.read(reinterpret_cast<char*>(&value), sizeof(T));
 			return static_cast<bool>(ifs);
 		}
 
+		/// @brief Assimpの4x4行列をエンジンのMat4に変換する。Assimpは行優先、エンジンは列優先なので、要素の入れ替えに注意。
+		/// @param m 変換するAssimpの行列
+		/// @return 変換されたMat4
 		Mat4 ToMat4(const aiMatrix4x4& m) {
-			Mat4 out    = Mat4::identity;
-			out.m[0][0] = m.a1;
-			out.m[0][1] = m.a2;
-			out.m[0][2] = m.a3;
-			out.m[0][3] = m.a4;
-			out.m[1][0] = m.b1;
-			out.m[1][1] = m.b2;
-			out.m[1][2] = m.b3;
-			out.m[1][3] = m.b4;
-			out.m[2][0] = m.c1;
-			out.m[2][1] = m.c2;
-			out.m[2][2] = m.c3;
-			out.m[2][3] = m.c4;
-			out.m[3][0] = m.d1;
-			out.m[3][1] = m.d2;
-			out.m[3][2] = m.d3;
-			out.m[3][3] = m.d4;
+			Mat4 out = Mat4::identity;
+			out      = {
+				{m.a1, m.b1, m.c1, m.d1}, // 1列目				
+				{m.a2, m.b2, m.c2, m.d2}, // 2列目
+				{m.a3, m.b3, m.c3, m.d3}, // 3列目
+				{m.a4, m.b4, m.c4, m.d4}  // 4列目
+			};
 			return out;
 		}
 
+		/// @brief 頂点にボーンの影響を追加する。最大4本までのボーンをサポートし、5本以上の場合は最小重みのものを置き換える。
+		/// @param v 影響を追加する頂点
+		/// @param boneIndex 追加するボーンのインデックス
+		/// @param weight 追加するボーンの重み
 		void AddBoneWeight(
 			MeshVertex& v, const uint16_t boneIndex, const float weight
 		) {
@@ -134,7 +149,9 @@ namespace Unnamed {
 		}
 
 		/// @brief スキン無しメッシュの頂点に、階層トランスフォームを焼き込む
-		/// Assimpのシーン構造を再帰的にたどり、各ノードの変換を子ノードとメッシュ頂点に適用する。
+		/// @param node 現在のノード
+		/// @param parentTransform 親ノードからの累積トランスフォーム
+		/// @param scene Assimpのシーンデータ
 		void BakeNodeTransformsIntoMesh(
 			const aiNode*      node,
 			const aiMatrix4x4& parentTransform,
@@ -187,6 +204,7 @@ namespace Unnamed {
 	bool MeshAssetLoader::CanLoad(
 		const std::string_view path, ASSET_TYPE* outType
 	) const {
+		// 拡張子ベースで判定。厳密なファイル存在チェックはLoad()に任せる。
 		const std::string ext = StrUtil::ToLowerExt(path);
 		bool              ok  = false;
 
@@ -214,9 +232,8 @@ namespace Unnamed {
 		Profiler::ScopeTimer assimpScope(profiler, "MeshImport.Assimp");
 
 		Assimp::Importer importer;
-		// ここでは ReadFile を1回に統一する。
-		// 以前はスキン無しのとき aiProcess_PreTransformVertices を付けて再読込していたが、
-		// 代わりにローダ側でノード変換を焼き込む。
+
+		// スキン無しメッシュは階層トランスフォームを焼き込んで頂点をフラット化することで、ランタイムの頂点処理を軽量化する。
 		constexpr uint32_t kBaseFlags =
 			aiProcess_ImproveCacheLocality |
 			aiProcess_ConvertToLeftHanded;
@@ -244,8 +261,6 @@ namespace Unnamed {
 			}
 		}
 
-		// スキン無しメッシュは従来どおり「階層トランスフォームを焼き込んだ頂点」を使いたいので、
-		// Importer内部のシーンを直接変換する（ReadFileの二重呼び出しを回避）。
 		if (!hasBones && scene->mRootNode) {
 			BakeNodeTransformsIntoMesh(scene->mRootNode, aiMatrix4x4(), scene);
 		}
@@ -373,7 +388,7 @@ namespace Unnamed {
 
 	std::filesystem::path MeshAssetLoader::GetDerivedCachePath(
 		const std::string& sourcePath
-	) const {
+	) {
 		const std::string normalized = StrUtil::NormalizePath(sourcePath);
 		const uint64_t    hash       = std::hash<std::string>{}(normalized);
 		return std::filesystem::path("./bin/cache/assets/meshes") /
@@ -382,7 +397,7 @@ namespace Unnamed {
 
 	bool MeshAssetLoader::TryLoadDerivedCache(
 		const std::string& path, LoadResult& out
-	) {
+	) const {
 		const std::filesystem::path cachePath = GetDerivedCachePath(path);
 		if (!std::filesystem::exists(cachePath)) {
 			return false;

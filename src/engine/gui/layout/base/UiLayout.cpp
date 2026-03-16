@@ -1,13 +1,12 @@
 #include "UiLayout.h"
 
-#include "engine/gui/UiSerializationHelpers.h"
-
 namespace Unnamed::Gui {
-	UiLayout::UiLayout()  = default;
+	UiLayout::UiLayout() = default;
 	UiLayout::~UiLayout() = default;
 
 	void UiLayout::SetPadding(const LayoutPadding& padding) {
 		mPadding = padding;
+		SyncLayoutComponent();
 		MarkDirty(DIRTY_FLAGS::LAYOUT | DIRTY_FLAGS::DRAW);
 	}
 
@@ -17,6 +16,7 @@ namespace Unnamed::Gui {
 
 	void UiLayout::SetSpacing(const float spacing) {
 		mSpacing = spacing;
+		SyncLayoutComponent();
 		MarkDirty(DIRTY_FLAGS::LAYOUT | DIRTY_FLAGS::DRAW);
 	}
 
@@ -24,20 +24,15 @@ namespace Unnamed::Gui {
 		return mSpacing;
 	}
 
-	void UiLayout::OnSerialize(JsonWriter& writer) const {
-		writer.Key("padding");
-		WritePadding(writer, mPadding);
-
-		writer.Key("spacing");
-		writer.Write(mSpacing);
-	}
-
-	void UiLayout::OnDeserialize(const JsonReader& reader) {
-		if (reader.Has("padding")) {
-			SetPadding(ReadPadding(reader["padding"].GetArray()));
+	void UiLayout::SyncLayoutComponent() const {
+		auto* self = const_cast<UiLayout*>(this);
+		if (auto* vertical = self->GetComponent<UiVerticalLayoutComponent>()) {
+			vertical->SetPadding(mPadding);
+			vertical->SetSpacing(mSpacing);
 		}
-		if (reader.Has("spacing")) {
-			SetSpacing(reader["spacing"].GetFloat());
+		if (auto* horizontal = self->GetComponent<UiHorizontalLayoutComponent>()) {
+			horizontal->SetPadding(mPadding);
+			horizontal->SetSpacing(mSpacing);
 		}
 	}
 }

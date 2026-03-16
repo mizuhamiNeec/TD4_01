@@ -1,4 +1,4 @@
-#include "BuiltInConVars.h"
+﻿#include "BuiltInConVars.h"
 
 #include <engine/unnamed/subsystem/console/concommand/ConVar.h>
 
@@ -201,11 +201,6 @@ namespace Unnamed {
 			"ent_bbox", false, FCVAR::CHEAT,
 			"Draw bounding box for entities."
 		);
-
-		static ConVar noclipenabled(
-			"noclipenabled", false, FCVAR::CHEAT | FCVAR::NOTIFY,
-			"Enable noclip mode."
-		);
 	}
 
 	/// @brief サーバー側のConVarを登録します。
@@ -275,6 +270,11 @@ namespace Unnamed {
 		static ConVar sv_sprintspeed(
 			"sv_sprintspeed", 320.0f, FCVAR::NOTIFY | FCVAR::REPLICATED,
 			"Sprint speed in HU/s."
+		);
+
+		static ConVar sv_jumpvelocity(
+			"sv_jumpvelocity", 420.0f, FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Jump velocity in HU/s."
 		);
 	}
 }

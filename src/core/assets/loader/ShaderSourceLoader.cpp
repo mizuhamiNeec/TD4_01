@@ -11,7 +11,7 @@ namespace Unnamed {
 	static constexpr std::string_view kChannel            = "ShaderSrcLdr";
 	static constexpr std::string_view kSupportedExtension = ".hlsl";
 
-	ShaderSourceLoader::ShaderSourceLoader(AssetManager& assetManager) :
+	ShaderSourceLoader::ShaderSourceLoader(AssetManager* assetManager) :
 		mAssetManager(assetManager) {}
 
 	bool ShaderSourceLoader::CanLoad(
@@ -54,7 +54,7 @@ namespace Unnamed {
 			const std::string depPath = StrUtil::NormalizePath(
 				includePath.lexically_normal().string()
 			);
-			const AssetID depId = mAssetManager.LoadFromFile(
+			const AssetID depId = mAssetManager->LoadFromFile(
 				depPath, ASSET_TYPE::SHADER_SOURCE
 			);
 			if (depId != kInvalidAssetID) {
@@ -64,8 +64,7 @@ namespace Unnamed {
 
 		r.payload     = std::move(data);
 		r.resolveName = std::filesystem::path(path).filename().string();
-		if (std::error_code ec;
-			std::filesystem::exists(path, ec)) {
+		if (std::error_code ec; std::filesystem::exists(path, ec)) {
 			r.stamp.sizeInBytes = std::filesystem::file_size(path);
 		}
 

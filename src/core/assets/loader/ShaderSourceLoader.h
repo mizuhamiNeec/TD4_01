@@ -9,7 +9,7 @@ namespace Unnamed {
 	public:
 		/// @brief コンストラクタ
 		/// @param assetManager アセットマネージャーの参照
-		explicit ShaderSourceLoader(AssetManager& assetManager);
+		explicit ShaderSourceLoader(AssetManager* assetManager);
 
 		/// @brief 対象のファイルを読み込めるか?
 		/// @param path 読み込むファイルのパス
@@ -28,6 +28,6 @@ namespace Unnamed {
 		/// @return インクルードされているファイルのパスのリスト
 		static std::vector<std::string> ParseIncludes(const std::string& text);
 
-		AssetManager& mAssetManager;
+		AssetManager* mAssetManager = nullptr;
 	};
 }

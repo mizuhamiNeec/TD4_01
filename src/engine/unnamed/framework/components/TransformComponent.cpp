@@ -5,7 +5,7 @@
 #include "core/json/JsonWriter.h"
 
 #include "engine/ImGui/ImGuiWidgets.h"
-#include "engine/scene/UScene.h"
+#include "engine/scene/Scene.h"
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 
@@ -96,7 +96,7 @@ namespace Unnamed {
 		MarkDirty();
 	}
 
-	void TransformComponent::ResolveDeferredParent(const UScene& scene) {
+	void TransformComponent::ResolveDeferredParent(const Scene& scene) {
 		if (mPendingParentEntityGuid == 0) {
 			return;
 		}
@@ -112,6 +112,18 @@ namespace Unnamed {
 			TransformComponent>();
 		SetParent(parentTransform, false);
 		mPendingParentEntityGuid = 0;
+	}
+
+	Vec3 TransformComponent::Right() const noexcept {
+		return mWorldMat.GetRight();
+	}
+
+	Vec3 TransformComponent::Up() const noexcept {
+		return mWorldMat.GetUp();
+	}
+
+	Vec3 TransformComponent::Forward() const noexcept {
+		return mWorldMat.GetForward();
 	}
 
 	void TransformComponent::OnDetached() {
@@ -149,6 +161,11 @@ namespace Unnamed {
 			// フラグを外す
 			mIsDirty = false;
 		}
+	}
+
+	void TransformComponent::OnEditorTick(const float deltaTime) {
+		// エディタモードでも行列更新を行う
+		OnTick(deltaTime);
 	}
 
 	void TransformComponent::Serialize(JsonWriter& writer) const {

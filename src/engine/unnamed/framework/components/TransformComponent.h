@@ -8,7 +8,7 @@
 #include "core/math/Vec3.h"
 
 namespace Unnamed {
-	class UScene;
+	class Scene;
 
 	class TransformComponent : public BaseComponent {
 	public:
@@ -26,13 +26,18 @@ namespace Unnamed {
 		void SetRotation(Quaternion rotation) noexcept;
 		void SetScale(Vec3 scale) noexcept;
 		void SetParent(TransformComponent* parent, bool preserveWorld = true);
-		void ResolveDeferredParent(const UScene& scene);
+		void ResolveDeferredParent(const Scene& scene);
+
+		[[nodiscard]] Vec3 Right() const noexcept;
+		[[nodiscard]] Vec3 Up() const noexcept;
+		[[nodiscard]] Vec3 Forward() const noexcept;
 
 		//---------------------------------------------------------------------
 		// BaseComponent
 		//---------------------------------------------------------------------
 		void OnDetached() override;
 		void OnTick(float deltaTime) override;
+		void OnEditorTick(float deltaTime) override;
 
 		[[nodiscard]] std::string_view GetStableName() const override {
 			return "engine.Transform";

@@ -217,15 +217,15 @@ namespace Unnamed::Rhi {
 		return mSrvUavTotalCapacity;
 	}
 
-	uint32_t D3D12Device::GetImguiSrvHeapBase() const {
+	uint32_t D3D12Device::GetImGuiSrvHeapBase() const {
 		return mImguiSrvHeapBase;
 	}
 
-	uint32_t D3D12Device::GetImguiSrvHeapCapacity() const {
+	uint32_t D3D12Device::GetImGuiSrvHeapCapacity() const {
 		return mImguiSrvHeapCapacity;
 	}
 
-	uint32_t D3D12Device::AllocateImguiSrvSlot() {
+	uint32_t D3D12Device::AllocateImGuiSrvSlot() {
 		if (mImguiNextSlot >= mImguiSrvHeapCapacity) {
 			Fatal(
 				kChannel,

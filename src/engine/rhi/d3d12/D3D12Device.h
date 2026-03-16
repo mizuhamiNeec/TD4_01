@@ -44,9 +44,9 @@ namespace Unnamed::Rhi {
 		[[nodiscard]] uint32_t GetSrvUavDescriptorSize() const;
 		[[nodiscard]] uint32_t GetSrvUavHeapCapacity() const;
 		[[nodiscard]] uint32_t GetSrvUavTotalHeapCapacity() const;
-		[[nodiscard]] uint32_t GetImguiSrvHeapBase() const;
-		[[nodiscard]] uint32_t GetImguiSrvHeapCapacity() const;
-		[[nodiscard]] uint32_t AllocateImguiSrvSlot();
+		[[nodiscard]] uint32_t GetImGuiSrvHeapBase() const;
+		[[nodiscard]] uint32_t GetImGuiSrvHeapCapacity() const;
+		[[nodiscard]] uint32_t AllocateImGuiSrvSlot();
 		[[nodiscard]] uint32_t GetCurrentFrameIndex() const;
 		[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE GetSrvUavCpuHandle(
 			uint32_t absoluteSlot

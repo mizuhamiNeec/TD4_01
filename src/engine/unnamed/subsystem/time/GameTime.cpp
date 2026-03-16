@@ -3,7 +3,7 @@
 #include <engine/unnamed/subsystem/time/GameTime.h>
 
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
-#include "engine/unnamed/subsystem/console/concommand/UnnamedConVar.h"
+#include "engine/unnamed/subsystem/console/concommand/ConVar.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 
 /// @brief コンストラクタ
@@ -35,7 +35,7 @@ void GameTime::EndFrame() {
 
 	// タイムスケールを取得
 	mTimeScale = ServiceLocator::Get<Unnamed::ConsoleSystem>()->GetConVarAs<
-		Unnamed::UnnamedConVar<float>>(
+		Unnamed::ConVar<float>>(
 		"host_timescale"
 	)->GetValue();
 

@@ -10,6 +10,7 @@
 #include "core/math/Vec3.h"
 
 namespace Unnamed {
+	/// @brief メッシュの頂点データ構造体
 	struct MeshVertex {
 		Vec3                    position    = Vec3::zero;
 		Vec3                    normal      = Vec3::up;
@@ -18,12 +19,14 @@ namespace Unnamed {
 		std::array<float, 4>    boneWeights = {1.0f, 0.0f, 0.0f, 0.0f};
 	};
 
+	/// @brief スケルトンのボーンデータ構造体
 	struct SkeletonBoneAssetData {
 		std::string name;
 		int32_t     parentIndex     = -1;
 		Mat4        inverseBindPose = Mat4::identity;
 	};
 
+	/// @brief メッシュアセットのデータ構造体
 	struct MeshAssetData {
 		std::vector<MeshVertex>            vertices;
 		std::vector<uint32_t>              indices;

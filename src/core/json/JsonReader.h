@@ -51,6 +51,34 @@ namespace Unnamed {
 			return mValid && mNode;
 		}
 
+		[[nodiscard]] bool IsObject() const {
+			return mNode && mNode->is_object();
+		}
+
+		[[nodiscard]] bool IsArray() const {
+			return mNode && mNode->is_array();
+		}
+
+		[[nodiscard]] bool IsNumber() const {
+			return mNode && mNode->is_number();
+		}
+
+		[[nodiscard]] bool IsString() const {
+			return mNode && mNode->is_string();
+		}
+
+		[[nodiscard]] bool IsBoolean() const {
+			return mNode && mNode->is_boolean();
+		}
+
+		[[nodiscard]] bool IsNumberInteger() const {
+			return mNode && mNode->is_number_integer();
+		}
+
+		[[nodiscard]] bool IsNumberFloat() const {
+			return mNode && mNode->is_number_float();
+		}
+
 		[[nodiscard]] bool Has(const std::string_view& key) const {
 			return mNode && mNode->is_object() && mNode->contains(key);
 		}
@@ -253,6 +281,16 @@ namespace Unnamed {
 				}
 			}
 			return out;
+		}
+
+		template <typename Fn>
+		void ForEachObject(Fn&& fn) const {
+			if (!mNode || !mNode->is_object()) {
+				return;
+			}
+			for (auto it = mNode->begin(); it != mNode->end(); ++it) {
+				fn(it.key(), JsonReader(mStorage, &it.value(), mValid));
+			}
 		}
 
 	private:

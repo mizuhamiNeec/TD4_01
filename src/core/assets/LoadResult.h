@@ -12,10 +12,11 @@
 #include "types/ShaderProgramAssetData.h"
 #include "types/ShaderSourceAssetData.h"
 #include "types/TextureAssetData.h"
+#include "types/UiDocumentAssetData.h"
 
 namespace Unnamed {
 	//-------------------------------------------------------------------------
-	// variant: 複数の型の一つを突っ込めるもの。 スッゲェェエ
+	// variant: 複数の型の一つを突っ込めるもの。 スッゲェェエ!
 	// monostate: 空の状態
 	//-------------------------------------------------------------------------
 
@@ -28,9 +29,11 @@ namespace Unnamed {
 		ShaderProgramAssetData,
 		MaterialAssetData,
 		MaterialInstanceAssetData,
-		PostFxChainAssetData
+		PostFxChainAssetData,
+		UiDocumentAssetData
 	>;
 
+	/// @brief アセットのロード結果を表す構造体
 	struct LoadResult {
 		AssetPayload         payload;      // アセットのペイロードデータ
 		std::vector<AssetID> dependencies; // パースして見つかった依存

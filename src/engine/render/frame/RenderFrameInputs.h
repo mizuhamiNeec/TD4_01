@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <string>
 #include <vector>
 
 #include "core/assets/AssetID.h"
@@ -16,20 +17,49 @@ namespace Unnamed::Render {
 		ReverseZ,
 	};
 
+	enum class SPRITE_TEXTURE_SOURCE : uint8_t {
+		ASSET = 0,
+		VIEW_OUTPUT = 1,
+	};
+
+	struct SpriteTextureRef {
+		SPRITE_TEXTURE_SOURCE source = SPRITE_TEXTURE_SOURCE::ASSET;
+		AssetID               textureAssetId = kInvalidAssetID;
+		std::string           viewKey;
+	};
+
 	enum class SCENE_RENDER_MODE : uint8_t {
 		FIT_VIEWPORT,
 		FIXED_ASPECT_16X9,
+		FIXED_ASPECT_4X3,
 		HD_720P,
 		FHD_1080P,
 	};
 
-	struct SceneRenderRequest {
+	struct SceneViewRenderMode {
 		SCENE_RENDER_MODE mode = SCENE_RENDER_MODE::FIT_VIEWPORT;
 		uint32_t          viewportPanelWidth = 0;
 		uint32_t          viewportPanelHeight = 0;
 		bool              preferRealtimeResize = true;
-		bool              presentToSwapChain = true;
-		bool              clearSwapChainWhenNotPresenting = false;
+	};
+
+	enum class RENDER_VIEW_TYPE : uint8_t {
+		SCENE = 0,
+		SPRITE_ONLY = 1,
+	};
+
+	enum class RENDER_VIEW_SIZE_MODE : uint8_t {
+		FIXED = 0,
+		MATCH_BACK_BUFFER = 1,
+	};
+
+	struct RenderViewOutputDesc {
+		RENDER_VIEW_SIZE_MODE sizeMode = RENDER_VIEW_SIZE_MODE::FIXED;
+		uint32_t              width = 0;
+		uint32_t              height = 0;
+		bool                  presentToSwapChain = false;
+		bool                  clearSwapChainWhenNotPresenting = false;
+		bool                  exposeToUi = false;
 	};
 
 	struct RenderCameraInput {
@@ -72,34 +102,57 @@ namespace Unnamed::Render {
 	};
 
 	struct ScreenSpriteInput {
-		AssetID textureAssetId = kInvalidAssetID;
+		SpriteTextureRef texture;
 		Vec2    positionPx     = Vec2::zero;
 		Vec2    sizePx         = Vec2::one;
 		Vec2    anchor         = Vec2(0.5f, 0.5f);
 		float   rotationRad    = 0.0f;
 		Vec4    color          = Vec4::one;
 		int32_t sortKey        = 0;
+		bool    uvFlipY        = false;
 	};
 
 	struct WorldBillboardInput {
-		AssetID textureAssetId = kInvalidAssetID;
+		SpriteTextureRef texture;
 		Vec3    worldPosition  = Vec3::zero;
 		Vec2    sizeWorld      = Vec2::one;
 		Vec4    color          = Vec4::one;
 		float   rotationRad    = 0.0f;
 		int32_t sortKey        = 0;
+		bool    uvFlipY        = false;
 	};
 
-	struct RenderFrameInputs {
-		uint32_t frameIndex = 0;
+	struct WorldSpriteInput {
+		SpriteTextureRef texture;
+		Vec3    worldPosition  = Vec3::zero;
+		Vec3    worldRight     = Vec3::right;
+		Vec3    worldUp        = Vec3::up;
+		Vec2    sizeWorld      = Vec2::one;
+		Vec4    color          = Vec4::one;
+		float   rotationRad    = 0.0f;
+		int32_t sortKey        = 0;
+		bool    uvFlipY        = false;
+	};
 
-		RenderCameraInput                 camera = {};
+	struct RenderViewInput {
+		std::string viewKey;
+
+		RENDER_VIEW_TYPE      type = RENDER_VIEW_TYPE::SCENE;
+		RenderViewOutputDesc  output = {};
+		SceneViewRenderMode   sceneViewMode = {};
+		RenderCameraInput     camera = {};
+
 		std::vector<VisibleRenderObject>  visibleObjects;
 		std::vector<SkinningPaletteInput> skinningPalettes;
 		std::vector<PortalPairInput>      portalPairs;
 		std::vector<WorldBillboardInput>  worldBillboards;
+		std::vector<WorldSpriteInput>     worldSprites;
 		std::vector<ScreenSpriteInput>    screenSprites;
-		SceneRenderRequest                sceneRenderRequest = {};
+	};
+
+	struct RenderFrameInputs {
+		uint32_t frameIndex = 0;
+		std::vector<RenderViewInput> views;
 
 		float time = 0.0f;
 	};

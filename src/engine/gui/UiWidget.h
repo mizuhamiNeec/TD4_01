@@ -1,11 +1,14 @@
 #pragma once
 #include <cstdint>
+#include <limits>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include "Rect.h"
 #include "UiDrawCommand.h"
+#include "components/UiComponent.h"
 
 #include "core/json/JsonReader.h"
 #include "core/json/JsonWriter.h"
@@ -51,6 +54,73 @@ namespace Unnamed::Gui {
 	public:
 		UiWidget();
 		virtual ~UiWidget();
+
+		void AddComponent(std::unique_ptr<UiComponent> component);
+
+		template <typename ComponentType, typename... Args>
+		ComponentType* AddComponent(Args&&... args) {
+			static_assert(
+				std::is_base_of_v<UiComponent, ComponentType>,
+				"ComponentType must derive from UiComponent"
+			);
+			auto component = std::make_unique<ComponentType>(
+				std::forward<Args>(args)...
+			);
+			ComponentType* raw = component.get();
+			AddComponent(std::move(component));
+			return raw;
+		}
+
+		template <typename ComponentType>
+		[[nodiscard]] ComponentType* GetComponent() {
+			static_assert(
+				std::is_base_of_v<UiComponent, ComponentType>,
+				"ComponentType must derive from UiComponent"
+			);
+			for (auto& component : mComponents) {
+				if (auto* casted = dynamic_cast<ComponentType*>(component.get())) {
+					return casted;
+				}
+			}
+			return nullptr;
+		}
+
+		template <typename ComponentType>
+		[[nodiscard]] const ComponentType* GetComponent() const {
+			static_assert(
+				std::is_base_of_v<UiComponent, ComponentType>,
+				"ComponentType must derive from UiComponent"
+			);
+			for (const auto& component : mComponents) {
+				if (auto* casted =
+					    dynamic_cast<const ComponentType*>(component.get())) {
+					return casted;
+				}
+			}
+			return nullptr;
+		}
+
+		template <typename ComponentType, typename... Args>
+		[[nodiscard]] ComponentType* GetOrAddComponent(Args&&... args) {
+			if (auto* existing = GetComponent<ComponentType>()) {
+				return existing;
+			}
+			return AddComponent<ComponentType>(std::forward<Args>(args)...);
+		}
+
+		[[nodiscard]] UiComponent* GetComponentByTypeName(
+			std::string_view typeName
+		);
+		[[nodiscard]] const std::vector<std::unique_ptr<UiComponent>>&
+		GetComponents() const;
+		[[nodiscard]] std::vector<std::unique_ptr<UiComponent>>& GetComponents();
+		bool RemoveComponentAt(size_t index);
+		bool MoveComponent(size_t fromIndex, size_t toIndex);
+		[[nodiscard]] static std::unique_ptr<UiComponent> CreateComponentByTypeName(
+			std::string_view typeName
+		);
+		[[nodiscard]] static std::vector<std::string_view>
+		GetRegisteredComponentTypeNames();
 
 		/// @brief 子を追加します。
 		/// @param child 追加する子ウィジェット
@@ -236,5 +306,7 @@ namespace Unnamed::Gui {
 
 		UiSizePolicy      mSizePolicy;
 		UiSizeConstraints mSizeConstraints;
+
+		std::vector<std::unique_ptr<UiComponent>> mComponents;
 	};
 }

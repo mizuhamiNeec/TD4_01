@@ -1,29 +1,35 @@
 #include "UiWidget.h"
 
+#include <algorithm>
+#include <cstddef>
+#include <utility>
+
 #include <engine/unnamed/subsystem/console/Log.h>
 
 #include <core/math/Math.h>
 
-#include "UiButton.h"
-#include "UiPanel.h"
 #include "UiSerializationHelpers.h"
-
-#include "layout/UiHorizontalLayout.h"
-#include "layout/UiVerticalLayout.h"
+#include "components/UiButtonBehaviorComponent.h"
+#include "components/UiLayoutComponents.h"
+#include "components/UiPanelStyleComponent.h"
+#include "components/UiTransformComponent.h"
 
 namespace Unnamed::Gui {
-	static constexpr std::string_view kChannel = "UiWidget";
+	namespace {
+		static constexpr std::string_view kChannel = "UiWidget";
+	}
 
 	DIRTY_FLAGS operator|(DIRTY_FLAGS a, DIRTY_FLAGS b) {
 		return static_cast<DIRTY_FLAGS>(
-			static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+			static_cast<uint32_t>(a) | static_cast<uint32_t>(b)
+		);
 	}
 
 	DIRTY_FLAGS operator|=(DIRTY_FLAGS& a, const DIRTY_FLAGS b) {
 		return a = a | b;
 	}
 
-	bool HasFlag(DIRTY_FLAGS flags, DIRTY_FLAGS test) {
+	bool HasFlag(const DIRTY_FLAGS flags, const DIRTY_FLAGS test) {
 		return
 			(static_cast<uint32_t>(flags) & static_cast<uint32_t>(test)) != 0;
 	}
@@ -39,9 +45,127 @@ namespace Unnamed::Gui {
 		}
 	}
 
-	UiWidget::UiWidget() {}
+	UiWidget::UiWidget() {
+		AddComponent(std::make_unique<UiTransformComponent>());
+	}
 
-	UiWidget::~UiWidget() = default;
+	UiWidget::~UiWidget() {
+		for (auto& component : mComponents) {
+			if (component) {
+				component->OnDetached(*this);
+			}
+		}
+	}
+
+	void UiWidget::AddComponent(std::unique_ptr<UiComponent> component) {
+		if (!component) {
+			return;
+		}
+		component->OnAttached(*this);
+		mComponents.emplace_back(std::move(component));
+		MarkDirty(DIRTY_FLAGS::LAYOUT | DIRTY_FLAGS::DRAW);
+	}
+
+	UiComponent* UiWidget::GetComponentByTypeName(const std::string_view typeName
+	) {
+		for (auto& component : mComponents) {
+			if (component && component->GetTypeName() == typeName) {
+				return component.get();
+			}
+		}
+		return nullptr;
+	}
+
+	const std::vector<std::unique_ptr<UiComponent>>& UiWidget::GetComponents(
+	) const {
+		return mComponents;
+	}
+
+	std::vector<std::unique_ptr<UiComponent>>& UiWidget::GetComponents() {
+		return mComponents;
+	}
+
+	bool UiWidget::RemoveComponentAt(const size_t index) {
+		if (index >= mComponents.size()) {
+			return false;
+		}
+		const auto* component = mComponents[index].get();
+		if (!component || component->GetTypeName() == "Transform") {
+			return false;
+		}
+
+		mComponents[index]->OnDetached(*this);
+		mComponents.erase(
+			mComponents.begin() + static_cast<std::ptrdiff_t>(index)
+		);
+		MarkDirty(DIRTY_FLAGS::LAYOUT | DIRTY_FLAGS::DRAW);
+		return true;
+	}
+
+	bool UiWidget::MoveComponent(size_t fromIndex, size_t toIndex) {
+		if (
+			fromIndex >= mComponents.size() ||
+			toIndex >= mComponents.size() ||
+			fromIndex == toIndex
+		) {
+			return false;
+		}
+
+		const auto* component = mComponents[fromIndex].get();
+		if (!component || component->GetTypeName() == "Transform") {
+			return false;
+		}
+		if (toIndex == 0 && !mComponents.empty() &&
+		    mComponents[0] &&
+		    mComponents[0]->GetTypeName() == "Transform") {
+			toIndex = 1;
+		}
+
+		auto moving = std::move(mComponents[fromIndex]);
+		mComponents.erase(
+			mComponents.begin() + static_cast<std::ptrdiff_t>(fromIndex)
+		);
+		if (fromIndex < toIndex) {
+			--toIndex;
+		}
+		mComponents.insert(
+			mComponents.begin() + static_cast<std::ptrdiff_t>(toIndex),
+			std::move(moving)
+		);
+		MarkDirty(DIRTY_FLAGS::LAYOUT | DIRTY_FLAGS::DRAW);
+		return true;
+	}
+
+	std::unique_ptr<UiComponent> UiWidget::CreateComponentByTypeName(
+		const std::string_view typeName
+	) {
+		if (typeName == "Transform") {
+			return std::make_unique<UiTransformComponent>();
+		}
+		if (typeName == "VerticalLayout") {
+			return std::make_unique<UiVerticalLayoutComponent>();
+		}
+		if (typeName == "HorizontalLayout") {
+			return std::make_unique<UiHorizontalLayoutComponent>();
+		}
+		if (typeName == "PanelStyle") {
+			return std::make_unique<UiPanelStyleComponent>();
+		}
+		if (typeName == "ButtonBehavior") {
+			return std::make_unique<UiButtonBehaviorComponent>();
+		}
+		return nullptr;
+	}
+
+	std::vector<std::string_view> UiWidget::GetRegisteredComponentTypeNames() {
+		return {
+			"Transform",
+			"VerticalLayout",
+			"HorizontalLayout",
+			"PanelStyle",
+			"ButtonBehavior",
+		};
+	}
 
 	void UiWidget::AddChild(std::unique_ptr<UiWidget> child) {
 		if (!child) {
@@ -90,19 +214,22 @@ namespace Unnamed::Gui {
 	}
 
 	void UiWidget::AddChildReference(UiWidget* child) {
-		if (!child) return; // 安全策
+		if (!child) {
+			return;
+		}
 		child->mParent = this;
 		mReferenceChildren.push_back(child);
 		MarkDirty(DIRTY_FLAGS::LAYOUT | DIRTY_FLAGS::DRAW);
 	}
 
 	void UiWidget::RemoveChildReference(const UiWidget* child) {
-		if (!child) return;
+		if (!child) {
+			return;
+		}
 
 		for (auto it = mReferenceChildren.begin(); it != mReferenceChildren.
-		                                           end(); ++it) {
+		     end(); ++it) {
 			if (*it == child) {
-				// 親の参照を切るかは設計によりますが、通常はnullptrに戻します
 				if ((*it)->mParent == this) {
 					(*it)->mParent = nullptr;
 				}
@@ -117,8 +244,7 @@ namespace Unnamed::Gui {
 		return mReferenceChildren;
 	}
 
-	const std::vector<std::unique_ptr<UiWidget>>&
-	UiWidget::GetChildren() const {
+	const std::vector<std::unique_ptr<UiWidget>>& UiWidget::GetChildren() const {
 		return mChildren;
 	}
 
@@ -136,6 +262,9 @@ namespace Unnamed::Gui {
 
 	void UiWidget::SetLocalRect(const Rect& rect) {
 		mLocalRect = rect;
+		if (auto* transform = GetComponent<UiTransformComponent>()) {
+			transform->SetRect(rect);
+		}
 		MarkDirty(DIRTY_FLAGS::LAYOUT | DIRTY_FLAGS::DRAW);
 	}
 
@@ -149,6 +278,9 @@ namespace Unnamed::Gui {
 
 	void UiWidget::SetAnchors(const Anchors& anchors) {
 		mAnchors = anchors;
+		if (auto* transform = GetComponent<UiTransformComponent>()) {
+			transform->SetAnchors(anchors);
+		}
 		MarkDirty(DIRTY_FLAGS::LAYOUT | DIRTY_FLAGS::DRAW);
 	}
 
@@ -158,6 +290,9 @@ namespace Unnamed::Gui {
 
 	void UiWidget::SetMargins(const Margins& margins) {
 		mMargins = margins;
+		if (auto* transform = GetComponent<UiTransformComponent>()) {
+			transform->SetMargins(margins);
+		}
 		MarkDirty(DIRTY_FLAGS::LAYOUT | DIRTY_FLAGS::DRAW);
 	}
 
@@ -167,6 +302,9 @@ namespace Unnamed::Gui {
 
 	void UiWidget::SetPivot(const Pivot& pivot) {
 		mPivot = pivot;
+		if (auto* transform = GetComponent<UiTransformComponent>()) {
+			transform->SetPivot(pivot);
+		}
 		MarkDirty(DIRTY_FLAGS::LAYOUT | DIRTY_FLAGS::DRAW);
 	}
 
@@ -175,7 +313,9 @@ namespace Unnamed::Gui {
 	}
 
 	void UiWidget::SetVisible(const bool visible) {
-		if (mVisible == visible) return;
+		if (mVisible == visible) {
+			return;
+		}
 		mVisible = visible;
 		MarkDirty(DIRTY_FLAGS::DRAW);
 	}
@@ -185,7 +325,9 @@ namespace Unnamed::Gui {
 	}
 
 	void UiWidget::SetEnabled(const bool enabled) {
-		if (mEnabled == enabled) return;
+		if (mEnabled == enabled) {
+			return;
+		}
 		mEnabled = enabled;
 	}
 
@@ -205,7 +347,7 @@ namespace Unnamed::Gui {
 		return mDirtyFlags;
 	}
 
-	void UiWidget::ClearDirtyFlags(DIRTY_FLAGS flags) {
+	void UiWidget::ClearDirtyFlags(const DIRTY_FLAGS flags) {
 		uint32_t       raw   = static_cast<uint32_t>(mDirtyFlags);
 		const uint32_t clear = static_cast<uint32_t>(flags);
 		raw                  &= ~clear;
@@ -213,10 +355,14 @@ namespace Unnamed::Gui {
 	}
 
 	void UiWidget::SetSizePolicy(
-		const UiSizePolicyAxis horizontal, const UiSizePolicyAxis vertical
+		const UiSizePolicyAxis horizontal,
+		const UiSizePolicyAxis vertical
 	) {
 		mSizePolicy.horizontal = horizontal;
 		mSizePolicy.vertical   = vertical;
+		if (auto* transform = GetComponent<UiTransformComponent>()) {
+			transform->SetSizePolicy(mSizePolicy);
+		}
 		MarkDirty(DIRTY_FLAGS::LAYOUT | DIRTY_FLAGS::DRAW);
 	}
 
@@ -226,6 +372,9 @@ namespace Unnamed::Gui {
 
 	void UiWidget::SetSizeConstraints(const UiSizeConstraints& constraints) {
 		mSizeConstraints = constraints;
+		if (auto* transform = GetComponent<UiTransformComponent>()) {
+			transform->SetSizeConstraints(constraints);
+		}
 		MarkDirty(DIRTY_FLAGS::LAYOUT | DIRTY_FLAGS::DRAW);
 	}
 
@@ -241,25 +390,39 @@ namespace Unnamed::Gui {
 		return mLocalRect.height;
 	}
 
-	void UiWidget::Tick(float) {
-		// DO SOMETHING
+	void UiWidget::Tick(const float deltaTime) {
+		for (auto& component : mComponents) {
+			if (component) {
+				component->OnTick(*this, deltaTime);
+			}
+		}
 	}
 
 	void UiWidget::UpdateLayoutRecursive(const Rect& parentGlobalRect) {
+		for (auto& component : mComponents) {
+			if (component) {
+				component->OnBeforeLayout(*this);
+			}
+		}
+
 		if (HasFlag(mDirtyFlags, DIRTY_FLAGS::LAYOUT) ||
 		    HasFlag(mDirtyFlags, DIRTY_FLAGS::ALL)) {
 			UpdateLayout(parentGlobalRect);
 			ClearDirtyFlags(DIRTY_FLAGS::LAYOUT);
 		}
 
-		// 所有している子
+		for (auto& component : mComponents) {
+			if (component) {
+				component->OnAfterLayout(*this);
+			}
+		}
+
 		for (auto& child : mChildren) {
 			if (child) {
 				child->UpdateLayoutRecursive(mGlobalRect);
 			}
 		}
 
-		// 参照だけ持っている子（AddChildReferenceでぶら下げたやつ）
 		for (auto* refChild : mReferenceChildren) {
 			if (refChild) {
 				refChild->UpdateLayoutRecursive(mGlobalRect);
@@ -268,19 +431,22 @@ namespace Unnamed::Gui {
 	}
 
 	void UiWidget::BuildDrawCommands(std::vector<UiDrawCommand>& out) const {
-		// 自分が非表示なら何も描画しない（子も含めて）
 		if (!IsVisible()) {
 			return;
 		}
 
-		// 所有している子
+		for (const auto& component : mComponents) {
+			if (component) {
+				component->BuildDrawCommands(*this, out);
+			}
+		}
+
 		for (const auto& child : mChildren) {
 			if (child) {
 				child->BuildDrawCommands(out);
 			}
 		}
 
-		// 参照だけ持っている子
 		for (const auto* refChild : mReferenceChildren) {
 			if (refChild) {
 				refChild->BuildDrawCommands(out);
@@ -289,8 +455,10 @@ namespace Unnamed::Gui {
 	}
 
 	void UiWidget::DebugDrawUi(const UiWidget* w) {
-		if (!w) return;
-#ifdef  _DEBUG
+		if (!w) {
+			return;
+		}
+#ifdef _DEBUG
 		const auto& r  = w->GetGlobalRect();
 		auto*       dl = ImGui::GetForegroundDrawList();
 
@@ -309,18 +477,13 @@ namespace Unnamed::Gui {
 			);
 		}
 
-		// 所有している子
 		for (const auto& child : w->GetChildren()) {
 			if (child) {
 				DebugDrawUi(child.get());
 			}
 		}
 
-		// 参照だけ持っている子も再帰
-		// mReferenceChildren は非 const getterがないので、static 関数を
-		// UiWidget 内に追加するか、friend 的にアクセスできるようにする必要あり。
 		for (const auto* refChild : w->mReferenceChildren) {
-			// 同じクラス内なのでアクセス可能
 			if (refChild) {
 				DebugDrawUi(refChild);
 			}
@@ -329,9 +492,10 @@ namespace Unnamed::Gui {
 	}
 
 	UiWidget* UiWidget::HitTest(const float x, const float y) {
-		if (!mVisible || !mEnabled) return nullptr;
+		if (!mVisible || !mEnabled) {
+			return nullptr;
+		}
 
-		// まず z-order 的に後ろの方から（所有子）
 		for (auto it = mChildren.rbegin(); it != mChildren.rend(); ++it) {
 			if (*it) {
 				if (UiWidget* hit = (*it)->HitTest(x, y)) {
@@ -340,9 +504,8 @@ namespace Unnamed::Gui {
 			}
 		}
 
-		// 次に参照子も逆順でチェック
 		for (auto it = mReferenceChildren.rbegin(); it != mReferenceChildren.
-		                                            rend(); ++it) {
+		     rend(); ++it) {
 			UiWidget* child = *it;
 			if (child) {
 				if (UiWidget* hit = child->HitTest(x, y)) {
@@ -369,22 +532,46 @@ namespace Unnamed::Gui {
 
 	void UiWidget::OnMouseEnter() {
 		mHovered = true;
+		for (auto& component : mComponents) {
+			if (component) {
+				component->OnMouseEnter(*this);
+			}
+		}
 	}
 
 	void UiWidget::OnMouseLeave() {
 		mHovered = false;
+		for (auto& component : mComponents) {
+			if (component) {
+				component->OnMouseLeave(*this);
+			}
+		}
 	}
 
 	void UiWidget::OnMouseDown() {
 		mPressed = true;
+		for (auto& component : mComponents) {
+			if (component) {
+				component->OnMouseDown(*this);
+			}
+		}
 	}
 
 	void UiWidget::OnMouseUp() {
 		mPressed = false;
+		for (auto& component : mComponents) {
+			if (component) {
+				component->OnMouseUp(*this);
+			}
+		}
 	}
 
 	void UiWidget::OnClick() {
-		// DO SOMETHING
+		for (auto& component : mComponents) {
+			if (component) {
+				component->OnClick(*this);
+			}
+		}
 	}
 
 	const char* UiWidget::GetTypeName() const {
@@ -393,43 +580,32 @@ namespace Unnamed::Gui {
 
 	void UiWidget::SaveToJson(JsonWriter& writer) const {
 		writer.BeginObject();
-
-		// 基本情報
-		writer.Key("type");
-		writer.Write(std::string(GetTypeName()));
 		writer.Key("name");
 		writer.Write(std::string(GetName()));
-
-		DevMsg(
-			kChannel, "Saving widget '{}': visible={}, enabled={}",
-			GetName(), IsVisible(), IsEnabled()
-		);
-
 		writer.Key("visible");
 		writer.Write(IsVisible());
 		writer.Key("enabled");
 		writer.Write(IsEnabled());
 
-		// Rect / Anchors / Pivot / Margins
-		writer.Key("rect");
-		WriteRect(writer, GetLocalRect());
-		writer.Key("anchors");
-		WriteAnchors(writer, GetAnchors());
-		writer.Key("pivot");
-		WritePivot(writer, GetPivot());
-		writer.Key("margins");
-		WriteMargins(writer, GetMargins());
-
-		// SizePolicy / Constraints
-		writer.Key("sizePolicy");
-		WriteSizePolicy(writer, GetSizePolicy());
-
-		writer.Key("constraints");
-		WriteConstraints(writer, GetSizeConstraints());
+		writer.Key("components");
+		writer.BeginArray();
+		for (const auto& component : mComponents) {
+			if (!component) {
+				continue;
+			}
+			writer.BeginObject();
+			writer.Key("type");
+			writer.Write(std::string(component->GetTypeName()));
+			writer.Key("data");
+			writer.BeginObject();
+			component->Serialize(writer);
+			writer.EndObject();
+			writer.EndObject();
+		}
+		writer.EndArray();
 
 		OnSerialize(writer);
 
-		// 子
 		writer.Key("children");
 		writer.BeginArray();
 		for (const auto& child : GetChildren()) {
@@ -447,7 +623,6 @@ namespace Unnamed::Gui {
 			return;
 		}
 
-		// 基本情報
 		if (reader.Has("name")) {
 			SetName(reader["name"].GetString());
 		}
@@ -458,74 +633,56 @@ namespace Unnamed::Gui {
 			SetEnabled(reader["enabled"].GetBool());
 		}
 
-		// Rect
-		if (reader.Has("rect")) {
-			const Rect r = ReadRect(reader["rect"].GetArray());
-			SetLocalRect(r);
-		}
+		if (reader.Has("components")) {
+			const JsonReader components = reader["components"].GetArray();
+			for (size_t i = 0; i < components.Size(); ++i) {
+				const JsonReader componentNode = components[i];
+				if (!componentNode.Valid()) {
+					continue;
+				}
+				const JsonReader typeNode = componentNode["type"];
+				if (!typeNode.Valid()) {
+					continue;
+				}
+				const std::string typeName = typeNode.GetString();
+				const JsonReader  dataNode = componentNode["data"];
 
-		// Anchors / Pivot / Margins
-		if (reader.Has("anchors")) {
-			SetAnchors(ReadAnchors(reader["anchors"].GetArray()));
-		}
-		if (reader.Has("pivot")) {
-			SetPivot(ReadPivot(reader["pivot"].GetArray()));
-		}
-		if (reader.Has("margins")) {
-			SetMargins(ReadMargins(reader["margins"].GetArray()));
-		}
+				if (UiComponent* existing = GetComponentByTypeName(typeName)) {
+					existing->Deserialize(dataNode);
+					continue;
+				}
 
-		// SizePolicy / Constraints
-		if (reader.Has("sizePolicy")) {
-			SetSizePolicy(
-				ReadSizePolicy(reader["sizePolicy"].GetArray()).horizontal,
-				ReadSizePolicy(reader["sizePolicy"].GetArray()).vertical
-			);
-		}
-		if (reader.Has("constraints")) {
-			SetSizeConstraints(ReadConstraints(reader["constraints"]));
+				std::unique_ptr<UiComponent> component =
+					CreateComponentByTypeName(typeName);
+				if (!component) {
+					Warning(
+						kChannel,
+						"Unknown UI component type '{}' in widget '{}'.",
+						typeName,
+						GetName()
+					);
+					continue;
+				}
+				component->Deserialize(dataNode);
+				AddComponent(std::move(component));
+			}
 		}
 
 		OnDeserialize(reader);
 	}
 
-	std::unique_ptr<UiWidget> UiWidget::
-	CreateFromJson(const JsonReader& reader) {
+	std::unique_ptr<UiWidget> UiWidget::CreateFromJson(const JsonReader& reader) {
 		if (!reader.Valid()) {
 			return nullptr;
 		}
 
-		// type 取得
-		std::string type = "Widget";
-		if (reader.Has("type")) {
-			type = reader["type"].GetString();
-		}
-
-		std::unique_ptr<UiWidget> widget;
-
-		if (type == "Panel") {
-			widget = std::make_unique<UiPanel>();
-		} else if (
-			type == "Button") {
-			widget = std::make_unique<UiButton>();
-		} else if
-		(type == "VerticalLayout") {
-			widget = std::make_unique<UiVerticalLayout>();
-		} else if (type == "HorizontalLayout") {
-			widget = std::make_unique<UiHorizontalLayout>();
-		} else {
-			// 謎 → とりあえず UiWidget
-			widget = std::make_unique<UiWidget>();
-		}
-
+		auto widget = std::make_unique<UiWidget>();
 		widget->LoadFromJson(reader);
 
-		// 子
 		if (reader.Has("children")) {
 			const JsonReader children = reader["children"].GetArray();
-			const size_t     count    = children.Size();
-			for (size_t i = 0; i < count; ++i) {
-				JsonReader childNode   = children[i];
+			for (size_t i = 0; i < children.Size(); ++i) {
+				JsonReader childNode = children[i];
 				auto       childWidget = CreateFromJson(childNode);
 				if (childWidget) {
 					widget->AddChild(std::move(childWidget));
@@ -560,7 +717,6 @@ namespace Unnamed::Gui {
 		float w;
 		float h;
 
-		// Horizontal
 		if (mAnchors.minX == mAnchors.maxX) {
 			x = anchorLeft + mLocalRect.x;
 			w = mLocalRect.width;
@@ -570,7 +726,6 @@ namespace Unnamed::Gui {
 			w                     = available - mMargins.left - mMargins.right;
 		}
 
-		// Vertical
 		if (mAnchors.minY == mAnchors.maxY) {
 			y = anchorTop + mLocalRect.y;
 			h = mLocalRect.height;
@@ -580,7 +735,6 @@ namespace Unnamed::Gui {
 			h                     = available - mMargins.top - mMargins.bottom;
 		}
 
-		// Pivot
 		float finalX = x;
 		float finalY = y;
 

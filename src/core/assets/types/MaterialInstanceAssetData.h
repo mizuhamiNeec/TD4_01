@@ -6,6 +6,7 @@
 #include "core/math/Vec4.h"
 
 namespace Unnamed {
+	/// @brief マテリアルインスタンスアセットのデータ構造体
 	struct MaterialInstanceAssetData {
 		std::string name;
 

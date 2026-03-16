@@ -2,6 +2,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "engine/unnamed/framework/components/base/BaseComponent.h"
 
@@ -14,6 +15,11 @@ namespace Unnamed {
 
 		struct Entry {
 			CreateFn    create = nullptr;
+			std::string displayName;
+		};
+
+		struct RegisteredComponentInfo {
+			std::string stableName;
 			std::string displayName;
 		};
 
@@ -35,6 +41,8 @@ namespace Unnamed {
 		[[nodiscard]] bool IsRegistered(std::string_view stableName) const;
 
 		[[nodiscard]] const Entry* Find(std::string_view stableName) const;
+		[[nodiscard]] std::vector<RegisteredComponentInfo>
+		ListRegisteredComponents() const;
 
 		void Clear();
 

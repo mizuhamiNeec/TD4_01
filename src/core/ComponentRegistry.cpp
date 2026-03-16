@@ -1,5 +1,7 @@
 #include "ComponentRegistry.h"
 
+#include <algorithm>
+
 #include "engine/unnamed/subsystem/console/Log.h"
 
 namespace Unnamed {
@@ -58,6 +60,28 @@ namespace Unnamed {
 		const auto it = mEntries.find(std::string(stableName));
 		if (it == mEntries.end()) return nullptr;
 		return &it->second;
+	}
+
+	std::vector<ComponentRegistry::RegisteredComponentInfo>
+	ComponentRegistry::ListRegisteredComponents() const {
+		std::vector<RegisteredComponentInfo> result;
+		result.reserve(mEntries.size());
+
+		for (const auto& [stableName, entry] : mEntries) {
+			RegisteredComponentInfo info;
+			info.stableName = stableName;
+			info.displayName = entry.displayName;
+			result.emplace_back(std::move(info));
+		}
+
+		std::ranges::sort(
+			result,
+			[](const RegisteredComponentInfo& lhs,
+			   const RegisteredComponentInfo& rhs) {
+				return lhs.stableName < rhs.stableName;
+			}
+		);
+		return result;
 	}
 
 	void ComponentRegistry::Clear() {

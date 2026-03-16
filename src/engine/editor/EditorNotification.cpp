@@ -74,7 +74,7 @@ namespace Unnamed {
 				return size;
 			}
 			const ImFontBaked* baked = font->GetFontBaked(size);
-			return baked ? (baked->Ascent - baked->Descent) : size;
+			return baked ? baked->Ascent - baked->Descent : size;
 		}
 
 		void StopTween(TweenHandle& handle) {
@@ -87,7 +87,7 @@ namespace Unnamed {
 
 		ImU32 ApplyAlpha(ImU32 color, const float alpha) {
 			ImVec4 colorVec = ImGui::ColorConvertU32ToFloat4(color);
-			colorVec.w      *= std::clamp(alpha, 0.0f, 1.0f);
+			colorVec.w      *= std::clamp(alpha, 0.0f, 0.9f);
 			return ImGui::ColorConvertFloat4ToU32(colorVec);
 		}
 
@@ -96,6 +96,7 @@ namespace Unnamed {
 				case NOTIFY_TYPE::INFO: return kIconInfo;
 				case NOTIFY_TYPE::WARNING: return kIconWarning;
 				case NOTIFY_TYPE::ERR: return kIconError;
+				case NOTIFY_TYPE::FATAL: return kIconBomb;
 			}
 			return kIconQuestionMark;
 		}
@@ -112,6 +113,9 @@ namespace Unnamed {
 				case NOTIFY_TYPE::ERR: return ImGui::ColorConvertFloat4ToU32(
 						ToImVec4(kConTextColorError)
 					);
+				case NOTIFY_TYPE::FATAL: return ImGui::ColorConvertFloat4ToU32(
+						ToImVec4(kConTextColorFatal)
+					);
 			}
 			return ImGui::GetColorU32(ImGuiCol_Text);
 		}
@@ -126,6 +130,9 @@ namespace Unnamed {
 			}
 			if (lower == "error" || lower == "err" || lower == "e") {
 				return NOTIFY_TYPE::ERR;
+			}
+			if (lower == "fatal" || lower == "f") {
+				return NOTIFY_TYPE::FATAL;
 			}
 			return std::nullopt;
 		}
@@ -295,7 +302,7 @@ namespace Unnamed {
 			}
 			const bool  hasTitle       = !notification.title.empty();
 			const bool  hasDescription = !notification.description.empty();
-			const float clampedAlpha   = std::clamp(alpha, 0.0f, 1.0f);
+			const float clampedAlpha   = std::clamp(alpha, 0.0f, 0.75f);
 
 			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, clampedAlpha);
 			ImGui::BeginChild(
@@ -303,7 +310,7 @@ namespace Unnamed {
 				layout.childSize,
 				ImGuiChildFlags_FrameStyle |
 				ImGuiChildFlags_AutoResizeX,
-				ImGuiWindowFlags_NoFocusOnAppearing
+				ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoInputs
 			);
 
 			ImDrawList*  drawList   = ImGui::GetWindowDrawList();
@@ -319,7 +326,7 @@ namespace Unnamed {
 				GetNotificationIconColor(notification.type), clampedAlpha
 			);
 			const ImU32 textColor = ApplyAlpha(
-				ImGui::GetColorU32(ImGuiCol_Text), clampedAlpha
+				ImGui::GetColorU32(ImGuiCol_Text), 1.0f
 			);
 
 			drawList->AddText(
@@ -392,7 +399,7 @@ namespace Unnamed {
 				);
 				return true;
 			},
-			"Usage: notify [info|warning|error] [seconds] <message...>\n"
+			"Usage: notify [info|warning|error|fatal] [seconds] <message...>\n"
 			"       notify [type] [seconds] <title...> | <description...>"
 		);
 
@@ -546,7 +553,7 @@ namespace Unnamed {
 			fadeTween->SetEaseCubicBezier(kP1, kP2);
 			notification->opacityTween = TweenHandle(fadeTween);
 
-			auto slideTween = mTweenManager->CreateTo(
+			const auto slideTween = mTweenManager->CreateTo(
 				notification->slideOffsetX, 0.0f, kEnterDurationSeconds
 			);
 			slideTween->SetEaseCubicBezier(kP1, kP2);
@@ -565,7 +572,7 @@ namespace Unnamed {
 
 	void EditorNotification::UpdateNotificationLifetimes(
 		const float deltaTime
-	) {
+	) const {
 		if (deltaTime <= 0.0f) {
 			return;
 		}
@@ -622,19 +629,17 @@ namespace Unnamed {
 			return;
 		}
 
-		const std::weak_ptr<NotificationState> weakNotification = notification;
+		const std::weak_ptr weakNotification = notification;
 		const auto fadeTween = mTweenManager->CreateTo(
 			notification->opacity, 0.0f, kExitDurationSeconds
 		);
-		fadeTween
-			->SetEaseCubicBezier(kP1, kP2)
-			.OnComplete(
-				[weakNotification]() {
-					if (const auto locked = weakNotification.lock()) {
-						locked->pendingRemoval = true;
-					}
+		fadeTween->SetEaseCubicBezier(kP1, kP2).OnComplete(
+			[weakNotification] {
+				if (const auto locked = weakNotification.lock()) {
+					locked->pendingRemoval = true;
 				}
-			);
+			}
+		);
 		notification->opacityTween = TweenHandle(fadeTween);
 	}
 }

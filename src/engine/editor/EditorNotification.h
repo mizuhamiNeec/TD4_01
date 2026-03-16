@@ -1,6 +1,5 @@
 ﻿#pragma once
 #ifdef _DEBUG
-#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -14,6 +13,7 @@ namespace Unnamed {
 		INFO,    // 通常の通知
 		WARNING, // 注意が必要な通知
 		ERR,     // 重大な問題を示す通知
+		FATAL,   // 致命的な問題を示す通知。あんまり見たくないです。ははっ。
 	};
 
 	struct Notification {
@@ -59,7 +59,7 @@ namespace Unnamed {
 	private:
 		struct NotificationState;
 
-		void UpdateNotificationLifetimes(float deltaTime);
+		void UpdateNotificationLifetimes(float deltaTime) const;
 		void CleanupFinishedNotifications();
 		void StartExitAnimation(
 			const std::shared_ptr<NotificationState>& notification

@@ -60,6 +60,7 @@ namespace Unnamed::Render {
 		uint32_t CreateTexture2DFromAsset(
 			const TextureAssetData& texture, const std::string& debugName
 		);
+		void ReleaseTexture(uint32_t textureId);
 
 		[[nodiscard]] ID3D12Resource* GetResource(uint32_t textureId) const;
 		[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE GetSrv(
@@ -69,6 +70,7 @@ namespace Unnamed::Render {
 			uint32_t textureId
 		) const;
 		[[nodiscard]] uint64_t GetSrvRevision(uint32_t textureId) const;
+		[[nodiscard]] uint64_t GetResourceRevision(uint32_t textureId) const;
 		[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE GetUav(
 			uint32_t textureId
 		) const;
@@ -123,6 +125,14 @@ namespace Unnamed::Render {
 		struct RetiredTextureResource {
 			uint64_t                               retireFenceValue = 0;
 			Microsoft::WRL::ComPtr<ID3D12Resource> resource;
+			uint64_t                               approxBytes = 0;
+			uint32_t                               textureId   = 0;
+			uint32_t                               srvLocal    = UINT32_MAX;
+			uint32_t                               uavLocal    = UINT32_MAX;
+			uint32_t                               rtvLocal    = UINT32_MAX;
+			uint32_t                               dsvLocal    = UINT32_MAX;
+			uint32_t                               srvCpuLocal = UINT32_MAX;
+			bool                                   releaseTextureId = false;
 		};
 
 		uint32_t               AllocateId();
@@ -152,6 +162,7 @@ namespace Unnamed::Render {
 
 		std::vector<TexEntry> mEntries;    // IDとインデックスは同じ
 		uint32_t              mNextId = 1; // 0は無効
+		std::vector<uint32_t> mFreeTextureIds;
 
 		uint32_t mSrvUavHeapCapacity = 0;
 		uint32_t mRtvCapacity;
@@ -162,7 +173,14 @@ namespace Unnamed::Render {
 		std::vector<uint32_t>               mDsvFrameBase;
 		uint32_t                            mDsvPerFrameSlots = 0;
 		uint32_t                            mNextDsvLocal     = 0;
+		uint32_t                            mNextDsvLocalGlobal = 0;
 		uint32_t                            mDsvCapacity      = 0;
 		std::vector<RetiredTextureResource> mRetiredResources;
+		uint64_t                            mGlobalSrvRevision = 1;
+
+		std::vector<uint32_t> mFreeSrvUavLocals;
+		std::vector<uint32_t> mFreeRtvLocals;
+		std::vector<uint32_t> mFreeCpuLocals;
+		std::vector<uint32_t> mFreeDsvLocals;
 	};
 }

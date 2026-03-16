@@ -16,6 +16,41 @@ using Microsoft::WRL::ComPtr;
 namespace Unnamed::Render {
 	static constexpr std::string_view kChannel = "RDG";
 
+	namespace {
+		[[nodiscard]] uint32_t ApproxBytesPerPixel(const DXGI_FORMAT format) {
+			switch (format) {
+				case DXGI_FORMAT_R8G8B8A8_UNORM:
+				case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB: return 4;
+				case DXGI_FORMAT_R16G16B16A16_FLOAT: return 8;
+				case DXGI_FORMAT_R32G8X24_TYPELESS:
+				case DXGI_FORMAT_D32_FLOAT_S8X24_UINT:
+				case DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS: return 8;
+				default: return 4;
+			}
+		}
+
+		[[nodiscard]] uint64_t EstimateTextureBytes(ID3D12Resource* resource) {
+			if (!resource) {
+				return 0;
+			}
+
+			const D3D12_RESOURCE_DESC desc = resource->GetDesc();
+			if (desc.Dimension != D3D12_RESOURCE_DIMENSION_TEXTURE2D) {
+				return 0;
+			}
+
+			const uint64_t slices = static_cast<uint64_t>(std::max<uint16_t>(
+				desc.DepthOrArraySize, 1
+			));
+			const uint64_t mipLevels = static_cast<uint64_t>(std::max<uint16_t>(
+				desc.MipLevels, 1
+			));
+			const uint64_t pixels = desc.Width * static_cast<uint64_t>(desc.Height);
+			return pixels * slices * mipLevels *
+			       static_cast<uint64_t>(ApproxBytesPerPixel(desc.Format));
+		}
+	}
+
 	RgResourceRegistry::RgResourceRegistry(Rhi::D3D12Device& dx) : mDx(dx) {
 		mEntries.resize(1);
 
@@ -236,8 +271,53 @@ namespace Unnamed::Render {
 			up.EndAndSubmitAndWait();
 		}
 
+		++e.resourceRevision;
 		CreateDescriptors(e);
 		return id;
+	}
+
+	void RgResourceRegistry::ReleaseTexture(const uint32_t textureId) {
+		if (textureId == 0 || textureId >= mEntries.size()) {
+			return;
+		}
+
+		auto& e = mEntries[textureId];
+		if (
+			!e.resource &&
+			e.srvLocal == UINT32_MAX &&
+			e.uavLocal == UINT32_MAX &&
+			e.rtvLocal == UINT32_MAX &&
+			e.dsvLocal == UINT32_MAX &&
+			e.srvCpuLocal == UINT32_MAX
+		) {
+			return;
+		}
+
+		RetiredTextureResource retired = {};
+		retired.retireFenceValue       = std::max(
+			GetSafeRetireFenceValue(), mDx.GetNextSignalFenceValue()
+		);
+		retired.approxBytes      = EstimateTextureBytes(e.resource.Get());
+		retired.resource         = e.resource;
+		retired.textureId        = textureId;
+		retired.srvLocal         = e.srvLocal;
+		retired.uavLocal         = e.uavLocal;
+		retired.rtvLocal         = e.rtvLocal;
+		retired.dsvLocal         = e.dsvLocal;
+		retired.srvCpuLocal      = e.srvCpuLocal;
+		retired.releaseTextureId = true;
+		mRetiredResources.emplace_back(std::move(retired));
+
+		e.resource.Reset();
+		e.desc        = {};
+		e.srvLocal    = UINT32_MAX;
+		e.uavLocal    = UINT32_MAX;
+		e.rtvLocal    = UINT32_MAX;
+		e.dsvLocal    = UINT32_MAX;
+		e.srvCpuLocal = UINT32_MAX;
+		e.srvCpu      = {};
+		e.rtvCpu      = {};
+		e.dsvCpu      = {};
 	}
 
 	ID3D12Resource* RgResourceRegistry::GetResource(uint32_t textureId) const {
@@ -280,6 +360,15 @@ namespace Unnamed::Render {
 			return 0;
 		}
 		return mEntries[textureId].srvRevision;
+	}
+
+	uint64_t RgResourceRegistry::GetResourceRevision(
+		const uint32_t textureId
+	) const {
+		if (textureId == 0 || textureId >= mEntries.size()) {
+			return 0;
+		}
+		return mEntries[textureId].resourceRevision;
 	}
 
 	D3D12_GPU_DESCRIPTOR_HANDLE RgResourceRegistry::GetUav(
@@ -359,16 +448,65 @@ namespace Unnamed::Render {
 	void RgResourceRegistry::CollectGarbage(
 		const uint64_t completedFenceValue
 	) {
-		std::erase_if(
-			mRetiredResources,
-			[completedFenceValue](const RetiredTextureResource& retired) {
-				return retired.retireFenceValue == 0 ||
-				       retired.retireFenceValue <= completedFenceValue;
+		uint32_t reclaimedCount = 0;
+		uint64_t reclaimedBytes = 0;
+		std::erase_if(mRetiredResources, [this, completedFenceValue, &reclaimedCount, &reclaimedBytes](
+			              const RetiredTextureResource& retired
+		              ) {
+			const bool ready = retired.retireFenceValue == 0 ||
+				retired.retireFenceValue <= completedFenceValue;
+			if (!ready) {
+				return false;
 			}
+
+			if (retired.srvLocal != UINT32_MAX) {
+				mFreeSrvUavLocals.emplace_back(retired.srvLocal);
+			}
+			if (retired.uavLocal != UINT32_MAX) {
+				mFreeSrvUavLocals.emplace_back(retired.uavLocal);
+			}
+			if (retired.rtvLocal != UINT32_MAX) {
+				mFreeRtvLocals.emplace_back(retired.rtvLocal);
+			}
+			if (retired.dsvLocal != UINT32_MAX) {
+				mFreeDsvLocals.emplace_back(retired.dsvLocal);
+			}
+			if (retired.srvCpuLocal != UINT32_MAX) {
+				mFreeCpuLocals.emplace_back(retired.srvCpuLocal);
+			}
+			if (retired.releaseTextureId && retired.textureId != 0) {
+				mFreeTextureIds.emplace_back(retired.textureId);
+			}
+			++reclaimedCount;
+			reclaimedBytes += retired.approxBytes;
+			return true;
+		}
 		);
+
+		if (reclaimedCount > 0) {
+			uint64_t pendingBytes = 0;
+			for (const auto& pending : mRetiredResources) {
+				pendingBytes += pending.approxBytes;
+			}
+
+			DevMsg(
+				kChannel,
+				"Retired resources reclaimed: count={}, approxMiB={:.2f}, pendingCount={}, pendingMiB={:.2f}",
+				reclaimedCount,
+				static_cast<double>(reclaimedBytes) / (1024.0 * 1024.0),
+				mRetiredResources.size(),
+				static_cast<double>(pendingBytes) / (1024.0 * 1024.0)
+			);
+		}
 	}
 
 	uint32_t RgResourceRegistry::AllocSrvUavSlot() {
+		if (!mFreeSrvUavLocals.empty()) {
+			const uint32_t local = mFreeSrvUavLocals.back();
+			mFreeSrvUavLocals.pop_back();
+			return local;
+		}
+
 		const uint32_t local = mNextSrvUavLocalGlobal++;
 		if (local >= mSrvUavPerFrameSlots) {
 			Fatal(
@@ -381,6 +519,12 @@ namespace Unnamed::Render {
 	}
 
 	uint32_t RgResourceRegistry::AllocRtvSlot() {
+		if (!mFreeRtvLocals.empty()) {
+			const uint32_t local = mFreeRtvLocals.back();
+			mFreeRtvLocals.pop_back();
+			return local;
+		}
+
 		const uint32_t local = mNextRtvLocalGlobal++;
 		if (local >= mRtvPerFrameSlots) {
 			Fatal(
@@ -393,6 +537,12 @@ namespace Unnamed::Render {
 	}
 
 	uint32_t RgResourceRegistry::AllocCpuSlot() {
+		if (!mFreeCpuLocals.empty()) {
+			const uint32_t slot = mFreeCpuLocals.back();
+			mFreeCpuLocals.pop_back();
+			return slot;
+		}
+
 		const uint32_t slot = mCpuNextSlot++;
 		if (slot >= mCpuHeapCapacity) {
 			Fatal(
@@ -406,15 +556,18 @@ namespace Unnamed::Render {
 	}
 
 	uint32_t RgResourceRegistry::AllocDsvSlot() {
-		const uint32_t base = mDsvFrameBase[mCurrentFrameIndex];
-		const uint32_t slot = base + mNextDsvLocal++;
+		if (!mFreeDsvLocals.empty()) {
+			const uint32_t slot = mFreeDsvLocals.back();
+			mFreeDsvLocals.pop_back();
+			return slot;
+		}
 
-		const uint32_t end = base + mDsvPerFrameSlots;
-		if (slot >= end) {
+		const uint32_t slot = mNextDsvLocalGlobal++;
+		if (slot >= mDsvCapacity) {
 			Fatal(
 				kChannel,
-				"DSV heap slots exhausted: slot={}, perFrame={}, frameIndex={}",
-				slot, mDsvPerFrameSlots, mCurrentFrameIndex
+				"DSV heap slots exhausted: slot={}, capacity={}",
+				slot, mDsvCapacity
 			);
 		}
 		return slot;
@@ -484,6 +637,11 @@ namespace Unnamed::Render {
 	}
 
 	uint32_t RgResourceRegistry::AllocateId() {
+		if (!mFreeTextureIds.empty()) {
+			const uint32_t id = mFreeTextureIds.back();
+			mFreeTextureIds.pop_back();
+			return id;
+		}
 		return mNextId++;
 	}
 
@@ -584,6 +742,7 @@ namespace Unnamed::Render {
 			retired.retireFenceValue       = std::max(
 				self->GetSafeRetireFenceValue(), mDx.GetNextSignalFenceValue()
 			);
+			retired.approxBytes = EstimateTextureBytes(e.resource.Get());
 			retired.resource = e.resource;
 			self->mRetiredResources.emplace_back(std::move(retired));
 			e.resource.Reset();
@@ -696,10 +855,6 @@ namespace Unnamed::Render {
 		}
 
 		if (e.desc.allowDsv) {
-			if (e.dsvLocal == UINT32_MAX) {
-				e.dsvLocal = AllocDsvSlot();
-			}
-
 			auto*      dsvHeap = mDx.GetDsvHeap();
 			auto       cpuBase = dsvHeap->GetCPUDescriptorHandleForHeapStart();
 			const UINT inc     = mDx.GetDsvDescriptorSize();
@@ -717,6 +872,6 @@ namespace Unnamed::Render {
 			e.dsvCpu = cpuDsv;
 		}
 
-		++e.srvRevision;
+		e.srvRevision = ++mGlobalSrvRevision;
 	}
 }

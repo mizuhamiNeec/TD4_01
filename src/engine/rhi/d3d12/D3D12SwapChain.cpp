@@ -9,7 +9,7 @@
 #include "engine/unnamed/subsystem/console/Log.h"
 
 namespace Unnamed::Rhi {
-	static constexpr std::string_view kChannel = "D3D12SwapChain";
+	static constexpr std::string_view kChannel = "SwpCin";
 
 	using namespace Microsoft::WRL;
 
@@ -97,8 +97,11 @@ namespace Unnamed::Rhi {
 	}
 
 	void D3D12SwapChain::Present(const bool vSync) {
-		const UINT     syncInterval = vSync ? 1u : 0u;
-		constexpr UINT flags        = 0u;
+		const UINT syncInterval = vSync ? 1u : 0u;
+		UINT       flags        = 0u;
+		if (vSync) {
+			flags |= DXGI_PRESENT_ALLOW_TEARING;
+		}
 		Throw(mSwapChain->Present(syncInterval, flags));
 	}
 
@@ -126,18 +129,18 @@ namespace Unnamed::Rhi {
 		const HWND hwnd, const SwapChainDesc& desc
 	) {
 		DXGI_SWAP_CHAIN_DESC1 scDesc;
-		scDesc.Width              = desc.width;
-		scDesc.Height             = desc.height;
-		scDesc.Format             = ToDxgiFormat(desc.format);
-		scDesc.Stereo             = FALSE;
-		scDesc.SampleDesc.Count   = 1;
+		scDesc.Width = desc.width;
+		scDesc.Height = desc.height;
+		scDesc.Format = ToDxgiFormat(desc.format);
+		scDesc.Stereo = FALSE;
+		scDesc.SampleDesc.Count = 1;
 		scDesc.SampleDesc.Quality = 0;
-		scDesc.BufferUsage        = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		scDesc.BufferCount        = desc.bufferCount;
-		scDesc.Scaling            = DXGI_SCALING_STRETCH;
-		scDesc.SwapEffect         = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-		scDesc.AlphaMode          = DXGI_ALPHA_MODE_IGNORE;
-		scDesc.Flags              = 0;
+		scDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+		scDesc.BufferCount = desc.bufferCount;
+		scDesc.Scaling = DXGI_SCALING_STRETCH;
+		scDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+		scDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+		scDesc.Flags = desc.vSync ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
 
 		ComPtr<IDXGISwapChain1> swapChain1;
 		Throw(

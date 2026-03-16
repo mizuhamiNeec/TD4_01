@@ -3,7 +3,7 @@
 #include <utility>
 
 #include "RenderDevice.h"
-#include "URenderer.h"
+#include "Renderer.h"
 
 namespace Unnamed::Render {
 	RenderModule::RenderModule(
@@ -15,7 +15,7 @@ namespace Unnamed::Render {
 		mRenderDevice = std::make_unique<RenderDevice>(
 			mRhiDevice, mAssetManager
 		);
-		mRenderer = std::make_unique<URenderer>();
+		mRenderer = std::make_unique<Renderer>();
 		mRenderer->Init(*mRenderDevice);
 	}
 
@@ -33,8 +33,8 @@ namespace Unnamed::Render {
 	}
 
 	void RenderModule::SetUiCallbacks(
-		URenderer::UiMainRenderCallback     mainRenderCallback,
-		URenderer::UiPlatformRenderCallback platformRenderCallback
+		Renderer::UiMainRenderCallback     mainRenderCallback,
+		Renderer::UiPlatformRenderCallback platformRenderCallback
 	) const {
 		if (!mRenderer) {
 			return;
@@ -44,38 +44,19 @@ namespace Unnamed::Render {
 		);
 	}
 
-	SceneOutputView RenderModule::GetSceneOutputView() const {
-		if (!mRenderer || !mRenderDevice) {
-			return {};
-		}
-		return mRenderer->GetSceneOutputView(*mRenderDevice);
-	}
-
-	uint32_t RenderModule::GetSceneOutputTextureId() const {
-		return mRenderer ? mRenderer->GetSceneOutputTextureId() : 0;
-	}
-
-	D3D12_CPU_DESCRIPTOR_HANDLE RenderModule::GetSceneOutputSrvCpu() const {
-		if (!mRenderer || !mRenderDevice) {
-			return {};
-		}
-		const uint32_t textureId = mRenderer->GetSceneOutputTextureId();
-		if (textureId == 0) {
-			return {};
-		}
-		return mRenderDevice->GetRegistry().GetSrvCpu(textureId);
-	}
-
-	Vec2 RenderModule::GetSceneOutputSize() const {
-		return mRenderer ? mRenderer->GetSceneOutputSize() : Vec2(0.0f, 0.0f);
-	}
-
-	void RenderModule::SetSceneRenderRequest(
-		const SceneRenderRequest& request
+	SceneOutputView RenderModule::GetViewOutputView(
+		const std::string_view viewKey
 	) const {
-		if (!mRenderer) {
-			return;
+		if (!mRenderer || !mRenderDevice) {
+			return {};
 		}
-		mRenderer->SetSceneRenderRequest(request);
+		return mRenderer->GetViewOutputView(*mRenderDevice, viewKey);
+	}
+
+	Vec2 RenderModule::GetViewOutputSize(const std::string_view viewKey) const {
+		if (!mRenderer || !mRenderDevice) {
+			return Vec2::zero;
+		}
+		return mRenderer->GetViewOutputSize(viewKey);
 	}
 }

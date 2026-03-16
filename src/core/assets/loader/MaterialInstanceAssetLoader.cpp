@@ -1,55 +1,33 @@
 #include "MaterialInstanceAssetLoader.h"
 
 #include <filesystem>
-#include <fstream>
-
-#include <json.hpp>
 
 #include "core/assets/AssetManager.h"
 #include "core/assets/types/MaterialInstanceAssetData.h"
+#include "core/json/JsonReader.h"
+#include "core/path/PathUtil.h"
 #include "core/string/StrUtil.h"
 
 namespace Unnamed {
 	namespace {
+		/// @brief マテリアルインスタンスアセットのパスか?
+		/// @param path パス
+		/// @return マテリアルインスタンスアセットのパスならtrue
 		bool IsMaterialInstancePath(const std::string_view path) {
 			return StrUtil::ToLowerCase(std::string(path)).ends_with(
 				".matinst.json"
 			);
 		}
-
-		std::string ResolveRelativePath(
-			const std::filesystem::path& baseDir, std::string path
-		) {
-			if (path.empty()) {
-				return path;
-			}
-			std::filesystem::path p(path);
-			if (p.is_relative()) {
-				p = baseDir / p;
-			}
-			return StrUtil::NormalizePath(p.lexically_normal().string());
-		}
-
-		Vec4 ParseVec4(const nlohmann::json& j, const Vec4 fallback) {
-			if (!j.is_array() || j.size() < 4) {
-				return fallback;
-			}
-			return Vec4(
-				j[0].get<float>(),
-				j[1].get<float>(),
-				j[2].get<float>(),
-				j[3].get<float>()
-			);
-		}
 	}
 
 	MaterialInstanceAssetLoader::MaterialInstanceAssetLoader(
-		AssetManager& assetManager
+		AssetManager* assetManager
 	) : mAssetManager(assetManager) {}
 
 	bool MaterialInstanceAssetLoader::CanLoad(
 		const std::string_view path, ASSET_TYPE* outType
 	) const {
+		// 拡張子ベースで判定。厳密なファイル存在チェックはLoad()に任せる。
 		const bool ok = IsMaterialInstancePath(path);
 		if (outType) {
 			*outType = ok ? ASSET_TYPE::MATERIAL_INSTANCE : ASSET_TYPE::UNKNOWN;
@@ -58,32 +36,26 @@ namespace Unnamed {
 	}
 
 	LoadResult MaterialInstanceAssetLoader::Load(const std::string& path) {
-		LoadResult    result = {};
-		std::ifstream ifs(path);
-		if (!ifs) {
-			return result;
-		}
-
-		nlohmann::json root;
-		try {
-			ifs >> root;
-		} catch (...) {
+		LoadResult       result = {};
+		const JsonReader root(path);
+		if (!root.Valid()) {
 			return result;
 		}
 
 		const std::filesystem::path full(path);
 		const std::filesystem::path baseDir = full.parent_path();
 
+		// "name" フィールドがあればそれを、なければファイル名をアセット名とする。
 		MaterialInstanceAssetData data = {};
-		data.name                      = root.value(
-			"name", full.filename().string()
+		data.name = root.Read<std::string>("name").value_or(
+			full.filename().string()
 		);
 
-		if (root.contains("material")) {
-			data.materialPath = ResolveRelativePath(
-				baseDir, root["material"].get<std::string>()
-			);
-			data.materialId = mAssetManager.LoadFromFile(
+		// "material" フィールドがあればマテリアルアセットを読み込む。
+		if (const auto materialPath = root.Read<std::string>("material");
+			materialPath.has_value() && !materialPath->empty()) {
+			data.materialPath = Path::ResolveRelativePath(baseDir, *materialPath);
+			data.materialId   = mAssetManager->LoadFromFile(
 				data.materialPath, ASSET_TYPE::MATERIAL
 			);
 			if (data.materialId != kInvalidAssetID) {
@@ -91,41 +63,58 @@ namespace Unnamed {
 			}
 		}
 
-		if (root.contains("textures") && root["textures"].is_object()) {
-			for (const auto& [slot, p] : root["textures"].items()) {
-				if (!p.is_string()) {
-					continue;
-				}
-				std::string texturePath = ResolveRelativePath(
-					baseDir, p.get<std::string>()
-				);
-				data.textureOverrides[slot] = texturePath;
+		// "textures" フィールドがあればテクスチャオーバーライドを読み込む。
+		const JsonReader textures = root["textures"];
+		if (textures.Valid() && textures.IsObject()) {
+			textures.ForEachObject(
+				[&](
+				const std::string& slot, const JsonReader& texturePathNode
+			) {
+					if (!texturePathNode.IsString()) {
+						return;
+					}
+					std::string texturePath = Path::ResolveRelativePath(
+						baseDir, texturePathNode.GetString()
+					);
+					data.textureOverrides[slot] = texturePath;
 
-				const AssetID textureDep = mAssetManager.LoadFromFile(
-					texturePath, ASSET_TYPE::TEXTURE
-				);
-				if (textureDep != kInvalidAssetID) {
-					result.dependencies.emplace_back(textureDep);
+					const AssetID textureDep = mAssetManager->LoadFromFile(
+						texturePath, ASSET_TYPE::TEXTURE
+					);
+					if (textureDep != kInvalidAssetID) {
+						result.dependencies.emplace_back(textureDep);
+					}
 				}
-			}
+			);
 		}
 
-		if (root.contains("scalars") && root["scalars"].is_object()) {
-			for (const auto& [k, v] : root["scalars"].items()) {
-				if (!v.is_number()) {
-					continue;
+		// "scalars" フィールドがあればスカラーオーバーライドを読み込む。
+		const JsonReader scalars = root["scalars"];
+		if (scalars.Valid() && scalars.IsObject()) {
+			scalars.ForEachObject(
+				[&data](const std::string& k, const JsonReader& v) {
+					if (!v.IsNumber()) {
+						return;
+					}
+					data.scalarOverrides[k] = v.GetFloat();
 				}
-				data.scalarOverrides[k] = v.get<float>();
-			}
+			);
 		}
 
-		if (root.contains("vectors") && root["vectors"].is_object()) {
-			for (const auto& [k, v] : root["vectors"].items()) {
-				data.vectorOverrides[k] = ParseVec4(v, Vec4(0, 0, 0, 0));
-			}
+		// "vectors" フィールドがあればベクターオーバーライドを読み込む。
+		const JsonReader vectors = root["vectors"];
+		if (vectors.Valid() && vectors.IsObject()) {
+			vectors.ForEachObject(
+				[&data](const std::string& k, const JsonReader& v) {
+					data.vectorOverrides[k] = v.GetVec4(Vec4(0, 0, 0, 0));
+				}
+			);
 		}
 
-		result.payload     = std::move(data);
+		// payloadにデータをセット
+		result.payload = std::move(data);
+
+		// アセット名が指定されていない場合は、ファイル名から拡張子を除いたものをアセット名とする。
 		result.resolveName = full.stem().stem().string();
 
 		std::error_code ec;

@@ -3,7 +3,7 @@
 #include <fstream>
 
 #include <engine/unnamed/subsystem/console/ConsoleSystem.h>
-#include <engine/unnamed/subsystem/console/concommand/UnnamedConVar.h>
+#include <engine/unnamed/subsystem/console/concommand/ConVar.h>
 #include <engine/unnamed/subsystem/interface/ServiceLocator.h>
 
 namespace Unnamed {
@@ -24,7 +24,7 @@ namespace Unnamed {
 				switch (GetConVarType(var.second)) {
 					case CVAR_TYPE::NONE: break;
 					case CVAR_TYPE::BOOL: {
-						const auto* bVar = dynamic_cast<UnnamedConVar<bool>*>(
+						const auto* bVar = dynamic_cast<ConVar<bool>*>(
 							var.
 							second);
 						std::string valueStr = static_cast<bool>(*bVar) ?
@@ -35,7 +35,7 @@ namespace Unnamed {
 					break;
 
 					case CVAR_TYPE::INT: {
-						const auto* iVar = dynamic_cast<UnnamedConVar<int>*>(var
+						const auto* iVar = dynamic_cast<ConVar<int>*>(var
 							.
 							second);
 						ofs << var.first << " " << static_cast<int>(*iVar) <<
@@ -44,7 +44,7 @@ namespace Unnamed {
 					break;
 
 					case CVAR_TYPE::FLOAT: {
-						const auto* fVar = dynamic_cast<UnnamedConVar<float>*>(
+						const auto* fVar = dynamic_cast<ConVar<float>*>(
 							var.
 							second);
 						ofs << var.first << " " << static_cast<float>(*fVar) <<
@@ -53,7 +53,7 @@ namespace Unnamed {
 					break;
 
 					case CVAR_TYPE::DOUBLE: {
-						const auto* dVar = dynamic_cast<UnnamedConVar<double>*>(
+						const auto* dVar = dynamic_cast<ConVar<double>*>(
 							var.
 							second);
 						ofs << var.first << " " << static_cast<double>(*dVar) <<
@@ -62,7 +62,7 @@ namespace Unnamed {
 					break;
 
 					case CVAR_TYPE::STRING: {
-						const auto* sVar = dynamic_cast<UnnamedConVar<
+						const auto* sVar = dynamic_cast<ConVar<
 							std::string>*>(
 							var.
 							second);

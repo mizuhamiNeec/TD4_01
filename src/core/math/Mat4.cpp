@@ -439,16 +439,15 @@ Quaternion Mat4::ToQuaternion() const {
 // Purpose: ベクトルを行列で変換する
 //-----------------------------------------------------------------------------
 Vec3 Mat4::TransformPoint(Vec3 vec3) const {
-	const float w = vec3.x * m[0][3] + vec3.y * m[1][3] + vec3.z * m[2][3] + m[
-		                3][3];
+	const float x = vec3.x;
+	const float y = vec3.y;
+	const float z = vec3.z;
+	const float w = x * m[0][3] + y * m[1][3] + z * m[2][3] + m[3][3];
 	assert(w != 0.0f); // wが0になることはありえない
 
-	vec3.x = (vec3.x * m[0][0] + vec3.y * m[1][0] + vec3.z * m[2][0] + m[3][0])
-	         / w;
-	vec3.y = (vec3.x * m[0][1] + vec3.y * m[1][1] + vec3.z * m[2][1] + m[3][1])
-	         / w;
-	vec3.z = (vec3.x * m[0][2] + vec3.y * m[1][2] + vec3.z * m[2][2] + m[3][2])
-	         / w;
+	vec3.x = (x * m[0][0] + y * m[1][0] + z * m[2][0] + m[3][0]) / w;
+	vec3.y = (x * m[0][1] + y * m[1][1] + z * m[2][1] + m[3][1]) / w;
+	vec3.z = (x * m[0][2] + y * m[1][2] + z * m[2][2] + m[3][2]) / w;
 
 	return vec3;
 }

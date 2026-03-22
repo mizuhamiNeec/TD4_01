@@ -42,6 +42,7 @@ namespace Unnamed {
 			}
 
 			auto       newScene = std::make_unique<Scene>();
+			newScene->SetWorld(this);
 			const bool loadOk   = SceneSerializer::LoadFromFile(
 				*newScene, path, mGuidGenerator
 			);

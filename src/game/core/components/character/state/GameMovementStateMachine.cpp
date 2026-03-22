@@ -56,7 +56,7 @@ namespace Unnamed {
 		const std::shared_ptr<IMovementState>& state
 	) {
 		if (state) {
-			mStates[state->GetStateName()] = state;
+			mStates[std::string(state->GetStateName())] = state;
 		}
 	}
 

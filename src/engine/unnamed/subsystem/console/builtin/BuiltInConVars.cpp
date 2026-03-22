@@ -26,11 +26,6 @@ namespace Unnamed {
 			FCVAR::NONE, "Path to ImGuizmo config file."
 		);
 
-		static ConVar host_timescale(
-			"host_timescale", 1.0f, FCVAR::NONE,
-			"Prescale the clock by this amount."
-		);
-
 		//---------------------------------------------------------------------
 		// Asset
 		//---------------------------------------------------------------------
@@ -43,6 +38,24 @@ namespace Unnamed {
 			0.125f, // 0.125s = 8回/s
 			true,
 			5.0f // 適当に上限を設ける
+		);
+
+		//---------------------------------------------------------------------
+		// Renderer
+		//---------------------------------------------------------------------
+		static ConVar r_vsync(
+			"r_vsync", false, FCVAR::ARCHIVE,
+			"Vertical sync"
+		);
+
+		static ConVar r_clear(
+			"r_clear", true, FCVAR::NONE,
+			"Clear the backbuffer each frame."
+		);
+
+		static ConVar post_bloommipcount(
+			"post_bloommipcount", 2, FCVAR::ARCHIVE,
+			"Number of mip levels to use for bloom effect."
 		);
 	}
 
@@ -121,6 +134,14 @@ namespace Unnamed {
 		);
 
 		//---------------------------------------------------------------------
+		// Time
+		//---------------------------------------------------------------------
+		static ConVar host_timescale(
+			"host_timescale", 1.0f, FCVAR::NONE,
+			"Prescale the clock by this amount."
+		);
+
+		//---------------------------------------------------------------------
 		// Mouse
 		//---------------------------------------------------------------------
 		static ConVar sensitivity(
@@ -182,11 +203,6 @@ namespace Unnamed {
 		static ConVar fps_max(
 			"fps_max", 360.0, FCVAR::ARCHIVE,
 			"Frame rate limiter. 0 = unlimited."
-		);
-
-		static ConVar r_vsync(
-			"r_vsync", false, FCVAR::ARCHIVE,
-			"Vertical sync"
 		);
 
 		//---------------------------------------------------------------------
@@ -275,6 +291,16 @@ namespace Unnamed {
 		static ConVar sv_jumpvelocity(
 			"sv_jumpvelocity", 420.0f, FCVAR::NOTIFY | FCVAR::REPLICATED,
 			"Jump velocity in HU/s."
+		);
+		static ConVar sv_jumpsnapdisabletime(
+			"sv_jumpsnapdisabletime", 0.10f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Disable ground snap duration immediately after jump (seconds)."
+		);
+
+		static ConVar sv_stepheight(
+			"sv_stepheight", 18.0f, FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Step height in HU."
 		);
 	}
 }

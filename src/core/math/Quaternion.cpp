@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 
+#include "Mat4.h"
 #include "Vec3.h"
 
 const Quaternion Quaternion::identity = Quaternion(0, 0, 0, 1);
@@ -118,57 +119,23 @@ Quaternion Quaternion::AxisAngle(const Vec3& axis, const float angleDeg) {
 }
 
 Quaternion Quaternion::LookRotation(const Vec3& forward, const Vec3& up) {
-	const Vec3 f = forward.Normalized();
-	Vec3       u = up.Normalized();
-	const Vec3 r = u.Cross(f).Normalized();
-	u            = f.Cross(r);
+	Vec3 f = forward.Normalized();
+	Vec3 r = up.Cross(f).Normalized();
+	Vec3 u = f.Cross(r);
 
-	const float m00 = r.x;
-	const float m01 = r.y;
-	const float m02 = r.z;
-	const float m10 = u.x;
-	const float m11 = u.y;
-	const float m12 = u.z;
-	const float m20 = f.x;
-	const float m21 = f.y;
-	const float m22 = f.z;
+	// 回転行列を作る（行ベクトル想定）
+	Mat4 m;
+	m.m[0][0] = r.x;
+	m.m[0][1] = r.y;
+	m.m[0][2] = r.z;
+	m.m[1][0] = u.x;
+	m.m[1][1] = u.y;
+	m.m[1][2] = u.z;
+	m.m[2][0] = f.x;
+	m.m[2][1] = f.y;
+	m.m[2][2] = f.z;
 
-	const float num8 = m00 + m11 + m22;
-	Quaternion  quaternion;
-	if (num8 > 0.0f) {
-		float num    = sqrt(num8 + 1.0f);
-		quaternion.w = num * 0.5f;
-		num          = 0.5f / num;
-		quaternion.x = (m12 - m21) * num;
-		quaternion.y = (m20 - m02) * num;
-		quaternion.z = (m01 - m10) * num;
-		return quaternion;
-	}
-	if (m00 >= m11 && m00 >= m22) {
-		const float num7 = sqrt(1.0f + m00 - m11 - m22);
-		const float num4 = 0.5f / num7;
-		quaternion.x     = 0.5f * num7;
-		quaternion.y     = (m01 + m10) * num4;
-		quaternion.z     = (m02 + m20) * num4;
-		quaternion.w     = (m12 - m21) * num4;
-		return quaternion;
-	}
-	if (m11 > m22) {
-		const float num6 = sqrt(1.0f + m11 - m00 - m22);
-		const float num3 = 0.5f / num6;
-		quaternion.x     = (m10 + m01) * num3;
-		quaternion.y     = 0.5f * num6;
-		quaternion.z     = (m21 + m12) * num3;
-		quaternion.w     = (m20 - m02) * num3;
-		return quaternion;
-	}
-	const float num5 = sqrt(1.0f + m22 - m00 - m11);
-	const float num2 = 0.5f / num5;
-	quaternion.x     = (m20 + m02) * num2;
-	quaternion.y     = (m21 + m12) * num2;
-	quaternion.z     = 0.5f * num5;
-	quaternion.w     = (m01 - m10) * num2;
-	return quaternion;
+	return m.ToQuaternion();
 }
 
 Quaternion Quaternion::Lerp(const Quaternion& a, const Quaternion& b, float t) {

@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "ShaderKey.h"
@@ -26,6 +27,9 @@ namespace Unnamed::Render {
 		);
 
 		const ShaderDxil& GetOrCreateDxil(const ShaderKey& key);
+
+		void MarkDirtyByShaderSource(AssetID shaderSourceId);
+		void MarkAllDirty();
 
 		void InvalidateByShaderSource(AssetID shaderSourceId);
 
@@ -53,6 +57,7 @@ namespace Unnamed::Render {
 		std::filesystem::path mCacheDir = {};
 
 		std::unordered_map<ShaderKey, ShaderDxil, ShaderKeyHash> mRuntimeCache;
+		std::unordered_set<ShaderKey, ShaderKeyHash>             mDirtyKeys;
 
 		std::unordered_map<AssetID, std::vector<ShaderKey>> mReverse;
 	};

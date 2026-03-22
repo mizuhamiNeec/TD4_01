@@ -1,5 +1,6 @@
 #include "ShaderLibrary.h"
 
+#include <algorithm>
 #include <fstream>
 
 #include "core/UnnamedMacro.h"
@@ -32,17 +33,36 @@ namespace Unnamed::Render {
 	    mDxcShaderCompiler(dxcCompiler) {}
 
 	const ShaderDxil& ShaderLibrary::GetOrCreateDxil(const ShaderKey& key) {
-		if (const auto it = mRuntimeCache.find(key);
-			it != mRuntimeCache.end()) {
-			return it->second;
+		auto& reverse = mReverse[key.shaderSourceId];
+		if (std::ranges::find(reverse, key) == reverse.end()) {
+			reverse.emplace_back(key);
+		}
+
+		auto       runtimeIt = mRuntimeCache.find(key);
+		const bool hadCached = runtimeIt != mRuntimeCache.end();
+		const bool wasDirty  = mDirtyKeys.erase(key) > 0;
+		if (hadCached && !wasDirty) {
+			return runtimeIt->second;
 		}
 
 		const auto dxilPath = GetDxilCachePath(key);
-		ShaderDxil out      = {};
-
+		ShaderDxil candidate = {};
+		bool       prepared  = false;
 		if (std::filesystem::exists(dxilPath)) {
-			out.bytes = ReadFileBytes(dxilPath);
-		} else {
+			candidate.bytes = ReadFileBytes(dxilPath);
+			prepared        = !candidate.bytes.empty();
+			if (!prepared) {
+				Warning(
+					kChannel,
+					"DXIL cache file is empty. key(source={}, entry='{}', profile='{}')",
+					key.shaderSourceId,
+					key.entry,
+					key.profile
+				);
+			}
+		}
+
+		if (!prepared) {
 			const auto* src = mAssetManager.Get<ShaderSourceAssetData>(
 				key.shaderSourceId
 			);
@@ -51,6 +71,9 @@ namespace Unnamed::Render {
 					kChannel, "ShaderSource asset payload missing: id={}",
 					key.shaderSourceId
 				);
+				if (hadCached) {
+					return runtimeIt->second;
+				}
 				auto [it, _] = mRuntimeCache.emplace(key, ShaderDxil{});
 				return it->second;
 			}
@@ -62,38 +85,84 @@ namespace Unnamed::Render {
 			const std::vector<std::wstring> includeDirs;
 			const auto                      extraArgs = BuildDxcArgs(key);
 
-			mDxcShaderCompiler.Initialize();
-
-			const bool ok = mDxcShaderCompiler.CompileToFileDXIL(
-				sourcePath, entry, profile, includeDirs, extraArgs,
-				dxilPath.wstring()
-			);
-
-			if (ok) {
-				out.bytes = ReadFileBytes(dxilPath);
+			if (!mDxcShaderCompiler.Initialize()) {
+				Error(kChannel, "DxcShaderCompiler initialization failed.");
+			} else {
+				const bool ok = mDxcShaderCompiler.CompileToFileDXIL(
+					sourcePath, entry, profile, includeDirs, extraArgs,
+					dxilPath.wstring()
+				);
+				if (ok) {
+					candidate.bytes = ReadFileBytes(dxilPath);
+					prepared        = !candidate.bytes.empty();
+					if (!prepared) {
+						Error(
+							kChannel,
+							"Compiled DXIL is empty. key(source={}, entry='{}', profile='{}')",
+							key.shaderSourceId,
+							key.entry,
+							key.profile
+						);
+					}
+				}
 			}
 		}
 
-		mReverse[key.shaderSourceId].emplace_back(key);
+		if (prepared) {
+			if (hadCached) {
+				runtimeIt->second = std::move(candidate);
+				return runtimeIt->second;
+			}
+			auto [it, _] = mRuntimeCache.emplace(key, std::move(candidate));
+			return it->second;
+		}
 
-		auto [insIt, _] = mRuntimeCache.emplace(key, std::move(out));
-		return insIt->second;
+		if (hadCached) {
+			Warning(
+				kChannel,
+				"Shader compile failed. Keeping last known good DXIL. key(source={}, entry='{}', profile='{}')",
+				key.shaderSourceId,
+				key.entry,
+				key.profile
+			);
+			return runtimeIt->second;
+		}
+
+		Warning(
+			kChannel,
+			"Shader compile failed and no fallback exists. key(source={}, entry='{}', profile='{}')",
+			key.shaderSourceId,
+			key.entry,
+			key.profile
+		);
+		auto [it, _] = mRuntimeCache.emplace(key, ShaderDxil{});
+		return it->second;
 	}
 
-	void ShaderLibrary::InvalidateByShaderSource(AssetID shaderSourceId) {
+	void ShaderLibrary::MarkDirtyByShaderSource(const AssetID shaderSourceId) {
 		const auto it = mReverse.find(shaderSourceId);
 		if (it == mReverse.end()) {
 			return;
 		}
 
 		for (const auto& key : it->second) {
-			mRuntimeCache.erase(key);
+			mDirtyKeys.emplace(key);
 		}
-		it->second.clear();
+	}
+
+	void ShaderLibrary::MarkAllDirty() {
+		for (const auto& [key, _] : mRuntimeCache) {
+			mDirtyKeys.emplace(key);
+		}
+	}
+
+	void ShaderLibrary::InvalidateByShaderSource(AssetID shaderSourceId) {
+		MarkDirtyByShaderSource(shaderSourceId);
 	}
 
 	void ShaderLibrary::InvalidateAll() {
 		mRuntimeCache.clear();
+		mDirtyKeys.clear();
 		mReverse.clear();
 	}
 
@@ -126,9 +195,11 @@ namespace Unnamed::Render {
 			key.shaderSourceId
 		);
 		if (!src) {
-			UASSERT(
-				false && "シェーダーソースアセットのペイロードがありません"
+			Error(
+				kChannel, "ShaderSource payload missing while hashing: id={}",
+				key.shaderSourceId
 			);
+			return 0;
 		}
 
 		// ソースファイルのパスを正規化してハッシュに含める

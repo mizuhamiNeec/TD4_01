@@ -142,7 +142,7 @@ namespace Unnamed {
 		mChildren.clear();
 	}
 
-	void TransformComponent::OnTick(float) {
+	void TransformComponent::UpdateWorldRecursive() {
 		if (mIsDirty) {
 			// ローカル行列を計算
 			const Mat4 localMat = Mat4::Affine(
@@ -161,11 +161,26 @@ namespace Unnamed {
 			// フラグを外す
 			mIsDirty = false;
 		}
+
+		for (TransformComponent* child : mChildren) {
+			if (!child || !child->mIsDirty) {
+				continue;
+			}
+			child->UpdateWorldRecursive();
+		}
+	}
+
+	void TransformComponent::OnTick(float) {
+		UpdateWorldRecursive();
 	}
 
 	void TransformComponent::OnEditorTick(const float deltaTime) {
 		// エディタモードでも行列更新を行う
 		OnTick(deltaTime);
+	}
+
+	std::string_view TransformComponent::GetStableName() const {
+		return "engine.Transform";
 	}
 
 	void TransformComponent::Serialize(JsonWriter& writer) const {
@@ -244,6 +259,14 @@ namespace Unnamed {
 	}
 
 #ifdef _DEBUG
+	std::string_view TransformComponent::GetComponentName() const {
+		return "Transform";
+	}
+
+	uint32_t TransformComponent::GetIcon() const {
+		return kIconDragPan;
+	}
+
 	void TransformComponent::DrawInspectorImGui() {
 		Vec3       localPos   = mLocalPos;
 		Quaternion localRot   = mLocalRot;

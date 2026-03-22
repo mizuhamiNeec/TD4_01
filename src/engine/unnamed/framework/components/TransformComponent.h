@@ -7,6 +7,8 @@
 #include "core/math/Quaternion.h"
 #include "core/math/Vec3.h"
 
+#include "engine/ImGui/Icons.h"
+
 namespace Unnamed {
 	class Scene;
 
@@ -38,14 +40,15 @@ namespace Unnamed {
 		void OnDetached() override;
 		void OnTick(float deltaTime) override;
 		void OnEditorTick(float deltaTime) override;
-
-		[[nodiscard]] std::string_view GetStableName() const override {
-			return "engine.Transform";
+		[[nodiscard]] TickGroup GetTickGroup() const override {
+			return TickGroup::KinematicSource;
 		}
 
-		[[nodiscard]] std::string_view GetComponentName() const override {
-			return "Transform";
-		}
+		[[nodiscard]] std::string_view GetStableName() const override;
+
+		[[nodiscard]] std::string_view GetComponentName() const override;
+
+		[[nodiscard]] uint32_t GetIcon() const override;
 
 #ifdef _DEBUG
 		void DrawInspectorImGui() override;
@@ -55,6 +58,8 @@ namespace Unnamed {
 		void Serialize(JsonWriter& writer) const override;
 
 	private:
+		void UpdateWorldRecursive();
+
 		/// @brief 変更されたことをマークします。
 		void MarkDirty();
 

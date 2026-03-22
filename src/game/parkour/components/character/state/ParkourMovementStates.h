@@ -8,9 +8,6 @@ namespace Unnamed {
 	class GameMovementStateMachine;
 
 	namespace {
-		constexpr char kStateAirMove[]    = "AirMove";
-		constexpr char kStateGroundMove[] = "GroundMove";
-
 		constexpr float kGroundProbeDistanceHu = 2.0f;
 		constexpr float kGroundNormalMinY      = 0.7f;
 		constexpr float kWishSpeedHu           = 320.0f;
@@ -24,6 +21,5 @@ namespace Unnamed {
 
 	void RegisterParkourMovementStates(
 		GameMovementStateMachine& stateMachine
-
 	);
 }

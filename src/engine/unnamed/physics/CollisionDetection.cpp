@@ -1,8 +1,92 @@
 #include <engine/unnamed/physics/CollisionDetection.h>
 
 #include <algorithm>
+#include <cmath>
 
 #include "engine/unnamed/primitive/Primitives.h"
+
+namespace {
+	Vec3 ClosestPointOnTriangle(
+		const Unnamed::Triangle& tri,
+		const Vec3&              p
+	) {
+		const Vec3 a = tri.v0;
+		const Vec3 b = tri.v1;
+		const Vec3 c = tri.v2;
+
+		const Vec3  ab = b - a;
+		const Vec3  ac = c - a;
+		const Vec3  ap = p - a;
+		const float d1 = ab.Dot(ap);
+		const float d2 = ac.Dot(ap);
+		if (d1 <= 0.0f && d2 <= 0.0f) {
+			return a;
+		}
+
+		const Vec3  bp = p - b;
+		const float d3 = ab.Dot(bp);
+		const float d4 = ac.Dot(bp);
+		if (d3 >= 0.0f && d4 <= d3) {
+			return b;
+		}
+
+		const float vc = d1 * d4 - d3 * d2;
+		if (vc <= 0.0f && d1 >= 0.0f && d3 <= 0.0f) {
+			const float v = d1 / (d1 - d3);
+			return a + ab * v;
+		}
+
+		const Vec3  cp = p - c;
+		const float d5 = ab.Dot(cp);
+		const float d6 = ac.Dot(cp);
+		if (d6 >= 0.0f && d5 <= d6) {
+			return c;
+		}
+
+		const float vb = d5 * d2 - d1 * d6;
+		if (vb <= 0.0f && d2 >= 0.0f && d6 <= 0.0f) {
+			const float w = d2 / (d2 - d6);
+			return a + ac * w;
+		}
+
+		const float va = d3 * d6 - d5 * d4;
+		if (va <= 0.0f && d4 - d3 >= 0.0f && d5 - d6 >= 0.0f) {
+			const Vec3  bc = c - b;
+			const float bcLenSq = bc.Dot(bc);
+			if (bcLenSq <= 1e-12f) {
+				return b;
+			}
+			const float t =
+				std::clamp((p - b).Dot(bc) / bcLenSq, 0.0f, 1.0f);
+			return b + bc * t;
+		}
+
+		const Vec3  n      = ab.Cross(ac);
+		const float nLenSq = n.SqrLength();
+		if (nLenSq <= 1e-12f) {
+			return a;
+		}
+		const Vec3  nn   = n / std::sqrt(nLenSq);
+		const float dist = (p - a).Dot(nn);
+		return p - nn * dist;
+	}
+
+	bool IsPointInsideTrianglePlane(
+		const Vec3&              pointOnPlane,
+		const Unnamed::Triangle& tri,
+		const Vec3&              triNormal
+	) {
+		constexpr float kEdgeEpsilon = 1e-6f;
+
+		const Vec3 c0 = (tri.v1 - tri.v0).Cross(pointOnPlane - tri.v0);
+		const Vec3 c1 = (tri.v2 - tri.v1).Cross(pointOnPlane - tri.v1);
+		const Vec3 c2 = (tri.v0 - tri.v2).Cross(pointOnPlane - tri.v2);
+
+		return triNormal.Dot(c0) >= -kEdgeEpsilon &&
+		       triNormal.Dot(c1) >= -kEdgeEpsilon &&
+		       triNormal.Dot(c2) >= -kEdgeEpsilon;
+	}
+}
 
 namespace Unnamed::Physics {
 	/// @brief レイとAABBの交差判定を行います
@@ -233,8 +317,7 @@ namespace Unnamed::Physics {
 		return true;
 	}
 
-	// NOT WORKING YET
-	/// @brief スイープ球と三角形の連続衝突判定を行います（SAT）
+	/// @brief スイープ球と三角形の連続衝突判定を行います
 	/// @param center 判定する球の中心位置
 	/// @param radius 球の半径
 	/// @param delta 球の移動ベクトル
@@ -250,167 +333,207 @@ namespace Unnamed::Physics {
 		float&          outTOI,
 		Vec3&           outNormal
 	) {
-		/* ---------- 1. 基本量 ---------- */
-		const Vec3 C0 = center;
-		const Vec3 V  = delta;
+		constexpr float kParallelEpsilon = 1e-8f;
+		constexpr float kRootEpsilon     = 1e-6f;
+		constexpr float kNormalEpsilon   = 1e-12f;
+		constexpr float kDistanceEpsilon = 1e-5f;
 
-		/* ---------- 2. 分離軸を列挙（Voronoi領域を考慮） ---------- */
-		Vec3 axes[10]; // 最大10軸
-		int  axisCount = 0;
-
-		/* 2-1 三角形法線（最優先軸） */
-		Vec3 triNormal = (tri.v1 - tri.v0).Cross(tri.v2 - tri.v0).Normalized();
-		if (triNormal.Dot(triNormal) > 1e-8f) {
-			axes[axisCount++] = triNormal;
+		if (radius <= 0.0f) {
+			return false;
 		}
 
-		/* 2-2 球と三角形のVoronoi領域に基づく軸選択 */
-		Vec3 edges[3] = {tri.v1 - tri.v0, tri.v2 - tri.v1, tri.v0 - tri.v2};
-		Vec3 verts[3] = {tri.v0, tri.v1, tri.v2};
+		const Vec3 p0 = center;
+		const Vec3 v  = delta;
 
-		// 各頂点に対する処理
+		const Vec3  e0 = tri.v1 - tri.v0;
+		const Vec3  e1 = tri.v2 - tri.v0;
+		Vec3        triNormal = e0.Cross(e1);
+		const float triNLenSq = triNormal.SqrLength();
+		if (triNLenSq > kNormalEpsilon) {
+			triNormal /= std::sqrt(triNLenSq);
+		} else {
+			triNormal = Vec3::zero;
+		}
+
+		float candidateTimes[24];
+		int   candidateCount = 0;
+		auto  pushCandidateTime = [&](const float t) {
+			if (t < -kRootEpsilon || t > 1.0f + kRootEpsilon) {
+				return;
+			}
+			const float clampedT = std::clamp(t, 0.0f, 1.0f);
+			for (int i = 0; i < candidateCount; ++i) {
+				if (fabsf(candidateTimes[i] - clampedT) <= 1e-5f) {
+					return;
+				}
+			}
+			if (candidateCount < 24) {
+				candidateTimes[candidateCount++] = clampedT;
+			}
+		};
+
+		auto addQuadraticRoots = [&](const float a, const float b, const float c) {
+			if (fabsf(a) <= kParallelEpsilon) {
+				if (fabsf(b) <= kParallelEpsilon) {
+					return;
+				}
+				pushCandidateTime(-c / b);
+				return;
+			}
+
+			float discriminant = b * b - 4.0f * a * c;
+			if (discriminant < -kParallelEpsilon) {
+				return;
+			}
+			discriminant = std::max(0.0f, discriminant);
+			const float sqrtDisc = std::sqrt(discriminant);
+			const float inv2A    = 0.5f / a;
+			pushCandidateTime((-b - sqrtDisc) * inv2A);
+			pushCandidateTime((-b + sqrtDisc) * inv2A);
+		};
+
+		pushCandidateTime(0.0f);
+
+		const float motionLenSq = v.SqrLength();
+
+		// 面接触候補（平面との距離が半径になる時刻）
+		if (triNormal.SqrLength() > kNormalEpsilon) {
+			const float planeDist0 = (p0 - tri.v0).Dot(triNormal);
+			const float planeSpeed = v.Dot(triNormal);
+			if (fabsf(planeSpeed) > kParallelEpsilon) {
+				const float targetDists[2] = {radius, -radius};
+				for (float targetDist : targetDists) {
+					const float t = (targetDist - planeDist0) / planeSpeed;
+					if (t < -kRootEpsilon || t > 1.0f + kRootEpsilon) {
+						continue;
+					}
+					const float clampedT = std::clamp(t, 0.0f, 1.0f);
+					const Vec3  cAtT     = p0 + v * clampedT;
+					const Vec3  pOnPlane = cAtT - triNormal * targetDist;
+					if (IsPointInsideTrianglePlane(pOnPlane, tri, triNormal)) {
+						pushCandidateTime(clampedT);
+					}
+				}
+			}
+		}
+
+		// 辺接触候補（移動点と三角形辺の最短距離が半径になる時刻）
+		const Vec3 edgeStarts[3] = {tri.v0, tri.v1, tri.v2};
+		const Vec3 edgeEnds[3]   = {tri.v1, tri.v2, tri.v0};
 		for (int i = 0; i < 3; ++i) {
-			Vec3 toVert = verts[i] - C0;
-
-			// 頂点のVoronoi領域かチェック
-			Vec3 edge1 = edges[(i + 2) % 3]; // 前のエッジ（逆向き）
-			Vec3 edge2 = edges[i];           // 次のエッジ
-
-			const bool inVertexRegion = toVert.Dot(-edge1) >= 0 && toVert.
-			                            Dot(edge2) >= 0;
-
-			if (inVertexRegion) {
-				float len = toVert.Length();
-				if (len > 1e-8f) {
-					axes[axisCount++] = toVert / len;
-				}
-			}
-		}
-
-		// 各エッジに対する処理
-		for (int i = 0; i < 3; ++i) {
-			Vec3  edge     = edges[i];
-			float edgeLen2 = edge.Dot(edge);
-			if (edgeLen2 < 1e-10f) {
+			const Vec3  edge    = edgeEnds[i] - edgeStarts[i];
+			const float edgeLen = edge.Dot(edge);
+			if (edgeLen <= kNormalEpsilon) {
 				continue;
 			}
 
-			Vec3  toStart = C0 - verts[i];
-			float t       = toStart.Dot(edge) / edgeLen2;
+			const Vec3  m        = p0 - edgeStarts[i];
+			const float mdotEdge = m.Dot(edge);
+			const float vdotEdge = v.Dot(edge);
+			const float invEdgeLen = 1.0f / edgeLen;
 
-			// エッジのVoronoi領域かチェック
-			if (t >= 0.0f && t <= 1.0f) {
-				Vec3  closestPoint = verts[i] + edge * t;
-				Vec3  toClosest    = C0 - closestPoint;
-				float len          = toClosest.Length();
+			const float s0 = mdotEdge * invEdgeLen;
+			const float sd = vdotEdge * invEdgeLen;
+			const Vec3  w0 = m - edge * s0;
+			const Vec3  wd = v - edge * sd;
 
-				if (len > 1e-8f) {
-					axes[axisCount++] = toClosest / len;
+			const float a = wd.Dot(wd);
+			const float b = 2.0f * w0.Dot(wd);
+			const float c = w0.Dot(w0) - radius * radius;
+
+			float roots[2] = {};
+			int   rootCnt  = 0;
+			if (fabsf(a) <= kParallelEpsilon) {
+				if (fabsf(b) > kParallelEpsilon) {
+					roots[rootCnt++] = -c / b;
+				}
+			} else {
+				float discriminant = b * b - 4.0f * a * c;
+				if (discriminant >= -kParallelEpsilon) {
+					discriminant      = std::max(0.0f, discriminant);
+					const float sqrtD = std::sqrt(discriminant);
+					const float inv2A = 0.5f / a;
+					roots[rootCnt++]  = (-b - sqrtD) * inv2A;
+					roots[rootCnt++]  = (-b + sqrtD) * inv2A;
+				}
+			}
+
+			for (int r = 0; r < rootCnt; ++r) {
+				const float t = roots[r];
+				if (t < -kRootEpsilon || t > 1.0f + kRootEpsilon) {
+					continue;
+				}
+				const float s = (mdotEdge + vdotEdge * t) * invEdgeLen;
+				if (s >= -kRootEpsilon && s <= 1.0f + kRootEpsilon) {
+					pushCandidateTime(t);
 				}
 			}
 		}
 
-		float tEnter = 0.0f;
-		float tExit  = 1.0f;
-		Vec3  bestNrm{0, 0, 0};
-		float bestSeparation   = -FLT_MAX; // 最大分離距離を追跡（負の値は侵入を意味する）
-		bool  foundValidNormal = false;
+		// 頂点接触候補（移動点と頂点距離が半径になる時刻）
+		const Vec3 vertices[3] = {tri.v0, tri.v1, tri.v2};
+		for (const Vec3& vertex : vertices) {
+			const Vec3 toVertex = p0 - vertex;
+			const float a       = motionLenSq;
+			const float b       = 2.0f * toVertex.Dot(v);
+			const float c       = toVertex.Dot(toVertex) - radius * radius;
+			addQuadraticRoots(a, b, c);
+		}
 
-		/* ---------- 3. 各軸で連続衝突テスト ---------- */
-		for (int a = 0; a < axisCount; ++a) {
-			Vec3 A = axes[a];
-			if (A.Dot(A) < 1e-8f) {
-				continue;
+		float bestTOI  = FLT_MAX;
+		Vec3  bestNrm  = Vec3::zero;
+		bool  hasHit   = false;
+		const float maxDist = radius + kDistanceEpsilon;
+		const float maxDistSq = maxDist * maxDist;
+
+		auto evaluateCandidate = [&](const float t, const Vec3& fallbackNormal) {
+			const Vec3 centerAtT = p0 + v * t;
+			const Vec3 closest   = ClosestPointOnTriangle(tri, centerAtT);
+			Vec3       sep       = centerAtT - closest;
+			const float distSq   = sep.SqrLength();
+			if (distSq > maxDistSq) {
+				return;
 			}
 
-			/* 球体：中心投影 ± radius */
-			float projC0     = C0.Dot(A);
-			float minSphere0 = projC0 - radius;
-			float maxSphere0 = projC0 + radius;
-
-			/* 三角形：3頂点投影 min/max */
-			float v0     = tri.v0.Dot(A);
-			float v1     = tri.v1.Dot(A);
-			float v2     = tri.v2.Dot(A);
-			float minTri = std::min(v0, std::min(v1, v2));
-			float maxTri = std::max(v0, std::max(v1, v2));
-
-			/* 相対速度を投影 */
-			float vRel = V.Dot(A);
-
-			// 分離距離を計算（正の値は分離、負の値は侵入）
-			float separation1 = minTri - maxSphere0; // 三角形が球体の上側にある場合
-			float separation2 = minSphere0 - maxTri; // 三角形が球体の下側にある場合
-			float separation  = std::max(separation1, separation2);
-
-			if (fabsf(vRel) < 1e-8f) {
-				/* 静的分離チェック */
-				if (separation > 0.0f) {
-					return false; // 完全に分離している
+			Vec3 normal = sep;
+			if (distSq > kNormalEpsilon) {
+				normal /= std::sqrt(distSq);
+			} else {
+				normal = fallbackNormal;
+				const float fallbackLenSq = normal.SqrLength();
+				if (fallbackLenSq > kNormalEpsilon) {
+					normal /= std::sqrt(fallbackLenSq);
+				} else if (triNormal.SqrLength() > kNormalEpsilon) {
+					normal = triNormal;
+				} else if (motionLenSq > kNormalEpsilon) {
+					normal = -v.Normalized();
+				} else {
+					normal = Vec3::up;
 				}
-
-				/* 重複している場合、分離距離をチェック（負の値）*/
-				if (separation > bestSeparation) {
-					bestSeparation   = separation;
-					bestNrm          = separation1 > separation2 ? A : -A;
-					foundValidNormal = true;
-				}
-				continue;
 			}
 
-			/* 入・出 時間を求める */
-			float t0 = (minTri - maxSphere0) / vRel;
-			float t1 = (maxTri - minSphere0) / vRel;
-			if (t0 > t1) {
-				std::swap(t0, t1);
+			if (motionLenSq > kNormalEpsilon && normal.Dot(v) > 0.0f) {
+				normal = -normal;
 			}
 
-			/* 時間窓を更新 */
-			if (t0 > tEnter) {
-				tEnter           = t0;
-				bestNrm          = A * (vRel > 0 ? -1.f : 1.f);
-				foundValidNormal = true;
-				bestSeparation   = -FLT_MAX; // 動的衝突時はリセット
+			if (!hasHit || t < bestTOI) {
+				hasHit  = true;
+				bestTOI = t;
+				bestNrm = normal;
 			}
-			tExit = std::min(t1, tExit);
+		};
 
-			/* 分離判定 */
-			if (tEnter > tExit) {
-				return false;
-			}
-			if (tExit < 0.0f) {
-				return false;
-			}
-			if (tEnter > 1.0f) {
-				return false;
-			}
+		const Vec3 fallbackNormal =
+			triNormal.SqrLength() > kNormalEpsilon ? triNormal : Vec3::up;
+		for (int i = 0; i < candidateCount; ++i) {
+			evaluateCandidate(candidateTimes[i], fallbackNormal);
 		}
 
-		/* ---------- 4. 法線の連続性確保と安定化 ---------- */
-		if (!foundValidNormal || bestNrm.Dot(bestNrm) < 1e-8f) {
-			bestNrm = triNormal; // フォールバック
+		if (!hasHit) {
+			return false;
 		}
 
-		/* 法線の方向を一意に決定するための安定化処理 */
-		Vec3 centerAtTOI = C0 + V * std::max(0.0f, tEnter);
-
-		// 三角形の重心計算
-		Vec3 triCenter   = (tri.v0 + tri.v1 + tri.v2) / 3.0f;
-		Vec3 toTriCenter = triCenter - centerAtTOI;
-
-		// 法線が三角形の表面から球体中心を向くように調整
-		if (bestNrm.Dot(toTriCenter) > 0) {
-			bestNrm = -bestNrm;
-		}
-
-		// 三角形法線との一貫性チェック（面接触時の安定性向上）
-		float normalAlignment = bestNrm.Dot(triNormal);
-		if (fabsf(normalAlignment) > 0.8f) {
-			// 法線がほぼ同じ向きの場合
-			bestNrm = triNormal * (normalAlignment > 0 ? 1.0f : -1.0f);
-		}
-
-		outTOI    = std::max(0.0f, tEnter);
+		outTOI    = std::clamp(bestTOI, 0.0f, 1.0f);
 		outNormal = bestNrm.Normalized();
 		return true;
 	}

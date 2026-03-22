@@ -87,6 +87,8 @@ namespace Unnamed {
 			const Vec3& position, float maxDistance, Physics::Hit* outHit
 		) const = 0;
 
+		Physics::Engine* GetPhysics() const;
+
 	protected:
 		Physics::Engine* mEngine = nullptr;
 	};

@@ -27,4 +27,8 @@ namespace Unnamed {
 		}
 		return out;
 	}
+
+	Physics::Engine* BaseKinematicCollisionResolver::GetPhysics() const {
+		return mEngine;
+	}
 }

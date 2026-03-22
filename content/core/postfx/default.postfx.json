@@ -2,11 +2,25 @@
 	"name": "default_postfx",
 	"passes": [
 		{
+			"name": "Bloom",
+			"enabled": true,
+			"shader": "../shaders/programs/postfx_bloom.shader.json",
+			"scalars": {
+				"Intensity": 0.5,
+				"Threshold": 1.0,
+				"Radius": 1.0,
+				"Knee": 0.5
+			}
+		},
+		{
 			"name": "Vignette",
 			"enabled": true,
 			"shader": "../shaders/programs/postfx_vignette.shader.json",
 			"scalars": {
-				"Intensity": 1.0
+				"Intensity": 1.5
+			},
+			"colors": {
+				"Tint": [1.0, 1.0, 1.0, 1.0]
 			}
 		}
 	]

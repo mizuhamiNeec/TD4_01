@@ -158,7 +158,9 @@ namespace Unnamed::Render {
 		texDesc.Width               = e.desc.width;
 		texDesc.Height              = e.desc.height;
 		texDesc.DepthOrArraySize    = 1;
-		texDesc.MipLevels           = 1;
+		texDesc.MipLevels = static_cast<uint16_t>(std::max<size_t>(
+			texture.mips.size(), 1
+		));
 		texDesc.Format              = e.desc.resourceFormat;
 		texDesc.SampleDesc.Count    = 1;
 		texDesc.Layout              = D3D12_TEXTURE_LAYOUT_UNKNOWN;
@@ -182,26 +184,30 @@ namespace Unnamed::Render {
 			e.resource->SetName(StrUtil::ToWString(debugName).c_str());
 		}
 
-		const TextureMip& mip0 = texture.mips[0];
-		if (!mip0.bytes.empty()) {
+		if (!texture.mips.empty() && !texture.mips[0].bytes.empty()) {
 			auto& up = mDx.GetUploadContext();
 			up.Begin();
 			auto* cmd = up.GetCommandList();
 
 			D3D12_RESOURCE_DESC rd = e.resource->GetDesc();
-
-			uint64_t                           requiredBytes  = 0;
-			D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint      = {};
-			UINT                               numRows        = 0;
-			uint64_t                           rowSizeInBytes = 0;
+			const UINT subresourceCount = std::min<UINT>(
+				static_cast<UINT>(texture.mips.size()),
+				static_cast<UINT>(rd.MipLevels)
+			);
+			uint64_t requiredBytes = 0;
+			std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> footprints(
+				subresourceCount
+			);
+			std::vector<UINT> numRows(subresourceCount);
+			std::vector<uint64_t> rowSizeInBytes(subresourceCount);
 			device->GetCopyableFootprints(
 				&rd,
 				0,
-				1,
+				subresourceCount,
 				0,
-				&footprint,
-				&numRows,
-				&rowSizeInBytes,
+				footprints.data(),
+				numRows.data(),
+				rowSizeInBytes.data(),
 				&requiredBytes
 			);
 
@@ -232,13 +238,26 @@ namespace Unnamed::Render {
 			void*       map       = nullptr;
 			D3D12_RANGE readRange = {0, 0};
 			Rhi::Throw(upload->Map(0, &readRange, &map));
-			for (UINT y = 0; y < numRows; ++y) {
-				const uint8_t* src = mip0.bytes.data() +
-				                     static_cast<size_t>(y) * mip0.rowPitch;
-				uint8_t* dst = static_cast<uint8_t*>(map) + footprint.Offset +
-				               static_cast<size_t>(y) *
-				               footprint.Footprint.RowPitch;
-				memcpy(dst, src, rowSizeInBytes);
+			for (UINT mipIndex = 0; mipIndex < subresourceCount; ++mipIndex) {
+				const TextureMip&                           mip =
+					texture.mips[mipIndex];
+				const D3D12_PLACED_SUBRESOURCE_FOOTPRINT& footprint =
+					footprints[mipIndex];
+				for (UINT y = 0; y < numRows[mipIndex]; ++y) {
+					const uint8_t* src = mip.bytes.data() +
+					                     static_cast<size_t>(y) * mip.rowPitch;
+					uint8_t* dst = static_cast<uint8_t*>(map) + footprint.Offset +
+					               static_cast<size_t>(y) *
+					               footprint.Footprint.RowPitch;
+					memcpy(
+						dst,
+						src,
+						std::min<size_t>(
+							static_cast<size_t>(rowSizeInBytes[mipIndex]),
+							mip.rowPitch
+						)
+					);
+				}
 			}
 			upload->Unmap(0, nullptr);
 
@@ -249,17 +268,19 @@ namespace Unnamed::Render {
 			);
 			cmd->ResourceBarrier(1, &toCopy);
 
-			D3D12_TEXTURE_COPY_LOCATION srcLoc = {};
-			srcLoc.pResource = upload.Get();
-			srcLoc.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-			srcLoc.PlacedFootprint = footprint;
+			for (UINT mipIndex = 0; mipIndex < subresourceCount; ++mipIndex) {
+				D3D12_TEXTURE_COPY_LOCATION srcLoc = {};
+				srcLoc.pResource = upload.Get();
+				srcLoc.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+				srcLoc.PlacedFootprint = footprints[mipIndex];
 
-			D3D12_TEXTURE_COPY_LOCATION dstLoc = {};
-			dstLoc.pResource = e.resource.Get();
-			dstLoc.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-			dstLoc.SubresourceIndex = 0;
+				D3D12_TEXTURE_COPY_LOCATION dstLoc = {};
+				dstLoc.pResource = e.resource.Get();
+				dstLoc.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+				dstLoc.SubresourceIndex = mipIndex;
 
-			cmd->CopyTextureRegion(&dstLoc, 0, 0, 0, &srcLoc, nullptr);
+				cmd->CopyTextureRegion(&dstLoc, 0, 0, 0, &srcLoc, nullptr);
+			}
 
 			auto toCommon = CD3DX12_RESOURCE_BARRIER::Transition(
 				e.resource.Get(),
@@ -808,7 +829,7 @@ namespace Unnamed::Render {
 		D3D12_SHADER_RESOURCE_VIEW_DESC srv = {};
 		srv.Format                          = srvFormat;
 		srv.ViewDimension                   = D3D12_SRV_DIMENSION_TEXTURE2D;
-		srv.Texture2D.MipLevels             = 1;
+		srv.Texture2D.MipLevels             = e.resource->GetDesc().MipLevels;
 		srv.Shader4ComponentMapping         =
 			D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 

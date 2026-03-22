@@ -1,5 +1,6 @@
 #include "ShaderSourceLoader.h"
 
+#include <cctype>
 #include <filesystem>
 
 #include "core/assets/AssetManager.h"
@@ -8,8 +9,9 @@
 #include "engine/unnamed/subsystem/console/Log.h"
 
 namespace Unnamed {
-	static constexpr std::string_view kChannel            = "ShaderSrcLdr";
-	static constexpr std::string_view kSupportedExtension = ".hlsl";
+	static constexpr std::string_view kChannel                 = "ShaderSrcLdr";
+	static constexpr std::string_view kSupportedHlslExtension  = ".hlsl";
+	static constexpr std::string_view kSupportedHlsliExtension = ".hlsli";
 
 	ShaderSourceLoader::ShaderSourceLoader(AssetManager* assetManager) :
 		mAssetManager(assetManager) {}
@@ -22,7 +24,10 @@ namespace Unnamed {
 			return false;
 		}
 		// 拡張子がサポートされているかを確認
-		if (StrUtil::HasExtension(path, kSupportedExtension)) {
+		if (
+			StrUtil::HasExtension(path, kSupportedHlslExtension) ||
+			StrUtil::HasExtension(path, kSupportedHlsliExtension)
+		) {
 			*outType = ASSET_TYPE::SHADER_SOURCE;
 			return true;
 		}
@@ -75,28 +80,53 @@ namespace Unnamed {
 		const std::string& text
 	) {
 		std::vector<std::string> result;
-		size_t                   pos = 0;
+		size_t                   lineBegin = 0;
+		static constexpr std::string_view kIncludeToken = "#include";
 
-		while (true) {
-			pos = text.find("#include", pos);
-			if (pos == std::string::npos) {
+		while (lineBegin < text.size()) {
+			const size_t lineEnd = text.find('\n', lineBegin);
+			const size_t lineSize = (lineEnd == std::string::npos) ?
+				                        (text.size() - lineBegin) :
+				                        (lineEnd - lineBegin);
+			const std::string_view line(text.data() + lineBegin, lineSize);
+
+			const size_t includePos = line.find(kIncludeToken);
+			if (includePos != std::string_view::npos) {
+				size_t cursor = includePos + kIncludeToken.size();
+				while (
+					cursor < line.size() &&
+					std::isspace(static_cast<unsigned char>(line[cursor]))
+				) {
+					++cursor;
+				}
+
+				if (cursor < line.size()) {
+					const char openDelimiter = line[cursor];
+					char       closeDelimiter = '\0';
+					if (openDelimiter == '"') {
+						closeDelimiter = '"';
+					} else if (openDelimiter == '<') {
+						closeDelimiter = '>';
+					}
+
+					if (closeDelimiter != '\0') {
+						const size_t closePos = line.find(closeDelimiter, cursor + 1);
+						if (closePos != std::string_view::npos && closePos > cursor + 1) {
+							result.emplace_back(
+								line.substr(
+									cursor + 1,
+									closePos - (cursor + 1)
+								)
+							);
+						}
+					}
+				}
+			}
+
+			if (lineEnd == std::string::npos) {
 				break;
 			}
-
-			const auto quote0 = text.find('"', pos);
-			if (quote0 == std::string::npos) {
-				static constexpr size_t kIncludeLen = 8; // "#include"の文字列の長さ
-				pos                                 += kIncludeLen;
-				continue;
-			}
-			const auto quote1 = text.find('"', quote0 + 1);
-			if (quote1 == std::string::npos) {
-				pos = quote0 + 1;
-				continue;
-			}
-
-			result.emplace_back(text.substr(quote0 + 1, quote1 - (quote0 + 1)));
-			pos = quote1 + 1;
+			lineBegin = lineEnd + 1;
 		}
 		return result;
 	}

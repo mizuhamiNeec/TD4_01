@@ -10,6 +10,8 @@
 #include "core/json/JsonWriter.h"
 #include "core/math/Math.h"
 
+#include "engine/ImGui/Icons.h"
+#include "engine/ImGui/ImGuiWidgets.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/subsystem/console/Log.h"
@@ -71,6 +73,10 @@ namespace Unnamed {
 	}
 
 	void BaseCharacterComponent::OnTick(const float deltaTime) {
+		BaseComponent::OnTick(deltaTime);
+	}
+
+	void BaseCharacterComponent::PostPhysicsTick(const float deltaTime) {
 		TransformComponent* transform = GetTransform();
 		if (!transform) {
 			Error(GetComponentName(), "TransformComponentが見つからないため、移動できません。");
@@ -89,10 +95,6 @@ namespace Unnamed {
 			mAccumulator -= mSimStepSec;
 			steps++;
 		}
-	}
-
-	void BaseCharacterComponent::PostPhysicsTick(float deltaTime) {
-		BaseComponent::PostPhysicsTick(deltaTime);
 	}
 
 	void BaseCharacterComponent::Deserialize(const JsonReader& reader) {
@@ -135,12 +137,11 @@ namespace Unnamed {
 		writer.Write(static_cast<int>(mMaxSubSteps));
 
 		const Vec3 boxHalfExtentsHu = Math::MtoH(mBoxHalfExtents);
-		writer.Key("boxHalfExtentsHu");
-		writer.BeginArray();
-		writer.Write(boxHalfExtentsHu.x);
-		writer.Write(boxHalfExtentsHu.y);
-		writer.Write(boxHalfExtentsHu.z);
-		writer.EndArray();
+		writer.WriteVec3("boxHalfExtentsHu", boxHalfExtentsHu);
+	}
+
+	uint32_t BaseCharacterComponent::GetIcon() const {
+		return kIconDirectionsWalk;
 	}
 
 	TransformComponent* BaseCharacterComponent::GetTransform() const {
@@ -163,12 +164,21 @@ namespace Unnamed {
 			ImGui::Text(
 				"CurrentState: %s",
 				mStateMachine->GetCurrentState() ?
-					mStateMachine->GetCurrentState()->GetStateName().c_str() :
+					mStateMachine->GetCurrentState()->GetStateName().data() :
 					"Null"
 			);
 		}
 		ImGui::Text("Grounded: %s", mGrounded ? "true" : "false");
-		ImGui::DragFloat3("Velocity", &mVelocity.x, 1.0f);
+		ImGui::Text("Vel: %f", Math::MtoH(mVelocity.Length()));
+
+		Vec3 tmp = Math::MtoH(mVelocity);
+		if (
+			ImGuiWidgets::DragVec3(
+				"Velocity", tmp, Vec3::zero, 1.0f, "%.2f"
+			)
+		) {
+			mVelocity = Math::HtoM(tmp);
+		}
 		ImGui::Checkbox("Collision Enabled", &mCollisionEnabled);
 		ImGui::DragFloat(
 			"Sim Step Sec", &mSimStepSec, 0.0001f, 1.0f / 1000.0f,

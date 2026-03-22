@@ -74,6 +74,8 @@ namespace Unnamed {
 
 		void Deserialize(const JsonReader& reader) override;
 		void Serialize(JsonWriter& writer) const override;
+		
+		uint32_t GetIcon() const override;
 
 	protected:
 		[[nodiscard]] virtual TransformComponent* GetTransform() const;

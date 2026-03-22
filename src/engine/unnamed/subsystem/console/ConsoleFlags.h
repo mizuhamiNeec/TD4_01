@@ -22,6 +22,7 @@ namespace Unnamed {
 		PRINTABLEONLY = 1 << 10, // ユーザー/プレイヤーに見せても問題ない文字列のみを許可します。
 
 		//--------Network------------------------------------------------------
+		// このエンジンにはサーバーもクライアントもありません あったらいいなぁ
 
 		// このフラグがREPLICATEDで設定されている場合、値の変更をログファイルやコンソールに記録しません。
 		UNLOGGED = 1 << 11,
@@ -34,7 +35,7 @@ namespace Unnamed {
 	const char* ToString(FCVAR e);
 
 	FCVAR& operator|=(FCVAR& lhs, const FCVAR& rhs);
-	FCVAR operator|(const FCVAR& lhs, const FCVAR& rhs);
+	FCVAR  operator|(const FCVAR& lhs, const FCVAR& rhs);
 	bool   operator&(const FCVAR& lhs, const FCVAR& rhs);
 	bool   operator!=(const FCVAR& lhs, const FCVAR& rhs);
 }

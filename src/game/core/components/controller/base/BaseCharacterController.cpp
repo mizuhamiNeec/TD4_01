@@ -4,6 +4,7 @@
 
 #include "core/ComponentRegistry.h"
 
+#include "engine/ImGui/Icons.h"
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/unnamed/subsystem/input/InputSystem.h"
@@ -39,6 +40,10 @@ namespace Unnamed {
 
 	std::string_view BaseCharacterController::GetComponentName() const {
 		return "BaseCharacterController";
+	}
+
+	uint32_t BaseCharacterController::GetIcon() const {
+		return kIconJoystick;
 	}
 
 #ifdef _DEBUG

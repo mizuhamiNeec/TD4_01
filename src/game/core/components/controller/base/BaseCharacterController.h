@@ -21,6 +21,8 @@ namespace Unnamed {
 		[[nodiscard]] std::string_view GetStableName() const override;
 		[[nodiscard]] std::string_view GetComponentName() const override;
 
+		uint32_t GetIcon() const override;
+
 #ifdef _DEBUG
 		void DrawInspectorImGui() override;
 #endif

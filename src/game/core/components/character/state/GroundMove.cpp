@@ -1,5 +1,7 @@
 #include "GroundMove.h"
 
+#include <algorithm>
+
 #include "engine/unnamed/framework/components/TransformComponent.h"
 
 #include "game/core/collision/kinematic/base/BaseKinematicCollisionResolver.h"
@@ -8,7 +10,7 @@ namespace Unnamed {
 	namespace {
 		constexpr float kGroundProbeDistanceHu = 2.0f;
 		constexpr float kGroundNormalMinY      = 0.7f;
-		constexpr float kStepHeightHu          = 18.0f;
+		constexpr float kJumpDetachBiasHu      = 1.0f;
 	}
 
 	void GroundMove::Enter(ConsoleSystem* console) {
@@ -20,51 +22,79 @@ namespace Unnamed {
 			return;
 		}
 
-		mAccelerate = GetConVarSafe<float>(console, "sv_accelerate");
-		mMaxSpeed   = GetConVarSafe<float>(console, "sv_maxspeed");
-		mStopSpeed  = GetConVarSafe<float>(console, "sv_stopspeed");
-		mFriction   = GetConVarSafe<float>(console, "sv_friction");
+		mAccelerate   = GetConVarSafe<float>(console, "sv_accelerate");
+		mMaxSpeed     = GetConVarSafe<float>(console, "sv_maxspeed");
+		mStopSpeed    = GetConVarSafe<float>(console, "sv_stopspeed");
+		mFriction     = GetConVarSafe<float>(console, "sv_friction");
+		mJumpVelocity = GetConVarSafe<float>(console, "sv_jumpvelocity");
+		mJumpSnapDisableTime = GetConVarSafe<float>(
+			console, "sv_jumpsnapdisabletime"
+		);
+		mStepHeight   = GetConVarSafe<float>(console, "sv_stepheight");
+
+		mDuckSpeed   = GetConVarSafe<float>(console, "sv_duckspeed");
+		mWalkSpeed   = GetConVarSafe<float>(console, "sv_walkspeed");
+		mSprintSpeed = GetConVarSafe<float>(console, "sv_sprintspeed");
+
+		mRebaseVelocityToSupportOnFirstTick = true;
 	}
 
-	void GroundMove::Tick(MovementContext& context, float deltaTime) {
-		// 入力の視点方向
-		const Vec3 right   = context.input.right.Normalized();
-		const Vec3 forward = context.input.forward.Normalized();
+	void GroundMove::Tick(
+		MovementContext& context, float deltaTime
+	) {
+		context.isGrounded = false;
 
-		// カメラの基底ベクトルに入力軸を掛け合わせて、ワールド空間での移動方向を計算
-		Vec3 wishDir =
-			right * context.input.moveAxis.x +
-			forward * context.input.moveAxis.z;
-		wishDir.y = 0.0f; // 上下成分は無視
-		wishDir.Normalize();
+		if (mRebaseVelocityToSupportOnFirstTick) {
+			context.velocity -= context.supportLinearVelocity;
+			mRebaseVelocityToSupportOnFirstTick = false;
+		}
+
+		// 移動方向
+		Vec3 wishDir = GetWishDirHoriz(context);
 
 		// 地上移動中は鉛直速度をリセット
 		context.velocity.y = 0.0f;
 
-		ApplyFriction(context.velocity, mFriction->GetValue(), deltaTime);
+		// ジャンプしていない場合は摩擦を適用(バニーホップ中か?)
+		if (!context.input.jumpPressed) {
+			ApplyFriction(context.velocity, mFriction->GetValue(), deltaTime);
+		}
+
+		// 移動状態によって最大速度を変える
+		// しゃがみ入力優先
+		float currentMaxSpeed = mWalkSpeed->GetValue();
+		if (context.input.sprintPressed) {
+			currentMaxSpeed = mSprintSpeed->GetValue();
+		}
+		if (context.input.crouchPressed) {
+			currentMaxSpeed = mDuckSpeed->GetValue();
+		}
 
 		Accelerate(
 			context.velocity,
 			wishDir,
-			320.0f,
+			currentMaxSpeed,
 			mAccelerate->GetValue(),
 			deltaTime
 		);
 
+		if (context.input.jumpPressed) {
+			ExecuteJumpAndLeaveGround(context, deltaTime, "AirMove");
+			return;
+		}
+
 		KinematicMoveQuery query = {
 			.position    = context.transform->Position(),
 			.velocity    = context.velocity,
-			.halfExtents = context.halfExtents.IsZero() ?
-				               Math::HtoM(Vec3(32.0f, 73.0f, 32.0f)) * 0.5f :
-				               context.halfExtents,
-			.deltaTime = deltaTime
+			.halfExtents = context.halfExtents,
+			.deltaTime   = deltaTime
 		};
 
 		KinematicMoveResult result;
 
 		// 移動と衝突の解決
 		context.resolver->StepMove(
-			query.position, query.velocity, kStepHeightHu, deltaTime
+			query.position, query.velocity, mStepHeight->GetValue(), deltaTime
 		);
 
 		result.position = query.position;
@@ -74,16 +104,24 @@ namespace Unnamed {
 		context.transform->SetPosition(result.position);
 		context.velocity = result.velocity;
 
-		if (!IsGrounded(context.resolver, result.position)) {
+		// 地面に接しているかを判定し、状態遷移を行う
+		Physics::Hit groundHit{};
+		if (!IsGrounded(context.resolver, result.position, &groundHit)) {
+			context.supportEntityGuid = 0;
+			context.supportLinearVelocity = Vec3::zero;
+			context.supportStepDelta = Vec3::zero;
 			context.requestedState = "AirMove";
-		} else {
-			context.velocity.y = 0.0f;
+			return;
 		}
+
+		context.isGrounded = true;
+		context.supportEntityGuid = groundHit.hitEntityGuid;
+		context.velocity.y = 0.0f;
 	}
 
 	void GroundMove::Exit() {}
 
-	std::string GroundMove::GetStateName() {
+	std::string_view GroundMove::GetStateName() {
 		return "GroundMove";
 	}
 
@@ -138,7 +176,9 @@ namespace Unnamed {
 	}
 
 	bool GroundMove::IsGrounded(
-		const BaseKinematicCollisionResolver* resolver, const Vec3& position
+		const BaseKinematicCollisionResolver* resolver,
+		const Vec3&                           position,
+		Physics::Hit*                         outHit
 	) {
 		if (!resolver) {
 			return false;
@@ -153,9 +193,47 @@ namespace Unnamed {
 			return false;
 		}
 
-		return
-			hit.startSolid ||
-			hit.allsolid ||
-			hit.normal.y > kGroundNormalMinY; // 地面の法線がある程度上向きであれば地面とみなす
+		if (outHit) {
+			*outHit = hit;
+		}
+		return hit.startSolid || hit.allsolid || hit.normal.y > kGroundNormalMinY;
+	}
+
+	void GroundMove::ExecuteJumpAndLeaveGround(
+		MovementContext& context,
+		const float      deltaTime,
+		const std::string_view airStateName
+	) const {
+		if (!context.transform || !context.resolver) {
+			return;
+		}
+
+		const float detachBiasM = Math::HtoM(kJumpDetachBiasHu) +
+		                          std::max(0.0f, context.supportStepDelta.y);
+		context.transform->SetPosition(
+			context.transform->Position() + Vec3::up * detachBiasM
+		);
+
+		context.velocity += context.supportLinearVelocity;
+		context.velocity.y += Math::HtoM(mJumpVelocity->GetValue());
+
+		if (mJumpSnapDisableTime) {
+			context.jumpSnapDisableRemaining = std::max(
+				context.jumpSnapDisableRemaining,
+				mJumpSnapDisableTime->GetValue()
+			);
+		}
+
+		Vec3 jumpPos = context.transform->Position();
+		Vec3 jumpVel = context.velocity;
+		context.resolver->SlideMove(jumpPos, jumpVel, deltaTime);
+		context.transform->SetPosition(jumpPos);
+		context.velocity = jumpVel;
+
+		context.isGrounded              = false;
+		context.supportEntityGuid       = 0;
+		context.supportLinearVelocity   = Vec3::zero;
+		context.supportStepDelta        = Vec3::zero;
+		context.requestedState          = std::string(airStateName);
 	}
 }

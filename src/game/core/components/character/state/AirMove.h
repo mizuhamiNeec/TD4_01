@@ -2,16 +2,17 @@
 #include "engine/unnamed/subsystem/console/concommand/ConVar.h"
 
 #include "interface/IMovementState.h"
+#include "game/core/collision/kinematic/base/BaseKinematicCollisionResolver.h"
 
 namespace Unnamed {
 	class AirMove : public IMovementState {
 	public:
-		void        Enter(ConsoleSystem* console) override;
-		void        Tick(MovementContext& context, float deltaTime) override;
-		void        Exit() override;
-		std::string GetStateName() override;
+		void Enter(ConsoleSystem* console) override;
+		void Tick(MovementContext& context, float deltaTime) override;
+		void Exit() override;
+		std::string_view GetStateName() override;
 
-	private:
+	protected:
 		/// @brief 空中加速を行う関数
 		/// @param currentVel 現在の速度ベクトル
 		/// @param wishDir 行きたい方向
@@ -28,6 +29,12 @@ namespace Unnamed {
 		/// @param deltaTime フレームの経過時間
 		void ApplyHalfGravity(
 			Vec3& target, float deltaTime
+		);
+		
+		bool IsGrounded(
+			const BaseKinematicCollisionResolver* resolver,
+			const Vec3&                           position,
+			Physics::Hit*                         outHit = nullptr
 		);
 
 		ConVar<float>* mGravity       = nullptr;

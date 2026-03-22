@@ -1,5 +1,7 @@
 ﻿#include "AirMove.h"
 
+#include <algorithm>
+
 #include "engine/unnamed/framework/components/TransformComponent.h"
 
 #include "game/core/collision/kinematic/base/BaseKinematicCollisionResolver.h"
@@ -8,23 +10,6 @@ namespace Unnamed {
 	namespace {
 		constexpr float kGroundProbeDistanceHu = 2.0f;
 		constexpr float kGroundNormalMinY      = 0.7f;
-
-		bool IsGrounded(
-			BaseKinematicCollisionResolver* resolver, const Vec3& position
-		) {
-			if (!resolver) {
-				return false;
-			}
-
-			Physics::Hit hit{};
-			if (!resolver->ProbeGround(
-				position, Math::HtoM(kGroundProbeDistanceHu), &hit
-			)) {
-				return false;
-			}
-
-			return hit.startSolid || hit.allsolid || hit.normal.y > kGroundNormalMinY;
-		}
 	}
 
 	void AirMove::Enter(ConsoleSystem* console) {
@@ -42,6 +27,15 @@ namespace Unnamed {
 	}
 
 	void AirMove::Tick(MovementContext& context, float deltaTime) {
+		context.isGrounded         = false;
+		context.supportEntityGuid  = 0;
+		context.supportLinearVelocity = Vec3::zero;
+		context.supportStepDelta   = Vec3::zero;
+		context.jumpSnapDisableRemaining = std::max(
+			0.0f,
+			context.jumpSnapDisableRemaining - deltaTime
+		);
+
 		// 入力の視点方向
 		const Vec3 right   = context.input.right.Normalized();
 		const Vec3 forward = context.input.forward.Normalized();
@@ -70,7 +64,7 @@ namespace Unnamed {
 			.halfExtents = context.halfExtents.IsZero() ?
 				               Math::HtoM(Vec3(32.0f, 73.0f, 32.0f)) * 0.5f :
 				               context.halfExtents,
-			.deltaTime   = deltaTime
+			.deltaTime = deltaTime
 		};
 
 		KinematicMoveResult result;
@@ -87,16 +81,20 @@ namespace Unnamed {
 		context.transform->SetPosition(result.position);
 		context.velocity = result.velocity;
 
-		if (context.velocity.y <= 0.0f &&
-		    IsGrounded(context.resolver, result.position)) {
-			context.velocity.y    = 0.0f;
+		Physics::Hit groundHit{};
+		if (context.jumpSnapDisableRemaining <= 0.0f &&
+		    context.velocity.y <= 0.0f &&
+		    IsGrounded(context.resolver, result.position, &groundHit)) {
+			context.velocity.y     = 0.0f;
+			context.isGrounded     = true;
+			context.supportEntityGuid = groundHit.hitEntityGuid;
 			context.requestedState = "GroundMove";
 		}
 	}
 
 	void AirMove::Exit() {}
 
-	std::string AirMove::GetStateName() {
+	std::string_view AirMove::GetStateName() {
 		return "AirMove";
 	}
 
@@ -121,5 +119,27 @@ namespace Unnamed {
 		Vec3& target, const float deltaTime
 	) {
 		target.y -= Math::HtoM(mGravity->GetValue()) * 0.5f * deltaTime;
+	}
+
+	bool AirMove::IsGrounded(
+		const BaseKinematicCollisionResolver* resolver,
+		const Vec3&                           position,
+		Physics::Hit*                         outHit
+	) {
+		if (!resolver) {
+			return false;
+		}
+
+		Physics::Hit hit{};
+		if (!resolver->ProbeGround(
+			position, Math::HtoM(kGroundProbeDistanceHu), &hit
+		)) {
+			return false;
+		}
+
+		if (outHit) {
+			*outHit = hit;
+		}
+		return hit.startSolid || hit.allsolid || hit.normal.y > kGroundNormalMinY;
 	}
 }

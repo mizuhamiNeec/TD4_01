@@ -37,7 +37,7 @@
 					}
 				},
 				{
-					"type": "parkour.StaticMeshCollider",
+					"type": "engine.StaticMeshCollider",
 					"guid": 2003,
 					"active": true,
 					"data": {

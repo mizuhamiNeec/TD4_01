@@ -30,7 +30,7 @@
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "",
+                        "materialInstancePath": "./content/core/materials/instances/hoge.matinst.json",
                         "meshPath": "./content/parkour/models/map/sp_city.obj"
                     },
                     "guid": 3002,
@@ -39,10 +39,11 @@
                 {
                     "active": true,
                     "data": {
+                        "dynamic": true,
                         "enabled": true
                     },
                     "guid": 3003,
-                    "type": "parkour.StaticMeshCollider"
+                    "type": "engine.StaticMeshCollider"
                 }
             ],
             "folderPath": "Gameplay/World",
@@ -59,15 +60,15 @@
                     "data": {
                         "parentEntityGuid": 0,
                         "position": [
-                            -6.184574127197266,
-                            -16.0,
+                            20.0,
+                            0.0,
                             0.0
                         ],
                         "rotation": [
                             0.0,
-                            0.5403355360031128,
                             0.0,
-                            -0.8431398868560791
+                            0.0,
+                            1.0
                         ],
                         "scale": [
                             1.000000238418579,
@@ -89,16 +90,40 @@
                 },
                 {
                     "active": true,
+                    "data": {},
+                    "guid": 11964708778926788202,
+                    "type": "engine.KinematicMover"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "dynamic": true,
+                        "enabled": true
+                    },
+                    "guid": 11530977000138538086,
+                    "type": "engine.StaticMeshCollider"
+                },
+                {
+                    "active": true,
                     "data": {
                         "enabled": true,
-                        "rotationRate": [
+                        "moveToPointB": true,
+                        "pointA": [
+                            20.0,
                             0.0,
-                            90.0,
                             0.0
-                        ]
+                        ],
+                        "pointB": [
+                            20.0,
+                            200.0,
+                            0.0
+                        ],
+                        "snapOnAttach": true,
+                        "speed": 20.0,
+                        "startFromA": true
                     },
-                    "guid": 3012,
-                    "type": "game.Rotator"
+                    "guid": 0,
+                    "type": "game.PatrolPoint"
                 }
             ],
             "folderPath": "Gameplay/World",
@@ -138,9 +163,9 @@
                     "active": true,
                     "data": {
                         "boxHalfExtentsHu": [
-                            16.00005340576172,
-                            36.000125885009766,
-                            16.00005340576172
+                            16.000106811523438,
+                            36.0002555847168,
+                            16.000106811523438
                         ],
                         "collisionEnabled": true,
                         "maxSubSteps": 6,
@@ -237,6 +262,7 @@
                     "active": true,
                     "data": {
                         "cameraActive": true,
+                        "exposureEv": 2.0,
                         "farZ": 10000.0,
                         "fovYDegrees": 90.0,
                         "nearZ": 0.009999999776482582

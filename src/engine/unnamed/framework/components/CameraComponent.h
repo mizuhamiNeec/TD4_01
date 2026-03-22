@@ -56,6 +56,7 @@ namespace Unnamed {
 		float mNearZ        = 0.01f;
 		float mFarZ         = 10000.0f;
 		float mAspectRatio  = 16.0f / 9.0f;
+		float mExposureEv   = 0.0f;
 		bool  mCameraActive = true;
 	};
 }

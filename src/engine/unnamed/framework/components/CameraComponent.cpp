@@ -33,6 +33,7 @@ namespace Unnamed {
 		mFovYDegrees  = ReadFloatOr(reader, "fovYDegrees", mFovYDegrees);
 		mNearZ        = ReadFloatOr(reader, "nearZ", mNearZ);
 		mFarZ         = ReadFloatOr(reader, "farZ", mFarZ);
+		mExposureEv   = ReadFloatOr(reader, "exposureEv", mExposureEv);
 		mCameraActive = ReadBoolOr(reader, "cameraActive", mCameraActive);
 	}
 
@@ -43,6 +44,8 @@ namespace Unnamed {
 		writer.Write(mNearZ);
 		writer.Key("farZ");
 		writer.Write(mFarZ);
+		writer.Key("exposureEv");
+		writer.Write(mExposureEv);
 		writer.Key("cameraActive");
 		writer.Write(mCameraActive);
 	}
@@ -53,6 +56,7 @@ namespace Unnamed {
 		ImGui::DragFloat("FovYDegrees", &mFovYDegrees, 0.1f, 1.0f, 179.0f);
 		ImGui::DragFloat("NearZ", &mNearZ, 0.001f, 0.001f, mFarZ - 0.01f);
 		ImGui::DragFloat("FarZ", &mFarZ, 1.0f, mNearZ + 0.01f, 100000.0f);
+		ImGui::DragFloat("ExposureEV", &mExposureEv, 0.05f, -16.0f, 16.0f);
 		ImGui::Text("AspectRatio: %.3f", mAspectRatio);
 	}
 #endif
@@ -96,6 +100,7 @@ namespace Unnamed {
 		);
 		outCamera.viewProj  = outCamera.view * outCamera.proj;
 		outCamera.cameraPos = world.TransformPoint(Vec3::zero);
+		outCamera.exposureEv = mExposureEv;
 		outCamera.nearZ     = mNearZ;
 		outCamera.farZ      = mFarZ;
 		outCamera.depthMode = Render::PROJECTION_DEPTH_MODE::ReverseZ;

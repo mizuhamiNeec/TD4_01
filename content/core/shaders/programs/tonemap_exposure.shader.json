@@ -1,0 +1,13 @@
+{
+  "name": "ToneMapExposure",
+  "vs": {
+    "path": "../src/FullscreenTriangle.hlsli",
+    "entry": "VsMain",
+    "profile": "vs_6_6"
+  },
+  "ps": {
+    "path": "../src/TonemapExposure.hlsl",
+    "entry": "PsMain",
+    "profile": "ps_6_6"
+  }
+}

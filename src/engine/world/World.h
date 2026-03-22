@@ -1,12 +1,21 @@
 #pragma once
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 
 #include "core/guidgenerator/GuidGenerator.h"
+#include "core/math/Vec4.h"
+
 #include "engine/world/WorldCameraManager.h"
+#include "engine/world/WorldDebugDraw.h"
 
 namespace Unnamed {
+	namespace Physics {
+		class Engine;
+	}
+
 	class Scene;
 	class AssetManager;
 	class JsonReader;
@@ -28,22 +37,14 @@ namespace Unnamed {
 		virtual ~World();
 
 		/// @brief シーンを取得します。存在しない場合はnullptrを返します。
-		[[nodiscard]] Scene& GetScene() {
-			return *mScene;
-		}
+		[[nodiscard]] Scene& GetScene();
 
 		/// @brief シーンを取得します。存在しない場合はnullptrを返します。
-		[[nodiscard]] const Scene& GetScene() const {
-			return *mScene;
-		}
+		[[nodiscard]] const Scene& GetScene() const;
 
-		[[nodiscard]] Scene* GetScenePtr() noexcept {
-			return mScene.get();
-		}
+		[[nodiscard]] Scene* GetScenePtr() noexcept;
 
-		[[nodiscard]] const Scene* GetScenePtr() const noexcept {
-			return mScene.get();
-		}
+		[[nodiscard]] const Scene* GetScenePtr() const noexcept;
 
 		/// @brief 初期化します。
 		virtual void Initialize();
@@ -92,19 +93,78 @@ namespace Unnamed {
 		/// @param path ロードされたシーンのファイルパス
 		void SetLoadedScenePath(std::string path);
 
-		[[nodiscard]] WorldCameraManager& GetCameraManager() noexcept {
-			return mCameraManager;
-		}
+		/// @brief ワールドの現在カメラマネージャを取得します。
+		/// @return ワールドの現在カメラマネージャへの参照
+		[[nodiscard]] WorldCameraManager& GetCameraManager() noexcept;
 
-		[[nodiscard]] const WorldCameraManager& GetCameraManager() const noexcept {
-			return mCameraManager;
-		}
+		/// @brief ワールドの現在カメラマネージャを取得します（const版）。
+		/// @return ワールドの現在カメラマネージャへのconst参照
+		[[nodiscard]] const WorldCameraManager&
+		GetCameraManager() const noexcept;
 
 		/// @brief シーンを設定します。既にシーンが存在する場合はアンロードされます。
 		/// @param scene 設定するシーンのユニークポインタ
 		virtual void SetScene(std::unique_ptr<Scene> scene);
 
+		[[nodiscard]] Physics::Engine& GetPhysicsEngine();
+
+		[[nodiscard]] const Physics::Engine& GetPhysicsEngine() const;
+
+		/// @brief 指定したポストFXパスの有効/無効を上書きします。
+		/// @param passName ポストFXパス名（例: "Vignette"）
+		/// @param enabled trueなら有効、falseなら無効
+		void SetPostFxPassEnabledOverride(
+			std::string_view passName, bool enabled
+		);
+
+		/// @brief 指定したポストFXパスの有効/無効上書きを解除します。
+		/// @param passName ポストFXパス名
+		void ClearPostFxPassEnabledOverride(std::string_view passName);
+
+		/// @brief すべてのポストFXパス有効/無効上書きを解除します。
+		void ClearPostFxPassEnabledOverrides();
+
+		/// @brief 指定したポストFXパスのスカラー値を上書きします。
+		/// @param passName ポストFXパス名
+		/// @param paramName パラメータ名（例: "Intensity"）
+		/// @param value スカラー値
+		void SetPostFxScalarOverride(
+			std::string_view passName, std::string_view paramName, float value
+		);
+
+		/// @brief 指定したポストFXパスの色値を上書きします。
+		/// @param passName ポストFXパス名
+		/// @param paramName パラメータ名（例: "Tint"）
+		/// @param value 色値
+		void SetPostFxColorOverride(
+			std::string_view passName, std::string_view paramName,
+			const Vec4&      value
+		);
+
+		/// @brief 指定したポストFXパスのパラメータ上書きを解除します。
+		void ClearPostFxParamOverride(
+			std::string_view passName, std::string_view paramName
+		);
+
+		/// @brief 指定したポストFXパスの全上書きを解除します。
+		void ClearPostFxPassOverrides(std::string_view passName);
+
+		/// @brief すべてのポストFXパス上書きを解除します。
+		void ClearAllPostFxOverrides();
+
+		/// @brief ワールド共通のデバッグ描画コンテキストを取得します。
+		[[nodiscard]] WorldDebugDraw& GetDebugDraw() noexcept;
+
+		/// @brief ワールド共通のデバッグ描画コンテキストを取得します（const版）。
+		[[nodiscard]] const WorldDebugDraw& GetDebugDraw() const noexcept;
+
 	protected:
+		struct PostFxPassOverrides {
+			std::unordered_map<std::string, Vec4>  colorParams;
+			std::unordered_map<std::string, float> scalarParams;
+			std::optional<bool>                    enabled;
+		};
+
 		[[nodiscard]] virtual bool BuildUiInputCamera(
 			Render::RenderCameraInput& outCamera
 		) const;
@@ -115,10 +175,15 @@ namespace Unnamed {
 		/// @brief シーンがアンロードされる前に呼び出されます。派生クラスでオーバーライドして、シーンアンロード時の処理を実装できます。
 		virtual void OnSceneUnloaded();
 
-		std::unique_ptr<Scene> mScene;           // 現在のシーン
-		WorldCameraManager     mCameraManager;   // ワールドの現在カメラ管理
-		GuidGenerator          mGuidGenerator;   // GUIDジェネレーター
-		std::string            mLoadedScenePath; // ロードされたシーンのファイルパス
-		WorldTime              mTime;            // ワールドの時間情報
+		std::unordered_map<std::string, PostFxPassOverrides>
+		mPostFxPassOverrides;
+
+		std::unique_ptr<Scene>           mScene;           // 現在のシーン
+		std::unique_ptr<Physics::Engine> mPhysicsEngine;   // 物理エンジン
+		WorldCameraManager               mCameraManager;   // ワールドの現在カメラ管理
+		GuidGenerator                    mGuidGenerator;   // GUIDジェネレーター
+		std::string                      mLoadedScenePath; // ロードされたシーンのファイルパス
+		WorldTime                        mTime;            // ワールドの時間情報
+		WorldDebugDraw                   mDebugDraw;
 	};
 }

@@ -15,6 +15,14 @@ namespace Unnamed {
 	/// 取り付けられた Entity にどの用に振る舞わせるかを定義します。
 	class BaseComponent {
 	public:
+		enum class TickGroup : uint8_t {
+			Early = 0,
+			KinematicSource = 1,
+			ColliderSync    = 2,
+			Gameplay        = 3,
+			Late            = 4,
+		};
+
 		explicit BaseComponent();
 		virtual  ~BaseComponent();
 
@@ -51,6 +59,9 @@ namespace Unnamed {
 
 		/// @brief エディタでの表示やコンソールのログに使用されます。オーバーライド必須
 		[[nodiscard]] virtual std::string_view GetComponentName() const = 0;
+
+		/// @brief エディタのアイコン（フォントアイコン）を取得します。オーバーライド任意
+		[[nodiscard]] virtual uint32_t GetIcon() const;
 
 #ifdef _DEBUG
 		/// @brief エディタのインスペクターでこのコンポーネントのプロパティを描画します。
@@ -99,6 +110,10 @@ namespace Unnamed {
 		/// @brief コンポーネントの型識別子を取得します。
 		/// @return コンポーネントの型識別子
 		[[nodiscard]] TypeId GetTypeId() const;
+
+		/// @brief Tick実行グループを取得します。
+		/// @return Tickグループ
+		[[nodiscard]] virtual TickGroup GetTickGroup() const;
 
 	protected:
 		Entity*  mOwner = nullptr; // 所有しているエンティティ

@@ -2,6 +2,8 @@
 
 #include "../../entity/Entity.h"
 
+#include "engine/ImGui/Icons.h"
+
 namespace Unnamed {
 	BaseComponent::BaseComponent()  = default;
 	BaseComponent::~BaseComponent() = default;
@@ -16,6 +18,10 @@ namespace Unnamed {
 	void BaseComponent::OnPostRender() const {}
 	void BaseComponent::OnEditorTick(float) {}
 	void BaseComponent::OnEditorRender() const {}
+
+	uint32_t BaseComponent::GetIcon() const {
+		return kIconQuestionMark; // デフォルトはクエスションマークアイコン
+	}
 
 #ifdef _DEBUG
 	void BaseComponent::DrawInspectorImGui() {}
@@ -55,5 +61,9 @@ namespace Unnamed {
 
 	TypeId BaseComponent::GetTypeId() const {
 		return HashTypeName(GetStableName());
+	}
+
+	BaseComponent::TickGroup BaseComponent::GetTickGroup() const {
+		return TickGroup::Gameplay;
 	}
 }

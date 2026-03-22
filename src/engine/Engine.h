@@ -9,10 +9,6 @@ class IPostProcess;
 class SrvManager;
 class AudioManager;
 
-namespace Unnamed::Physics {
-	class Engine;
-}
-
 namespace Unnamed {
 	class EditorRuntime;
 	class ImGuiLayer;
@@ -42,8 +38,7 @@ namespace Unnamed {
 		int Run();
 
 		/// @brief エディターモードの画面表示モードを切り替えます。
-		void                           ToggleEditorScreenMode() const;
-		[[nodiscard]] Physics::Engine* GetPhysicsEngine() const;
+		void ToggleEditorScreenMode() const;
 
 	private:
 		/// @brief 初期化処理
@@ -88,7 +83,6 @@ namespace Unnamed {
 
 		std::unique_ptr<Rhi::IRhiDevice>      mRhiDevice;
 		std::unique_ptr<Render::RenderModule> mRenderModule;
-		std::unique_ptr<Physics::Engine>      mPhysicsEngine;
 
 		std::unique_ptr<World> mWorld;
 

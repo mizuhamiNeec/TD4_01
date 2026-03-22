@@ -18,7 +18,6 @@
 #include <core/assets/loader/ShaderSourceLoader.h>
 #include <core/assets/loader/TextureLoaderDirectXTex.h>
 #include <core/assets/loader/UiDocumentAssetLoader.h>
-#include "engine/scene/Scene.h"
 
 #include <engine/editor/EditorRuntime.h>
 #include <engine/physics/core/Physics.h>
@@ -42,7 +41,6 @@
 #include <engine/unnamed/subsystem/terminal/TerminalSystem.h>
 #include <engine/unnamed/subsystem/time/SystemClock.h>
 #include <engine/unnamed/subsystem/time/TimeSystem.h>
-#include <engine/world/EditorWorld.h>
 #include <engine/world/GameWorld.h>
 #include <engine/world/World.h>
 
@@ -117,10 +115,6 @@ namespace Unnamed {
 			mUEditorRuntime->TogglePresentMode();
 		}
 #endif
-	}
-
-	Physics::Engine* Engine::GetPhysicsEngine() const {
-		return mPhysicsEngine.get();
 	}
 
 	/// @brief 初期化
@@ -217,9 +211,6 @@ namespace Unnamed {
 		mProfiler = std::make_unique<Profiler>();
 		ServiceLocator::Register<Profiler>(mProfiler.get());
 
-		mPhysicsEngine = std::make_unique<Physics::Engine>();
-		mPhysicsEngine->Init();
-
 		// InputSystemの初期化
 		mInputSystem = std::make_unique<InputSystem>();
 		if (!mInputSystem->Init()) {
@@ -269,7 +260,7 @@ namespace Unnamed {
 		mRenderModule = std::make_unique<Render::RenderModule>(
 			*mAssetManager, *mRhiDevice
 		);
-		mRenderModule->Init();
+		mRenderModule->Init(mConsoleSystem.get());
 		mRenderFrameContext = std::make_unique<Render::RenderFrameContext>();
 
 #ifdef _DEBUG
@@ -298,15 +289,18 @@ namespace Unnamed {
 		RegisterConsoleCommandsAndVariables();
 
 		if (mConfig.mode == RUN_MODE::EDITOR) {
-			auto& editorWorld = SwitchWorld<EditorWorld>();
-			editorWorld.LoadSceneFromFile("./content/parkour/scenes/game.json");
 #ifdef _DEBUG
 			mUEditorRuntime = std::make_unique<EditorRuntime>(
-				editorWorld,
+				mConsoleSystem.get(),
 				*mWindowManager,
 				*mRenderModule,
 				*mUImGuiLayer
 			);
+			if (World* runtimeWorld = mUEditorRuntime->GetRuntimeWorld()) {
+				runtimeWorld->LoadSceneFromFile(
+					"./content/parkour/scenes/game.json"
+				);
+			}
 
 			mConsoleSystem->ExecuteCommand(
 				"exec ./content/core/cfg/editor.cfg"
@@ -405,36 +399,32 @@ namespace Unnamed {
 			Profiler::ScopeTimer scope(mProfiler.get(), "Terminal.Update");
 			mTerminalSystem->Update(unscaledDeltaTime);
 		}
-		{
-			Profiler::ScopeTimer scope(mProfiler.get(), "Physics.Update");
-			if (mPhysicsEngine) {
-				mPhysicsEngine->Update(unscaledDeltaTime);
-			}
+
+		World* runtimeWorld = mWorld.get();
+#ifdef _DEBUG
+		if (mUEditorRuntime && mIsEditorMode) {
+			runtimeWorld = mUEditorRuntime->GetRuntimeWorld();
 		}
+#endif
 
 		// ワールドの更新
 		{
 			Profiler::ScopeTimer scope(mProfiler.get(), "World.Tick");
-			if (mWorld) {
-				mWorld->Tick(unscaledDeltaTime, scaledDeltaTime);
+			if (runtimeWorld) {
+				runtimeWorld->Tick(unscaledDeltaTime, scaledDeltaTime);
 			}
 		}
-
-		Box box = {
-			.center   = Vec3::zero,
-			.halfSize = Vec3::one * 2.0f * 0.5f,
-		};
 
 		Render::RenderFrameInputs inputs = {};
 		// フレームインデックスとゲーム時間を設定
 		inputs.frameIndex = mFrameIndex++;
 		inputs.time       =
 			static_cast<float>(mTimeSystem->GetGameTime()->TotalTime());
-		if (mWorld && mRenderFrameContext) {
+		if (runtimeWorld && mRenderFrameContext) {
 			Profiler::ScopeTimer scope(
 				mProfiler.get(), "World.FillRenderFrameInputs"
 			);
-			mWorld->FillRenderFrameInputs(
+			runtimeWorld->FillRenderFrameInputs(
 				inputs, *mRenderFrameContext, *mAssetManager
 			);
 		}
@@ -442,22 +432,7 @@ namespace Unnamed {
 #ifdef _DEBUG
 		if (mUImGuiLayer) {
 			if (mUEditorRuntime && mIsEditorMode) {
-				if (mRenderModule) {
-					auto updateViewOutput = [this](
-						const std::string_view viewKey
-					) {
-						mUEditorRuntime->SetViewOutput(
-							viewKey,
-							mRenderModule->GetViewOutputView(viewKey),
-							mRenderModule->GetViewOutputSize(viewKey)
-						);
-					};
-					updateViewOutput(EditorRuntime::kViewScenePerspective);
-					updateViewOutput(EditorRuntime::kViewSceneTop);
-					updateViewOutput(EditorRuntime::kViewSceneFront);
-					updateViewOutput(EditorRuntime::kViewSceneRight);
-					updateViewOutput(EditorRuntime::kViewGuiPreview);
-				}
+				mUEditorRuntime->SyncViewOutputs();
 				if (
 					mUEditorRuntime->GetPresentMode() ==
 					EDITOR_PRESENT_MODE::VIEWPORT_PANEL
@@ -500,8 +475,6 @@ namespace Unnamed {
 			mWorld->Shutdown();
 			mWorld.reset();
 		}
-
-		mPhysicsEngine.reset();
 
 #ifdef _DEBUG
 		if (mRenderModule) {
@@ -609,6 +582,11 @@ namespace Unnamed {
 	}
 
 	World* Engine::GetWorld() const {
+#ifdef _DEBUG
+		if (mUEditorRuntime && mIsEditorMode) {
+			return mUEditorRuntime->GetRuntimeWorld();
+		}
+#endif
 		return mWorld.get();
 	}
 }

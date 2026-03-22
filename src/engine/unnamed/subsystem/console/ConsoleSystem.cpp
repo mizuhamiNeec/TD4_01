@@ -429,9 +429,25 @@ namespace Unnamed {
 	ConCommandBase* ConsoleSystem::GetConVar(
 		const std::string_view name
 	) {
-		return mConVars.contains(name.data()) ?
-			       mConVars[std::string(name)] :
-			       nullptr;
+		const auto it = mConVars.find(std::string(name));
+		return it != mConVars.end() ? it->second : nullptr;
+	}
+
+	ConCommandBase* ConsoleSystem::GetConCommand(
+		const std::string_view name
+	) {
+		const auto it = mConCommands.find(std::string(name));
+		return it != mConCommands.end() ? it->second : nullptr;
+	}
+
+	std::string ConsoleSystem::GetConVarValueString(
+		const std::string_view name
+	) const {
+		const auto it = mConVars.find(std::string(name));
+		if (it == mConVars.end()) {
+			return {};
+		}
+		return GetVarValueString(it->second);
 	}
 
 	CVAR_TYPE ConsoleSystem::GetConVarType(ConCommandBase* var) {
@@ -460,6 +476,213 @@ namespace Unnamed {
 		return type;
 	}
 
+	std::vector<std::string> ConsoleSystem::FindSimilarConVars(
+		std::string_view input, size_t maxResults
+	) {
+		// 大文字小文字を区別しないstring_viewを小文字に変換するヘルパー
+		auto toLower = [](std::string_view str) -> std::string {
+			std::string result(str.begin(), str.end());
+			std::transform(
+				result.begin(), result.end(), result.begin(),
+				[](unsigned char c) {
+					return std::tolower(c);
+				}
+			);
+			return result;
+		};
+
+		// Levenshtein距離を計算する関数
+		auto calculateLevenshteinDistance = [](
+			std::string_view s1, std::string_view s2
+		) -> int {
+			const int len1 = static_cast<int>(s1.length());
+			const int len2 = static_cast<int>(s2.length());
+
+			// dp テーブルの初期化
+			std::vector<std::vector<int>> dp(
+				len1 + 1, std::vector<int>(len2 + 1)
+			);
+			for (int i = 0; i <= len1; ++i) {
+				dp[i][0] = i;
+			}
+			for (int j = 0; j <= len2; ++j) {
+				dp[0][j] = j;
+			}
+
+			// dpテーブルを埋める
+			for (int i = 1; i <= len1; ++i) {
+				for (int j = 1; j <= len2; ++j) {
+					const int cost =
+					(s1[static_cast<size_t>(i - 1)] ==
+					 s2[static_cast<size_t>(j - 1)]) ?
+						0 :
+						1;
+					dp[i][j] = std::min(
+						{
+							dp[i - 1][j] + 1,       // 削除
+							dp[i][j - 1] + 1,       // 挿入
+							dp[i - 1][j - 1] + cost // 置換
+						}
+					);
+				}
+			}
+
+			return dp[len1][len2];
+		};
+
+		// マッチ候補とスコアを格納するペア
+		std::vector<std::pair<std::string, int>> candidates;
+
+		// 入力テキストを小文字に変換
+		const std::string lowerInputStr = toLower(input);
+
+		// 全てのconvarを検索
+		for (const auto& [name, _] : mConVars) {
+			// convar名を小文字に変換
+			const std::string lowerName = toLower(name);
+
+			// スコアを計算（距離が小さいほど良い）
+			const int distance = calculateLevenshteinDistance(
+				lowerInputStr, lowerName
+			);
+
+			// 距離が入力文字列の長さの2倍以下、または前方一致している場合を採用
+			const bool prefixMatch =
+				lowerName.find(lowerInputStr) == 0;
+			const int threshold = static_cast<int>(lowerInputStr.length()) * 2;
+
+			if (prefixMatch || distance <= threshold) {
+				// スコアを計算（前方一致は優遇）
+				int score = 1000 - distance;
+				if (prefixMatch) {
+					score += 500; // 前方一致ボーナス
+				}
+				candidates.emplace_back(name, score);
+			}
+		}
+
+		// スコア順でソート（高スコアが先）
+		std::sort(
+			candidates.begin(), candidates.end(),
+			[](const auto& a, const auto& b) {
+				return a.second > b.second;
+			}
+		);
+
+		// 結果を返す
+		std::vector<std::string> results;
+		for (const auto& [name, _] :
+		     candidates | std::views::take(maxResults)) {
+			results.push_back(name);
+		}
+
+		return results;
+	}
+
+	std::vector<std::string> ConsoleSystem::FindSimilarConCommands(
+		std::string_view input, size_t maxResults
+	) {
+		// 大文字小文字を区別しないstring_viewを小文字に変換するヘルパー
+		auto toLower = [](std::string_view str) -> std::string {
+			std::string result(str.begin(), str.end());
+			std::ranges::transform(
+				result
+				, result.begin(),
+				[](unsigned char c) {
+					return std::tolower(c);
+				}
+			);
+			return result;
+		};
+
+		// Levenshtein距離を計算する関数
+		auto calculateLevenshteinDistance = [](
+			std::string_view s1, std::string_view s2
+		) -> int {
+			const int len1 = static_cast<int>(s1.length());
+			const int len2 = static_cast<int>(s2.length());
+
+			// dp テーブルの初期化
+			std::vector<std::vector<int>> dp(
+				len1 + 1, std::vector<int>(len2 + 1)
+			);
+			for (int i = 0; i <= len1; ++i) {
+				dp[i][0] = i;
+			}
+			for (int j = 0; j <= len2; ++j) {
+				dp[0][j] = j;
+			}
+
+			// dpテーブルを埋める
+			for (int i = 1; i <= len1; ++i) {
+				for (int j = 1; j <= len2; ++j) {
+					const int cost =
+					(s1[static_cast<size_t>(i - 1)] ==
+					 s2[static_cast<size_t>(j - 1)]) ?
+						0 :
+						1;
+					dp[i][j] = std::min(
+						{
+							dp[i - 1][j] + 1,       // 削除
+							dp[i][j - 1] + 1,       // 挿入
+							dp[i - 1][j - 1] + cost // 置換
+						}
+					);
+				}
+			}
+
+			return dp[len1][len2];
+		};
+
+		// マッチ候補とスコアを格納するペア
+		std::vector<std::pair<std::string, int>> candidates;
+
+		// 入力テキストを小文字に変換
+		const std::string lowerInputStr = toLower(input);
+
+		// 全てのコマンドを検索
+		for (const auto& name : mConCommands | std::views::keys) {
+			// コマンド名を小文字に変換
+			const std::string lowerName = toLower(name);
+
+			// スコアを計算（距離が小さいほど良い）
+			const int distance = calculateLevenshteinDistance(
+				lowerInputStr, lowerName
+			);
+
+			// 距離が入力文字列の長さの2倍以下、または前方一致している場合を採用
+			const bool prefixMatch =
+				lowerName.starts_with(lowerInputStr);
+			const int threshold = static_cast<int>(lowerInputStr.length()) * 2;
+
+			if (prefixMatch || distance <= threshold) {
+				// スコアを計算（前方一致は優遇）
+				int score = 1000 - distance;
+				if (prefixMatch) {
+					score += 500; // 前方一致ボーナス
+				}
+				candidates.emplace_back(name, score);
+			}
+		}
+
+		// スコア順でソート（高スコアが先）
+		std::ranges::sort(
+			candidates,
+			[](const auto& a, const auto& b) {
+				return a.second > b.second;
+			}
+		);
+
+		// 結果を返す
+		std::vector<std::string> results;
+		for (const auto& [name, _] :
+		     candidates | std::views::take(maxResults)) {
+			results.push_back(name);
+		}
+
+		return results;
+	}
+
 	void ConsoleSystem::RegisterCommonCommands() {
 		// ヘルプコマンド
 		static ConCommand help(
@@ -480,20 +703,41 @@ namespace Unnamed {
 					);
 				} else {
 					// 引数が無い場合は全てのコマンド・変数の一覧を表示する
-					for (const auto& command :
-					     mConCommands | std::views::values) {
+					for (
+						const auto& command : mConCommands | std::views::values
+					) {
 						SpecialMsg(
 							LogLevel::Info,
-							"",
+							kChannelNone,
 							"{} : {}",
 							command->GetName(),
 							command->GetDescription()
 						);
 					}
 					for (const auto& var : mConVars | std::views::values) {
+						LogLevel level = LogLevel::Info;
+
+						switch (GetConVarType(var)) {
+							case CVAR_TYPE::BOOL: level = LogLevel::Bool;
+								break;
+							case CVAR_TYPE::INT: level = LogLevel::Int;
+								break;
+							case CVAR_TYPE::FLOAT: level = LogLevel::Float;
+								break;
+							case CVAR_TYPE::DOUBLE: level = LogLevel::Double;
+								break;
+							case CVAR_TYPE::STRING: level = LogLevel::String;
+								break;
+							case CVAR_TYPE::VEC3: level = LogLevel::Vec3;
+								break;
+							case CVAR_TYPE::NONE:
+							default: level = LogLevel::Info;
+								break;
+						}
+
 						SpecialMsg(
-							LogLevel::Info,
-							"",
+							level,
+							kChannelNone,
 							"{} : {}",
 							var->GetName(),
 							var->GetDescription()

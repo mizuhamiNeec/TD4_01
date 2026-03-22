@@ -119,6 +119,16 @@ namespace Unnamed {
 		/// @return 変数へのポインタ（存在しない場合はnullptr）
 		ConCommandBase* GetConVar(std::string_view name);
 
+		/// @brief 名前からコンソールコマンドを取得します
+		/// @param name コマンド名
+		/// @return コマンドへのポインタ（存在しない場合はnullptr）
+		ConCommandBase* GetConCommand(std::string_view name);
+
+		/// @brief ConVarの現在値を文字列で取得します
+		/// @param name 変数名
+		/// @return 値文字列（存在しない/ConVarでない場合は空文字）
+		[[nodiscard]] std::string GetConVarValueString(std::string_view name) const;
+
 		/// @brief ConCommandBaseからCVAR_TYPEを取得します
 		/// @param var 変数へのポインタ
 		/// @return 変数の型
@@ -143,6 +153,24 @@ namespace Unnamed {
 
 			return static_cast<TVar*>(base);
 		}
+
+		/// @brief 入力テキストに基づいて曖昧検索でコンソール変数を検索します
+		/// @param input 検索キーワード
+		/// @param maxResults 最大結果数
+		/// @return マッチしたconvar名のベクター（スコア順でソート、高スコアから低スコア）
+		[[nodiscard]]
+		std::vector<std::string> FindSimilarConVars(
+			std::string_view input, size_t maxResults = 10
+		);
+
+		/// @brief 入力テキストに基づいて曖昧検索でコンソールコマンドを検索します
+		/// @param input 検索キーワード
+		/// @param maxResults 最大結果数
+		/// @return マッチしたconcommand名のベクター（スコア順でソート、高スコアから低スコア）
+		[[nodiscard]]
+		std::vector<std::string> FindSimilarConCommands(
+			std::string_view input, size_t maxResults = 10
+		);
 
 	private:
 		/// @brief 一般コマンドを登録します

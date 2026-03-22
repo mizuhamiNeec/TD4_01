@@ -85,6 +85,18 @@ namespace Unnamed {
 					);
 				}
 
+				const JsonReader colors = p["colors"];
+				if (colors.Valid() && colors.IsObject()) {
+					colors.ForEachObject(
+						[&pass](const std::string& k, const JsonReader& v) {
+							if (!v.IsArray() || v.Size() != 4) {
+								return;
+							}
+							pass.colorParams[k] = v.GetVec4();
+						}
+					);
+				}
+
 				data.passes.emplace_back(std::move(pass));
 			}
 		}

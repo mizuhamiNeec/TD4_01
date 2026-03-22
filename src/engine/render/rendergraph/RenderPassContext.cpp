@@ -366,12 +366,16 @@ namespace Unnamed::Render {
 		mContext.SetGraphicsPipeline(rootSignature, pipelineState);
 	}
 
+	void RenderPassContext::SetPrimitiveTopology(
+		const D3D_PRIMITIVE_TOPOLOGY topology
+	) const {
+		mCommandList->IASetPrimitiveTopology(topology);
+	}
+
 	void RenderPassContext::SetVertexBuffer(
 		const D3D12_VERTEX_BUFFER_VIEW& vbv
 	) const {
-		mCommandList->IASetPrimitiveTopology(
-			D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST
-		);
+		mCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		mCommandList->IASetVertexBuffers(0, 1, &vbv);
 	}
 

@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <d3d12.h>
+#include <optional>
 #include <span>
 
 #include "IDescriptorResolver.h"
@@ -76,6 +77,7 @@ namespace Unnamed::Render {
 			ID3D12PipelineState* pipelineState
 		) const;
 
+		void SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY topology) const;
 		void SetVertexBuffer(const D3D12_VERTEX_BUFFER_VIEW& vbv) const;
 
 		void DrawTriangleTest() const;

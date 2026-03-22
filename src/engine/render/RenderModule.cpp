@@ -11,11 +11,11 @@ namespace Unnamed::Render {
 	) : mAssetManager(assetManager),
 	    mRhiDevice(rhiDevice) {}
 
-	void RenderModule::Init() {
+	void RenderModule::Init(ConsoleSystem* console) {
 		mRenderDevice = std::make_unique<RenderDevice>(
 			mRhiDevice, mAssetManager
 		);
-		mRenderer = std::make_unique<Renderer>();
+		mRenderer = std::make_unique<Renderer>(console);
 		mRenderer->Init(*mRenderDevice);
 	}
 

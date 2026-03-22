@@ -24,7 +24,7 @@ namespace Unnamed::Render {
 	public:
 		RenderModule(AssetManager& assetManager, Rhi::IRhiDevice& rhiDevice);
 
-		void Init();
+		void Init(ConsoleSystem* console);
 		void Tick(RenderFrameInputs& inputs) const;
 
 		void OnResize(uint32_t width, uint32_t height) const;

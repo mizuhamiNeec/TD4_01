@@ -14,6 +14,7 @@
 #include "engine/unnamed/framework/components/mesh/StaticMeshRendererComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
+#include "engine/world/World.h"
 
 namespace Unnamed {
 	Vec3 TriggerVolumeComponentBase::GetWorldCenter() const noexcept {
@@ -104,116 +105,7 @@ namespace Unnamed {
 		SerializeVolume(writer);
 	}
 
-	void StaticMeshColliderComponent::OnAttached() {
-		BaseComponent::OnAttached();
-		RefreshPhysicsRegistration();
-	}
-
-	void StaticMeshColliderComponent::OnDetached() {
-		UnregisterPhysicsMesh();
-		BaseComponent::OnDetached();
-	}
-
-	void StaticMeshColliderComponent::OnTick(float deltaTime) {
-		BaseComponent::OnTick(deltaTime);
-		RefreshPhysicsRegistration();
-	}
-
-	void StaticMeshColliderComponent::Deserialize(const JsonReader& reader) {
-		const JsonReader enabled = reader["enabled"];
-		if (enabled.Valid()) {
-			mEnabled = enabled.GetBool();
-		}
-	}
-
-	void StaticMeshColliderComponent::Serialize(JsonWriter& writer) const {
-		writer.Key("enabled");
-		writer.Write(mEnabled);
-	}
-
-	void StaticMeshColliderComponent::RefreshPhysicsRegistration() {
-		if (!mEnabled) {
-			UnregisterPhysicsMesh();
-			return;
-		}
-
-		Entity* owner     = GetOwner();
-		auto*   transform = owner ?
-			                    owner->GetComponent<TransformComponent>() :
-			                    nullptr;
-		auto* meshRenderer =
-			owner ?
-				owner->GetComponent<StaticMeshRendererComponent>() :
-				nullptr;
-		auto*            assetManager = ServiceLocator::Get<AssetManager>();
-		const auto*      engine       = EngineServices::Get();
-		Physics::Engine* physics      =
-			engine ? engine->GetPhysicsEngine() : nullptr;
-
-		if (!transform || !meshRenderer || !assetManager || !physics) {
-			UnregisterPhysicsMesh();
-			return;
-		}
-
-		transform->OnTick(0.0f);
-		const AssetID meshAssetId = meshRenderer->ResolveMeshAsset(
-			*assetManager
-		);
-		const MeshAssetData* mesh = assetManager->Get<MeshAssetData>(
-			meshAssetId
-		);
-		if (!mesh || mesh->vertices.empty() || mesh->indices.empty()) {
-			UnregisterPhysicsMesh();
-			return;
-		}
-
-		const Mat4 world = transform->WorldMat();
-		if (
-			mRegistered &&
-			mRegisteredMeshAssetId == meshAssetId &&
-			mRegisteredWorld == world
-		) {
-			return;
-		}
-
-		UnregisterPhysicsMesh();
-		if (!owner) {
-			return;
-		}
-
-		if (physics->RegisterStaticMesh(
-			owner->GetGuid(),
-			std::span<const MeshVertex>(
-				mesh->vertices.data(), mesh->vertices.size()
-			),
-			std::span<const uint32_t>(
-				mesh->indices.data(), mesh->indices.size()
-			),
-			world
-		)) {
-			mRegistered            = true;
-			mRegisteredMeshAssetId = meshAssetId;
-			mRegisteredWorld       = world;
-		}
-	}
-
-	void StaticMeshColliderComponent::UnregisterPhysicsMesh() {
-		if (!mRegistered) {
-			return;
-		}
-
-		if (const Entity* owner = GetOwner()) {
-			if (const Engine* engine = EngineServices::Get()) {
-				if (Physics::Engine* physics = engine->GetPhysicsEngine()) {
-					physics->UnregisterStaticMesh(owner->GetGuid());
-				}
-			}
-		}
-
-		mRegistered            = false;
-		mRegisteredMeshAssetId = kInvalidAssetID;
-		mRegisteredWorld       = Mat4::zero;
-	}
+	
 
 	REGISTER_COMPONENT(JumpPadComponent);
 
@@ -222,6 +114,4 @@ namespace Unnamed {
 	REGISTER_COMPONENT(CheckpointComponent);
 
 	REGISTER_COMPONENT(GoalComponent);
-
-	REGISTER_COMPONENT(StaticMeshColliderComponent);
 }

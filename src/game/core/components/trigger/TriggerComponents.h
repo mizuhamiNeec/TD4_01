@@ -118,35 +118,4 @@ namespace Unnamed {
 		void Deserialize(const JsonReader& reader) override;
 		void Serialize(JsonWriter& writer) const override;
 	};
-
-	class StaticMeshColliderComponent final : public BaseComponent {
-	public:
-		void OnAttached() override;
-		void OnDetached() override;
-		void OnTick(float deltaTime) override;
-
-		[[nodiscard]] std::string_view GetStableName() const override {
-			return "parkour.StaticMeshCollider";
-		}
-
-		[[nodiscard]] std::string_view GetComponentName() const override {
-			return "StaticMeshCollider";
-		}
-
-		void Deserialize(const JsonReader& reader) override;
-		void Serialize(JsonWriter& writer) const override;
-
-		[[nodiscard]] bool IsCollisionEnabled() const noexcept {
-			return mEnabled;
-		}
-
-	private:
-		void RefreshPhysicsRegistration();
-		void UnregisterPhysicsMesh();
-
-		bool    mEnabled               = true;
-		bool    mRegistered            = false;
-		AssetID mRegisteredMeshAssetId = kInvalidAssetID;
-		Mat4    mRegisteredWorld       = Mat4::zero;
-	};
 }

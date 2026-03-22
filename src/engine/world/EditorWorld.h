@@ -1,19 +1,22 @@
 #pragma once
 #include "World.h"
 
+#include "engine/physics/core/Physics.h"
 #include "engine/render/frame/RenderFrameInputs.h"
+#include "engine/unnamed/framework/entity/Entity.h"
+#include "engine/world/GameWorld.h"
 
 namespace Unnamed {
 	namespace Render {
 		struct SceneViewRenderMode;
 	}
 
-	class GameWorld;
 	class EditorCameraComponent;
-	class Entity;
 
 	class EditorWorld final : public World {
 	public:
+		~EditorWorld() override;
+
 		void Initialize() override;
 		void Tick(float unscaledDeltaTime, float deltaTime) override;
 
@@ -47,8 +50,8 @@ namespace Unnamed {
 		[[nodiscard]] const EditorCameraComponent* GetEditorCamera() const;
 		bool                                       BuildEditorCameraMatrices(
 			const Render::SceneViewRenderMode& request,
-			Mat4&                             outView,
-			Mat4&                             outProj
+			Mat4&                              outView,
+			Mat4&                              outProj
 		);
 		void SetEditorCameraLookEnabled(bool enabled);
 

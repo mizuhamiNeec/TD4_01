@@ -17,6 +17,8 @@
 namespace Unnamed {
 	static constexpr std::string_view kChannel = "EditorWorld";
 
+	EditorWorld::~EditorWorld() = default;
+
 	namespace {
 		float ResolveEditorCameraAspect(
 			const Render::SceneViewRenderMode& request
@@ -90,6 +92,7 @@ namespace Unnamed {
 		const auto worldInitEnd = std::chrono::steady_clock::now();
 
 		auto          playScene = std::make_unique<Scene>();
+		playScene->SetWorld(playWorld.get());
 		GuidGenerator cloneGuid;
 		const auto    cloneStart = std::chrono::steady_clock::now();
 		if (!SceneSerializer::CloneScene(*mScene, *playScene, cloneGuid)) {

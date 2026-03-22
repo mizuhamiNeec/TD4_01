@@ -538,11 +538,13 @@ namespace Unnamed::Render {
 			PostFxRuntimePass runtimePass = {};
 			runtimePass.name              = passAsset.name;
 			runtimePass.enabled           = passAsset.enabled;
+			runtimePass.scalarDefaults    = passAsset.scalarParams;
+			runtimePass.colorDefaults     = passAsset.colorParams;
 			runtimePass.pass.rootSig      = dx.GetFsRootSignature();
 			runtimePass.pass.psoKey.rootSignature = runtimePass.pass.rootSig;
 			runtimePass.pass.psoKey.vertexLayout  = std::nullopt;
 			runtimePass.pass.psoKey.numRenderTargets = 1;
-			runtimePass.pass.psoKey.rtvFormat     = DXGI_FORMAT_R8G8B8A8_UNORM;
+			runtimePass.pass.psoKey.rtvFormat     = kSceneHdrColorFormat;
 			runtimePass.pass.psoKey.depthEnable   = false;
 			runtimePass.pass.psoKey.dsvFormat     = DXGI_FORMAT_UNKNOWN;
 			runtimePass.pass.psoKey.depthFunc     = D3D12_COMPARISON_FUNC_ALWAYS;

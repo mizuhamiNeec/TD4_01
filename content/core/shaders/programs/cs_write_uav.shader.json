@@ -1,8 +1,8 @@
 {
-  "name": "CsWriteUav",
-  "cs": {
-    "path": "../src/CsWriteUav.hlsl",
-    "entry": "CsMain",
-    "profile": "cs_6_6"
-  }
+	"name": "CsWriteUav",
+	"cs": {
+		"path": "../src/CsWriteUav.hlsl",
+		"entry": "CsMain",
+		"profile": "cs_6_6"
+	}
 }

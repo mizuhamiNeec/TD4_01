@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <string>
 
 #include "base/BaseCharacterComponent.h"
@@ -11,6 +12,7 @@ namespace Unnamed {
 	class TransformComponent;
 	class InputSystem;
 	class ConsoleSystem;
+	class KinematicMoverComponent;
 	template <typename T>
 	class ConVar;
 
@@ -31,6 +33,9 @@ namespace Unnamed {
 		void PrePhysicsTick(float deltaTime) override;
 		void OnTick(float deltaTime) override;
 		void PostPhysicsTick(float deltaTime) override;
+		[[nodiscard]] TickGroup GetTickGroup() const override {
+			return TickGroup::Gameplay;
+		}
 
 		[[nodiscard]] std::string_view GetStableName() const override;
 		[[nodiscard]] std::string_view GetComponentName() const override;
@@ -50,32 +55,25 @@ namespace Unnamed {
 		virtual void UpdateCollisionHull(TransformComponent* transform) const;
 
 		[[nodiscard]] TransformComponent* GetTransform() const override;
+		[[nodiscard]] Vec3 ResolveSupportLinearVelocity(
+			uint64_t supportEntityGuid
+		) const;
+		[[nodiscard]] Vec3 ResolveSupportStepDelta(
+			uint64_t supportEntityGuid, float stepSeconds
+		) const;
 
 		Physics::Engine* mPhysics = nullptr;
 		InputSystem*     mInput   = nullptr;
 		ConsoleSystem*   mConsole = nullptr;
 
-		// Walk
-		float mCurrentMaxWalkSpeed = 0.0f; // 現在の最大歩行速度
+		struct SupportCache {
+			bool     grounded            = false;
+			uint64_t supportEntityGuid   = 0;
+			Vec3     supportLinearVelocity = Vec3::zero;
+			Vec3     supportStepDelta      = Vec3::zero;
+		};
 
-		// ---- ConVars -------------------------------------------------------
-		// Cheats
-		ConVar<bool>* mNoclip = nullptr;
-
-		// SV
-		ConVar<float>* mAccelerate    = nullptr;
-		ConVar<float>* mAirAccelerate = nullptr;
-		ConVar<float>* mMaxSpeed      = nullptr;
-		ConVar<float>* mStopSpeed     = nullptr;
-		ConVar<float>* mAirSpeedCap   = nullptr;
-		ConVar<float>* mFriction      = nullptr;
-
-		// Ground
-		ConVar<float>* mDuckSpeed   = nullptr;
-		ConVar<float>* mWalkSpeed   = nullptr;
-		ConVar<float>* mSprintSpeed = nullptr;
-
-		// Jump
-		ConVar<float>* mJumpVelocity = nullptr;
+		SupportCache mSupportCache;
+		float        mJumpSnapDisableRemaining = 0.0f;
 	};
 }

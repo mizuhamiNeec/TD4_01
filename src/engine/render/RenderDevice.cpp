@@ -45,12 +45,13 @@ namespace Unnamed::Render {
 		const auto& meta = mAssetManager.Meta(id);
 		switch (meta.type) {
 			case ASSET_TYPE::SHADER_SOURCE: {
-				mShaderLibrary.InvalidateByShaderSource(id);
-				mPipelineCache.InvalidateAll();
+				mShaderLibrary.MarkDirtyByShaderSource(id);
+				mPipelineCache.MarkDirtyByShaderSource(id);
 				break;
 			}
 			case ASSET_TYPE::SHADER_PROGRAM: {
-				mPipelineCache.InvalidateAll();
+				mShaderLibrary.MarkAllDirty();
+				mPipelineCache.MarkAllDirty();
 				break;
 			}
 			case ASSET_TYPE::MESH: {

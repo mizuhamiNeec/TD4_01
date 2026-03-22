@@ -47,8 +47,6 @@ namespace Unnamed {
 
 		void RearrangeGridElements(uint32_t newWidth, uint32_t newHeight);
 
-		void ShowExecResultPopup();
-
 		ConsoleSystem* mConsoleSystem = nullptr;
 
 		static constexpr auto kBgColorDefault = Vec4(0.29f, 0.29f, 0.29f, 1.0f);

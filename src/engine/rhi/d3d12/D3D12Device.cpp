@@ -702,7 +702,8 @@ namespace Unnamed::Rhi {
 			);
 		}
 
-		// フルスクリーン ルートシグネチャ SRV(t0) + static sampler(s0)
+		// フルスクリーン ルートシグネチャ
+		// CBV(b0)=PostFxParams, SRV(t0)=SourceTexture, static sampler(s0)
 		{
 			D3D12_DESCRIPTOR_RANGE range = {};
 			range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
@@ -712,24 +713,31 @@ namespace Unnamed::Rhi {
 			range.OffsetInDescriptorsFromTableStart =
 				D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-			D3D12_ROOT_PARAMETER param = {};
-			param.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-			param.DescriptorTable.NumDescriptorRanges = 1;
-			param.DescriptorTable.pDescriptorRanges = &range;
-			param.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+			std::array<D3D12_ROOT_PARAMETER, 2> param = {};
+			param[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+			param[0].Descriptor.ShaderRegister = 0; // b0
+			param[0].Descriptor.RegisterSpace = 0;
+			param[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+			param[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+			param[1].DescriptorTable.NumDescriptorRanges = 1;
+			param[1].DescriptorTable.pDescriptorRanges = &range;
+			param[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 			D3D12_STATIC_SAMPLER_DESC sampler = {};
 			sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
 			sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 			sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
 			sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+			sampler.MipLODBias = 0.0f;
+			sampler.MinLOD = 0.0f;
+			sampler.MaxLOD = D3D12_FLOAT32_MAX;
 			sampler.ShaderRegister = 0; // s0
 			sampler.RegisterSpace = 0;
 			sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 			D3D12_ROOT_SIGNATURE_DESC desc = {};
-			desc.NumParameters             = 1;
-			desc.pParameters               = &param;
+			desc.NumParameters             = static_cast<UINT>(param.size());
+			desc.pParameters               = param.data();
 			desc.NumStaticSamplers         = 1;
 			desc.pStaticSamplers           = &sampler;
 
@@ -795,13 +803,18 @@ namespace Unnamed::Rhi {
 			param[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 			D3D12_STATIC_SAMPLER_DESC sampler = {};
-			sampler.Filter                    = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-			sampler.AddressU                  = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-			sampler.AddressV                  = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-			sampler.AddressW                  = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-			sampler.ShaderRegister            = 0; // s0
-			sampler.RegisterSpace             = 0;
-			sampler.ShaderVisibility          = D3D12_SHADER_VISIBILITY_PIXEL;
+			sampler.Filter = D3D12_FILTER_ANISOTROPIC;
+			sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+			sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+			sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+			sampler.MinLOD = 0.0f;
+			sampler.MaxLOD = D3D12_FLOAT32_MAX;
+			sampler.MaxAnisotropy = 16;
+			sampler.MipLODBias = -1.0f; // ちょっと
+			sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+			sampler.ShaderRegister = 0; // s0
+			sampler.RegisterSpace = 0;
+			sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
 			D3D12_ROOT_SIGNATURE_DESC desc = {};
 			desc.NumParameters             = static_cast<UINT>(param.size());

@@ -7,12 +7,14 @@
 
 #include "engine/profiler/Profiler.h"
 #include "engine/rhi/d3d12/D3D12Device.h"
+#include "engine/rhi/d3d12/D3D12Util.h"
 #include "engine/rhi/interface/IRhiDevice.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 
 namespace Unnamed::Render {
 	namespace {
+		static constexpr std::string_view kRenderChannel = "Renderer";
 		static constexpr uint32_t kShrinkSettleFrames = 12;
 		static constexpr uint32_t kMinShrinkPixels    = 64;
 		static constexpr float    kMinShrinkRatio     = 0.9f;
@@ -34,7 +36,7 @@ namespace Unnamed::Render {
 		}
 
 		bool IsSignificantShrink(
-			const uint32_t appliedWidth, const uint32_t appliedHeight,
+			const uint32_t appliedWidth, const uint32_t   appliedHeight,
 			const uint32_t requestedWidth, const uint32_t requestedHeight
 		) {
 			const uint32_t shrinkWidth = appliedWidth > requestedWidth ?
@@ -95,16 +97,19 @@ namespace Unnamed::Render {
 			LoadPostFxChain(renderDevice);
 		}
 
-		mFrameViews = inputs.views;
+		mFrameViews      = inputs.views;
+		mFrameDebugLines = inputs.debugDraw.lines;
 		if (mFrameViews.empty()) {
 			RenderViewInput fallback = {};
-			fallback.viewKey         = "default.main";
-			fallback.type            = RENDER_VIEW_TYPE::SCENE;
+			fallback.viewKey = "default.main";
+			fallback.type = RENDER_VIEW_TYPE::SCENE;
 			fallback.output.sizeMode = RENDER_VIEW_SIZE_MODE::MATCH_BACK_BUFFER;
 			fallback.output.presentToSwapChain = true;
 			fallback.sceneViewMode.mode = SCENE_RENDER_MODE::FIT_VIEWPORT;
 			mFrameViews.emplace_back(std::move(fallback));
 		}
+
+		UploadDebugLinesForFrame();
 
 		mViewExecutionOrder.clear();
 		mPresentViewKey.clear();
@@ -163,7 +168,7 @@ namespace Unnamed::Render {
 				mPresentViewKey = view.viewKey;
 			}
 
-			auto& state = mViewStates[view.viewKey];
+			auto&          state           = mViewStates[view.viewKey];
 			const bool     typeChanged     = state.type != view.type;
 			const uint32_t requestedWidth  = view.output.width;
 			const uint32_t requestedHeight = view.output.height;
@@ -212,12 +217,13 @@ namespace Unnamed::Render {
 									kShrinkSettleFrames
 								);
 							} else {
-								state.pendingShrinkWidth        = requestedWidth;
-								state.pendingShrinkHeight       = requestedHeight;
+								state.pendingShrinkWidth = requestedWidth;
+								state.pendingShrinkHeight = requestedHeight;
 								state.pendingShrinkStableFrames = 1;
 							}
 
-							if (state.pendingShrinkStableFrames >= kShrinkSettleFrames) {
+							if (state.pendingShrinkStableFrames >=
+							    kShrinkSettleFrames) {
 								sizeChanged = ApplyViewSizeImmediately(
 									state, requestedWidth, requestedHeight
 								);
@@ -233,10 +239,13 @@ namespace Unnamed::Render {
 
 			if (sizeChanged || typeChanged) {
 				ReleaseViewRuntimeTextures(renderDevice, state);
-				state.colorTextureId  = 0;
-				state.depthTextureId  = 0;
+				state.colorTextureId   = 0;
+				state.depthTextureId   = 0;
 				state.postFxTextureAId = 0;
 				state.postFxTextureBId = 0;
+				for (uint32_t& bloomMipTextureId : state.bloomMipTextureIds) {
+					bloomMipTextureId = 0;
+				}
 				state.outputTextureId = 0;
 			}
 		}
@@ -313,6 +322,10 @@ namespace Unnamed::Render {
 			renderDevice.GetPipelineCache().GetOrCreateGraphicsPso(
 				mBillboardPass.geom.psoKey
 			);
+		mLinePass.pso =
+			renderDevice.GetPipelineCache().GetOrCreateGraphicsPso(
+				mLinePass.psoKey
+			);
 
 		rhi.BeginFrame();
 		mAdvancedFoundation.BeginFrame();
@@ -345,6 +358,111 @@ namespace Unnamed::Render {
 	) {
 		mUiMainRenderCallback     = std::move(mainRenderCallback);
 		mUiPlatformRenderCallback = std::move(platformRenderCallback);
+	}
+
+	void Renderer::InitializeDebugLineResources(Rhi::D3D12Device& dx) {
+		mLinePass.vertexCapacity   = kMaxDebugLines * 2;
+		mLinePass.frameVertexCount = 0;
+		mLinePass.mappedVertices   = nullptr;
+		mLinePass.dynamicVb.Reset();
+		mLinePass.frameVbv = {};
+
+		const uint64_t bufferSize = static_cast<uint64_t>(
+			sizeof(DebugLineVertex)
+		) * static_cast<uint64_t>(mLinePass.vertexCapacity);
+
+		D3D12_HEAP_PROPERTIES heapProps = {};
+		heapProps.Type                  = D3D12_HEAP_TYPE_UPLOAD;
+
+		D3D12_RESOURCE_DESC desc = {};
+		desc.Dimension           = D3D12_RESOURCE_DIMENSION_BUFFER;
+		desc.Width               = bufferSize;
+		desc.Height              = 1;
+		desc.DepthOrArraySize    = 1;
+		desc.MipLevels           = 1;
+		desc.SampleDesc.Count    = 1;
+		desc.Layout              = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+		Rhi::Throw(
+			dx.GetDevice()->CreateCommittedResource(
+				&heapProps,
+				D3D12_HEAP_FLAG_NONE,
+				&desc,
+				D3D12_RESOURCE_STATE_GENERIC_READ,
+				nullptr,
+				IID_PPV_ARGS(mLinePass.dynamicVb.ReleaseAndGetAddressOf())
+			)
+		);
+
+		void* mapped = nullptr;
+		constexpr D3D12_RANGE readRange = {0, 0};
+		Rhi::Throw(mLinePass.dynamicVb->Map(0, &readRange, &mapped));
+		mLinePass.mappedVertices = static_cast<DebugLineVertex*>(mapped);
+
+		mLinePass.frameVbv.BufferLocation = mLinePass.dynamicVb->
+			GetGPUVirtualAddress();
+		mLinePass.frameVbv.SizeInBytes = static_cast<UINT>(
+			sizeof(DebugLineVertex) * mLinePass.vertexCapacity
+		);
+		mLinePass.frameVbv.StrideInBytes = sizeof(DebugLineVertex);
+		mLinePass.dynamicVb->SetName(L"DebugLineDynamicVB");
+	}
+
+	void Renderer::UploadDebugLinesForFrame() {
+		mLinePass.frameVertexCount = 0;
+		if (mLinePass.dynamicVb.Get() == nullptr || mLinePass.mappedVertices == nullptr) {
+			return;
+		}
+		if (mFrameDebugLines.empty()) {
+			return;
+		}
+
+		const size_t requestedLines = mFrameDebugLines.size();
+		if (requestedLines > kMaxDebugLines) {
+			Warning(
+				kRenderChannel,
+				"Debug line count exceeded limit. requested={}, limit={}, clipped={}",
+				requestedLines,
+				kMaxDebugLines,
+				requestedLines - kMaxDebugLines
+			);
+		}
+
+		const uint32_t lineCount = static_cast<uint32_t>(std::min<size_t>(
+			requestedLines,
+			static_cast<size_t>(kMaxDebugLines)
+		));
+		const uint32_t vertexCount = std::min<uint32_t>(
+			lineCount * 2u,
+			mLinePass.vertexCapacity
+		);
+
+		for (uint32_t i = 0; i < vertexCount / 2u; ++i) {
+			const DebugLineInput& srcLine = mFrameDebugLines[i];
+			DebugLineVertex&      v0 = mLinePass.mappedVertices[i * 2u + 0u];
+			DebugLineVertex&      v1 = mLinePass.mappedVertices[i * 2u + 1u];
+
+			v0.px = srcLine.start.x;
+			v0.py = srcLine.start.y;
+			v0.pz = srcLine.start.z;
+			v0.r  = srcLine.color.x;
+			v0.g  = srcLine.color.y;
+			v0.b  = srcLine.color.z;
+			v0.a  = srcLine.color.w;
+
+			v1.px = srcLine.end.x;
+			v1.py = srcLine.end.y;
+			v1.pz = srcLine.end.z;
+			v1.r  = srcLine.color.x;
+			v1.g  = srcLine.color.y;
+			v1.b  = srcLine.color.z;
+			v1.a  = srcLine.color.w;
+		}
+
+		mLinePass.frameVertexCount   = vertexCount;
+		mLinePass.frameVbv.SizeInBytes = static_cast<UINT>(
+			sizeof(DebugLineVertex) * vertexCount
+		);
 	}
 
 	SceneOutputView Renderer::GetViewOutputView(
@@ -380,8 +498,8 @@ namespace Unnamed::Render {
 	}
 
 	std::pair<uint32_t, uint32_t> Renderer::ResolveSceneRenderExtent(
-		const uint32_t            backBufferWidth,
-		const uint32_t            backBufferHeight,
+		const uint32_t             backBufferWidth,
+		const uint32_t             backBufferHeight,
 		const SceneViewRenderMode& request
 	) {
 		uint32_t width  = backBufferWidth;
@@ -459,7 +577,9 @@ namespace Unnamed::Render {
 			EnsureSpriteFallbackTexture(renderDevice);
 			return mSpriteFallbackTextureId;
 		}
-		return EnsureSpriteTextureLoaded(renderDevice, textureRef.textureAssetId);
+		return EnsureSpriteTextureLoaded(
+			renderDevice, textureRef.textureAssetId
+		);
 	}
 
 	void Renderer::ReleaseViewRuntimeTextures(
@@ -477,6 +597,12 @@ namespace Unnamed::Render {
 		}
 		if (state.postFxTextureBId != 0) {
 			registry.ReleaseTexture(state.postFxTextureBId);
+		}
+		for (uint32_t& bloomMipTextureId : state.bloomMipTextureIds) {
+			if (bloomMipTextureId != 0) {
+				registry.ReleaseTexture(bloomMipTextureId);
+			}
+			bloomMipTextureId = 0;
 		}
 		if (state.outputTextureId != 0) {
 			registry.ReleaseTexture(state.outputTextureId);

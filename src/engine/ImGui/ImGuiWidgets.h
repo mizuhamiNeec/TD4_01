@@ -104,6 +104,16 @@ namespace ImGuiWidgets {
 		const ImVec2& sizeArg, float rounding
 	);
 
+	/// @brief ImGui1.92.6から取ってきたBeginMenuウィジェット。角丸四角形で表示します。
+	/// @param label メニューのラベル
+	/// @param icon アイコン文字列（フォントアイコン）
+	/// @param enabled メニューが有効かどうか
+	/// @param rounding 角丸の半径
+	/// @return メニューが開かれた場合にtrueを返します
+	bool BeginMenuEx(
+		const char* label, const char* icon, bool enabled, float rounding
+	);
+
 	/// @brief 角丸四角形のメニューアイテムを表示します。
 	/// @param label メニューアイテムのラベル
 	/// @param icon アイコン文字列（フォントアイコン）

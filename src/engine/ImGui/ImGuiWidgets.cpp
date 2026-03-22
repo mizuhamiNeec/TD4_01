@@ -326,23 +326,23 @@ namespace ImGuiWidgets {
 		const bool        hasLabel = label && label[0] != '\0';
 		const bool        horizontalLayout =
 			labelDir == ImGuiDir_Left || labelDir == ImGuiDir_Right;
-		const bool  iconOnly = !hasLabel || labelDir == ImGuiDir_None;
-		const bool  autoWidth = size.x <= 0.0f;
+		const bool  iconOnly   = !hasLabel || labelDir == ImGuiDir_None;
+		const bool  autoWidth  = size.x <= 0.0f;
 		const bool  autoHeight = size.y <= 0.0f;
-		const float gap      = horizontalLayout ?
-			                       style.ItemSpacing.x :
-			                       style
-			                       .ItemSpacing.y;
-		const ImVec2 pad          = style.FramePadding;
-		const float  baseFontSize = ImGui::GetFontSize();
+		const float gap        = horizontalLayout ?
+			                         style.ItemSpacing.x :
+			                         style
+			                         .ItemSpacing.y;
+		const ImVec2 pad              = style.FramePadding;
+		const float  baseFontSize     = ImGui::GetFontSize();
 		const float  baseFontSizeSafe = std::max(1.0f, baseFontSize);
-		const ImVec2 iconBaseSize = ImGui::CalcTextSize(iconUtf8.c_str());
-		const ImVec2 labelSize    = hasLabel ?
-			                            ImGui::CalcTextSize(label) :
-			                            ImVec2(0.0f, 0.0f);
-		const float  autoIconFontSize =
+		const ImVec2 iconBaseSize     = ImGui::CalcTextSize(iconUtf8.c_str());
+		const ImVec2 labelSize        = hasLabel ?
+			                                ImGui::CalcTextSize(label) :
+			                                ImVec2(0.0f, 0.0f);
+		const float autoIconFontSize =
 			std::max(1.0f, baseFontSize * iconScale);
-		const float autoFontScale = autoIconFontSize / baseFontSizeSafe;
+		const float autoFontScale  = autoIconFontSize / baseFontSizeSafe;
 		ImVec2      layoutIconSize = ImVec2(
 			iconBaseSize.x * autoFontScale, iconBaseSize.y * autoFontScale
 		);
@@ -414,11 +414,11 @@ namespace ImGuiWidgets {
 			itemMin, itemMax, bgColor, true, style.FrameRounding
 		);
 
-		const float  iconFontSize = autoHeight ?
-				                         autoIconFontSize :
-				                         std::max(1.0f, innerSize.y * iconScale);
-		const float  fontScale    = iconFontSize / baseFontSizeSafe;
-		const ImVec2 iconSize     = ImVec2(
+		const float iconFontSize = autoHeight ?
+			                           autoIconFontSize :
+			                           std::max(1.0f, innerSize.y * iconScale);
+		const float  fontScale = iconFontSize / baseFontSizeSafe;
+		const ImVec2 iconSize  = ImVec2(
 			iconBaseSize.x * fontScale, iconBaseSize.y * fontScale
 		);
 
@@ -532,6 +532,7 @@ namespace ImGuiWidgets {
 		ImGui::PopStyleVar(2);
 		return ret;
 	}
+
 
 	void HandleHoveredComboMenuMouseWheelScroll(
 		uint32_t& index, const uint32_t itemSize
@@ -794,6 +795,252 @@ namespace ImGuiWidgets {
 		return upperPopup->Window &&
 		       upperPopup->Window->Flags & ImGuiWindowFlags_ChildMenu &&
 		       ImGui::IsWindowChildOf(upperPopup->Window, window, true, false);
+	}
+
+	static ImVec2 operator-(const ImVec2& lhs, const ImVec2& rhs) {
+		return ImVec2(lhs.x - rhs.x, lhs.y - rhs.y);
+	}
+
+	bool BeginMenuEx(
+		const char* label, const char* icon, bool enabled, float rounding
+	) {
+		ImGuiWindow* window = ImGui::GetCurrentWindow();
+		if (window->SkipItems) return false;
+
+		ImGuiContext& g = *GImGui;
+		const ImGuiStyle& style = g.Style;
+		const ImGuiID id = window->GetID(label);
+		bool menu_is_open = ImGui::IsPopupOpen(id, ImGuiPopupFlags_None);
+
+		ImGuiWindowFlags window_flags =
+			ImGuiWindowFlags_ChildMenu | ImGuiWindowFlags_AlwaysAutoResize |
+			ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar |
+			ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoNavFocus;
+		if (window->Flags &
+		    ImGuiWindowFlags_ChildMenu)
+			window_flags |= ImGuiWindowFlags_ChildWindow;
+
+		if (g.MenusIdSubmittedThisFrame.contains(id)) {
+			if (menu_is_open)
+				menu_is_open =
+					ImGui::BeginPopupMenuEx(id, label, window_flags);
+
+			else g.NextWindowData.ClearFlags();
+			return menu_is_open;
+		}
+
+		g.MenusIdSubmittedThisFrame.push_back(id);
+
+		ImVec2 label_size = ImGui::CalcTextSize(label, NULL, true);
+
+		const bool menuset_is_open = IsRootOfOpenMenuSet();
+		if (menuset_is_open)
+			ImGui::PushItemFlag(
+				ImGuiItemFlags_NoWindowHoverableCheck, true
+			);
+
+		ImVec2 popup_pos;
+		ImVec2 pos = window->DC.CursorPos;
+		ImGui::PushID(label);
+		if (!enabled) ImGui::BeginDisabled();
+		const ImGuiMenuColumns* offsets = &window->DC.MenuColumns;
+		bool                    pressed;
+
+		const ImGuiSelectableFlags selectable_flags =
+			ImGuiSelectableFlags_NoHoldingActiveID |
+			ImGuiSelectableFlags_NoSetKeyOwner |
+			ImGuiSelectableFlags_SelectOnClick |
+			ImGuiSelectableFlags_NoAutoClosePopups;
+		if (window->DC.LayoutType == ImGuiLayoutType_Horizontal) {
+			window->DC.CursorPos.x += IM_TRUNC(style.ItemSpacing.x * 0.5f);
+			ImGui::PushStyleVarX(
+				ImGuiStyleVar_ItemSpacing, style.ItemSpacing.x * 2.0f
+			);
+			float  w = label_size.x;
+			ImVec2 text_pos(
+				window->DC.CursorPos.x + offsets->OffsetLabel,
+				pos.y + window->DC.CurrLineTextBaseOffset
+			);
+			pressed = SelectableWithRounding(
+				"", menu_is_open, selectable_flags, ImVec2(w, label_size.y),
+				rounding
+			);
+			ImGui::LogSetNextTextDecoration("[", "]");
+			ImGui::RenderText(text_pos, label);
+			ImGui::PopStyleVar();
+			window->DC.CursorPos.x +=
+				IM_TRUNC(style.ItemSpacing.x * (-1.0f + 0.5f));
+			popup_pos = ImVec2(
+				pos.x - 1.0f - IM_TRUNC(style.ItemSpacing.x * 0.5f),
+				text_pos.y - style.FramePadding.y + window->MenuBarHeight
+			);
+		} else {
+			float icon_w = (icon && icon[0]) ?
+				               ImGui::CalcTextSize(icon, NULL).x :
+				               0.0f;
+			float checkmark_w = IM_TRUNC(g.FontSize * 1.20f);
+			float min_w       = window->DC.MenuColumns.DeclColumns(
+				icon_w, label_size.x, 0.0f, checkmark_w
+			);
+			float extra_w = ImMax(
+				0.0f, ImGui::GetContentRegionAvail().x - min_w
+			);
+			ImVec2 text_pos(
+				window->DC.CursorPos.x,
+				pos.y + window->DC.CurrLineTextBaseOffset
+			);
+			pressed = SelectableWithRounding(
+				"", menu_is_open,
+				selectable_flags | ImGuiSelectableFlags_SpanAvailWidth,
+				ImVec2(min_w, label_size.y),
+				rounding
+			);
+			ImGui::LogSetNextTextDecoration("", ">");
+			ImGui::RenderText(
+				ImVec2(text_pos.x + offsets->OffsetLabel, text_pos.y), label
+			);
+			if (icon_w > 0.0f)
+				ImGui::RenderText(
+					ImVec2(text_pos.x + offsets->OffsetIcon, text_pos.y), icon
+				);
+			ImGui::RenderArrow(
+				window->DrawList,
+				ImVec2(
+					text_pos.x + offsets->OffsetMark + extra_w + g.FontSize *
+					0.30f, text_pos.y
+				), ImGui::GetColorU32(ImGuiCol_Text), ImGuiDir_Right
+			);
+			popup_pos = ImVec2(pos.x, text_pos.y - style.WindowPadding.y);
+		}
+		if (!enabled) ImGui::EndDisabled();
+
+		const bool hovered = (g.HoveredId == id) && enabled && !g.
+		                     NavHighlightItemUnderNav;
+		if (menuset_is_open) ImGui::PopItemFlag();
+
+		bool want_open          = false;
+		bool want_open_nav_init = false;
+		bool want_close         = false;
+		if (window->DC.LayoutType == ImGuiLayoutType_Vertical) {
+			bool            moving_toward_child_menu = false;
+			ImGuiPopupData* child_popup              =
+				(g.BeginPopupStack.Size < g.OpenPopupStack.Size) ?
+					&g.OpenPopupStack[g.BeginPopupStack.Size] :
+					NULL; // Popup candidate (testing below)
+			ImGuiWindow* child_menu_window =
+			(child_popup && child_popup->Window && child_popup->Window->
+			 ParentWindow == window) ?
+				child_popup->Window :
+				NULL;
+			if (g.HoveredWindow == window && child_menu_window != NULL) {
+				const float ref_unit  = g.FontSize; // FIXME-DPI
+				const float child_dir =
+					(window->Pos.x < child_menu_window->Pos.x) ? 1.0f : -1.0f;
+				const ImRect next_window_rect = child_menu_window->Rect();
+				ImVec2       ta = (g.IO.MousePos - g.IO.MouseDelta);
+				ImVec2       tb = (child_dir > 0.0f) ?
+					                  next_window_rect.GetTL() :
+					                  next_window_rect.GetTR();
+				ImVec2 tc = (child_dir > 0.0f) ?
+					            next_window_rect.GetBL() :
+					            next_window_rect.GetBR();
+				const float pad_farmost_h = ImClamp(
+					ImFabs(ta.x - tb.x) * 0.30f, ref_unit * 0.5f,
+					ref_unit * 2.5f
+				);
+				ta.x += child_dir * -0.5f;
+				tb.x += child_dir * ref_unit;
+				tc.x += child_dir * ref_unit;
+				tb.y = ta.y + ImMax(
+					       (tb.y - pad_farmost_h) - ta.y, -ref_unit * 8.0f
+				       );
+				tc.y = ta.y + ImMin(
+					       (tc.y + pad_farmost_h) - ta.y, +ref_unit * 8.0f
+				       );
+				moving_toward_child_menu = ImTriangleContainsPoint(
+					ta, tb, tc, g.IO.MousePos
+				);
+			}
+
+			if (menu_is_open && !hovered && g.HoveredWindow == window && !
+			    moving_toward_child_menu && !g.NavHighlightItemUnderNav && g.
+			    ActiveId == 0)
+				want_close = true;
+
+			if (!menu_is_open && pressed) want_open = true;
+			else if (!menu_is_open && hovered && !
+			         moving_toward_child_menu)
+				want_open = true;
+			else if (!menu_is_open && hovered && g.HoveredIdTimer >= 0.30f && g.
+			         MouseStationaryTimer >= 0.30f)
+				want_open = true;
+			if (g.NavId == id && g.NavMoveDir == ImGuiDir_Right) {
+				want_open = want_open_nav_init = true;
+				ImGui::NavMoveRequestCancel();
+				ImGui::SetNavCursorVisibleAfterMove();
+			}
+		} else {
+			if (menu_is_open && pressed && menuset_is_open) {
+				want_close = true;
+				want_open  = menu_is_open = false;
+			} else if (pressed || (
+				           hovered && menuset_is_open && !menu_is_open)) {
+				want_open = true;
+			} else if (g.NavId == id && g.NavMoveDir == ImGuiDir_Down) {
+				want_open = true;
+				ImGui::NavMoveRequestCancel();
+			}
+		}
+
+		if (!enabled) want_close = true;
+		if (want_close &&
+		    ImGui::IsPopupOpen(id, ImGuiPopupFlags_None))
+			ImGui::ClosePopupToLevel(
+				g.BeginPopupStack.Size, true
+			);
+
+		IMGUI_TEST_ENGINE_ITEM_INFO(
+			id, label,
+			g.LastItemData.StatusFlags | ImGuiItemStatusFlags_Openable | (
+				menu_is_open ? ImGuiItemStatusFlags_Opened : 0)
+		);
+		ImGui::PopID();
+
+		if (want_open && !menu_is_open && g.OpenPopupStack.Size > g.
+		    BeginPopupStack.Size) {
+			ImGui::OpenPopup(label);
+		} else if (want_open) {
+			menu_is_open = true;
+			ImGui::OpenPopup(label, ImGuiPopupFlags_NoReopen);
+		}
+
+		if (menu_is_open) {
+			ImGuiLastItemData last_item_in_parent = g.LastItemData;
+			ImGui::SetNextWindowPos(popup_pos, ImGuiCond_Always);
+			ImGui::PushStyleVar(
+				ImGuiStyleVar_ChildRounding, style.PopupRounding
+			);
+			menu_is_open = ImGui::BeginPopupMenuEx(id, label, window_flags);
+			ImGui::PopStyleVar();
+			if (menu_is_open) {
+				if (want_open && want_open_nav_init && !g.NavInitRequest) {
+					ImGui::FocusWindow(
+						g.CurrentWindow, ImGuiFocusRequestFlags_UnlessBelowModal
+					);
+					ImGui::NavInitWindow(g.CurrentWindow, false);
+				}
+
+				g.LastItemData = last_item_in_parent;
+				if (g.HoveredWindow ==
+				    window)
+					g.LastItemData.StatusFlags |=
+						ImGuiItemStatusFlags_HoveredWindow;
+			}
+		} else {
+			g.NextWindowData.ClearFlags();
+		}
+
+		return menu_is_open;
 	}
 
 	/// @brief ImVec2同士の加算演算子

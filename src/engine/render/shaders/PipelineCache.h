@@ -4,6 +4,7 @@
 #include <d3d12.h>
 #include <optional>
 #include <unordered_map>
+#include <unordered_set>
 
 #include <wrl/client.h>
 
@@ -21,6 +22,8 @@ namespace Unnamed::Render {
 
 		uint8_t     numRenderTargets = 1;
 		DXGI_FORMAT rtvFormat        = DXGI_FORMAT_R8G8B8A8_UNORM;
+		D3D12_PRIMITIVE_TOPOLOGY_TYPE primitiveTopologyType =
+			D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 
 		bool                  depthEnable = false;
 		DXGI_FORMAT           dsvFormat   = DXGI_FORMAT_UNKNOWN;
@@ -56,6 +59,7 @@ namespace Unnamed::Render {
 			       rootSignature == rhs.rootSignature &&
 			       numRenderTargets == rhs.numRenderTargets &&
 			       rtvFormat == rhs.rtvFormat &&
+			       primitiveTopologyType == rhs.primitiveTopologyType &&
 			       depthEnable == rhs.depthEnable &&
 			       dsvFormat == rhs.dsvFormat &&
 			       depthFunc == rhs.depthFunc &&
@@ -127,6 +131,7 @@ namespace Unnamed::Render {
 			HashCombine(seed, std::hash<void*>{}(k.rootSignature));
 			HashCombine(seed, std::hash<uint8_t>{}(k.numRenderTargets));
 			HashCombine(seed, std::hash<int>{}(k.rtvFormat));
+			HashCombine(seed, std::hash<int>{}(k.primitiveTopologyType));
 
 			HashCombine(seed, std::hash<bool>{}(k.depthEnable));
 			HashCombine(seed, std::hash<int>{}(k.dsvFormat));
@@ -178,6 +183,9 @@ namespace Unnamed::Render {
 				return false;
 			}
 			if (a.rtvFormat != b.rtvFormat) {
+				return false;
+			}
+			if (a.primitiveTopologyType != b.primitiveTopologyType) {
 				return false;
 			}
 			if (a.depthEnable != b.depthEnable) {
@@ -295,6 +303,8 @@ namespace Unnamed::Render {
 			const ComputePipelineKey& key
 		);
 
+		void MarkDirtyByShaderSource(AssetID shaderSourceId);
+		void MarkAllDirty();
 		void InvalidateAll();
 
 	private:
@@ -311,5 +321,10 @@ namespace Unnamed::Render {
 			Microsoft::WRL::ComPtr<ID3D12PipelineState>,
 			ComputePipelineKeyHash
 		> mCompute;
+
+		std::unordered_set<GraphicsPsoKey, GraphicsPipelineKeyHash>
+			mDirtyGraphics;
+		std::unordered_set<ComputePipelineKey, ComputePipelineKeyHash>
+			mDirtyCompute;
 	};
 }

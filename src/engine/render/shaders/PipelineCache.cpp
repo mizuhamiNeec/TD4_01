@@ -2,6 +2,7 @@
 
 #include "d3dx12.h"
 #include "ShaderLibrary.h"
+#include "engine/unnamed/subsystem/console/Log.h"
 
 namespace {
 	const char* SemanticToString(const Unnamed::Rhi::VertexSemantic s) {
@@ -30,6 +31,8 @@ namespace {
 }
 
 namespace Unnamed::Render {
+	static constexpr std::string_view kChannel = "PipelineCache";
+
 	BuiltInputLayout BuildInputLayout(
 		const Rhi::VertexLayoutDesc& layout
 	) {
@@ -62,12 +65,28 @@ namespace Unnamed::Render {
 	ID3D12PipelineState* PipelineCache::GetOrCreateGraphicsPso(
 		const GraphicsPsoKey& key
 	) {
-		if (auto it = mGraphics.find(key); it != mGraphics.end()) {
+		auto       it          = mGraphics.find(key);
+		const bool hasExisting = it != mGraphics.end();
+		const bool needsRebuild =
+			!hasExisting || mDirtyGraphics.contains(key);
+		if (!needsRebuild) {
 			return it->second.Get();
 		}
+		mDirtyGraphics.erase(key);
 
 		const auto& vsDxil = mShaders.GetOrCreateDxil(key.vs);
 		const auto& psDxil = mShaders.GetOrCreateDxil(key.ps);
+		if (vsDxil.bytes.empty() || psDxil.bytes.empty()) {
+			Error(
+				kChannel,
+				"Missing DXIL bytes. VS(id={}, entry='{}') PS(id={}, entry='{}')",
+				key.vs.shaderSourceId,
+				key.vs.entry,
+				key.ps.shaderSourceId,
+				key.ps.entry
+			);
+			return hasExisting ? it->second.Get() : nullptr;
+		}
 
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC desc = {};
 		desc.pRootSignature                     = key.rootSignature;
@@ -147,15 +166,24 @@ namespace Unnamed::Render {
 			desc.InputLayout = {nullptr, 0};
 		}
 
-		// 今のところ三角形リスト固定
-		desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+		desc.PrimitiveTopologyType = key.primitiveTopologyType;
 
 		Microsoft::WRL::ComPtr<ID3D12PipelineState> pso;
 		const HRESULT hr = mDevice->CreateGraphicsPipelineState(
 			&desc, IID_PPV_ARGS(pso.ReleaseAndGetAddressOf())
 		);
 		if (FAILED(hr)) {
-			return nullptr;
+			Error(
+				kChannel,
+				"CreateGraphicsPipelineState failed. hr=0x{:08X}",
+				static_cast<uint32_t>(hr)
+			);
+			return hasExisting ? it->second.Get() : nullptr;
+		}
+
+		if (hasExisting) {
+			it->second = std::move(pso);
+			return it->second.Get();
 		}
 
 		auto* raw = pso.Get();
@@ -166,11 +194,25 @@ namespace Unnamed::Render {
 	ID3D12PipelineState* PipelineCache::GetOrCreateComputePso(
 		const ComputePipelineKey& key
 	) {
-		if (const auto it = mCompute.find(key); it != mCompute.end()) {
+		auto       it          = mCompute.find(key);
+		const bool hasExisting = it != mCompute.end();
+		const bool needsRebuild =
+			!hasExisting || mDirtyCompute.contains(key);
+		if (!needsRebuild) {
 			return it->second.Get();
 		}
+		mDirtyCompute.erase(key);
 
 		const auto& csDxil = mShaders.GetOrCreateDxil(key.cs);
+		if (csDxil.bytes.empty()) {
+			Error(
+				kChannel,
+				"Missing DXIL bytes. CS(id={}, entry='{}')",
+				key.cs.shaderSourceId,
+				key.cs.entry
+			);
+			return hasExisting ? it->second.Get() : nullptr;
+		}
 
 		D3D12_COMPUTE_PIPELINE_STATE_DESC desc = {};
 		desc.pRootSignature = key.rootSignature;
@@ -181,7 +223,17 @@ namespace Unnamed::Render {
 			&desc, IID_PPV_ARGS(pso.ReleaseAndGetAddressOf())
 		);
 		if (FAILED(hr)) {
-			return nullptr;
+			Error(
+				kChannel,
+				"CreateComputePipelineState failed. hr=0x{:08X}",
+				static_cast<uint32_t>(hr)
+			);
+			return hasExisting ? it->second.Get() : nullptr;
+		}
+
+		if (hasExisting) {
+			it->second = std::move(pso);
+			return it->second.Get();
 		}
 
 		auto* raw = pso.Get();
@@ -189,8 +241,36 @@ namespace Unnamed::Render {
 		return raw;
 	}
 
+	void PipelineCache::MarkDirtyByShaderSource(const AssetID shaderSourceId) {
+		for (const auto& [key, _] : mGraphics) {
+			if (
+				key.vs.shaderSourceId == shaderSourceId ||
+				key.ps.shaderSourceId == shaderSourceId
+			) {
+				mDirtyGraphics.emplace(key);
+			}
+		}
+
+		for (const auto& [key, _] : mCompute) {
+			if (key.cs.shaderSourceId == shaderSourceId) {
+				mDirtyCompute.emplace(key);
+			}
+		}
+	}
+
+	void PipelineCache::MarkAllDirty() {
+		for (const auto& [key, _] : mGraphics) {
+			mDirtyGraphics.emplace(key);
+		}
+		for (const auto& [key, _] : mCompute) {
+			mDirtyCompute.emplace(key);
+		}
+	}
+
 	void PipelineCache::InvalidateAll() {
 		mGraphics.clear();
 		mCompute.clear();
+		mDirtyGraphics.clear();
+		mDirtyCompute.clear();
 	}
 }

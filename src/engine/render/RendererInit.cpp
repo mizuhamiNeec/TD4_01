@@ -21,6 +21,8 @@ namespace Unnamed::Render {
 		}
 	}
 
+	Renderer::Renderer(ConsoleSystem* console) : mConsole(console) {}
+
 	void Renderer::Init(RenderDevice& renderDevice) {
 		auto& assetManager = renderDevice.GetAssetManager();
 		auto& dx = dynamic_cast<Rhi::D3D12Device&>(renderDevice.GetRhiDevice());
@@ -60,6 +62,31 @@ namespace Unnamed::Render {
 			"./content/core/shaders/programs/sprite_overlay.shader.json",
 			ASSET_TYPE::SHADER_PROGRAM
 		);
+		const AssetID debugLineProgramId = LoadAsset(
+			assetManager,
+			"./content/core/shaders/programs/DebugLine.shader.json",
+			ASSET_TYPE::SHADER_PROGRAM
+		);
+		const AssetID bloomDownsampleProgramId = LoadAsset(
+			assetManager,
+			"./content/core/shaders/programs/bloom_downsample.shader.json",
+			ASSET_TYPE::SHADER_PROGRAM
+		);
+		const AssetID bloomUpsampleProgramId = LoadAsset(
+			assetManager,
+			"./content/core/shaders/programs/bloom_upsample.shader.json",
+			ASSET_TYPE::SHADER_PROGRAM
+		);
+		const AssetID bloomCombineProgramId = LoadAsset(
+			assetManager,
+			"./content/core/shaders/programs/bloom_combine.shader.json",
+			ASSET_TYPE::SHADER_PROGRAM
+		);
+		const AssetID toneMapExposureProgramId = LoadAsset(
+			assetManager,
+			"./content/core/shaders/programs/tonemap_exposure.shader.json",
+			ASSET_TYPE::SHADER_PROGRAM
+		);
 
 		mFullscreenPass.rootSig = dx.GetFsRootSignature();
 		ResolveShaderProgramStageKey(
@@ -81,6 +108,93 @@ namespace Unnamed::Render {
 		mFullscreenPass.psoKey.rtvFormat = Rhi::ToDxgiFormat(
 			dx.GetSwapChain().GetFormat()
 		);
+
+		mHdrCopyPass.rootSig = dx.GetFsRootSignature();
+		ResolveShaderProgramStageKey(
+			renderDevice, fullscreenProgramId, "vs", mHdrCopyPass.psoKey.vs
+		);
+		ResolveShaderProgramStageKey(
+			renderDevice, fullscreenProgramId, "ps", mHdrCopyPass.psoKey.ps
+		);
+		mHdrCopyPass.psoKey.depthEnable   = false;
+		mHdrCopyPass.psoKey.dsvFormat     = DXGI_FORMAT_UNKNOWN;
+		mHdrCopyPass.psoKey.depthFunc     = D3D12_COMPARISON_FUNC_ALWAYS;
+		mHdrCopyPass.psoKey.rootSignature = mHdrCopyPass.rootSig;
+		mHdrCopyPass.psoKey.vertexLayout  = std::nullopt;
+		mHdrCopyPass.psoKey.rtvFormat     = kSceneHdrColorFormat;
+
+		mToneMapPass.rootSig = dx.GetFsRootSignature();
+		ResolveShaderProgramStageKey(
+			renderDevice, toneMapExposureProgramId, "vs", mToneMapPass.psoKey.vs
+		);
+		ResolveShaderProgramStageKey(
+			renderDevice, toneMapExposureProgramId, "ps", mToneMapPass.psoKey.ps
+		);
+		mToneMapPass.psoKey.depthEnable   = false;
+		mToneMapPass.psoKey.dsvFormat     = DXGI_FORMAT_UNKNOWN;
+		mToneMapPass.psoKey.depthFunc     = D3D12_COMPARISON_FUNC_ALWAYS;
+		mToneMapPass.psoKey.rootSignature = mToneMapPass.rootSig;
+		mToneMapPass.psoKey.vertexLayout  = std::nullopt;
+		mToneMapPass.psoKey.rtvFormat     = kSceneLdrColorFormat;
+
+		mBloomDownsamplePass.rootSig = dx.GetFsRootSignature();
+		ResolveShaderProgramStageKey(
+			renderDevice, bloomDownsampleProgramId, "vs",
+			mBloomDownsamplePass.psoKey.vs
+		);
+		ResolveShaderProgramStageKey(
+			renderDevice, bloomDownsampleProgramId, "ps",
+			mBloomDownsamplePass.psoKey.ps
+		);
+		mBloomDownsamplePass.psoKey.depthEnable = false;
+		mBloomDownsamplePass.psoKey.dsvFormat = DXGI_FORMAT_UNKNOWN;
+		mBloomDownsamplePass.psoKey.depthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+		mBloomDownsamplePass.psoKey.rootSignature = mBloomDownsamplePass.
+			rootSig;
+		mBloomDownsamplePass.psoKey.vertexLayout = std::nullopt;
+		mBloomDownsamplePass.psoKey.rtvFormat    = kSceneHdrColorFormat;
+
+		mBloomUpsamplePass.rootSig = dx.GetFsRootSignature();
+		ResolveShaderProgramStageKey(
+			renderDevice, bloomUpsampleProgramId, "vs",
+			mBloomUpsamplePass.psoKey.vs
+		);
+		ResolveShaderProgramStageKey(
+			renderDevice, bloomUpsampleProgramId, "ps",
+			mBloomUpsamplePass.psoKey.ps
+		);
+		mBloomUpsamplePass.psoKey.depthEnable    = false;
+		mBloomUpsamplePass.psoKey.dsvFormat      = DXGI_FORMAT_UNKNOWN;
+		mBloomUpsamplePass.psoKey.depthFunc      = D3D12_COMPARISON_FUNC_ALWAYS;
+		mBloomUpsamplePass.psoKey.rootSignature  = mBloomUpsamplePass.rootSig;
+		mBloomUpsamplePass.psoKey.vertexLayout   = std::nullopt;
+		mBloomUpsamplePass.psoKey.rtvFormat      = kSceneHdrColorFormat;
+		mBloomUpsamplePass.psoKey.blendEnable    = true;
+		mBloomUpsamplePass.psoKey.srcBlend       = D3D12_BLEND_ONE;
+		mBloomUpsamplePass.psoKey.destBlend      = D3D12_BLEND_ONE;
+		mBloomUpsamplePass.psoKey.srcBlendAlpha  = D3D12_BLEND_ONE;
+		mBloomUpsamplePass.psoKey.destBlendAlpha = D3D12_BLEND_ONE;
+
+		mBloomCombinePass.rootSig = dx.GetFsRootSignature();
+		ResolveShaderProgramStageKey(
+			renderDevice, bloomCombineProgramId, "vs",
+			mBloomCombinePass.psoKey.vs
+		);
+		ResolveShaderProgramStageKey(
+			renderDevice, bloomCombineProgramId, "ps",
+			mBloomCombinePass.psoKey.ps
+		);
+		mBloomCombinePass.psoKey.depthEnable    = false;
+		mBloomCombinePass.psoKey.dsvFormat      = DXGI_FORMAT_UNKNOWN;
+		mBloomCombinePass.psoKey.depthFunc      = D3D12_COMPARISON_FUNC_ALWAYS;
+		mBloomCombinePass.psoKey.rootSignature  = mBloomCombinePass.rootSig;
+		mBloomCombinePass.psoKey.vertexLayout   = std::nullopt;
+		mBloomCombinePass.psoKey.rtvFormat      = kSceneHdrColorFormat;
+		mBloomCombinePass.psoKey.blendEnable    = true;
+		mBloomCombinePass.psoKey.srcBlend       = D3D12_BLEND_ONE;
+		mBloomCombinePass.psoKey.destBlend      = D3D12_BLEND_ONE;
+		mBloomCombinePass.psoKey.srcBlendAlpha  = D3D12_BLEND_ONE;
+		mBloomCombinePass.psoKey.destBlendAlpha = D3D12_BLEND_ONE;
 
 		mDepthVisPass.rootSig = dx.GetFsRootSignature();
 		ResolveShaderProgramStageKey(
@@ -112,9 +226,7 @@ namespace Unnamed::Render {
 
 		mGeometryPass.psoKey.rootSignature = mGeometryPass.rootSig;
 
-		mGeometryPass.psoKey.rtvFormat = Rhi::ToDxgiFormat(
-			dx.GetSwapChain().GetFormat()
-		);
+		mGeometryPass.psoKey.rtvFormat   = kSceneHdrColorFormat;
 		mGeometryPass.psoKey.depthEnable = true;
 		mGeometryPass.psoKey.dsvFormat   = DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
 		mGeometryPass.psoKey.depthFunc   = D3D12_COMPARISON_FUNC_GREATER_EQUAL;
@@ -247,9 +359,7 @@ namespace Unnamed::Render {
 			mPortalPass.compositeGeom.rootSig;
 		mPortalPass.compositeGeom.psoKey.vertexLayout =
 			mPortalPass.maskPassGeom.psoKey.vertexLayout;
-		mPortalPass.compositeGeom.psoKey.rtvFormat = Rhi::ToDxgiFormat(
-			dx.GetSwapChain().GetFormat()
-		);
+		mPortalPass.compositeGeom.psoKey.rtvFormat   = kSceneHdrColorFormat;
 		mPortalPass.compositeGeom.psoKey.depthEnable = false;
 		mPortalPass.compositeGeom.psoKey.dsvFormat   =
 			DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
@@ -302,9 +412,7 @@ namespace Unnamed::Render {
 		mSpritePass.geom.psoKey.rootSignature = mSpritePass.geom.rootSig;
 		mSpritePass.geom.psoKey.vertexLayout  = mPortalPass.maskPassGeom.psoKey.
 			vertexLayout;
-		mSpritePass.geom.psoKey.rtvFormat = Rhi::ToDxgiFormat(
-			dx.GetSwapChain().GetFormat()
-		);
+		mSpritePass.geom.psoKey.rtvFormat      = kSceneLdrColorFormat;
 		mSpritePass.geom.psoKey.depthEnable    = false;
 		mSpritePass.geom.psoKey.dsvFormat      = DXGI_FORMAT_UNKNOWN;
 		mSpritePass.geom.psoKey.cullMode       = D3D12_CULL_MODE_NONE;
@@ -317,10 +425,50 @@ namespace Unnamed::Render {
 		mBillboardPass.geom.rootSig = dx.GetGeomRootSignature();
 		mBillboardPass.geom.psoKey = mSpritePass.geom.psoKey;
 		mBillboardPass.geom.psoKey.rootSignature = mBillboardPass.geom.rootSig;
+		mBillboardPass.geom.psoKey.rtvFormat = kSceneHdrColorFormat;
 		mBillboardPass.geom.psoKey.depthEnable = true;
 		mBillboardPass.geom.psoKey.dsvFormat = DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
 		mBillboardPass.geom.psoKey.depthFunc =
 			D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+
+		mLinePass.rootSig = dx.GetGeomRootSignature();
+		ResolveShaderProgramStageKey(
+			renderDevice, debugLineProgramId, "vs", mLinePass.psoKey.vs
+		);
+		ResolveShaderProgramStageKey(
+			renderDevice, debugLineProgramId, "ps", mLinePass.psoKey.ps
+		);
+		mLinePass.psoKey.rootSignature = mLinePass.rootSig;
+		mLinePass.psoKey.vertexLayout  = Rhi::VertexLayoutDesc{
+			.stride   = sizeof(float) * 7,
+			.elements = {
+				Rhi::VertexElementDesc{
+					.semantic         = Rhi::VertexSemantic::POSITION,
+					.semanticIndex    = 0,
+					.format           = Rhi::VertexFormat::FLOAT3,
+					.offset           = 0,
+					.inputSlot        = 0,
+					.perInstance      = false,
+					.instanceStepRate = 0,
+				},
+				Rhi::VertexElementDesc{
+					.semantic         = Rhi::VertexSemantic::COLOR,
+					.semanticIndex    = 0,
+					.format           = Rhi::VertexFormat::FLOAT4,
+					.offset           = sizeof(float) * 3,
+					.inputSlot        = 0,
+					.perInstance      = false,
+					.instanceStepRate = 0,
+				},
+			}
+		};
+		mLinePass.psoKey.rtvFormat = kSceneHdrColorFormat;
+		mLinePass.psoKey.depthEnable = true;
+		mLinePass.psoKey.dsvFormat = DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
+		mLinePass.psoKey.depthFunc = D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+		mLinePass.psoKey.cullMode = D3D12_CULL_MODE_NONE;
+		mLinePass.psoKey.primitiveTopologyType =
+			D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
 
 		mFrameCb.Init(
 			dx.GetDevice(), dx.GetFramesInFlight(), L"FrameConstants"
@@ -342,6 +490,7 @@ namespace Unnamed::Render {
 			dx.GetDevice(), dx.GetFramesInFlight() * kMaxDrawObjects,
 			L"SkinningPaletteCB"
 		);
+		InitializeDebugLineResources(dx);
 
 		CreateTriangleTestResources(dx);
 		CreatePortalQuadResources(dx);
@@ -365,6 +514,8 @@ namespace Unnamed::Render {
 		);
 		mGraph.Reset();
 		mGraphBuilt = false;
+
+		mBloomMipCount = GetConVarSafe<int>(mConsole, "post_bloommipcount");
 	}
 
 	bool Renderer::ResolveShaderProgramStageKey(

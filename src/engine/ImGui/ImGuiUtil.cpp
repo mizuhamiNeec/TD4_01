@@ -1,8 +1,14 @@
 #ifdef _DEBUG
 
+#include <imgui_internal.h>
+
 #include <core/math/Math.h>
 
 #include <engine/ImGui/ImGuiUtil.h>
+
+#include "Icons.h"
+
+#include "core/string/StrUtil.h"
 
 namespace ImGuiUtil {
 	/// @brief Vec4型をImVec4型に変換します。
@@ -201,13 +207,100 @@ namespace ImGuiUtil {
 	}
 
 	bool CollapsingHeaderWithCheckbox(
-		const char* label, bool* v, const ImGuiTreeNodeFlags flags
+		const uint32_t           icon,
+		const char*              label,
+		const uint64_t           id,
+		bool*                    checkbox,
+		bool*                    menu,
+		const ImGuiTreeNodeFlags flags
 	) {
-		ImGui::PushID(label);
+		std::string uniqueID = "##" + std::to_string(id);
+
+		ImGui::PushID(uniqueID.c_str());
 		ImGui::BeginGroup();
-		ImGui::Checkbox("##Checkbox", v);
+
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{8.0f, 8.0f});
+
+		const bool isOpen = ImGui::CollapsingHeader(
+			uniqueID.c_str(),
+			flags | ImGuiTreeNodeFlags_AllowOverlap // チェックボックスと重なってもいいようにする
+		);
+
+		const float collapsingHeaderHeight = ImGui::GetItemRectSize().y;
+
+		ImGui::PopStyleVar();
+
 		ImGui::SameLine();
-		const bool isOpen = ImGui::CollapsingHeader(label, flags);
+
+		// アイコンを表示
+		constexpr float iconScale = 1.5f;
+
+		// フォントサイズを取得
+		const float fontSize = ImGui::GetFontSize();
+		ImVec2      iconSize = ImGui::CalcTextSize(
+			Unnamed::StrUtil::ConvertToUtf8(icon).c_str()
+		);
+		iconSize.x *= iconScale;
+		iconSize.y *= iconScale;
+
+		ImGui::GetWindowDrawList()->AddText(
+			ImGui::GetFont(),
+			fontSize * iconScale,
+			ImVec2(
+				ImGui::GetCursorScreenPos().x,
+				ImGui::GetCursorScreenPos().y + collapsingHeaderHeight * 0.5f -
+				(fontSize * iconScale) * 0.5f
+			),
+			ImGui::GetColorU32(ImGuiCol_Text),
+			Unnamed::StrUtil::ConvertToUtf8(icon).c_str()
+		);
+
+		ImGui::SameLine();
+
+		// チェックボックス用にカーソル位置を調整
+		ImGui::SetCursorPos(
+			ImVec2(
+				ImGui::GetCursorPosX() + ImGui::GetStyle().ItemSpacing.x +
+				iconSize.x,
+				ImGui::GetCursorPosY() + collapsingHeaderHeight * 0.5f -
+				ImGui::GetFrameHeight() * 0.5f
+			)
+		);
+
+		ImGui::DebugDrawCursorPos();
+
+		// チェックボックスを表示
+		ImGui::Checkbox("##Checkbox", checkbox);
+
+		ImGui::SameLine();
+
+		// ラベルを表示
+		ImGui::Text(label);
+
+		ImGui::SameLine();
+
+		std::string moreHoriz = Unnamed::StrUtil::ConvertToUtf8(
+			kIconMoreHoriz
+		);
+
+		ImGui::SetCursorPosX(
+			ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x -
+			ImGui::GetStyle().ItemSpacing.x * 2.0f - ImGui::CalcTextSize(
+				moreHoriz.c_str()
+			).x
+		);
+
+		const bool menuOpen = ImGui::Button(moreHoriz.c_str());
+
+		if (menuOpen) {
+			ImGui::OpenPopup("##HeaderMenu");
+		}
+		if (ImGui::BeginPopup("##HeaderMenu")) {
+			ImGui::MenuItem("Option 1", nullptr, menu ? menu : nullptr);
+			ImGui::MenuItem("Option 2", nullptr, menu ? menu : nullptr);
+			ImGui::EndPopup();
+		}
+
 		ImGui::EndGroup();
 		ImGui::PopID();
 		return isOpen;

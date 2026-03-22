@@ -22,8 +22,22 @@ namespace ImGuiUtil {
 		float       outlineSize = 1.0f
 	);
 
+	/// @brief 折りたたみヘッダーとチェックボックスを組み合わせたウィジェットを表示します。
+	/// @param icon アイコン（フォントアイコン）
+	/// @param label ヘッダーのラベル
+	/// @param id ヘッダーのID。GUIDを突っ込む
+	/// @param checkbox チェックボックスの状態への参照
+	/// @param menu メニューの状態への参照。右クリックでコンテキストメニューを表示します。
+	/// @param flags ImGuiTreeNodeFlagsのフラグ
+	/// @return ヘッダーが開かれた場合にtrueを返します
+	/// @details 主にインスペクタで使用します。
 	bool CollapsingHeaderWithCheckbox(
-		const char* label, bool* v, ImGuiTreeNodeFlags flags = 0
+		uint32_t           icon,
+		const char*        label,
+		uint64_t           id,
+		bool*              checkbox,
+		bool*              menu,
+		ImGuiTreeNodeFlags flags = 0
 	);
 #endif
 }

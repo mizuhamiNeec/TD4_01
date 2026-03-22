@@ -110,6 +110,7 @@ namespace Unnamed {
 		mFovYDegrees = ReadFloatOr(reader, "fovYDegrees", mFovYDegrees);
 		mNearZ       = ReadFloatOr(reader, "nearZ", mNearZ);
 		mFarZ        = ReadFloatOr(reader, "farZ", mFarZ);
+		mExposureEv  = ReadFloatOr(reader, "exposureEv", mExposureEv);
 		mMoveSpeed   = ReadFloatOr(reader, "moveSpeed", mMoveSpeed);
 	}
 
@@ -120,6 +121,8 @@ namespace Unnamed {
 		writer.Write(mNearZ);
 		writer.Key("farZ");
 		writer.Write(mFarZ);
+		writer.Key("exposureEv");
+		writer.Write(mExposureEv);
 		writer.Key("moveSpeed");
 		writer.Write(mMoveSpeed);
 	}
@@ -129,6 +132,7 @@ namespace Unnamed {
 		ImGui::DragFloat("FovYDegrees", &mFovYDegrees, 0.1f, 1.0f, 179.0f);
 		ImGui::DragFloat("NearZ", &mNearZ, 0.0005f, 0.0001f, mFarZ - 0.001f);
 		ImGui::DragFloat("FarZ", &mFarZ, 1.0f, mNearZ + 0.001f, 1000000.0f);
+		ImGui::DragFloat("ExposureEV", &mExposureEv, 0.05f, -16.0f, 16.0f);
 		ImGui::DragFloat("MoveSpeed", &mMoveSpeed, 1.0f, 1.0f, 10000.0f);
 		ImGui::Text("AspectRatio: %.3f", mAspectRatio);
 	}
@@ -202,6 +206,7 @@ namespace Unnamed {
 		outCamera.proj      = proj;
 		outCamera.viewProj  = view * proj;
 		outCamera.cameraPos = transform->Position();
+		outCamera.exposureEv = mExposureEv;
 		outCamera.nearZ     = mNearZ;
 		outCamera.farZ      = mFarZ;
 		outCamera.depthMode = Render::PROJECTION_DEPTH_MODE::ReverseZ;

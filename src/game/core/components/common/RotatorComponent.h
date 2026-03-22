@@ -11,7 +11,7 @@ namespace Unnamed {
 
 	class RotatorComponent final : public BaseComponent {
 	public:
-		void PrePhysicsTick(float deltaTime) override;
+		void OnTick(float deltaTime) override;
 
 		[[nodiscard]] std::string_view GetStableName() const override {
 			return "game.Rotator";

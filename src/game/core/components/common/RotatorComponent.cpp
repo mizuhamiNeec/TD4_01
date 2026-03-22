@@ -11,7 +11,7 @@
 #include "engine/unnamed/framework/entity/Entity.h"
 
 namespace Unnamed {
-	void RotatorComponent::PrePhysicsTick(const float deltaTime) {
+	void RotatorComponent::OnTick(const float deltaTime) {
 		if (!mRotationEnabled) {
 			return;
 		}

@@ -11,7 +11,7 @@ namespace Unnamed {
 	namespace {
 		constexpr float    kEpsilon            = 1e-6f;
 		constexpr float    kNormalEpsilon      = 1e-12f;
-		constexpr float    kDuplicatePlaneDot  = 0.99f;
+		constexpr float    kDuplicatePlaneDot  = 0.97f;
 		constexpr float    kSkinHu             = 1.0f; // 衝突面からの停止距離（HU）
 		constexpr float    kOverbounce         = 1.0f;
 		constexpr uint32_t kMaxClipPlanes      = 5;
@@ -229,12 +229,14 @@ namespace Unnamed {
 			return dx * dx + dz * dz;
 		};
 
-		const auto snapDownWalkable = [this](Vec3& targetPos, const float maxDrop) -> bool {
+		const auto snapDownWalkable = [this](
+			Vec3& targetPos, const float maxDrop
+		) -> bool {
 			if (maxDrop <= 0.0f) {
 				return false;
 			}
 
-			Box box = mHull;
+			Box box    = mHull;
 			box.center = targetPos;
 
 			const float  skin       = SkinM();
@@ -250,9 +252,10 @@ namespace Unnamed {
 				return false;
 			}
 
-			const float hitDistance = std::clamp(hit.t, 0.0f, 1.0f) * castLength;
+			const float hitDistance =
+				std::clamp(hit.t, 0.0f, 1.0f) * castLength;
 			const float drop = std::clamp(hitDistance - skin, 0.0f, maxDrop);
-			targetPos += Vec3::down * drop;
+			targetPos        += Vec3::down * drop;
 			return true;
 		};
 
@@ -260,7 +263,7 @@ namespace Unnamed {
 		const Vec3 savedPos = position;
 		const Vec3 savedVel = velocity;
 
-		const Vec3 desiredMove        = savedVel * timeTotal;
+		const Vec3  desiredMove        = savedVel * timeTotal;
 		const float desiredHorizDistSq =
 			desiredMove.x * desiredMove.x + desiredMove.z * desiredMove.z;
 
@@ -308,7 +311,7 @@ namespace Unnamed {
 		SlideMove(position, velocity, timeTotal);
 
 		// 上げた分 + 許容ステップダウン分だけ地面へスナップを試みる。
-		const float maxDrop = stepRise + stepHeightM;
+		const float maxDrop    = stepRise + stepHeightM;
 		const bool  upGrounded = snapDownWalkable(position, maxDrop);
 		if (!upGrounded) {
 			position = downPos;
@@ -318,7 +321,8 @@ namespace Unnamed {
 
 		const float upDistSq       = horizDistSq(position, savedPos);
 		const bool  climbedTooHigh = position.y >
-		                             (savedPos.y + stepHeightM + kStepSelectDownEps);
+		                             (savedPos.y + stepHeightM +
+		                              kStepSelectDownEps);
 
 		if (climbedTooHigh || upDistSq <= downDistSq + kStepSelectHorizEps) {
 			position = downPos;

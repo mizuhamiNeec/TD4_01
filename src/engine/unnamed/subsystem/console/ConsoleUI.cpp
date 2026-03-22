@@ -2,7 +2,10 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <pch.h>
+#include <algorithm>
+#include <cctype>
 #include <string>
+#include <unordered_set>
 
 #include <core/math/Vec4.h>
 
@@ -12,6 +15,7 @@
 #include <engine/unnamed/subsystem/console/ConVarHelper.h>
 #include <engine/unnamed/subsystem/console/concommand/ConCommand.h>
 
+#include "core/string/StrUtil.h"
 #include "engine/Properties.h"
 
 namespace Unnamed {
@@ -21,6 +25,18 @@ namespace Unnamed {
 	namespace {
 		/// @brief コンソールUIのデータ構造体
 		struct ConsoleUIData {
+			struct SuggestionEntry {
+				std::string name;
+				std::string secondaryText;
+				bool        isConVar = false;
+			};
+
+			struct SuggestionState {
+				std::vector<SuggestionEntry> items;
+				std::string                  query;
+				int                          selectedIndex = -1;
+			};
+
 			RingBuffer<std::string, kHistoryBufferSize> history = {};
 
 			// 選択
@@ -37,6 +53,12 @@ namespace Unnamed {
 
 			// クリッピング用: フィルタ後の表示行 -> 実ログ(actualIndex) の対応
 			std::vector<size_t> filteredToActual = {};
+
+			// サジェスト状態
+			SuggestionState suggestion                      = {};
+			bool            requestInputRefocus             = false;
+			bool            requestMoveCursorToEnd          = false;
+			bool            suppressSuggestionRefreshOnEdit = false;
 		} gConsoleUIData;
 	}
 
@@ -53,6 +75,44 @@ namespace Unnamed {
 		ImGuiInputTextFlags_CallbackHistory |
 		ImGuiInputTextFlags_CallbackEdit |
 		ImGuiInputTextFlags_CallbackResize;
+
+	static constexpr int kMaxSuggestionDisplayCount = 8;
+
+	namespace {
+		std::string ToLowerAscii(std::string_view text) {
+			std::string lowered(text);
+			std::transform(
+				lowered.begin(),
+				lowered.end(),
+				lowered.begin(),
+				[](const unsigned char c) {
+					return static_cast<char>(std::tolower(c));
+				}
+			);
+			return lowered;
+		}
+
+		size_t FindFirstCaseInsensitive(
+			std::string_view text, std::string_view query
+		) {
+			if (query.empty() || text.empty()) {
+				return std::string::npos;
+			}
+			const auto loweredText  = ToLowerAscii(text);
+			const auto loweredQuery = ToLowerAscii(query);
+			return loweredText.find(loweredQuery);
+		}
+
+		int CountDisplayLines(std::string_view text) {
+			int count = 1;
+			for (const char c : text) {
+				if (c == '\n') {
+					++count;
+				}
+			}
+			return std::max(1, count);
+		}
+	}
 
 	/// @brief コンストラクタ
 	ConsoleUI::ConsoleUI(
@@ -214,7 +274,11 @@ namespace Unnamed {
 		}
 
 		ImGui::SetNextItemWidth(inputW);
-		if (ImGui::InputTextEx(
+
+		// 入力テキストの左上座標を取る
+		const ImVec2 textLeftTop = ImGui::GetCursorScreenPos();
+
+		const bool enterPressed = ImGui::InputTextEx(
 			"##Input",
 			nullptr,
 			mInputBuffer,
@@ -223,9 +287,48 @@ namespace Unnamed {
 			kInputTextFlags,
 			InputTextCallback,
 			this
-		)) {
-			Submit();
+		);
+		const ImGuiID inputId = ImGui::GetItemID();
+
+		if (gConsoleUIData.requestInputRefocus) {
+			ImGui::SetKeyboardFocusHere(-1);
 		}
+		if (gConsoleUIData.requestMoveCursorToEnd) {
+			if (auto* state = ImGui::GetInputTextState(inputId)) {
+				state->ReloadUserBufAndMoveToEnd();
+				state->ClearSelection();
+				gConsoleUIData.requestMoveCursorToEnd = false;
+				gConsoleUIData.requestInputRefocus    = false;
+			}
+		}
+
+		const bool inputActive =
+			ImGui::IsItemActive() || ImGui::IsItemFocused();
+		auto&      suggestionState        = gConsoleUIData.suggestion;
+		const bool hasSuggestionSelection =
+			inputActive &&
+			!suggestionState.items.empty() &&
+			suggestionState.selectedIndex >= 0 &&
+			suggestionState.selectedIndex < static_cast<int>(
+				suggestionState.items.size()
+			);
+
+		if (enterPressed) {
+			if (hasSuggestionSelection) {
+				const auto& selected =
+					suggestionState.items[static_cast<size_t>(
+						suggestionState.selectedIndex
+					)];
+				ApplySuggestionToInputBuffer(selected.name, true);
+				UpdateSuggestions(mInputBuffer);
+				gConsoleUIData.requestInputRefocus    = true;
+				gConsoleUIData.requestMoveCursorToEnd = true;
+			} else {
+				Submit();
+			}
+		}
+
+		DrawSuggestionsPopup(textLeftTop, inputW, inputActive);
 
 		ImGui::SameLine(0.0f, spacingW);
 
@@ -378,6 +481,9 @@ namespace Unnamed {
 	}
 
 	void ConsoleUI::Submit() {
+		gConsoleUIData.requestInputRefocus    = false;
+		gConsoleUIData.requestMoveCursorToEnd = false;
+
 		// 送信してもフォーカスは維持
 		ImGui::SetKeyboardFocusHere(-1);
 
@@ -397,6 +503,10 @@ namespace Unnamed {
 		// コンソールシステムに送る
 		mConsoleSystem->ExecuteCommand(cmd);
 		mInputBuffer[0] = '\0';
+		gConsoleUIData.suggestion.items.clear();
+		gConsoleUIData.suggestion.query.clear();
+		gConsoleUIData.suggestion.selectedIndex        = -1;
+		gConsoleUIData.suppressSuggestionRefreshOnEdit = false;
 
 		// コマンドが送信時に一番下までスクロールする
 		mWishScrollToBottom = true;
@@ -454,6 +564,30 @@ namespace Unnamed {
 					ImGuiCol_Text, ToImVec4(kConTextColorSuccess)
 				);
 				break;
+			case LogLevel::Bool: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColorBool)
+				);
+				break;
+			case LogLevel::Int: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColorInt)
+				);
+				break;
+			case LogLevel::Float: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColorFloat)
+				);
+				break;
+			case LogLevel::Double: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColorDouble)
+				);
+				break;
+			case LogLevel::String: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColorString)
+				);
+				break;
+			case LogLevel::Vec3: ImGui::PushStyleColor(
+					ImGuiCol_Text, ToImVec4(kConTextColorVec3)
+				);
+				break;
 		}
 	}
 
@@ -476,16 +610,577 @@ namespace Unnamed {
 		);
 	}
 
+	void ConsoleUI::UpdateSuggestions(const std::string_view input) {
+		auto&       state = gConsoleUIData.suggestion;
+		std::string prevSelectedName;
+		if (
+			state.selectedIndex >= 0 &&
+			state.selectedIndex < static_cast<int>(state.items.size())
+		) {
+			prevSelectedName = state.items[static_cast<size_t>(state.
+					selectedIndex)].
+				name;
+		}
+
+		state.items.clear();
+		state.query.clear();
+		state.selectedIndex = -1;
+
+		if (input.empty()) {
+			return;
+		}
+
+		const auto ctx = ParseSuggestionContext(input);
+		if (ctx.tokenConfirmed) {
+			return;
+		}
+		if (!ctx.token.empty()) {
+			const std::string lowerToken             = ToLowerAscii(ctx.token);
+			auto              isCaseInsensitiveExact = [&](
+				const std::vector<std::string>& names
+			) {
+				return std::ranges::any_of(
+					names,
+					[&](const std::string& name) {
+						return ToLowerAscii(name) == lowerToken;
+					}
+				);
+			};
+
+			constexpr size_t exactCheckCount = static_cast<size_t>(
+				kMaxSuggestionDisplayCount * 2
+			);
+			const bool hasExactVar = isCaseInsensitiveExact(
+				mConsoleSystem->FindSimilarConVars(ctx.token, exactCheckCount)
+			);
+			const bool hasExactCmd = isCaseInsensitiveExact(
+				mConsoleSystem->FindSimilarConCommands(
+					ctx.token, exactCheckCount
+				)
+			);
+			if (hasExactVar || hasExactCmd) {
+				return;
+			}
+		}
+		state.query = ctx.token;
+
+		auto suggestions = BuildSuggestionsForToken(ctx.token);
+		if (suggestions.empty()) {
+			return;
+		}
+
+		state.items.reserve(suggestions.size());
+		for (auto& suggestion : suggestions) {
+			ConsoleUIData::SuggestionEntry entry;
+			entry.name          = std::move(suggestion.name);
+			entry.secondaryText = std::move(suggestion.secondaryText);
+			entry.isConVar      = suggestion.isConVar;
+			state.items.push_back(std::move(entry));
+		}
+
+		if (!prevSelectedName.empty()) {
+			for (size_t i = 0; i < state.items.size(); ++i) {
+				if (state.items[i].name == prevSelectedName) {
+					state.selectedIndex = static_cast<int>(i);
+					break;
+				}
+			}
+		}
+
+		if (state.selectedIndex == -1 && !ctx.token.empty()) {
+			for (size_t i = 0; i < state.items.size(); ++i) {
+				if (state.items[i].name == ctx.token) {
+					state.selectedIndex = static_cast<int>(i);
+					break;
+				}
+			}
+		}
+
+		if (state.selectedIndex == -1) {
+			state.selectedIndex = 0;
+		}
+	}
+
+	void ConsoleUI::DrawSuggestionsPopup(
+		const ImVec2& inputLeftTop, const float inputWidth,
+		const bool    inputActive
+	) {
+		const auto& state = gConsoleUIData.suggestion;
+		if (!inputActive || state.items.empty()) {
+			return;
+		}
+
+		const int itemCount = std::min(
+			static_cast<int>(state.items.size()),
+			kMaxSuggestionDisplayCount
+		);
+		if (itemCount <= 0) {
+			return;
+		}
+
+		const float  rowHeight = ImGui::GetFrameHeight();
+		const float  popupH    = rowHeight * itemCount + kPopupPadding * 2.0f;
+		const ImVec2 popupPos  = ImVec2(
+			inputLeftTop.x,
+			inputLeftTop.y - popupH - kPopupPadding
+		);
+		const ImVec2 popupSize = ImVec2(std::max(inputWidth, 200.0f), popupH);
+
+		ImGui::SetNextWindowPos(popupPos);
+		ImGui::SetNextWindowSize(popupSize);
+		ImGui::PushStyleVar(
+			ImGuiStyleVar_WindowPadding,
+			ImVec2(kPopupPadding, kPopupPadding)
+		);
+
+		constexpr ImGuiWindowFlags flags =
+			ImGuiWindowFlags_NoFocusOnAppearing |
+			ImGuiWindowFlags_NoSavedSettings |
+			ImGuiWindowFlags_NoDecoration |
+			ImGuiWindowFlags_NoMove |
+			ImGuiWindowFlags_NoNavFocus |
+			ImGuiWindowFlags_NoDocking;
+
+		if (ImGui::Begin("##ConsoleSuggestWindow", nullptr, flags)) {
+			ImGui::PushStyleVar(
+				ImGuiStyleVar_ItemSpacing,
+				ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f)
+			);
+			for (int visualIndex = 0; visualIndex < itemCount; ++visualIndex) {
+				const int         i = itemCount - 1 - visualIndex;
+				const bool        isSelected = i == state.selectedIndex;
+				const auto&       item = state.items[static_cast<size_t>(i)];
+				const std::string rowId =
+					"##ConsoleSuggestRow_" + std::to_string(i);
+				const float rowWidth = std::max(
+					ImGui::GetContentRegionAvail().x, 0.0f
+				);
+
+				if (ImGuiWidgets::SelectableWithRounding(
+					rowId.c_str(),
+					isSelected,
+					ImGuiSelectableFlags_AllowOverlap,
+					ImVec2(rowWidth, rowHeight),
+					4.0f
+				)) {
+					gConsoleUIData.suggestion.selectedIndex = i;
+					ApplySuggestionToInputBuffer(item.name);
+					gConsoleUIData.requestInputRefocus    = true;
+					gConsoleUIData.requestMoveCursorToEnd = true;
+				}
+
+				const ImVec2 rowMin = ImGui::GetItemRectMin();
+				const ImVec2 rowMax = ImGui::GetItemRectMax();
+				const float  textY  =
+					rowMin.y + ImGui::GetStyle().FramePadding.y;
+				const float textX = rowMin.x + ImGui::GetStyle().FramePadding.x;
+				const auto  secondaryColor = ImGui::GetColorU32(
+					ImGuiCol_TextDisabled
+				);
+				const auto normalColor = ImGui::GetColorU32(ImGuiCol_Text);
+				const auto matchColor  = ImGui::GetColorU32(
+					ImGuiCol_PlotHistogram
+				);
+				auto* drawList = ImGui::GetWindowDrawList();
+
+				const size_t matchPos = FindFirstCaseInsensitive(
+					item.name,
+					state.query
+				);
+				if (
+					matchPos == std::string::npos || state.query.empty() ||
+					matchPos >= item.name.size()
+				) {
+					drawList->AddText(
+						ImVec2(textX, textY),
+						normalColor,
+						item.name.c_str()
+					);
+				} else {
+					const size_t matchLen = std::min(
+						state.query.size(),
+						item.name.size() - matchPos
+					);
+					const std::string prefix = item.name.substr(0, matchPos);
+					const std::string match  = item.name.substr(
+						matchPos, matchLen
+					);
+					const std::string suffix = item.name.substr(
+						matchPos + matchLen
+					);
+
+					float x = textX;
+					if (!prefix.empty()) {
+						drawList->AddText(
+							ImVec2(x, textY),
+							normalColor,
+							prefix.c_str()
+						);
+						x += ImGui::CalcTextSize(prefix.c_str()).x;
+					}
+					if (!match.empty()) {
+						drawList->AddText(
+							ImVec2(x, textY),
+							matchColor,
+							match.c_str()
+						);
+						x += ImGui::CalcTextSize(match.c_str()).x;
+					}
+					if (!suffix.empty()) {
+						drawList->AddText(
+							ImVec2(x, textY),
+							normalColor,
+							suffix.c_str()
+						);
+					}
+				}
+
+				if (!item.secondaryText.empty()) {
+					const ImVec2 secondarySize = ImGui::CalcTextSize(
+						item.secondaryText.c_str()
+					);
+					const ImVec2 secondaryPos = ImVec2(
+						rowMax.x - ImGui::GetStyle().FramePadding.x -
+						secondarySize.x,
+						textY
+					);
+					drawList->AddText(
+						secondaryPos,
+						secondaryColor,
+						item.secondaryText.c_str()
+					);
+				}
+			}
+			ImGui::PopStyleVar();
+		}
+		ImGui::End();
+		ImGui::PopStyleVar();
+	}
+
+	void ConsoleUI::MoveSuggestionSelection(const int delta) {
+		auto& state = gConsoleUIData.suggestion;
+		if (state.items.empty()) {
+			state.selectedIndex = -1;
+			return;
+		}
+
+		const int count = static_cast<int>(state.items.size());
+		if (state.selectedIndex < 0 || state.selectedIndex >= count) {
+			state.selectedIndex = 0;
+			return;
+		}
+
+		int next = (state.selectedIndex + delta) % count;
+		if (next < 0) {
+			next += count;
+		}
+		state.selectedIndex = next;
+	}
+
+	void ConsoleUI::ApplySuggestionToInputBuffer(
+		const std::string& suggestion, const bool appendSpace
+	) {
+		std::string inputText(mInputBuffer);
+		const auto  ctx = ParseSuggestionContext(inputText);
+		if (ctx.tokenStart > inputText.size() || ctx.tokenEnd > inputText.
+		    size()) {
+			return;
+		}
+
+		inputText.replace(
+			ctx.tokenStart,
+			ctx.tokenEnd - ctx.tokenStart,
+			suggestion
+		);
+		const size_t insertPos = ctx.tokenStart + suggestion.size();
+		if (appendSpace) {
+			const bool hasNextChar       = insertPos < inputText.size();
+			const bool hasWhitespaceNext =
+				hasNextChar &&
+				std::isspace(
+					static_cast<unsigned char>(inputText[insertPos])
+				) != 0;
+			const bool hasSemicolonNext =
+				hasNextChar && inputText[insertPos] == ';';
+			if (!hasWhitespaceNext && !hasSemicolonNext) {
+				inputText.insert(insertPos, 1, ' ');
+			}
+		}
+
+		const size_t copySize = std::min(
+			inputText.size(),
+			static_cast<size_t>(IM_ARRAYSIZE(mInputBuffer) - 1)
+		);
+		std::copy_n(inputText.c_str(), copySize, mInputBuffer);
+		mInputBuffer[copySize] = '\0';
+	}
+
+	void ConsoleUI::ApplySuggestionToCallbackBuffer(
+		ImGuiInputTextCallbackData* data,
+		const std::string&          suggestion,
+		const bool                  appendSpace
+	) {
+		const std::string_view input(
+			data->Buf, static_cast<size_t>(data->BufTextLen)
+		);
+		const auto ctx = ParseSuggestionContext(input);
+		if (ctx.tokenStart > input.size() || ctx.tokenEnd > input.size()) {
+			return;
+		}
+
+		const int tokenStart = static_cast<int>(ctx.tokenStart);
+		const int tokenLen   = static_cast<int>(ctx.tokenEnd - ctx.tokenStart);
+		data->DeleteChars(tokenStart, tokenLen);
+		data->InsertChars(tokenStart, suggestion.c_str());
+		int newCursor = tokenStart + static_cast<int>(suggestion.size());
+		if (
+			appendSpace &&
+			(newCursor >= data->BufTextLen || (
+				 std::isspace(
+					 static_cast<unsigned char>(data->Buf[newCursor])
+				 ) == 0 &&
+				 data->Buf[newCursor] != ';'
+			 ))
+		) {
+			data->InsertChars(newCursor, " ");
+			++newCursor;
+		}
+		data->CursorPos      = newCursor;
+		data->SelectionStart = newCursor;
+		data->SelectionEnd   = newCursor;
+	}
+
+	ConsoleUI::SuggestionContext ConsoleUI::ParseSuggestionContext(
+		const std::string_view input
+	) {
+		SuggestionContext ctx{};
+
+		bool inQuotes = false;
+		for (size_t i = 0; i < input.size(); ++i) {
+			if (input[i] == '"') {
+				inQuotes = !inQuotes;
+				continue;
+			}
+
+			if (input[i] == ';' && !inQuotes) {
+				ctx.segmentStart = i + 1;
+			}
+		}
+
+		size_t tokenStart = ctx.segmentStart;
+		while (
+			tokenStart < input.size() &&
+			std::isspace(static_cast<unsigned char>(input[tokenStart])) != 0
+		) {
+			++tokenStart;
+		}
+		ctx.tokenStart = tokenStart;
+
+		size_t tokenEnd = tokenStart;
+		while (
+			tokenEnd < input.size() &&
+			std::isspace(static_cast<unsigned char>(input[tokenEnd])) == 0 &&
+			input[tokenEnd] != ';'
+		) {
+			++tokenEnd;
+		}
+		ctx.tokenEnd = tokenEnd;
+
+		if (ctx.tokenEnd > ctx.tokenStart) {
+			ctx.token = std::string(
+				input.substr(ctx.tokenStart, ctx.tokenEnd - ctx.tokenStart)
+			);
+			if (
+				ctx.tokenEnd < input.size() &&
+				std::isspace(
+					static_cast<unsigned char>(input[ctx.tokenEnd])
+				) != 0
+			) {
+				ctx.tokenConfirmed = true;
+			}
+		}
+
+		return ctx;
+	}
+
+	std::vector<ConsoleUI::SuggestionItem> ConsoleUI::BuildSuggestionsForToken(
+		const std::string_view token
+	) const {
+		std::vector<SuggestionItem>     results;
+		std::unordered_set<std::string> seen;
+		constexpr size_t                fetchCount = static_cast<size_t>(
+			kMaxSuggestionDisplayCount * 2
+		);
+
+		auto appendUnique = [&](
+			const std::string& name,
+			const bool         isConVar
+		) {
+			if (name.empty() || seen.contains(name)) {
+				return;
+			}
+
+			SuggestionItem item;
+			item.name     = name;
+			item.isConVar = isConVar;
+			if (isConVar) {
+				item.secondaryText =
+					"= " + mConsoleSystem->GetConVarValueString(
+						name
+					);
+			} else {
+				if (const auto* cmd = mConsoleSystem->GetConCommand(name)) {
+					item.secondaryText = std::string(cmd->GetDescription());
+				}
+				if (item.secondaryText.empty()) {
+					item.secondaryText = "[command]";
+				}
+			}
+
+			seen.insert(name);
+			results.push_back(std::move(item));
+		};
+
+		const std::string tokenText(token);
+		const std::string lowerToken    = ToLowerAscii(tokenText);
+		const auto        varCandidates =
+			mConsoleSystem->FindSimilarConVars(token, fetchCount);
+		const auto commandCandidates =
+			mConsoleSystem->FindSimilarConCommands(token, fetchCount);
+
+		auto isExactMatch = [&](const std::string& name) {
+			return !tokenText.empty() && ToLowerAscii(name) == lowerToken;
+		};
+		auto isPrefixMatch = [&](const std::string& name) {
+			return !tokenText.empty() &&
+			       ToLowerAscii(name).starts_with(lowerToken);
+		};
+
+		const bool hasExactVar = std::ranges::any_of(
+			varCandidates, isExactMatch
+		);
+		const bool hasExactCmd = std::ranges::any_of(
+			commandCandidates, isExactMatch
+		);
+		const bool hasExact = hasExactVar || hasExactCmd;
+
+		const bool hasPrefixVar = std::ranges::any_of(
+			varCandidates,
+			isPrefixMatch
+		);
+		const bool hasPrefixCmd = std::ranges::any_of(
+			commandCandidates,
+			isPrefixMatch
+		);
+		const bool hasPrefix = hasPrefixVar || hasPrefixCmd;
+
+		auto appendFiltered = [&](
+			const std::vector<std::string>& names,
+			const bool                      isConVar
+		) {
+			for (const auto& name : names) {
+				if (hasExact && !isExactMatch(name)) {
+					continue;
+				}
+				if (!hasExact && hasPrefix && !isPrefixMatch(name)) {
+					continue;
+				}
+				appendUnique(name, isConVar);
+			}
+		};
+
+		appendFiltered(varCandidates, true);
+		appendFiltered(commandCandidates, false);
+
+		if (results.size() > static_cast<size_t>(kMaxSuggestionDisplayCount)) {
+			results.resize(static_cast<size_t>(kMaxSuggestionDisplayCount));
+		}
+		return results;
+	}
+
 	/// @brief インプットテキストからのコールバック
 	int ConsoleUI::InputTextCallback(ImGuiInputTextCallbackData* data) {
-		auto& c = gConsoleUIData;
+		auto& c    = gConsoleUIData;
+		auto* self = static_cast<ConsoleUI*>(data->UserData);
+		if (!self) {
+			return 0;
+		}
+
+		auto ensureSuggestions = [&] {
+			if (!gConsoleUIData.suggestion.items.empty()) {
+				return true;
+			}
+			self->UpdateSuggestions(
+				std::string_view(
+					data->Buf,
+					static_cast<size_t>(std::max(data->BufTextLen, 0))
+				)
+			);
+			return !gConsoleUIData.suggestion.items.empty() && data->BufTextLen
+			       > 0;
+		};
+
 		switch (data->EventFlag) {
 			case ImGuiInputTextFlags_CallbackCompletion: {
-				Msg("callback", "completion");
+				if (!ensureSuggestions()) {
+					break;
+				}
+
+				auto& suggestionState = gConsoleUIData.suggestion;
+				if (suggestionState.items.empty()) {
+					break;
+				}
+
+				if (suggestionState.selectedIndex < 0) {
+					suggestionState.selectedIndex = 0;
+				}
+
+				const bool reverse = ImGui::GetIO().KeyShift;
+				self->MoveSuggestionSelection(reverse ? -1 : 1);
+				if (
+					suggestionState.selectedIndex >= 0 &&
+					suggestionState.selectedIndex < static_cast<int>(
+						suggestionState.items.size()
+					)
+				) {
+					const auto& selected =
+						suggestionState.items[static_cast<size_t>(
+							suggestionState.selectedIndex
+						)];
+					c.suppressSuggestionRefreshOnEdit = true;
+					ApplySuggestionToCallbackBuffer(data, selected.name, false);
+				}
 			}
 			break;
 
 			case ImGuiInputTextFlags_CallbackHistory: {
+				if (ensureSuggestions()) {
+					if (data->EventKey == ImGuiKey_UpArrow) {
+						self->MoveSuggestionSelection(1);
+						const auto& selected =
+							c.suggestion.items[static_cast<size_t>(
+								c.suggestion.selectedIndex
+							)];
+						c.suppressSuggestionRefreshOnEdit = true;
+						ApplySuggestionToCallbackBuffer(
+							data, selected.name, false
+						);
+						break;
+					}
+					if (data->EventKey == ImGuiKey_DownArrow) {
+						self->MoveSuggestionSelection(-1);
+						const auto& selected =
+							c.suggestion.items[static_cast<size_t>(
+								c.suggestion.selectedIndex
+							)];
+						c.suppressSuggestionRefreshOnEdit = true;
+						ApplySuggestionToCallbackBuffer(
+							data, selected.name, false
+						);
+						break;
+					}
+				}
+
 				const int historySize = static_cast<int>(c.history.Size());
 				if (historySize <= 0) {
 					break;
@@ -529,6 +1224,16 @@ namespace Unnamed {
 			case ImGuiInputTextFlags_CallbackEdit:
 				// 編集が入ったら「履歴閲覧中」フラグを解除（次の↑↓で scratch を取り直す）
 				c.browsing = false;
+				if (c.suppressSuggestionRefreshOnEdit) {
+					c.suppressSuggestionRefreshOnEdit = false;
+					break;
+				}
+				self->UpdateSuggestions(
+					std::string_view(
+						data->Buf,
+						static_cast<size_t>(std::max(data->BufTextLen, 0))
+					)
+				);
 				break;
 
 			case ImGuiInputTextFlags_CallbackResize: {}
@@ -562,7 +1267,6 @@ namespace Unnamed {
 			return;
 		}
 
-		ImGui::TableSetupScrollFreeze(0, 1);
 		ImGui::TableSetupColumn("Log", ImGuiTableColumnFlags_WidthStretch);
 		ImGui::TableSetupColumn("Channel", ImGuiTableColumnFlags_WidthFixed);
 		ImGui::TableHeadersRow();
@@ -605,25 +1309,16 @@ namespace Unnamed {
 	void ConsoleUI::DrawLogRows(
 		int& visibleIndex, bool& requestOpenContextMenu
 	) {
-		// ImGuiListClipper でスクロール範囲外の行の描画/入力処理を省略
-		ImGuiListClipper clipper;
-		clipper.Begin(static_cast<int>(gConsoleUIData.filteredToActual.size()));
-		while (clipper.Step()) {
-			for (
-				int row = clipper.DisplayStart;
-				row < clipper.DisplayEnd;
-				++row
-			) {
-				const size_t actualIndex = gConsoleUIData.filteredToActual[
-					static_cast<size_t>(row)
-				];
-				if (DrawLogRow(
-					actualIndex,
-					row,
-					requestOpenContextMenu
-				)) {
-					visibleIndex++;
-				}
+		// 複数行ログで可変行高になるため全行を順に描画する
+		for (size_t row = 0; row < gConsoleUIData.filteredToActual.size(); ++
+		     row) {
+			const size_t actualIndex = gConsoleUIData.filteredToActual[row];
+			if (DrawLogRow(
+				actualIndex,
+				static_cast<int>(row),
+				requestOpenContextMenu
+			)) {
+				visibleIndex++;
 			}
 		}
 	}
@@ -634,23 +1329,50 @@ namespace Unnamed {
 		bool&        requestOpenContextMenu
 	) {
 		const auto& buffer = mConsoleSystem->GetLogBuffer()[actualIndex];
+		const int   lineCount = CountDisplayLines(buffer.message);
+		const float lineHeight = ImGui::GetTextLineHeight();
+		const float multiLineHeight = std::max(
+			lineHeight * static_cast<float>(lineCount) +
+			ImGui::GetStyle().FramePadding.y * 2.0f,
+			ImGui::GetFrameHeight()
+		);
 
-		std::string display = buffer.message;
-		display             += "##" + std::to_string(actualIndex);
-
-		ImGui::TableNextRow();
+		if (lineCount > 1) {
+			ImGui::TableNextRow(0, multiLineHeight);
+		} else {
+			ImGui::TableNextRow();
+		}
 		ImGui::TableSetColumnIndex(0);
 
-		PushTextColor(buffer);
 		ImGui::PushID(static_cast<int>(actualIndex));
 
-		const bool isSelected = gConsoleUIData.selected[actualIndex];
+		const bool        isSelected   = gConsoleUIData.selected[actualIndex];
+		const std::string selectableId = "##LogRow_" + std::to_string(
+			                                 actualIndex
+		                                 );
 		ImGui::Selectable(
-			display.c_str(),
+			selectableId.c_str(),
 			isSelected,
 			ImGuiSelectableFlags_SpanAllColumns |
-			ImGuiSelectableFlags_AllowOverlap
+			ImGuiSelectableFlags_AllowOverlap,
+			lineCount > 1 ? ImVec2(0.0f, multiLineHeight) : ImVec2(0.0f, 0.0f)
 		);
+
+		PushTextColor(buffer);
+		const auto textColor = ImGui::GetColorU32(ImGuiCol_Text);
+		ImGui::PopStyleColor();
+		const ImVec2 textMin = ImVec2(
+			ImGui::GetItemRectMin().x + ImGui::GetStyle().FramePadding.x,
+			ImGui::GetItemRectMin().y + ImGui::GetStyle().FramePadding.y
+		);
+		const ImVec2 textMax = ImGui::GetItemRectMax();
+		ImGui::PushClipRect(textMin, textMax, true);
+		ImGui::GetWindowDrawList()->AddText(
+			textMin,
+			textColor,
+			buffer.message.c_str()
+		);
+		ImGui::PopClipRect();
 
 		// 左クリック選択
 		if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
@@ -696,7 +1418,6 @@ namespace Unnamed {
 		}
 
 		ImGui::PopID();
-		ImGui::PopStyleColor();
 
 		// チャンネル列
 		ImGui::TableSetColumnIndex(1);

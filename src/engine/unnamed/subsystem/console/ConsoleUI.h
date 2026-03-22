@@ -1,5 +1,9 @@
 #pragma once
 #ifdef _DEBUG
+#include <string>
+#include <string_view>
+#include <vector>
+
 #include "core/math/Vec4.h"
 struct ImVec2;
 struct ImGuiInputTextCallbackData;
@@ -17,6 +21,18 @@ namespace Unnamed {
 	constexpr Vec4 kConTextColorExec    = {0.8f, 1.0f, 1.0f, 1.0f};
 	constexpr Vec4 kConTextColorWait    = {0.93f, 0.79f, 0.09f, 1.0f};
 	constexpr Vec4 kConTextColorSuccess = {0.48f, 0.76f, 0.26f, 1.0f};
+	constexpr Vec4 kConTextColorBool    = {0.58f, 0.0f, 0.0f, 1.0f};
+	constexpr Vec4 kConTextColorInt     = {0.12f, 0.88f, 0.68f, 1.0f};
+	constexpr Vec4 kConTextColorFloat   = {0.22f, 0.83f, 0.0f, 1.0f};
+	constexpr Vec4 kConTextColorDouble  = {0.12f, 0.47f, 0.0f, 1.0f};
+	constexpr Vec4 kConTextColorString  = {0.99f, 0.0f, 0.82f, 1.0f};
+	constexpr Vec4 kConTextColorVec3    = {0.99f, 0.78f, 0.14f, 1.0f};
+
+	struct InputTextWithComboItems {
+		const char* (*itemGetter)(void* userData, int idx);
+		void*         userData;
+		int           itemCount;
+	};
 
 	/// @brief コンソールUIクラス
 	class ConsoleUI {
@@ -38,6 +54,20 @@ namespace Unnamed {
 		void OnConsoleUpdate();
 
 	private:
+		struct SuggestionContext {
+			size_t      segmentStart = 0;
+			size_t      tokenStart   = 0;
+			size_t      tokenEnd     = 0;
+			std::string token;
+			bool        tokenConfirmed = false;
+		};
+
+		struct SuggestionItem {
+			std::string name;
+			std::string secondaryText;
+			bool        isConVar = false;
+		};
+
 		/// @brief メニューバーを表示します
 		void ShowMenuBar();
 
@@ -68,6 +98,27 @@ namespace Unnamed {
 			const std::string& file, int line, int column
 		) const;
 
+		void UpdateSuggestions(std::string_view input);
+		void DrawSuggestionsPopup(
+			const ImVec2& inputLeftTop, float inputWidth, bool inputActive
+		);
+		void MoveSuggestionSelection(int delta);
+		void ApplySuggestionToInputBuffer(
+			const std::string& suggestion, bool appendSpace = false
+		);
+		static void ApplySuggestionToCallbackBuffer(
+			ImGuiInputTextCallbackData* data, const std::string& suggestion,
+			bool                        appendSpace = false
+		);
+		static SuggestionContext ParseSuggestionContext(std::string_view input);
+		std::vector<SuggestionItem> BuildSuggestionsForToken(
+			std::string_view token
+		) const;
+
+		bool InputTextWithCombo(
+			const char*              label, char* buf, size_t bufSize,
+			InputTextWithComboItems* items
+		);
 
 		static int InputTextCallback(ImGuiInputTextCallbackData* data);
 

@@ -1,4 +1,8 @@
-﻿Texture2D<float> gDepth : register(t0);
+﻿//-----------------------------------------------------------------------------
+// 深度バッファを可視化するシェーダー
+//-----------------------------------------------------------------------------
+
+Texture2D<float> gDepth : register(t0);
 SamplerState     gSampler : register(s0);
 
 struct VsOut {

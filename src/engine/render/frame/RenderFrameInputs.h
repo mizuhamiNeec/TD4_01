@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "core/assets/AssetID.h"
@@ -43,6 +44,14 @@ namespace Unnamed::Render {
 		bool              preferRealtimeResize = true;
 	};
 
+	struct PostFxPassOverride {
+		std::string passName;
+		bool        hasEnabledOverride = false;
+		bool        enabled            = true;
+		std::unordered_map<std::string, float> scalarParams;
+		std::unordered_map<std::string, Vec4>  colorParams;
+	};
+
 	enum class RENDER_VIEW_TYPE : uint8_t {
 		SCENE = 0,
 		SPRITE_ONLY = 1,
@@ -67,6 +76,7 @@ namespace Unnamed::Render {
 		Mat4                  proj      = Mat4::identity;
 		Mat4                  viewProj  = Mat4::identity;
 		Vec3                  cameraPos = Vec3::zero;
+		float                 exposureEv = 0.0f;
 		float                 nearZ     = 0.001f;
 		float                 farZ      = 10000.0f;
 		PROJECTION_DEPTH_MODE depthMode = PROJECTION_DEPTH_MODE::ReverseZ;
@@ -134,12 +144,23 @@ namespace Unnamed::Render {
 		bool    uvFlipY        = false;
 	};
 
+	struct DebugLineInput {
+		Vec3 start = Vec3::zero;
+		Vec3 end   = Vec3::right;
+		Vec4 color = Vec4::one;
+	};
+
+	struct DebugDrawFrameInput {
+		std::vector<DebugLineInput> lines;
+	};
+
 	struct RenderViewInput {
 		std::string viewKey;
 
 		RENDER_VIEW_TYPE      type = RENDER_VIEW_TYPE::SCENE;
 		RenderViewOutputDesc  output = {};
 		SceneViewRenderMode   sceneViewMode = {};
+		std::vector<PostFxPassOverride> postFxPassOverrides;
 		RenderCameraInput     camera = {};
 
 		std::vector<VisibleRenderObject>  visibleObjects;
@@ -153,6 +174,7 @@ namespace Unnamed::Render {
 	struct RenderFrameInputs {
 		uint32_t frameIndex = 0;
 		std::vector<RenderViewInput> views;
+		DebugDrawFrameInput          debugDraw;
 
 		float time = 0.0f;
 	};

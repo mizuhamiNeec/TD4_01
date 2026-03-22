@@ -8,12 +8,12 @@ cbuffer MaterialCB : register(b2) {
 	float2 gPadding;
 }
 
-Texture2D gSpriteTexture : register(t0);
+Texture2D    gSpriteTexture : register(t0);
 SamplerState gLinearWrapSampler : register(s0);
 
 struct PsIn {
 	float4 pos : SV_POSITION;
-	float2 uv  : TEXCOORD0;
+	float2 uv : TEXCOORD0;
 };
 
 float4 PsMain(PsIn input) : SV_TARGET {

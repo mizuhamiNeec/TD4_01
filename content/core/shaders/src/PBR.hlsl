@@ -59,7 +59,9 @@ VsOut VsMain(VsIn i) {
 		[unroll]
 		for (uint k = 0; k < 4; ++k) {
 			const float weight = i.boneWeights[k];
-			if (weight <= 0.0f) { continue; }
+			if (weight <= 0.0f) {
+				continue;
+			}
 
 			const uint boneIndex = (uint)i.boneIndices[k];
 			skinnedPos           += mul(
@@ -83,13 +85,18 @@ VsOut VsMain(VsIn i) {
 }
 
 float4 PsMain(VsOut i) : SV_TARGET {
+	// ポータルのクリッピング
 	if (gPortalClipEnabled > 0.5f) {
 		clip(dot(float4(i.positionWS, 1.0f), gPortalClipPlane));
 	}
 
+	// ベースカラーのテクスチャサンプリング
 	float3 texColor = gBaseColorTex.Sample(gLinearWrap, i.uv).rgb;
-	float3 albedo   = texColor * gBaseColor.rgb;
 
+	// アルベド = テクスチャカラー * ベースカラー
+	float3 albedo = texColor * gBaseColor.rgb;
+
+	// ドメインモードが0（Unlit）の場合は、ライティングなしでアルベドとエミッシブカラーを合成して出力
 	if (gDomainMode < 0.5f) {
 		float3 unlit = albedo + gEmissiveColor.rgb;
 		return float4(unlit, saturate(gOpacity * gBaseColor.a));

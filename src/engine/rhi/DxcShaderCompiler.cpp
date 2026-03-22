@@ -4,7 +4,6 @@
 #include <fstream>
 #include <iterator>
 
-#include "core/UnnamedMacro.h"
 #include "core/string/StrUtil.h"
 
 #include "engine/unnamed/subsystem/console/Log.h"
@@ -139,6 +138,7 @@ namespace Unnamed::Rhi {
 		result->GetStatus(&status);
 
 		// エラー/警告ログ
+		std::string_view diagnostics = {};
 		Microsoft::WRL::ComPtr<IDxcBlobUtf8> errors;
 		if (SUCCEEDED(
 			result->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(errors.
@@ -146,17 +146,27 @@ namespace Unnamed::Rhi {
 		)) {
 			if (errors && errors->GetStringLength() > 0) {
 				const char* message = errors->GetStringPointer();
-				Warning(
-					"Shader",
-					"{}",
-					message ? std::string_view(message) : std::string_view{}
-				);
-				UASSERT(false && "シェーダーのコンパイルに失敗しました");
+				diagnostics         = message ?
+					              std::string_view(message) :
+					              std::string_view{};
 			}
 		}
 
 		if (FAILED(status)) {
+			if (!diagnostics.empty()) {
+				Error("Shader", "{}", diagnostics);
+			} else {
+				Error(
+					"Shader",
+					"Compile failed with status=0x{:08X} for '{}'",
+					static_cast<uint32_t>(status),
+					StrUtil::ToString(sourcePath)
+				);
+			}
 			return false;
+		}
+		if (!diagnostics.empty()) {
+			Warning("Shader", "{}", diagnostics);
 		}
 
 		Microsoft::WRL::ComPtr<IDxcBlob> objectBlob;

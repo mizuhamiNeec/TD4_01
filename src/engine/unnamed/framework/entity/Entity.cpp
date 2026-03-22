@@ -54,6 +54,28 @@ namespace Unnamed {
 		}
 	}
 
+	uint32_t Entity::PrePhysicsTick(
+		const float                    deltaTime,
+		const BaseComponent::TickGroup group
+	) const {
+		if (!mIsActive) {
+			return 0;
+		}
+
+		uint32_t invokedCount = 0;
+		for (const auto& component : mComponents) {
+			if (!component->IsActive()) {
+				continue;
+			}
+			if (component->GetTickGroup() != group) {
+				continue;
+			}
+			component->PrePhysicsTick(deltaTime);
+			++invokedCount;
+		}
+		return invokedCount;
+	}
+
 	void Entity::Tick(const float deltaTime) const {
 		if (!mIsActive) {
 			return;
@@ -67,6 +89,28 @@ namespace Unnamed {
 		}
 	}
 
+	uint32_t Entity::Tick(
+		const float                    deltaTime,
+		const BaseComponent::TickGroup group
+	) const {
+		if (!mIsActive) {
+			return 0;
+		}
+
+		uint32_t invokedCount = 0;
+		for (const auto& component : mComponents) {
+			if (!component->IsActive()) {
+				continue;
+			}
+			if (component->GetTickGroup() != group) {
+				continue;
+			}
+			component->OnTick(deltaTime);
+			++invokedCount;
+		}
+		return invokedCount;
+	}
+
 	void Entity::PostPhysicsTick(const float deltaTime) const {
 		if (!mIsActive) {
 			return;
@@ -78,6 +122,28 @@ namespace Unnamed {
 			}
 			component->PostPhysicsTick(deltaTime);
 		}
+	}
+
+	uint32_t Entity::PostPhysicsTick(
+		const float                    deltaTime,
+		const BaseComponent::TickGroup group
+	) const {
+		if (!mIsActive) {
+			return 0;
+		}
+
+		uint32_t invokedCount = 0;
+		for (const auto& component : mComponents) {
+			if (!component->IsActive()) {
+				continue;
+			}
+			if (component->GetTickGroup() != group) {
+				continue;
+			}
+			component->PostPhysicsTick(deltaTime);
+			++invokedCount;
+		}
+		return invokedCount;
 	}
 
 	void Entity::OnPreRender() const {

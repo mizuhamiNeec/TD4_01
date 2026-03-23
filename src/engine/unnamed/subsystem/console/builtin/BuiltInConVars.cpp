@@ -298,7 +298,7 @@ namespace Unnamed {
 			"Disable ground snap duration immediately after jump (seconds)."
 		);
 		static ConVar sv_passivepush_contactskin(
-			"sv_passivepush_contactskin", 16.0f,
+			"sv_passivepush_contactskin", 4.0f,
 			FCVAR::NOTIFY | FCVAR::REPLICATED,
 			"Passive push contact skin width in HU."
 		);
@@ -311,6 +311,16 @@ namespace Unnamed {
 		static ConVar sv_stepheight(
 			"sv_stepheight", 18.0f, FCVAR::NOTIFY | FCVAR::REPLICATED,
 			"Step height in HU."
+		);
+
+		static ConVar park_duckaccelerate(
+			"park_duckaccelerate", 4.0f, FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Parkour duck accelerate."
+		);
+
+		static ConVar park_duckfriction(
+			"park_duckfriction", 1.0f, FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Parkour duck friction."
 		);
 	}
 }

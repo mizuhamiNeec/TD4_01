@@ -87,6 +87,19 @@ namespace Unnamed {
 			const Vec3& position, float maxDistance, Physics::Hit* outHit
 		) const = 0;
 
+		/// @brief 指定ボックスの重なりを収集します。
+		/// @param position 判定ボックス中心
+		/// @param halfExtents 判定ボックス半径
+		/// @param outHits ヒット情報出力先
+		/// @param maxHits 出力上限
+		/// @return 収集されたヒット数
+		virtual int CollectOverlaps(
+			const Vec3& position,
+			const Vec3& halfExtents,
+			Physics::Hit* outHits,
+			int           maxHits
+		) const = 0;
+
 		Physics::Engine* GetPhysics() const;
 
 	protected:

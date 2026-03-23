@@ -7,7 +7,7 @@
 
 namespace Unnamed {
 	/// @brief パルクール用の地上移動状態
-	class ParkourGroundMove final : public GroundMove {
+	class ParkourGroundMove : public GroundMove {
 	public:
 		explicit ParkourGroundMove();
 

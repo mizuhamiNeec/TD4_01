@@ -1,9 +1,6 @@
 ﻿#include "ParkourGroundMove.h"
 
-#include "ParkourAirMove.h"
-
 #include "engine/unnamed/framework/components/TransformComponent.h"
-#include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/world/World.h"
 
 #include "game/core/collision/kinematic/base/BaseKinematicCollisionResolver.h"
@@ -21,6 +18,7 @@ namespace Unnamed {
 	) {
 		context.isGrounded = false;
 
+		// 最初のティックでサポートの線形速度を基準にする
 		if (mRebaseVelocityToSupportOnFirstTick) {
 			context.velocity -= context.supportLinearVelocity;
 			mRebaseVelocityToSupportOnFirstTick = false;
@@ -35,6 +33,10 @@ namespace Unnamed {
 		// ジャンプしていない場合は摩擦を適用(バニーホップ中か?)
 		if (!context.input.jumpPressed) {
 			ApplyFriction(context.velocity, mFriction->GetValue(), deltaTime);
+		}
+
+		if (context.input.crouchPressed) {
+			context.requestedState = "ParkourSlideMove";
 		}
 
 		Accelerate(
@@ -74,15 +76,15 @@ namespace Unnamed {
 		// 地面に接しているかを判定し、状態遷移を行う
 		Physics::Hit groundHit{};
 		if (!IsGrounded(context.resolver, result.position, &groundHit)) {
-			context.supportEntityGuid = 0;
+			context.supportEntityGuid     = 0;
 			context.supportLinearVelocity = Vec3::zero;
-			context.supportStepDelta = Vec3::zero;
-			context.requestedState = "ParkourAirMove";
+			context.supportStepDelta      = Vec3::zero;
+			context.requestedState        = "ParkourAirMove";
 			return;
 		}
-		context.isGrounded = true;
+		context.isGrounded        = true;
 		context.supportEntityGuid = groundHit.hitEntityGuid;
-		context.velocity.y = 0.0f;
+		context.velocity.y        = 0.0f;
 	}
 
 	void ParkourGroundMove::Exit() {}

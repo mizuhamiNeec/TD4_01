@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "engine/unnamed/framework/components/TransformComponent.h"
+#include "engine/world/World.h"
 
 #include "game/core/collision/kinematic/base/BaseKinematicCollisionResolver.h"
 
@@ -22,15 +23,15 @@ namespace Unnamed {
 			return;
 		}
 
-		mAccelerate   = GetConVarSafe<float>(console, "sv_accelerate");
-		mMaxSpeed     = GetConVarSafe<float>(console, "sv_maxspeed");
-		mStopSpeed    = GetConVarSafe<float>(console, "sv_stopspeed");
-		mFriction     = GetConVarSafe<float>(console, "sv_friction");
-		mJumpVelocity = GetConVarSafe<float>(console, "sv_jumpvelocity");
+		mAccelerate          = GetConVarSafe<float>(console, "sv_accelerate");
+		mMaxSpeed            = GetConVarSafe<float>(console, "sv_maxspeed");
+		mStopSpeed           = GetConVarSafe<float>(console, "sv_stopspeed");
+		mFriction            = GetConVarSafe<float>(console, "sv_friction");
+		mJumpVelocity        = GetConVarSafe<float>(console, "sv_jumpvelocity");
 		mJumpSnapDisableTime = GetConVarSafe<float>(
 			console, "sv_jumpsnapdisabletime"
 		);
-		mStepHeight   = GetConVarSafe<float>(console, "sv_stepheight");
+		mStepHeight = GetConVarSafe<float>(console, "sv_stepheight");
 
 		mDuckSpeed   = GetConVarSafe<float>(console, "sv_duckspeed");
 		mWalkSpeed   = GetConVarSafe<float>(console, "sv_walkspeed");
@@ -51,6 +52,13 @@ namespace Unnamed {
 
 		// 移動方向
 		Vec3 wishDir = GetWishDirHoriz(context);
+
+		// デバッグ描画: 移動方向をレイで表示
+		context.transform->GetWorld()->GetDebugDraw().DrawRay(
+			context.transform->Position(),
+			wishDir.Normalized(),
+			Vec4::white
+		);
 
 		// 地上移動中は鉛直速度をリセット
 		context.velocity.y = 0.0f;
@@ -107,22 +115,60 @@ namespace Unnamed {
 		// 地面に接しているかを判定し、状態遷移を行う
 		Physics::Hit groundHit{};
 		if (!IsGrounded(context.resolver, result.position, &groundHit)) {
-			context.supportEntityGuid = 0;
+			context.supportEntityGuid     = 0;
 			context.supportLinearVelocity = Vec3::zero;
-			context.supportStepDelta = Vec3::zero;
-			context.requestedState = "AirMove";
+			context.supportStepDelta      = Vec3::zero;
+			context.requestedState        = "AirMove";
 			return;
 		}
 
-		context.isGrounded = true;
+		context.isGrounded        = true;
 		context.supportEntityGuid = groundHit.hitEntityGuid;
-		context.velocity.y = 0.0f;
+		context.velocity.y        = 0.0f;
 	}
 
 	void GroundMove::Exit() {}
 
 	std::string_view GroundMove::GetStateName() {
 		return "GroundMove";
+	}
+
+	void GroundMove::ExecuteJumpAndLeaveGround(
+		MovementContext&       context,
+		const float            deltaTime,
+		const std::string_view airStateName
+	) const {
+		if (!context.transform || !context.resolver) {
+			return;
+		}
+
+		const float detachBiasM = Math::HtoM(kJumpDetachBiasHu) +
+		                          std::max(0.0f, context.supportStepDelta.y);
+		context.transform->SetPosition(
+			context.transform->Position() + Vec3::up * detachBiasM
+		);
+
+		context.velocity   += context.supportLinearVelocity;
+		context.velocity.y += Math::HtoM(mJumpVelocity->GetValue());
+
+		if (mJumpSnapDisableTime) {
+			context.jumpSnapDisableRemaining = std::max(
+				context.jumpSnapDisableRemaining,
+				mJumpSnapDisableTime->GetValue()
+			);
+		}
+
+		Vec3 jumpPos = context.transform->Position();
+		Vec3 jumpVel = context.velocity;
+		context.resolver->SlideMove(jumpPos, jumpVel, deltaTime);
+		context.transform->SetPosition(jumpPos);
+		context.velocity = jumpVel;
+
+		context.isGrounded            = false;
+		context.supportEntityGuid     = 0;
+		context.supportLinearVelocity = Vec3::zero;
+		context.supportStepDelta      = Vec3::zero;
+		context.requestedState        = std::string(airStateName);
 	}
 
 	void GroundMove::ApplyFriction(
@@ -196,44 +242,7 @@ namespace Unnamed {
 		if (outHit) {
 			*outHit = hit;
 		}
-		return hit.startSolid || hit.allsolid || hit.normal.y > kGroundNormalMinY;
-	}
-
-	void GroundMove::ExecuteJumpAndLeaveGround(
-		MovementContext& context,
-		const float      deltaTime,
-		const std::string_view airStateName
-	) const {
-		if (!context.transform || !context.resolver) {
-			return;
-		}
-
-		const float detachBiasM = Math::HtoM(kJumpDetachBiasHu) +
-		                          std::max(0.0f, context.supportStepDelta.y);
-		context.transform->SetPosition(
-			context.transform->Position() + Vec3::up * detachBiasM
-		);
-
-		context.velocity += context.supportLinearVelocity;
-		context.velocity.y += Math::HtoM(mJumpVelocity->GetValue());
-
-		if (mJumpSnapDisableTime) {
-			context.jumpSnapDisableRemaining = std::max(
-				context.jumpSnapDisableRemaining,
-				mJumpSnapDisableTime->GetValue()
-			);
-		}
-
-		Vec3 jumpPos = context.transform->Position();
-		Vec3 jumpVel = context.velocity;
-		context.resolver->SlideMove(jumpPos, jumpVel, deltaTime);
-		context.transform->SetPosition(jumpPos);
-		context.velocity = jumpVel;
-
-		context.isGrounded              = false;
-		context.supportEntityGuid       = 0;
-		context.supportLinearVelocity   = Vec3::zero;
-		context.supportStepDelta        = Vec3::zero;
-		context.requestedState          = std::string(airStateName);
+		return hit.startSolid || hit.allsolid || hit.normal.y >
+		       kGroundNormalMinY;
 	}
 }

@@ -357,6 +357,23 @@ namespace Unnamed {
 		return true;
 	}
 
+	int BoxKinematicCollisionResolver::CollectOverlaps(
+		const Vec3& position,
+		const Vec3& halfExtents,
+		Physics::Hit* outHits,
+		const int     maxHits
+	) const {
+		if (!mEngine || !outHits || maxHits <= 0) {
+			return 0;
+		}
+
+		Box box = {
+			.center = position,
+			.halfSize = halfExtents
+		};
+		return mEngine->BoxOverlap(box, outHits, maxHits);
+	}
+
 	float BoxKinematicCollisionResolver::CastSkinM() {
 		return SkinM();
 	}

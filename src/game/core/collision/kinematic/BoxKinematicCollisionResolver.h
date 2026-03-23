@@ -23,6 +23,13 @@ namespace Unnamed {
 			const Vec3& position, float maxDistance, Physics::Hit* outHit
 		) const override;
 
+		int CollectOverlaps(
+			const Vec3& position,
+			const Vec3& halfExtents,
+			Physics::Hit* outHits,
+			int           maxHits
+		) const override;
+
 	private:
 		static float CastSkinM();
 		static float SkinM();

@@ -2,6 +2,7 @@
 
 #include "ParkourAirMove.h"
 #include "ParkourGroundMove.h"
+#include "ParkourSlideMove.h"
 
 #include "game/core/collision/kinematic/base/BaseKinematicCollisionResolver.h"
 #include "game/core/components/character/state/GameMovementStateMachine.h"
@@ -12,5 +13,6 @@ namespace Unnamed {
 	) {
 		stateMachine.AddState(std::make_shared<ParkourGroundMove>());
 		stateMachine.AddState(std::make_shared<ParkourAirMove>());
+		stateMachine.AddState(std::make_shared<ParkourSlideMove>());
 	}
 }

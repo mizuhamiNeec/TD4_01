@@ -1,8 +1,9 @@
 ﻿#pragma once
 #include "engine/unnamed/subsystem/console/concommand/ConVar.h"
 
-#include "interface/IMovementState.h"
 #include "game/core/collision/kinematic/base/BaseKinematicCollisionResolver.h"
+
+#include "interface/IMovementState.h"
 
 namespace Unnamed {
 	class AirMove : public IMovementState {

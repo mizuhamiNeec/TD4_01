@@ -1,6 +1,7 @@
 #include "GameMovementComponent.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 
 #include "base/BaseCharacterComponent.h"
@@ -31,6 +32,12 @@
 namespace Unnamed {
 	namespace {
 		constexpr char kStateAirMove[] = "AirMove";
+		constexpr int  kMaxPassiveOverlapHits = 64;
+
+		struct PassiveMoverInfluence {
+			uint64_t guid      = 0;
+			Vec3     stepDelta = Vec3::zero;
+		};
 	}
 
 	GameMovementComponent::~GameMovementComponent() = default;
@@ -42,6 +49,8 @@ namespace Unnamed {
 		if (!transform || !mCollisionResolver || !mStateMachine) {
 			return;
 		}
+
+		(void)ApplyPassiveMotionStep(transform, stepSeconds);
 
 		MovementContext context = {
 			.input                 = input,
@@ -125,6 +134,12 @@ namespace Unnamed {
 
 		mSupportCache = {};
 		mJumpSnapDisableRemaining = 0.0f;
+		mPassivePushContactSkin = GetConVarSafe<float>(
+			mConsole, "sv_passivepush_contactskin"
+		);
+		mPassivePushMaxDepenetrationIters = GetConVarSafe<int>(
+			mConsole, "sv_passivepush_maxdepenetrationiters"
+		);
 	}
 
 	void GameMovementComponent::PrePhysicsTick(const float deltaTime) {
@@ -309,6 +324,298 @@ namespace Unnamed {
 		}
 
 		return mover->GetStepDelta(stepSeconds);
+	}
+
+	bool GameMovementComponent::ApplyPassiveMotionStep(
+		TransformComponent* transform,
+		const float         stepSeconds
+	) {
+		if (!transform || !mCollisionResolver || stepSeconds <= 0.0f) {
+			return false;
+		}
+
+		const Entity* owner = GetOwner();
+		const uint64_t ownerGuid = owner ? owner->GetGuid() : 0;
+		const World* world = GetWorld();
+		const Scene* scene = world ? world->GetScenePtr() : nullptr;
+		if (!scene) {
+			return false;
+		}
+
+		const auto resolveMover = [scene](const uint64_t entityGuid)
+			-> const KinematicMoverComponent* {
+			if (entityGuid == 0) {
+				return nullptr;
+			}
+
+			const Entity* entity = scene->FindEntity(entityGuid);
+			for (int depth = 0; entity && depth < 8; ++depth) {
+				if (!entity->IsActive()) {
+					return nullptr;
+				}
+
+				const auto* mover = entity->GetComponent<KinematicMoverComponent>();
+				if (mover && !mover->WasTeleported()) {
+					return mover;
+				}
+
+				const auto* transform = entity->GetComponent<TransformComponent>();
+				if (!transform || !transform->Parent()) {
+					break;
+				}
+				entity = transform->Parent()->GetOwner();
+			}
+			return nullptr;
+		};
+
+		const uint64_t supportGuid =
+			mSupportCache.grounded ? mSupportCache.supportEntityGuid : 0;
+		const float contactSkinHu = mPassivePushContactSkin ?
+			                            mPassivePushContactSkin->GetValue() :
+			                            4.0f;
+		const float contactSkinM = Math::HtoM(std::max(0.0f, contactSkinHu));
+		const Vec3 overlapHalfExtents =
+			mBoxHalfExtents + Vec3(contactSkinM, contactSkinM, contactSkinM);
+		const float sweepExtra = contactSkinM + Math::HtoM(0.5f);
+
+		Vec3 position = transform->Position();
+		std::array<Physics::Hit, kMaxPassiveOverlapHits> overlapHits{};
+		std::array<PassiveMoverInfluence, kMaxPassiveOverlapHits> influences{};
+		int influenceCount = 0;
+		const auto findInfluenceIndex = [&influences, &influenceCount](
+			                              const uint64_t guid
+		                              ) -> int {
+			for (int i = 0; i < influenceCount; ++i) {
+				if (influences[i].guid == guid) {
+					return i;
+				}
+			}
+			return -1;
+		};
+		const auto tryAddInfluence =
+			[&influences, &influenceCount, &findInfluenceIndex](
+				const uint64_t guid,
+				const Vec3&    stepDelta
+			) -> void {
+			if (guid == 0 || stepDelta.SqrLength() <= 1.0e-12f) {
+				return;
+			}
+
+			const int existing = findInfluenceIndex(guid);
+			if (existing >= 0) {
+				influences[existing].stepDelta = stepDelta;
+				return;
+			}
+
+			if (influenceCount >= static_cast<int>(influences.size())) {
+				return;
+			}
+			influences[influenceCount++] = PassiveMoverInfluence{
+				.guid      = guid,
+				.stepDelta = stepDelta
+			};
+		};
+
+		const int overlapCount = mCollisionResolver->CollectOverlaps(
+			position,
+			overlapHalfExtents,
+			overlapHits.data(),
+			static_cast<int>(overlapHits.size())
+		);
+		for (int i = 0; i < overlapCount; ++i) {
+			const Physics::Hit& hit = overlapHits[i];
+			if (hit.hitEntityGuid == 0 || hit.hitEntityGuid == ownerGuid) {
+				continue;
+			}
+
+			const auto* mover = resolveMover(hit.hitEntityGuid);
+			if (!mover) {
+				continue;
+			}
+
+			const Entity* moverOwner = mover->GetOwner();
+			const uint64_t moverGuid =
+				moverOwner ? moverOwner->GetGuid() : hit.hitEntityGuid;
+			if (moverGuid == 0 || moverGuid == supportGuid) {
+				continue;
+			}
+
+			const Vec3 moverStepDelta = mover->GetStepDelta(stepSeconds);
+			if (moverStepDelta.SqrLength() <= 1.0e-12f) {
+				continue;
+			}
+
+			bool pushing = true;
+			if (hit.normal.SqrLength() > 1.0e-12f) {
+				const Vec3 n = hit.normal.Normalized();
+				pushing       = moverStepDelta.Dot(n) > 1.0e-6f;
+			}
+			if (!pushing) {
+				continue;
+			}
+
+			tryAddInfluence(moverGuid, moverStepDelta);
+		}
+
+		Physics::Engine* physics = mCollisionResolver->GetPhysics();
+		for (const auto& entityPtr : scene->GetEntities()) {
+			const Entity* moverEntity = entityPtr.get();
+			if (!moverEntity || !moverEntity->IsActive() ||
+			    moverEntity->GetGuid() == ownerGuid) {
+				continue;
+			}
+
+			const auto* mover = moverEntity->GetComponent<KinematicMoverComponent>();
+			if (!mover || mover->WasTeleported()) {
+				continue;
+			}
+
+			const uint64_t moverGuid = moverEntity->GetGuid();
+			if (moverGuid == supportGuid || findInfluenceIndex(moverGuid) >= 0) {
+				continue;
+			}
+
+			const Vec3 moverStepDelta = mover->GetStepDelta(stepSeconds);
+			if (moverStepDelta.SqrLength() <= 1.0e-12f) {
+				continue;
+			}
+
+			if (!physics) {
+				continue;
+			}
+
+			const float moverDeltaLen = moverStepDelta.Length();
+			if (moverDeltaLen <= 1.0e-6f) {
+				continue;
+			}
+
+			const Vec3  castDir    = (-moverStepDelta) / moverDeltaLen;
+			const float castLength = moverDeltaLen + sweepExtra;
+			const float yOffset    = mBoxHalfExtents.y * 0.5f;
+			const std::array<Vec3, 3> offsets = {
+				Vec3::zero,
+				Vec3::up * yOffset,
+				Vec3::down * yOffset
+			};
+
+			bool moverWouldTouch = false;
+			for (const Vec3& offset : offsets) {
+				Physics::Hit sweepHit{};
+				const Box sweepBox = {
+					.center   = position + offset,
+					.halfSize = overlapHalfExtents
+				};
+				if (!physics->BoxCast(
+					sweepBox,
+					castDir,
+					castLength,
+					&sweepHit
+				)) {
+					continue;
+				}
+
+				if (resolveMover(sweepHit.hitEntityGuid) == mover) {
+					moverWouldTouch = true;
+					break;
+				}
+			}
+			if (!moverWouldTouch) {
+				continue;
+			}
+
+			tryAddInfluence(moverGuid, moverStepDelta);
+		}
+
+		if (influenceCount <= 0) {
+			return false;
+		}
+
+		std::sort(
+			influences.begin(),
+			influences.begin() + influenceCount,
+			[](const PassiveMoverInfluence& lhs, const PassiveMoverInfluence& rhs) {
+				const float lhsLenSq = lhs.stepDelta.SqrLength();
+				const float rhsLenSq = rhs.stepDelta.SqrLength();
+				if (lhsLenSq == rhsLenSq) {
+					return lhs.guid < rhs.guid;
+				}
+				return lhsLenSq > rhsLenSq;
+			}
+		);
+
+		UpdateCollisionHull(transform);
+		bool positionChanged = false;
+		for (int i = 0; i < influenceCount; ++i) {
+			const Vec3 desiredDelta = influences[i].stepDelta;
+			if (desiredDelta.SqrLength() <= 1.0e-12f) {
+				continue;
+			}
+
+			const Vec3 beforePosition = position;
+			Vec3       pseudoVelocity = desiredDelta;
+			mCollisionResolver->SlideMove(position, pseudoVelocity, 1.0f);
+
+			const Vec3 appliedDelta = position - beforePosition;
+			if (!appliedDelta.IsZero(1.0e-6f)) {
+				positionChanged = true;
+			}
+
+			const Vec3 residual = desiredDelta - appliedDelta;
+			if (residual.SqrLength() > 1.0e-10f) {
+				const Vec3 blockNormal = residual.Normalized();
+				if (mVelocity.Dot(blockNormal) < 0.0f) {
+					mVelocity = BaseKinematicCollisionResolver::ClipVelocity(
+						mVelocity,
+						blockNormal,
+						1.0f
+					);
+				}
+			}
+		}
+
+		int maxDepenetrationIters = mPassivePushMaxDepenetrationIters ?
+			                            mPassivePushMaxDepenetrationIters->
+			                            GetValue() :
+			                            2;
+		maxDepenetrationIters = std::clamp(maxDepenetrationIters, 0, 8);
+		for (int iter = 0; iter < maxDepenetrationIters; ++iter) {
+			const int depenHitCount = mCollisionResolver->CollectOverlaps(
+				position,
+				mBoxHalfExtents,
+				overlapHits.data(),
+				static_cast<int>(overlapHits.size())
+			);
+
+			float deepestDepth  = 0.0f;
+			Vec3  deepestNormal = Vec3::zero;
+			for (int i = 0; i < depenHitCount; ++i) {
+				const Physics::Hit& hit = overlapHits[i];
+				if (hit.hitEntityGuid == 0 || hit.hitEntityGuid == ownerGuid) {
+					continue;
+				}
+
+				if (hit.depth > deepestDepth && hit.normal.SqrLength() > 1.0e-12f) {
+					deepestDepth  = hit.depth;
+					deepestNormal = hit.normal.Normalized();
+				}
+			}
+
+			if (deepestDepth <= contactSkinM + 1.0e-6f || deepestNormal.IsZero()) {
+				break;
+			}
+
+			const float depenBias = Math::HtoM(0.05f);
+			const float correction =
+				std::max(0.0f, deepestDepth - contactSkinM) + depenBias;
+			position += deepestNormal * correction;
+			positionChanged = true;
+		}
+
+		if (positionChanged) {
+			transform->SetPosition(position);
+			UpdateCollisionHull(transform);
+		}
+		return positionChanged;
 	}
 
 	REGISTER_COMPONENT(GameMovementComponent);

@@ -61,6 +61,9 @@ namespace Unnamed {
 		[[nodiscard]] Vec3 ResolveSupportStepDelta(
 			uint64_t supportEntityGuid, float stepSeconds
 		) const;
+		[[nodiscard]] bool ApplyPassiveMotionStep(
+			TransformComponent* transform, float stepSeconds
+		);
 
 		Physics::Engine* mPhysics = nullptr;
 		InputSystem*     mInput   = nullptr;
@@ -75,5 +78,7 @@ namespace Unnamed {
 
 		SupportCache mSupportCache;
 		float        mJumpSnapDisableRemaining = 0.0f;
+		ConVar<float>* mPassivePushContactSkin = nullptr;
+		ConVar<int>*   mPassivePushMaxDepenetrationIters = nullptr;
 	};
 }

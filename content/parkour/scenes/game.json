@@ -122,7 +122,7 @@
                         "speed": 20.0,
                         "startFromA": true
                     },
-                    "guid": 0,
+                    "guid": 16984558251293262854,
                     "type": "game.PatrolPoint"
                 }
             ],
@@ -163,9 +163,9 @@
                     "active": true,
                     "data": {
                         "boxHalfExtentsHu": [
-                            16.000106811523438,
-                            36.0002555847168,
-                            16.000106811523438
+                            16.00011444091797,
+                            36.000274658203125,
+                            16.00011444091797
                         ],
                         "collisionEnabled": true,
                         "maxSubSteps": 6,
@@ -792,6 +792,86 @@
             ],
             "folderPath": "",
             "guid": 2311,
+            "isEditorOnly": false,
+            "name": "Entity",
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            45.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            32.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "dynamic": true,
+                        "enabled": true
+                    },
+                    "guid": 0,
+                    "type": "engine.StaticMeshCollider"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "",
+                        "meshPath": "./content/core/models/fan.obj"
+                    },
+                    "guid": 0,
+                    "type": "engine.StaticMeshRenderer"
+                },
+                {
+                    "active": true,
+                    "data": {},
+                    "guid": 0,
+                    "type": "engine.KinematicMover"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "enabled": true,
+                        "moveToPointB": true,
+                        "pointA": [
+                            45.0,
+                            0.0,
+                            0.0
+                        ],
+                        "pointB": [
+                            45.0,
+                            0.0,
+                            20.0
+                        ],
+                        "snapOnAttach": true,
+                        "speed": 10.0,
+                        "startFromA": true
+                    },
+                    "guid": 0,
+                    "type": "game.PatrolPoint"
+                }
+            ],
+            "folderPath": "Gameplay/World",
+            "guid": 2312,
             "isEditorOnly": false,
             "name": "Entity",
             "visible": true

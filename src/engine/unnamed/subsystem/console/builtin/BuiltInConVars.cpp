@@ -297,6 +297,16 @@ namespace Unnamed {
 			FCVAR::NOTIFY | FCVAR::REPLICATED,
 			"Disable ground snap duration immediately after jump (seconds)."
 		);
+		static ConVar sv_passivepush_contactskin(
+			"sv_passivepush_contactskin", 16.0f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Passive push contact skin width in HU."
+		);
+		static ConVar sv_passivepush_maxdepenetrationiters(
+			"sv_passivepush_maxdepenetrationiters", 4,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Maximum depenetration iterations for passive push."
+		);
 
 		static ConVar sv_stepheight(
 			"sv_stepheight", 18.0f, FCVAR::NOTIFY | FCVAR::REPLICATED,

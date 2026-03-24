@@ -318,30 +318,5 @@ namespace Unnamed {
 
 			return type;
 		}
-
-		/// @brief ConVarを安全に取得します。存在しない場合や型が違う場合はエラーを出力してnullptrを返します。
-		template <typename T>
-		ConVar<T>* GetConVarSafe(
-			ConsoleSystem* con, std::string_view name
-		) {
-			if (!con) {
-				Error(
-					"ConVar",
-					"ConsoleSystem is not available.",
-				);
-				return nullptr;
-			}
-
-			auto* var = con->GetConVarAs<ConVar<T>>(name);
-			if (!var) {
-				Error(
-					"ConVar", "ConVar '{}' is not found or has wrong type.",
-					name
-				);
-				return nullptr;
-			}
-
-			return var;
-		}
 	}
 }

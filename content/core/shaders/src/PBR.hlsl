@@ -26,7 +26,7 @@ cbuffer MaterialCB : register(b2) {
 };
 
 cbuffer SkinningPaletteCB : register(b3) {
-	float4x4 gSkinMatrices[64];
+	float4x4 gSkinMatrices[512];
 };
 
 Texture2D    gBaseColorTex : register(t0);
@@ -63,7 +63,7 @@ VsOut VsMain(VsIn i) {
 				continue;
 			}
 
-			const uint boneIndex = (uint)i.boneIndices[k];
+			const uint boneIndex = min((uint)i.boneIndices[k], 511u);
 			skinnedPos           += mul(
 				float4(i.pos, 1.0f), gSkinMatrices[boneIndex]
 			) * weight;

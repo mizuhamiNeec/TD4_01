@@ -11,6 +11,7 @@ struct ImGuiInputTextCallbackData;
 namespace Unnamed {
 	struct ConsoleLogText;
 	class ConVarHelper;
+	class ConCommand;
 	class ConsoleSystem;
 
 	constexpr Vec4 kConTextColor        = {0.71f, 0.71f, 0.72f, 1.0f};
@@ -143,6 +144,7 @@ namespace Unnamed {
 		ConsoleSystem* mConsoleSystem; // コンソールシステムへのポインタ
 
 		std::unique_ptr<ConVarHelper> mConVarHelper; // ConVarヘルパー
+		std::unique_ptr<ConCommand> mToggleConsoleCommand;
 
 		bool mShowConsole      = true;  // コンソール表示フラグ
 		bool mShowAbout        = false; // Aboutウィンドウ表示フラグ

@@ -122,10 +122,12 @@ namespace Unnamed {
 		mConVarHelper = std::make_unique<ConVarHelper>(consoleSystem);
 	}
 
-	ConsoleUI::~ConsoleUI() {};
+	ConsoleUI::~ConsoleUI() {
+		mToggleConsoleCommand.reset();
+	};
 
 	void ConsoleUI::Init() {
-		static ConCommand toggleconsole(
+		mToggleConsoleCommand = std::make_unique<ConCommand>(
 			"toggleconsole",
 			[&](const std::vector<std::string>&) {
 				mShowConsole = !mShowConsole;

@@ -4,6 +4,8 @@
 
 #include "core/math/Vec2.h"
 
+#include "engine/unnamed/subsystem/console/concommand/ConVar.h"
+
 namespace Unnamed {
 	class World;
 	class TransformComponent;
@@ -13,42 +15,39 @@ namespace Unnamed {
 
 	class CameraRotatorComponent final : public BaseComponent {
 	public:
-		[[nodiscard]] std::string_view GetStableName() const override {
-			return "parkour.CameraRotator";
-		}
-
-		[[nodiscard]] std::string_view GetComponentName() const override {
-			return "CameraRotator";
-		}
-
 		void OnAttached() override;
+
 		void PrePhysicsTick(float deltaTime) override;
-		void Deserialize(const JsonReader& reader) override;
-		void Serialize(JsonWriter& writer) const override;
+
+		[[nodiscard]] std::string_view GetStableName() const override;
+		[[nodiscard]] std::string_view GetComponentName() const override;
 
 #ifdef _DEBUG
 		void DrawInspectorImGui() override;
 #endif
 
+		void Deserialize(const JsonReader& reader) override;
+		void Serialize(JsonWriter& writer) const override;
+
 		void               SetLookAnglesDegrees(float pitch, float yaw);
 		[[nodiscard]] Vec2 GetLookAnglesDegrees() const;
-		void               SetReplayLookOverride(float pitch, float yaw);
-		void               ClearReplayLookOverride();
-		void               SetLiveLookInput(const Vec2& delta);
-		void               ClearLiveLookInput();
+
+		[[nodiscard]] TICK_GROUP GetTickGroup() const override;
 
 	private:
 		[[nodiscard]] TransformComponent* GetTransform() const;
+		void                              BindLookAxisOnce() const;
 
-		InputSystem* mInput = nullptr;
+		ConsoleSystem* mConsole = nullptr;
+		InputSystem*   mInput         = nullptr;
 
-		float mPitch             = 0.0f;
-		float mYaw               = 0.0f;
-		float mSensitivity       = 1.0f;
-		bool  mReplayLookPending = false;
-		float mReplayPitchDeg    = 0.0f;
-		float mReplayYawDeg      = 0.0f;
-		bool  mLiveLookPending   = false;
-		Vec2  mLiveLookDelta     = Vec2::zero;
+		float mCurrentPitch = 0.0f;
+		float mCurrentYaw   = 0.0f;
+
+		ConVar<float>* mSensitivity = nullptr;
+		ConVar<float>* mPitch       = nullptr;
+		ConVar<float>* mYaw         = nullptr;
+
+		ConVar<float>* mJoySensitivity = nullptr;
 	};
 }

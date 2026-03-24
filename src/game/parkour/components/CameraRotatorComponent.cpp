@@ -15,172 +15,154 @@
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
 #include "engine/unnamed/subsystem/console/concommand/ConVar.h"
 #include "engine/unnamed/subsystem/input/InputSystem.h"
+#include "engine/unnamed/subsystem/input/device/gamepad/GamepadDevice.h"
 #include "engine/unnamed/subsystem/input/device/mouse/MouseDevice.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 
 namespace Unnamed {
-	namespace {
-		void BindMouseAxisOnce(InputSystem* input) {
-			static bool sBound = false;
-			if (sBound || !input) {
-				return;
-			}
-
-			constexpr InputKey mouseX = {
-				.device = InputDeviceType::MOUSE,
-				.code   = VM_X
-			};
-			constexpr InputKey mouseY = {
-				.device = InputDeviceType::MOUSE,
-				.code   = VM_Y
-			};
-
-			input->BindAxis2D("Mouse", mouseX, INPUT_AXIS::X, 1.0f);
-			input->BindAxis2D("Mouse", mouseY, INPUT_AXIS::Y, 1.0f);
-			sBound = true;
-		}
-	}
-
 	void CameraRotatorComponent::OnAttached() {
 		mInput = ServiceLocator::Get<InputSystem>();
-		BindMouseAxisOnce(mInput);
+		BindLookAxisOnce();
 		if (const TransformComponent* transform = GetTransform()) {
 			const Vec3 eulerDegrees = transform->Rotation().ToEulerDegrees();
-			mPitch                  = eulerDegrees.x;
-			mYaw                    = eulerDegrees.y;
+			mCurrentPitch           = eulerDegrees.x;
+			mCurrentYaw             = eulerDegrees.y;
 		}
+
+		mConsole = ServiceLocator::Get<ConsoleSystem>();
 	}
 
-	void CameraRotatorComponent::PrePhysicsTick(const float) {
+	void CameraRotatorComponent::PrePhysicsTick(const float deltaTime) {
 		auto* transform = GetTransform();
 		if (!transform) {
 			return;
 		}
 
-		float sensi          = 1.0f;
-		float m_pitch        = 0.022f;
-		float m_yaw          = 0.022f;
-		float pitchUpLimit   = 89.0f;
-		float pitchDownLimit = 89.0f;
-		if (auto* console = ServiceLocator::Get<ConsoleSystem>()) {
-			if (const auto* sensitivity =
-				console->GetConVarAs<ConVar<float>>("sensitivity")) {
-				sensi = sensitivity->GetValue();
-			}
-			if (const auto* pitch = console->GetConVarAs<ConVar<float>>(
-				"m_pitch"
-			)) {
-				m_pitch = pitch->GetValue();
-			}
-			if (const auto* yaw = console->GetConVarAs<ConVar<float>>(
-				"m_yaw"
-			)) {
-				m_yaw = yaw->GetValue();
-			}
-
-			if (const auto* pitchUp =
-				console->GetConVarAs<ConVar<float>>("cl_pitchup")) {
-				pitchUpLimit = std::abs(pitchUp->GetValue());
-			}
-			if (const auto* pitchDown = console->GetConVarAs<ConVar<
-				float>>(
-				"cl_pitchdown"
-			)) {
-				pitchDownLimit = std::abs(pitchDown->GetValue());
-			}
+		Vec2 mouseDelta   = Vec2::zero;
+		Vec2 gamepadDelta = Vec2::zero;
+		if (mInput) {
+			mouseDelta   = mInput->Axis2D("Mouse");
+			gamepadDelta = mInput->Axis2D("GamepadLook");
 		}
 
-		if (mReplayLookPending) {
-			mPitch             = mReplayPitchDeg;
-			mYaw               = mReplayYawDeg;
-			mReplayLookPending = false;
-		} else {
-			Vec2 delta = Vec2::zero;
-			if (mLiveLookPending) {
-				delta            = mLiveLookDelta;
-				mLiveLookPending = false;
-			} else if (mInput) {
-				delta = mInput->Axis2D("Mouse");
-			}
-			mPitch += delta.y * sensi * m_pitch;
-			mYaw   += delta.x * sensi * m_yaw;
-		}
+		// コンソールから各値を取得。
+		const float sensitivity = mConsole->GetConVarValueOr(
+			"sensitivity", 1.0f
+		);
+		const float pitch = mConsole->GetConVarValueOr(
+			"m_pitch", 0.022f
+		);
+		const float yaw = mConsole->GetConVarValueOr(
+			"m_yaw", 0.022f
+		);
+		const float pitchUpLimit = mConsole->GetConVarValueOr(
+			"cl_pitchup", 89.0f
+		);
+		const float pitchDownLimit = mConsole->GetConVarValueOr(
+			"cl_pitchdown", 89.0f
+		);
 
-		mPitch = std::clamp(mPitch, -pitchUpLimit, pitchDownLimit);
+		const float joySensitivity = mConsole->GetConVarValueOr(
+			"joy_sensitivity", 360.0f
+		);
+
+		// deltaTimeはゲームパッドの入力にのみ適用する。
+		mCurrentPitch += mouseDelta.y * sensitivity * pitch;
+		mCurrentYaw   += mouseDelta.x * sensitivity * yaw;
+		
+		mCurrentPitch += gamepadDelta.y * joySensitivity * deltaTime;
+		mCurrentYaw   += gamepadDelta.x * joySensitivity * deltaTime;
+
+		mCurrentPitch = std::clamp(
+			mCurrentPitch, -pitchUpLimit, pitchDownLimit
+		);
 		transform->SetRotation(
-			Quaternion::AxisAngle(Vec3::up, mYaw * Math::deg2Rad) *
-			Quaternion::AxisAngle(Vec3::right, mPitch * Math::deg2Rad)
+			Quaternion::AxisAngle(Vec3::up, mCurrentYaw * Math::deg2Rad) *
+			Quaternion::AxisAngle(Vec3::right, mCurrentPitch * Math::deg2Rad)
 		);
 	}
 
+	std::string_view CameraRotatorComponent::GetStableName() const {
+		return "parkour.CameraRotator";
+	}
+
+	std::string_view CameraRotatorComponent::GetComponentName() const {
+		return "CameraRotator";
+	}
+
 	void CameraRotatorComponent::Deserialize(const JsonReader& reader) {
-		const JsonReader pitch       = reader["pitchDegrees"];
-		const JsonReader yaw         = reader["yawDegrees"];
-		const JsonReader sensitivity = reader["sensitivity"];
+		const JsonReader pitch = reader["pitchDegrees"];
+		const JsonReader yaw   = reader["yawDegrees"];
 		if (pitch.Valid()) {
-			mPitch = pitch.GetFloat();
+			mCurrentPitch = pitch.GetFloat();
 		}
 		if (yaw.Valid()) {
-			mYaw = yaw.GetFloat();
-		}
-		if (sensitivity.Valid()) {
-			mSensitivity = sensitivity.GetFloat();
+			mCurrentYaw = yaw.GetFloat();
 		}
 	}
 
 	void CameraRotatorComponent::Serialize(JsonWriter& writer) const {
 		writer.Key("pitchDegrees");
-		writer.Write(mPitch);
+		writer.Write(mCurrentPitch);
 		writer.Key("yawDegrees");
-		writer.Write(mYaw);
-		writer.Key("sensitivity");
-		writer.Write(mSensitivity);
+		writer.Write(mCurrentYaw);
 	}
 
 #ifdef _DEBUG
 	void CameraRotatorComponent::DrawInspectorImGui() {
-		ImGui::DragFloat("Pitch", &mPitch, 0.1f, -89.0f, 89.0f);
-		ImGui::DragFloat("Yaw", &mYaw, 0.1f, -1080.0f, 1080.0f);
-		ImGui::DragFloat("Sensitivity", &mSensitivity, 0.001f, 0.01f, 1.0f);
+		ImGui::DragFloat("Pitch", &mCurrentPitch, 0.1f, -89.0f, 89.0f);
+		ImGui::DragFloat("Yaw", &mCurrentYaw, 0.1f, -1080.0f, 1080.0f);
 	}
 #endif
 
 	void CameraRotatorComponent::SetLookAnglesDegrees(
 		const float pitch, const float yaw
 	) {
-		mPitch = pitch;
-		mYaw   = yaw;
+		mCurrentPitch = pitch;
+		mCurrentYaw   = yaw;
 	}
 
 	Vec2 CameraRotatorComponent::GetLookAnglesDegrees() const {
-		return Vec2(mPitch, mYaw);
+		return Vec2(mCurrentPitch, mCurrentYaw);
 	}
 
-	void CameraRotatorComponent::SetReplayLookOverride(
-		const float pitch, const float yaw
-	) {
-		mReplayPitchDeg    = pitch;
-		mReplayYawDeg      = yaw;
-		mReplayLookPending = true;
-	}
-
-	void CameraRotatorComponent::ClearReplayLookOverride() {
-		mReplayLookPending = false;
-	}
-
-	void CameraRotatorComponent::SetLiveLookInput(const Vec2& delta) {
-		mLiveLookDelta   = delta;
-		mLiveLookPending = true;
-	}
-
-	void CameraRotatorComponent::ClearLiveLookInput() {
-		mLiveLookPending = false;
-		mLiveLookDelta   = Vec2::zero;
+	BaseComponent::TICK_GROUP CameraRotatorComponent::GetTickGroup() const {
+		return TICK_GROUP::EARLY;
 	}
 
 	TransformComponent* CameraRotatorComponent::GetTransform() const {
 		Entity* owner = GetOwner();
 		return owner ? owner->GetComponent<TransformComponent>() : nullptr;
+	}
+
+	void CameraRotatorComponent::BindLookAxisOnce() const {
+		static bool sBound = false;
+		if (sBound || !mInput) {
+			return;
+		}
+
+		constexpr InputKey mouseX = {
+			.device = InputDeviceType::MOUSE,
+			.code   = VM_X
+		};
+		constexpr InputKey mouseY = {
+			.device = InputDeviceType::MOUSE,
+			.code   = VM_Y
+		};
+		constexpr InputKey gamepadLookX = {
+			.device = InputDeviceType::GAMEPAD,
+			.code   = VG_RX
+		};
+		constexpr InputKey gamepadLookY = {
+			.device = InputDeviceType::GAMEPAD,
+			.code   = VG_RY
+		};
+
+		mInput->BindAxis2D("Mouse", mouseX, INPUT_AXIS::X, 1.0f);
+		mInput->BindAxis2D("Mouse", mouseY, INPUT_AXIS::Y, 1.0f);
+		mInput->BindAxis2D("GamepadLook", gamepadLookX, INPUT_AXIS::X, 1.0f);
+		mInput->BindAxis2D("GamepadLook", gamepadLookY, INPUT_AXIS::Y, -1.0f);
+		sBound = true;
 	}
 
 	REGISTER_COMPONENT(CameraRotatorComponent);

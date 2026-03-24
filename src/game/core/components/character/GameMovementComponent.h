@@ -33,8 +33,9 @@ namespace Unnamed {
 		void PrePhysicsTick(float deltaTime) override;
 		void OnTick(float deltaTime) override;
 		void PostPhysicsTick(float deltaTime) override;
-		[[nodiscard]] TickGroup GetTickGroup() const override {
-			return TickGroup::Gameplay;
+
+		[[nodiscard]] TICK_GROUP GetTickGroup() const override {
+			return TICK_GROUP::GAMEPLAY;
 		}
 
 		[[nodiscard]] std::string_view GetStableName() const override;
@@ -55,7 +56,7 @@ namespace Unnamed {
 		virtual void UpdateCollisionHull(TransformComponent* transform) const;
 
 		[[nodiscard]] TransformComponent* GetTransform() const override;
-		[[nodiscard]] Vec3 ResolveSupportLinearVelocity(
+		[[nodiscard]] Vec3                ResolveSupportLinearVelocity(
 			uint64_t supportEntityGuid
 		) const;
 		[[nodiscard]] Vec3 ResolveSupportStepDelta(
@@ -70,15 +71,13 @@ namespace Unnamed {
 		ConsoleSystem*   mConsole = nullptr;
 
 		struct SupportCache {
-			bool     grounded            = false;
-			uint64_t supportEntityGuid   = 0;
+			bool     grounded              = false;
+			uint64_t supportEntityGuid     = 0;
 			Vec3     supportLinearVelocity = Vec3::zero;
 			Vec3     supportStepDelta      = Vec3::zero;
 		};
 
 		SupportCache mSupportCache;
 		float        mJumpSnapDisableRemaining = 0.0f;
-		ConVar<float>* mPassivePushContactSkin = nullptr;
-		ConVar<int>*   mPassivePushMaxDepenetrationIters = nullptr;
 	};
 }

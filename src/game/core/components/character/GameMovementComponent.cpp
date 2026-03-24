@@ -111,12 +111,6 @@ namespace Unnamed {
 
 		mSupportCache             = {};
 		mJumpSnapDisableRemaining = 0.0f;
-		mPassivePushContactSkin   = GetConVarSafe<float>(
-			mConsole, "sv_passivepush_contactskin"
-		);
-		mPassivePushMaxDepenetrationIters = GetConVarSafe<int>(
-			mConsole, "sv_passivepush_maxdepenetrationiters"
-		);
 	}
 
 	void GameMovementComponent::PrePhysicsTick(const float deltaTime) {
@@ -378,9 +372,9 @@ namespace Unnamed {
 
 		const uint64_t supportGuid =
 			mSupportCache.grounded ? mSupportCache.supportEntityGuid : 0;
-		const float contactSkinHu = mPassivePushContactSkin ?
-			                            mPassivePushContactSkin->GetValue() :
-			                            4.0f;
+		const float contactSkinHu = mConsole->GetConVarValueOr(
+			"sv_passivepush_contactskin", 4.0f
+		);
 		const float contactSkinM = Math::HtoM(std::max(0.0f, contactSkinHu));
 		const Vec3  overlapHalfExtents =
 			mBoxHalfExtents + Vec3(contactSkinM, contactSkinM, contactSkinM);
@@ -585,10 +579,9 @@ namespace Unnamed {
 			}
 		}
 
-		int maxDepenetrationIters = mPassivePushMaxDepenetrationIters ?
-			                            mPassivePushMaxDepenetrationIters->
-			                            GetValue() :
-			                            2;
+		int maxDepenetrationIters = mConsole->GetConVarValueOr<int>(
+			"sv_passivepush_maxdepenetrationiters", 2
+		);
 		maxDepenetrationIters = std::clamp(maxDepenetrationIters, 0, 8);
 		for (int iter = 0; iter < maxDepenetrationIters; ++iter) {
 			const int depenHitCount = mCollisionResolver->CollectOverlaps(

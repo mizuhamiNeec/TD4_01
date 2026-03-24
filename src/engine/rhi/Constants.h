@@ -41,9 +41,14 @@ namespace Unnamed::Rhi {
 	);
 
 	struct alignas(16) SkinningPaletteConstants {
-		static constexpr uint32_t kMaxBones        = 64;
+		static constexpr uint32_t kMaxBones        = 512;
 		Mat4                      bones[kMaxBones] = {};
 	};
+
+	static_assert(
+		sizeof(SkinningPaletteConstants) <= 64 * 1024,
+		"SkinningPaletteConstants must fit in one constant buffer (64KB)"
+	);
 
 	struct alignas(16) MaterialConstants {
 		Vec4  baseColor     = Vec4::one;

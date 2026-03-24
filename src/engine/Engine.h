@@ -7,9 +7,9 @@
 
 class IPostProcess;
 class SrvManager;
-class AudioManager;
 
 namespace Unnamed {
+	class AudioSystem;
 	class EditorRuntime;
 	class ImGuiLayer;
 	class ConsoleSystem;
@@ -92,7 +92,7 @@ namespace Unnamed {
 		std::unique_ptr<EditorRuntime> mUEditorRuntime;
 #endif
 
-		std::unique_ptr<AudioManager> mAudioManager;
+		std::unique_ptr<AudioSystem> mAudioSystem;
 		std::unique_ptr<ConCommand> mQuitCommand;
 		std::unique_ptr<ConCommand> mToggleEditorCommand;
 		std::unique_ptr<ConCommand> mToggleFullscreenCommand;

@@ -14,6 +14,7 @@
 #include <core/assets/loader/MaterialInstanceAssetLoader.h>
 #include <core/assets/loader/MeshAssetLoader.h>
 #include <core/assets/loader/PostFxChainLoader.h>
+#include <core/assets/loader/SoundAssetLoader.h>
 #include <core/assets/loader/ShaderProgramLoader.h>
 #include <core/assets/loader/ShaderSourceLoader.h>
 #include <core/assets/loader/TextureLoaderDirectXTex.h>
@@ -202,6 +203,15 @@ namespace Unnamed {
 		mAssetManager->RegisterLoader(
 			std::move(std::make_unique<UiDocumentAssetLoader>())
 		);
+		mAssetManager->RegisterLoader(
+			std::move(std::make_unique<SoundAssetLoader>())
+		);
+
+		mAudioSystem = std::make_unique<AudioSystem>();
+		if (!mAudioSystem->Init()) {
+			return false;
+		}
+		ServiceLocator::Register<AudioSystem>(mAudioSystem.get());
 
 		// TimeSystemの初期化
 		mTimeSystem = std::make_unique<TimeSystem>();
@@ -496,6 +506,11 @@ namespace Unnamed {
 		mRenderModule.reset();
 		mRhiDevice.reset();
 		mProfiler.reset();
+		if (mAudioSystem) {
+			mAudioSystem->Shutdown();
+			mAudioSystem.reset();
+		}
+		ServiceLocator::Register<AudioSystem>(nullptr);
 
 		// 入力システムのリスナー解除
 		if (mPlatformEvents && mInputSystem) {

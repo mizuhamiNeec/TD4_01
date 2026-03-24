@@ -1,0 +1,286 @@
+#include "AudioSourceComponent.h"
+
+#include <algorithm>
+#include <array>
+#include <cstring>
+
+#include <imgui.h>
+
+#include "core/ComponentRegistry.h"
+#include "core/assets/AssetManager.h"
+#include "core/assets/AssetType.h"
+#include "core/assets/types/SoundAssetData.h"
+#include "core/json/JsonReader.h"
+#include "core/json/JsonWriter.h"
+#include "core/string/StrUtil.h"
+
+#include "engine/ResourceSystem/Audio/Audio.h"
+#include "engine/ResourceSystem/Audio/AudioManager.h"
+#include "engine/unnamed/subsystem/console/Log.h"
+#include "engine/unnamed/subsystem/interface/ServiceLocator.h"
+
+namespace Unnamed {
+	namespace {
+		static constexpr std::string_view kChannel = "AudioSourceComponent";
+	}
+
+	void AudioSourceComponent::OnAttached() {
+		mAutoPlayConsumed = false;
+		mLoggedError      = false;
+		(void)EnsureVoiceReady(false);
+	}
+
+	void AudioSourceComponent::OnDetached() {
+		Stop();
+		InvalidateVoice();
+	}
+
+	void AudioSourceComponent::OnTick(const float) {
+		if (!EnsureVoiceReady(true)) {
+			return;
+		}
+
+		if (mPlayOnStart && !mAutoPlayConsumed) {
+			mVoice->Play(mLoop);
+			mAutoPlayConsumed = true;
+		}
+	}
+
+	void AudioSourceComponent::Deserialize(const JsonReader& reader) {
+		if (reader.Has("soundPath")) {
+			SetSoundPath(reader["soundPath"].GetString());
+		}
+		if (reader.Has("playOnStart")) {
+			SetPlayOnStart(reader["playOnStart"].GetBool());
+		}
+		if (reader.Has("loop")) {
+			SetLoop(reader["loop"].GetBool());
+		}
+		if (reader.Has("volume")) {
+			SetVolume(reader["volume"].GetFloat());
+		}
+		if (reader.Has("pitch")) {
+			SetPitch(reader["pitch"].GetFloat());
+		}
+	}
+
+	void AudioSourceComponent::Serialize(JsonWriter& writer) const {
+		writer.Key("soundPath");
+		writer.Write(mSoundPath);
+		writer.Key("playOnStart");
+		writer.Write(mPlayOnStart);
+		writer.Key("loop");
+		writer.Write(mLoop);
+		writer.Key("volume");
+		writer.Write(mVolume);
+		writer.Key("pitch");
+		writer.Write(mPitch);
+	}
+
+#ifdef _DEBUG
+	void AudioSourceComponent::DrawInspectorImGui() {
+		std::array<char, 512> pathBuffer = {};
+		memcpy(
+			pathBuffer.data(),
+			mSoundPath.c_str(),
+			std::min(mSoundPath.size(), pathBuffer.size() - 1)
+		);
+
+		if (
+			ImGui::InputText(
+				"Sound Path", pathBuffer.data(), pathBuffer.size()
+			)
+		) {
+			SetSoundPath(pathBuffer.data());
+		}
+
+		ImGui::Checkbox("Play On Start", &mPlayOnStart);
+		ImGui::Checkbox("Loop", &mLoop);
+		if (ImGui::DragFloat("Volume", &mVolume, 0.01f, 0.0f, 4.0f, "%.2f")) {
+			SetVolume(mVolume);
+		}
+		if (ImGui::DragFloat("Pitch", &mPitch, 0.01f, 0.01f, 4.0f, "%.2f")) {
+			SetPitch(mPitch);
+		}
+
+		if (ImGui::Button("Play")) {
+			Play();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Pause")) {
+			Pause();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Resume")) {
+			Resume();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Stop")) {
+			Stop();
+		}
+
+		ImGui::TextUnformatted(IsPlaying() ? "State: Playing" : "State: Stopped");
+	}
+#endif
+
+	void AudioSourceComponent::SetSoundPath(const std::string& path) {
+		const std::string normalized = path.empty() ?
+			                               std::string() :
+			                               StrUtil::NormalizePath(path);
+		if (mSoundPath == normalized) {
+			return;
+		}
+		mSoundPath = normalized;
+		mAutoPlayConsumed = false;
+		mLoggedError = false;
+		InvalidateVoice();
+	}
+
+	const std::string& AudioSourceComponent::GetSoundPath() const noexcept {
+		return mSoundPath;
+	}
+
+	void AudioSourceComponent::SetPlayOnStart(const bool enabled) noexcept {
+		mPlayOnStart = enabled;
+	}
+
+	bool AudioSourceComponent::GetPlayOnStart() const noexcept {
+		return mPlayOnStart;
+	}
+
+	void AudioSourceComponent::SetLoop(const bool enabled) noexcept {
+		mLoop = enabled;
+	}
+
+	bool AudioSourceComponent::GetLoop() const noexcept {
+		return mLoop;
+	}
+
+	void AudioSourceComponent::SetVolume(float volume) noexcept {
+		mVolume = std::clamp(volume, 0.0f, 4.0f);
+		if (mVoice) {
+			mVoice->SetVolume(mVolume);
+		}
+	}
+
+	float AudioSourceComponent::GetVolume() const noexcept {
+		return mVolume;
+	}
+
+	void AudioSourceComponent::SetPitch(float pitch) noexcept {
+		mPitch = std::clamp(pitch, 0.01f, 4.0f);
+		if (mVoice) {
+			mVoice->SetPitch(mPitch);
+		}
+	}
+
+	float AudioSourceComponent::GetPitch() const noexcept {
+		return mPitch;
+	}
+
+	void AudioSourceComponent::Play() {
+		if (!EnsureVoiceReady(false) || !mVoice) {
+			return;
+		}
+		mVoice->Play(mLoop);
+		mAutoPlayConsumed = true;
+	}
+
+	void AudioSourceComponent::Stop() const {
+		if (mVoice) {
+			mVoice->Stop();
+		}
+	}
+
+	void AudioSourceComponent::Pause() const {
+		if (mVoice) {
+			mVoice->Pause();
+		}
+	}
+
+	void AudioSourceComponent::Resume() const {
+		if (mVoice) {
+			mVoice->Resume();
+		}
+	}
+
+	bool AudioSourceComponent::IsPlaying() const {
+		return mVoice && mVoice->IsPlaying();
+	}
+
+	bool AudioSourceComponent::EnsureVoiceReady(const bool preservePlayback) {
+		if (mSoundPath.empty()) {
+			return false;
+		}
+
+		auto* assetManager = ServiceLocator::Get<AssetManager>();
+		auto* audioSystem  = ServiceLocator::Get<AudioSystem>();
+		if (!assetManager || !audioSystem || !audioSystem->IsReady()) {
+			if (!mLoggedError) {
+				Error(kChannel, "AssetManager or AudioSystem is not available.");
+				mLoggedError = true;
+			}
+			return false;
+		}
+
+		if (mSoundAssetId == kInvalidAssetID) {
+			mSoundAssetId = assetManager->LoadFromFile(mSoundPath, ASSET_TYPE::SOUND);
+			mLoadedAssetVersion = 0;
+		}
+		if (mSoundAssetId == kInvalidAssetID) {
+			if (!mLoggedError) {
+				Error(kChannel, "Failed to load sound asset '{}'.", mSoundPath);
+				mLoggedError = true;
+			}
+			return false;
+		}
+
+		const auto& meta = assetManager->Meta(mSoundAssetId);
+		const bool  needsRebuild =
+			!mVoice || mLoadedAssetVersion != meta.version;
+		if (!needsRebuild) {
+			mLoggedError = false;
+			return true;
+		}
+
+		const bool wasPlaying =
+			preservePlayback && mVoice && mVoice->IsPlaying();
+
+		const auto* soundData = assetManager->Get<SoundAssetData>(mSoundAssetId);
+		if (!soundData) {
+			if (!mLoggedError) {
+				Error(kChannel, "Sound asset payload is invalid: '{}'.", mSoundPath);
+				mLoggedError = true;
+			}
+			return false;
+		}
+
+		std::shared_ptr<AudioVoice> voice = audioSystem->CreateVoice(*soundData);
+		if (!voice) {
+			if (!mLoggedError) {
+				Error(kChannel, "Failed to create audio voice for '{}'.", mSoundPath);
+				mLoggedError = true;
+			}
+			return false;
+		}
+
+		mVoice = std::move(voice);
+		mVoice->SetVolume(mVolume);
+		mVoice->SetPitch(mPitch);
+		mLoadedAssetVersion = meta.version;
+		mLoggedError        = false;
+
+		if (wasPlaying) {
+			mVoice->Play(mLoop);
+		}
+		return true;
+	}
+
+	void AudioSourceComponent::InvalidateVoice() {
+		mSoundAssetId       = kInvalidAssetID;
+		mLoadedAssetVersion = 0;
+		mVoice.reset();
+	}
+
+	REGISTER_COMPONENT(AudioSourceComponent);
+}

@@ -158,6 +158,15 @@ namespace Unnamed {
 			"Mouse yaw factor."
 		);
 
+		static ConVar joy_sensitivity(
+			"joy_sensitivity", 360.0f, FCVAR::ARCHIVE,
+			"Gamepad right-stick look sensitivity (deg/sec).",
+			true,
+			0.0f,
+			true,
+			1080.0f
+		);
+
 		//---------------------------------------------------------------------
 		// Camera 
 		//---------------------------------------------------------------------
@@ -313,6 +322,18 @@ namespace Unnamed {
 			"Step height in HU."
 		);
 
+		// Noclip
+		static ConVar sv_noclipaccelerate(
+			"sv_noclipaccelerate", 5.0f, FCVAR::NOTIFY | FCVAR::REPLICATED,
+			""
+		);
+
+		static ConVar sv_noclipspeed(
+			"sv_noclipspeed", 5.0f, FCVAR::NOTIFY | FCVAR::REPLICATED,
+			""
+		);
+
+		// Parkour
 		static ConVar park_duckaccelerate(
 			"park_duckaccelerate", 4.0f, FCVAR::NOTIFY | FCVAR::REPLICATED,
 			"Parkour duck accelerate."

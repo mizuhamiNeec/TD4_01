@@ -32,7 +32,15 @@ namespace Unnamed {
 
 		// ジャンプしていない場合は摩擦を適用(バニーホップ中か?)
 		if (!context.input.jumpPressed) {
-			ApplyFriction(context.velocity, mFriction->GetValue(), deltaTime);
+			ApplyFriction(
+				context.velocity,
+				mConsole->GetConVarValueOr("sv_friction", 5.2f),
+				deltaTime
+			);
+		} else {
+			Msg(
+				kChannelNone, "Friction skipped."
+			);
 		}
 
 		if (context.input.crouchPressed) {
@@ -42,8 +50,8 @@ namespace Unnamed {
 		Accelerate(
 			context.velocity,
 			wishDir,
-			mSprintSpeed->GetValue(),
-			mAccelerate->GetValue(),
+			mConsole->GetConVarValueOr("sv_sprintspeed", 320.0f),
+			mConsole->GetConVarValueOr("sv_accelerate", 10.0f),
 			deltaTime
 		);
 
@@ -63,7 +71,9 @@ namespace Unnamed {
 
 		// 移動と衝突の解決
 		context.resolver->StepMove(
-			query.position, query.velocity, mStepHeight->GetValue(), deltaTime
+			query.position, query.velocity,
+			mConsole->GetConVarValueOr("sv_stepheight", 18.0f),
+			deltaTime
 		);
 
 		result.position = query.position;

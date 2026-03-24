@@ -13,6 +13,7 @@ namespace Unnamed {
 	class EditorRuntime;
 	class ImGuiLayer;
 	class ConsoleSystem;
+	class ConCommand;
 	class World;
 
 	namespace Render {
@@ -92,6 +93,9 @@ namespace Unnamed {
 #endif
 
 		std::unique_ptr<AudioManager> mAudioManager;
+		std::unique_ptr<ConCommand> mQuitCommand;
+		std::unique_ptr<ConCommand> mToggleEditorCommand;
+		std::unique_ptr<ConCommand> mToggleFullscreenCommand;
 
 
 		std::unique_ptr<Render::RenderFrameContext> mRenderFrameContext;

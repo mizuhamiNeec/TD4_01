@@ -35,6 +35,7 @@
 #include <engine/ui/ImGuiLayer.h>
 #include <engine/unnamed/framework/entity/Entity.h>
 #include <engine/unnamed/subsystem/console/concommand/ConCommand.h>
+#include <engine/unnamed/subsystem/input/device/gamepad/GamepadDevice.h>
 #include <engine/unnamed/subsystem/input/device/keyboard/KeyboardDevice.h>
 #include <engine/unnamed/subsystem/input/device/mouse/MouseDevice.h>
 #include <engine/unnamed/subsystem/interface/ServiceLocator.h>
@@ -220,8 +221,10 @@ namespace Unnamed {
 		// デバイス登録
 		const auto keyboardDevice = std::make_shared<KeyboardDevice>(hwnd);
 		const auto mouseDevice    = std::make_shared<MouseDevice>(hwnd);
+		const auto gamepadDevice  = std::make_shared<GamepadDevice>(hwnd);
 		mInputSystem->RegisterDevice(keyboardDevice);
 		mInputSystem->RegisterDevice(mouseDevice);
+		mInputSystem->RegisterDevice(gamepadDevice);
 
 		// コンソールコマンドと変数の登録
 		mConsoleSystem->ExecuteCommand(
@@ -342,16 +345,15 @@ namespace Unnamed {
 		// アセットのホットリロードのポーリング
 		{
 			mAssetHotReloadPollAccumulator += unscaledDeltaTime;
-
-			auto hotreloadpollinterval = mConsoleSystem->GetConVarAs<
-				ConVar<float>>(
-				"asset_hotreloadpollinterval"
+			const float hotreloadpollinterval = mConsoleSystem->GetConVarValueOr(
+				"asset_hotreloadpollinterval",
+				0.25f
 			);
 
 			if (
 				mAssetManager &&
 				mAssetHotReloadPollAccumulator >=
-				hotreloadpollinterval->GetValue()
+				hotreloadpollinterval
 			) {
 				Profiler::ScopeTimer scope(
 					mProfiler.get(), "Asset.PollHotReload"
@@ -471,6 +473,12 @@ namespace Unnamed {
 
 	/// @brief シャットダウン
 	void Engine::Shutdown() {
+		mQuitCommand.reset();
+#ifdef _DEBUG
+		mToggleEditorCommand.reset();
+		mToggleFullscreenCommand.reset();
+#endif
+
 		if (mWorld) {
 			mWorld->Shutdown();
 			mWorld.reset();
@@ -520,8 +528,7 @@ namespace Unnamed {
 
 	/// @brief コンソールコマンドと変数の登録
 	void Engine::RegisterConsoleCommandsAndVariables() {
-		// コンソールコマンドを登録
-		static ConCommand quit(
+		mQuitCommand = std::make_unique<ConCommand>(
 			"quit",
 			[this](const std::vector<std::string>&) {
 				mWishShutdown = true;
@@ -531,7 +538,7 @@ namespace Unnamed {
 		);
 
 #ifdef _DEBUG
-		static ConCommand toggleeditor(
+		mToggleEditorCommand = std::make_unique<ConCommand>(
 			"toggleeditor",
 			[this](const std::vector<std::string>&) {
 				ToggleEditorScreenMode();
@@ -540,7 +547,7 @@ namespace Unnamed {
 			"Toggle editor mode."
 		);
 
-		static ConCommand togglefullscreen(
+		mToggleFullscreenCommand = std::make_unique<ConCommand>(
 			"togglefullscreen",
 			[this](const std::vector<std::string>&) {
 				ToggleFullscreen();

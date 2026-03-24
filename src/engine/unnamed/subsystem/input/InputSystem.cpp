@@ -5,6 +5,7 @@
 
 #include <engine/unnamed/subsystem/input/InputSystem.h>
 #include <engine/unnamed/subsystem/input/KeyNameTable.h>
+#include <engine/unnamed/subsystem/input/device/gamepad/GamepadDevice.h>
 #include <engine/unnamed/subsystem/input/device/keyboard/KeyboardDevice.h>
 #include <engine/unnamed/subsystem/input/device/mouse/MouseDevice.h>
 #include <engine/unnamed/subsystem/interface/ServiceLocator.h>
@@ -52,8 +53,7 @@ namespace Unnamed {
 		mMouseCursorLockOverrideMode = false;
 		mMouseCursorVisible          = true;
 
-		// 組み込みコマンドの登録
-		static ConCommand bind(
+		mBindCommand = std::make_unique<ConCommand>(
 			"bind",
 			[&](const std::vector<std::string>& args) {
 				// bind <key> <command...>
@@ -87,7 +87,7 @@ namespace Unnamed {
 			"Bind a key to a command. Usage: bind <key> <command>"
 		);
 
-		static ConCommand unbind(
+		mUnbindCommand = std::make_unique<ConCommand>(
 			"unbind",
 			[&](const std::vector<std::string>& args) {
 				// unbind <key>
@@ -104,7 +104,7 @@ namespace Unnamed {
 			"Unbind a key from a command. Usage: unbind <key>"
 		);
 
-		static ConCommand unbindall(
+		mUnbindAllCommand = std::make_unique<ConCommand>(
 			"unbindall",
 			[&](const std::vector<std::string>&) {
 				UnbindAllCommands();
@@ -132,13 +132,13 @@ namespace Unnamed {
 			return true;
 		};
 
-		static ConCommand togglelockcursor(
+		mToggleLockCursorCommand = std::make_unique<ConCommand>(
 			"togglelockcursor",
 			toggleCursorLockHandler,
 			"Toggle the cursor lock state."
 		);
 
-		static ConCommand togglecursorlock(
+		mToggleCursorLockCommand = std::make_unique<ConCommand>(
 			"togglecursorlock",
 			toggleCursorLockHandler,
 			"Toggle the cursor lock state."
@@ -181,7 +181,7 @@ namespace Unnamed {
 					.device = InputDeviceType::MOUSE,
 					.code   = vk
 				};
-				const bool down = mouseDevice->GetKeyState(key);
+				const bool down             = mouseDevice->GetKeyState(key);
 				mMouseButtonPressed[index]  = !mMouseButtonDown[index] && down;
 				mMouseButtonReleased[index] = mMouseButtonDown[index] && !down;
 				mMouseButtonDown[index]     = down;
@@ -333,6 +333,14 @@ namespace Unnamed {
 				mouse->ResetDelta();
 			}
 		}
+	}
+
+	void InputSystem::Shutdown() {
+		mBindCommand.reset();
+		mUnbindCommand.reset();
+		mUnbindAllCommand.reset();
+		mToggleLockCursorCommand.reset();
+		mToggleCursorLockCommand.reset();
 	}
 
 	/// @brief サブシステム名の取得
@@ -497,6 +505,34 @@ namespace Unnamed {
 		const std::shared_ptr<BaseInputDevice>& device
 	) {
 		mDevices.emplace_back(device);
+	}
+
+	void InputSystem::PlayGamepadRumble(
+		const float low,
+		const float high,
+		const float durationSec
+	) {
+		for (const auto& device : mDevices) {
+			if (device->GetDeviceType() != InputDeviceType::GAMEPAD) {
+				continue;
+			}
+
+			std::static_pointer_cast<GamepadDevice>(device)->EnqueueRumble(
+				low, high, durationSec
+			);
+			return;
+		}
+	}
+
+	void InputSystem::StopGamepadRumble() {
+		for (const auto& device : mDevices) {
+			if (device->GetDeviceType() != InputDeviceType::GAMEPAD) {
+				continue;
+			}
+
+			std::static_pointer_cast<GamepadDevice>(device)->StopRumble();
+			return;
+		}
 	}
 
 	void InputSystem::BindCommand(
@@ -849,8 +885,8 @@ namespace Unnamed {
 			device.get()->ResetStates();
 		}
 
-		mMouseLockAnchor.valid = false;
-		mMouseClientPosition   = Vec2::zero;
+		mMouseLockAnchor.valid   = false;
+		mMouseClientPosition     = Vec2::zero;
 		mMouseClientViewportSize = Vec2::zero;
 		mMouseButtonDown.fill(false);
 		mMouseButtonPressed.fill(false);

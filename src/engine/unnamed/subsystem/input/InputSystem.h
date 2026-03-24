@@ -21,6 +21,8 @@ struct std::hash<Unnamed::InputKey> {
 };
 
 namespace Unnamed {
+	class ConCommand;
+
 	/// @brief 入力アクション状態構造体
 	struct InputActionState {
 		bool bIsPressed  = false;
@@ -67,6 +69,7 @@ namespace Unnamed {
 		// ISubsystem
 		bool Init() override;
 		void Update(float) override;
+		void Shutdown() override;
 
 		[[nodiscard]] const std::string_view GetName() const override;
 
@@ -82,6 +85,15 @@ namespace Unnamed {
 		/// @brief 入力デバイスを登録します
 		/// @param device 登録する入力デバイスの共有ポインタ
 		void RegisterDevice(const std::shared_ptr<BaseInputDevice>& device);
+
+		/// @brief ゲームパッドランブルを追加再生します
+		/// @param low 低周波モータ強度 [0..1]
+		/// @param high 高周波モータ強度 [0..1]
+		/// @param durationSec 再生時間（秒）
+		void PlayGamepadRumble(float low, float high, float durationSec);
+
+		/// @brief すべてのゲームパッドランブルを停止します
+		void StopGamepadRumble();
 
 		/// @brief コマンドをキーにバインドします
 		/// @param key バインドするキー
@@ -254,5 +266,11 @@ namespace Unnamed {
 		std::array<bool, 5> mMouseButtonDown = {};
 		std::array<bool, 5> mMouseButtonPressed = {};
 		std::array<bool, 5> mMouseButtonReleased = {};
+
+		std::unique_ptr<ConCommand> mBindCommand;
+		std::unique_ptr<ConCommand> mUnbindCommand;
+		std::unique_ptr<ConCommand> mUnbindAllCommand;
+		std::unique_ptr<ConCommand> mToggleLockCursorCommand;
+		std::unique_ptr<ConCommand> mToggleCursorLockCommand;
 	};
 }

@@ -37,7 +37,7 @@ namespace Unnamed {
 	static constexpr std::string_view kChannel = "World";
 
 	namespace {
-		using TickGroup = BaseComponent::TickGroup;
+		using TickGroup = BaseComponent::TICK_GROUP;
 		enum class TickPhase : uint8_t {
 			PrePhysics = 0,
 			Tick       = 1,
@@ -45,11 +45,11 @@ namespace Unnamed {
 		};
 
 		static constexpr std::array<TickGroup, 5> kTickGroupOrder = {
-			TickGroup::Early,
-			TickGroup::KinematicSource,
-			TickGroup::ColliderSync,
-			TickGroup::Gameplay,
-			TickGroup::Late,
+			TickGroup::EARLY,
+			TickGroup::KINEMATIC_SOURCE,
+			TickGroup::COLLIDER_SYNC,
+			TickGroup::GAMEPLAY,
+			TickGroup::LATE,
 		};
 
 		static constexpr std::array<std::array<const char*, 5>, 3>

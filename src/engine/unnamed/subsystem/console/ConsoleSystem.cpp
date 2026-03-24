@@ -84,11 +84,16 @@ namespace Unnamed {
 	}
 
 	void ConsoleSystem::Shutdown() {
+		mHelpCommand.reset();
+		mClearCommand.reset();
+
 		// ユーザー設定ファイルに変数を書き込む
 		[[maybe_unused]] ConVarWriter writer(kUserCfgPath);
 
 		// ファイルログ停止して残りを書き出し
 		mFileLogSink.Stop();
+
+		ServiceLocator::Register<ConsoleSystem>(nullptr);
 	}
 
 	const std::string_view ConsoleSystem::GetName() const {
@@ -155,7 +160,21 @@ namespace Unnamed {
 	}
 
 	void ConsoleSystem::RegisterConCommand(ConCommandBase* conCommand) {
+		if (!conCommand) {
+			return;
+		}
 		mConCommands[std::string(conCommand->GetName())] = conCommand;
+	}
+
+	void ConsoleSystem::UnregisterConCommand(const ConCommandBase* conCommand) {
+		if (!conCommand) {
+			return;
+		}
+
+		const auto it = mConCommands.find(std::string(conCommand->GetName()));
+		if (it != mConCommands.end() && it->second == conCommand) {
+			mConCommands.erase(it);
+		}
 	}
 
 	void ConsoleSystem::RegisterConVar(ConCommandBase* conVar) {
@@ -684,8 +703,7 @@ namespace Unnamed {
 	}
 
 	void ConsoleSystem::RegisterCommonCommands() {
-		// ヘルプコマンド
-		static ConCommand help(
+		mHelpCommand = std::make_unique<ConCommand>(
 			"help",
 			[&](const std::vector<std::string>& args) {
 				// 引数がある場合はそのコマンド・変数の説明を表示する
@@ -749,8 +767,7 @@ namespace Unnamed {
 			"Display help information for commands and variables."
 		);
 
-		// コンソール出力をクリアするコマンド
-		static ConCommand clear(
+		mClearCommand = std::make_unique<ConCommand>(
 			"clear",
 			[&](const std::vector<std::string>&) {
 				GetLogBuffer().Clear();

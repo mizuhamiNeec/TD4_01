@@ -1,53 +1,39 @@
 #pragma once
-#include <string>
+#include <cstdint>
+#include <vector>
+
 #include <xaudio2.h>
 
-/// @brief オーディオクラス
-class Audio {
-public:
-	Audio();
-	~Audio();
+namespace Unnamed {
+	struct SoundAssetData;
 
-	bool LoadFromFile(IXAudio2* xAudio2, const char* filename);
-	void Play(bool isLoop = false);
-	void Stop();
-	void Pause();
-	void Resume();
-	void SetVolume(float volume) const;
-	void SetPitch(float pitch) const;
+	/// @brief サウンド再生インスタンス（1ボイス）
+	class AudioVoice final {
+	public:
+		AudioVoice();
+		~AudioVoice();
 
-	void InvalidateVoice() noexcept;
+		AudioVoice(const AudioVoice&)            = delete;
+		AudioVoice& operator=(const AudioVoice&) = delete;
 
-private:
-	// チャンクヘッダ
-	struct ChunkHeader {
-		char    id[4]; // チャンク毎のID
-		int32_t size;  // チャンクサイズ
+		bool Init(IXAudio2* xAudio2, const SoundAssetData& soundData);
+
+		void Play(bool isLoop = false);
+		void Stop();
+		void Pause();
+		void Resume();
+		void SetVolume(float volume) const;
+		void SetPitch(float pitch) const;
+
+		[[nodiscard]] bool IsPlaying() const;
+		[[nodiscard]] bool IsPaused() const noexcept;
+
+	private:
+		void DestroyVoice();
+
+		IXAudio2SourceVoice* mSourceVoice = nullptr;
+		XAUDIO2_BUFFER       mAudioBuffer = {};
+		std::vector<uint8_t> mOwnedPcmData;
+		bool                 mIsPaused = false;
 	};
-
-	// RIFFヘッダチャンク
-	struct RiffHeader {
-		ChunkHeader chunk;   // "RIFF"
-		char        type[4]; // "WAVE"
-	};
-
-	// FMTチャンク
-	struct FormatChunk {
-		ChunkHeader  chunk; // "fmt"
-		WAVEFORMATEX fmt;   // 波形フォーマット
-	};
-
-	struct SoundData {
-		WAVEFORMATEX wfex       = {};      // 波形フォーマット
-		BYTE*        pBuffer    = nullptr; // バッファの先頭サイズ
-		unsigned int bufferSize = 0;       // バッファのサイズ
-	};
-
-	static bool LoadWavFile(const std::string& filename, SoundData& outData);
-
-	IXAudio2SourceVoice* mSourceVoice = nullptr;
-	XAUDIO2_BUFFER       mAudioBuffer = {};
-	SoundData            mAudioData;
-	bool                 mIsPlaying  = false;
-	bool                 mVoiceValid = true;
-};
+}

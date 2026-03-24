@@ -22,7 +22,7 @@ namespace Unnamed {
 	namespace {
 		constexpr std::string_view kChannel          = "MeshAssetLdr";
 		constexpr uint32_t         kMeshCacheMagic   = 0x48534D55; // UMSH
-		constexpr uint32_t         kMeshCacheVersion = 1;
+		constexpr uint32_t         kMeshCacheVersion = 2;
 
 		constexpr std::array kSupportedExtensions = {
 			".obj",
@@ -145,6 +145,26 @@ namespace Unnamed {
 			if (weight > v.boneWeights[minIndex]) {
 				v.boneIndices[minIndex] = boneIndex;
 				v.boneWeights[minIndex] = weight;
+			}
+		}
+
+		/// @brief 頂点のボーンウェイトを正規化する。ウェイト和が0の場合は安全な既定値にフォールバックする。
+		/// @param v 正規化する頂点
+		void NormalizeBoneWeights(MeshVertex& v) {
+			float weightSum = 0.0f;
+			for (const float weight : v.boneWeights) {
+				weightSum += weight;
+			}
+
+			if (weightSum <= 1e-6f) {
+				v.boneIndices = {0, 0, 0, 0};
+				v.boneWeights = {1.0f, 0.0f, 0.0f, 0.0f};
+				return;
+			}
+
+			const float invSum = 1.0f / weightSum;
+			for (float& weight : v.boneWeights) {
+				weight *= invSum;
 			}
 		}
 
@@ -352,6 +372,14 @@ namespace Unnamed {
 							bone->mWeights[w].mWeight
 						);
 					}
+				}
+
+				for (uint32_t i = 0; i < mesh->mNumVertices; ++i) {
+					const uint32_t globalVertex = baseVertex + i;
+					if (globalVertex >= out.vertices.size()) {
+						continue;
+					}
+					NormalizeBoneWeights(out.vertices[globalVertex]);
 				}
 			}
 

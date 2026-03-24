@@ -114,8 +114,6 @@ group "Engine"
         files {
             "src/**.h",
             "src/**.cpp",
-            "src/**.h",
-            "src/**.cpp",
             "content/**.hlsl",
             "content/**.hlsli",
         }

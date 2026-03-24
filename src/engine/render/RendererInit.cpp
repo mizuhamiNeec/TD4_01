@@ -514,8 +514,6 @@ namespace Unnamed::Render {
 		);
 		mGraph.Reset();
 		mGraphBuilt = false;
-
-		mBloomMipCount = GetConVarSafe<int>(mConsole, "post_bloommipcount");
 	}
 
 	bool Renderer::ResolveShaderProgramStageKey(

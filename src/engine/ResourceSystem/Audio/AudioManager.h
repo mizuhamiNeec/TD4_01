@@ -1,29 +1,39 @@
 #pragma once
 #include <memory>
-#include <string>
-#include <unordered_map>
+#include <vector>
 
 #include <wrl/client.h>
 
 struct IXAudio2MasteringVoice;
 struct IXAudio2;
-class Audio;
 
-/// @brief オーディオマネージャークラス
-class AudioManager {
-public:
-	AudioManager();
-	~AudioManager();
+namespace Unnamed {
+	class AudioVoice;
+	struct SoundAssetData;
 
-	bool Init();
-	void Shutdown();
+	class AudioSystem {
+	public:
+		AudioSystem();
+		~AudioSystem();
 
-	std::shared_ptr<Audio> GetAudio(const std::string& filePath);
-	void                   UnloadAudio(const std::string& filePath);
-	void                   StopAll();
+		AudioSystem(const AudioSystem&)            = delete;
+		AudioSystem& operator=(const AudioSystem&) = delete;
 
-private:
-	Microsoft::WRL::ComPtr<IXAudio2> mXAudio2;
-	IXAudio2MasteringVoice* mAsterVoice = nullptr;
-	std::unordered_map<std::string, std::shared_ptr<Audio>> mAudioCache;
-};
+		bool Init();
+		void Shutdown();
+
+		[[nodiscard]] std::shared_ptr<AudioVoice> CreateVoice(
+			const SoundAssetData& soundData
+		);
+
+		void StopAll();
+		[[nodiscard]] bool IsReady() const noexcept;
+
+	private:
+		void CleanupExpiredVoices();
+
+		Microsoft::WRL::ComPtr<IXAudio2> mXAudio2;
+		IXAudio2MasteringVoice*          mMasterVoice = nullptr;
+		std::vector<std::weak_ptr<AudioVoice>> mVoices;
+	};
+}

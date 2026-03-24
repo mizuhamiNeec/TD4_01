@@ -1,110 +1,83 @@
-#include <ranges>
-
 #include "engine/ResourceSystem/Audio/AudioManager.h"
 
-#include <cassert>
+#include <algorithm>
 
 #include "Audio.h"
 
-#include "core/UnnamedMacro.h"
+namespace Unnamed {
+	AudioSystem::AudioSystem() = default;
 
-#include "engine/unnamed/subsystem/console/Log.h"
-
-static constexpr std::string_view kChannel = "AudMgr";
-
-/// @brief コンストラクタ
-AudioManager::AudioManager() = default;
-
-/// @brief デストラクタ
-AudioManager::~AudioManager() = default;
-
-/// @brief 初期化
-/// @return 成功したらtrue、失敗したらfalse
-bool AudioManager::Init() {
-	HRESULT hr = XAudio2Create(
-		mXAudio2.GetAddressOf(), 0,
-		XAUDIO2_DEFAULT_PROCESSOR
-	);
-	if (FAILED(hr)) {
-		Fatal(kChannel, "XAudio2の作成に失敗しました。");
-		UASSERT(SUCCEEDED(hr));
-		return false;
+	AudioSystem::~AudioSystem() {
+		Shutdown();
 	}
 
-	// マスターボイスの作成を追加
-	hr = mXAudio2->CreateMasteringVoice(&mAsterVoice);
-	if (FAILED(hr)) {
-		Fatal(kChannel, "マスターボイスの作成に失敗しました。");
-		UASSERT(SUCCEEDED(hr));
-		return false;
+	bool AudioSystem::Init() {
+		if (mXAudio2 && mMasterVoice) {
+			return true;
+		}
+
+		HRESULT hr = XAudio2Create(
+			mXAudio2.GetAddressOf(), 0, XAUDIO2_DEFAULT_PROCESSOR
+		);
+		if (FAILED(hr)) {
+			return false;
+		}
+
+		hr = mXAudio2->CreateMasteringVoice(&mMasterVoice);
+		if (FAILED(hr)) {
+			mXAudio2.Reset();
+			mMasterVoice = nullptr;
+			return false;
+		}
+
+		return true;
 	}
 
-	return true;
-}
+	void AudioSystem::Shutdown() {
+		StopAll();
+		mVoices.clear();
 
-/// @brief シャットダウン
-void AudioManager::Shutdown() {
-	// すでにShutdown済みか?
-	if (!mXAudio2 && !mAsterVoice && mAudioCache.empty()) {
-		return;
+		if (mMasterVoice) {
+			mMasterVoice->DestroyVoice();
+			mMasterVoice = nullptr;
+		}
+		mXAudio2.Reset();
 	}
 
-	// 外部参照が残っていても安全になるよう、まず全AudioのVoiceを無効化
-	for (auto& audio : mAudioCache | std::views::values) {
-		if (audio) {
-			audio->InvalidateVoice();
+	std::shared_ptr<AudioVoice> AudioSystem::CreateVoice(
+		const SoundAssetData& soundData
+	) {
+		if (!mXAudio2 || !mMasterVoice) {
+			return nullptr;
+		}
+
+		auto voice = std::make_shared<AudioVoice>();
+		if (!voice->Init(mXAudio2.Get(), soundData)) {
+			return nullptr;
+		}
+
+		CleanupExpiredVoices();
+		mVoices.emplace_back(voice);
+		return voice;
+	}
+
+	void AudioSystem::StopAll() {
+		CleanupExpiredVoices();
+		for (const auto& weak : mVoices) {
+			if (auto voice = weak.lock()) {
+				voice->Stop();
+			}
 		}
 	}
 
-	// SourceVoice を保持しているAudioを先に破棄（shared_ptrを解放）
-	mAudioCache.clear();
-
-	// MasteringVoice を破棄
-	if (mAsterVoice) {
-		mAsterVoice->DestroyVoice();
-		mAsterVoice = nullptr;
+	bool AudioSystem::IsReady() const noexcept {
+		return mXAudio2 != nullptr && mMasterVoice != nullptr;
 	}
 
-	// XAudio2 を破棄
-	mXAudio2.Reset();
-}
-
-/// @brief 音声を取得します
-/// @param filePath 音声ファイルのパス
-/// @return 音声オブジェクトへの共有ポインタ
-std::shared_ptr<Audio> AudioManager::GetAudio(const std::string& filePath) {
-	// キャッシュを検索
-	const auto it = mAudioCache.find(filePath);
-	if (it != mAudioCache.end()) {
-		return it->second;
-	}
-
-	// 音声を新しく読み込む
-	auto audio = std::make_shared<Audio>();
-	if (audio->LoadFromFile(mXAudio2.Get(), filePath.c_str())) {
-		mAudioCache[filePath] = audio;
-		return audio;
-	}
-
-	Error(kChannel, "音声の読み込みに失敗しました: {}", filePath);
-
-	return nullptr;
-}
-
-/// @brief 音声をアンロードします
-/// @param filePath 音声ファイルのパス
-void AudioManager::UnloadAudio(const std::string& filePath) {
-	// 検索してあったら削除
-	if (mAudioCache.contains(filePath)) {
-		mAudioCache.erase(filePath);
-	} else {
-		Error(kChannel, "音声のアンロードに失敗しました: {}", filePath);
-	}
-}
-
-/// @brief すべての音声を停止します
-void AudioManager::StopAll() {
-	for (const auto& audio : mAudioCache | std::views::values) {
-		audio->Stop();
+	void AudioSystem::CleanupExpiredVoices() {
+		std::erase_if(
+			mVoices,
+			[](const std::weak_ptr<AudioVoice>& weak) { return weak.expired(); }
+		);
 	}
 }

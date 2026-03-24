@@ -16,7 +16,7 @@ namespace Unnamed {
 		Vec3                    normal      = Vec3::up;
 		Vec2                    uv          = Vec2::zero;
 		std::array<uint16_t, 4> boneIndices = {0, 0, 0, 0};
-		std::array<float, 4>    boneWeights = {1.0f, 0.0f, 0.0f, 0.0f};
+		std::array<float, 4>    boneWeights = {0.0f, 0.0f, 0.0f, 0.0f};
 	};
 
 	/// @brief スケルトンのボーンデータ構造体

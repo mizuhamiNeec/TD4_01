@@ -22,26 +22,13 @@ namespace Unnamed {
 			);
 			return;
 		}
-
-		mAccelerate          = GetConVarSafe<float>(console, "sv_accelerate");
-		mMaxSpeed            = GetConVarSafe<float>(console, "sv_maxspeed");
-		mStopSpeed           = GetConVarSafe<float>(console, "sv_stopspeed");
-		mFriction            = GetConVarSafe<float>(console, "sv_friction");
-		mJumpVelocity        = GetConVarSafe<float>(console, "sv_jumpvelocity");
-		mJumpSnapDisableTime = GetConVarSafe<float>(
-			console, "sv_jumpsnapdisabletime"
-		);
-		mStepHeight = GetConVarSafe<float>(console, "sv_stepheight");
-
-		mDuckSpeed   = GetConVarSafe<float>(console, "sv_duckspeed");
-		mWalkSpeed   = GetConVarSafe<float>(console, "sv_walkspeed");
-		mSprintSpeed = GetConVarSafe<float>(console, "sv_sprintspeed");
+		mConsole = console;
 
 		mRebaseVelocityToSupportOnFirstTick = true;
 	}
 
 	void GroundMove::Tick(
-		MovementContext& context, float deltaTime
+		MovementContext& context, const float deltaTime
 	) {
 		context.isGrounded = false;
 
@@ -56,7 +43,7 @@ namespace Unnamed {
 		// デバッグ描画: 移動方向をレイで表示
 		context.transform->GetWorld()->GetDebugDraw().DrawRay(
 			context.transform->Position(),
-			wishDir.Normalized(),
+			wishDir,
 			Vec4::white
 		);
 
@@ -65,24 +52,33 @@ namespace Unnamed {
 
 		// ジャンプしていない場合は摩擦を適用(バニーホップ中か?)
 		if (!context.input.jumpPressed) {
-			ApplyFriction(context.velocity, mFriction->GetValue(), deltaTime);
+			ApplyFriction(
+				context.velocity,
+				mConsole->GetConVarValueOr("sv_friction", 5.2f), deltaTime
+			);
 		}
 
 		// 移動状態によって最大速度を変える
 		// しゃがみ入力優先
-		float currentMaxSpeed = mWalkSpeed->GetValue();
+		float currentMaxSpeed = mConsole->GetConVarValueOr(
+			"sv_walkspeed", 150.0f
+		);
 		if (context.input.sprintPressed) {
-			currentMaxSpeed = mSprintSpeed->GetValue();
+			currentMaxSpeed = mConsole->GetConVarValueOr(
+				"sv_sprintspeed", 320.0f
+			);
 		}
 		if (context.input.crouchPressed) {
-			currentMaxSpeed = mDuckSpeed->GetValue();
+			currentMaxSpeed = mConsole->GetConVarValueOr(
+				"sv_duckspeed", 63.3f
+			);
 		}
 
 		Accelerate(
 			context.velocity,
 			wishDir,
 			currentMaxSpeed,
-			mAccelerate->GetValue(),
+			mConsole->GetConVarValueOr("sv_accelerate", 10.0f),
 			deltaTime
 		);
 
@@ -102,7 +98,8 @@ namespace Unnamed {
 
 		// 移動と衝突の解決
 		context.resolver->StepMove(
-			query.position, query.velocity, mStepHeight->GetValue(), deltaTime
+			query.position, query.velocity,
+			mConsole->GetConVarValueOr("sv_stepheight", 18.0f), deltaTime
 		);
 
 		result.position = query.position;
@@ -149,14 +146,14 @@ namespace Unnamed {
 		);
 
 		context.velocity   += context.supportLinearVelocity;
-		context.velocity.y += Math::HtoM(mJumpVelocity->GetValue());
+		context.velocity.y += Math::HtoM(
+			mConsole->GetConVarValueOr("sv_jumpvelocity", 420.0f)
+		);
 
-		if (mJumpSnapDisableTime) {
-			context.jumpSnapDisableRemaining = std::max(
-				context.jumpSnapDisableRemaining,
-				mJumpSnapDisableTime->GetValue()
-			);
-		}
+		context.jumpSnapDisableRemaining = std::max(
+			context.jumpSnapDisableRemaining,
+			mConsole->GetConVarValueOr("sv_jumpsnapdisabletime", 0.1f)
+		);
 
 		Vec3 jumpPos = context.transform->Position();
 		Vec3 jumpVel = context.velocity;
@@ -182,7 +179,7 @@ namespace Unnamed {
 			return;
 		}
 
-		const float stop = mStopSpeed->GetValue();
+		const float stop = mConsole->GetConVarValueOr("sv_stopspeed", speed);
 
 		const float ctrl = speed < stop ? stop : speed;
 
@@ -205,8 +202,10 @@ namespace Unnamed {
 			return;
 		}
 
-		const float maxGroundSpeed = mMaxSpeed->GetValue();
-		const float wishSpd        = std::min(wishSpeed, maxGroundSpeed);
+		const float maxGroundSpeed = mConsole->GetConVarValueOr(
+			"sv_maxspeed", 320.0f
+		);
+		const float wishSpd = std::min(wishSpeed, maxGroundSpeed);
 
 		Vec3 currentHorizontal = Math::MtoH(currentVel);
 		currentHorizontal.y    = 0.0f;

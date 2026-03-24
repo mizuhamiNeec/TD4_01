@@ -16,7 +16,8 @@ namespace Unnamed {
 
 	protected:
 		void ExecuteJumpAndLeaveGround(
-			MovementContext& context, float deltaTime, std::string_view airStateName
+			MovementContext& context, float deltaTime,
+			std::string_view airStateName
 		) const;
 
 		/// @brief 摩擦を適用する
@@ -48,18 +49,6 @@ namespace Unnamed {
 			const Vec3&                           position,
 			Physics::Hit*                         outHit = nullptr
 		);
-
-		ConVar<float>* mAccelerate   = nullptr;
-		ConVar<float>* mMaxSpeed     = nullptr;
-		ConVar<float>* mStopSpeed    = nullptr;
-		ConVar<float>* mFriction     = nullptr;
-		ConVar<float>* mJumpVelocity = nullptr;
-		ConVar<float>* mJumpSnapDisableTime = nullptr;
-		ConVar<float>* mStepHeight   = nullptr;
-
-		ConVar<float>* mSprintSpeed = nullptr;
-		ConVar<float>* mWalkSpeed   = nullptr;
-		ConVar<float>* mDuckSpeed   = nullptr;
 
 		bool mRebaseVelocityToSupportOnFirstTick = false;
 	};

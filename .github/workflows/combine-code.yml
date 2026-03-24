@@ -3,7 +3,7 @@ name: Generate & Publish Combined Code File
 on:
   push:
     branches:
-      - master
+      - main
   # 手動実行を可能にする
   workflow_dispatch:
 
@@ -27,7 +27,7 @@ jobs:
       contents: write 
 
     steps:
-      - name: Checkout master (Shallow depth)
+      - name: Checkout main (Shallow depth)
         # 結合するコードを取得（デフォルトでshallow clone）
         uses: actions/checkout@v4 
 
@@ -126,8 +126,11 @@ jobs:
           with open(output_file, 'rb') as f:
               file_hash = hashlib.sha256(f.read()).hexdigest()
           
-          print(f"::set-output name=file_hash::{file_hash}")
-          print(f"::set-output name=output_file::{output_file}")
+          github_output = os.environ.get('GITHUB_OUTPUT')
+          if github_output:
+              with open(github_output, 'a', encoding='utf-8') as f:
+                  f.write(f"file_hash={file_hash}\n")
+                  f.write(f"output_file={output_file}\n")
 
 
       # 1.5. 既存ファイルの内容チェックとスキップ
@@ -142,7 +145,7 @@ jobs:
           # ターゲットブランチが存在しない場合は、必ずコミットし、スキップしない
           if ! git ls-remote --heads origin "$TARGET_BRANCH" | grep "$TARGET_BRANCH"; then
             echo "Target branch does not exist. Must commit."
-            echo "::set-output name=skip_commit::false"
+            echo "skip_commit=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           
@@ -158,10 +161,10 @@ jobs:
           
           if [ "$CURRENT_HASH" = "$EXISTING_HASH" ]; then
             echo "✅ Content unchanged. Skipping commit and push."
-            echo "::set-output name=skip_commit::true"
+            echo "skip_commit=true" >> "$GITHUB_OUTPUT"
           else
             echo "🔄 Content changed. Proceeding with commit."
-            echo "::set-output name=skip_commit::false"
+            echo "skip_commit=false" >> "$GITHUB_OUTPUT"
           fi
 
       # 2. ターゲットブランチのセットアップとコミット
@@ -193,7 +196,7 @@ jobs:
             
             # 全履歴を取得 (fetch-depth: 0 相当)
             echo "Fetching full history..."
-            git fetch --unshallow || git fetch origin master --depth=0
+            git fetch --unshallow || git fetch origin main --depth=0
             
             INITIAL_COMMIT_ID=$(git rev-list --max-parents=0 HEAD)
             echo "Initial Commit ID: $INITIAL_COMMIT_ID"
@@ -213,7 +216,7 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           
-          # masterの最新SHAをコミットメッセージに含める
+          # mainの最新SHAをコミットメッセージに含める
           git commit -m "Auto: Update summary for AI review (${{ github.sha }})"
           
           # 強制プッシュでリモートブランチを更新/作成

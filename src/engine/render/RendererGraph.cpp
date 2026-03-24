@@ -280,9 +280,12 @@ namespace Unnamed::Render {
 					);
 				}
 
-				// TODO: vectorのリサイズって重いんかな?
+				// TODO: vectorのリサイズって重いんかな?重そうだな...
 				state.bloomMipTextureIds.resize(
-					std::max(mBloomMipCount->GetValue(), 1)
+					std::max(
+						mConsole->GetConVarValueOr("post_bloommipcount", 5),
+						1
+					)
 				);
 
 				for (uint32_t i = 0; i < state.bloomMipTextureIds.size(); ++i) {
@@ -821,10 +824,14 @@ namespace Unnamed::Render {
 							std::span<const uint32_t>(&state.colorTextureId, 1),
 							state.depthTextureId
 						);
-						pass.SetGraphicsPipeline(mLinePass.rootSig, mLinePass.pso);
+						pass.SetGraphicsPipeline(
+							mLinePass.rootSig, mLinePass.pso
+						);
 						pass.BindGraphicsCbv(0, frameCb);
 						pass.SetVertexBuffer(mLinePass.frameVbv);
-						pass.SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
+						pass.SetPrimitiveTopology(
+							D3D_PRIMITIVE_TOPOLOGY_LINELIST
+						);
 						pass.DrawInstanced(mLinePass.frameVertexCount, 1);
 					}
 				);

@@ -18,6 +18,7 @@
 #include "types/MaterialInstanceAssetData.h"
 #include "types/MeshAssetData.h"
 #include "types/PostFxChainAssetData.h"
+#include "types/SoundAssetData.h"
 #include "types/ShaderProgramAssetData.h"
 #include "types/ShaderSourceAssetData.h"
 
@@ -274,6 +275,7 @@ namespace Unnamed {
 	template const MaterialAssetData*         AssetManager::Get(AssetID) const;
 	template const MaterialInstanceAssetData* AssetManager::Get(AssetID) const;
 	template const PostFxChainAssetData*      AssetManager::Get(AssetID) const;
+	template const SoundAssetData*            AssetManager::Get(AssetID) const;
 	template const UiDocumentAssetData*       AssetManager::Get(AssetID) const;
 
 	const std::vector<AssetID>& AssetManager::GetDependencies(

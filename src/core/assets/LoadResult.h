@@ -11,6 +11,7 @@
 #include "types/PostFxChainAssetData.h"
 #include "types/ShaderProgramAssetData.h"
 #include "types/ShaderSourceAssetData.h"
+#include "types/SoundAssetData.h"
 #include "types/TextureAssetData.h"
 #include "types/UiDocumentAssetData.h"
 
@@ -30,6 +31,7 @@ namespace Unnamed {
 		MaterialAssetData,
 		MaterialInstanceAssetData,
 		PostFxChainAssetData,
+		SoundAssetData,
 		UiDocumentAssetData
 	>;
 

@@ -20,17 +20,14 @@ namespace Unnamed {
 			);
 			return;
 		}
-
-		mGravity       = GetConVarSafe<float>(console, "sv_gravity");
-		mAirAccelerate = GetConVarSafe<float>(console, "sv_airaccelerate");
-		mAirSpeedCap   = GetConVarSafe<float>(console, "sv_airspeedcap");
+		mConsole = console;
 	}
 
 	void AirMove::Tick(MovementContext& context, float deltaTime) {
-		context.isGrounded         = false;
-		context.supportEntityGuid  = 0;
-		context.supportLinearVelocity = Vec3::zero;
-		context.supportStepDelta   = Vec3::zero;
+		context.isGrounded               = false;
+		context.supportEntityGuid        = 0;
+		context.supportLinearVelocity    = Vec3::zero;
+		context.supportStepDelta         = Vec3::zero;
 		context.jumpSnapDisableRemaining = std::max(
 			0.0f,
 			context.jumpSnapDisableRemaining - deltaTime
@@ -52,7 +49,7 @@ namespace Unnamed {
 		// 移動速度を計算
 		AirAccelerate(
 			context.velocity, wishDir, 320.0f,
-			mAirAccelerate->GetValue(),
+			mConsole->GetConVarValueOr("sv_airaccelerate", 10.0f),
 			deltaTime
 		);
 
@@ -85,10 +82,10 @@ namespace Unnamed {
 		if (context.jumpSnapDisableRemaining <= 0.0f &&
 		    context.velocity.y <= 0.0f &&
 		    IsGrounded(context.resolver, result.position, &groundHit)) {
-			context.velocity.y     = 0.0f;
-			context.isGrounded     = true;
+			context.velocity.y        = 0.0f;
+			context.isGrounded        = true;
 			context.supportEntityGuid = groundHit.hitEntityGuid;
-			context.requestedState = "GroundMove";
+			context.requestedState    = "GroundMove";
 		}
 	}
 
@@ -105,9 +102,12 @@ namespace Unnamed {
 		if (wishDir.IsZero() || wishSpeed <= 0.0f || accel <= 0.0f) {
 			return;
 		}
-		const float wishspd = std::min(wishSpeed, mAirSpeedCap->GetValue());
-		const float cur     = Math::MtoH(currentVel).Dot(wishDir);
-		const float add     = wishspd - cur;
+		const float wishspd = std::min(
+			wishSpeed,
+			mConsole->GetConVarValueOr("sv_airspeedcap", 30.0f)
+		);
+		const float cur = Math::MtoH(currentVel).Dot(wishDir);
+		const float add = wishspd - cur;
 		if (add <= 0.0f) {
 			return;
 		}
@@ -118,7 +118,8 @@ namespace Unnamed {
 	void AirMove::ApplyHalfGravity(
 		Vec3& target, const float deltaTime
 	) {
-		target.y -= Math::HtoM(mGravity->GetValue()) * 0.5f * deltaTime;
+		const float gravity = mConsole->GetConVarValueOr("sv_gravity", 800.0f);
+		target.y            -= Math::HtoM(gravity) * 0.5f * deltaTime;
 	}
 
 	bool AirMove::IsGrounded(
@@ -140,6 +141,7 @@ namespace Unnamed {
 		if (outHit) {
 			*outHit = hit;
 		}
-		return hit.startSolid || hit.allsolid || hit.normal.y > kGroundNormalMinY;
+		return hit.startSolid || hit.allsolid || hit.normal.y >
+		       kGroundNormalMinY;
 	}
 }

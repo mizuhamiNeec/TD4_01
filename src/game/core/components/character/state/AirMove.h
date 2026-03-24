@@ -31,15 +31,16 @@ namespace Unnamed {
 		void ApplyHalfGravity(
 			Vec3& target, float deltaTime
 		);
-		
+
+		/// @brief 地面に接地しているかどうかを判定する関数
+		/// @param resolver 衝突解決器
+		/// @param position 判定する位置
+		/// @param outHit 接地している場合、接地情報を格納するためのポインタ（省略可能）
+		/// @return 接地している場合は true、そうでない場合は false
 		bool IsGrounded(
 			const BaseKinematicCollisionResolver* resolver,
 			const Vec3&                           position,
 			Physics::Hit*                         outHit = nullptr
 		);
-
-		ConVar<float>* mGravity       = nullptr;
-		ConVar<float>* mAirAccelerate = nullptr;
-		ConVar<float>* mAirSpeedCap   = nullptr;
 	};
 }

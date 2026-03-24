@@ -9,6 +9,8 @@
 #include "engine/tween/TweenManager.h"
 
 namespace Unnamed {
+	class ConCommand;
+
 	enum class NOTIFY_TYPE {
 		INFO,    // 通常の通知
 		WARNING, // 注意が必要な通知
@@ -67,6 +69,7 @@ namespace Unnamed {
 
 		std::vector<std::shared_ptr<NotificationState>> mNotifications;
 		std::unique_ptr<TweenManager>                   mTweenManager = nullptr;
+		std::unique_ptr<ConCommand>                     mNotifyCommand;
 		uint64_t                                        mNextNotificationId = 0;
 	};
 }

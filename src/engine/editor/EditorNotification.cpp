@@ -374,7 +374,7 @@ namespace Unnamed {
 	}
 
 	EditorNotification::EditorNotification() {
-		static ConCommand notify(
+		mNotifyCommand = std::make_unique<ConCommand>(
 			"notify",
 			[this](const std::vector<std::string>& args) {
 				NOTIFY_TYPE type;
@@ -407,6 +407,7 @@ namespace Unnamed {
 	}
 
 	EditorNotification::~EditorNotification() {
+		mNotifyCommand.reset();
 		if (mTweenManager) {
 			mTweenManager->KillAll(false);
 		}

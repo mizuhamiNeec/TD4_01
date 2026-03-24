@@ -11,8 +11,5 @@ namespace Unnamed {
 		void Tick(MovementContext& context, float deltaTime) override;
 		void Exit() override;
 		std::string_view GetStateName() override;
-
-	protected:
-		ConVar<float>* mDuckAccelerate = nullptr;
 	};
 }

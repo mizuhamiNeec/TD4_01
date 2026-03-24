@@ -6,9 +6,6 @@ namespace Unnamed {
 	void ParkourSlideMove::Enter(ConsoleSystem* console) {
 		// ParkourGroundMoveに任せる
 		ParkourGroundMove::Enter(console);
-
-		mDuckAccelerate = GetConVarSafe<float>(console, "park_duckaccelerate");
-		mFriction       = GetConVarSafe<float>(console, "park_duckfriction");
 	}
 
 	void ParkourSlideMove::Tick(
@@ -30,7 +27,11 @@ namespace Unnamed {
 
 		// ジャンプしていない場合は摩擦を適用(バニーホップ中か?)
 		if (!context.input.jumpPressed) {
-			ApplyFriction(context.velocity, mFriction->GetValue(), deltaTime);
+			ApplyFriction(
+				context.velocity,
+				mConsole->GetConVarValueOr("park_duckfriction", 1.0f),
+				deltaTime
+			);
 		}
 
 		if (!context.input.crouchPressed) {
@@ -40,8 +41,8 @@ namespace Unnamed {
 		Accelerate(
 			context.velocity,
 			wishDir,
-			mDuckSpeed->GetValue(),
-			mDuckAccelerate->GetValue(),
+			mConsole->GetConVarValueOr("sv_duckspeed", 63.3f),
+			mConsole->GetConVarValueOr("park_duckaccelerate", 4.0f),
 			deltaTime
 		);
 
@@ -61,7 +62,8 @@ namespace Unnamed {
 
 		// 移動と衝突の解決
 		context.resolver->StepMove(
-			query.position, query.velocity, mStepHeight->GetValue(), deltaTime
+			query.position, query.velocity,
+			mConsole->GetConVarValueOr("sv_stepheight", 18.0f), deltaTime
 		);
 
 		result.position = query.position;

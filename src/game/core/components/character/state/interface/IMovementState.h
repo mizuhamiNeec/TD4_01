@@ -14,10 +14,10 @@ namespace Unnamed {
 		BaseKinematicCollisionResolver* resolver; // リゾルバへのポインタ
 		Vec3 halfExtents; // キャラクター衝突ハルの半径 [m]
 		std::string requestedState; // 次フレームで遷移したい状態名（空なら遷移なし）
-		bool isGrounded            = false;
+		bool isGrounded = false;
 		uint64_t supportEntityGuid = 0;
 		Vec3 supportLinearVelocity = Vec3::zero;
-		Vec3 supportStepDelta      = Vec3::zero;
+		Vec3 supportStepDelta = Vec3::zero;
 		float jumpSnapDisableRemaining = 0.0f;
 	};
 
@@ -49,7 +49,8 @@ namespace Unnamed {
 		/// @return 移動方向ベクトル
 		/// @details 空中移動や水中など3次元的な移動が必要な状態で用います。
 		virtual Vec3 GetWishDir(MovementContext& context);
+
+	protected:
+		ConsoleSystem* mConsole = nullptr;
 	};
 }
-
-

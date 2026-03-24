@@ -7,6 +7,8 @@ namespace Unnamed {
 	/// @brief コンソールコマンドクラス
 	class ConCommand : public ConCommandBase {
 	public:
+		~ConCommand() override;
+
 		// コールバック[引数: トークン化されたコマンド]
 		using OnExecute  = std::function<bool(std::vector<std::string>)>;
 		using OnComplete = std::function<void()>;

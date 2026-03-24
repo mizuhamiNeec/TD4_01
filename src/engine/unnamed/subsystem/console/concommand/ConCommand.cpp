@@ -7,6 +7,13 @@
 #include <engine/unnamed/subsystem/interface/ServiceLocator.h>
 
 namespace Unnamed {
+	/// @brief デストラクタ
+	ConCommand::~ConCommand() {
+		if (auto* console = ServiceLocator::Get<ConsoleSystem>()) {
+			console->UnregisterConCommand(this);
+		}
+	}
+
 	/// @brief コンストラクタ
 	/// @param name コマンド名
 	/// @param callback 実行時コールバック関数

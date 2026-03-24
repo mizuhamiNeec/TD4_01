@@ -15,12 +15,13 @@ namespace Unnamed {
 	/// 取り付けられた Entity にどの用に振る舞わせるかを定義します。
 	class BaseComponent {
 	public:
-		enum class TickGroup : uint8_t {
-			Early = 0,
-			KinematicSource = 1,
-			ColliderSync    = 2,
-			Gameplay        = 3,
-			Late            = 4,
+		// Tickの実行順序
+		enum class TICK_GROUP : uint8_t {
+			EARLY            = 0, //
+			KINEMATIC_SOURCE = 1,
+			COLLIDER_SYNC    = 2,
+			GAMEPLAY         = 3, // ほとんどのゲーム処理はここで行います。(デフォルト)
+			LATE             = 4, //
 		};
 
 		explicit BaseComponent();
@@ -113,7 +114,7 @@ namespace Unnamed {
 
 		/// @brief Tick実行グループを取得します。
 		/// @return Tickグループ
-		[[nodiscard]] virtual TickGroup GetTickGroup() const;
+		[[nodiscard]] virtual TICK_GROUP GetTickGroup() const;
 
 	protected:
 		Entity*  mOwner = nullptr; // 所有しているエンティティ

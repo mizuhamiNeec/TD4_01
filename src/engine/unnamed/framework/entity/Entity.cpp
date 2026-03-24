@@ -56,7 +56,7 @@ namespace Unnamed {
 
 	uint32_t Entity::PrePhysicsTick(
 		const float                    deltaTime,
-		const BaseComponent::TickGroup group
+		const BaseComponent::TICK_GROUP group
 	) const {
 		if (!mIsActive) {
 			return 0;
@@ -91,7 +91,7 @@ namespace Unnamed {
 
 	uint32_t Entity::Tick(
 		const float                    deltaTime,
-		const BaseComponent::TickGroup group
+		const BaseComponent::TICK_GROUP group
 	) const {
 		if (!mIsActive) {
 			return 0;
@@ -126,7 +126,7 @@ namespace Unnamed {
 
 	uint32_t Entity::PostPhysicsTick(
 		const float                    deltaTime,
-		const BaseComponent::TickGroup group
+		const BaseComponent::TICK_GROUP group
 	) const {
 		if (!mIsActive) {
 			return 0;

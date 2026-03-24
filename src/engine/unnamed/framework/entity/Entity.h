@@ -42,21 +42,21 @@ namespace Unnamed {
 		void PrePhysicsTick(float deltaTime) const;
 		[[nodiscard]] uint32_t PrePhysicsTick(
 			float                    deltaTime,
-			BaseComponent::TickGroup group
+			BaseComponent::TICK_GROUP group
 		) const;
 		/// @brief 毎フレーム呼び出されます。
 		/// @param deltaTime 前のフレームからの経過時間（秒）
 		void Tick(float deltaTime) const;
 		[[nodiscard]] uint32_t Tick(
 			float                    deltaTime,
-			BaseComponent::TickGroup group
+			BaseComponent::TICK_GROUP group
 		) const;
 		/// @brief 物理演算の後に呼び出されます。
 		/// @param deltaTime 前のフレームからの経過時間（秒）
 		void PostPhysicsTick(float deltaTime) const;
 		[[nodiscard]] uint32_t PostPhysicsTick(
 			float                    deltaTime,
-			BaseComponent::TickGroup group
+			BaseComponent::TICK_GROUP group
 		) const;
 
 		/// @brief レンダリングの前に呼び出されます。

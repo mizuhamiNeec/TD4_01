@@ -63,7 +63,7 @@ namespace Unnamed {
 		return HashTypeName(GetStableName());
 	}
 
-	BaseComponent::TickGroup BaseComponent::GetTickGroup() const {
-		return TickGroup::Gameplay;
+	BaseComponent::TICK_GROUP BaseComponent::GetTickGroup() const {
+		return TICK_GROUP::GAMEPLAY;
 	}
 }

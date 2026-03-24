@@ -10,8 +10,8 @@ namespace Unnamed {
 		void OnAttached() override;
 		void OnDetached() override;
 		void OnTick(float deltaTime) override;
-		[[nodiscard]] TickGroup GetTickGroup() const override {
-			return TickGroup::ColliderSync;
+		[[nodiscard]] TICK_GROUP GetTickGroup() const override {
+			return TICK_GROUP::COLLIDER_SYNC;
 		}
 
 		[[nodiscard]] std::string_view GetStableName() const override;

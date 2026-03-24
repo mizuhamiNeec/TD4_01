@@ -14,8 +14,8 @@
 #include "core/json/JsonWriter.h"
 #include "core/string/StrUtil.h"
 
-#include "engine/ResourceSystem/Audio/Audio.h"
-#include "engine/ResourceSystem/Audio/AudioManager.h"
+#include "engine/unnamed/subsystem/audio/Audio.h"
+#include "engine/unnamed/subsystem/audio/AudioSystem.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 

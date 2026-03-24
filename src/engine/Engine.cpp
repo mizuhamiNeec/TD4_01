@@ -4,7 +4,7 @@
 #include <pch.h>
 
 // ReSharper disable CppUnusedIncludeDirective
-#include <engine/ResourceSystem/Audio/AudioManager.h>
+#include <engine/unnamed/subsystem/audio/AudioSystem.h>
 // ReSharper restore CppUnusedIncludeDirective
 
 #include <utility>

@@ -39,7 +39,7 @@
                 {
                     "active": true,
                     "data": {
-                        "dynamic": true,
+                        "dynamic": false,
                         "enabled": true
                     },
                     "guid": 3003,
@@ -163,9 +163,9 @@
                     "active": true,
                     "data": {
                         "boxHalfExtentsHu": [
-                            16.00011444091797,
-                            36.000274658203125,
-                            16.00011444091797
+                            16,
+                            36,
+                            16
                         ],
                         "collisionEnabled": true,
                         "maxSubSteps": 6,
@@ -820,7 +820,7 @@
                             1.0
                         ]
                     },
-                    "guid": 0,
+                    "guid": 16047653065289439290,
                     "type": "engine.Transform"
                 },
                 {
@@ -829,7 +829,7 @@
                         "dynamic": true,
                         "enabled": true
                     },
-                    "guid": 0,
+                    "guid": 13221157956574019953,
                     "type": "engine.StaticMeshCollider"
                 },
                 {
@@ -838,13 +838,13 @@
                         "materialInstancePath": "",
                         "meshPath": "./content/core/models/fan.obj"
                     },
-                    "guid": 0,
+                    "guid": 10485443301812691385,
                     "type": "engine.StaticMeshRenderer"
                 },
                 {
                     "active": true,
                     "data": {},
-                    "guid": 0,
+                    "guid": 13497476310442762281,
                     "type": "engine.KinematicMover"
                 },
                 {
@@ -866,7 +866,7 @@
                         "speed": 10.0,
                         "startFromA": true
                     },
-                    "guid": 0,
+                    "guid": 16971574730157513000,
                     "type": "game.PatrolPoint"
                 }
             ],

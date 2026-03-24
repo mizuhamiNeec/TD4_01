@@ -13,9 +13,9 @@ namespace Unnamed {
 	public:
 		void OnAttached() override;
 		void OnTick(float deltaTime) override;
-		[[nodiscard]] TickGroup GetTickGroup() const override {
+		[[nodiscard]] TICK_GROUP GetTickGroup() const override {
 			// Transform/KinematicMover/ColliderSync より前に移動ソースを更新する。
-			return TickGroup::Early;
+			return TICK_GROUP::EARLY;
 		}
 
 		[[nodiscard]] std::string_view GetStableName() const override {

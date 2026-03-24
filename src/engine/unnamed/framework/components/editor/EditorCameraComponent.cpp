@@ -247,21 +247,17 @@ namespace Unnamed {
 		}
 
 		// 回転はここで決定する
-		const float sensitivity = mConsole->GetConVarAs<ConVar<float>>(
-			"sensitivity"
-		)->GetValue();
-		const float pitch = mConsole->GetConVarAs<ConVar<float>>(
-			"m_pitch"
-		)->GetValue();
-		const float yaw = mConsole->GetConVarAs<ConVar<float>>(
-			"m_yaw"
-		)->GetValue();
-		const float pitchDown = mConsole->GetConVarAs<ConVar<float>>(
-			"cl_pitchdown"
-		)->GetValue();
-		const float pitchUp = mConsole->GetConVarAs<ConVar<float>>(
-			"cl_pitchup"
-		)->GetValue();
+		const float sensitivity = mConsole->GetConVarValueOr(
+			"sensitivity",
+			1.0f
+		);
+		const float pitch = mConsole->GetConVarValueOr("m_pitch", 0.022f);
+		const float yaw   = mConsole->GetConVarValueOr("m_yaw", 0.022f);
+		const float pitchDown = mConsole->GetConVarValueOr(
+			"cl_pitchdown",
+			89.0f
+		);
+		const float pitchUp = mConsole->GetConVarValueOr("cl_pitchup", 89.0f);
 
 		const Vec2 delta = mInput->Axis2D("Mouse");
 
@@ -334,9 +330,7 @@ namespace Unnamed {
 	) {
 		const float speed = Math::MtoH(mVelocity.Length());
 
-		const float stop = mConsole->GetConVarAs<ConVar<float>>(
-			"sv_stopspeed"
-		)->GetValue();
+		const float stop = mConsole->GetConVarValueOr("sv_stopspeed", 100.0f);
 
 		const float ctrl = speed < stop ? stop : speed;
 		const float drop = ctrl * amount * deltaTime;

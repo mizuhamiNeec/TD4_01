@@ -15,6 +15,7 @@
 #include "engine/profiler/Profiler.h"
 #include "engine/render/frame/RenderFrameContext.h"
 #include "engine/render/frame/RenderFrameInputs.h"
+#include "engine/rhi/Constants.h"
 #include "engine/scene/Scene.h"
 #include "engine/scene/SceneSerializer.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
@@ -768,7 +769,7 @@ namespace Unnamed {
 
 						const uint32_t boneCount = std::min<uint32_t>(
 							static_cast<uint32_t>(meshAsset->skeleton.size()),
-							64u
+							Rhi::SkinningPaletteConstants::kMaxBones
 						);
 						palette.boneMatrices.resize(boneCount, Mat4::identity);
 

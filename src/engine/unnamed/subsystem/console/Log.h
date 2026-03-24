@@ -84,7 +84,7 @@ namespace Unnamed {
 		// エラー以上のレベルのメッセージはエディタ通知も出す
 		switch (level) {
 			case LogLevel::Error: console->ExecuteCommand(
-					"notify error 20 Error | " + body,
+					"notify error 2 Error | " + body,
 					EXEC_FLAG::FROM_CONSOLE | EXEC_FLAG::SILENT
 				);
 				break;

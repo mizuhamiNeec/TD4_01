@@ -230,8 +230,7 @@ namespace Unnamed::Render {
 		static constexpr uint32_t kPortalDirections     = 2;
 		static constexpr uint32_t kMaxDebugLines        = 65536; // TODO: とりあえず
 
-		ConsoleSystem* mConsole       = nullptr;
-		ConVar<int>*   mBloomMipCount = nullptr;
+		ConsoleSystem* mConsole = nullptr;
 
 		RenderGraph mGraph;
 

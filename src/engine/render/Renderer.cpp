@@ -14,10 +14,10 @@
 
 namespace Unnamed::Render {
 	namespace {
-		static constexpr std::string_view kRenderChannel = "Renderer";
-		static constexpr uint32_t kShrinkSettleFrames = 12;
-		static constexpr uint32_t kMinShrinkPixels    = 64;
-		static constexpr float    kMinShrinkRatio     = 0.9f;
+		constexpr std::string_view kRenderChannel      = "Renderer";
+		constexpr uint32_t         kShrinkSettleFrames = 12;
+		constexpr uint32_t         kMinShrinkPixels    = 64;
+		constexpr float            kMinShrinkRatio     = 0.9f;
 
 		void ResetPendingShrink(auto& state) {
 			state.pendingShrinkWidth        = 0;
@@ -360,111 +360,6 @@ namespace Unnamed::Render {
 		mUiPlatformRenderCallback = std::move(platformRenderCallback);
 	}
 
-	void Renderer::InitializeDebugLineResources(Rhi::D3D12Device& dx) {
-		mLinePass.vertexCapacity   = kMaxDebugLines * 2;
-		mLinePass.frameVertexCount = 0;
-		mLinePass.mappedVertices   = nullptr;
-		mLinePass.dynamicVb.Reset();
-		mLinePass.frameVbv = {};
-
-		const uint64_t bufferSize = static_cast<uint64_t>(
-			sizeof(DebugLineVertex)
-		) * static_cast<uint64_t>(mLinePass.vertexCapacity);
-
-		D3D12_HEAP_PROPERTIES heapProps = {};
-		heapProps.Type                  = D3D12_HEAP_TYPE_UPLOAD;
-
-		D3D12_RESOURCE_DESC desc = {};
-		desc.Dimension           = D3D12_RESOURCE_DIMENSION_BUFFER;
-		desc.Width               = bufferSize;
-		desc.Height              = 1;
-		desc.DepthOrArraySize    = 1;
-		desc.MipLevels           = 1;
-		desc.SampleDesc.Count    = 1;
-		desc.Layout              = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-
-		Rhi::Throw(
-			dx.GetDevice()->CreateCommittedResource(
-				&heapProps,
-				D3D12_HEAP_FLAG_NONE,
-				&desc,
-				D3D12_RESOURCE_STATE_GENERIC_READ,
-				nullptr,
-				IID_PPV_ARGS(mLinePass.dynamicVb.ReleaseAndGetAddressOf())
-			)
-		);
-
-		void* mapped = nullptr;
-		constexpr D3D12_RANGE readRange = {0, 0};
-		Rhi::Throw(mLinePass.dynamicVb->Map(0, &readRange, &mapped));
-		mLinePass.mappedVertices = static_cast<DebugLineVertex*>(mapped);
-
-		mLinePass.frameVbv.BufferLocation = mLinePass.dynamicVb->
-			GetGPUVirtualAddress();
-		mLinePass.frameVbv.SizeInBytes = static_cast<UINT>(
-			sizeof(DebugLineVertex) * mLinePass.vertexCapacity
-		);
-		mLinePass.frameVbv.StrideInBytes = sizeof(DebugLineVertex);
-		mLinePass.dynamicVb->SetName(L"DebugLineDynamicVB");
-	}
-
-	void Renderer::UploadDebugLinesForFrame() {
-		mLinePass.frameVertexCount = 0;
-		if (mLinePass.dynamicVb.Get() == nullptr || mLinePass.mappedVertices == nullptr) {
-			return;
-		}
-		if (mFrameDebugLines.empty()) {
-			return;
-		}
-
-		const size_t requestedLines = mFrameDebugLines.size();
-		if (requestedLines > kMaxDebugLines) {
-			Warning(
-				kRenderChannel,
-				"Debug line count exceeded limit. requested={}, limit={}, clipped={}",
-				requestedLines,
-				kMaxDebugLines,
-				requestedLines - kMaxDebugLines
-			);
-		}
-
-		const uint32_t lineCount = static_cast<uint32_t>(std::min<size_t>(
-			requestedLines,
-			static_cast<size_t>(kMaxDebugLines)
-		));
-		const uint32_t vertexCount = std::min<uint32_t>(
-			lineCount * 2u,
-			mLinePass.vertexCapacity
-		);
-
-		for (uint32_t i = 0; i < vertexCount / 2u; ++i) {
-			const DebugLineInput& srcLine = mFrameDebugLines[i];
-			DebugLineVertex&      v0 = mLinePass.mappedVertices[i * 2u + 0u];
-			DebugLineVertex&      v1 = mLinePass.mappedVertices[i * 2u + 1u];
-
-			v0.px = srcLine.start.x;
-			v0.py = srcLine.start.y;
-			v0.pz = srcLine.start.z;
-			v0.r  = srcLine.color.x;
-			v0.g  = srcLine.color.y;
-			v0.b  = srcLine.color.z;
-			v0.a  = srcLine.color.w;
-
-			v1.px = srcLine.end.x;
-			v1.py = srcLine.end.y;
-			v1.pz = srcLine.end.z;
-			v1.r  = srcLine.color.x;
-			v1.g  = srcLine.color.y;
-			v1.b  = srcLine.color.z;
-			v1.a  = srcLine.color.w;
-		}
-
-		mLinePass.frameVertexCount   = vertexCount;
-		mLinePass.frameVbv.SizeInBytes = static_cast<UINT>(
-			sizeof(DebugLineVertex) * vertexCount
-		);
-	}
-
 	SceneOutputView Renderer::GetViewOutputView(
 		const RenderDevice& renderDevice, const std::string_view viewKey
 	) const {
@@ -579,6 +474,113 @@ namespace Unnamed::Render {
 		}
 		return EnsureSpriteTextureLoaded(
 			renderDevice, textureRef.textureAssetId
+		);
+	}
+
+	void Renderer::InitializeDebugLineResources(Rhi::D3D12Device& dx) {
+		mLinePass.vertexCapacity   = kMaxDebugLines * 2;
+		mLinePass.frameVertexCount = 0;
+		mLinePass.mappedVertices   = nullptr;
+		mLinePass.dynamicVb.Reset();
+		mLinePass.frameVbv = {};
+
+		const uint64_t bufferSize = static_cast<uint64_t>(
+			                            sizeof(DebugLineVertex)
+		                            ) * static_cast<uint64_t>(mLinePass.
+			                            vertexCapacity);
+
+		D3D12_HEAP_PROPERTIES heapProps = {};
+		heapProps.Type                  = D3D12_HEAP_TYPE_UPLOAD;
+
+		D3D12_RESOURCE_DESC desc = {};
+		desc.Dimension           = D3D12_RESOURCE_DIMENSION_BUFFER;
+		desc.Width               = bufferSize;
+		desc.Height              = 1;
+		desc.DepthOrArraySize    = 1;
+		desc.MipLevels           = 1;
+		desc.SampleDesc.Count    = 1;
+		desc.Layout              = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+		Rhi::Throw(
+			dx.GetDevice()->CreateCommittedResource(
+				&heapProps,
+				D3D12_HEAP_FLAG_NONE,
+				&desc,
+				D3D12_RESOURCE_STATE_GENERIC_READ,
+				nullptr,
+				IID_PPV_ARGS(mLinePass.dynamicVb.ReleaseAndGetAddressOf())
+			)
+		);
+
+		void*                 mapped    = nullptr;
+		constexpr D3D12_RANGE readRange = {0, 0};
+		Rhi::Throw(mLinePass.dynamicVb->Map(0, &readRange, &mapped));
+		mLinePass.mappedVertices = static_cast<DebugLineVertex*>(mapped);
+
+		mLinePass.frameVbv.BufferLocation = mLinePass.dynamicVb->
+			GetGPUVirtualAddress();
+		mLinePass.frameVbv.SizeInBytes = static_cast<UINT>(
+			sizeof(DebugLineVertex) * mLinePass.vertexCapacity
+		);
+		mLinePass.frameVbv.StrideInBytes = sizeof(DebugLineVertex);
+		mLinePass.dynamicVb->SetName(L"DebugLineDynamicVB");
+	}
+
+	void Renderer::UploadDebugLinesForFrame() {
+		mLinePass.frameVertexCount = 0;
+		if (mLinePass.dynamicVb.Get() == nullptr || mLinePass.mappedVertices ==
+		    nullptr) {
+			return;
+		}
+		if (mFrameDebugLines.empty()) {
+			return;
+		}
+
+		const size_t requestedLines = mFrameDebugLines.size();
+		if (requestedLines > kMaxDebugLines) {
+			Warning(
+				kRenderChannel,
+				"Debug line count exceeded limit. requested={}, limit={}, clipped={}",
+				requestedLines,
+				kMaxDebugLines,
+				requestedLines - kMaxDebugLines
+			);
+		}
+
+		const uint32_t lineCount = static_cast<uint32_t>(std::min<size_t>(
+			requestedLines,
+			static_cast<size_t>(kMaxDebugLines)
+		));
+		const uint32_t vertexCount = std::min<uint32_t>(
+			lineCount * 2u,
+			mLinePass.vertexCapacity
+		);
+
+		for (uint32_t i = 0; i < vertexCount / 2u; ++i) {
+			const DebugLineInput& srcLine = mFrameDebugLines[i];
+			DebugLineVertex&      v0 = mLinePass.mappedVertices[i * 2u + 0u];
+			DebugLineVertex&      v1 = mLinePass.mappedVertices[i * 2u + 1u];
+
+			v0.px = srcLine.start.x;
+			v0.py = srcLine.start.y;
+			v0.pz = srcLine.start.z;
+			v0.r  = srcLine.color.x;
+			v0.g  = srcLine.color.y;
+			v0.b  = srcLine.color.z;
+			v0.a  = srcLine.color.w;
+
+			v1.px = srcLine.end.x;
+			v1.py = srcLine.end.y;
+			v1.pz = srcLine.end.z;
+			v1.r  = srcLine.color.x;
+			v1.g  = srcLine.color.y;
+			v1.b  = srcLine.color.z;
+			v1.a  = srcLine.color.w;
+		}
+
+		mLinePass.frameVertexCount     = vertexCount;
+		mLinePass.frameVbv.SizeInBytes = static_cast<UINT>(
+			sizeof(DebugLineVertex) * vertexCount
 		);
 	}
 

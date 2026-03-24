@@ -16,10 +16,10 @@ namespace Unnamed {
 	}
 
 	void ParkourAirMove::Tick(MovementContext& context, float deltaTime) {
-		context.isGrounded            = false;
-		context.supportEntityGuid     = 0;
-		context.supportLinearVelocity = Vec3::zero;
-		context.supportStepDelta      = Vec3::zero;
+		context.isGrounded               = false;
+		context.supportEntityGuid        = 0;
+		context.supportLinearVelocity    = Vec3::zero;
+		context.supportStepDelta         = Vec3::zero;
 		context.jumpSnapDisableRemaining = std::max(
 			0.0f,
 			context.jumpSnapDisableRemaining - deltaTime
@@ -41,7 +41,7 @@ namespace Unnamed {
 		// 移動速度を計算
 		AirAccelerate(
 			context.velocity, wishDir, 320.0f,
-			mAirAccelerate->GetValue(),
+			mConsole->GetConVarValueOr("sv_airaccelerate", FLT_MAX),
 			deltaTime
 		);
 
@@ -74,10 +74,10 @@ namespace Unnamed {
 		if (context.jumpSnapDisableRemaining <= 0.0f &&
 		    context.velocity.y <= 0.0f &&
 		    IsGrounded(context.resolver, result.position, &groundHit)) {
-			context.velocity.y     = 0.0f;
-			context.isGrounded     = true;
+			context.velocity.y        = 0.0f;
+			context.isGrounded        = true;
 			context.supportEntityGuid = groundHit.hitEntityGuid;
-			context.requestedState = "ParkourGroundMove";
+			context.requestedState    = "ParkourGroundMove";
 		}
 	}
 

@@ -13,8 +13,8 @@ namespace Unnamed {
 		void OnAttached() override;
 
 		void                           PrePhysicsTick(float deltaTime) override;
-		[[nodiscard]] TickGroup        GetTickGroup() const override {
-			return TickGroup::Early;
+		[[nodiscard]] TICK_GROUP        GetTickGroup() const override {
+			return TICK_GROUP::EARLY;
 		}
 		[[nodiscard]] std::string_view GetStableName() const override;
 		[[nodiscard]] std::string_view GetComponentName() const override;

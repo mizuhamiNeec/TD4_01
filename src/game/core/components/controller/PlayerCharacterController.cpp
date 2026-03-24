@@ -8,10 +8,33 @@
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/unnamed/subsystem/input/InputSystem.h"
+#include "engine/unnamed/subsystem/input/device/gamepad/GamepadDevice.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 #include "engine/world/World.h"
 
 namespace Unnamed {
+	namespace {
+		void BindGamepadMoveAxisOnce(InputSystem* input) {
+			static bool sBound = false;
+			if (sBound || !input) {
+				return;
+			}
+
+			constexpr InputKey gamepadMoveX = {
+				.device = InputDeviceType::GAMEPAD,
+				.code   = VG_LX
+			};
+			constexpr InputKey gamepadMoveY = {
+				.device = InputDeviceType::GAMEPAD,
+				.code   = VG_LY
+			};
+
+			input->BindAxis2D("GamepadMove", gamepadMoveX, INPUT_AXIS::X, 1.0f);
+			input->BindAxis2D("GamepadMove", gamepadMoveY, INPUT_AXIS::Y, 1.0f);
+			sBound = true;
+		}
+	}
+
 	PlayerCharacterController::~PlayerCharacterController() {}
 
 	void PlayerCharacterController::OnAttached() {
@@ -19,6 +42,7 @@ namespace Unnamed {
 
 		if (auto* inputSystem = ServiceLocator::Get<InputSystem>()) {
 			mInput = inputSystem;
+			BindGamepadMoveAxisOnce(mInput);
 		} else {
 			Error(
 				GetComponentName(),
@@ -65,7 +89,13 @@ namespace Unnamed {
 			input.sprintPressed = true;
 		}
 
-		input.moveAxis.Normalize();
+		const Vec2 gamepadMoveAxis = mInput->Axis2D("GamepadMove");
+		input.moveAxis.x           += gamepadMoveAxis.x;
+		input.moveAxis.z           += gamepadMoveAxis.y;
+
+		if (input.moveAxis.Length() > 1.0f) {
+			input.moveAxis.Normalize();
+		}
 
 		if (auto* world = GetWorld()) {
 			const auto& cameraMgr = world->GetCameraManager();

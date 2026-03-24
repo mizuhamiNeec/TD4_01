@@ -100,7 +100,7 @@ namespace Unnamed {
 			int           maxHits
 		) const = 0;
 
-		Physics::Engine* GetPhysics() const;
+		[[nodiscard]] Physics::Engine* GetPhysics() const;
 
 	protected:
 		Physics::Engine* mEngine = nullptr;

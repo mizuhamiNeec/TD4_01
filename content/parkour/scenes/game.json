@@ -163,9 +163,9 @@
                     "active": true,
                     "data": {
                         "boxHalfExtentsHu": [
-                            16,
-                            36,
-                            16
+                            16.000015258789063,
+                            36.00003433227539,
+                            16.000015258789063
                         ],
                         "collisionEnabled": true,
                         "maxSubSteps": 6,
@@ -218,7 +218,6 @@
                     "active": true,
                     "data": {
                         "pitchDegrees": 0.0,
-                        "sensitivity": 0.15000000596046448,
                         "yawDegrees": 0.0
                     },
                     "guid": 3111,
@@ -237,7 +236,7 @@
                 {
                     "active": true,
                     "data": {
-                        "parentEntityGuid": 2101,
+                        "parentEntityGuid": 2314,
                         "position": [
                             0.0,
                             0.0,
@@ -576,7 +575,7 @@
             "guid": 2300,
             "isEditorOnly": false,
             "name": "Checkpoint1",
-            "visible": false
+            "visible": true
         },
         {
             "active": true,
@@ -633,7 +632,7 @@
             "guid": 2301,
             "isEditorOnly": false,
             "name": "Checkpoint2",
-            "visible": false
+            "visible": true
         },
         {
             "active": true,
@@ -690,7 +689,7 @@
             "guid": 2302,
             "isEditorOnly": false,
             "name": "Checkpoint3",
-            "visible": false
+            "visible": true
         },
         {
             "active": true,
@@ -741,59 +740,6 @@
             "guid": 2310,
             "isEditorOnly": false,
             "name": "Goal",
-            "visible": false
-        },
-        {
-            "active": true,
-            "components": [
-                {
-                    "active": true,
-                    "data": {
-                        "parentEntityGuid": 0,
-                        "position": [
-                            0.0,
-                            3.5,
-                            3.0
-                        ],
-                        "rotation": [
-                            0.0,
-                            0.0,
-                            0.0,
-                            1.0
-                        ],
-                        "scale": [
-                            1.0,
-                            1.0,
-                            1.0
-                        ]
-                    },
-                    "guid": 16572862083116074599,
-                    "type": "engine.Transform"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "pixelSize": [
-                            1920.0,
-                            1080.0
-                        ],
-                        "receiveInput": true,
-                        "sortKey": 0,
-                        "spaceMode": "WorldPlane",
-                        "uiAssetPath": "./content/parkour/ui/MainMenu.ui.json",
-                        "worldSize": [
-                            3.200000047683716,
-                            1.7999999523162842
-                        ]
-                    },
-                    "guid": 11890695562267748357,
-                    "type": "engine.UiCanvas"
-                }
-            ],
-            "folderPath": "",
-            "guid": 2311,
-            "isEditorOnly": false,
-            "name": "Entity",
             "visible": true
         },
         {
@@ -872,6 +818,156 @@
             ],
             "folderPath": "Gameplay/World",
             "guid": 2312,
+            "isEditorOnly": false,
+            "name": "Entity",
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 2101,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            -9.099629210140847e-07,
+                            1.0,
+                            -9.099629210140847e-07,
+                            8.280325210219264e-13
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 13956203433119618907,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "",
+                        "meshPath": "./content/parkour/models/hand/hand.gltf"
+                    },
+                    "guid": 14371380690343291608,
+                    "type": "engine.SkeletalMeshRenderer"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "clipName": "",
+                        "layers": [
+                            {
+                                "clipName": "",
+                                "loop": true,
+                                "playOnStart": true,
+                                "speed": 1.0,
+                                "weight": 1.0
+                            }
+                        ],
+                        "loop": true,
+                        "playOnStart": true,
+                        "speed": 1.0
+                    },
+                    "guid": 14953038522775958096,
+                    "type": "engine.SkeletalAnimation"
+                }
+            ],
+            "folderPath": "Gameplay/Player",
+            "guid": 2313,
+            "isEditorOnly": false,
+            "name": "Entity",
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 2101,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.Transform"
+                }
+            ],
+            "folderPath": "Gameplay/Player",
+            "guid": 2314,
+            "isEditorOnly": false,
+            "name": "Entity",
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 2101,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.20000000298023224
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "pixelSize": [
+                            256.0,
+                            256.0
+                        ],
+                        "receiveInput": true,
+                        "sortKey": 0,
+                        "spaceMode": "WorldBillboard",
+                        "uiAssetPath": "./content/parkour/ui/crosshair.ui.json",
+                        "worldSize": [
+                            0.02500000037252903,
+                            0.02500000037252903
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.UiCanvas"
+                }
+            ],
+            "folderPath": "Gameplay/Player",
+            "guid": 2315,
             "isEditorOnly": false,
             "name": "Entity",
             "visible": true

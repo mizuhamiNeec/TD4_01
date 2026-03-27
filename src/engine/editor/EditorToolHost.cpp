@@ -261,6 +261,7 @@ namespace Unnamed {
 			ImGui::PopStyleVar(3); // WinRound, WinBorder, WinPadding
 
 			const ImGuiID dockSpaceId = ImGui::GetID("MainEditorDockSpace");
+			const ImVec2  dockNodeSize = ImGui::GetContentRegionAvail();
 			ImGui::DockSpace(
 				dockSpaceId,
 				ImVec2(0.0f, 0.0f),
@@ -268,7 +269,6 @@ namespace Unnamed {
 			);
 
 			if (!mMainDockInitialized) {
-				const ImVec2 dockNodeSize = ImGui::GetContentRegionAvail();
 				if (dockNodeSize.x > 1.0f && dockNodeSize.y > 1.0f) {
 					ImGui::DockBuilderRemoveNode(dockSpaceId);
 					ImGui::DockBuilderAddNode(

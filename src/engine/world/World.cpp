@@ -20,6 +20,7 @@
 #include "engine/scene/SceneSerializer.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/framework/components/editor/EditorCameraComponent.h"
+#include "engine/unnamed/framework/components/mesh/SkeletalAnimationComponent.h"
 #include "engine/unnamed/framework/components/mesh/SkeletalMeshRendererComponent.h"
 #include "engine/unnamed/framework/components/mesh/StaticMeshRendererComponent.h"
 #include "engine/unnamed/framework/components/portal/PortalComponent.h"
@@ -39,9 +40,10 @@ namespace Unnamed {
 
 	namespace {
 		using TickGroup = BaseComponent::TICK_GROUP;
+
 		enum class TickPhase : uint8_t {
-			PrePhysics = 0,
-			Tick       = 1,
+			PrePhysics  = 0,
+			Tick        = 1,
 			PostPhysics = 2,
 		};
 
@@ -54,54 +56,58 @@ namespace Unnamed {
 		};
 
 		static constexpr std::array<std::array<const char*, 5>, 3>
-		kPhaseGroupTimeSampleNames = {{
+		kPhaseGroupTimeSampleNames = {
 			{
-				"World.Tick.PrePhysics.Early",
-				"World.Tick.PrePhysics.KinematicSource",
-				"World.Tick.PrePhysics.ColliderSync",
-				"World.Tick.PrePhysics.Gameplay",
-				"World.Tick.PrePhysics.Late"
-			},
-			{
-				"World.Tick.OnTick.Early",
-				"World.Tick.OnTick.KinematicSource",
-				"World.Tick.OnTick.ColliderSync",
-				"World.Tick.OnTick.Gameplay",
-				"World.Tick.OnTick.Late"
-			},
-			{
-				"World.Tick.PostPhysics.Early",
-				"World.Tick.PostPhysics.KinematicSource",
-				"World.Tick.PostPhysics.ColliderSync",
-				"World.Tick.PostPhysics.Gameplay",
-				"World.Tick.PostPhysics.Late"
+				{
+					"World.Tick.PrePhysics.Early",
+					"World.Tick.PrePhysics.KinematicSource",
+					"World.Tick.PrePhysics.ColliderSync",
+					"World.Tick.PrePhysics.Gameplay",
+					"World.Tick.PrePhysics.Late"
+				},
+				{
+					"World.Tick.OnTick.Early",
+					"World.Tick.OnTick.KinematicSource",
+					"World.Tick.OnTick.ColliderSync",
+					"World.Tick.OnTick.Gameplay",
+					"World.Tick.OnTick.Late"
+				},
+				{
+					"World.Tick.PostPhysics.Early",
+					"World.Tick.PostPhysics.KinematicSource",
+					"World.Tick.PostPhysics.ColliderSync",
+					"World.Tick.PostPhysics.Gameplay",
+					"World.Tick.PostPhysics.Late"
+				}
 			}
-		}};
+		};
 
 		static constexpr std::array<std::array<const char*, 5>, 3>
-		kPhaseGroupCountSampleNames = {{
+		kPhaseGroupCountSampleNames = {
 			{
-				"World.Tick.PrePhysics.Early.Count",
-				"World.Tick.PrePhysics.KinematicSource.Count",
-				"World.Tick.PrePhysics.ColliderSync.Count",
-				"World.Tick.PrePhysics.Gameplay.Count",
-				"World.Tick.PrePhysics.Late.Count"
-			},
-			{
-				"World.Tick.OnTick.Early.Count",
-				"World.Tick.OnTick.KinematicSource.Count",
-				"World.Tick.OnTick.ColliderSync.Count",
-				"World.Tick.OnTick.Gameplay.Count",
-				"World.Tick.OnTick.Late.Count"
-			},
-			{
-				"World.Tick.PostPhysics.Early.Count",
-				"World.Tick.PostPhysics.KinematicSource.Count",
-				"World.Tick.PostPhysics.ColliderSync.Count",
-				"World.Tick.PostPhysics.Gameplay.Count",
-				"World.Tick.PostPhysics.Late.Count"
+				{
+					"World.Tick.PrePhysics.Early.Count",
+					"World.Tick.PrePhysics.KinematicSource.Count",
+					"World.Tick.PrePhysics.ColliderSync.Count",
+					"World.Tick.PrePhysics.Gameplay.Count",
+					"World.Tick.PrePhysics.Late.Count"
+				},
+				{
+					"World.Tick.OnTick.Early.Count",
+					"World.Tick.OnTick.KinematicSource.Count",
+					"World.Tick.OnTick.ColliderSync.Count",
+					"World.Tick.OnTick.Gameplay.Count",
+					"World.Tick.OnTick.Late.Count"
+				},
+				{
+					"World.Tick.PostPhysics.Early.Count",
+					"World.Tick.PostPhysics.KinematicSource.Count",
+					"World.Tick.PostPhysics.ColliderSync.Count",
+					"World.Tick.PostPhysics.Gameplay.Count",
+					"World.Tick.PostPhysics.Late.Count"
+				}
 			}
-		}};
+		};
 
 		[[nodiscard]] constexpr size_t ToPhaseIndex(const TickPhase phase) {
 			return static_cast<size_t>(phase);
@@ -480,37 +486,35 @@ namespace Unnamed {
 			}
 		);
 
-		Profiler* profiler = ServiceLocator::Get<Profiler>();
+		Profiler*  profiler      = ServiceLocator::Get<Profiler>();
 		const auto runPhaseGroup =
 			[&](
 			const TickPhase phase,
 			const TickGroup group
 		) {
-			const auto start = std::chrono::steady_clock::now();
+			const auto start                 = std::chrono::steady_clock::now();
 			uint32_t   invokedComponentCount = 0;
 
 			for (Entity* entity : activeEntities) {
 				switch (phase) {
-					case TickPhase::PrePhysics:
-						invokedComponentCount += entity->PrePhysicsTick(
-							deltaTime,
-							group
-						);
+					case TickPhase::PrePhysics
+					: invokedComponentCount += entity->PrePhysicsTick(
+						  deltaTime,
+						  group
+					  );
 						break;
-					case TickPhase::Tick:
-						invokedComponentCount += entity->Tick(
-							deltaTime,
-							group
-						);
+					case TickPhase::Tick: invokedComponentCount += entity->Tick(
+						                      deltaTime,
+						                      group
+					                      );
 						break;
-					case TickPhase::PostPhysics:
-						invokedComponentCount += entity->PostPhysicsTick(
-							deltaTime,
-							group
-						);
+					case TickPhase::PostPhysics
+					: invokedComponentCount += entity->PostPhysicsTick(
+						  deltaTime,
+						  group
+					  );
 						break;
-					default:
-						break;
+					default: break;
 				}
 			}
 
@@ -552,6 +556,17 @@ namespace Unnamed {
 				Vec4::orange
 			);
 		}
+
+		for (const auto& entity : activeEntities) {
+			const auto transform = entity->GetComponent<TransformComponent>();
+
+			if (transform) {
+				GetDebugDraw().DrawAxis(
+					transform->Position(), transform->Rotation()
+				);
+			}
+		}
+
 		mPhysicsEngine->EndFrame();
 	}
 
@@ -755,35 +770,32 @@ namespace Unnamed {
 					meshAsset && meshAsset->hasSkinning && !meshAsset->skeleton.
 					empty();
 				if (hasSkinning) {
-					object.isSkinned = true;
-					const auto found = frameContext.skinningPaletteIndexByMesh.
-					                                find(
-						                                meshAssetId
-					                                );
-					if (found != frameContext.skinningPaletteIndexByMesh.
-					                          end()) {
-						object.skeletonPaletteId = found->second;
+					object.isSkinned                     = true;
+					Render::SkinningPaletteInput palette = {};
+					palette.meshAssetId                  = meshAssetId;
+
+					const uint32_t boneCount = std::min<uint32_t>(
+						static_cast<uint32_t>(meshAsset->skeleton.size()),
+						Rhi::SkinningPaletteConstants::kMaxBones
+					);
+					palette.boneMatrices.resize(boneCount, Mat4::identity);
+
+					if (auto* anim = entity->GetComponent<
+							SkeletalAnimationComponent>();
+						anim && anim->IsActive()) {
+						anim->BuildSkinningPalette(
+							*meshAsset, palette.boneMatrices
+						);
 					} else {
-						Render::SkinningPaletteInput palette = {};
-						palette.meshAssetId                  = meshAssetId;
-
-						const uint32_t boneCount = std::min<uint32_t>(
-							static_cast<uint32_t>(meshAsset->skeleton.size()),
-							Rhi::SkinningPaletteConstants::kMaxBones
+						SkeletalAnimationComponent::BuildBindPosePalette(
+							*meshAsset, palette.boneMatrices
 						);
-						palette.boneMatrices.resize(boneCount, Mat4::identity);
-
-						const uint32_t paletteIndex = static_cast<uint32_t>(
-							sceneView.skinningPalettes.size()
-						);
-						sceneView.skinningPalettes.emplace_back(
-							std::move(palette)
-						);
-						frameContext.skinningPaletteIndexByMesh.emplace(
-							meshAssetId, paletteIndex
-						);
-						object.skeletonPaletteId = paletteIndex;
 					}
+
+					object.skeletonPaletteId = static_cast<uint32_t>(
+						sceneView.skinningPalettes.size()
+					);
+					sceneView.skinningPalettes.emplace_back(std::move(palette));
 				}
 
 				sceneView.visibleObjects.emplace_back(object);
@@ -1056,6 +1068,9 @@ namespace Unnamed {
 				billboard.rotationRad     = 0.0f;
 				billboard.sortKey         = canvasSort;
 				billboard.uvFlipY         = true;
+				billboard.depthTest      =
+					entry.canvas->GetBillboardDepthMode() ==
+					UI_CANVAS_BILLBOARD_DEPTH_MODE::DEPTH_TEST;
 				sceneView.worldBillboards.emplace_back(billboard);
 			} else {
 				Render::WorldSpriteInput sprite = {};

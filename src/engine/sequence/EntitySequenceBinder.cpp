@@ -189,6 +189,14 @@ namespace Unnamed {
 			canvas.SetSpaceMode(static_cast<UI_CANVAS_SPACE_MODE>(mode));
 			return true;
 		}
+		if (propertyPath == "billboardDepthMode") {
+			int mode = static_cast<int>(std::lround(value));
+			mode = std::clamp(mode, 0, 1);
+			canvas.SetBillboardDepthMode(
+				static_cast<UI_CANVAS_BILLBOARD_DEPTH_MODE>(mode)
+			);
+			return true;
+		}
 		return false;
 	}
 

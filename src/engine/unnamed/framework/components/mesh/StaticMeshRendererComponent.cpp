@@ -12,6 +12,8 @@
 #include "core/json/JsonWriter.h"
 #include "core/string/StrUtil.h"
 
+#include "engine/ImGui/ImGuiWidgets.h"
+
 namespace Unnamed {
 	namespace {
 		std::string ReadStringOr(
@@ -56,29 +58,26 @@ namespace Unnamed {
 
 #ifdef _DEBUG
 	void StaticMeshRendererComponent::DrawInspectorImGui() {
-		std::array<char, 512> meshPath = {};
-		std::array<char, 512> matPath  = {};
-
-		memcpy(
-			meshPath.data(),
-			mMeshPath.c_str(),
-			std::min(mMeshPath.size(), meshPath.size() - 1)
-		);
-		memcpy(
-			matPath.data(),
-			mMaterialInstancePath.c_str(),
-			std::min(mMaterialInstancePath.size(), matPath.size() - 1)
-		);
-
-		if (ImGui::InputText("MeshPath", meshPath.data(), meshPath.size())) {
-			SetMeshPath(meshPath.data());
-		}
+		std::string meshPath = mMeshPath;
 		if (
-			ImGui::InputText(
-				"MaterialInstancePath", matPath.data(), matPath.size()
+			ImGuiWidgets::AssetPathPicker(
+				"MeshPath",
+				meshPath,
+				ImGuiWidgets::AssetTypeToMask(ASSET_TYPE::MESH)
 			)
 		) {
-			SetMaterialInstancePath(matPath.data());
+			SetMeshPath(meshPath);
+		}
+
+		std::string materialPath = mMaterialInstancePath;
+		if (
+			ImGuiWidgets::AssetPathPicker(
+				"MaterialInstancePath",
+				materialPath,
+				ImGuiWidgets::AssetTypeToMask(ASSET_TYPE::MATERIAL_INSTANCE)
+			)
+		) {
+			SetMaterialInstancePath(materialPath);
 		}
 	}
 #endif

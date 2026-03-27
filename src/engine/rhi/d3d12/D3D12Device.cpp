@@ -810,7 +810,8 @@ namespace Unnamed::Rhi {
 			sampler.MinLOD = 0.0f;
 			sampler.MaxLOD = D3D12_FLOAT32_MAX;
 			sampler.MaxAnisotropy = 16;
-			sampler.MipLODBias = -1.0f; // ちょっと
+			sampler.MipLODBias = -1.0f;
+			sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 			sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
 			sampler.ShaderRegister = 0; // s0
 			sampler.RegisterSpace = 0;

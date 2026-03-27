@@ -163,9 +163,9 @@
                     "active": true,
                     "data": {
                         "boxHalfExtentsHu": [
-                            16.000030517578125,
-                            36.00007247924805,
-                            16.000030517578125
+                            16.000038146972656,
+                            36.000091552734375,
+                            16.000038146972656
                         ],
                         "collisionEnabled": true,
                         "maxSubSteps": 6,
@@ -861,10 +861,10 @@
                 {
                     "active": true,
                     "data": {
-                        "clipName": "",
+                        "clipName": "Crouch",
                         "layers": [
                             {
-                                "clipName": "",
+                                "clipName": "Crouch",
                                 "loop": true,
                                 "playOnStart": true,
                                 "speed": 1.0,
@@ -882,10 +882,8 @@
                     "active": true,
                     "data": {
                         "attenuation": 16.0,
-                        "maxPitchDeg": 8.0,
-                        "maxYawDeg": 8.0,
-                        "pitchScale": 80.0,
-                        "yawScale": 80.0
+                        "locationAmount": 0.0,
+                        "swayAmount": 0.5
                     },
                     "guid": 9631003245581126474,
                     "type": "game.ViewmodelSway"

@@ -4,6 +4,8 @@
 #include "base/BaseCharacterController.h"
 
 namespace Unnamed {
+	class CameraRotatorComponent;
+
 	/// @brief プレイヤーがキャラクターを制御するためのコンポーネントです。
 	class PlayerCharacterController : public BaseCharacterController {
 	public:
@@ -11,6 +13,7 @@ namespace Unnamed {
 
 		// ---- BaseComponent ------------------------------------------------
 		void OnAttached() override;
+		void OnDetached() override;
 
 		void                           PrePhysicsTick(float deltaTime) override;
 		[[nodiscard]] TICK_GROUP        GetTickGroup() const override {
@@ -24,7 +27,10 @@ namespace Unnamed {
 #endif
 
 	protected:
+		void TryBindCameraRotator();
+
 		InputSystem*       mInput = nullptr;
+		CameraRotatorComponent* mCameraRotator = nullptr;
 		MovementFrameInput mDebugMoveFrameInput;
 	};
 }

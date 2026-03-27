@@ -1,11 +1,14 @@
-﻿#include "PlayerCharacterController.h"
+#include "PlayerCharacterController.h"
 
 #include "../character/base/BaseCharacterComponent.h"
+#include "../../../parkour/components/CameraRotatorComponent.h"
 
 #include "core/ComponentRegistry.h"
 
 #include "engine/ImGui/ImGuiWidgets.h"
+#include "engine/scene/Scene.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
+#include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/unnamed/subsystem/input/InputSystem.h"
 #include "engine/unnamed/subsystem/input/device/gamepad/GamepadDevice.h"
@@ -49,9 +52,21 @@ namespace Unnamed {
 				"UInputSystemを取得できませんでした。BaseCharacterControllerは入力を処理できません。"
 			);
 		}
+
+		TryBindCameraRotator();
 	}
 
-	void PlayerCharacterController::PrePhysicsTick(float) {
+	void PlayerCharacterController::OnDetached() {
+		if (mCameraRotator) {
+			mCameraRotator->SetDirectInputEnabled(true);
+			mCameraRotator = nullptr;
+		}
+		mInput = nullptr;
+
+		BaseCharacterController::OnDetached();
+	}
+
+	void PlayerCharacterController::PrePhysicsTick(const float deltaTime) {
 		// 各入力を詰め込む
 		MovementFrameInput input;
 		if (!mInput) {
@@ -93,6 +108,18 @@ namespace Unnamed {
 		input.moveAxis.x           += gamepadMoveAxis.x;
 		input.moveAxis.z           += gamepadMoveAxis.y;
 
+		if (!mCameraRotator) {
+			TryBindCameraRotator();
+		}
+
+		if (mCameraRotator) {
+			const Vec2 mouseLookDelta   = mInput->Axis2D("Mouse");
+			const Vec2 gamepadLookDelta = mInput->Axis2D("GamepadLook");
+			mCameraRotator->AddLookInput(
+				mouseLookDelta, gamepadLookDelta, deltaTime
+			);
+		}
+
 		if (input.moveAxis.Length() > 1.0f) {
 			input.moveAxis.Normalize();
 		}
@@ -117,6 +144,43 @@ namespace Unnamed {
 
 	std::string_view PlayerCharacterController::GetStableName() const {
 		return "game.PlayerCharacterController";
+	}
+
+	void PlayerCharacterController::TryBindCameraRotator() {
+		if (mCameraRotator) {
+			return;
+		}
+
+		TransformComponent* controlledTransform = nullptr;
+		if (Entity* owner = GetOwner()) {
+			controlledTransform = owner->GetComponent<TransformComponent>();
+		}
+
+		if (auto* scene = GetScene()) {
+			for (const auto& entityPtr : scene->GetEntities()) {
+				if (!entityPtr) {
+					continue;
+				}
+
+				auto* rotator = entityPtr->GetComponent<CameraRotatorComponent>();
+				if (!rotator) {
+					continue;
+				}
+
+				auto* rotatorTransform = entityPtr->GetComponent<TransformComponent>();
+				if (!rotatorTransform) {
+					continue;
+				}
+				if (controlledTransform &&
+				    rotatorTransform->Parent() != controlledTransform) {
+					continue;
+				}
+
+				mCameraRotator = rotator;
+				mCameraRotator->SetDirectInputEnabled(false);
+				return;
+			}
+		}
 	}
 
 	std::string_view PlayerCharacterController::GetComponentName() const {

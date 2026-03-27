@@ -1,12 +1,30 @@
 #pragma once
+#include <cstdint>
 #include <string>
 
 #ifdef _DEBUG
 #include <imgui.h>
 
+#include "core/assets/AssetType.h"
+#include "engine/editor/ContentBrowser.h"
+
 struct Vec3;
 
 namespace ImGuiWidgets {
+	using AssetTypeMask = Unnamed::EditorContentBrowser::AssetTypeMask;
+	inline constexpr AssetTypeMask kAssetTypeMaskAny =
+		Unnamed::EditorContentBrowser::kAssetTypeMaskAny;
+	inline constexpr const char* kAssetDragDropPayloadId =
+		Unnamed::EditorContentBrowser::kAssetDragDropPayloadId;
+	using AssetDragDropPayload = Unnamed::EditorContentBrowser::
+		AssetDragDropPayload;
+
+	[[nodiscard]] AssetTypeMask AssetTypeToMask(Unnamed::ASSET_TYPE type);
+	[[nodiscard]] bool IsAssetTypeAccepted(
+		Unnamed::ASSET_TYPE type,
+		AssetTypeMask       acceptedMask
+	);
+
 	/// @brief Dragウィジェット用のスタイルカラーをプッシュします。
 	/// @param bg 通常時の背景色
 	/// @param bgHovered ホバー時の背景色
@@ -140,6 +158,19 @@ namespace ImGuiWidgets {
 		float       rounding, ImDrawFlags flags = ImDrawFlags_RoundCornersAll,
 		ImVec2      uv0 = ImVec2(0, 0), ImVec2 uv1 = ImVec2(1, 1),
 		ImVec4      tintColor = ImVec4(1, 1, 1, 1)
+	);
+
+	/// @brief アセットパスの入力 + D&D受け入れ + ピッカー起動を行うウィジェット
+	/// @param label ラベル名
+	/// @param path 編集対象のパス
+	/// @param acceptedMask 受け入れ可能なアセットタイプマスク
+	/// @param helpText 補助テキスト（省略可能）
+	/// @return pathが変更された場合にtrue
+	bool AssetPathPicker(
+		const char*   label,
+		std::string&  path,
+		AssetTypeMask acceptedMask,
+		const char*   helpText = nullptr
 	);
 }
 #endif

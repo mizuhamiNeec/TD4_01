@@ -2,6 +2,7 @@
 #include "ImGuiWidgets.h"
 
 #include <array>
+#include <format>
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <pch.h>
@@ -12,6 +13,20 @@
 #include <engine/ImGui/Icons.h>
 
 namespace ImGuiWidgets {
+	AssetTypeMask AssetTypeToMask(const Unnamed::ASSET_TYPE type) {
+		return Unnamed::EditorContentBrowser::AssetTypeToMask(type);
+	}
+
+	bool IsAssetTypeAccepted(
+		const Unnamed::ASSET_TYPE type,
+		const AssetTypeMask       acceptedMask
+	) {
+		return Unnamed::EditorContentBrowser::IsAssetTypeAccepted(
+			type,
+			acceptedMask
+		);
+	}
+
 	/// @brief Dragウィジェット用のスタイルカラーをプッシュします。
 	/// @param bg 通常時の背景色
 	/// @param bgHovered ホバー時の背景色
@@ -805,7 +820,9 @@ namespace ImGuiWidgets {
 		const char* label, const char* icon, bool enabled, float rounding
 	) {
 		ImGuiWindow* window = ImGui::GetCurrentWindow();
-		if (window->SkipItems) return false;
+		if (window->SkipItems) {
+			return false;
+		}
 
 		ImGuiContext& g = *GImGui;
 		const ImGuiStyle& style = g.Style;
@@ -817,15 +834,17 @@ namespace ImGuiWidgets {
 			ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar |
 			ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoNavFocus;
 		if (window->Flags &
-		    ImGuiWindowFlags_ChildMenu)
+		    ImGuiWindowFlags_ChildMenu) {
 			window_flags |= ImGuiWindowFlags_ChildWindow;
+		}
 
 		if (g.MenusIdSubmittedThisFrame.contains(id)) {
-			if (menu_is_open)
+			if (menu_is_open) {
 				menu_is_open =
 					ImGui::BeginPopupMenuEx(id, label, window_flags);
-
-			else g.NextWindowData.ClearFlags();
+			} else {
+				g.NextWindowData.ClearFlags();
+			}
 			return menu_is_open;
 		}
 
@@ -834,15 +853,18 @@ namespace ImGuiWidgets {
 		ImVec2 label_size = ImGui::CalcTextSize(label, NULL, true);
 
 		const bool menuset_is_open = IsRootOfOpenMenuSet();
-		if (menuset_is_open)
+		if (menuset_is_open) {
 			ImGui::PushItemFlag(
 				ImGuiItemFlags_NoWindowHoverableCheck, true
 			);
+		}
 
 		ImVec2 popup_pos;
 		ImVec2 pos = window->DC.CursorPos;
 		ImGui::PushID(label);
-		if (!enabled) ImGui::BeginDisabled();
+		if (!enabled) {
+			ImGui::BeginDisabled();
+		}
 		const ImGuiMenuColumns* offsets = &window->DC.MenuColumns;
 		bool                    pressed;
 
@@ -899,10 +921,11 @@ namespace ImGuiWidgets {
 			ImGui::RenderText(
 				ImVec2(text_pos.x + offsets->OffsetLabel, text_pos.y), label
 			);
-			if (icon_w > 0.0f)
+			if (icon_w > 0.0f) {
 				ImGui::RenderText(
 					ImVec2(text_pos.x + offsets->OffsetIcon, text_pos.y), icon
 				);
+			}
 			ImGui::RenderArrow(
 				window->DrawList,
 				ImVec2(
@@ -912,11 +935,15 @@ namespace ImGuiWidgets {
 			);
 			popup_pos = ImVec2(pos.x, text_pos.y - style.WindowPadding.y);
 		}
-		if (!enabled) ImGui::EndDisabled();
+		if (!enabled) {
+			ImGui::EndDisabled();
+		}
 
 		const bool hovered = (g.HoveredId == id) && enabled && !g.
 		                     NavHighlightItemUnderNav;
-		if (menuset_is_open) ImGui::PopItemFlag();
+		if (menuset_is_open) {
+			ImGui::PopItemFlag();
+		}
 
 		bool want_open          = false;
 		bool want_open_nav_init = false;
@@ -964,16 +991,20 @@ namespace ImGuiWidgets {
 
 			if (menu_is_open && !hovered && g.HoveredWindow == window && !
 			    moving_toward_child_menu && !g.NavHighlightItemUnderNav && g.
-			    ActiveId == 0)
+			    ActiveId == 0) {
 				want_close = true;
+			}
 
-			if (!menu_is_open && pressed) want_open = true;
-			else if (!menu_is_open && hovered && !
-			         moving_toward_child_menu)
+			if (!menu_is_open && pressed) {
 				want_open = true;
-			else if (!menu_is_open && hovered && g.HoveredIdTimer >= 0.30f && g.
-			         MouseStationaryTimer >= 0.30f)
+			} else if (!menu_is_open && hovered && !
+			           moving_toward_child_menu) {
 				want_open = true;
+			} else if (!menu_is_open && hovered && g.HoveredIdTimer >= 0.30f &&
+			           g.
+			           MouseStationaryTimer >= 0.30f) {
+				want_open = true;
+			}
 			if (g.NavId == id && g.NavMoveDir == ImGuiDir_Right) {
 				want_open = want_open_nav_init = true;
 				ImGui::NavMoveRequestCancel();
@@ -992,12 +1023,15 @@ namespace ImGuiWidgets {
 			}
 		}
 
-		if (!enabled) want_close = true;
+		if (!enabled) {
+			want_close = true;
+		}
 		if (want_close &&
-		    ImGui::IsPopupOpen(id, ImGuiPopupFlags_None))
+		    ImGui::IsPopupOpen(id, ImGuiPopupFlags_None)) {
 			ImGui::ClosePopupToLevel(
 				g.BeginPopupStack.Size, true
 			);
+		}
 
 		IMGUI_TEST_ENGINE_ITEM_INFO(
 			id, label,
@@ -1032,9 +1066,10 @@ namespace ImGuiWidgets {
 
 				g.LastItemData = last_item_in_parent;
 				if (g.HoveredWindow ==
-				    window)
+				    window) {
 					g.LastItemData.StatusFlags |=
 						ImGuiItemStatusFlags_HoveredWindow;
+				}
 			}
 		} else {
 			g.NextWindowData.ClearFlags();
@@ -1085,7 +1120,7 @@ namespace ImGuiWidgets {
 			const float w          = labelSize.x;
 			window->DC.CursorPos.x += IM_TRUNC(style.ItemSpacing.x * 0.5f);
 			const ImVec2 text_pos(
-				window->DC.CursorPos.x + offsets->OffsetLabel,
+				offsets->OffsetLabel + window->DC.CursorPos.x,
 				window->DC.CursorPos.y + window->DC.CurrLineTextBaseOffset
 			);
 			ImGui::PushStyleVarX(
@@ -1142,7 +1177,7 @@ namespace ImGuiWidgets {
 					ImGui::LogSetNextTextDecoration("(", ")");
 					ImGui::RenderText(
 						textPos + ImVec2(
-							offsets->OffsetShortcut + stretchW, 0.0f
+							stretchW + offsets->OffsetShortcut, 0.0f
 						), shortcut, NULL, false
 					);
 					ImGui::PopStyleColor();
@@ -1151,7 +1186,7 @@ namespace ImGuiWidgets {
 					ImGui::RenderCheckMark(
 						window->DrawList,
 						textPos + ImVec2(
-							offsets->OffsetMark + stretchW + g.FontSize *
+							stretchW + offsets->OffsetMark + g.FontSize *
 							0.40f,
 							g.FontSize * 0.134f * 0.5f
 						), ImGui::GetColorU32(ImGuiCol_Text),
@@ -1194,6 +1229,20 @@ namespace ImGuiWidgets {
 			flags
 		);
 		ImGui::Dummy(size);
+	}
+
+	bool AssetPathPicker(
+		const char*   label,
+		std::string&  path,
+		AssetTypeMask acceptedMask,
+		const char*   helpText
+	) {
+		return Unnamed::EditorContentBrowser::DrawAssetPathPicker(
+			label,
+			path,
+			acceptedMask,
+			helpText
+		);
 	}
 }
 #endif

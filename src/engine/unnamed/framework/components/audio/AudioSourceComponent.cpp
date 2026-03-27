@@ -14,6 +14,7 @@
 #include "core/json/JsonWriter.h"
 #include "core/string/StrUtil.h"
 
+#include "engine/ImGui/ImGuiWidgets.h"
 #include "engine/unnamed/subsystem/audio/Audio.h"
 #include "engine/unnamed/subsystem/audio/AudioSystem.h"
 #include "engine/unnamed/subsystem/console/Log.h"
@@ -79,19 +80,15 @@ namespace Unnamed {
 
 #ifdef _DEBUG
 	void AudioSourceComponent::DrawInspectorImGui() {
-		std::array<char, 512> pathBuffer = {};
-		memcpy(
-			pathBuffer.data(),
-			mSoundPath.c_str(),
-			std::min(mSoundPath.size(), pathBuffer.size() - 1)
-		);
-
+		std::string soundPath = mSoundPath;
 		if (
-			ImGui::InputText(
-				"Sound Path", pathBuffer.data(), pathBuffer.size()
+			ImGuiWidgets::AssetPathPicker(
+				"Sound Path",
+				soundPath,
+				ImGuiWidgets::AssetTypeToMask(ASSET_TYPE::SOUND)
 			)
 		) {
-			SetSoundPath(pathBuffer.data());
+			SetSoundPath(soundPath);
 		}
 
 		ImGui::Checkbox("Play On Start", &mPlayOnStart);

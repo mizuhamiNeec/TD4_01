@@ -153,6 +153,7 @@ namespace Unnamed {
 				ImGui::DockBuilderDockWindow("Outliner", dockLeft);
 				ImGui::DockBuilderDockWindow("Inspector", dockRight);
 				ImGui::DockBuilderDockWindow("Profiler", dockBottom);
+				ImGui::DockBuilderDockWindow("Content Browser", dockBottom);
 				ImGui::DockBuilderFinish(dockSpaceId);
 				mDockInitialized = true;
 			}
@@ -211,6 +212,8 @@ namespace Unnamed {
 			DrawSceneOutliner();
 			ImGui::SetNextWindowDockID(dockSpaceId, ImGuiCond_FirstUseEver);
 			DrawInspector();
+			ImGui::SetNextWindowDockID(dockSpaceId, ImGuiCond_FirstUseEver);
+			DrawContentBrowser();
 		} else {
 			float width  = mViewportPanelWidth;
 			float height = mViewportPanelHeight;

@@ -13,6 +13,7 @@
 #include "EditorNotification.h"
 #include "EditorViewportCameraManager.h"
 #include "IEditorTool.h"
+#include "ContentBrowser.h"
 
 #include "core/math/Vec2.h"
 
@@ -122,6 +123,7 @@ namespace Unnamed {
 
 		void DrawSceneOutliner();
 		void DrawInspector();
+		void DrawContentBrowser();
 		void DrawProfilerWindow();
 
 		[[nodiscard]] Entity* GetSelectedEntity() const;
@@ -162,6 +164,8 @@ namespace Unnamed {
 		float mCameraSpeedPopupTimer = 0.0f;
 		bool mShowProfilerWindow = false;
 		bool mViewportLookActive = false;
+
+		EditorContentBrowser::BrowserViewState mContentBrowserState = {};
 	};
 }
 

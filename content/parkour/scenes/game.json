@@ -31,7 +31,7 @@
                     "active": true,
                     "data": {
                         "materialInstancePath": "./content/core/materials/instances/hoge.matinst.json",
-                        "meshPath": "./content/parkour/models/map/sp_city.obj"
+                        "meshPath": "content/parkour/models/map/sp_city.obj"
                     },
                     "guid": 3002,
                     "type": "engine.StaticMeshRenderer"
@@ -163,9 +163,9 @@
                     "active": true,
                     "data": {
                         "boxHalfExtentsHu": [
-                            16.000022888183594,
-                            36.00005340576172,
-                            16.000022888183594
+                            16.000030517578125,
+                            36.00007247924805,
+                            16.000030517578125
                         ],
                         "collisionEnabled": true,
                         "maxSubSteps": 6,
@@ -877,6 +877,18 @@
                     },
                     "guid": 14953038522775958096,
                     "type": "engine.SkeletalAnimation"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "attenuation": 16.0,
+                        "maxPitchDeg": 8.0,
+                        "maxYawDeg": 8.0,
+                        "pitchScale": 80.0,
+                        "yawScale": 80.0
+                    },
+                    "guid": 9631003245581126474,
+                    "type": "game.ViewmodelSway"
                 }
             ],
             "folderPath": "Gameplay/Player",
@@ -929,7 +941,7 @@
                         "position": [
                             0.0,
                             0.0,
-                            512.0
+                            1024.0
                         ],
                         "rotation": [
                             0.0,
@@ -957,7 +969,7 @@
                         "receiveInput": false,
                         "sortKey": 0,
                         "spaceMode": "WorldBillboard",
-                        "uiAssetPath": "./content/parkour/ui/crosshair.ui.json",
+                        "uiAssetPath": "content/parkour/ui/crosshair.ui.json",
                         "worldSize": [
                             128.0,
                             128.0

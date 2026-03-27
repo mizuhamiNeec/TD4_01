@@ -130,6 +130,7 @@ namespace Unnamed::Render {
 		float   rotationRad    = 0.0f;
 		int32_t sortKey        = 0;
 		bool    uvFlipY        = false;
+		bool    depthTest      = true;
 	};
 
 	struct WorldSpriteInput {

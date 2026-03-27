@@ -51,14 +51,22 @@ constexpr uint32_t kIconStop  = 0xE047; // ストップ
 constexpr uint32_t kIconTimer = 0xE425; // タイマー
 constexpr uint32_t kIconSpeed = 0xE9E4; // スピード
 
+// ---- Content Browser -------------------------------------------------------
+constexpr uint32_t kIconFolder      = 0xE2C7; // フォルダ
+constexpr uint32_t kIconArrowUpward = 0xE5D8; // 上向き矢印 (親フォルダに移動)
+
 // ---- Scene / Data types ----------------------------------------------------
-constexpr uint32_t kIconEntity = 0xEA24; // エンティティ
-constexpr uint32_t kIconObject = 0xE3B4; // オブジェクト
-constexpr uint32_t kIconGroup  = 0xE574; // グループ
-constexpr uint32_t kIconMesh   = 0xE3EC; // メッシュ
-constexpr uint32_t kIconVertex = 0xEBC7; // 頂点
-constexpr uint32_t kIconEdge   = 0xE922; // エッジ
-constexpr uint32_t kIconFace   = 0xE86B; // 面
+constexpr uint32_t kIconEntity           = 0xEA24; // エンティティ
+constexpr uint32_t kIconObject           = 0xE3B4; // オブジェクト
+constexpr uint32_t kIconGroup            = 0xE574; // グループ
+constexpr uint32_t kIconMesh             = 0xE3EC; // メッシュ
+constexpr uint32_t kIconVertex           = 0xEBC7; // 頂点
+constexpr uint32_t kIconEdge             = 0xE922; // エッジ
+constexpr uint32_t kIconFace             = 0xE86B; // 面
+constexpr uint32_t kIconAudioFile        = 0xEB82; // オーディオファイル
+constexpr uint32_t kIconArticle          = 0xEF42; // 記事 (生ファイルに使用)
+constexpr uint32_t kIconJson             = 0xF3BB; // JSONファイル
+constexpr uint32_t kIconDesktopLandscape = 0xF45E; // UIファイルに使用
 
 // ---- Gizmo / Transform -----------------------------------------------------
 constexpr uint32_t kIconSelect  = 0xF82F; // 選択
@@ -68,8 +76,11 @@ constexpr uint32_t kIconScale   = 0xF707; // 拡縮
 constexpr uint32_t kIconPivot   = 0xE147; // 原点
 
 // ---- Primitives / Assets ---------------------------------------------------
-constexpr uint32_t kIconBox     = 0xF720; // ボックス
-constexpr uint32_t kIconTexture = 0xE421; // テクスチャ
+constexpr uint32_t kIconBox          = 0xF720; // ボックス
+constexpr uint32_t kIconTexture      = 0xE421; // テクスチャ
+constexpr uint32_t kIconDeployedCode = 0xF720; // 3Dモデル(仮)のアイコンに使用
+constexpr uint32_t kIconCode         = 0xE86F; // コード
+constexpr uint32_t kIconEvShadow     = 0xEF8F; // シャドウ(マテリアルのアイコンに使用)
 
 // ---- UI helpers ------------------------------------------------------------
 constexpr uint32_t kIconFilter   = 0xEF4F; // フィルター

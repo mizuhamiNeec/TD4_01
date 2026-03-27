@@ -1,5 +1,6 @@
 #include "MeshAssetLoader.h"
 
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <filesystem>
@@ -22,7 +23,7 @@ namespace Unnamed {
 	namespace {
 		constexpr std::string_view kChannel          = "MeshAssetLdr";
 		constexpr uint32_t         kMeshCacheMagic   = 0x48534D55; // UMSH
-		constexpr uint32_t         kMeshCacheVersion = 2;
+		constexpr uint32_t         kMeshCacheVersion = 3;
 
 		constexpr std::array kSupportedExtensions = {
 			".obj",
@@ -41,6 +42,7 @@ namespace Unnamed {
 			uint32_t vertexCount          = 0;
 			uint32_t indexCount           = 0;
 			uint32_t skeletonBoneCount    = 0;
+			uint32_t animationClipCount   = 0;
 			uint32_t flags                = 0;
 		};
 
@@ -118,6 +120,213 @@ namespace Unnamed {
 				{m.a4, m.b4, m.c4, m.d4}  // 4列目
 			};
 			return out;
+		}
+
+		Vec3 ToVec3(const aiVector3D& v) {
+			return Vec3(v.x, v.y, v.z);
+		}
+
+		Quaternion ToQuaternion(const aiQuaternion& q) {
+			return Quaternion(q.x, q.y, q.z, q.w).Normalized();
+		}
+
+		void BuildNodeLookup(
+			const aiNode* node,
+			std::unordered_map<std::string, const aiNode*>& outLookup
+		) {
+			if (!node) {
+				return;
+			}
+
+			outLookup.emplace(node->mName.C_Str(), node);
+			for (uint32_t i = 0; i < node->mNumChildren; ++i) {
+				BuildNodeLookup(node->mChildren[i], outLookup);
+			}
+		}
+
+		void BuildSkeletonHierarchy(
+			const aiScene*                                      scene,
+			const std::unordered_map<std::string, uint16_t>&    boneNameToIndex,
+			MeshAssetData&                                      out
+		) {
+			if (!scene || !scene->mRootNode || out.skeleton.empty()) {
+				return;
+			}
+
+			std::unordered_map<std::string, const aiNode*> nodeLookup;
+			nodeLookup.reserve(boneNameToIndex.size() * 2);
+			BuildNodeLookup(scene->mRootNode, nodeLookup);
+
+			for (auto& bone : out.skeleton) {
+				const auto nodeIt = nodeLookup.find(bone.name);
+				if (nodeIt == nodeLookup.end() || !nodeIt->second) {
+					continue;
+				}
+
+				const aiNode* node = nodeIt->second;
+				aiVector3D   scaling(1.0f, 1.0f, 1.0f);
+				aiQuaternion rotation;
+				aiVector3D   translation(0.0f, 0.0f, 0.0f);
+				node->mTransformation.Decompose(scaling, rotation, translation);
+
+				bone.bindLocalTranslation = ToVec3(translation);
+				bone.bindLocalRotation    = ToQuaternion(rotation);
+				bone.bindLocalScale       = ToVec3(scaling);
+
+				bone.parentIndex          = -1;
+				const aiNode* parent = node->mParent;
+				while (parent) {
+					const auto parentIt = boneNameToIndex.find(
+						parent->mName.C_Str()
+					);
+					if (parentIt != boneNameToIndex.end()) {
+						bone.parentIndex = parentIt->second;
+						break;
+					}
+					parent = parent->mParent;
+				}
+			}
+		}
+
+		template <typename T>
+		float LastKeyTimeSeconds(const std::vector<T>& keys) {
+			if (keys.empty()) {
+				return 0.0f;
+			}
+			return keys.back().timeSeconds;
+		}
+
+		void SortTrackKeys(SkeletonBoneTrackAssetData& track) {
+			std::sort(
+				track.translationKeys.begin(),
+				track.translationKeys.end(),
+				[](const AnimationKeyVec3AssetData& lhs,
+				   const AnimationKeyVec3AssetData& rhs) {
+					return lhs.timeSeconds < rhs.timeSeconds;
+				}
+			);
+			std::sort(
+				track.rotationKeys.begin(),
+				track.rotationKeys.end(),
+				[](const AnimationKeyQuatAssetData& lhs,
+				   const AnimationKeyQuatAssetData& rhs) {
+					return lhs.timeSeconds < rhs.timeSeconds;
+				}
+			);
+			std::sort(
+				track.scaleKeys.begin(),
+				track.scaleKeys.end(),
+				[](const AnimationKeyVec3AssetData& lhs,
+				   const AnimationKeyVec3AssetData& rhs) {
+					return lhs.timeSeconds < rhs.timeSeconds;
+				}
+			);
+		}
+
+		void ExtractAnimationClips(
+			const aiScene*                                   scene,
+			const std::unordered_map<std::string, uint16_t>& boneNameToIndex,
+			MeshAssetData&                                   out
+		) {
+			if (!scene || scene->mNumAnimations == 0) {
+				return;
+			}
+
+			out.animationClips.reserve(scene->mNumAnimations);
+			for (uint32_t animIndex = 0; animIndex < scene->mNumAnimations;
+			     ++animIndex) {
+				const aiAnimation* anim = scene->mAnimations[animIndex];
+				if (!anim) {
+					continue;
+				}
+
+				const double ticksPerSecond = anim->mTicksPerSecond > 0.0 ?
+					                              anim->mTicksPerSecond :
+					                              25.0;
+				AnimationClipAssetData clip = {};
+				clip.name = anim->mName.length > 0 ?
+					            std::string(anim->mName.C_Str()) :
+					            ("Anim" + std::to_string(animIndex));
+				clip.durationSeconds = anim->mDuration > 0.0 ?
+					                       static_cast<float>(
+						                       anim->mDuration /
+						                       ticksPerSecond
+					                       ) :
+					                       0.0f;
+
+				for (uint32_t ch = 0; ch < anim->mNumChannels; ++ch) {
+					const aiNodeAnim* channel = anim->mChannels[ch];
+					if (!channel) {
+						continue;
+					}
+
+					const auto boneIt = boneNameToIndex.find(
+						channel->mNodeName.C_Str()
+					);
+					if (boneIt == boneNameToIndex.end()) {
+						continue;
+					}
+
+					SkeletonBoneTrackAssetData track = {};
+					track.boneIndex                  = boneIt->second;
+					track.translationKeys.reserve(channel->mNumPositionKeys);
+					track.rotationKeys.reserve(channel->mNumRotationKeys);
+					track.scaleKeys.reserve(channel->mNumScalingKeys);
+
+					for (uint32_t i = 0; i < channel->mNumPositionKeys; ++i) {
+						const aiVectorKey& key = channel->mPositionKeys[i];
+						track.translationKeys.push_back(
+							{
+								static_cast<float>(
+									key.mTime / ticksPerSecond
+								),
+								ToVec3(key.mValue)
+							}
+						);
+					}
+
+					for (uint32_t i = 0; i < channel->mNumRotationKeys; ++i) {
+						const aiQuatKey& key = channel->mRotationKeys[i];
+						track.rotationKeys.push_back(
+							{
+								static_cast<float>(
+									key.mTime / ticksPerSecond
+								),
+								ToQuaternion(key.mValue)
+							}
+						);
+					}
+
+					for (uint32_t i = 0; i < channel->mNumScalingKeys; ++i) {
+						const aiVectorKey& key = channel->mScalingKeys[i];
+						track.scaleKeys.push_back(
+							{
+								static_cast<float>(
+									key.mTime / ticksPerSecond
+								),
+								ToVec3(key.mValue)
+							}
+						);
+					}
+
+					SortTrackKeys(track);
+					clip.durationSeconds = std::max(
+						clip.durationSeconds,
+						std::max(
+							LastKeyTimeSeconds(track.translationKeys),
+							std::max(
+								LastKeyTimeSeconds(track.rotationKeys),
+								LastKeyTimeSeconds(track.scaleKeys)
+							)
+						)
+					);
+					clip.boneTracks.emplace_back(std::move(track));
+				}
+
+				if (!clip.boneTracks.empty()) {
+					out.animationClips.emplace_back(std::move(clip));
+				}
+			}
 		}
 
 		/// @brief 頂点にボーンの影響を追加する。最大4本までのボーンをサポートし、5本以上の場合は最小重みのものを置き換える。
@@ -401,6 +610,13 @@ namespace Unnamed {
 			}
 		}
 
+		if (!out.skeleton.empty()) {
+			BuildSkeletonHierarchy(scene, boneNameToIndex, out);
+		}
+		if (out.hasSkinning) {
+			ExtractAnimationClips(scene, boneNameToIndex, out);
+		}
+
 		if (out.vertices.empty() || out.indices.empty()) {
 			Error(kChannel, "有効な頂点/インデックスがありません: {}", path);
 			return r;
@@ -505,6 +721,83 @@ namespace Unnamed {
 			if (!ReadPod(ifs, mesh.skeleton[i].inverseBindPose)) {
 				return false;
 			}
+			if (!ReadPod(ifs, mesh.skeleton[i].bindLocalTranslation)) {
+				return false;
+			}
+			if (!ReadPod(ifs, mesh.skeleton[i].bindLocalRotation)) {
+				return false;
+			}
+			if (!ReadPod(ifs, mesh.skeleton[i].bindLocalScale)) {
+				return false;
+			}
+		}
+
+		mesh.animationClips.resize(header.animationClipCount);
+		for (uint32_t i = 0; i < header.animationClipCount; ++i) {
+			AnimationClipAssetData& clip = mesh.animationClips[i];
+
+			uint32_t clipNameLen = 0;
+			if (!ReadPod(ifs, clipNameLen)) {
+				return false;
+			}
+			clip.name.resize(clipNameLen);
+			if (
+				clipNameLen > 0 &&
+				!static_cast<bool>(ifs.read(clip.name.data(), clipNameLen))
+			) {
+				return false;
+			}
+
+			if (!ReadPod(ifs, clip.durationSeconds)) {
+				return false;
+			}
+
+			uint32_t trackCount = 0;
+			if (!ReadPod(ifs, trackCount)) {
+				return false;
+			}
+			clip.boneTracks.resize(trackCount);
+			for (uint32_t t = 0; t < trackCount; ++t) {
+				SkeletonBoneTrackAssetData& track = clip.boneTracks[t];
+				if (!ReadPod(ifs, track.boneIndex)) {
+					return false;
+				}
+
+				uint32_t translationCount = 0;
+				uint32_t rotationCount    = 0;
+				uint32_t scaleCount       = 0;
+				if (!ReadPod(ifs, translationCount) || !ReadPod(ifs, rotationCount) ||
+				    !ReadPod(ifs, scaleCount)) {
+					return false;
+				}
+
+				track.translationKeys.resize(translationCount);
+				track.rotationKeys.resize(rotationCount);
+				track.scaleKeys.resize(scaleCount);
+
+				if (
+					(translationCount > 0 &&
+					 !static_cast<bool>(ifs.read(
+						 reinterpret_cast<char*>(track.translationKeys.data()),
+						 sizeof(AnimationKeyVec3AssetData) *
+						 track.translationKeys.size()
+					 ))) ||
+					(rotationCount > 0 &&
+					 !static_cast<bool>(ifs.read(
+						 reinterpret_cast<char*>(track.rotationKeys.data()),
+						 sizeof(AnimationKeyQuatAssetData) *
+						 track.rotationKeys.size()
+					 ))) ||
+					(scaleCount > 0 &&
+					 !static_cast<bool>(ifs.read(
+						 reinterpret_cast<char*>(track.scaleKeys.data()),
+						 sizeof(AnimationKeyVec3AssetData) *
+						 track.scaleKeys.size()
+					 )))
+				) {
+					return false;
+				}
+			}
 		}
 
 		for (const auto& vertex : mesh.vertices) {
@@ -555,6 +848,9 @@ namespace Unnamed {
 		header.vertexCount = static_cast<uint32_t>(mesh->vertices.size());
 		header.indexCount = static_cast<uint32_t>(mesh->indices.size());
 		header.skeletonBoneCount = static_cast<uint32_t>(mesh->skeleton.size());
+		header.animationClipCount = static_cast<uint32_t>(
+			mesh->animationClips.size()
+		);
 		header.flags = mesh->hasSkinning ? 0x1u : 0u;
 
 		if (!WritePod(ofs, header)) {
@@ -591,6 +887,87 @@ namespace Unnamed {
 			}
 			if (!WritePod(ofs, bone.inverseBindPose)) {
 				return false;
+			}
+			if (!WritePod(ofs, bone.bindLocalTranslation)) {
+				return false;
+			}
+			if (!WritePod(ofs, bone.bindLocalRotation)) {
+				return false;
+			}
+			if (!WritePod(ofs, bone.bindLocalScale)) {
+				return false;
+			}
+		}
+
+		for (const auto& clip : mesh->animationClips) {
+			const uint32_t clipNameLen = static_cast<uint32_t>(clip.name.size());
+			if (!WritePod(ofs, clipNameLen)) {
+				return false;
+			}
+			if (
+				clipNameLen > 0 &&
+				!static_cast<bool>(ofs.write(clip.name.data(), clipNameLen))
+			) {
+				return false;
+			}
+
+			if (!WritePod(ofs, clip.durationSeconds)) {
+				return false;
+			}
+
+			const uint32_t trackCount = static_cast<uint32_t>(
+				clip.boneTracks.size()
+			);
+			if (!WritePod(ofs, trackCount)) {
+				return false;
+			}
+
+			for (const auto& track : clip.boneTracks) {
+				if (!WritePod(ofs, track.boneIndex)) {
+					return false;
+				}
+
+				const uint32_t translationCount = static_cast<uint32_t>(
+					track.translationKeys.size()
+				);
+				const uint32_t rotationCount = static_cast<uint32_t>(
+					track.rotationKeys.size()
+				);
+				const uint32_t scaleCount = static_cast<uint32_t>(
+					track.scaleKeys.size()
+				);
+				if (
+					!WritePod(ofs, translationCount) ||
+					!WritePod(ofs, rotationCount) ||
+					!WritePod(ofs, scaleCount)
+				) {
+					return false;
+				}
+
+				if (
+					(translationCount > 0 &&
+					 !static_cast<bool>(ofs.write(
+						 reinterpret_cast<const char*>(
+							 track.translationKeys.data()
+						 ),
+						 sizeof(AnimationKeyVec3AssetData) *
+						 track.translationKeys.size()
+					 ))) ||
+					(rotationCount > 0 &&
+					 !static_cast<bool>(ofs.write(
+						 reinterpret_cast<const char*>(track.rotationKeys.data()),
+						 sizeof(AnimationKeyQuatAssetData) *
+						 track.rotationKeys.size()
+					 ))) ||
+					(scaleCount > 0 &&
+					 !static_cast<bool>(ofs.write(
+						 reinterpret_cast<const char*>(track.scaleKeys.data()),
+						 sizeof(AnimationKeyVec3AssetData) *
+						 track.scaleKeys.size()
+					 )))
+				) {
+					return false;
+				}
 			}
 		}
 

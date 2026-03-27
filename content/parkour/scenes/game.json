@@ -163,9 +163,9 @@
                     "active": true,
                     "data": {
                         "boxHalfExtentsHu": [
-                            16.000015258789063,
-                            36.00003433227539,
-                            16.000015258789063
+                            16.000022888183594,
+                            36.00005340576172,
+                            16.000022888183594
                         ],
                         "collisionEnabled": true,
                         "maxSubSteps": 6,
@@ -909,7 +909,7 @@
                             1.0
                         ]
                     },
-                    "guid": 0,
+                    "guid": 9575242804018874495,
                     "type": "engine.Transform"
                 }
             ],
@@ -929,7 +929,7 @@
                         "position": [
                             0.0,
                             0.0,
-                            0.20000000298023224
+                            512.0
                         ],
                         "rotation": [
                             0.0,
@@ -943,26 +943,27 @@
                             1.0
                         ]
                     },
-                    "guid": 0,
+                    "guid": 15058049875644357720,
                     "type": "engine.Transform"
                 },
                 {
                     "active": true,
                     "data": {
+                        "billboardDepthMode": "AlwaysFront",
                         "pixelSize": [
                             256.0,
                             256.0
                         ],
-                        "receiveInput": true,
+                        "receiveInput": false,
                         "sortKey": 0,
                         "spaceMode": "WorldBillboard",
                         "uiAssetPath": "./content/parkour/ui/crosshair.ui.json",
                         "worldSize": [
-                            0.02500000037252903,
-                            0.02500000037252903
+                            128.0,
+                            128.0
                         ]
                     },
-                    "guid": 0,
+                    "guid": 13217018570166250149,
                     "type": "engine.UiCanvas"
                 }
             ],

@@ -26,6 +26,7 @@
 
 #include "state/AirMove.h"
 #include "state/GroundMove.h"
+#include "state/NoclipMove.h"
 
 namespace Unnamed {
 	namespace {
@@ -222,6 +223,7 @@ namespace Unnamed {
 	void GameMovementComponent::RegisterMovementStates(
 		GameMovementStateMachine& stateMachine
 	) {
+		stateMachine.AddState(std::make_shared<NoclipMove>());
 		stateMachine.AddState(std::make_shared<AirMove>());
 		stateMachine.AddState(std::make_shared<GroundMove>());
 	}

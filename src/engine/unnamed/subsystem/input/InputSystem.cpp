@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <ranges>
+#include <Dbt.h>
 
 #include <engine/unnamed/subsystem/input/InputSystem.h>
 #include <engine/unnamed/subsystem/input/KeyNameTable.h>
@@ -401,6 +402,24 @@ namespace Unnamed {
 					const RAWINPUT* raw = reinterpret_cast<RAWINPUT*>(buffer.
 						data());
 					OnRawInput(*raw);
+				}
+				break;
+			}
+
+			case WM_DEVICECHANGE: {
+				if (
+					wParam == DBT_DEVICEARRIVAL ||
+					wParam == DBT_DEVICEREMOVECOMPLETE ||
+					wParam == DBT_DEVNODES_CHANGED
+				) {
+					for (const auto& device : mDevices) {
+						if (device->GetDeviceType() != InputDeviceType::GAMEPAD) {
+							continue;
+						}
+
+						std::static_pointer_cast<GamepadDevice>(device)
+							->RequestDirectInputRefresh();
+					}
 				}
 				break;
 			}

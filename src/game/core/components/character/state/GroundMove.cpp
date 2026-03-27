@@ -30,6 +30,11 @@ namespace Unnamed {
 	void GroundMove::Tick(
 		MovementContext& context, const float deltaTime
 	) {
+		if (mConsole->GetConVarValueOr("noclip", false)) {
+			context.requestedState = "NoclipMove";
+			return;
+		}
+
 		context.isGrounded = false;
 
 		if (mRebaseVelocityToSupportOnFirstTick) {

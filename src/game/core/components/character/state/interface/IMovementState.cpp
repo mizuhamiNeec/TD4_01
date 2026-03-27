@@ -27,7 +27,7 @@ namespace Unnamed {
 		// カメラの基底ベクトルに入力軸を掛け合わせて、ワールド空間での移動方向を計算
 		const Vec3 wishDir =
 			right * context.input.moveAxis.x +
-			up * context.input.moveAxis.z +
+			up * context.input.moveAxis.y +
 			forward * context.input.moveAxis.z;
 
 		return wishDir;

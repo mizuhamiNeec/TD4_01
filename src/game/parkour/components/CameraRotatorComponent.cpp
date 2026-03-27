@@ -33,8 +33,15 @@ namespace Unnamed {
 	}
 
 	void CameraRotatorComponent::PrePhysicsTick(const float deltaTime) {
-		auto* transform = GetTransform();
-		if (!transform) {
+		if (!mUseDirectInput) {
+			auto* transform = GetTransform();
+			if (!transform) {
+				return;
+			}
+			transform->SetRotation(
+				Quaternion::AxisAngle(Vec3::up, mCurrentYaw * Math::deg2Rad) *
+				Quaternion::AxisAngle(Vec3::right, mCurrentPitch * Math::deg2Rad)
+			);
 			return;
 		}
 
@@ -43,6 +50,19 @@ namespace Unnamed {
 		if (mInput) {
 			mouseDelta   = mInput->Axis2D("Mouse");
 			gamepadDelta = mInput->Axis2D("GamepadLook");
+		}
+
+		AddLookInput(mouseDelta, gamepadDelta, deltaTime);
+	}
+
+	void CameraRotatorComponent::AddLookInput(
+		const Vec2& mouseDelta,
+		const Vec2& gamepadDelta,
+		const float deltaTime
+	) {
+		auto* transform = GetTransform();
+		if (!transform || !mConsole) {
+			return;
 		}
 
 		// コンソールから各値を取得。
@@ -69,7 +89,7 @@ namespace Unnamed {
 		// deltaTimeはゲームパッドの入力にのみ適用する。
 		mCurrentPitch += mouseDelta.y * sensitivity * pitch;
 		mCurrentYaw   += mouseDelta.x * sensitivity * yaw;
-		
+
 		mCurrentPitch += gamepadDelta.y * joySensitivity * deltaTime;
 		mCurrentYaw   += gamepadDelta.x * joySensitivity * deltaTime;
 
@@ -80,6 +100,14 @@ namespace Unnamed {
 			Quaternion::AxisAngle(Vec3::up, mCurrentYaw * Math::deg2Rad) *
 			Quaternion::AxisAngle(Vec3::right, mCurrentPitch * Math::deg2Rad)
 		);
+	}
+
+	void CameraRotatorComponent::SetDirectInputEnabled(const bool enabled) {
+		mUseDirectInput = enabled;
+	}
+
+	bool CameraRotatorComponent::IsDirectInputEnabled() const {
+		return mUseDirectInput;
 	}
 
 	std::string_view CameraRotatorComponent::GetStableName() const {

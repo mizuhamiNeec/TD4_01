@@ -18,6 +18,9 @@ namespace Unnamed {
 		void OnAttached() override;
 
 		void PrePhysicsTick(float deltaTime) override;
+		void AddLookInput(const Vec2& mouseDelta, const Vec2& gamepadDelta, float deltaTime);
+		void SetDirectInputEnabled(bool enabled);
+		[[nodiscard]] bool IsDirectInputEnabled() const;
 
 		[[nodiscard]] std::string_view GetStableName() const override;
 		[[nodiscard]] std::string_view GetComponentName() const override;
@@ -49,5 +52,6 @@ namespace Unnamed {
 		ConVar<float>* mYaw         = nullptr;
 
 		ConVar<float>* mJoySensitivity = nullptr;
+		bool           mUseDirectInput = true;
 	};
 }

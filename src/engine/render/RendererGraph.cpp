@@ -536,7 +536,7 @@ namespace Unnamed::Render {
 				);
 
 				mGraph.AddPass(
-					prefix + "WorldBillboard",
+					prefix + "WorldBillboardDepth",
 					[colorId, depthId, worldBillboardTextureIds](
 					RenderGraphBuilder& b
 				) {
@@ -551,6 +551,15 @@ namespace Unnamed::Render {
 				) {
 						const RenderViewInput& view = mFrameViews[viewIndex];
 						if (view.worldBillboards.empty()) {
+							return;
+						}
+						if (!std::any_of(
+							view.worldBillboards.begin(),
+							view.worldBillboards.end(),
+							[](const WorldBillboardInput& billboard) {
+								return billboard.depthTest;
+							}
+						)) {
 							return;
 						}
 
@@ -583,17 +592,20 @@ namespace Unnamed::Render {
 							std::span<const uint32_t>(&state.colorTextureId, 1),
 							state.depthTextureId
 						);
-						if (!mBillboardPass.geom.pso) {
+						if (!mBillboardPass.depthGeom.pso) {
 							return;
 						}
 						pass.SetGraphicsPipeline(
-							mBillboardPass.geom.rootSig, mBillboardPass.geom.pso
+							mBillboardPass.depthGeom.rootSig, mBillboardPass.depthGeom.pso
 						);
 						pass.BindGraphicsCbv(0, frameCb);
-						pass.SetVertexBuffer(mBillboardPass.geom.vbv);
-						pass.SetIndexBuffer(mBillboardPass.geom.ibv);
+						pass.SetVertexBuffer(mBillboardPass.depthGeom.vbv);
+						pass.SetIndexBuffer(mBillboardPass.depthGeom.ibv);
 
 						for (const auto& billboard : view.worldBillboards) {
+							if (!billboard.depthTest) {
+								continue;
+							}
 							const float cosine = std::cos(
 								billboard.rotationRad
 							);
@@ -655,7 +667,7 @@ namespace Unnamed::Render {
 								)
 							);
 							pass.DrawIndexedTest(
-								mBillboardPass.geom.indexCount
+								mBillboardPass.depthGeom.indexCount
 							);
 						}
 					}
@@ -702,15 +714,15 @@ namespace Unnamed::Render {
 							std::span<const uint32_t>(&state.colorTextureId, 1),
 							state.depthTextureId
 						);
-						if (!mBillboardPass.geom.pso) {
+						if (!mBillboardPass.depthGeom.pso) {
 							return;
 						}
 						pass.SetGraphicsPipeline(
-							mBillboardPass.geom.rootSig, mBillboardPass.geom.pso
+							mBillboardPass.depthGeom.rootSig, mBillboardPass.depthGeom.pso
 						);
 						pass.BindGraphicsCbv(0, frameCb);
-						pass.SetVertexBuffer(mBillboardPass.geom.vbv);
-						pass.SetIndexBuffer(mBillboardPass.geom.ibv);
+						pass.SetVertexBuffer(mBillboardPass.depthGeom.vbv);
+						pass.SetIndexBuffer(mBillboardPass.depthGeom.ibv);
 
 						for (const auto& sprite : view.worldSprites) {
 							Vec3 right = sprite.worldRight;
@@ -783,7 +795,7 @@ namespace Unnamed::Render {
 								)
 							);
 							pass.DrawIndexedTest(
-								mBillboardPass.geom.indexCount
+								mBillboardPass.depthGeom.indexCount
 							);
 						}
 					}
@@ -833,6 +845,127 @@ namespace Unnamed::Render {
 							D3D_PRIMITIVE_TOPOLOGY_LINELIST
 						);
 						pass.DrawInstanced(mLinePass.frameVertexCount, 1);
+					}
+				);
+
+				mGraph.AddPass(
+					prefix + "WorldBillboardFront",
+					[colorId, worldBillboardTextureIds](RenderGraphBuilder& b) {
+						b.WriteRt(colorId);
+						for (const uint32_t texId : worldBillboardTextureIds) {
+							b.ReadSrvPs(texId);
+						}
+					},
+					[this, viewIndex, state, &renderDevice](RenderPassContext& pass) {
+						const RenderViewInput& view = mFrameViews[viewIndex];
+						if (view.worldBillboards.empty()) {
+							return;
+						}
+						if (!std::any_of(
+							view.worldBillboards.begin(),
+							view.worldBillboards.end(),
+							[](const WorldBillboardInput& billboard) {
+								return !billboard.depthTest;
+							}
+						)) {
+							return;
+						}
+
+						auto& allocator = static_cast<Rhi::D3D12Device&>(
+							renderDevice.GetRhiDevice()
+						).GetFrameUploadAllocator();
+						Rhi::FrameConstants frame = BuildSceneFrameConstants(
+							view.camera, state.width, state.height, 0.0f
+						);
+						const D3D12_GPU_VIRTUAL_ADDRESS frameCb =
+							allocator.AllocateConstantBuffer(&frame, sizeof(frame));
+
+						const Mat4 cameraWorld = frame.view.Inverse();
+						const Vec3 cameraRight = cameraWorld.GetRight().Normalized();
+						const Vec3 cameraUp = cameraWorld.GetUp().Normalized();
+						const Vec3 cameraForward = cameraWorld.GetForward().Normalized();
+
+						pass.SetViewportAndScissor(
+							0.0f,
+							0.0f,
+							static_cast<float>(state.width),
+							static_cast<float>(state.height)
+						);
+						pass.SetSrvUavHeap();
+						pass.SetRenderTarget(state.colorTextureId);
+						if (!mBillboardPass.frontGeom.pso) {
+							return;
+						}
+						pass.SetGraphicsPipeline(
+							mBillboardPass.frontGeom.rootSig,
+							mBillboardPass.frontGeom.pso
+						);
+						pass.BindGraphicsCbv(0, frameCb);
+						pass.SetVertexBuffer(mBillboardPass.frontGeom.vbv);
+						pass.SetIndexBuffer(mBillboardPass.frontGeom.ibv);
+
+						for (const auto& billboard : view.worldBillboards) {
+							if (billboard.depthTest) {
+								continue;
+							}
+
+							const float cosine = std::cos(billboard.rotationRad);
+							const float sine = std::sin(billboard.rotationRad);
+							const Vec3  rotatedRight =
+								cameraRight * cosine + cameraUp * sine;
+							const Vec3 rotatedUp =
+								cameraRight * -sine + cameraUp * cosine;
+
+							Rhi::ObjectConstants object = {};
+							object.world                = Mat4::identity;
+							object.world.m[0][0] =
+								rotatedRight.x * billboard.sizeWorld.x * 0.5f;
+							object.world.m[0][1] =
+								rotatedRight.y * billboard.sizeWorld.x * 0.5f;
+							object.world.m[0][2] =
+								rotatedRight.z * billboard.sizeWorld.x * 0.5f;
+							object.world.m[1][0] =
+								rotatedUp.x * billboard.sizeWorld.y * 0.5f;
+							object.world.m[1][1] =
+								rotatedUp.y * billboard.sizeWorld.y * 0.5f;
+							object.world.m[1][2] =
+								rotatedUp.z * billboard.sizeWorld.y * 0.5f;
+							object.world.m[2][0] = cameraForward.x;
+							object.world.m[2][1] = cameraForward.y;
+							object.world.m[2][2] = cameraForward.z;
+							object.world.m[3][0] = billboard.worldPosition.x;
+							object.world.m[3][1] = billboard.worldPosition.y;
+							object.world.m[3][2] = billboard.worldPosition.z;
+							object.worldInverseTranspose =
+								object.world.Inverse().Transpose();
+							object.skinningInfo = Vec4(
+								0.0f,
+								0.0f,
+								billboard.uvFlipY ? 1.0f : 0.0f,
+								0.0f
+							);
+
+							Rhi::MaterialConstants material = {};
+							material.baseColor              = billboard.color;
+							material.opacity                = billboard.color.w;
+							material.domainMode             = 0.0f;
+
+							const D3D12_GPU_VIRTUAL_ADDRESS objectCb =
+								allocator.AllocateConstantBuffer(&object, sizeof(object));
+							const D3D12_GPU_VIRTUAL_ADDRESS materialCb =
+								allocator.AllocateConstantBuffer(
+									&material,
+									sizeof(material)
+								);
+							pass.BindGraphicsCbv(1, objectCb);
+							pass.BindGraphicsCbv(2, materialCb);
+							pass.BindGraphicsCbv(3, objectCb);
+							pass.BindGraphicsSrvTable(
+								4,
+								ResolveSpriteTexture(renderDevice, billboard.texture)
+							);
+							pass.DrawIndexedTest(mBillboardPass.frontGeom.indexCount);
+						}
 					}
 				);
 
@@ -1489,3 +1622,5 @@ namespace Unnamed::Render {
 		);
 	}
 }
+
+

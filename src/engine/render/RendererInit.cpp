@@ -422,14 +422,25 @@ namespace Unnamed::Render {
 		mSpritePass.geom.psoKey.srcBlendAlpha  = D3D12_BLEND_ONE;
 		mSpritePass.geom.psoKey.destBlendAlpha = D3D12_BLEND_INV_SRC_ALPHA;
 
-		mBillboardPass.geom.rootSig = dx.GetGeomRootSignature();
-		mBillboardPass.geom.psoKey = mSpritePass.geom.psoKey;
-		mBillboardPass.geom.psoKey.rootSignature = mBillboardPass.geom.rootSig;
-		mBillboardPass.geom.psoKey.rtvFormat = kSceneHdrColorFormat;
-		mBillboardPass.geom.psoKey.depthEnable = true;
-		mBillboardPass.geom.psoKey.dsvFormat = DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
-		mBillboardPass.geom.psoKey.depthFunc =
+		mBillboardPass.depthGeom.rootSig = dx.GetGeomRootSignature();
+		mBillboardPass.depthGeom.psoKey = mSpritePass.geom.psoKey;
+		mBillboardPass.depthGeom.psoKey.rootSignature =
+			mBillboardPass.depthGeom.rootSig;
+		mBillboardPass.depthGeom.psoKey.rtvFormat = kSceneHdrColorFormat;
+		mBillboardPass.depthGeom.psoKey.depthEnable = true;
+		mBillboardPass.depthGeom.psoKey.dsvFormat =
+			DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
+		mBillboardPass.depthGeom.psoKey.depthFunc =
 			D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+
+		mBillboardPass.frontGeom.rootSig = dx.GetGeomRootSignature();
+		mBillboardPass.frontGeom.psoKey = mBillboardPass.depthGeom.psoKey;
+		mBillboardPass.frontGeom.psoKey.rootSignature =
+			mBillboardPass.frontGeom.rootSig;
+		mBillboardPass.frontGeom.psoKey.depthEnable = false;
+		mBillboardPass.frontGeom.psoKey.dsvFormat = DXGI_FORMAT_UNKNOWN;
+		mBillboardPass.frontGeom.psoKey.depthFunc =
+			D3D12_COMPARISON_FUNC_ALWAYS;
 
 		mLinePass.rootSig = dx.GetGeomRootSignature();
 		ResolveShaderProgramStageKey(
@@ -499,11 +510,18 @@ namespace Unnamed::Render {
 		mSpritePass.geom.vbv           = mPortalPass.maskPassGeom.vbv;
 		mSpritePass.geom.ibv           = mPortalPass.maskPassGeom.ibv;
 		mSpritePass.geom.indexCount    = mPortalPass.maskPassGeom.indexCount;
-		mBillboardPass.geom.vb         = mPortalPass.maskPassGeom.vb;
-		mBillboardPass.geom.ib         = mPortalPass.maskPassGeom.ib;
-		mBillboardPass.geom.vbv        = mPortalPass.maskPassGeom.vbv;
-		mBillboardPass.geom.ibv        = mPortalPass.maskPassGeom.ibv;
-		mBillboardPass.geom.indexCount = mPortalPass.maskPassGeom.indexCount;
+		mBillboardPass.depthGeom.vb         = mPortalPass.maskPassGeom.vb;
+		mBillboardPass.depthGeom.ib         = mPortalPass.maskPassGeom.ib;
+		mBillboardPass.depthGeom.vbv        = mPortalPass.maskPassGeom.vbv;
+		mBillboardPass.depthGeom.ibv        = mPortalPass.maskPassGeom.ibv;
+		mBillboardPass.depthGeom.indexCount =
+			mPortalPass.maskPassGeom.indexCount;
+		mBillboardPass.frontGeom.vb         = mPortalPass.maskPassGeom.vb;
+		mBillboardPass.frontGeom.ib         = mPortalPass.maskPassGeom.ib;
+		mBillboardPass.frontGeom.vbv        = mPortalPass.maskPassGeom.vbv;
+		mBillboardPass.frontGeom.ibv        = mPortalPass.maskPassGeom.ibv;
+		mBillboardPass.frontGeom.indexCount =
+			mPortalPass.maskPassGeom.indexCount;
 		LoadSceneMeshResources(renderDevice, dx);
 		LoadMaterialResources(renderDevice, dx);
 		LoadPostFxChain(renderDevice);

@@ -27,7 +27,9 @@ namespace Unnamed {
 		[[nodiscard]] TICK_GROUP GetTickGroup() const override;
 
 	private:
-		[[nodiscard]] TransformComponent* ResolveLookSourceTransform() const;
+		/// @brief 親のTransformComponentを取得します。無効な場合はnullptrを返します。
+		/// @return 親のTransformComponentへのポインタ、無効な場合はnullptr
+		[[nodiscard]] TransformComponent* GetParentTransform() const;
 
 		TransformComponent* mTransform  = nullptr;
 		TransformComponent* mLookSource = nullptr;
@@ -35,12 +37,14 @@ namespace Unnamed {
 		Quaternion mBaseLocalRotation = Quaternion::identity;
 		Vec2       mPrevLookDeg       = Vec2::zero;
 		Vec2       mCurrentSwayDeg    = Vec2::zero;
-		bool       mInitialized       = false;
+		float      mPitch             = 0.0f;
+		float      mYaw               = 0.0f;
 
-		float mPitchScale  = 80.0f;
-		float mYawScale    = 80.0f;
-		float mMaxPitchDeg = 8.0f;
-		float mMaxYawDeg   = 8.0f;
+		float mSwayAmount  = 0.0f;
 		float mAttenuation = 16.0f;
+
+		float mLocationAmount = 0.0f;
+
+		bool mInitialized = false;
 	};
 }

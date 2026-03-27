@@ -10,6 +10,7 @@
 #include "core/ComponentRegistry.h"
 #include "core/json/JsonReader.h"
 #include "core/json/JsonWriter.h"
+#include "core/math/Math.h"
 #include "core/math/Quaternion.h"
 #include "core/math/Vec3.h"
 
@@ -29,6 +30,18 @@ namespace Unnamed {
 			}
 			return delta;
 		}
+
+		Vec2 ExtractLookPitchYawDegrees(const Quaternion& rotation) {
+			const Vec3 forward = rotation.RotateVector(Vec3::forward).
+			                              Normalized();
+
+			const float horizontalLen =
+				std::sqrt(forward.x * forward.x + forward.z * forward.z);
+			const float pitchRad = std::atan2(forward.y, horizontalLen);
+			const float yawRad   = std::atan2(forward.x, forward.z);
+
+			return Vec2(pitchRad * Math::rad2Deg, yawRad * Math::rad2Deg);
+		}
 	}
 
 	void ViewmodelSway::OnAttached() {
@@ -44,16 +57,15 @@ namespace Unnamed {
 			return;
 		}
 
-		mLookSource = ResolveLookSourceTransform();
+		mLookSource = GetParentTransform();
 		if (!mLookSource) {
 			return;
 		}
 
 		mBaseLocalRotation = mTransform->Rotation();
-		const Vec3 lookDeg = mLookSource->Rotation().ToEulerDegrees();
-		mPrevLookDeg       = Vec2(lookDeg.x, lookDeg.y);
-		mCurrentSwayDeg    = Vec2::zero;
-		mInitialized       = true;
+		mPrevLookDeg = ExtractLookPitchYawDegrees(mLookSource->Rotation());
+		mCurrentSwayDeg = Vec2::zero;
+		mInitialized = true;
 	}
 
 	void ViewmodelSway::OnTick(float deltaTime) {
@@ -65,7 +77,7 @@ namespace Unnamed {
 		}
 
 		if (!mLookSource) {
-			mLookSource = ResolveLookSourceTransform();
+			mLookSource = GetParentTransform();
 		}
 
 		if (!mTransform || !mLookSource) {
@@ -74,37 +86,48 @@ namespace Unnamed {
 
 		if (!mInitialized) {
 			mBaseLocalRotation = mTransform->Rotation();
-			const Vec3 lookDeg = mLookSource->Rotation().ToEulerDegrees();
-			mPrevLookDeg       = Vec2(lookDeg.x, lookDeg.y);
-			mCurrentSwayDeg    = Vec2::zero;
-			mInitialized       = true;
+			mPrevLookDeg = ExtractLookPitchYawDegrees(mLookSource->Rotation());
+			mCurrentSwayDeg = Vec2::zero;
+			mInitialized = true;
 		}
 
-		const Vec3 lookDeg = mLookSource->Rotation().ToEulerDegrees();
-		const Vec2 lookNow = Vec2(lookDeg.x, lookDeg.y);
+		const Vec2 lookNow = ExtractLookPitchYawDegrees(
+			mLookSource->Rotation()
+		);
 
 		const float deltaPitch = DeltaAngleDegrees(mPrevLookDeg.x, lookNow.x);
 		const float deltaYaw   = DeltaAngleDegrees(mPrevLookDeg.y, lookNow.y);
 		mPrevLookDeg           = lookNow;
 
-		Vec2 targetSwayDeg;
-		targetSwayDeg.x = std::clamp(
-			-deltaPitch * mPitchScale, -mMaxPitchDeg, mMaxPitchDeg
-		);
-		targetSwayDeg.y = std::clamp(
-			deltaYaw * mYawScale, -mMaxYawDeg, mMaxYawDeg
+		mPitch += deltaPitch * mSwayAmount * deltaTime;
+		mYaw   += deltaYaw * mSwayAmount * deltaTime;
+
+		mPitch = std::lerp(mPitch, 0.0f, mAttenuation * deltaTime); // ピッチの減衰
+		mYaw   = std::lerp(mYaw, 0.0f, mAttenuation * deltaTime);   // ヨーの減衰
+
+		const Quaternion pitch = Quaternion::AxisAngle(Vec3::right, mPitch);
+		const Quaternion yaw   = Quaternion::AxisAngle(Vec3::up, mYaw);
+
+		const Quaternion finalRotation = yaw * pitch;
+
+		// ちょっとずらす
+		mTransform->SetPosition(
+			mTransform->Position() + Vec2(deltaYaw, deltaPitch) *
+			mLocationAmount
 		);
 
-		const float lerpT = std::clamp(deltaTime * mAttenuation, 0.0f, 1.0f);
-		mCurrentSwayDeg.x = mCurrentSwayDeg.x +
-		                   (targetSwayDeg.x - mCurrentSwayDeg.x) * lerpT;
-		mCurrentSwayDeg.y = mCurrentSwayDeg.y +
-		                   (targetSwayDeg.y - mCurrentSwayDeg.y) * lerpT;
+		mTransform->OnTick(0.0f); // ずらした位置を反映させるために先に更新しておく
 
-		const Quaternion swayRotation = Quaternion::EulerDegrees(
-			Vec3(mCurrentSwayDeg.x, mCurrentSwayDeg.y, 0.0f)
+		// ベースの回転にスウェイの回転を乗算して適用
+		mTransform->SetRotation(mBaseLocalRotation * finalRotation);
+
+		mTransform->SetPosition(
+			Math::Lerp(
+				mTransform->Position(),
+				Vec3::zero,
+				mAttenuation * deltaTime
+			)
 		);
-		mTransform->SetRotation(mBaseLocalRotation * swayRotation);
 	}
 
 	std::string_view ViewmodelSway::GetStableName() const {
@@ -116,34 +139,26 @@ namespace Unnamed {
 	}
 
 	void ViewmodelSway::DrawInspectorImGui() {
-		ImGui::DragFloat("Pitch Scale", &mPitchScale, 0.01f, 0.0f, 4.0f, "%.2f");
-		ImGui::DragFloat("Yaw Scale", &mYawScale, 0.01f, 0.0f, 4.0f, "%.2f");
-		ImGui::DragFloat("Max Pitch Deg", &mMaxPitchDeg, 0.01f, 0.0f, 20.0f, "%.2f");
-		ImGui::DragFloat("Max Yaw Deg", &mMaxYawDeg, 0.01f, 0.0f, 20.0f, "%.2f");
+		ImGui::DragFloat(
+			"SwayAmount", &mSwayAmount, 0.01f, 0.0f, 10.0f, "%.2f"
+		);
+		ImGui::DragFloat(
+			"LocationAmount", &mLocationAmount, 0.01f, 0.0f, 10.0f, "%.2f"
+		);
 		ImGui::DragFloat(
 			"Attenuation", &mAttenuation, 0.1f, 0.0f, 64.0f, "%.2f"
 		);
 	}
 
 	void ViewmodelSway::Deserialize(const JsonReader& reader) {
-		const JsonReader pitchScale = reader["pitchScale"];
-		if (pitchScale.Valid()) {
-			mPitchScale = pitchScale.GetFloat();
+		const JsonReader swayAmount = reader["swayAmount"];
+		if (swayAmount.Valid()) {
+			mSwayAmount = swayAmount.GetFloat();
 		}
 
-		const JsonReader yawScale = reader["yawScale"];
-		if (yawScale.Valid()) {
-			mYawScale = yawScale.GetFloat();
-		}
-
-		const JsonReader maxPitchDeg = reader["maxPitchDeg"];
-		if (maxPitchDeg.Valid()) {
-			mMaxPitchDeg = maxPitchDeg.GetFloat();
-		}
-
-		const JsonReader maxYawDeg = reader["maxYawDeg"];
-		if (maxYawDeg.Valid()) {
-			mMaxYawDeg = maxYawDeg.GetFloat();
+		const JsonReader locationAmount = reader["locationAmount"];
+		if (locationAmount.Valid()) {
+			mLocationAmount = locationAmount.GetFloat();
 		}
 
 		const JsonReader attenuation = reader["attenuation"];
@@ -153,17 +168,11 @@ namespace Unnamed {
 	}
 
 	void ViewmodelSway::Serialize(JsonWriter& writer) const {
-		writer.Key("pitchScale");
-		writer.Write(mPitchScale);
+		writer.Key("swayAmount");
+		writer.Write(mSwayAmount);
 
-		writer.Key("yawScale");
-		writer.Write(mYawScale);
-
-		writer.Key("maxPitchDeg");
-		writer.Write(mMaxPitchDeg);
-
-		writer.Key("maxYawDeg");
-		writer.Write(mMaxYawDeg);
+		writer.Key("locationAmount");
+		writer.Write(mLocationAmount);
 
 		writer.Key("attenuation");
 		writer.Write(mAttenuation);
@@ -173,12 +182,11 @@ namespace Unnamed {
 		return kIcon3DRotation;
 	}
 
-	BaseComponent::TICK_GROUP ViewmodelSway::
-	GetTickGroup() const {
+	BaseComponent::TICK_GROUP ViewmodelSway::GetTickGroup() const {
 		return TICK_GROUP::EARLY;
 	}
 
-	TransformComponent* ViewmodelSway::ResolveLookSourceTransform() const {
+	TransformComponent* ViewmodelSway::GetParentTransform() const {
 		if (!mTransform) {
 			return nullptr;
 		}

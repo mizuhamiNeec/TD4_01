@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <string>
+#include <string_view>
 
 namespace Unnamed {
 	enum class ASSET_TYPE : uint16_t {
@@ -18,4 +19,5 @@ namespace Unnamed {
 	};
 
 	std::string ToString(ASSET_TYPE e);
+	ASSET_TYPE  GuessAssetTypeFromPath(std::string_view path);
 }

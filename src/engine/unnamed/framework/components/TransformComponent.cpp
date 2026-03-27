@@ -142,34 +142,6 @@ namespace Unnamed {
 		mChildren.clear();
 	}
 
-	void TransformComponent::UpdateWorldRecursive() {
-		if (mIsDirty) {
-			// ローカル行列を計算
-			const Mat4 localMat = Mat4::Affine(
-				mLocalScale, mLocalRot, mLocalPos
-			);
-
-			// ワールド行列を計算
-			if (mParent) {
-				// 親がいる場合は親のワールド行列を掛ける
-				mWorldMat = localMat * mParent->WorldMat();
-			} else {
-				// 親がいない場合はローカル行列がそのままワールド行列
-				mWorldMat = localMat;
-			}
-
-			// フラグを外す
-			mIsDirty = false;
-		}
-
-		for (TransformComponent* child : mChildren) {
-			if (!child || !child->mIsDirty) {
-				continue;
-			}
-			child->UpdateWorldRecursive();
-		}
-	}
-
 	void TransformComponent::OnTick(float) {
 		UpdateWorldRecursive();
 	}
@@ -212,6 +184,34 @@ namespace Unnamed {
 				mParent->GetOwner()->GetGuid() :
 				0ull
 		);
+	}
+
+	void TransformComponent::UpdateWorldRecursive() {
+		if (mIsDirty) {
+			// ローカル行列を計算
+			const Mat4 localMat = Mat4::Affine(
+				mLocalScale, mLocalRot, mLocalPos
+			);
+
+			// ワールド行列を計算
+			if (mParent) {
+				// 親がいる場合は親のワールド行列を掛ける
+				mWorldMat = localMat * mParent->WorldMat();
+			} else {
+				// 親がいない場合はローカル行列がそのままワールド行列
+				mWorldMat = localMat;
+			}
+
+			// フラグを外す
+			mIsDirty = false;
+		}
+
+		for (TransformComponent* child : mChildren) {
+			if (!child || !child->mIsDirty) {
+				continue;
+			}
+			child->UpdateWorldRecursive();
+		}
 	}
 
 	void TransformComponent::MarkDirty() {

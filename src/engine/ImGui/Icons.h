@@ -91,3 +91,4 @@ constexpr uint32_t kIconDirectionsWalk = 0xE536; // 歩く
 constexpr uint32_t kIconDirectionsRun  = 0xE566; // 走る
 constexpr uint32_t kIconSprint         = 0xF81F; // 全力疾走
 constexpr uint32_t kIconJoystick       = 0xF5EE; // ジョイスティック
+constexpr uint32_t kIcon3DRotation     = 0xE84D; // 3D回転

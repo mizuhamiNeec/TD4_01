@@ -110,72 +110,73 @@ namespace Unnamed {
 			ImGui::End();
 			return;
 		}
+		const ImVec2 dockNodeSize = ImGui::GetContentRegionAvail();
 		const ImGuiID dockSpaceId = ImGui::GetID("GUIEditorDockSpace");
 		ImGui::DockSpace(dockSpaceId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
 		if (!mGuiEditorDockInitialized) {
-			const ImVec2 dockNodeSize = ImGui::GetContentRegionAvail();
-			if (dockNodeSize.x <= 1.0f || dockNodeSize.y <= 1.0f) {
-				ImGui::End();
-				return;
+			if (dockNodeSize.x > 1.0f && dockNodeSize.y > 1.0f) {
+				ImGui::DockBuilderRemoveNode(dockSpaceId);
+				ImGui::DockBuilderAddNode(
+					dockSpaceId,
+					ImGuiDockNodeFlags_DockSpace
+				);
+				ImGui::DockBuilderSetNodeSize(
+					dockSpaceId,
+					ImVec2(std::max(1.0f, dockNodeSize.x), std::max(1.0f, dockNodeSize.y))
+				);
+				ImGuiID dockMain = dockSpaceId;
+				ImGuiID dockLeft = ImGui::DockBuilderSplitNode(
+					dockMain,
+					ImGuiDir_Left,
+					0.25f,
+					nullptr,
+					&dockMain
+				);
+				ImGuiID dockRight = ImGui::DockBuilderSplitNode(
+					dockMain,
+					ImGuiDir_Right,
+					0.30f,
+					nullptr,
+					&dockMain
+				);
+				ImGuiID dockBottom = ImGui::DockBuilderSplitNode(
+					dockMain,
+					ImGuiDir_Down,
+					0.35f,
+					nullptr,
+					&dockMain
+				);
+				ImGuiID dockLeftBottom = ImGui::DockBuilderSplitNode(
+					dockLeft,
+					ImGuiDir_Down,
+					0.45f,
+					nullptr,
+					&dockLeft
+				);
+				ImGui::DockBuilderDockWindow("UI Document", dockLeft);
+				ImGui::DockBuilderDockWindow("Ui Outliner", dockLeft);
+				ImGui::DockBuilderDockWindow("Ui Palette", dockLeftBottom);
+				ImGui::DockBuilderDockWindow("Ui Inspector", dockRight);
+				ImGui::DockBuilderDockWindow("Ui Preview", dockBottom);
+				ImGui::DockBuilderFinish(dockSpaceId);
+				mGuiEditorDockInitialized = true;
 			}
-			ImGui::DockBuilderRemoveNode(dockSpaceId);
-			ImGui::DockBuilderAddNode(
-				dockSpaceId,
-				ImGuiDockNodeFlags_DockSpace
-			);
-			ImGui::DockBuilderSetNodeSize(
-				dockSpaceId,
-				ImVec2(std::max(1.0f, dockNodeSize.x), std::max(1.0f, dockNodeSize.y))
-			);
-			ImGuiID dockMain = dockSpaceId;
-			ImGuiID dockLeft = ImGui::DockBuilderSplitNode(
-				dockMain,
-				ImGuiDir_Left,
-				0.25f,
-				nullptr,
-				&dockMain
-			);
-			ImGuiID dockRight = ImGui::DockBuilderSplitNode(
-				dockMain,
-				ImGuiDir_Right,
-				0.30f,
-				nullptr,
-				&dockMain
-			);
-			ImGuiID dockBottom = ImGui::DockBuilderSplitNode(
-				dockMain,
-				ImGuiDir_Down,
-				0.35f,
-				nullptr,
-				&dockMain
-			);
-			ImGuiID dockLeftBottom = ImGui::DockBuilderSplitNode(
-				dockLeft,
-				ImGuiDir_Down,
-				0.45f,
-				nullptr,
-				&dockLeft
-			);
-			ImGui::DockBuilderDockWindow("UI Document", dockLeft);
-			ImGui::DockBuilderDockWindow("Ui Outliner", dockLeft);
-			ImGui::DockBuilderDockWindow("Ui Palette", dockLeftBottom);
-			ImGui::DockBuilderDockWindow("Ui Inspector", dockRight);
-			ImGui::DockBuilderDockWindow("Ui Preview", dockBottom);
-			ImGui::DockBuilderFinish(dockSpaceId);
-			mGuiEditorDockInitialized = true;
 		}
-		ImGui::SetNextWindowDockID(dockSpaceId, ImGuiCond_FirstUseEver);
+		const ImGuiCond dockCond = mGuiEditorDockInitialized ?
+			                           ImGuiCond_FirstUseEver :
+			                           ImGuiCond_Always;
+		ImGui::SetNextWindowDockID(dockSpaceId, dockCond);
 		Gui::DrawUiEditorMenu(
 			*mGuiDocumentManager,
 			mGuiActiveDocument,
 			mGuiEditorScreenStack.get(),
 			*mGuiEditorContext
 		);
-		ImGui::SetNextWindowDockID(dockSpaceId, ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowDockID(dockSpaceId, dockCond);
 		Gui::DrawUiHierarchyWindow(*mGuiEditorRoot, *mGuiEditorContext);
-		ImGui::SetNextWindowDockID(dockSpaceId, ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowDockID(dockSpaceId, dockCond);
 		Gui::DrawUiPaletteWindow(*mGuiEditorRoot, *mGuiEditorContext);
-		ImGui::SetNextWindowDockID(dockSpaceId, ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowDockID(dockSpaceId, dockCond);
 		Gui::DrawUiInspectorWindow(*mGuiEditorContext);
 
 		if (mGuiEditorContext->documentChanged) {
@@ -204,7 +205,7 @@ namespace Unnamed {
 			previewSize = it->second.size;
 		}
 
-		ImGui::SetNextWindowDockID(dockSpaceId, ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowDockID(dockSpaceId, dockCond);
 		Gui::DrawUiPreviewWindow(
 			mGuiEditorRoot.get(),
 			previewOutput,

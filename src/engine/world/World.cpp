@@ -559,10 +559,12 @@ namespace Unnamed {
 
 		for (const auto& entity : activeEntities) {
 			const auto transform = entity->GetComponent<TransformComponent>();
-
 			if (transform) {
+				Mat4             worldMat = transform->WorldMat();
+				const Vec3       pos      = worldMat.GetTranslate();
+				const Quaternion quat     = worldMat.Inverse().ToQuaternion();
 				GetDebugDraw().DrawAxis(
-					transform->Position(), transform->Rotation()
+					pos, quat
 				);
 			}
 		}
@@ -673,9 +675,9 @@ namespace Unnamed {
 		InputSystem* inputSystem        = ServiceLocator::Get<InputSystem>();
 		static bool  sTextWarningLogged = false;
 		const Vec2   aspectViewportSize = inputSystem ?
-			                                  inputSystem->
-			                                  GetMouseClientViewportSize() :
-			                                  Vec2::zero;
+			                                inputSystem->
+			                                GetMouseClientViewportSize() :
+			                                Vec2::zero;
 		const float runtimeAspect = aspectViewportSize.y > 0.0f ?
 			                            aspectViewportSize.x /
 			                            aspectViewportSize.y :
@@ -1068,7 +1070,7 @@ namespace Unnamed {
 				billboard.rotationRad     = 0.0f;
 				billboard.sortKey         = canvasSort;
 				billboard.uvFlipY         = true;
-				billboard.depthTest      =
+				billboard.depthTest       =
 					entry.canvas->GetBillboardDepthMode() ==
 					UI_CANVAS_BILLBOARD_DEPTH_MODE::DEPTH_TEST;
 				sceneView.worldBillboards.emplace_back(billboard);

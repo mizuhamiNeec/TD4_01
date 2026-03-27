@@ -318,9 +318,13 @@ namespace Unnamed::Render {
 			renderDevice.GetPipelineCache().GetOrCreateGraphicsPso(
 				mSpritePass.geom.psoKey
 			);
-		mBillboardPass.geom.pso =
+		mBillboardPass.depthGeom.pso =
 			renderDevice.GetPipelineCache().GetOrCreateGraphicsPso(
-				mBillboardPass.geom.psoKey
+				mBillboardPass.depthGeom.psoKey
+			);
+		mBillboardPass.frontGeom.pso =
+			renderDevice.GetPipelineCache().GetOrCreateGraphicsPso(
+				mBillboardPass.frontGeom.psoKey
 			);
 		mLinePass.pso =
 			renderDevice.GetPipelineCache().GetOrCreateGraphicsPso(
@@ -616,3 +620,4 @@ namespace Unnamed::Render {
 		state.outputTextureId  = 0;
 	}
 }
+

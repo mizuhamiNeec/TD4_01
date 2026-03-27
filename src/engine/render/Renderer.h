@@ -181,7 +181,8 @@ namespace Unnamed::Render {
 		};
 
 		struct BillboardPassRes {
-			GeometryPassRes geom = {};
+			GeometryPassRes depthGeom = {};
+			GeometryPassRes frontGeom = {};
 		};
 
 		struct DebugLineVertex {

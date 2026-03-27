@@ -16,6 +16,11 @@ namespace Unnamed {
 	}
 
 	void ParkourAirMove::Tick(MovementContext& context, float deltaTime) {
+		if (mConsole->GetConVarValueOr("noclip", false)) {
+			context.requestedState = "NoclipMove";
+			return;
+		}
+
 		context.isGrounded               = false;
 		context.supportEntityGuid        = 0;
 		context.supportLinearVelocity    = Vec3::zero;

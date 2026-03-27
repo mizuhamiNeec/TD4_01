@@ -16,6 +16,11 @@ namespace Unnamed {
 	void ParkourGroundMove::Tick(
 		MovementContext& context, const float deltaTime
 	) {
+		if (mConsole->GetConVarValueOr("noclip", false)) {
+			context.requestedState = "NoclipMove";
+			return;
+		}
+
 		context.isGrounded = false;
 
 		// 最初のティックでサポートの線形速度を基準にする

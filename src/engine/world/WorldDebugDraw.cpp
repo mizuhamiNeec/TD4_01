@@ -41,6 +41,18 @@ namespace Unnamed {
 		);
 	}
 
+	void WorldDebugDraw::DrawAxis(
+		const Vec3 position, const Quaternion orientation
+	) {
+		const Vec3 right   = orientation * Vec3::right;
+		const Vec3 up      = orientation * Vec3::up;
+		const Vec3 forward = orientation * Vec3::forward;
+
+		DrawRay(position, right, Vec4::red);
+		DrawRay(position, up, Vec4::green);
+		DrawRay(position, forward, Vec4::blue);
+	}
+
 	void WorldDebugDraw::DrawCircle(
 		const Vec3& position, const Quaternion& rotation, const float radius,
 		const Vec4& color, const uint32_t       segments
@@ -272,12 +284,11 @@ namespace Unnamed {
 
 		Vec3        verticalOffset    = Vec3::zero;
 		const float parallelAngleStep = Math::pi / static_cast<float>(segments);
-		float       stepRadius        = 0.0f;
 
 		for (int i = 1; i < segments; ++i) {
 			const float stepAngle = parallelAngleStep * static_cast<float>(i);
 			verticalOffset = (orientation * Vec3::up) * cos(stepAngle) * radius;
-			stepRadius = sin(stepAngle) * radius;
+			const float stepRadius = sin(stepAngle) * radius;
 
 			DrawCircle(
 				position + verticalOffset,

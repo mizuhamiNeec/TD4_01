@@ -34,6 +34,11 @@ namespace Unnamed {
 			const Vec3& position, const Vec3& dir, const Vec4& color
 		);
 
+		/// @brief 座標軸を描画します。
+		/// @param position 座標軸の中心位置
+		/// @param orientation 座標軸の回転
+		void DrawAxis(Vec3 position, Quaternion orientation);
+
 		/// @brief 円を描画します。
 		/// @param position 円の中心位置
 		/// @param rotation 円の回転

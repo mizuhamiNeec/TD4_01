@@ -20,6 +20,11 @@ namespace Unnamed {
 		WORLD_PLANE     = 2,
 	};
 
+	enum class UI_CANVAS_BILLBOARD_DEPTH_MODE : uint8_t {
+		DEPTH_TEST   = 0,
+		ALWAYS_FRONT = 1,
+	};
+
 	class UiCanvasComponent final : public BaseComponent {
 	public:
 		UiCanvasComponent();
@@ -46,6 +51,10 @@ namespace Unnamed {
 		void SetSpaceMode(UI_CANVAS_SPACE_MODE mode);
 		[[nodiscard]] UI_CANVAS_SPACE_MODE GetSpaceMode() const;
 
+		void SetBillboardDepthMode(UI_CANVAS_BILLBOARD_DEPTH_MODE mode);
+		[[nodiscard]] UI_CANVAS_BILLBOARD_DEPTH_MODE GetBillboardDepthMode()
+		const;
+
 		void SetPixelSize(const Vec2& size);
 		[[nodiscard]] Vec2 GetPixelSize() const;
 
@@ -69,6 +78,8 @@ namespace Unnamed {
 
 		std::string mUiAssetPath = "./content/parkour/ui/MainMenu.ui.json";
 		UI_CANVAS_SPACE_MODE mSpaceMode = UI_CANVAS_SPACE_MODE::SCREEN;
+		UI_CANVAS_BILLBOARD_DEPTH_MODE mBillboardDepthMode =
+			UI_CANVAS_BILLBOARD_DEPTH_MODE::DEPTH_TEST;
 		Vec2                 mPixelSize = Vec2(1920.0f, 1080.0f);
 		Vec2                 mWorldSize = Vec2(2.0f, 1.125f);
 		int32_t              mSortKey = 0;

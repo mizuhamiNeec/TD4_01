@@ -8,11 +8,13 @@
 
 #include "core/ComponentRegistry.h"
 #include "core/assets/AssetManager.h"
+#include "core/assets/AssetType.h"
 #include "core/assets/types/UiDocumentAssetData.h"
 #include "core/json/JsonReader.h"
 #include "core/json/JsonWriter.h"
 #include "core/string/StrUtil.h"
 
+#include "engine/ImGui/ImGuiWidgets.h"
 #include "engine/gui/UiDocument.h"
 #include "engine/gui/UiRoot.h"
 #include "engine/gui/UiWidget.h"
@@ -42,6 +44,27 @@ namespace Unnamed {
 			}
 			return UI_CANVAS_SPACE_MODE::SCREEN;
 		}
+
+		std::string ToBillboardDepthModeString(
+			const UI_CANVAS_BILLBOARD_DEPTH_MODE mode
+		) {
+			switch (mode) {
+				case UI_CANVAS_BILLBOARD_DEPTH_MODE::DEPTH_TEST:
+					return "DepthTest";
+				case UI_CANVAS_BILLBOARD_DEPTH_MODE::ALWAYS_FRONT:
+					return "AlwaysFront";
+				default: return "DepthTest";
+			}
+		}
+
+		UI_CANVAS_BILLBOARD_DEPTH_MODE ParseBillboardDepthMode(
+			const std::string_view value
+		) {
+			if (value == "AlwaysFront") {
+				return UI_CANVAS_BILLBOARD_DEPTH_MODE::ALWAYS_FRONT;
+			}
+			return UI_CANVAS_BILLBOARD_DEPTH_MODE::DEPTH_TEST;
+		}
 	}
 
 	UiCanvasComponent::UiCanvasComponent() = default;
@@ -53,6 +76,11 @@ namespace Unnamed {
 		}
 		if (reader.Has("spaceMode")) {
 			SetSpaceMode(ParseMode(reader["spaceMode"].GetString()));
+		}
+		if (reader.Has("billboardDepthMode")) {
+			SetBillboardDepthMode(
+				ParseBillboardDepthMode(reader["billboardDepthMode"].GetString())
+			);
 		}
 		if (reader.Has("pixelSize")) {
 			const JsonReader pixel = reader["pixelSize"].GetArray();
@@ -81,6 +109,9 @@ namespace Unnamed {
 		writer.Key("spaceMode");
 		writer.Write(ToModeString(mSpaceMode));
 
+		writer.Key("billboardDepthMode");
+		writer.Write(ToBillboardDepthModeString(mBillboardDepthMode));
+
 		writer.Key("pixelSize");
 		writer.BeginArray();
 		writer.Write(mPixelSize.x);
@@ -102,20 +133,36 @@ namespace Unnamed {
 
 #ifdef _DEBUG
 	void UiCanvasComponent::DrawInspectorImGui() {
-		std::array<char, 512> pathBuffer = {};
-		memcpy(
-			pathBuffer.data(),
-			mUiAssetPath.c_str(),
-			std::min(mUiAssetPath.size(), pathBuffer.size() - 1)
-		);
-		if (ImGui::InputText("UI Asset Path", pathBuffer.data(), pathBuffer.size())) {
-			SetUiAssetPath(pathBuffer.data());
+		std::string uiAssetPath = mUiAssetPath;
+		if (
+			ImGuiWidgets::AssetPathPicker(
+				"UI Asset Path",
+				uiAssetPath,
+				ImGuiWidgets::AssetTypeToMask(ASSET_TYPE::UI_DOCUMENT)
+			)
+		) {
+			SetUiAssetPath(uiAssetPath);
 		}
 
 		constexpr const char* kModes[] = {"Screen", "WorldBillboard", "WorldPlane"};
 		int mode = static_cast<int>(mSpaceMode);
 		if (ImGui::Combo("Space Mode", &mode, kModes, IM_ARRAYSIZE(kModes))) {
 			SetSpaceMode(static_cast<UI_CANVAS_SPACE_MODE>(mode));
+		}
+
+		if (mSpaceMode == UI_CANVAS_SPACE_MODE::WORLD_BILLBOARD) {
+			constexpr const char* kDepthModes[] = {"DepthTest", "AlwaysFront"};
+			int depthMode = static_cast<int>(mBillboardDepthMode);
+			if (ImGui::Combo(
+				"Billboard Depth",
+				&depthMode,
+				kDepthModes,
+				IM_ARRAYSIZE(kDepthModes)
+			)) {
+				SetBillboardDepthMode(
+					static_cast<UI_CANVAS_BILLBOARD_DEPTH_MODE>(depthMode)
+				);
+			}
 		}
 
 		float pixel[2] = {mPixelSize.x, mPixelSize.y};
@@ -155,6 +202,17 @@ namespace Unnamed {
 
 	UI_CANVAS_SPACE_MODE UiCanvasComponent::GetSpaceMode() const {
 		return mSpaceMode;
+	}
+
+	void UiCanvasComponent::SetBillboardDepthMode(
+		const UI_CANVAS_BILLBOARD_DEPTH_MODE mode
+	) {
+		mBillboardDepthMode = mode;
+	}
+
+	UI_CANVAS_BILLBOARD_DEPTH_MODE UiCanvasComponent::GetBillboardDepthMode()
+	const {
+		return mBillboardDepthMode;
 	}
 
 	void UiCanvasComponent::SetPixelSize(const Vec2& size) {

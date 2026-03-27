@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <array>
+#include <format>
 #include <functional>
 #include <imgui.h>
 #include <map>
@@ -10,6 +11,7 @@
 #include <unordered_set>
 
 #include "core/ComponentRegistry.h"
+#include "core/assets/AssetType.h"
 #include "core/string/StrUtil.h"
 
 #include "engine/ImGui/Icons.h"
@@ -285,6 +287,7 @@ namespace Unnamed {
 			}
 			return false;
 		}
+
 	}
 
 	void LevelEditorTool::DrawSceneOutliner() {
@@ -828,6 +831,10 @@ namespace Unnamed {
 		}
 
 		ImGui::End();
+	}
+
+	void LevelEditorTool::DrawContentBrowser() {
+		EditorContentBrowser::DrawWindow(mContentBrowserState, "Content Browser");
 	}
 
 	void LevelEditorTool::DrawInspector() {

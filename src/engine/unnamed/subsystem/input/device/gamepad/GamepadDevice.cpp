@@ -125,10 +125,9 @@ namespace Unnamed {
 		ResetFrameStates();
 
 		const bool hasXInput = PollXInput();
-		const double now     = NowSeconds();
-		if (now >= mNextDirectInputRefreshTime) {
+		if (mDirectInputRefreshRequested) {
 			EnumerateDirectInputDevices();
-			mNextDirectInputRefreshTime = now + 2.0;
+			mDirectInputRefreshRequested = false;
 		}
 
 		if (!hasXInput) {
@@ -218,6 +217,10 @@ namespace Unnamed {
 		for (DWORD user = 0; user < 4; ++user) {
 			ApplyRumbleToXInput(user, 0.0f, 0.0f);
 		}
+	}
+
+	void GamepadDevice::RequestDirectInputRefresh() {
+		mDirectInputRefreshRequested = true;
 	}
 
 	BOOL CALLBACK GamepadDevice::EnumerateDevicesThunk(
@@ -463,7 +466,7 @@ namespace Unnamed {
 		}
 
 		EnumerateDirectInputDevices();
-		mNextDirectInputRefreshTime = NowSeconds() + 2.0;
+		mDirectInputRefreshRequested = false;
 	}
 
 	void GamepadDevice::UnloadDirectInput() {

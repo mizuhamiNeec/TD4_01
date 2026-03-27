@@ -62,6 +62,7 @@ namespace Unnamed {
 
 		void EnqueueRumble(float low, float high, float durationSec);
 		void StopRumble();
+		void RequestDirectInputRefresh();
 
 	private:
 		using PFN_XInputGetState = DWORD(WINAPI*)(DWORD, XINPUT_STATE*);
@@ -142,7 +143,7 @@ namespace Unnamed {
 		IDirectInput8W*              mDirectInput                = nullptr;
 		IDirectInputDevice8W*        mConfiguringDirectInputDevice = nullptr;
 		std::vector<DirectInputPad>  mDirectInputPads;
-		double                       mNextDirectInputRefreshTime = 0.0;
+		bool                         mDirectInputRefreshRequested = false;
 
 		std::vector<RumbleEvent> mRumbleEvents;
 		float                    mAppliedRumbleLow  = 0.0f;

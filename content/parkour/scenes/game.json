@@ -163,9 +163,9 @@
                     "active": true,
                     "data": {
                         "boxHalfExtentsHu": [
-                            16.000038146972656,
-                            36.000091552734375,
-                            16.000038146972656
+                            16.000045776367188,
+                            36.00010681152344,
+                            16.000045776367188
                         ],
                         "collisionEnabled": true,
                         "maxSubSteps": 6,
@@ -892,7 +892,7 @@
             "folderPath": "Gameplay/Player",
             "guid": 2313,
             "isEditorOnly": false,
-            "name": "Entity",
+            "name": "Viewmodel",
             "visible": true
         },
         {
@@ -980,7 +980,7 @@
             "folderPath": "Gameplay/Player",
             "guid": 2315,
             "isEditorOnly": false,
-            "name": "Entity",
+            "name": "UI_Reticle",
             "visible": true
         }
     ],

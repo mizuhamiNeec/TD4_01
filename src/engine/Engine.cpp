@@ -4,6 +4,8 @@
 #include <pch.h>
 
 // ReSharper disable CppUnusedIncludeDirective
+#include <engine/physics/core/Physics.h>
+#include <engine/scene/Scene.h>
 #include <engine/unnamed/subsystem/audio/AudioSystem.h>
 // ReSharper restore CppUnusedIncludeDirective
 
@@ -14,14 +16,13 @@
 #include <core/assets/loader/MaterialInstanceAssetLoader.h>
 #include <core/assets/loader/MeshAssetLoader.h>
 #include <core/assets/loader/PostFxChainLoader.h>
-#include <core/assets/loader/SoundAssetLoader.h>
 #include <core/assets/loader/ShaderProgramLoader.h>
 #include <core/assets/loader/ShaderSourceLoader.h>
+#include <core/assets/loader/SoundAssetLoader.h>
 #include <core/assets/loader/TextureLoaderDirectXTex.h>
 #include <core/assets/loader/UiDocumentAssetLoader.h>
 
 #include <engine/editor/EditorRuntime.h>
-#include <engine/physics/core/Physics.h>
 #include <engine/Platform/PlatformEventsImpl.h>
 #include <engine/Platform/WindowManager.h>
 #include <engine/profiler/Profiler.h>
@@ -45,8 +46,6 @@
 #include <engine/unnamed/subsystem/time/TimeSystem.h>
 #include <engine/world/GameWorld.h>
 #include <engine/world/World.h>
-
-#include <engine/unnamed/subsystem/console/concommand/ConVar.h>
 
 namespace Unnamed {
 	namespace Rhi {
@@ -354,11 +353,12 @@ namespace Unnamed {
 
 		// アセットのホットリロードのポーリング
 		{
-			mAssetHotReloadPollAccumulator += unscaledDeltaTime;
-			const float hotreloadpollinterval = mConsoleSystem->GetConVarValueOr(
-				"asset_hotreloadpollinterval",
-				0.25f
-			);
+			mAssetHotReloadPollAccumulator    += unscaledDeltaTime;
+			const float hotreloadpollinterval = mConsoleSystem->
+				GetConVarValueOr(
+					"asset_hotreloadpollinterval",
+					0.25f
+				);
 
 			if (
 				mAssetManager &&

@@ -8,6 +8,7 @@
 #include <string_view>
 #include <vector>
 
+#include "core/math/Quaternion.h"
 #include "core/math/Vec3.h"
 #include "core/math/Vec4.h"
 
@@ -156,6 +157,20 @@ namespace Unnamed {
 			return 0;
 		}
 
+		[[nodiscard]] Vec2 GetVec2(const Vec2 fallback = Vec2::zero) const {
+			if (!mNode || !mNode->is_array() || mNode->size() != 2) {
+				return fallback;
+			}
+			try {
+				return Vec2(
+					mNode->at(0).get<float>(),
+					mNode->at(1).get<float>()
+				);
+			} catch (...) {
+				return fallback;
+			}
+		}
+
 		[[nodiscard]] Vec3 GetVec3(const Vec3 fallback = Vec3::zero) const {
 			if (!mNode || !mNode->is_array() || mNode->size() != 3) {
 				return fallback;
@@ -177,6 +192,24 @@ namespace Unnamed {
 			}
 			try {
 				return Vec4(
+					mNode->at(0).get<float>(),
+					mNode->at(1).get<float>(),
+					mNode->at(2).get<float>(),
+					mNode->at(3).get<float>()
+				);
+			} catch (...) {
+				return fallback;
+			}
+		}
+
+		[[nodiscard]] Quaternion GetQuaternion(
+			const Quaternion fallback = Quaternion::identity
+		) const {
+			if (!mNode || !mNode->is_array() || mNode->size() != 4) {
+				return fallback;
+			}
+			try {
+				return Quaternion(
 					mNode->at(0).get<float>(),
 					mNode->at(1).get<float>(),
 					mNode->at(2).get<float>(),

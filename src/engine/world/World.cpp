@@ -23,7 +23,6 @@
 #include "engine/unnamed/framework/components/mesh/SkeletalAnimationComponent.h"
 #include "engine/unnamed/framework/components/mesh/SkeletalMeshRendererComponent.h"
 #include "engine/unnamed/framework/components/mesh/StaticMeshRendererComponent.h"
-#include "engine/unnamed/framework/components/portal/PortalComponent.h"
 #include "engine/unnamed/framework/components/ui/UiCanvasComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/physics/CollisionDetection.h"
@@ -32,8 +31,6 @@
 #include "engine/unnamed/subsystem/input/InputSystem.h"
 #include "engine/unnamed/subsystem/input/device/mouse/MouseDevice.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
-
-#include <set>
 
 namespace Unnamed {
 	static constexpr std::string_view kChannel = "World";
@@ -669,7 +666,6 @@ namespace Unnamed {
 			sceneView.postFxPassOverrides.emplace_back(std::move(passOverride));
 		}
 
-		std::set<std::pair<uint64_t, uint64_t>> emittedPortalPairs;
 		std::vector<UiCanvasRuntimeEntry>       uiCanvasEntries;
 		uiCanvasEntries.reserve(mScene->GetEntities().size());
 		InputSystem* inputSystem        = ServiceLocator::Get<InputSystem>();
@@ -701,9 +697,8 @@ namespace Unnamed {
 				continue;
 			}
 
-			auto*       transform = entity->GetComponent<TransformComponent>();
-			const auto* portal = entity->GetComponent<PortalComponent>();
-			auto*       meshRenderer = entity->GetComponent<
+			auto* transform = entity->GetComponent<TransformComponent>();
+			auto* meshRenderer = entity->GetComponent<
 				StaticMeshRendererComponent>();
 			auto* skelRenderer = entity->GetComponent<
 				SkeletalMeshRendererComponent>();
@@ -732,10 +727,6 @@ namespace Unnamed {
 							assetManager
 						);
 					object.ownerEntityGuid = entity->GetGuid();
-					object.isPortalSurface =
-						portal && portal->IsActive() && portal->IsEnabled() &&
-						portal->GetLinkedPortalGuid() != 0 &&
-						portal->GetUseAsPortalSurface();
 					object.world     = transform->WorldMat();
 					object.isSkinned = false;
 					sceneView.visibleObjects.emplace_back(object);
@@ -757,10 +748,6 @@ namespace Unnamed {
 						assetManager
 					);
 				object.ownerEntityGuid = entity->GetGuid();
-				object.isPortalSurface =
-					portal && portal->IsActive() && portal->IsEnabled() &&
-					portal->GetLinkedPortalGuid() != 0 &&
-					portal->GetUseAsPortalSurface();
 				object.world             = transform->WorldMat();
 				object.isSkinned         = false;
 				object.skeletonPaletteId = 0;
@@ -801,60 +788,6 @@ namespace Unnamed {
 				}
 
 				sceneView.visibleObjects.emplace_back(object);
-			}
-
-			if (
-				portal && portal->IsActive() && portal->IsEnabled() &&
-				portal->GetLinkedPortalGuid() != 0
-			) {
-				if (portal->GetLinkedPortalGuid() == entity->GetGuid()) {
-					continue;
-				}
-
-				Entity* linkedEntity = mScene->FindEntity(
-					portal->GetLinkedPortalGuid()
-				);
-				if (!linkedEntity || !linkedEntity->IsActive()) {
-					continue;
-				}
-
-				const auto* linkedPortal = linkedEntity->GetComponent<
-					PortalComponent>();
-				const auto* linkedTransform = linkedEntity->GetComponent<
-					TransformComponent>();
-				if (!linkedPortal || !linkedTransform || !linkedPortal->
-				    IsActive() ||
-				    !linkedPortal->IsEnabled()) {
-					continue;
-				}
-				if (linkedPortal->GetLinkedPortalGuid() != entity->GetGuid()) {
-					continue;
-				}
-
-				const auto pairKey = std::minmax(
-					entity->GetGuid(), linkedEntity->GetGuid()
-				);
-				if (!emittedPortalPairs.emplace(pairKey).second) {
-					continue;
-				}
-
-				Render::PortalPairInput portalPair = {};
-				portalPair.enabled = true;
-				portalPair.fromPortalGuid = entity->GetGuid();
-				portalPair.toPortalGuid = linkedEntity->GetGuid();
-				portalPair.fromPortalWorld = transform->WorldMat();
-				portalPair.toPortalWorld = linkedTransform->WorldMat();
-				portalPair.fromPortalHalfExtents = portal->GetHalfExtents();
-				portalPair.toPortalHalfExtents = linkedPortal->GetHalfExtents();
-				sceneView.portalPairs.emplace_back(portalPair);
-
-				std::swap(portalPair.fromPortalGuid, portalPair.toPortalGuid);
-				std::swap(portalPair.fromPortalWorld, portalPair.toPortalWorld);
-				std::swap(
-					portalPair.fromPortalHalfExtents,
-					portalPair.toPortalHalfExtents
-				);
-				sceneView.portalPairs.emplace_back(portalPair);
 			}
 		}
 

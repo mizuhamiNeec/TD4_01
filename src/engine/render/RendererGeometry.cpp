@@ -102,7 +102,7 @@ namespace Unnamed::Render {
 			float bw0, bw1, bw2, bw3;
 		};
 
-		struct PortalMaskVertex {
+		struct QuadVertex {
 			float px, py, pz;
 			float u,  v;
 		};
@@ -173,14 +173,14 @@ namespace Unnamed::Render {
 		mGeometryPass.ib->SetName(L"TriangleTestIB_Default");
 	}
 
-	void Renderer::CreatePortalQuadResources(Rhi::D3D12Device& dx) {
+	void Renderer::CreateQuadResources(Rhi::D3D12Device& dx) {
 		auto& up = dx.GetUploadContext();
 		up.Begin();
 
 		auto* device  = dx.GetDevice();
 		auto* cmdList = up.GetCommandList();
 
-		constexpr PortalMaskVertex verts[4] = {
+		constexpr QuadVertex verts[4] = {
 			{-1.0f, -1.0f, 0.0f, 0.0f, 1.0f},
 			{-1.0f, 1.0f, 0.0f, 0.0f, 0.0f},
 			{1.0f, 1.0f, 0.0f, 1.0f, 0.0f},
@@ -196,7 +196,7 @@ namespace Unnamed::Render {
 			cmdList,
 			verts,
 			sizeof(verts),
-			mPortalPass.maskPassGeom.vb,
+			mSpritePass.geom.vb,
 			vbUpload,
 			D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER
 		);
@@ -206,32 +206,26 @@ namespace Unnamed::Render {
 			cmdList,
 			indices,
 			sizeof(indices),
-			mPortalPass.maskPassGeom.ib,
+			mSpritePass.geom.ib,
 			ibUpload,
 			D3D12_RESOURCE_STATE_INDEX_BUFFER
 		);
 
 		up.EndAndSubmitAndWait();
 
-		mPortalPass.maskPassGeom.vbv.BufferLocation =
-			mPortalPass.maskPassGeom.vb->GetGPUVirtualAddress();
-		mPortalPass.maskPassGeom.vbv.SizeInBytes   = sizeof(verts);
-		mPortalPass.maskPassGeom.vbv.StrideInBytes = sizeof(PortalMaskVertex);
+		mSpritePass.geom.vbv.BufferLocation =
+			mSpritePass.geom.vb->GetGPUVirtualAddress();
+		mSpritePass.geom.vbv.SizeInBytes   = sizeof(verts);
+		mSpritePass.geom.vbv.StrideInBytes = sizeof(QuadVertex);
 
-		mPortalPass.maskPassGeom.ibv.BufferLocation =
-			mPortalPass.maskPassGeom.ib->GetGPUVirtualAddress();
-		mPortalPass.maskPassGeom.ibv.SizeInBytes = sizeof(indices);
-		mPortalPass.maskPassGeom.ibv.Format      = DXGI_FORMAT_R16_UINT;
-		mPortalPass.maskPassGeom.indexCount      = 6;
+		mSpritePass.geom.ibv.BufferLocation =
+			mSpritePass.geom.ib->GetGPUVirtualAddress();
+		mSpritePass.geom.ibv.SizeInBytes = sizeof(indices);
+		mSpritePass.geom.ibv.Format      = DXGI_FORMAT_R16_UINT;
+		mSpritePass.geom.indexCount      = 6;
 
-		mPortalPass.maskPassGeom.vb->SetName(L"PortalMaskQuadVB_Default");
-		mPortalPass.maskPassGeom.ib->SetName(L"PortalMaskQuadIB_Default");
-		mPortalPass.compositeGeom.vb         = mPortalPass.maskPassGeom.vb;
-		mPortalPass.compositeGeom.ib         = mPortalPass.maskPassGeom.ib;
-		mPortalPass.compositeGeom.vbv        = mPortalPass.maskPassGeom.vbv;
-		mPortalPass.compositeGeom.ibv        = mPortalPass.maskPassGeom.ibv;
-		mPortalPass.compositeGeom.indexCount = mPortalPass.maskPassGeom.
-			indexCount;
+		mSpritePass.geom.vb->SetName(L"QuadVB_Default");
+		mSpritePass.geom.ib->SetName(L"QuadIB_Default");
 	}
 
 	bool Renderer::EnsureMeshResourceLoaded(

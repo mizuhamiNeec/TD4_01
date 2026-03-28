@@ -42,8 +42,6 @@ namespace Unnamed::Render {
 			frame.viewProj = frame.view * frame.proj;
 			frame.cameraPos = camera.valid ? camera.cameraPos : Vec3::zero;
 			frame.time = time;
-			frame.portalClipPlane = Vec4::zero;
-			frame.portalClipEnabled = 0.0f;
 			return frame;
 		}
 

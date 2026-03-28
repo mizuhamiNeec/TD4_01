@@ -87,7 +87,6 @@ namespace Unnamed::Render {
 		AssetID  meshAssetId        = kInvalidAssetID;
 		AssetID  materialInstanceId = kInvalidAssetID;
 		uint64_t ownerEntityGuid    = 0;
-		bool     isPortalSurface    = false;
 
 		Mat4 world       = Mat4::identity;
 		AABB worldBounds = {};
@@ -99,16 +98,6 @@ namespace Unnamed::Render {
 	struct SkinningPaletteInput {
 		AssetID           meshAssetId = kInvalidAssetID;
 		std::vector<Mat4> boneMatrices;
-	};
-
-	struct PortalPairInput {
-		bool     enabled               = false;
-		uint64_t fromPortalGuid        = 0;
-		uint64_t toPortalGuid          = 0;
-		Mat4     fromPortalWorld       = Mat4::identity;
-		Mat4     toPortalWorld         = Mat4::identity;
-		Vec2     fromPortalHalfExtents = Vec2(0.5f, 1.0f);
-		Vec2     toPortalHalfExtents   = Vec2(0.5f, 1.0f);
 	};
 
 	struct ScreenSpriteInput {
@@ -166,7 +155,6 @@ namespace Unnamed::Render {
 
 		std::vector<VisibleRenderObject>  visibleObjects;
 		std::vector<SkinningPaletteInput> skinningPalettes;
-		std::vector<PortalPairInput>      portalPairs;
 		std::vector<WorldBillboardInput>  worldBillboards;
 		std::vector<WorldSpriteInput>     worldSprites;
 		std::vector<ScreenSpriteInput>    screenSprites;

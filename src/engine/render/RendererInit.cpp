@@ -47,16 +47,6 @@ namespace Unnamed::Render {
 			"./content/core/shaders/programs/cs_write_uav.shader.json",
 			ASSET_TYPE::SHADER_PROGRAM
 		);
-		const AssetID portalMaskProgramId = LoadAsset(
-			assetManager,
-			"./content/core/shaders/programs/portal_mask.shader.json",
-			ASSET_TYPE::SHADER_PROGRAM
-		);
-		const AssetID portalCompositeProgramId = LoadAsset(
-			assetManager,
-			"./content/core/shaders/programs/portal_composite.shader.json",
-			ASSET_TYPE::SHADER_PROGRAM
-		);
 		const AssetID spriteOverlayProgramId = LoadAsset(
 			assetManager,
 			"./content/core/shaders/programs/sprite_overlay.shader.json",
@@ -282,19 +272,17 @@ namespace Unnamed::Render {
 			}
 		};
 
-		mPortalPass.maskPassGeom.rootSig = dx.GetGeomRootSignature();
+		mSpritePass.geom.rootSig = dx.GetGeomRootSignature();
 		ResolveShaderProgramStageKey(
-			renderDevice, portalMaskProgramId, "vs",
-			mPortalPass.maskPassGeom.psoKey.vs
+			renderDevice, spriteOverlayProgramId, "vs",
+			mSpritePass.geom.psoKey.vs
 		);
 		ResolveShaderProgramStageKey(
-			renderDevice, portalMaskProgramId, "ps",
-			mPortalPass.maskPassGeom.psoKey.ps
+			renderDevice, spriteOverlayProgramId, "ps",
+			mSpritePass.geom.psoKey.ps
 		);
-		mPortalPass.maskPassGeom.psoKey.rootSignature = mPortalPass.maskPassGeom
-			.
-			rootSig;
-		mPortalPass.maskPassGeom.psoKey.vertexLayout = Rhi::VertexLayoutDesc{
+		mSpritePass.geom.psoKey.rootSignature = mSpritePass.geom.rootSig;
+		mSpritePass.geom.psoKey.vertexLayout  = Rhi::VertexLayoutDesc{
 			.stride   = sizeof(float) * 5,
 			.elements = {
 				Rhi::VertexElementDesc{
@@ -317,101 +305,6 @@ namespace Unnamed::Render {
 				},
 			}
 		};
-		mPortalPass.maskPassGeom.psoKey.numRenderTargets = 0;
-		mPortalPass.maskPassGeom.psoKey.rtvFormat        = DXGI_FORMAT_UNKNOWN;
-		mPortalPass.maskPassGeom.psoKey.dsvFormat        =
-			DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
-		mPortalPass.maskPassGeom.psoKey.depthEnable = true;
-		mPortalPass.maskPassGeom.psoKey.depthFunc   =
-			D3D12_COMPARISON_FUNC_GREATER_EQUAL;
-		mPortalPass.maskPassGeom.psoKey.stencilEnable      = true;
-		mPortalPass.maskPassGeom.psoKey.stencilReadMask    = 0xFF;
-		mPortalPass.maskPassGeom.psoKey.stencilWriteMask   = 0xFF;
-		mPortalPass.maskPassGeom.psoKey.stencilFrontFailOp =
-			D3D12_STENCIL_OP_KEEP;
-		mPortalPass.maskPassGeom.psoKey.stencilFrontDepthFailOp =
-			D3D12_STENCIL_OP_KEEP;
-		mPortalPass.maskPassGeom.psoKey.stencilFrontPassOp =
-			D3D12_STENCIL_OP_REPLACE;
-		mPortalPass.maskPassGeom.psoKey.stencilFrontFunc =
-			D3D12_COMPARISON_FUNC_ALWAYS;
-		mPortalPass.maskPassGeom.psoKey.stencilBackFailOp =
-			D3D12_STENCIL_OP_KEEP;
-		mPortalPass.maskPassGeom.psoKey.stencilBackDepthFailOp =
-			D3D12_STENCIL_OP_KEEP;
-		mPortalPass.maskPassGeom.psoKey.stencilBackPassOp =
-			D3D12_STENCIL_OP_REPLACE;
-		mPortalPass.maskPassGeom.psoKey.stencilBackFunc =
-			D3D12_COMPARISON_FUNC_ALWAYS;
-		mPortalPass.maskPassGeom.psoKey.stencilRef = 1;
-		mPortalPass.maskPassGeom.psoKey.cullMode   = D3D12_CULL_MODE_NONE;
-
-		mPortalPass.compositeGeom.rootSig = dx.GetGeomRootSignature();
-		ResolveShaderProgramStageKey(
-			renderDevice, portalCompositeProgramId, "vs",
-			mPortalPass.compositeGeom.psoKey.vs
-		);
-		ResolveShaderProgramStageKey(
-			renderDevice, portalCompositeProgramId, "ps",
-			mPortalPass.compositeGeom.psoKey.ps
-		);
-		mPortalPass.compositeGeom.psoKey.rootSignature =
-			mPortalPass.compositeGeom.rootSig;
-		mPortalPass.compositeGeom.psoKey.vertexLayout =
-			mPortalPass.maskPassGeom.psoKey.vertexLayout;
-		mPortalPass.compositeGeom.psoKey.rtvFormat   = kSceneHdrColorFormat;
-		mPortalPass.compositeGeom.psoKey.depthEnable = false;
-		mPortalPass.compositeGeom.psoKey.dsvFormat   =
-			DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
-		mPortalPass.compositeGeom.psoKey.stencilEnable      = true;
-		mPortalPass.compositeGeom.psoKey.stencilReadMask    = 0xFF;
-		mPortalPass.compositeGeom.psoKey.stencilWriteMask   = 0x00;
-		mPortalPass.compositeGeom.psoKey.stencilFrontFailOp =
-			D3D12_STENCIL_OP_KEEP;
-		mPortalPass.compositeGeom.psoKey.stencilFrontDepthFailOp =
-			D3D12_STENCIL_OP_KEEP;
-		mPortalPass.compositeGeom.psoKey.stencilFrontPassOp =
-			D3D12_STENCIL_OP_KEEP;
-		mPortalPass.compositeGeom.psoKey.stencilFrontFunc =
-			D3D12_COMPARISON_FUNC_EQUAL;
-		mPortalPass.compositeGeom.psoKey.stencilBackFailOp =
-			D3D12_STENCIL_OP_KEEP;
-		mPortalPass.compositeGeom.psoKey.stencilBackDepthFailOp =
-			D3D12_STENCIL_OP_KEEP;
-		mPortalPass.compositeGeom.psoKey.stencilBackPassOp =
-			D3D12_STENCIL_OP_KEEP;
-		mPortalPass.compositeGeom.psoKey.stencilBackFunc =
-			D3D12_COMPARISON_FUNC_EQUAL;
-		mPortalPass.compositeGeom.psoKey.cullMode = D3D12_CULL_MODE_NONE;
-
-		mPortalPass.sceneRootSig = dx.GetGeomRootSignature();
-		mPortalPass.scenePsoKey = mGeometryPass.psoKey;
-		mPortalPass.scenePsoKey.depthFunc = D3D12_COMPARISON_FUNC_GREATER_EQUAL;
-		mPortalPass.scenePsoKey.stencilEnable = true;
-		mPortalPass.scenePsoKey.stencilReadMask = 0xFF;
-		mPortalPass.scenePsoKey.stencilWriteMask = 0x00;
-		mPortalPass.scenePsoKey.stencilFrontFailOp = D3D12_STENCIL_OP_KEEP;
-		mPortalPass.scenePsoKey.stencilFrontDepthFailOp = D3D12_STENCIL_OP_KEEP;
-		mPortalPass.scenePsoKey.stencilFrontPassOp = D3D12_STENCIL_OP_KEEP;
-		mPortalPass.scenePsoKey.stencilFrontFunc = D3D12_COMPARISON_FUNC_EQUAL;
-		mPortalPass.scenePsoKey.stencilBackFailOp = D3D12_STENCIL_OP_KEEP;
-		mPortalPass.scenePsoKey.stencilBackDepthFailOp = D3D12_STENCIL_OP_KEEP;
-		mPortalPass.scenePsoKey.stencilBackPassOp = D3D12_STENCIL_OP_KEEP;
-		mPortalPass.scenePsoKey.stencilBackFunc = D3D12_COMPARISON_FUNC_EQUAL;
-		mPortalPass.scenePsoKey.stencilRef = mPortalPass.stencilRefBase;
-
-		mSpritePass.geom.rootSig = dx.GetGeomRootSignature();
-		ResolveShaderProgramStageKey(
-			renderDevice, spriteOverlayProgramId, "vs",
-			mSpritePass.geom.psoKey.vs
-		);
-		ResolveShaderProgramStageKey(
-			renderDevice, spriteOverlayProgramId, "ps",
-			mSpritePass.geom.psoKey.ps
-		);
-		mSpritePass.geom.psoKey.rootSignature = mSpritePass.geom.rootSig;
-		mSpritePass.geom.psoKey.vertexLayout  = mPortalPass.maskPassGeom.psoKey.
-			vertexLayout;
 		mSpritePass.geom.psoKey.rtvFormat      = kSceneLdrColorFormat;
 		mSpritePass.geom.psoKey.depthEnable    = false;
 		mSpritePass.geom.psoKey.dsvFormat      = DXGI_FORMAT_UNKNOWN;
@@ -484,11 +377,6 @@ namespace Unnamed::Render {
 		mFrameCb.Init(
 			dx.GetDevice(), dx.GetFramesInFlight(), L"FrameConstants"
 		);
-		mPortalFrameCb.Init(
-			dx.GetDevice(),
-			dx.GetFramesInFlight() * kMaxPortalViews,
-			L"PortalFrameConstants"
-		);
 		mObjectCb.Init(
 			dx.GetDevice(), dx.GetFramesInFlight() * kMaxDrawObjects,
 			L"ObjectCB"
@@ -504,24 +392,17 @@ namespace Unnamed::Render {
 		InitializeDebugLineResources(dx);
 
 		CreateTriangleTestResources(dx);
-		CreatePortalQuadResources(dx);
-		mSpritePass.geom.vb            = mPortalPass.maskPassGeom.vb;
-		mSpritePass.geom.ib            = mPortalPass.maskPassGeom.ib;
-		mSpritePass.geom.vbv           = mPortalPass.maskPassGeom.vbv;
-		mSpritePass.geom.ibv           = mPortalPass.maskPassGeom.ibv;
-		mSpritePass.geom.indexCount    = mPortalPass.maskPassGeom.indexCount;
-		mBillboardPass.depthGeom.vb         = mPortalPass.maskPassGeom.vb;
-		mBillboardPass.depthGeom.ib         = mPortalPass.maskPassGeom.ib;
-		mBillboardPass.depthGeom.vbv        = mPortalPass.maskPassGeom.vbv;
-		mBillboardPass.depthGeom.ibv        = mPortalPass.maskPassGeom.ibv;
-		mBillboardPass.depthGeom.indexCount =
-			mPortalPass.maskPassGeom.indexCount;
-		mBillboardPass.frontGeom.vb         = mPortalPass.maskPassGeom.vb;
-		mBillboardPass.frontGeom.ib         = mPortalPass.maskPassGeom.ib;
-		mBillboardPass.frontGeom.vbv        = mPortalPass.maskPassGeom.vbv;
-		mBillboardPass.frontGeom.ibv        = mPortalPass.maskPassGeom.ibv;
-		mBillboardPass.frontGeom.indexCount =
-			mPortalPass.maskPassGeom.indexCount;
+		CreateQuadResources(dx);
+		mBillboardPass.depthGeom.vb         = mSpritePass.geom.vb;
+		mBillboardPass.depthGeom.ib         = mSpritePass.geom.ib;
+		mBillboardPass.depthGeom.vbv        = mSpritePass.geom.vbv;
+		mBillboardPass.depthGeom.ibv        = mSpritePass.geom.ibv;
+		mBillboardPass.depthGeom.indexCount = mSpritePass.geom.indexCount;
+		mBillboardPass.frontGeom.vb         = mSpritePass.geom.vb;
+		mBillboardPass.frontGeom.ib         = mSpritePass.geom.ib;
+		mBillboardPass.frontGeom.vbv        = mSpritePass.geom.vbv;
+		mBillboardPass.frontGeom.ibv        = mSpritePass.geom.ibv;
+		mBillboardPass.frontGeom.indexCount = mSpritePass.geom.indexCount;
 		LoadSceneMeshResources(renderDevice, dx);
 		LoadMaterialResources(renderDevice, dx);
 		LoadPostFxChain(renderDevice);

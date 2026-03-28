@@ -90,7 +90,7 @@ namespace Unnamed::Render {
 		);
 
 		void CreateTriangleTestResources(Rhi::D3D12Device& dx);
-		void CreatePortalQuadResources(Rhi::D3D12Device& dx);
+		void CreateQuadResources(Rhi::D3D12Device& dx);
 		bool EnsureMeshResourceLoaded(
 			RenderDevice& renderDevice, Rhi::D3D12Device& dx,
 			AssetID       meshAssetId
@@ -152,30 +152,6 @@ namespace Unnamed::Render {
 			FullscreenPassRes                      pass = {};
 		};
 
-		struct PortalPassRes {
-			GeometryPassRes      maskPassGeom   = {};
-			GeometryPassRes      compositeGeom  = {};
-			GraphicsPsoKey       scenePsoKey    = {};
-			ID3D12RootSignature* sceneRootSig   = nullptr;
-			ID3D12PipelineState* scenePso       = nullptr;
-			uint32_t             stencilRefBase = 1;
-		};
-
-		struct ActivePortalView {
-			PortalPairInput pair              = {};
-			uint32_t        stencilRef        = 0;
-			uint32_t        maskObjectCbIndex = 0;
-		};
-
-		struct RecursivePortalView {
-			PortalPairInput pair                   = {};
-			Mat4            cameraWorld            = Mat4::identity;
-			uint32_t        frameCbIndex           = 0;
-			uint32_t        compositeObjectCbIndex = 0;
-			uint32_t        stencilRef             = 0;
-			bool            visibleFromPrevious    = false;
-		};
-
 		struct SpritePassRes {
 			GeometryPassRes geom = {};
 		};
@@ -226,9 +202,6 @@ namespace Unnamed::Render {
 		};
 
 		static constexpr uint32_t kMaxDrawObjects       = 1024; // TODO: とりあえず
-		static constexpr uint32_t kMaxPortalViews       = 16;
-		static constexpr uint32_t kPortalRecursionDepth = 6;
-		static constexpr uint32_t kPortalDirections     = 2;
 		static constexpr uint32_t kMaxDebugLines        = 65536; // TODO: とりあえず
 
 		ConsoleSystem* mConsole = nullptr;
@@ -244,14 +217,12 @@ namespace Unnamed::Render {
 		FullscreenPassRes        mDepthVisPass        = {};
 		ComputePassRes           mComputePass         = {};
 		GeometryPassRes          mGeometryPass        = {};
-		PortalPassRes            mPortalPass          = {};
 		SpritePassRes            mSpritePass          = {};
 		BillboardPassRes         mBillboardPass       = {};
 		LinePassRes              mLinePass            = {};
 		AdvancedRenderFoundation mAdvancedFoundation  = {};
 
 		Rhi::UploadBuffer<Rhi::FrameConstants> mFrameCb;
-		Rhi::UploadBuffer<Rhi::FrameConstants> mPortalFrameCb;
 		Rhi::UploadBuffer<Rhi::ObjectConstants> mObjectCb;
 		Rhi::UploadBuffer<Rhi::MaterialConstants> mMaterialCb;
 		Rhi::UploadBuffer<Rhi::SkinningPaletteConstants> mSkinningCb;
@@ -267,20 +238,7 @@ namespace Unnamed::Render {
 		uint32_t mSpriteFallbackTextureId = 0;
 
 		std::vector<MeshDrawItem>     mMainDrawList;
-		std::vector<MeshDrawItem>     mPortalDrawList;
 		std::vector<DrawBatch>        mMainBatches;
-		std::vector<DrawBatch>        mPortalBatches;
-		bool                          mPortalEnabled = false;
-		std::vector<ActivePortalView> mActivePortalViews;
-		std::array<std::array<RecursivePortalView, kPortalRecursionDepth>,
-		           kPortalDirections>
-		mPortalRecursionViews = {};
-		std::array<std::array<uint32_t, kPortalRecursionDepth>,
-		           kPortalDirections>
-		mPortalRecursionColorIds = {};
-		std::array<std::array<uint32_t, kPortalRecursionDepth>,
-		           kPortalDirections>
-		mPortalRecursionDepthIds = {};
 		std::unordered_map<std::string, ViewRuntimeState> mViewStates;
 		std::vector<std::string> mViewExecutionOrder;
 		std::vector<RenderViewInput> mFrameViews;

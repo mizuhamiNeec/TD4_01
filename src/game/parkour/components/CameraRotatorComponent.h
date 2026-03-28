@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string_view>
+
 #include "engine/unnamed/framework/components/base/BaseComponent.h"
 
 #include "core/math/Vec2.h"
@@ -18,8 +20,10 @@ namespace Unnamed {
 		void OnAttached() override;
 
 		void PrePhysicsTick(float deltaTime) override;
-		void AddLookInput(const Vec2& mouseDelta, const Vec2& gamepadDelta, float deltaTime);
-		void SetDirectInputEnabled(bool enabled);
+		void AddLookInput(
+			const Vec2& mouseDelta, const Vec2& gamepadDelta, float deltaTime
+		);
+		void               SetDirectInputEnabled(bool enabled);
 		[[nodiscard]] bool IsDirectInputEnabled() const;
 
 		[[nodiscard]] std::string_view GetStableName() const override;
@@ -42,7 +46,7 @@ namespace Unnamed {
 		void                              BindLookAxisOnce() const;
 
 		ConsoleSystem* mConsole = nullptr;
-		InputSystem*   mInput         = nullptr;
+		InputSystem*   mInput   = nullptr;
 
 		float mCurrentPitch = 0.0f;
 		float mCurrentYaw   = 0.0f;

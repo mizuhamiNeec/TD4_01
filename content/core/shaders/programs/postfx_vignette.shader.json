@@ -1,7 +1,7 @@
 {
 	"name": "PostFxVignette",
 	"vs": {
-		"path": "../src/PostFxVignette.hlsl",
+		"path": "../src/FullscreenTriangle.hlsli",
 		"entry": "VsMain",
 		"profile": "vs_6_6"
 	},

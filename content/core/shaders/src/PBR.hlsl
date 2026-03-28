@@ -1,33 +1,4 @@
-cbuffer FrameCB : register(b0) {
-	float4x4 gView;      // ビュー行列
-	float4x4 gProj;      // プロジェクション行列
-	float4x4 gViewProj;  // ビュープロジェクション行列
-	float3   gCameraPos; // カメラのワールド空間位置
-	float    gTime;      // 経過時間
-	float4   gPortalClipPlane;
-	float    gPortalClipEnabled;
-	float3   gFramePadding;
-}
-
-cbuffer ObjectCB : register(b1) {
-	float4x4 gWorld;
-	float4x4 gWorldInvTranspose;
-	float4   gSkinningInfo; // x=paletteOffset, y=useSkinning
-};
-
-cbuffer MaterialCB : register(b2) {
-	float4 gBaseColor;
-	float4 gEmissiveColor;
-	float  gMetallic;
-	float  gRoughness;
-	float  gOpacity;
-	float  gDomainMode; // 0=Unlit, 1=PBR
-	float2 gPadding;
-};
-
-cbuffer SkinningPaletteCB : register(b3) {
-	float4x4 gSkinMatrices[512];
-};
+#include "SceneConstants.hlsli"
 
 Texture2D    gBaseColorTex : register(t0);
 SamplerState gLinearWrap : register(s0);
@@ -84,12 +55,7 @@ VsOut VsMain(VsIn i) {
 	return o;
 }
 
-float4 PsMain(VsOut i) : SV_TARGET {
-	// ポータルのクリッピング
-	if (gPortalClipEnabled > 0.5f) {
-		clip(dot(float4(i.positionWS, 1.0f), gPortalClipPlane));
-	}
-
+float4 PsMain(VsOut i) : SV_Target {
 	// ベースカラーのテクスチャサンプリング
 	float3 texColor = gBaseColorTex.Sample(gLinearWrap, i.uv).rgb;
 

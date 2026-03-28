@@ -1,6 +1,5 @@
+#include "FullscreenBindings.hlsli"
 #include "FullscreenTriangle.hlsli"
-Texture2D    gTex : register(t0);
-SamplerState gSampler : register(s0);
 
 cbuffer BloomParams : register(b0) {
     float4 gParams0; // x=invSrcW, y=invSrcH
@@ -21,7 +20,7 @@ float3 SampleTent(float2 uv, float2 texel) {
     return c / 16.0;
 }
 
-float4 PsMain(VSOut i) : SV_Target {
+float4 PsMain(VsOut i) : SV_Target {
     float2 invSrcSize = gParams0.xy;
     float radius = max(gParams1.x, 0.5);
     float2 texel = invSrcSize * radius;

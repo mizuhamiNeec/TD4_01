@@ -1,40 +1,8 @@
-Texture2D    gTex : register(t0);
-SamplerState gSampler : register(s0);
+#include "FullscreenBindings.hlsli"
+#include "FullscreenTriangle.hlsli"
+#include "PostFxParams.hlsli"
 
-cbuffer PostFxParams : register(b0) {
-	float4 gPostFxScalar0; // x=Intensity, y=Threshold, z=Radius, w=Amount
-	float4 gPostFxScalar1; // 未使用
-	float4 gPostFxColor0;  // default tint
-	float4 gPostFxColor1;  // 未使用
-};
-
-static const int kNumVertices = 3;
-
-static const float4 kPositions[kNumVertices] = {
-	{-1.0f, 1.0f, 0.0f, 1.0f},  // 左上
-	{3.0f, 1.0f, 0.0f, 1.0f},   // 右上
-	{-1.0f, -3.0f, 0.0f, 1.0f}, // 左下
-};
-
-static const float2 kTexCoords[kNumVertices] = {
-	{0.0f, 0.0f}, // 左上
-	{2.0f, 0.0f}, // 右上
-	{0.0f, 2.0f}, // 左下
-};
-
-struct VSOut {
-	float4 pos : SV_POSITION;
-	float2 uv : TEXCOORD0;
-};
-
-VSOut VsMain(uint vid : SV_VertexID) {
-	VSOut o;
-	o.pos = kPositions[vid];
-	o.uv  = kTexCoords[vid];
-	return o;
-}
-
-float4 PsMain(VSOut i) : SV_TARGET {
+float4 PsMain(VsOut i) : SV_Target {
 	float2 uv  = i.uv;
 	float4 col = gTex.Sample(gSampler, uv);
 

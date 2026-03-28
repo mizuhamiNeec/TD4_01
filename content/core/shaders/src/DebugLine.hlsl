@@ -1,13 +1,4 @@
-cbuffer FrameCB : register(b0) {
-	float4x4 gView;
-	float4x4 gProj;
-	float4x4 gViewProj;
-	float3   gCameraPos;
-	float    gTime;
-	float4   gPortalClipPlane;
-	float    gPortalClipEnabled;
-	float3   gFramePadding;
-}
+#include "SceneConstants.hlsli"
 
 struct VsIn {
 	float3 position : POSITION;
@@ -26,6 +17,6 @@ VsOut VsMain(VsIn input) {
 	return output;
 }
 
-float4 PsMain(VsOut input) : SV_TARGET {
+float4 PsMain(VsOut input) : SV_Target {
 	return input.color;
 }

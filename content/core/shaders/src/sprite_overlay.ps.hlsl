@@ -1,22 +1,14 @@
-cbuffer MaterialCB : register(b2) {
-	float4 gBaseColor;
-	float4 gEmissiveColor;
-	float  gMetallic;
-	float  gRoughness;
-	float  gOpacity;
-	float  gDomainMode;
-	float2 gPadding;
-}
+#include "SceneConstants.hlsli"
 
 Texture2D    gSpriteTexture : register(t0);
 SamplerState gLinearWrapSampler : register(s0);
 
-struct PsIn {
+struct VsOut {
 	float4 pos : SV_POSITION;
 	float2 uv : TEXCOORD0;
 };
 
-float4 PsMain(PsIn input) : SV_TARGET {
+float4 PsMain(VsOut input) : SV_Target {
 	const float4 texel = gSpriteTexture.Sample(gLinearWrapSampler, input.uv);
 	return float4(
 		texel.rgb * gBaseColor.rgb,

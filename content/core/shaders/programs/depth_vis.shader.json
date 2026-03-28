@@ -1,7 +1,7 @@
 {
 	"name": "DepthVis",
 	"vs": {
-		"path": "../src/FsDepthVis.hlsl",
+		"path": "../src/FullscreenTriangle.hlsli",
 		"entry": "VsMain",
 		"profile": "vs_6_6"
 	},

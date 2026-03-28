@@ -1,0 +1,33 @@
+#ifndef SCENE_CONSTANTS_HLSLI
+#define SCENE_CONSTANTS_HLSLI
+
+cbuffer FrameCB : register(b0) {
+	float4x4 gView;
+	float4x4 gProj;
+	float4x4 gViewProj;
+	float3   gCameraPos;
+	float    gTime;
+	float3   gFramePadding;
+}
+
+cbuffer ObjectCB : register(b1) {
+	float4x4 gWorld;
+	float4x4 gWorldInvTranspose;
+	float4   gSkinningInfo;
+}
+
+cbuffer MaterialCB : register(b2) {
+	float4 gBaseColor;
+	float4 gEmissiveColor;
+	float  gMetallic;
+	float  gRoughness;
+	float  gOpacity;
+	float  gDomainMode;
+	float2 gPadding;
+}
+
+cbuffer SkinningPaletteCB : register(b3) {
+	float4x4 gSkinMatrices[512];
+}
+
+#endif

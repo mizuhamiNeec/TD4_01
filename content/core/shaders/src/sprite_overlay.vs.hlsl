@@ -1,19 +1,4 @@
-cbuffer FrameCB : register(b0) {
-	float4x4 gView;
-	float4x4 gProj;
-	float4x4 gViewProj;
-	float3   gCameraPos;
-	float    gTime;
-	float4   gPortalClipPlane;
-	float    gPortalClipEnabled;
-	float3   gFramePadding;
-}
-
-cbuffer ObjectCB : register(b1) {
-	float4x4 gWorld;
-	float4x4 gWorldInvTranspose;
-	float4   gSkinningInfo;
-}
+#include "SceneConstants.hlsli"
 
 struct VsIn {
 	float3 pos : POSITION;

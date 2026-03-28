@@ -39,16 +39,17 @@ namespace Unnamed {
 	void KinematicMoverComponent::OnAttached() {
 		BaseComponent::OnAttached();
 
-		auto* transform = mOwner ? mOwner->GetComponent<TransformComponent>() :
+		auto* transform = mOwner ?
+			                  mOwner->GetComponent<TransformComponent>() :
 			                  nullptr;
 		if (!transform) {
 			return;
 		}
 
-		mState.positionPrev = transform->Position();
-		mState.positionCurr = transform->Position();
-		mState.rotationPrev = transform->Rotation();
-		mState.rotationCurr = transform->Rotation();
+		mState.positionPrev   = transform->Position();
+		mState.positionCurr   = transform->Position();
+		mState.rotationPrev   = transform->Rotation();
+		mState.rotationCurr   = transform->Rotation();
 		mState.linearVelocity = Vec3::zero;
 		mState.deltaPosition  = Vec3::zero;
 		mState.frameDeltaTime = 0.0f;
@@ -81,7 +82,7 @@ namespace Unnamed {
 		mState.positionCurr = transform->Position();
 		mState.rotationCurr = transform->Rotation();
 
-		mState.deltaPosition = mState.positionCurr - mState.positionPrev;
+		mState.deltaPosition  = mState.positionCurr - mState.positionPrev;
 		mState.frameDeltaTime = deltaTime;
 		if (deltaTime > 0.0f) {
 			mState.linearVelocity = mState.deltaPosition / deltaTime;
@@ -90,8 +91,7 @@ namespace Unnamed {
 		}
 	}
 
-	void KinematicMoverComponent::PostPhysicsTick(float) {
-	}
+	void KinematicMoverComponent::PostPhysicsTick(float) {}
 
 	std::string_view KinematicMoverComponent::GetStableName() const {
 		return "engine.KinematicMover";
@@ -105,9 +105,11 @@ namespace Unnamed {
 		return BaseComponent::GetIcon();
 	}
 
+#ifdef _DEBUG
 	void KinematicMoverComponent::DrawInspectorImGui() {
 		BaseComponent::DrawInspectorImGui();
 	}
+#endif
 
 	void KinematicMoverComponent::Deserialize(const JsonReader& reader) {
 		reader;

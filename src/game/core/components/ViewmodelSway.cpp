@@ -138,6 +138,7 @@ namespace Unnamed {
 		return "ViewmodelSway";
 	}
 
+#ifdef _DEBUG
 	void ViewmodelSway::DrawInspectorImGui() {
 		ImGui::DragFloat(
 			"SwayAmount", &mSwayAmount, 0.01f, 0.0f, 10.0f, "%.2f"
@@ -149,6 +150,7 @@ namespace Unnamed {
 			"Attenuation", &mAttenuation, 0.1f, 0.0f, 64.0f, "%.2f"
 		);
 	}
+#endif
 
 	void ViewmodelSway::Deserialize(const JsonReader& reader) {
 		const JsonReader swayAmount = reader["swayAmount"];

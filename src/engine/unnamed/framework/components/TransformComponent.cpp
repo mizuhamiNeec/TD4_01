@@ -155,6 +155,14 @@ namespace Unnamed {
 		return "engine.Transform";
 	}
 
+	std::string_view TransformComponent::GetComponentName() const {
+		return "Transform";
+	}
+
+	uint32_t TransformComponent::GetIcon() const {
+		return kIconDragPan;
+	}
+
 	void TransformComponent::Serialize(JsonWriter& writer) const {
 		writer.Key("position");
 		writer.BeginArray();
@@ -221,14 +229,6 @@ namespace Unnamed {
 		for (auto* child : mChildren) {
 			child->MarkDirty();
 		}
-	}
-
-	std::string_view TransformComponent::GetComponentName() const {
-		return "Transform";
-	}
-
-	uint32_t TransformComponent::GetIcon() const {
-		return kIconDragPan;
 	}
 
 #ifdef _DEBUG

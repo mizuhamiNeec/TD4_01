@@ -11,7 +11,6 @@
 #include <unordered_set>
 
 #include "core/ComponentRegistry.h"
-#include "core/assets/AssetType.h"
 #include "core/string/StrUtil.h"
 
 #include "engine/ImGui/Icons.h"
@@ -287,7 +286,6 @@ namespace Unnamed {
 			}
 			return false;
 		}
-
 	}
 
 	void LevelEditorTool::DrawSceneOutliner() {
@@ -303,9 +301,10 @@ namespace Unnamed {
 
 		static uint64_t              renameEntityId = 0;
 		static std::string           renameFolderPath;
-		static std::array<char, 256> renameBuffer = {};
+		static std::array<char, 256> renameBuffer             = {};
+		bool                         openRenamePopupRequested = false;
 
-		auto openRenameEntity = [&](Entity& entity) {
+		auto openRenameEntity = [&](const Entity& entity) {
 			renameEntityId = entity.GetGuid();
 			renameFolderPath.clear();
 			std::ranges::fill(renameBuffer, '\0');
@@ -315,7 +314,7 @@ namespace Unnamed {
 				name.c_str(),
 				std::min(name.size(), renameBuffer.size() - 1)
 			);
-			ImGui::OpenPopup("OutlinerRenamePopup");
+			openRenamePopupRequested = true;
 		};
 
 		auto openRenameFolder = [&](std::string_view folderPath) {
@@ -328,7 +327,7 @@ namespace Unnamed {
 				leafName.c_str(),
 				std::min(leafName.size(), renameBuffer.size() - 1)
 			);
-			ImGui::OpenPopup("OutlinerRenamePopup");
+			openRenamePopupRequested = true;
 		};
 
 		constexpr ImGuiTableFlags tableFlags =
@@ -803,6 +802,11 @@ namespace Unnamed {
 			}
 		}
 
+		if (openRenamePopupRequested) {
+			ImGui::OpenPopup("OutlinerRenamePopup");
+			openRenamePopupRequested = false;
+		}
+
 		if (ImGui::BeginPopup("OutlinerRenamePopup")) {
 			ImGui::InputText(
 				"##Rename", renameBuffer.data(), renameBuffer.size()
@@ -831,10 +835,6 @@ namespace Unnamed {
 		}
 
 		ImGui::End();
-	}
-
-	void LevelEditorTool::DrawContentBrowser() {
-		EditorContentBrowser::DrawWindow(mContentBrowserState, "Content Browser");
 	}
 
 	void LevelEditorTool::DrawInspector() {
@@ -928,7 +928,12 @@ namespace Unnamed {
 
 		ImGui::End();
 	}
+
+	void LevelEditorTool::DrawContentBrowser() {
+		EditorContentBrowser::DrawWindow(
+			mContentBrowserState, "Content Browser"
+		);
+	}
 }
 
 #endif
-

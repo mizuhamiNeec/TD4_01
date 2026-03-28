@@ -40,6 +40,7 @@ namespace Unnamed {
 		void OnDetached() override;
 		void OnTick(float deltaTime) override;
 		void OnEditorTick(float deltaTime) override;
+
 		[[nodiscard]] TICK_GROUP GetTickGroup() const override {
 			return TICK_GROUP::KINEMATIC_SOURCE;
 		}

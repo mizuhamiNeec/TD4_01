@@ -223,42 +223,6 @@ namespace Unnamed {
 		}
 	}
 
-	namespace {
-		/// @brief Vec3 を読み取ります。
-		/// @param r JSON リーダー
-		/// @param key キー
-		/// @param fallback フォールバック値
-		/// @return 読み取った Vec3、失敗した場合はフォールバック値
-		Vec3 ReadVec3(
-			const JsonReader& r, const char* key, const Vec3& fallback
-		) {
-			const JsonReader a = r[key];
-			if (!a.Valid() || a.Size() < 3) {
-				return fallback;
-			}
-			return {a[0].GetFloat(), a[1].GetFloat(), a[2].GetFloat()};
-		}
-
-		/// @brief Quaternion を読み取ります。
-		/// @param r JSON リーダー
-		/// @param key キー
-		/// @param fallback フォールバック値
-		/// @return 読み取った Quaternion、失敗した場合はフォールバック値
-		Quaternion ReadQuat(
-			const JsonReader& r, const char* key, const Quaternion& fallback
-		) {
-			const JsonReader a = r[key];
-			if (!a.Valid() || a.Size() < 4) {
-				return fallback;
-			}
-			return {
-				a[0].GetFloat(), a[1].GetFloat(),
-				a[2].GetFloat(), a[3].GetFloat()
-			};
-		}
-	}
-
-#ifdef _DEBUG
 	std::string_view TransformComponent::GetComponentName() const {
 		return "Transform";
 	}
@@ -267,6 +231,7 @@ namespace Unnamed {
 		return kIconDragPan;
 	}
 
+#ifdef _DEBUG
 	void TransformComponent::DrawInspectorImGui() {
 		Vec3       localPos   = mLocalPos;
 		Quaternion localRot   = mLocalRot;
@@ -305,9 +270,10 @@ namespace Unnamed {
 #endif
 
 	void TransformComponent::Deserialize(const JsonReader& reader) {
-		mLocalPos                = ReadVec3(reader, "position", mLocalPos);
-		mLocalRot                = ReadQuat(reader, "rotation", mLocalRot);
-		mLocalScale              = ReadVec3(reader, "scale", mLocalScale);
+		mLocalPos   = reader["position"].GetVec3(mLocalPos);
+		mLocalRot   = reader["rotation"].GetQuaternion(mLocalRot);
+		mLocalScale = reader["scale"].GetVec3(mLocalScale);
+
 		mPendingParentEntityGuid =
 			reader.ReadUint64("parentEntityGuid").value_or(0ull);
 

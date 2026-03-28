@@ -108,45 +108,43 @@ namespace Unnamed {
 			return mNode->size();
 		}
 
-		[[nodiscard]] bool GetBool() const {
+		[[nodiscard]] bool GetBool(const bool fallback = false) const {
 			if (!mNode) {
-				return false;
+				return fallback;
 			}
 			if (mNode->is_boolean()) {
 				return mNode->get<bool>();
 			}
-			return false;
+			return fallback;
 		}
 
-		[[nodiscard]] std::string GetString() const {
+		[[nodiscard]] std::string GetString(
+			const std::string& fallback = "readerror"
+		) const {
 			if (!mNode) {
-				return {};
+				return fallback;
 			}
 			if (mNode->is_string()) {
 				return mNode->get<std::string>();
 			}
-			// 数値を文字列化など最低限のフォールバック
-			if (mNode->is_number()) {
-				return mNode->dump();
-			}
-			return {};
+			return fallback;
 		}
 
-		[[nodiscard]] float GetFloat() const {
+		[[nodiscard]] float GetFloat(const float fallback = 0.0f) const {
 			if (!mNode) {
-				return 0.f;
+				return fallback;
 			}
 			if (mNode->is_number_float() || mNode->is_number_integer() || mNode
 			    ->
 			    is_number_unsigned()) {
 				return mNode->get<float>();
 			}
-			return 0.f;
+			return fallback;
 		}
 
-		[[nodiscard]] int GetInt() const {
+		[[nodiscard]] int GetInt(const int fallback = 0) const {
 			if (!mNode) {
-				return 0;
+				return fallback;
 			}
 			if (mNode->is_number_integer() || mNode->is_number_unsigned()) {
 				return mNode->get<int>();
@@ -154,7 +152,7 @@ namespace Unnamed {
 			if (mNode->is_number_float()) {
 				return static_cast<int>(mNode->get<float>());
 			}
-			return 0;
+			return fallback;
 		}
 
 		[[nodiscard]] Vec2 GetVec2(const Vec2 fallback = Vec2::zero) const {

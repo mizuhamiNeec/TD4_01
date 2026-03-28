@@ -148,7 +148,7 @@ namespace Unnamed::Physics {
 			std::vector<Box>*                 debugBox
 		) {
 			std::vector<const RegisteredBVH*> filtered;
-			const Ray broadRay = {
+			const Ray                         broadRay = {
 				.origin = start,
 				.dir    = dir,
 				.invDir = Vec3::one / dir,
@@ -167,8 +167,10 @@ namespace Unnamed::Physics {
 				if (bvh.nodes.empty()) {
 					continue;
 				}
-				AABB  root = cast.ExpandNode(ToWorldBounds(bvh, bvh.nodes[0].bounds));
-				float t    = length;
+				AABB root = cast.ExpandNode(
+					ToWorldBounds(bvh, bvh.nodes[0].bounds)
+				);
+				float t = length;
 				if (RayVsAABB(broadRay, root, t)) {
 					filtered.emplace_back(&bvh);
 				}
@@ -178,9 +180,8 @@ namespace Unnamed::Physics {
 				return false;
 			}
 
-			constexpr float kStartSolidToiEpsilon = 1e-6f;
-			constexpr float kNormalEpsilon        = 1e-12f;
-			constexpr float kOverlapDepthEpsilon  = 1e-6f;
+			constexpr float startSolidToiEpsilon = 1e-6f;
+			constexpr float kOverlapDepthEpsilon = 1e-6f;
 
 			float    bestTOI       = 1.0f;
 			uint32_t hitTri        = UINT32_MAX;
@@ -198,7 +199,7 @@ namespace Unnamed::Physics {
 				uint32_t nodeIndex;
 				int      parentEntry;
 			};
-			const RegisteredBVH* bestPathBVH   = nullptr;
+			const RegisteredBVH*   bestPathBVH = nullptr;
 			std::vector<PathEntry> bestPathData;
 			int                    bestPathLeaf = -1;
 #else
@@ -214,9 +215,8 @@ namespace Unnamed::Physics {
 #endif
 				int sp      = 0;
 				stack[sp++] = StackItem{
-					.nodeIndex = 0
+					.nodeIndex = 0,
 #ifdef _DEBUG
-					,
 					.parentEntry = -1
 #endif
 				};
@@ -227,33 +227,37 @@ namespace Unnamed::Physics {
 					const uint32_t index = item.nodeIndex;
 					const int currentEntry = static_cast<int>(traversal.size());
 					traversal.emplace_back(
-						PathEntry{.nodeIndex = index, .parentEntry = item.parentEntry}
+						PathEntry{
+							.nodeIndex = index, .parentEntry = item.parentEntry
+						}
 					);
 #else
 					const uint32_t index = stack[--sp].nodeIndex;
 #endif
 					const auto& node = bvh->nodes[index];
 
-					Ray pruneRay  = broadRay;
-					pruneRay.tMax = bestTOI * length;
-					float tBox    = bestTOI * length;
-					const AABB nodeBoundsWorld = ToWorldBounds(*bvh, node.bounds);
-					if (!RayVsAABB(pruneRay, cast.ExpandNode(nodeBoundsWorld), tBox)) {
+					Ray pruneRay               = broadRay;
+					pruneRay.tMax              = bestTOI * length;
+					float      tBox            = bestTOI * length;
+					const AABB nodeBoundsWorld = ToWorldBounds(
+						*bvh, node.bounds
+					);
+					if (!RayVsAABB(
+						pruneRay, cast.ExpandNode(nodeBoundsWorld), tBox
+					)) {
 						continue;
 					}
 
 					if (node.primCount == 0) {
 						stack[sp++] = StackItem{
-							.nodeIndex = node.leftFirst
+							.nodeIndex = node.leftFirst,
 #ifdef _DEBUG
-							,
 							.parentEntry = currentEntry
 #endif
 						};
 						stack[sp++] = StackItem{
-							.nodeIndex = node.rightFirst
+							.nodeIndex = node.rightFirst,
 #ifdef _DEBUG
-							,
 							.parentEntry = currentEntry
 #endif
 						};
@@ -261,23 +265,25 @@ namespace Unnamed::Physics {
 						const uint32_t first = node.leftFirst;
 						for (uint32_t i = 0; i < node.primCount; ++i) {
 							const uint32_t triIdx = bvh->triIndices[first + i];
-							const Triangle tri    = ToWorldTriangle(*bvh, triIdx);
+							const Triangle tri = ToWorldTriangle(*bvh, triIdx);
 							float          toi;
 							Vec3           nrm;
-							if (!cast.TestTriangle(tri, dir, length, toi, nrm)) {
+							if (!cast.TestTriangle(
+								tri, dir, length, toi, nrm
+							)) {
 								continue;
 							}
 							if (toi < bestTOI) {
-								bestTOI         = toi;
-								hitTri          = triIdx;
-								hitEntityGuid   = bvh->ownerGuid;
-								hitNormal       = nrm;
-								hitTriangle     = tri;
-								hasHitTriangle  = true;
+								bestTOI        = toi;
+								hitTri         = triIdx;
+								hitEntityGuid  = bvh->ownerGuid;
+								hitNormal      = nrm;
+								hitTriangle    = tri;
+								hasHitTriangle = true;
 #ifdef _DEBUG
-								bestPathBVH     = bvh;
-								bestPathData    = traversal;
-								bestPathLeaf    = currentEntry;
+								bestPathBVH  = bvh;
+								bestPathData = traversal;
+								bestPathLeaf = currentEntry;
 #endif
 								pruneRay.tMax = bestTOI * length;
 							}
@@ -293,7 +299,13 @@ namespace Unnamed::Physics {
 #ifdef _DEBUG
 			if (debugBox != nullptr) {
 				debugBox->clear();
-				if (bestPathBVH && bestPathLeaf >= 0) {
+				if (bestPathBVH&& bestPathLeaf
+
+				
+				>=
+				0
+				)
+				{
 					std::vector<uint32_t> pathNodes;
 					for (int cursor = bestPathLeaf; cursor >= 0;) {
 						const PathEntry& entry = bestPathData[cursor];
@@ -313,15 +325,18 @@ namespace Unnamed::Physics {
 					}
 				}
 			}
+#else
+			(void)debugBox;
 #endif
 
 			if (outHit) {
-				float overlapDepth = 0.0f;
-				Vec3  overlapNrm   = Vec3::zero;
-				bool  startSolid   = false;
+				constexpr float normalEpsilon = 1e-12f;
+				float           overlapDepth  = 0.0f;
+				Vec3            overlapNrm    = Vec3::zero;
+				bool            startSolid    = false;
 				if (
-					bestTOI <= kStartSolidToiEpsilon ||
-					hitNormal.SqrLength() <= kNormalEpsilon
+					bestTOI <= startSolidToiEpsilon ||
+					hitNormal.SqrLength() <= normalEpsilon
 				) {
 					startSolid = cast.OverlapAtStart(
 						hitTriangle,
@@ -334,7 +349,7 @@ namespace Unnamed::Physics {
 					}
 					if (
 						startSolid &&
-						overlapNrm.SqrLength() > kNormalEpsilon
+						overlapNrm.SqrLength() > normalEpsilon
 					) {
 						hitNormal = overlapNrm;
 					}
@@ -349,12 +364,12 @@ namespace Unnamed::Physics {
 						hitTriangle.v2 - hitTriangle.v0
 					);
 					const float triNLenSq = finalNormal.SqrLength();
-					if (triNLenSq > kNormalEpsilon) {
+					if (triNLenSq > normalEpsilon) {
 						finalNormal /= std::sqrt(triNLenSq);
 						if (finalNormal.Dot(dirNormalized) > 0.0f) {
 							finalNormal = -finalNormal;
 						}
-					} else if (dirLenSq > kNormalEpsilon) {
+					} else if (dirLenSq > normalEpsilon) {
 						finalNormal = -dirNormalized;
 					} else {
 						finalNormal = Vec3::up;
@@ -380,7 +395,7 @@ namespace Unnamed::Physics {
 
 		static bool RemoveColliderByOwnerGuid(
 			std::vector<RegisteredBVH>& bvhSet,
-			uint64_t                   ownerGuid
+			uint64_t                    ownerGuid
 		);
 		static RegisteredBVH BuildRegisteredMesh(
 			uint64_t                    ownerGuid,

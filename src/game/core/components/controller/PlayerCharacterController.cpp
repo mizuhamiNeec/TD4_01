@@ -1,7 +1,8 @@
 #include "PlayerCharacterController.h"
 
+#include "../CameraRotatorComponent.h"
+
 #include "../character/base/BaseCharacterComponent.h"
-#include "../../../parkour/components/CameraRotatorComponent.h"
 
 #include "core/ComponentRegistry.h"
 
@@ -100,7 +101,7 @@ namespace Unnamed {
 			input.crouchPressed = true;
 		}
 
-		if (mInput->IsHeld("sprint")) {
+		if (mInput->IsPressed("sprint")) {
 			input.sprintPressed = true;
 		}
 
@@ -146,6 +147,10 @@ namespace Unnamed {
 		return "game.PlayerCharacterController";
 	}
 
+	std::string_view PlayerCharacterController::GetComponentName() const {
+		return "PlayerCharacterController";
+	}
+
 	void PlayerCharacterController::TryBindCameraRotator() {
 		if (mCameraRotator) {
 			return;
@@ -162,12 +167,14 @@ namespace Unnamed {
 					continue;
 				}
 
-				auto* rotator = entityPtr->GetComponent<CameraRotatorComponent>();
+				auto* rotator = entityPtr->GetComponent<
+					CameraRotatorComponent>();
 				if (!rotator) {
 					continue;
 				}
 
-				auto* rotatorTransform = entityPtr->GetComponent<TransformComponent>();
+				auto* rotatorTransform = entityPtr->GetComponent<
+					TransformComponent>();
 				if (!rotatorTransform) {
 					continue;
 				}
@@ -181,10 +188,6 @@ namespace Unnamed {
 				return;
 			}
 		}
-	}
-
-	std::string_view PlayerCharacterController::GetComponentName() const {
-		return "PlayerCharacterController";
 	}
 
 #ifdef _DEBUG

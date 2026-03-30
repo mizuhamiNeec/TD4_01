@@ -1,6 +1,7 @@
 #include "Entity.h"
 
 #include <algorithm>
+#include <iterator>
 
 #include "core/guidgenerator/GuidGenerator.h"
 
@@ -9,6 +10,12 @@
 
 namespace Unnamed {
 	static constexpr std::string_view kChannel = "Entity";
+
+	namespace {
+		[[nodiscard]] bool IsTransformComponent(const BaseComponent* component) {
+			return component != nullptr && component->GetStableName() == "Transform";
+		}
+	}
 
 	Entity::Entity(
 		const std::string_view& name,
@@ -250,6 +257,89 @@ namespace Unnamed {
 
 		raw->OnAttached();
 		return raw;
+	}
+
+	void Entity::RebuildComponentTypeIndex() {
+		mComponentsByType.clear();
+		for (const auto& component : mComponents) {
+			if (!component) {
+				continue;
+			}
+			mComponentsByType[component->GetTypeId()].emplace_back(component.get());
+		}
+	}
+
+	void Entity::RemoveComponent(BaseComponent* component) {
+		if (!component) {
+			return;
+		}
+
+		const auto it = std::find_if(
+			mComponents.begin(), mComponents.end(),
+			[component](const std::unique_ptr<BaseComponent>& current) {
+				return current.get() == component;
+			}
+		);
+		if (it == mComponents.end()) {
+			return;
+		}
+
+		if ((*it) != nullptr) {
+			(*it)->OnDetached();
+			(*it)->SetOwner(nullptr);
+		}
+		mComponents.erase(it);
+		RebuildComponentTypeIndex();
+	}
+
+	bool Entity::MoveComponentUp(BaseComponent* component) {
+		if (!component || IsTransformComponent(component)) {
+			return false;
+		}
+
+		const auto it = std::find_if(
+			mComponents.begin(), mComponents.end(),
+			[component](const std::unique_ptr<BaseComponent>& current) {
+				return current.get() == component;
+			}
+		);
+		if (it == mComponents.end() || it == mComponents.begin()) {
+			return false;
+		}
+
+		const auto prevIt = std::prev(it);
+		if (IsTransformComponent(prevIt->get())) {
+			return false;
+		}
+
+		std::iter_swap(prevIt, it);
+		RebuildComponentTypeIndex();
+		return true;
+	}
+
+	bool Entity::MoveComponentDown(BaseComponent* component) {
+		if (!component || IsTransformComponent(component)) {
+			return false;
+		}
+
+		const auto it = std::find_if(
+			mComponents.begin(), mComponents.end(),
+			[component](const std::unique_ptr<BaseComponent>& current) {
+				return current.get() == component;
+			}
+		);
+		if (it == mComponents.end()) {
+			return false;
+		}
+
+		const auto nextIt = std::next(it);
+		if (nextIt == mComponents.end() || IsTransformComponent(nextIt->get())) {
+			return false;
+		}
+
+		std::iter_swap(it, nextIt);
+		RebuildComponentTypeIndex();
+		return true;
 	}
 
 	Scene* Entity::GetScene() const noexcept {

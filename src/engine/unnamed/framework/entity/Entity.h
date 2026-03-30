@@ -154,11 +154,11 @@ namespace Unnamed {
 		template <typename ComponentType>
 		void FindComponentsByBase(std::vector<const ComponentType*>& out) const;
 
-		template <typename ComponentType>
-
 		/// @brief コンポーネントを削除します。
 		/// @param component 削除するコンポーネントのポインタ
 		void RemoveComponent(BaseComponent* component);
+		[[nodiscard]] bool MoveComponentUp(BaseComponent* component);
+		[[nodiscard]] bool MoveComponentDown(BaseComponent* component);
 
 		/// @brief エンティティが所属するシーンを取得します。
 		/// @return 所属するシーンのポインタ。存在しない場合は nullptr。
@@ -232,6 +232,8 @@ namespace Unnamed {
 		bool ForEachComponent(Func&& func) const;
 
 	protected:
+		void RebuildComponentTypeIndex();
+
 		// 所有しているコンポーネント
 		std::vector<std::unique_ptr<BaseComponent>> mComponents;
 
@@ -448,40 +450,6 @@ namespace Unnamed {
 			}
 			if (auto* casted = dynamic_cast<const ComponentType*>(c)) {
 				out.push_back(casted);
-			}
-		}
-	}
-
-	template <typename ComponentType>
-	void Entity::RemoveComponent(BaseComponent* component) {
-		static_assert(
-			std::is_base_of_v<BaseComponent, ComponentType>,
-			"ComponentType は BaseComponent の派生クラスでなければなりません。"
-		);
-
-		if (!component) {
-			return;
-		}
-
-		// 所有から削除
-		auto it = std::remove_if(
-			mComponents.begin(), mComponents.end(),
-			[component](const std::unique_ptr<BaseComponent>& uptr) {
-				return uptr.get() == component;
-			}
-		);
-		if (it != mComponents.end()) {
-			mComponents.erase(it, mComponents.end());
-		}
-
-		// 型索引から削除
-		const TypeId typeId = HashTypeName(component->GetStableName());
-		const auto   mapIt  = mComponentsByType.find(typeId);
-		if (mapIt != mComponentsByType.end()) {
-			auto& vec = mapIt->second;
-			std::erase(vec, component);
-			if (vec.empty()) {
-				mComponentsByType.erase(mapIt);
 			}
 		}
 	}

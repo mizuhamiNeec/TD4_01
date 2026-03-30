@@ -87,8 +87,16 @@ constexpr uint32_t kIconFilter   = 0xEF4F; // フィルター
 constexpr uint32_t kIconDropDown = 0xE5C5; // ドロップダウン
 
 // ---- Misc ------------------------------------------------------------------
-constexpr uint32_t kIconDirectionsWalk = 0xE536; // 歩く
-constexpr uint32_t kIconDirectionsRun  = 0xE566; // 走る
-constexpr uint32_t kIconSprint         = 0xF81F; // 全力疾走
-constexpr uint32_t kIconJoystick       = 0xF5EE; // ジョイスティック
-constexpr uint32_t kIcon3DRotation     = 0xE84D; // 3D回転
+constexpr uint32_t kIconDirectionsWalk     = 0xE536; // 歩く
+constexpr uint32_t kIconDirectionsRun      = 0xE566; // 走る
+constexpr uint32_t kIconSprint             = 0xF81F; // 全力疾走
+constexpr uint32_t kIconJoystick           = 0xF5EE; // ジョイスティック
+constexpr uint32_t kIcon3DRotation         = 0xE84D; // 3D回転
+constexpr uint32_t kIconSiren              = 0xF3A7; // サイレン
+constexpr uint32_t kIconPanoramaHorizontal = 0xE40D; // パノラマ水平
+constexpr uint32_t kIconSpeaker            = 0xE32D; // スピーカー
+constexpr uint32_t kIconExplosion          = 0xF685; // 爆発
+constexpr uint32_t kIconAccessibility      = 0xE84E; // アクセシビリティ
+constexpr uint32_t kIconEmojiPeople        = 0xEA1D; // 人の絵文字
+constexpr uint32_t kIconMonitor            = 0xEF5B; // モニター
+constexpr uint32_t kIconVideoCam           = 0xE04B; // ビデオカメラ

@@ -1,4 +1,4 @@
-#include "ParkourGroundMove.h"
+#include "ParkourDuckMove.h"
 
 #include "engine/unnamed/framework/components/TransformComponent.h"
 
@@ -6,15 +6,13 @@
 #include "game/parkour/components/character/ParkourMovementComponent.h"
 
 namespace Unnamed {
-	ParkourGroundMove::ParkourGroundMove() = default;
-
-	void ParkourGroundMove::Enter(ConsoleSystem* console) {
-		GroundMove::Enter(console);
+	void ParkourDuckMove::Enter(ConsoleSystem* console) {
+		ParkourGroundMove::Enter(console);
 	}
 
-	void ParkourGroundMove::Tick(
+	void ParkourDuckMove::Tick(
 		MovementContext& context,
-		const float      deltaTime
+		float            deltaTime
 	) {
 		if (mConsole->GetConVarValueOr("noclip", false)) {
 			context.requestedState = "NoclipMove";
@@ -24,36 +22,26 @@ namespace Unnamed {
 		auto* parkour = dynamic_cast<ParkourMovementComponent*>(
 			context.movementComponent
 		);
-		if (parkour) {
-			parkour->TickParkourTimers(deltaTime);
-			parkour->EndWallRun();
-			auto& runtime      = parkour->GetParkourRuntime();
-			runtime.hasDoubleJump = true;
-			runtime.slide.active  = false;
-			runtime.lastJumpHeld  = context.input.jumpPressed;
+		if (!parkour) {
+			context.requestedState = "ParkourGroundMove";
+			return;
 		}
 
-		context.isGrounded = false;
+		parkour->TickParkourTimers(deltaTime);
+		auto& runtime = parkour->GetParkourRuntime();
+		runtime.lastJumpHeld = context.input.jumpPressed;
+		runtime.slide.active = false;
 
+		if (parkour->TryStartBlink(context)) {
+			return;
+		}
+
+		(void)parkour->SetDuckHullEnabled(context, true);
+
+		context.isGrounded = false;
 		if (mRebaseVelocityToSupportOnFirstTick) {
 			context.velocity -= context.supportLinearVelocity;
 			mRebaseVelocityToSupportOnFirstTick = false;
-		}
-
-		if (parkour && !parkour->SetDuckHullEnabled(context, false)) {
-			context.requestedState = "ParkourDuckMove";
-			return;
-		}
-
-		if (parkour && parkour->TryStartBlink(context)) {
-			return;
-		}
-
-		if (context.input.crouchPressed) {
-			context.requestedState = parkour ?
-				parkour->ResolveGroundStateFromInput(context) :
-				"ParkourSlideMove";
-			return;
 		}
 
 		Vec3 wishDir = GetWishDirHoriz(context);
@@ -62,7 +50,7 @@ namespace Unnamed {
 		if (!context.input.jumpPressed) {
 			ApplyFriction(
 				context.velocity,
-				mConsole->GetConVarValueOr("sv_friction", 5.2f),
+				mConsole->GetConVarValueOr("park_duckfriction", 1.0f),
 				deltaTime
 			);
 		}
@@ -70,16 +58,14 @@ namespace Unnamed {
 		Accelerate(
 			context.velocity,
 			wishDir,
-			mConsole->GetConVarValueOr("sv_sprintspeed", 320.0f),
-			mConsole->GetConVarValueOr("sv_accelerate", 10.0f),
+			mConsole->GetConVarValueOr("sv_duckspeed", 63.3f),
+			mConsole->GetConVarValueOr("park_duckaccelerate", 4.0f),
 			deltaTime
 		);
 
 		if (context.input.jumpPressed) {
+			runtime.hasDoubleJump = true;
 			ExecuteJumpAndLeaveGround(context, deltaTime, "ParkourAirMove");
-			if (parkour) {
-				parkour->GetParkourRuntime().hasDoubleJump = true;
-			}
 			return;
 		}
 
@@ -112,11 +98,23 @@ namespace Unnamed {
 		context.isGrounded        = true;
 		context.supportEntityGuid = groundHit.hitEntityGuid;
 		context.velocity.y        = 0.0f;
+
+		const float speedHu = parkour->GetHorizontalSpeedHu(context.velocity);
+		if (context.input.crouchPressed && parkour->ShouldSlideFromSpeed(speedHu)) {
+			context.requestedState = "ParkourSlideMove";
+			return;
+		}
+
+		if (!context.input.crouchPressed) {
+			if (parkour->SetDuckHullEnabled(context, false)) {
+				context.requestedState = "ParkourGroundMove";
+			}
+		}
 	}
 
-	void ParkourGroundMove::Exit() {}
+	void ParkourDuckMove::Exit() {}
 
-	std::string_view ParkourGroundMove::GetStateName() {
-		return "ParkourGroundMove";
+	std::string_view ParkourDuckMove::GetStateName() {
+		return "ParkourDuckMove";
 	}
 }

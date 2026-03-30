@@ -1,42 +1,93 @@
-﻿#include "ParkourSlideMove.h"
+#include "ParkourSlideMove.h"
+
+#include <algorithm>
 
 #include "engine/unnamed/framework/components/TransformComponent.h"
 
+#include "game/core/collision/kinematic/base/BaseKinematicCollisionResolver.h"
+#include "game/parkour/components/character/ParkourMovementComponent.h"
+
 namespace Unnamed {
 	void ParkourSlideMove::Enter(ConsoleSystem* console) {
-		// ParkourGroundMoveに任せる
 		ParkourGroundMove::Enter(console);
 	}
 
 	void ParkourSlideMove::Tick(
-		MovementContext& context, float deltaTime
+		MovementContext& context,
+		float            deltaTime
 	) {
-		context.isGrounded = false;
+		if (mConsole->GetConVarValueOr("noclip", false)) {
+			context.requestedState = "NoclipMove";
+			return;
+		}
 
-		// 最初のティックでサポートの線形速度を基準にする
+		auto* parkour = dynamic_cast<ParkourMovementComponent*>(
+			context.movementComponent
+		);
+		if (!parkour) {
+			context.requestedState = "ParkourGroundMove";
+			return;
+		}
+
+		parkour->TickParkourTimers(deltaTime);
+		if (parkour->TryStartBlink(context)) {
+			return;
+		}
+		(void)parkour->SetDuckHullEnabled(context, true);
+
+		auto& runtime        = parkour->GetParkourRuntime();
+		runtime.lastJumpHeld = context.input.jumpPressed;
+		if (!runtime.slide.active) {
+			runtime.slide.active = true;
+			runtime.slide.time   = 0.0f;
+
+			Vec3 velHorz = context.velocity;
+			velHorz.y    = 0.0f;
+			if (velHorz.IsZero()) {
+				velHorz   = GetWishDirHoriz(context);
+				velHorz.y = 0.0f;
+			}
+			if (!velHorz.IsZero()) {
+				velHorz.Normalize();
+				runtime.slide.direction = velHorz;
+			} else {
+				runtime.slide.direction = Vec3::forward;
+			}
+
+			Vec3 horizontalVelocity = context.velocity;
+			horizontalVelocity.y    = 0.0f;
+			float boostedSpeed      = horizontalVelocity.Length() + Math::HtoM(
+				                     mConsole->GetConVarValueOr(
+					                     "park_slide_boostspeed", 50.0f
+				                     )
+			                     );
+			boostedSpeed = std::min(
+				boostedSpeed,
+				Math::HtoM(
+					mConsole->GetConVarValueOr(
+						"park_slide_hopspeedcap", 5000.0f
+					)
+				)
+			);
+			const float originalY = context.velocity.y;
+			context.velocity      = runtime.slide.direction * boostedSpeed;
+			context.velocity.y    = originalY;
+		}
+
+		context.isGrounded = false;
 		if (mRebaseVelocityToSupportOnFirstTick) {
 			context.velocity -= context.supportLinearVelocity;
 			mRebaseVelocityToSupportOnFirstTick = false;
 		}
 
-		// 移動方向
-		Vec3 wishDir = GetWishDirHoriz(context);
-
-		// 地上移動中は鉛直速度をリセット
+		Vec3 wishDir       = GetWishDirHoriz(context);
 		context.velocity.y = 0.0f;
 
-		// ジャンプしていない場合は摩擦を適用(バニーホップ中か?)
-		if (!context.input.jumpPressed) {
-			ApplyFriction(
-				context.velocity,
-				mConsole->GetConVarValueOr("park_duckfriction", 1.0f),
-				deltaTime
-			);
-		}
-
-		if (!context.input.crouchPressed) {
-			context.requestedState = "ParkourGroundMove";
-		}
+		ApplyFriction(
+			context.velocity,
+			mConsole->GetConVarValueOr("park_duckfriction", 0.75f),
+			deltaTime
+		);
 
 		Accelerate(
 			context.velocity,
@@ -47,6 +98,7 @@ namespace Unnamed {
 		);
 
 		if (context.input.jumpPressed) {
+			runtime.slide.active = false;
 			ExecuteJumpAndLeaveGround(context, deltaTime, "ParkourAirMove");
 			return;
 		}
@@ -57,33 +109,75 @@ namespace Unnamed {
 			.halfExtents = context.halfExtents,
 			.deltaTime   = deltaTime
 		};
-
-		KinematicMoveResult result;
-
-		// 移動と衝突の解決
 		context.resolver->StepMove(
-			query.position, query.velocity,
-			mConsole->GetConVarValueOr("sv_stepheight", 18.0f), deltaTime
+			query.position,
+			query.velocity,
+			mConsole->GetConVarValueOr("sv_stepheight", 18.0f),
+			deltaTime
 		);
 
-		result.position = query.position;
-		result.velocity = context.velocity;
+		context.transform->SetPosition(query.position);
+		context.velocity = query.velocity;
 
-		// 位置を更新
-		context.transform->SetPosition(result.position);
-		context.velocity = result.velocity;
-
-		// 地面に接しているかを判定し、状態遷移を行う
 		Physics::Hit groundHit{};
-		if (!IsGrounded(context.resolver, result.position, &groundHit)) {
+		if (!IsGrounded(context.resolver, query.position, &groundHit)) {
+			runtime.slide.active          = false;
 			context.supportEntityGuid     = 0;
 			context.supportLinearVelocity = Vec3::zero;
 			context.supportStepDelta      = Vec3::zero;
 			context.requestedState        = "ParkourAirMove";
+			return;
 		}
+
 		context.isGrounded        = true;
 		context.supportEntityGuid = groundHit.hitEntityGuid;
 		context.velocity.y        = 0.0f;
+
+		const Vec3 groundNormal = groundHit.normal;
+		if (groundNormal.y < 0.999f && groundNormal.y > 0.0f) {
+			const float gravity = Math::HtoM(
+				mConsole->GetConVarValueOr("sv_gravity", 800.0f)
+			);
+			const Vec3  gravityVec = Vec3::down * gravity;
+			const float dotGN      = gravityVec.Dot(groundNormal);
+			const Vec3  slopeForce =
+				(gravityVec - groundNormal * dotGN) *
+				mConsole->GetConVarValueOr("park_slide_gravityscale", 1.75f);
+			context.velocity += slopeForce * deltaTime;
+		}
+
+		runtime.slide.time += std::max(0.0f, deltaTime);
+		if (runtime.slide.time >= mConsole->GetConVarValueOr(
+			    "park_slide_maxtime", 20.0f
+		    )) {
+			runtime.slide.active   = false;
+			context.requestedState = context.input.crouchPressed ?
+				                         "ParkourDuckMove" :
+				                         (parkour->CanStandAt(context) ?
+					                          "ParkourGroundMove" :
+					                          "ParkourDuckMove");
+			return;
+		}
+
+		const float speedHu = parkour->GetHorizontalSpeedHu(context.velocity);
+		if (speedHu < mConsole->GetConVarValueOr(
+			    "park_slide_stopspeed", 50.0f
+		    )) {
+			runtime.slide.active   = false;
+			context.requestedState = context.input.crouchPressed ?
+				                         "ParkourDuckMove" :
+				                         (parkour->CanStandAt(context) ?
+					                          "ParkourGroundMove" :
+					                          "ParkourDuckMove");
+			return;
+		}
+
+		if (!context.input.crouchPressed) {
+			runtime.slide.active   = false;
+			context.requestedState = parkour->CanStandAt(context) ?
+				                         "ParkourGroundMove" :
+				                         "ParkourDuckMove";
+		}
 	}
 
 	void ParkourSlideMove::Exit() {}

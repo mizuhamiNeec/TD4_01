@@ -1,15 +1,15 @@
-﻿#include "ParkourAirMove.h"
+#include "ParkourAirMove.h"
 
 #include <algorithm>
+#include <cfloat>
 
 #include "engine/unnamed/framework/components/TransformComponent.h"
-#include "engine/unnamed/framework/entity/Entity.h"
-#include "engine/world/World.h"
 
 #include "game/core/collision/kinematic/base/BaseKinematicCollisionResolver.h"
+#include "game/parkour/components/character/ParkourMovementComponent.h"
 
 namespace Unnamed {
-	ParkourAirMove::~ParkourAirMove() {}
+	ParkourAirMove::~ParkourAirMove() = default;
 
 	void ParkourAirMove::Enter(ConsoleSystem* console) {
 		AirMove::Enter(console);
@@ -21,6 +21,47 @@ namespace Unnamed {
 			return;
 		}
 
+		auto* parkour = dynamic_cast<ParkourMovementComponent*>(
+			context.movementComponent
+		);
+		auto syncJumpHeld = [&context, parkour]() {
+			if (parkour) {
+				parkour->GetParkourRuntime().lastJumpHeld = context.input.jumpPressed;
+			}
+		};
+
+		if (parkour) {
+			parkour->TickParkourTimers(deltaTime);
+			if (parkour->TryStartBlink(context)) {
+				syncJumpHeld();
+				return;
+			}
+			if (parkour->TryStartSpeedVault(context)) {
+				syncJumpHeld();
+				return;
+			}
+			if (parkour->TryStartWallRun(context)) {
+				syncJumpHeld();
+				return;
+			}
+
+			auto& runtime = parkour->GetParkourRuntime();
+			const bool jumpPressed = context.input.jumpPressed;
+			const bool jumpPressedEdge = jumpPressed && !runtime.lastJumpHeld;
+			if (jumpPressedEdge && runtime.hasDoubleJump) {
+				context.velocity.y = Math::HtoM(
+					mConsole->GetConVarValueOr("park_doublejump_velocity", 300.0f)
+				);
+				runtime.hasDoubleJump = false;
+				context.jumpSnapDisableRemaining = std::max(
+					context.jumpSnapDisableRemaining,
+					mConsole->GetConVarValueOr("sv_jumpsnapdisabletime", 0.1f)
+				);
+			}
+
+			(void)parkour->SetDuckHullEnabled(context, context.input.crouchPressed);
+		}
+
 		context.isGrounded               = false;
 		context.supportEntityGuid        = 0;
 		context.supportLinearVelocity    = Vec3::zero;
@@ -30,26 +71,23 @@ namespace Unnamed {
 			context.jumpSnapDisableRemaining - deltaTime
 		);
 
-		// 入力の視点方向
 		const Vec3 right   = context.input.right.Normalized();
 		const Vec3 forward = context.input.forward.Normalized();
 
-		// カメラの基底ベクトルに入力軸を掛け合わせて、ワールド空間での移動方向を計算
 		Vec3 wishDir =
 			right * context.input.moveAxis.x +
 			forward * context.input.moveAxis.z;
-		wishDir.y = 0.0f; // 上下成分は無視
+		wishDir.y = 0.0f;
 		wishDir.Normalize();
 
 		ApplyHalfGravity(context.velocity, deltaTime);
-
-		// 移動速度を計算
 		AirAccelerate(
-			context.velocity, wishDir, 320.0f,
+			context.velocity,
+			wishDir,
+			320.0f,
 			mConsole->GetConVarValueOr("sv_airaccelerate", FLT_MAX),
 			deltaTime
 		);
-
 		ApplyHalfGravity(context.velocity, deltaTime);
 
 		KinematicMoveQuery query = {
@@ -61,29 +99,31 @@ namespace Unnamed {
 			.deltaTime = deltaTime
 		};
 
-		KinematicMoveResult result;
-
-		// 移動と衝突の解決
 		context.resolver->SlideMove(
-			query.position, query.velocity, deltaTime
+			query.position,
+			query.velocity,
+			deltaTime
 		);
 
-		result.position = query.position;
-		result.velocity = query.velocity;
-
-		// 位置を更新
-		context.transform->SetPosition(result.position);
-		context.velocity = result.velocity;
+		context.transform->SetPosition(query.position);
+		context.velocity = query.velocity;
 
 		Physics::Hit groundHit{};
 		if (context.jumpSnapDisableRemaining <= 0.0f &&
 		    context.velocity.y <= 0.0f &&
-		    IsGrounded(context.resolver, result.position, &groundHit)) {
+		    IsGrounded(context.resolver, query.position, &groundHit)) {
 			context.velocity.y        = 0.0f;
 			context.isGrounded        = true;
 			context.supportEntityGuid = groundHit.hitEntityGuid;
-			context.requestedState    = "ParkourGroundMove";
+			context.requestedState    = parkour ?
+				parkour->ResolveGroundStateFromInput(context) :
+				"ParkourGroundMove";
+			if (parkour) {
+				parkour->GetParkourRuntime().hasDoubleJump = true;
+			}
 		}
+
+		syncJumpHeld();
 	}
 
 	void ParkourAirMove::Exit() {

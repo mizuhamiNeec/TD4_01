@@ -9,6 +9,7 @@
 #include "types/MaterialInstanceAssetData.h"
 #include "types/MeshAssetData.h"
 #include "types/PostFxChainAssetData.h"
+#include "types/PresentationProfileAssetData.h"
 #include "types/ShaderProgramAssetData.h"
 #include "types/ShaderSourceAssetData.h"
 #include "types/SoundAssetData.h"
@@ -32,7 +33,8 @@ namespace Unnamed {
 		MaterialInstanceAssetData,
 		PostFxChainAssetData,
 		SoundAssetData,
-		UiDocumentAssetData
+		UiDocumentAssetData,
+		PresentationProfileAssetData
 	>;
 
 	/// @brief アセットのロード結果を表す構造体

@@ -18,9 +18,10 @@
 #include "types/MaterialInstanceAssetData.h"
 #include "types/MeshAssetData.h"
 #include "types/PostFxChainAssetData.h"
-#include "types/SoundAssetData.h"
+#include "types/PresentationProfileAssetData.h"
 #include "types/ShaderProgramAssetData.h"
 #include "types/ShaderSourceAssetData.h"
+#include "types/SoundAssetData.h"
 
 namespace Unnamed {
 	constexpr std::string_view kChannel = "AstMgr";
@@ -277,6 +278,8 @@ namespace Unnamed {
 	template const PostFxChainAssetData*      AssetManager::Get(AssetID) const;
 	template const SoundAssetData*            AssetManager::Get(AssetID) const;
 	template const UiDocumentAssetData*       AssetManager::Get(AssetID) const;
+	template const PresentationProfileAssetData*
+	AssetManager::Get(AssetID) const;
 
 	const std::vector<AssetID>& AssetManager::GetDependencies(
 		const AssetID id

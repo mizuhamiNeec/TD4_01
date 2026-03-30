@@ -17,6 +17,7 @@ std::string Unnamed::ToString(const ASSET_TYPE e) {
 		case ASSET_TYPE::MATERIAL_INSTANCE: return "MATERIAL_INSTANCE";
 		case ASSET_TYPE::POST_FX_CHAIN: return "POST_FX_CHAIN";
 		case ASSET_TYPE::UI_DOCUMENT: return "UI_DOCUMENT";
+		case ASSET_TYPE::PRESENTATION_PROFILE: return "PRESENTATION_PROFILE";
 		default: return "unknown";
 	}
 }
@@ -73,6 +74,9 @@ Unnamed::ASSET_TYPE Unnamed::GuessAssetTypeFromPath(const std::string_view path)
 	}
 	if (endsWith(".ui.json")) {
 		return ASSET_TYPE::UI_DOCUMENT;
+	}
+	if (endsWith(".presentation.json")) {
+		return ASSET_TYPE::PRESENTATION_PROFILE;
 	}
 	if (endsWith(".hlsl") || endsWith(".hlsli")) {
 		return ASSET_TYPE::SHADER_SOURCE;

@@ -62,9 +62,9 @@ namespace Unnamed {
 			return;
 		}
 
+		mBaseLocalPosition = mTransform->Position();
 		mBaseLocalRotation = mTransform->Rotation();
 		mPrevLookDeg = ExtractLookPitchYawDegrees(mLookSource->Rotation());
-		mCurrentSwayDeg = Vec2::zero;
 		mInitialized = true;
 	}
 
@@ -85,11 +85,17 @@ namespace Unnamed {
 		}
 
 		if (!mInitialized) {
+			mBaseLocalPosition = mTransform->Position();
 			mBaseLocalRotation = mTransform->Rotation();
 			mPrevLookDeg = ExtractLookPitchYawDegrees(mLookSource->Rotation());
-			mCurrentSwayDeg = Vec2::zero;
+			mPitch = 0.0f;
+			mYaw = 0.0f;
 			mInitialized = true;
 		}
+
+		const float attenuationT = std::clamp(
+			mAttenuation * deltaTime, 0.0f, 1.0f
+		);
 
 		const Vec2 lookNow = ExtractLookPitchYawDegrees(
 			mLookSource->Rotation()
@@ -110,24 +116,18 @@ namespace Unnamed {
 
 		const Quaternion finalRotation = yaw * pitch;
 
-		// ちょっとずらす
+		const Vec3 swayPositionOffset = Vec3(deltaYaw, deltaPitch, 0.0f) *
+		                                mLocationAmount;
+		const Vec3 targetLocalPosition =
+			mBaseLocalPosition + swayPositionOffset;
 		mTransform->SetPosition(
-			mTransform->Position() + Vec2(deltaYaw, deltaPitch) *
-			mLocationAmount
+			Math::Lerp(
+				mTransform->Position(), targetLocalPosition, attenuationT
+			)
 		);
-
-		mTransform->OnTick(0.0f); // ずらした位置を反映させるために先に更新しておく
 
 		// ベースの回転にスウェイの回転を乗算して適用
 		mTransform->SetRotation(mBaseLocalRotation * finalRotation);
-
-		mTransform->SetPosition(
-			Math::Lerp(
-				mTransform->Position(),
-				Vec3::zero,
-				mAttenuation * deltaTime
-			)
-		);
 	}
 
 	std::string_view ViewmodelSway::GetStableName() const {
@@ -181,7 +181,7 @@ namespace Unnamed {
 	}
 
 	uint32_t ViewmodelSway::GetIcon() const {
-		return kIcon3DRotation;
+		return kIconPanoramaHorizontal;
 	}
 
 	BaseComponent::TICK_GROUP ViewmodelSway::GetTickGroup() const {

@@ -3,6 +3,7 @@
 
 #include "core/math/Quaternion.h"
 #include "core/math/Vec2.h"
+#include "core/math/Vec3.h"
 
 namespace Unnamed {
 	class TransformComponent;
@@ -34,9 +35,9 @@ namespace Unnamed {
 		TransformComponent* mTransform  = nullptr;
 		TransformComponent* mLookSource = nullptr;
 
+		Vec3       mBaseLocalPosition = Vec3::zero;
 		Quaternion mBaseLocalRotation = Quaternion::identity;
 		Vec2       mPrevLookDeg       = Vec2::zero;
-		Vec2       mCurrentSwayDeg    = Vec2::zero;
 		float      mPitch             = 0.0f;
 		float      mYaw               = 0.0f;
 

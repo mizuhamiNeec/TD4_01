@@ -368,7 +368,7 @@ namespace Unnamed {
 			constexpr float iconSize  = 70.0f;
 			constexpr float titleSize = 24.0f;
 			constexpr float margin    = 8.0f;
-
+			
 			// アイコンを描画
 			dl->AddText(
 				font, iconSize, ImGui::GetCursorScreenPos(),
@@ -1360,21 +1360,25 @@ namespace Unnamed {
 			lineCount > 1 ? ImVec2(0.0f, multiLineHeight) : ImVec2(0.0f, 0.0f)
 		);
 
-		PushTextColor(buffer);
-		const auto textColor = ImGui::GetColorU32(ImGuiCol_Text);
-		ImGui::PopStyleColor();
-		const ImVec2 textMin = ImVec2(
-			ImGui::GetItemRectMin().x + ImGui::GetStyle().FramePadding.x,
-			ImGui::GetItemRectMin().y + ImGui::GetStyle().FramePadding.y
-		);
-		const ImVec2 textMax = ImGui::GetItemRectMax();
-		ImGui::PushClipRect(textMin, textMax, true);
-		ImGui::GetWindowDrawList()->AddText(
-			textMin,
-			textColor,
-			buffer.message.c_str()
-		);
-		ImGui::PopClipRect();
+		const bool isRowVisible = ImGui::IsItemVisible();
+
+		if (isRowVisible) {
+			PushTextColor(buffer);
+			const auto textColor = ImGui::GetColorU32(ImGuiCol_Text);
+			ImGui::PopStyleColor();
+			const ImVec2 textMin = ImVec2(
+				ImGui::GetItemRectMin().x + ImGui::GetStyle().FramePadding.x,
+				ImGui::GetItemRectMin().y + ImGui::GetStyle().FramePadding.y
+			);
+			const ImVec2 textMax = ImGui::GetItemRectMax();
+			ImGui::PushClipRect(textMin, textMax, true);
+			ImGui::GetWindowDrawList()->AddText(
+				textMin,
+				textColor,
+				buffer.message.c_str()
+			);
+			ImGui::PopClipRect();
+		}
 
 		// 左クリック選択
 		if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
@@ -1423,7 +1427,7 @@ namespace Unnamed {
 
 		// チャンネル列
 		ImGui::TableSetColumnIndex(1);
-		if (buffer.channel != kChannelNone) {
+		if (isRowVisible && buffer.channel != kChannelNone) {
 			if (ImGui::TextLink(
 				(buffer.channel + "##" + std::to_string(actualIndex)).c_str()
 			)) {

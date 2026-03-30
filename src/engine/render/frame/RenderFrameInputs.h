@@ -83,6 +83,12 @@ namespace Unnamed::Render {
 		bool                  valid     = false;
 	};
 
+	struct SkyboxInput {
+		bool    enabled        = false;
+		AssetID textureAssetId = kInvalidAssetID;
+		float   intensity      = 1.0f;
+	};
+
 	struct VisibleRenderObject {
 		AssetID  meshAssetId        = kInvalidAssetID;
 		AssetID  materialInstanceId = kInvalidAssetID;
@@ -152,6 +158,7 @@ namespace Unnamed::Render {
 		SceneViewRenderMode   sceneViewMode = {};
 		std::vector<PostFxPassOverride> postFxPassOverrides;
 		RenderCameraInput     camera = {};
+		SkyboxInput           skybox = {};
 
 		std::vector<VisibleRenderObject>  visibleObjects;
 		std::vector<SkinningPaletteInput> skinningPalettes;

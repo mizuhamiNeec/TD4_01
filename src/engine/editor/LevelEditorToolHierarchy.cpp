@@ -8,6 +8,7 @@
 #include <imgui.h>
 #include <map>
 #include <set>
+#include <unordered_map>
 #include <unordered_set>
 
 #include "core/ComponentRegistry.h"
@@ -102,6 +103,8 @@ namespace Unnamed {
 			Entity&                                entity,
 			const std::unordered_set<std::string>& existingStableNames
 		) {
+			static std::unordered_map<std::string, uint32_t>
+				sComponentIconCache;
 			bool added = false;
 
 			for (const auto& [scopeName, childNode] : node.children) {
@@ -135,10 +138,23 @@ namespace Unnamed {
 
 				const bool alreadyExists =
 					existingStableNames.contains(info.stableName);
+				uint32_t componentIcon = kIconQuestionMark;
+				if (const auto cached = sComponentIconCache.find(
+					info.stableName
+				); cached != sComponentIconCache.end()) {
+					componentIcon = cached->second;
+				} else {
+					if (auto component = ComponentRegistry::Get().Create(
+						info.stableName
+					)) {
+						componentIcon = component->GetIcon();
+					}
+					sComponentIconCache.emplace(info.stableName, componentIcon);
+				}
 
 				if (
 					ImGuiWidgets::MenuItemWithIcon(
-						label.c_str(), kIconQuestionMark, nullptr, false,
+						label.c_str(), componentIcon, nullptr, false,
 						!alreadyExists
 					)
 				) {
@@ -857,6 +873,31 @@ namespace Unnamed {
 			}
 		);
 
+		ImDrawList* dl       = ImGui::GetWindowDrawList();
+		ImFont*     font     = ImGui::GetFont();
+		const float textSize = ImGui::GetFontSize() * 1.5f;
+
+		// アイコンを描画
+		dl->AddText(
+			font, textSize, ImGui::GetCursorScreenPos(),
+			ImGui::GetColorU32(ImGuiCol_Text),
+			entity->GetName().data()
+		);
+
+		// テキストの下にスペースを空ける
+		ImGui::SetCursorPosY(
+			ImGui::GetCursorPosY() + textSize + ImGui::GetStyle().ItemSpacing.y
+		);
+
+		std::string label = "GUID: " + std::to_string(entity->GetGuid());
+		if (
+			ImGuiWidgets::IconButton(
+				kIconCopy, label.c_str(), ImVec2(0, 0), 1.0f, ImGuiDir_Right
+			)
+		) {
+			ImGui::SetClipboardText(std::to_string(entity->GetGuid()).c_str());
+		}
+
 		if (
 			ImGuiWidgets::IconButton(
 				kIconAdd, "AddComponent", ImVec2(0.0f, 0.0f), 1.5f,
@@ -903,28 +944,80 @@ namespace Unnamed {
 
 		ImGui::Separator();
 
-		// すべてのコンポーネントのインスペクタUIを描画
+		std::vector<BaseComponent*> orderedComponents;
 		entity->ForEachComponent(
 			[&](BaseComponent& component) {
-				bool       componentActive = component.IsActive();
-				const bool open            =
-					ImGuiUtil::CollapsingHeaderWithCheckbox(
-						component.GetIcon(),
-						component.GetComponentName().data(),
-						component.GetGuid(),
-						&componentActive,
-						nullptr,
-						ImGuiTreeNodeFlags_DefaultOpen
-					);
-				if (componentActive != component.IsActive()) {
-					component.SetActive(componentActive);
-				}
-				if (open) {
-					component.DrawInspectorImGui();
-				}
-				ImGui::Separator();
+				orderedComponents.emplace_back(&component);
 			}
 		);
+
+		ImGuiUtil::HeaderMenuAction pendingAction =
+			ImGuiUtil::HeaderMenuAction::None;
+		BaseComponent* pendingTarget = nullptr;
+
+		for (size_t index = 0; index < orderedComponents.size(); ++index) {
+			BaseComponent* component = orderedComponents[index];
+			if (!component) {
+				continue;
+			}
+
+			const bool isTransform =
+				component->GetStableName() == "Transform";
+			const bool canMoveUp =
+				!isTransform &&
+				index > 0 &&
+				orderedComponents[index - 1] != nullptr &&
+				orderedComponents[index - 1]->GetStableName() != "Transform";
+			const bool canMoveDown =
+				!isTransform && (index + 1) < orderedComponents.size();
+			const bool canRemove = !isTransform;
+
+			bool                        componentActive = component->IsActive();
+			ImGuiUtil::HeaderMenuAction action          =
+				ImGuiUtil::HeaderMenuAction::None;
+			const bool open = ImGuiUtil::CollapsingHeaderWithCheckbox(
+				component->GetIcon(),
+				component->GetComponentName().data(),
+				component->GetGuid(),
+				&componentActive,
+				&action,
+				canMoveUp,
+				canMoveDown,
+				canRemove,
+				ImGuiTreeNodeFlags_DefaultOpen
+			);
+			if (componentActive != component->IsActive()) {
+				component->SetActive(componentActive);
+			}
+			if (open) {
+				component->DrawInspectorImGui();
+			}
+			ImGui::Separator();
+
+			if (
+				action != ImGuiUtil::HeaderMenuAction::None &&
+				pendingTarget == nullptr
+			) {
+				pendingAction = action;
+				pendingTarget = component;
+			}
+		}
+
+		if (pendingTarget != nullptr) {
+			switch (pendingAction) {
+				case ImGuiUtil::HeaderMenuAction::MoveUp: (void)entity->
+						MoveComponentUp(pendingTarget);
+					break;
+				case ImGuiUtil::HeaderMenuAction::MoveDown: (void)entity->
+						MoveComponentDown(pendingTarget);
+					break;
+				case ImGuiUtil::HeaderMenuAction::Remove: entity->
+						RemoveComponent(pendingTarget);
+					break;
+				case ImGuiUtil::HeaderMenuAction::None:
+				default: break;
+			}
+		}
 
 		ImGui::End();
 	}

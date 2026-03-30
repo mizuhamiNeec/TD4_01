@@ -211,10 +211,14 @@ namespace ImGuiUtil {
 		const char*              label,
 		const uint64_t           id,
 		bool*                    checkbox,
-		bool*                    menu,
+		HeaderMenuAction*        action,
+		const bool               canMoveUp,
+		const bool               canMoveDown,
+		const bool               canRemove,
 		const ImGuiTreeNodeFlags flags
 	) {
 		std::string uniqueID = "##" + std::to_string(id);
+		HeaderMenuAction menuAction = HeaderMenuAction::None;
 
 		ImGui::PushID(uniqueID.c_str());
 		ImGui::BeginGroup();
@@ -227,6 +231,8 @@ namespace ImGuiUtil {
 		);
 
 		const float collapsingHeaderHeight = ImGui::GetItemRectSize().y;
+		const ImVec2 collapsingHeaderMin   = ImGui::GetItemRectMin();
+		const ImVec2 collapsingHeaderMax   = ImGui::GetItemRectMax();
 
 		ImGui::PopStyleVar();
 
@@ -267,8 +273,6 @@ namespace ImGuiUtil {
 			)
 		);
 
-		ImGui::DebugDrawCursorPos();
-
 		// チェックボックスを表示
 		ImGui::Checkbox("##Checkbox", checkbox);
 
@@ -283,12 +287,17 @@ namespace ImGuiUtil {
 			kIconMoreHoriz
 		);
 
+		const float buttonWidth = ImGui::CalcTextSize(moreHoriz.c_str()).x +
+			ImGui::GetStyle().FramePadding.x * 2.0f;
 		ImGui::SetCursorPosX(
 			ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x -
-			ImGui::GetStyle().ItemSpacing.x * 2.0f - ImGui::CalcTextSize(
-				moreHoriz.c_str()
-			).x
+			ImGui::GetStyle().ItemSpacing.x * 2.0f - buttonWidth
 		);
+		const float headerCenterY = (collapsingHeaderMin.y + collapsingHeaderMax.
+			y) *
+			0.5f;
+		const float buttonTopY = headerCenterY - ImGui::GetFrameHeight() * 0.5f;
+		ImGui::SetCursorPosY(buttonTopY - ImGui::GetWindowPos().y);
 
 		const bool menuOpen = ImGui::Button(moreHoriz.c_str());
 
@@ -296,13 +305,23 @@ namespace ImGuiUtil {
 			ImGui::OpenPopup("##HeaderMenu");
 		}
 		if (ImGui::BeginPopup("##HeaderMenu")) {
-			ImGui::MenuItem("Option 1", nullptr, menu ? menu : nullptr);
-			ImGui::MenuItem("Option 2", nullptr, menu ? menu : nullptr);
+			if (ImGui::MenuItem("Move Up", nullptr, false, canMoveUp)) {
+				menuAction = HeaderMenuAction::MoveUp;
+			}
+			if (ImGui::MenuItem("Move Down", nullptr, false, canMoveDown)) {
+				menuAction = HeaderMenuAction::MoveDown;
+			}
+			if (ImGui::MenuItem("Remove", nullptr, false, canRemove)) {
+				menuAction = HeaderMenuAction::Remove;
+			}
 			ImGui::EndPopup();
 		}
 
 		ImGui::EndGroup();
 		ImGui::PopID();
+		if (action != nullptr) {
+			*action = menuAction;
+		}
 		return isOpen;
 	}
 }

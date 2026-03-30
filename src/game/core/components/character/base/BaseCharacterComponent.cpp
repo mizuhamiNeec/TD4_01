@@ -97,6 +97,14 @@ namespace Unnamed {
 		}
 	}
 
+	std::string_view BaseCharacterComponent::GetStableName() const {
+		return "game.BaseCharacterComponent";
+	}
+
+	std::string_view BaseCharacterComponent::GetComponentName() const {
+		return "BaseCharacterComponent";
+	}
+
 	void BaseCharacterComponent::Deserialize(const JsonReader& reader) {
 		const JsonReader collisionEnabled = reader["collisionEnabled"];
 		if (collisionEnabled.Valid()) {

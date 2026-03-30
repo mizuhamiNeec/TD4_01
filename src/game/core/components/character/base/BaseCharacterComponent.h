@@ -58,15 +58,9 @@ namespace Unnamed {
 		void OnTick(float deltaTime) override;
 		void PostPhysicsTick(float deltaTime) override;
 
-		[[nodiscard]]
-		std::string_view GetStableName() const override {
-			return "game.BaseCharacterComponent";
-		}
+		[[nodiscard]] std::string_view GetStableName() const override;
 
-		[[nodiscard]]
-		std::string_view GetComponentName() const override {
-			return "BaseCharacterComponent";
-		}
+		[[nodiscard]] std::string_view GetComponentName() const override;
 
 #ifdef _DEBUG
 		void DrawInspectorImGui() override;
@@ -74,7 +68,7 @@ namespace Unnamed {
 
 		void Deserialize(const JsonReader& reader) override;
 		void Serialize(JsonWriter& writer) const override;
-		
+
 		uint32_t GetIcon() const override;
 
 	protected:

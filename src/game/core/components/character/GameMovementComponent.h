@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <string>
+#include <string_view>
 
 #include "base/BaseCharacterComponent.h"
 
@@ -33,6 +34,8 @@ namespace Unnamed {
 		void PrePhysicsTick(float deltaTime) override;
 		void OnTick(float deltaTime) override;
 		void PostPhysicsTick(float deltaTime) override;
+		
+		void OnEditorTick(float deltaTime) override;
 
 		[[nodiscard]] TICK_GROUP GetTickGroup() const override {
 			return TICK_GROUP::GAMEPLAY;
@@ -65,6 +68,18 @@ namespace Unnamed {
 		[[nodiscard]] bool ApplyPassiveMotionStep(
 			TransformComponent* transform, float stepSeconds
 		);
+		void PublishCue(
+			std::string id, float value = 0.0f, float value2 = 0.0f
+		);
+		static std::string ToLowerCopy(std::string_view text);
+		virtual void OnAfterCoreCueDispatch(
+			std::string_view          previousStateName,
+			std::string_view          currentStateName,
+			const MovementFrameInput& input,
+			bool                      wasGrounded,
+			bool                      isGrounded,
+			float                     stepSeconds
+		);
 
 		Physics::Engine* mPhysics = nullptr;
 		InputSystem*     mInput   = nullptr;
@@ -79,5 +94,12 @@ namespace Unnamed {
 
 		SupportCache mSupportCache;
 		float        mJumpSnapDisableRemaining = 0.0f;
+
+#ifdef _DEBUG
+		std::string mDebugLastPublishedCueId;
+		float       mDebugLastPublishedCueValue  = 0.0f;
+		float       mDebugLastPublishedCueValue2 = 0.0f;
+		uint64_t    mDebugPublishedCueCount      = 0;
+#endif
 	};
 }

@@ -6,6 +6,7 @@
 
 namespace Unnamed {
 	class ConsoleSystem;
+	class GameMovementComponent;
 
 	struct MovementContext {
 		MovementFrameInput input; // 入力情報(移動入力・ジャンプ、視点方向など)
@@ -19,6 +20,7 @@ namespace Unnamed {
 		Vec3 supportLinearVelocity = Vec3::zero;
 		Vec3 supportStepDelta = Vec3::zero;
 		float jumpSnapDisableRemaining = 0.0f;
+		GameMovementComponent* movementComponent = nullptr;
 	};
 
 	/// @brief キャラクターの移動状態を表すインターフェースです。

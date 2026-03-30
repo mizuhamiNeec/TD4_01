@@ -2,7 +2,12 @@
 
 #include <algorithm>
 #include <array>
+#include <cctype>
 #include <cmath>
+
+#ifdef _DEBUG
+#include <imgui.h>
+#endif
 
 #include "base/BaseCharacterComponent.h"
 
@@ -19,6 +24,7 @@
 #include "engine/unnamed/subsystem/console/concommand/ConVar.h"
 #include "engine/unnamed/subsystem/input/InputSystem.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
+#include "engine/world/GameplayCueBus.h"
 #include "engine/world/World.h"
 
 #include "game/core/collision/kinematic/BoxKinematicCollisionResolver.h"
@@ -49,6 +55,14 @@ namespace Unnamed {
 			return;
 		}
 
+		const bool        wasGrounded            = mSupportCache.grounded;
+		const float       preStepVerticalSpeedHu = Math::MtoH(mVelocity.y);
+		const std::string previousStateName      = ToLowerCopy(
+			mStateMachine->GetCurrentState() ?
+				mStateMachine->GetCurrentState()->GetStateName() :
+				""
+		);
+
 		(void)ApplyPassiveMotionStep(transform, stepSeconds);
 
 		MovementContext context = {
@@ -62,7 +76,8 @@ namespace Unnamed {
 			.supportEntityGuid        = mSupportCache.supportEntityGuid,
 			.supportLinearVelocity    = mSupportCache.supportLinearVelocity,
 			.supportStepDelta         = mSupportCache.supportStepDelta,
-			.jumpSnapDisableRemaining = mJumpSnapDisableRemaining
+			.jumpSnapDisableRemaining = mJumpSnapDisableRemaining,
+			.movementComponent        = this
 		};
 
 		UpdateCollisionHull(transform);
@@ -72,6 +87,45 @@ namespace Unnamed {
 		mJumpSnapDisableRemaining = std::max(
 			0.0f,
 			context.jumpSnapDisableRemaining
+		);
+
+		const std::string currentStateName = ToLowerCopy(
+			mStateMachine->GetCurrentState() ?
+				mStateMachine->GetCurrentState()->GetStateName() :
+				""
+		);
+
+		if (!previousStateName.empty() && previousStateName != currentStateName) {
+			PublishCue("movement.state.exit." + previousStateName);
+			if (!currentStateName.empty()) {
+				PublishCue("movement.state.enter." + currentStateName);
+			}
+		}
+
+		if (
+			wasGrounded &&
+			!context.isGrounded &&
+			input.jumpPressed &&
+			context.velocity.y > 0.0f
+		) {
+			PublishCue("movement.jump");
+		}
+
+		if (!wasGrounded && context.isGrounded) {
+			const float downSpeedHu  = std::max(0.0f, -preStepVerticalSpeedHu);
+			const float landStrength = std::clamp(
+				downSpeedHu / 400.0f, 0.0f, 200.0f
+			);
+			PublishCue("movement.land", landStrength, downSpeedHu);
+		}
+
+		OnAfterCoreCueDispatch(
+			previousStateName,
+			currentStateName,
+			input,
+			wasGrounded,
+			context.isGrounded,
+			stepSeconds
 		);
 
 		if (context.isGrounded) {
@@ -212,6 +266,17 @@ namespace Unnamed {
 		);
 	}
 
+	void GameMovementComponent::OnEditorTick(float) {
+		auto* world = GetWorld();
+
+		world->GetDebugDraw().DrawBox(
+			GetTransform()->Position(),
+			GetTransform()->Rotation(),
+			mBoxHalfExtents * 2.0f,
+			Vec4::cyan
+		);
+	}
+
 	std::string_view GameMovementComponent::GetStableName() const {
 		return "game.GameMovement";
 	}
@@ -247,9 +312,30 @@ namespace Unnamed {
 		}
 	}
 
+	void GameMovementComponent::OnAfterCoreCueDispatch(
+		const std::string_view,
+		const std::string_view,
+		const MovementFrameInput&,
+		const bool,
+		const bool,
+		const float
+	) {}
+
 #ifdef _DEBUG
 	void GameMovementComponent::DrawInspectorImGui() {
 		BaseCharacterComponent::DrawInspectorImGui();
+
+		ImGui::SeparatorText("Gameplay Cue Debug");
+		ImGui::Text(
+			"Published Cues: %llu",
+			static_cast<unsigned long long>(mDebugPublishedCueCount)
+		);
+		ImGui::Text("Last Cue ID: %s", mDebugLastPublishedCueId.c_str());
+		ImGui::Text(
+			"Last Cue Payload: %.3f / %.3f",
+			mDebugLastPublishedCueValue,
+			mDebugLastPublishedCueValue2
+		);
 	}
 #endif
 
@@ -625,6 +711,49 @@ namespace Unnamed {
 			UpdateCollisionHull(transform);
 		}
 		return positionChanged;
+	}
+
+	void GameMovementComponent::PublishCue(
+		std::string id, const float value, const float value2
+	) {
+		World* world = GetWorld();
+		if (!world) {
+			return;
+		}
+
+		const Entity* owner = GetOwner();
+		if (!owner) {
+			return;
+		}
+
+		GameplayCue cue      = {};
+		cue.id               = std::move(id);
+		cue.sourceEntityGuid = owner->GetGuid();
+		cue.value            = value;
+		cue.value2           = value2;
+		world->GetGameplayCueBus().Publish(cue);
+
+#ifdef _DEBUG
+		mDebugLastPublishedCueId     = cue.id;
+		mDebugLastPublishedCueValue  = cue.value;
+		mDebugLastPublishedCueValue2 = cue.value2;
+		++mDebugPublishedCueCount;
+#endif
+	}
+
+	std::string GameMovementComponent::ToLowerCopy(
+		const std::string_view text
+	) {
+		std::string lower(text);
+		std::transform(
+			lower.begin(),
+			lower.end(),
+			lower.begin(),
+			[](const unsigned char c) {
+				return static_cast<char>(std::tolower(c));
+			}
+		);
+		return lower;
 	}
 
 	REGISTER_COMPONENT(GameMovementComponent);

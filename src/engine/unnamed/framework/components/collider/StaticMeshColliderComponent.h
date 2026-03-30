@@ -10,9 +10,8 @@ namespace Unnamed {
 		void OnAttached() override;
 		void OnDetached() override;
 		void OnTick(float deltaTime) override;
-		[[nodiscard]] TICK_GROUP GetTickGroup() const override {
-			return TICK_GROUP::COLLIDER_SYNC;
-		}
+
+		[[nodiscard]] TICK_GROUP GetTickGroup() const override;
 
 		[[nodiscard]] std::string_view GetStableName() const override;
 		[[nodiscard]] std::string_view GetComponentName() const override;
@@ -24,13 +23,10 @@ namespace Unnamed {
 		void Deserialize(const JsonReader& reader) override;
 		void Serialize(JsonWriter& writer) const override;
 
-		[[nodiscard]] bool IsCollisionEnabled() const noexcept {
-			return mEnabled;
-		}
+		[[nodiscard]] uint32_t GetIcon() const override;
 
-		[[nodiscard]] bool IsDynamicMesh() const noexcept {
-			return mDynamic;
-		}
+		[[nodiscard]] bool IsCollisionEnabled() const noexcept;
+		[[nodiscard]] bool IsDynamicMesh() const noexcept;
 
 	private:
 		void RefreshPhysicsRegistration();

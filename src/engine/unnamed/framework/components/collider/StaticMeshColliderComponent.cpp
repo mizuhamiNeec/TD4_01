@@ -34,6 +34,11 @@ namespace Unnamed {
 		RefreshPhysicsRegistration();
 	}
 
+	BaseComponent::TICK_GROUP StaticMeshColliderComponent::
+	GetTickGroup() const {
+		return TICK_GROUP::COLLIDER_SYNC;
+	}
+
 	std::string_view StaticMeshColliderComponent::GetStableName() const {
 		return "engine.StaticMeshCollider";
 	}
@@ -65,6 +70,18 @@ namespace Unnamed {
 		writer.Write(mEnabled);
 		writer.Key("dynamic");
 		writer.Write(mDynamic);
+	}
+
+	uint32_t StaticMeshColliderComponent::GetIcon() const {
+		return kIconExplosion;
+	}
+
+	bool StaticMeshColliderComponent::IsCollisionEnabled() const noexcept {
+		return mEnabled;
+	}
+
+	bool StaticMeshColliderComponent::IsDynamicMesh() const noexcept {
+		return mDynamic;
 	}
 
 	void StaticMeshColliderComponent::RefreshPhysicsRegistration() {

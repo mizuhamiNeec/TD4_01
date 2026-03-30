@@ -15,13 +15,9 @@ namespace Unnamed {
 
 	class AudioSourceComponent final : public BaseComponent {
 	public:
-		[[nodiscard]] std::string_view GetStableName() const override {
-			return "engine.AudioSource";
-		}
+		[[nodiscard]] std::string_view GetStableName() const override;
 
-		[[nodiscard]] std::string_view GetComponentName() const override {
-			return "AudioSource";
-		}
+		[[nodiscard]] std::string_view GetComponentName() const override;
 
 		void OnAttached() override;
 		void OnDetached() override;
@@ -34,25 +30,27 @@ namespace Unnamed {
 		void DrawInspectorImGui() override;
 #endif
 
-		void SetSoundPath(const std::string& path);
+		[[nodiscard]] uint32_t GetIcon() const override;
+
+		void                             SetSoundPath(const std::string& path);
 		[[nodiscard]] const std::string& GetSoundPath() const noexcept;
 
-		void SetPlayOnStart(bool enabled) noexcept;
+		void               SetPlayOnStart(bool enabled) noexcept;
 		[[nodiscard]] bool GetPlayOnStart() const noexcept;
 
-		void SetLoop(bool enabled) noexcept;
+		void               SetLoop(bool enabled) noexcept;
 		[[nodiscard]] bool GetLoop() const noexcept;
 
-		void SetVolume(float volume) noexcept;
+		void                SetVolume(float volume) noexcept;
 		[[nodiscard]] float GetVolume() const noexcept;
 
-		void SetPitch(float pitch) noexcept;
+		void                SetPitch(float pitch) noexcept;
 		[[nodiscard]] float GetPitch() const noexcept;
 
-		void Play();
-		void Stop() const;
-		void Pause() const;
-		void Resume() const;
+		void               Play();
+		void               Stop() const;
+		void               Pause() const;
+		void               Resume() const;
 		[[nodiscard]] bool IsPlaying() const;
 
 	private:

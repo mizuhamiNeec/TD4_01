@@ -14,6 +14,7 @@
 #include "core/json/JsonWriter.h"
 #include "core/string/StrUtil.h"
 
+#include "engine/ImGui/Icons.h"
 #include "engine/ImGui/ImGuiWidgets.h"
 #include "engine/unnamed/subsystem/audio/Audio.h"
 #include "engine/unnamed/subsystem/audio/AudioSystem.h"
@@ -23,6 +24,14 @@
 namespace Unnamed {
 	namespace {
 		static constexpr std::string_view kChannel = "AudioSourceComponent";
+	}
+
+	std::string_view AudioSourceComponent::GetStableName() const {
+		return "engine.AudioSource";
+	}
+
+	std::string_view AudioSourceComponent::GetComponentName() const {
+		return "AudioSource";
 	}
 
 	void AudioSourceComponent::OnAttached() {
@@ -116,9 +125,15 @@ namespace Unnamed {
 			Stop();
 		}
 
-		ImGui::TextUnformatted(IsPlaying() ? "State: Playing" : "State: Stopped");
+		ImGui::TextUnformatted(
+			IsPlaying() ? "State: Playing" : "State: Stopped"
+		);
 	}
 #endif
+	
+	uint32_t AudioSourceComponent::GetIcon() const {
+		return kIconSpeaker;
+	}
 
 	void AudioSourceComponent::SetSoundPath(const std::string& path) {
 		const std::string normalized = path.empty() ?
@@ -127,9 +142,9 @@ namespace Unnamed {
 		if (mSoundPath == normalized) {
 			return;
 		}
-		mSoundPath = normalized;
+		mSoundPath        = normalized;
 		mAutoPlayConsumed = false;
-		mLoggedError = false;
+		mLoggedError      = false;
 		InvalidateVoice();
 	}
 
@@ -214,14 +229,18 @@ namespace Unnamed {
 		auto* audioSystem  = ServiceLocator::Get<AudioSystem>();
 		if (!assetManager || !audioSystem || !audioSystem->IsReady()) {
 			if (!mLoggedError) {
-				Error(kChannel, "AssetManager or AudioSystem is not available.");
+				Error(
+					kChannel, "AssetManager or AudioSystem is not available."
+				);
 				mLoggedError = true;
 			}
 			return false;
 		}
 
 		if (mSoundAssetId == kInvalidAssetID) {
-			mSoundAssetId = assetManager->LoadFromFile(mSoundPath, ASSET_TYPE::SOUND);
+			mSoundAssetId = assetManager->LoadFromFile(
+				mSoundPath, ASSET_TYPE::SOUND
+			);
 			mLoadedAssetVersion = 0;
 		}
 		if (mSoundAssetId == kInvalidAssetID) {
@@ -232,7 +251,7 @@ namespace Unnamed {
 			return false;
 		}
 
-		const auto& meta = assetManager->Meta(mSoundAssetId);
+		const auto& meta         = assetManager->Meta(mSoundAssetId);
 		const bool  needsRebuild =
 			!mVoice || mLoadedAssetVersion != meta.version;
 		if (!needsRebuild) {
@@ -243,19 +262,27 @@ namespace Unnamed {
 		const bool wasPlaying =
 			preservePlayback && mVoice && mVoice->IsPlaying();
 
-		const auto* soundData = assetManager->Get<SoundAssetData>(mSoundAssetId);
+		const auto* soundData = assetManager->Get<
+			SoundAssetData>(mSoundAssetId);
 		if (!soundData) {
 			if (!mLoggedError) {
-				Error(kChannel, "Sound asset payload is invalid: '{}'.", mSoundPath);
+				Error(
+					kChannel, "Sound asset payload is invalid: '{}'.",
+					mSoundPath
+				);
 				mLoggedError = true;
 			}
 			return false;
 		}
 
-		std::shared_ptr<AudioVoice> voice = audioSystem->CreateVoice(*soundData);
+		std::shared_ptr<AudioVoice> voice = audioSystem->
+			CreateVoice(*soundData);
 		if (!voice) {
 			if (!mLoggedError) {
-				Error(kChannel, "Failed to create audio voice for '{}'.", mSoundPath);
+				Error(
+					kChannel, "Failed to create audio voice for '{}'.",
+					mSoundPath
+				);
 				mLoggedError = true;
 			}
 			return false;

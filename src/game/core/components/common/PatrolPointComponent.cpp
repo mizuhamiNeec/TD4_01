@@ -30,7 +30,8 @@ namespace Unnamed {
 			return;
 		}
 
-		if ((mPointB - mPointA).SqrLength() <= kArriveEpsilon * kArriveEpsilon) {
+		if ((mPointB - mPointA).SqrLength() <= kArriveEpsilon *
+		    kArriveEpsilon) {
 			transform->SetPosition(mPointA);
 			return;
 		}
@@ -42,28 +43,41 @@ namespace Unnamed {
 
 		Vec3 current = transform->Position();
 		for (uint32_t i = 0; i < 32 && remainingDistance > 0.0f; ++i) {
-			const Vec3 target = mMoveToPointB ? mPointB : mPointA;
-			const Vec3 toTarget = target - current;
+			const Vec3  target   = mMoveToPointB ? mPointB : mPointA;
+			const Vec3  toTarget = target - current;
 			const float distance = toTarget.Length();
 
 			if (distance <= kArriveEpsilon) {
-				current = target;
+				current       = target;
 				mMoveToPointB = !mMoveToPointB;
 				continue;
 			}
 
 			if (remainingDistance >= distance) {
-				current = target;
+				current           = target;
 				remainingDistance -= distance;
-				mMoveToPointB = !mMoveToPointB;
+				mMoveToPointB     = !mMoveToPointB;
 				continue;
 			}
 
-			current += toTarget * (remainingDistance / distance);
+			current           += toTarget * (remainingDistance / distance);
 			remainingDistance = 0.0f;
 		}
 
 		transform->SetPosition(current);
+	}
+
+	BaseComponent::TICK_GROUP PatrolPointComponent::GetTickGroup() const {
+		// Transform/KinematicMover/ColliderSync より前に移動ソースを更新する。
+		return TICK_GROUP::EARLY;
+	}
+
+	std::string_view PatrolPointComponent::GetStableName() const {
+		return "game.PatrolPoint";
+	}
+
+	std::string_view PatrolPointComponent::GetComponentName() const {
+		return "PatrolPoint";
 	}
 
 	void PatrolPointComponent::Deserialize(const JsonReader& reader) {
@@ -113,6 +127,10 @@ namespace Unnamed {
 		writer.Write(mSnapOnAttach);
 	}
 
+	uint32_t PatrolPointComponent::GetIcon() const {
+		return kIconSiren;
+	}
+
 #ifdef _DEBUG
 	void PatrolPointComponent::DrawInspectorImGui() {
 		ImGui::Checkbox("Enabled", &mEnabled);
@@ -145,4 +163,3 @@ namespace Unnamed {
 
 	REGISTER_COMPONENT(PatrolPointComponent);
 }
-

@@ -1,5 +1,7 @@
 #include "CameraComponent.h"
 
+#include <algorithm>
+
 #include <imgui.h>
 
 #include "TransformComponent.h"
@@ -50,6 +52,10 @@ namespace Unnamed {
 		writer.Write(mCameraActive);
 	}
 
+	uint32_t CameraComponent::GetIcon() const {
+		return kIconVideoCam;
+	}
+
 #ifdef _DEBUG
 	void CameraComponent::DrawInspectorImGui() {
 		ImGui::Checkbox("Camera Active", &mCameraActive);
@@ -98,14 +104,22 @@ namespace Unnamed {
 			mFarZ,
 			ProjectionDepthMode::ReverseZ
 		);
-		outCamera.viewProj  = outCamera.view * outCamera.proj;
-		outCamera.cameraPos = world.TransformPoint(Vec3::zero);
+		outCamera.viewProj   = outCamera.view * outCamera.proj;
+		outCamera.cameraPos  = world.TransformPoint(Vec3::zero);
 		outCamera.exposureEv = mExposureEv;
-		outCamera.nearZ     = mNearZ;
-		outCamera.farZ      = mFarZ;
-		outCamera.depthMode = Render::PROJECTION_DEPTH_MODE::ReverseZ;
-		outCamera.valid     = true;
+		outCamera.nearZ      = mNearZ;
+		outCamera.farZ       = mFarZ;
+		outCamera.depthMode  = Render::PROJECTION_DEPTH_MODE::ReverseZ;
+		outCamera.valid      = true;
 		return true;
+	}
+
+	void CameraComponent::SetFovYDegrees(float fovYDegrees) {
+		mFovYDegrees = std::clamp(fovYDegrees, 1.0f, 179.0f);
+	}
+
+	float CameraComponent::GetFovYDegrees() const noexcept {
+		return mFovYDegrees;
 	}
 
 	bool CameraComponent::SetAsCurrentCamera() {

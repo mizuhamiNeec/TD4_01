@@ -33,7 +33,10 @@ namespace Unnamed {
 		/// @return カメラ入力の構築に成功したかどうか。
 		bool BuildCameraInput(Render::RenderCameraInput& outCamera) const;
 
-		bool SetAsCurrentCamera();
+		void               SetFovYDegrees(float fovYDegrees);
+		[[nodiscard]] float GetFovYDegrees() const noexcept;
+
+		bool               SetAsCurrentCamera();
 		[[nodiscard]] bool IsCurrentCamera() const;
 
 		// ---- BaseComponent ------------------------------------------------
@@ -46,6 +49,8 @@ namespace Unnamed {
 
 		void Deserialize(const JsonReader& reader) override;
 		void Serialize(JsonWriter& writer) const override;
+
+		[[nodiscard]] uint32_t GetIcon() const override;
 
 	private:
 		/// @brief TransformComponentを取得します。存在しない場合はnullptrを返します。

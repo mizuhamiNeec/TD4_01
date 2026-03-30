@@ -139,13 +139,6 @@ namespace Unnamed {
 					nullptr,
 					&dockMain
 				);
-				ImGuiID dockBottom = ImGui::DockBuilderSplitNode(
-					dockMain,
-					ImGuiDir_Down,
-					0.35f,
-					nullptr,
-					&dockMain
-				);
 				ImGuiID dockLeftBottom = ImGui::DockBuilderSplitNode(
 					dockLeft,
 					ImGuiDir_Down,
@@ -153,11 +146,18 @@ namespace Unnamed {
 					nullptr,
 					&dockLeft
 				);
+				ImGuiID dockOutliner = ImGui::DockBuilderSplitNode(
+					dockLeft,
+					ImGuiDir_Down,
+					0.50f,
+					nullptr,
+					&dockLeft
+				);
 				ImGui::DockBuilderDockWindow("UI Document", dockLeft);
-				ImGui::DockBuilderDockWindow("Ui Outliner", dockLeft);
+				ImGui::DockBuilderDockWindow("Ui Outliner", dockOutliner);
 				ImGui::DockBuilderDockWindow("Ui Palette", dockLeftBottom);
 				ImGui::DockBuilderDockWindow("Ui Inspector", dockRight);
-				ImGui::DockBuilderDockWindow("Ui Preview", dockBottom);
+				ImGui::DockBuilderDockWindow("Ui Preview", dockMain);
 				ImGui::DockBuilderFinish(dockSpaceId);
 				mGuiEditorDockInitialized = true;
 			}

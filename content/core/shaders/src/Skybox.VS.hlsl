@@ -1,26 +1,18 @@
-﻿#include "Skybox.hlsli"
+#include "SceneConstants.hlsli"
+#include "Skybox.hlsli"
 
-struct TransformationMatrix {
-	float4x4 WVP;
-	float4x4 World;
-	float4x4 WorldInverseTranspose;
-};
+SkyboxVsOut VsMain(SkyboxVsIn input) {
+	SkyboxVsOut output;
 
-ConstantBuffer<TransformationMatrix> gTransformationMatrix : register(b0);
+	float4 worldPos = mul(float4(input.pos, 1.0f), gWorld);
+	float4 viewPos  = mul(worldPos, gView);
+	float4 clipPos  = mul(viewPos, gProj);
 
-struct VertexShaderInput {
-	float4 position : POSITION0;
-	float2 texcoord : TEXCOORD0;
-	float3 normal : NORMAL0;
-};
-
-VertexShaderOutput main(VertexShaderInput input) {
-	VertexShaderOutput output;
 	// VertexShaderの出力は同時クリップ空間であり、
 	// 同時クリップ空間で最も遠い場所はwである。
 	// その後のPerspectiveDivideによってNDCになることを考えても、
 	// zとwを同じ値にしておけば、z=1となり、NDCでの最遠方に配置されることになる。
-	output.position = mul(input.position, gTransformationMatrix.WVP).xyww;
-	output.texcoord = input.position.xyz;
+	output.position  = float4(clipPos.xy, 0.0f, clipPos.w);
+	output.direction = input.pos;
 	return output;
 }

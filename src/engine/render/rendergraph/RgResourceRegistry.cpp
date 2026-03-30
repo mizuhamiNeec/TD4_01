@@ -1,5 +1,7 @@
 #include "RgResourceRegistry.h"
 
+#include <algorithm>
+
 #include "d3dx12.h"
 
 #include "core/UnnamedMacro.h"

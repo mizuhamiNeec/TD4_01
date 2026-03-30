@@ -12,6 +12,7 @@
 #include "core/json/JsonWriter.h"
 #include "core/string/StrUtil.h"
 
+#include "engine/ImGui/Icons.h"
 #include "engine/ImGui/ImGuiWidgets.h"
 
 namespace Unnamed {
@@ -54,6 +55,10 @@ namespace Unnamed {
 		writer.Write(mMeshPath);
 		writer.Key("materialInstancePath");
 		writer.Write(mMaterialInstancePath);
+	}
+
+	uint32_t StaticMeshRendererComponent::GetIcon() const {
+		return kIconDeployedCode;
 	}
 
 #ifdef _DEBUG

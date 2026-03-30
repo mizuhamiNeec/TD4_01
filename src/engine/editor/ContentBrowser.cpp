@@ -695,7 +695,10 @@ namespace Unnamed::EditorContentBrowser {
 	}
 
 	void DrawWindow(BrowserViewState& state, const char* windowName) {
-		if (!ImGui::Begin(windowName)) {
+		if (!ImGui::Begin(
+			windowName, nullptr,
+			ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse
+		)) {
 			ImGui::End();
 			return;
 		}

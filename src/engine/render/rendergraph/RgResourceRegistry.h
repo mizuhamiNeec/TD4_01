@@ -57,6 +57,9 @@ namespace Unnamed::Render {
 		void ResetFrame(uint32_t frameIndex);
 
 		uint32_t CreateTexture(const RgTextureDesc& desc);
+		uint32_t CreateTextureFromAsset(
+			const TextureAssetData& texture, const std::string& debugName
+		);
 		uint32_t CreateTexture2DFromAsset(
 			const TextureAssetData& texture, const std::string& debugName
 		);
@@ -120,6 +123,8 @@ namespace Unnamed::Render {
 			D3D12_CPU_DESCRIPTOR_HANDLE srvCpu = {};
 			D3D12_CPU_DESCRIPTOR_HANDLE rtvCpu = {};
 			D3D12_CPU_DESCRIPTOR_HANDLE dsvCpu = {};
+
+			bool isCubeMap = false;
 		};
 
 		struct RetiredTextureResource {

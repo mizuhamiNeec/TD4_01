@@ -295,6 +295,15 @@ namespace Unnamed::Render {
 					);
 				}
 			}
+			if (
+				view.type == RENDER_VIEW_TYPE::SCENE &&
+				view.skybox.enabled &&
+				view.skybox.textureAssetId != kInvalidAssetID
+			) {
+				(void)EnsureSkyboxTextureLoaded(
+					renderDevice, view.skybox.textureAssetId
+				);
+			}
 			if (view.type != RENDER_VIEW_TYPE::SCENE) {
 				continue;
 			}
@@ -313,6 +322,10 @@ namespace Unnamed::Render {
 		mGeometryPass.pso =
 			renderDevice.GetPipelineCache().GetOrCreateGraphicsPso(
 				mGeometryPass.psoKey
+			);
+		mSkyboxPass.geom.pso =
+			renderDevice.GetPipelineCache().GetOrCreateGraphicsPso(
+				mSkyboxPass.geom.psoKey
 			);
 		mSpritePass.geom.pso =
 			renderDevice.GetPipelineCache().GetOrCreateGraphicsPso(

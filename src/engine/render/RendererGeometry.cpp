@@ -228,6 +228,75 @@ namespace Unnamed::Render {
 		mSpritePass.geom.ib->SetName(L"QuadIB_Default");
 	}
 
+	void Renderer::CreateSkyboxCubeResources(Rhi::D3D12Device& dx) {
+		auto& up = dx.GetUploadContext();
+		up.Begin();
+
+		auto* device  = dx.GetDevice();
+		auto* cmdList = up.GetCommandList();
+
+		constexpr VertexGeom verts[8] = {
+			{-1.0f, -1.0f, -1.0f, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0},
+			{1.0f, -1.0f, -1.0f, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0},
+			{1.0f, 1.0f, -1.0f, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0},
+			{-1.0f, 1.0f, -1.0f, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0},
+			{-1.0f, -1.0f, 1.0f, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0},
+			{1.0f, -1.0f, 1.0f, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0},
+			{1.0f, 1.0f, 1.0f, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0},
+			{-1.0f, 1.0f, 1.0f, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0},
+		};
+		constexpr uint16_t indices[36] = {
+			0, 1, 2, 0, 2, 3,
+			4, 6, 5, 4, 7, 6,
+			4, 5, 1, 4, 1, 0,
+			3, 2, 6, 3, 6, 7,
+			1, 5, 6, 1, 6, 2,
+			4, 0, 3, 4, 3, 7,
+		};
+
+		Microsoft::WRL::ComPtr<ID3D12Resource> vbUpload;
+		Microsoft::WRL::ComPtr<ID3D12Resource> ibUpload;
+
+		CreateDefaultBufferWithUpload(
+			device,
+			cmdList,
+			verts,
+			sizeof(verts),
+			mSkyboxPass.geom.vb,
+			vbUpload,
+			D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER
+		);
+
+		CreateDefaultBufferWithUpload(
+			device,
+			cmdList,
+			indices,
+			sizeof(indices),
+			mSkyboxPass.geom.ib,
+			ibUpload,
+			D3D12_RESOURCE_STATE_INDEX_BUFFER
+		);
+
+		up.EndAndSubmitAndWait();
+
+		mSkyboxPass.geom.vbv.BufferLocation =
+			mSkyboxPass.geom.vb->GetGPUVirtualAddress();
+		mSkyboxPass.geom.vbv.SizeInBytes   = sizeof(verts);
+		mSkyboxPass.geom.vbv.StrideInBytes = sizeof(VertexGeom);
+
+		mSkyboxPass.geom.ibv.BufferLocation =
+			mSkyboxPass.geom.ib->GetGPUVirtualAddress();
+		mSkyboxPass.geom.ibv.SizeInBytes = sizeof(indices);
+		mSkyboxPass.geom.ibv.Format      = DXGI_FORMAT_R16_UINT;
+		mSkyboxPass.geom.indexCount      = 36;
+		mSkyboxPass.geom.localAABB = MakeAabbFromPositions(
+			std::vector<VertexGeom>(std::begin(verts), std::end(verts))
+		);
+
+		mSkyboxPass.geom.vb->SetName(L"SkyboxCubeVB_Default");
+		mSkyboxPass.geom.ib->SetName(L"SkyboxCubeIB_Default");
+	}
+
 	bool Renderer::EnsureMeshResourceLoaded(
 		RenderDevice& renderDevice, Rhi::D3D12Device& dx,
 		const AssetID meshAssetId
@@ -591,6 +660,35 @@ namespace Unnamed::Render {
 			*tex, "SpriteOverlayTex"
 		);
 		mSpriteTextureIds.emplace(textureAssetId, textureId);
+		return textureId;
+	}
+
+	uint32_t Renderer::EnsureSkyboxTextureLoaded(
+		RenderDevice& renderDevice, const AssetID textureAssetId
+	) {
+		if (textureAssetId == kInvalidAssetID) {
+			return 0;
+		}
+		if (const auto it = mSkyboxTextureIds.find(textureAssetId);
+		    it != mSkyboxTextureIds.end()) {
+			return it->second;
+		}
+
+		const auto& assetManager = renderDevice.GetAssetManager();
+		auto&       registry = renderDevice.GetRegistry();
+		const auto* tex = assetManager.Get<TextureAssetData>(textureAssetId);
+		if (!tex || !tex->isCubeMap) {
+			return 0;
+		}
+
+		const uint32_t textureId = registry.CreateTextureFromAsset(
+			*tex, "SkyboxCubeTex"
+		);
+		if (textureId == 0) {
+			return 0;
+		}
+
+		mSkyboxTextureIds.emplace(textureAssetId, textureId);
 		return textureId;
 	}
 

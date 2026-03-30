@@ -42,6 +42,11 @@ namespace Unnamed::Render {
 			"./content/core/shaders/programs/pbr.shader.json",
 			ASSET_TYPE::SHADER_PROGRAM
 		);
+		const AssetID skyboxProgramId = LoadAsset(
+			assetManager,
+			"./content/core/shaders/programs/skybox.shader.json",
+			ASSET_TYPE::SHADER_PROGRAM
+		);
 		const AssetID csProgramId = LoadAsset(
 			assetManager,
 			"./content/core/shaders/programs/cs_write_uav.shader.json",
@@ -272,6 +277,21 @@ namespace Unnamed::Render {
 			}
 		};
 
+		mSkyboxPass.geom.rootSig = dx.GetGeomRootSignature();
+		ResolveShaderProgramStageKey(
+			renderDevice, skyboxProgramId, "vs", mSkyboxPass.geom.psoKey.vs
+		);
+		ResolveShaderProgramStageKey(
+			renderDevice, skyboxProgramId, "ps", mSkyboxPass.geom.psoKey.ps
+		);
+		mSkyboxPass.geom.psoKey.rootSignature = mSkyboxPass.geom.rootSig;
+		mSkyboxPass.geom.psoKey.rtvFormat     = kSceneHdrColorFormat;
+		mSkyboxPass.geom.psoKey.depthEnable   = true;
+		mSkyboxPass.geom.psoKey.dsvFormat = DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
+		mSkyboxPass.geom.psoKey.depthFunc = D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+		mSkyboxPass.geom.psoKey.cullMode  = D3D12_CULL_MODE_NONE;
+		mSkyboxPass.geom.psoKey.vertexLayout = mGeometryPass.psoKey.vertexLayout;
+
 		mSpritePass.geom.rootSig = dx.GetGeomRootSignature();
 		ResolveShaderProgramStageKey(
 			renderDevice, spriteOverlayProgramId, "vs",
@@ -393,6 +413,7 @@ namespace Unnamed::Render {
 
 		CreateTriangleTestResources(dx);
 		CreateQuadResources(dx);
+		CreateSkyboxCubeResources(dx);
 		mBillboardPass.depthGeom.vb         = mSpritePass.geom.vb;
 		mBillboardPass.depthGeom.ib         = mSpritePass.geom.ib;
 		mBillboardPass.depthGeom.vbv        = mSpritePass.geom.vbv;

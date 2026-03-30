@@ -372,6 +372,12 @@ namespace Unnamed::Render {
 				collectTextureIds(
 					view.screenSprites
 				);
+			const uint32_t skyboxTextureId =
+				view.type == RENDER_VIEW_TYPE::SCENE && view.skybox.enabled ?
+					EnsureSkyboxTextureLoaded(
+						renderDevice, view.skybox.textureAssetId
+					) :
+					0;
 
 			uint32_t colorId  = state.colorTextureId;
 			uint32_t depthId  = state.depthTextureId;
@@ -388,6 +394,93 @@ namespace Unnamed::Render {
 						b.ClearDepth(depthId, 0.0f, 0);
 					},
 					[](RenderPassContext&) {}
+				);
+
+				mGraph.AddPass(
+					prefix + "Skybox",
+					[colorId, depthId, skyboxTextureId](RenderGraphBuilder& b) {
+						b.WriteRt(colorId);
+						b.WriteDepth(depthId);
+						if (skyboxTextureId != 0) {
+							b.ReadSrvPs(skyboxTextureId);
+						}
+					},
+					[this, viewIndex, state, skyboxTextureId, &renderDevice](
+					RenderPassContext& pass
+				) {
+						const RenderViewInput& view = mFrameViews[viewIndex];
+						if (!view.skybox.enabled || skyboxTextureId == 0) {
+							return;
+						}
+						if (
+							!mSkyboxPass.geom.pso ||
+							!mSkyboxPass.geom.vb ||
+							!mSkyboxPass.geom.ib
+						) {
+							return;
+						}
+
+						auto& allocator = static_cast<Rhi::D3D12Device&>(
+							renderDevice.GetRhiDevice()
+						).GetFrameUploadAllocator();
+						Rhi::FrameConstants frame = BuildSceneFrameConstants(
+							view.camera, state.width, state.height, 0.0f
+						);
+						Rhi::ObjectConstants object = {};
+						object.world                = Mat4::identity;
+						object.world.m[3][0]        = frame.cameraPos.x;
+						object.world.m[3][1]        = frame.cameraPos.y;
+						object.world.m[3][2]        = frame.cameraPos.z;
+						object.worldInverseTranspose =
+							object.world.Inverse().Transpose();
+						object.skinningInfo = Vec4::zero;
+
+						Rhi::MaterialConstants material = {};
+						material.baseColor = Vec4(
+							view.skybox.intensity,
+							view.skybox.intensity,
+							view.skybox.intensity,
+							1.0f
+						);
+						material.opacity    = 1.0f;
+						material.domainMode = 0.0f;
+
+						const D3D12_GPU_VIRTUAL_ADDRESS frameCb =
+							allocator.AllocateConstantBuffer(
+								&frame, sizeof(frame)
+							);
+						const D3D12_GPU_VIRTUAL_ADDRESS objectCb =
+							allocator.AllocateConstantBuffer(
+								&object, sizeof(object)
+							);
+						const D3D12_GPU_VIRTUAL_ADDRESS materialCb =
+							allocator.AllocateConstantBuffer(
+								&material, sizeof(material)
+							);
+
+						pass.SetViewportAndScissor(
+							0.0f,
+							0.0f,
+							static_cast<float>(state.width),
+							static_cast<float>(state.height)
+						);
+						pass.SetSrvUavHeap();
+						pass.SetRenderTargetAndDepth(
+							std::span<const uint32_t>(&state.colorTextureId, 1),
+							state.depthTextureId
+						);
+						pass.SetGraphicsPipeline(
+							mSkyboxPass.geom.rootSig, mSkyboxPass.geom.pso
+						);
+						pass.SetVertexBuffer(mSkyboxPass.geom.vbv);
+						pass.SetIndexBuffer(mSkyboxPass.geom.ibv);
+						pass.BindGraphicsCbv(0, frameCb);
+						pass.BindGraphicsCbv(1, objectCb);
+						pass.BindGraphicsCbv(2, materialCb);
+						pass.BindGraphicsCbv(3, objectCb);
+						pass.BindGraphicsSrvTable(4, skyboxTextureId);
+						pass.DrawIndexedTest(mSkyboxPass.geom.indexCount);
+					}
 				);
 
 				mGraph.AddPass(

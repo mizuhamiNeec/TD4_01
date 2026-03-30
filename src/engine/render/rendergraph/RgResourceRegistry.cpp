@@ -118,6 +118,7 @@ namespace Unnamed::Render {
 
 		auto& e = mEntries[id];
 		e.desc  = resolved;
+		e.isCubeMap = false;
 
 		CreateD3D12Texture(e);
 		CreateDescriptors(e);
@@ -125,11 +126,82 @@ namespace Unnamed::Render {
 		return id;
 	}
 
-	uint32_t RgResourceRegistry::CreateTexture2DFromAsset(
+	uint32_t RgResourceRegistry::CreateTextureFromAsset(
 		const TextureAssetData& texture, const std::string& debugName
 	) {
-		if (texture.width == 0 || texture.height == 0 || texture.mips.empty()) {
+		if (texture.width == 0 || texture.height == 0) {
 			return 0;
+		}
+
+		const uint32_t mipLevels = texture.mipLevels > 0 ?
+			                           texture.mipLevels :
+			                           static_cast<uint32_t>(texture.mips.size());
+		if (mipLevels == 0) {
+			return 0;
+		}
+
+		const uint32_t arraySize = std::max<uint32_t>(texture.arraySize, 1);
+		const uint32_t expectedSubresources = mipLevels * arraySize;
+
+		std::vector<const TextureSubresource*> subresourceInfos(
+			expectedSubresources, nullptr
+		);
+		std::vector<TextureSubresource> legacySubresources;
+		if (!texture.subresources.empty()) {
+			for (const TextureSubresource& subresource : texture.subresources) {
+				if (
+					subresource.mipLevel >= mipLevels ||
+					subresource.arraySlice >= arraySize
+				) {
+					continue;
+				}
+				const uint32_t index = subresource.mipLevel +
+				                       subresource.arraySlice * mipLevels;
+				subresourceInfos[index] = &subresource;
+			}
+		} else {
+			legacySubresources.reserve(mipLevels);
+			for (uint32_t mipLevel = 0; mipLevel < mipLevels; ++mipLevel) {
+				if (mipLevel >= texture.mips.size()) {
+					break;
+				}
+				const TextureMip& mip = texture.mips[mipLevel];
+				if (mip.bytes.empty()) {
+					continue;
+				}
+				TextureSubresource legacySubresource = {};
+				legacySubresource.width      = mip.width;
+				legacySubresource.height     = mip.height;
+				legacySubresource.rowPitch   = mip.rowPitch;
+				legacySubresource.slicePitch = mip.bytes.size();
+				legacySubresource.mipLevel   = mipLevel;
+				legacySubresource.arraySlice = 0;
+				legacySubresource.bytes      = mip.bytes;
+				legacySubresources.emplace_back(std::move(legacySubresource));
+				subresourceInfos[mipLevel] = &legacySubresources.back();
+			}
+		}
+
+		if (std::any_of(
+			subresourceInfos.begin(),
+			subresourceInfos.end(),
+			[](const TextureSubresource* subresource) {
+				return subresource == nullptr;
+			}
+		)) {
+			Warning(
+				kChannel,
+				"テクスチャのサブリソースが不足しているため作成できません: {}",
+				debugName
+			);
+			return 0;
+		}
+
+		DXGI_FORMAT textureFormat = texture.format;
+		if (textureFormat == DXGI_FORMAT_UNKNOWN) {
+			textureFormat = texture.isSRGB ?
+				                DXGI_FORMAT_R8G8B8A8_UNORM_SRGB :
+				                DXGI_FORMAT_R8G8B8A8_UNORM;
 		}
 
 		const uint32_t id = AllocateId();
@@ -141,9 +213,7 @@ namespace Unnamed::Render {
 		e.desc  = RgTextureDesc{
 			.width          = texture.width,
 			.height         = texture.height,
-			.resourceFormat = texture.isSRGB ?
-				                  DXGI_FORMAT_R8G8B8A8_UNORM_SRGB :
-				                  DXGI_FORMAT_R8G8B8A8_UNORM,
+			.resourceFormat = textureFormat,
 			.allowUav   = false,
 			.allowRtv   = false,
 			.allowDsv   = false,
@@ -157,10 +227,8 @@ namespace Unnamed::Render {
 		texDesc.Dimension           = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 		texDesc.Width               = e.desc.width;
 		texDesc.Height              = e.desc.height;
-		texDesc.DepthOrArraySize    = 1;
-		texDesc.MipLevels = static_cast<uint16_t>(std::max<size_t>(
-			texture.mips.size(), 1
-		));
+		texDesc.DepthOrArraySize = static_cast<uint16_t>(arraySize);
+		texDesc.MipLevels        = static_cast<uint16_t>(mipLevels);
 		texDesc.Format              = e.desc.resourceFormat;
 		texDesc.SampleDesc.Count    = 1;
 		texDesc.Layout              = D3D12_TEXTURE_LAYOUT_UNKNOWN;
@@ -183,17 +251,19 @@ namespace Unnamed::Render {
 		if (!debugName.empty()) {
 			e.resource->SetName(StrUtil::ToWString(debugName).c_str());
 		}
+		e.isCubeMap = texture.isCubeMap;
 
-		if (!texture.mips.empty() && !texture.mips[0].bytes.empty()) {
+		if (!subresourceInfos.empty()) {
 			auto& up = mDx.GetUploadContext();
 			up.Begin();
 			auto* cmd = up.GetCommandList();
 
 			D3D12_RESOURCE_DESC rd = e.resource->GetDesc();
-			const UINT subresourceCount = std::min<UINT>(
-				static_cast<UINT>(texture.mips.size()),
-				static_cast<UINT>(rd.MipLevels)
-			);
+			const UINT subresourceCount = static_cast<UINT>(std::min<uint32_t>(
+				expectedSubresources,
+				static_cast<uint32_t>(rd.MipLevels) *
+					static_cast<uint32_t>(rd.DepthOrArraySize)
+			));
 			uint64_t requiredBytes = 0;
 			std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> footprints(
 				subresourceCount
@@ -238,25 +308,39 @@ namespace Unnamed::Render {
 			void*       map       = nullptr;
 			D3D12_RANGE readRange = {0, 0};
 			Rhi::Throw(upload->Map(0, &readRange, &map));
-			for (UINT mipIndex = 0; mipIndex < subresourceCount; ++mipIndex) {
-				const TextureMip&                           mip =
-					texture.mips[mipIndex];
+			for (UINT subresourceIndex = 0; subresourceIndex < subresourceCount;
+			     ++subresourceIndex) {
+				const TextureSubresource* subresource =
+					subresourceInfos[subresourceIndex];
+				if (!subresource) {
+					continue;
+				}
 				const D3D12_PLACED_SUBRESOURCE_FOOTPRINT& footprint =
-					footprints[mipIndex];
-				for (UINT y = 0; y < numRows[mipIndex]; ++y) {
-					const uint8_t* src = mip.bytes.data() +
-					                     static_cast<size_t>(y) * mip.rowPitch;
+					footprints[subresourceIndex];
+				for (UINT y = 0; y < numRows[subresourceIndex]; ++y) {
+					const size_t srcOffset =
+						static_cast<size_t>(y) * subresource->rowPitch;
+					const uint8_t* src = srcOffset < subresource->bytes.size() ?
+						                     subresource->bytes.data() + srcOffset :
+						                     nullptr;
 					uint8_t* dst = static_cast<uint8_t*>(map) + footprint.Offset +
 					               static_cast<size_t>(y) *
 					               footprint.Footprint.RowPitch;
-					memcpy(
-						dst,
-						src,
-						std::min<size_t>(
-							static_cast<size_t>(rowSizeInBytes[mipIndex]),
-							mip.rowPitch
-						)
+					const size_t rowBytes = static_cast<size_t>(
+						rowSizeInBytes[subresourceIndex]
 					);
+					size_t copyBytes = 0;
+					if (src) {
+						copyBytes = std::min<size_t>(
+							rowBytes, subresource->bytes.size() - srcOffset
+						);
+					}
+					if (copyBytes > 0) {
+						memcpy(dst, src, copyBytes);
+					}
+					if (copyBytes < rowBytes) {
+						std::memset(dst + copyBytes, 0, rowBytes - copyBytes);
+					}
 				}
 			}
 			upload->Unmap(0, nullptr);
@@ -268,16 +352,17 @@ namespace Unnamed::Render {
 			);
 			cmd->ResourceBarrier(1, &toCopy);
 
-			for (UINT mipIndex = 0; mipIndex < subresourceCount; ++mipIndex) {
+			for (UINT subresourceIndex = 0; subresourceIndex < subresourceCount;
+			     ++subresourceIndex) {
 				D3D12_TEXTURE_COPY_LOCATION srcLoc = {};
 				srcLoc.pResource = upload.Get();
 				srcLoc.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-				srcLoc.PlacedFootprint = footprints[mipIndex];
+				srcLoc.PlacedFootprint = footprints[subresourceIndex];
 
 				D3D12_TEXTURE_COPY_LOCATION dstLoc = {};
 				dstLoc.pResource = e.resource.Get();
 				dstLoc.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-				dstLoc.SubresourceIndex = mipIndex;
+				dstLoc.SubresourceIndex = subresourceIndex;
 
 				cmd->CopyTextureRegion(&dstLoc, 0, 0, 0, &srcLoc, nullptr);
 			}
@@ -295,6 +380,12 @@ namespace Unnamed::Render {
 		++e.resourceRevision;
 		CreateDescriptors(e);
 		return id;
+	}
+
+	uint32_t RgResourceRegistry::CreateTexture2DFromAsset(
+		const TextureAssetData& texture, const std::string& debugName
+	) {
+		return CreateTextureFromAsset(texture, debugName);
 	}
 
 	void RgResourceRegistry::ReleaseTexture(const uint32_t textureId) {
@@ -339,6 +430,7 @@ namespace Unnamed::Render {
 		e.srvCpu      = {};
 		e.rtvCpu      = {};
 		e.dsvCpu      = {};
+		e.isCubeMap   = false;
 	}
 
 	ID3D12Resource* RgResourceRegistry::GetResource(uint32_t textureId) const {
@@ -826,12 +918,29 @@ namespace Unnamed::Render {
 			}
 			srvFormat = e.desc.srvFormat.value();
 		}
+		const D3D12_RESOURCE_DESC resourceDesc = e.resource->GetDesc();
+
 		D3D12_SHADER_RESOURCE_VIEW_DESC srv = {};
 		srv.Format                          = srvFormat;
-		srv.ViewDimension                   = D3D12_SRV_DIMENSION_TEXTURE2D;
-		srv.Texture2D.MipLevels             = e.resource->GetDesc().MipLevels;
 		srv.Shader4ComponentMapping         =
 			D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		if (e.isCubeMap) {
+			srv.ViewDimension                 = D3D12_SRV_DIMENSION_TEXTURECUBE;
+			srv.TextureCube.MostDetailedMip  = 0;
+			srv.TextureCube.MipLevels        = resourceDesc.MipLevels;
+			srv.TextureCube.ResourceMinLODClamp = 0.0f;
+		} else if (resourceDesc.DepthOrArraySize > 1) {
+			srv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+			srv.Texture2DArray.MostDetailedMip = 0;
+			srv.Texture2DArray.MipLevels = resourceDesc.MipLevels;
+			srv.Texture2DArray.FirstArraySlice = 0;
+			srv.Texture2DArray.ArraySize = resourceDesc.DepthOrArraySize;
+			srv.Texture2DArray.PlaneSlice = 0;
+			srv.Texture2DArray.ResourceMinLODClamp = 0.0f;
+		} else {
+			srv.ViewDimension       = D3D12_SRV_DIMENSION_TEXTURE2D;
+			srv.Texture2D.MipLevels = resourceDesc.MipLevels;
+		}
 
 		D3D12_UNORDERED_ACCESS_VIEW_DESC uav = {};
 		uav.Format                           = e.desc.resourceFormat;

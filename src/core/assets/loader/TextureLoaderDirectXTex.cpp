@@ -1,5 +1,6 @@
 #include "TextureLoaderDirectXTex.h"
 
+#include <algorithm>
 #include <array>
 #include <DirectXTex.h>
 #include <filesystem>
@@ -11,6 +12,21 @@
 
 namespace Unnamed {
 	static constexpr std::string_view kChannel = "TxLdrDtx";
+
+	namespace {
+		[[nodiscard]] bool IsSrgbFormat(const DXGI_FORMAT format) {
+			switch (format) {
+				case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
+				case DXGI_FORMAT_BC1_UNORM_SRGB:
+				case DXGI_FORMAT_BC2_UNORM_SRGB:
+				case DXGI_FORMAT_BC3_UNORM_SRGB:
+				case DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:
+				case DXGI_FORMAT_B8G8R8X8_UNORM_SRGB:
+				case DXGI_FORMAT_BC7_UNORM_SRGB: return true;
+				default: return false;
+			}
+		}
+	}
 
 	static constexpr std::array kSupportedExtensions = {
 		// DirectDraw Surface
@@ -117,29 +133,53 @@ namespace Unnamed {
 
 		// アセットデータにつめつめ
 		TextureAssetData out = {};
-		out.width            = static_cast<uint32_t>(meta.width);
-		out.height           = static_cast<uint32_t>(meta.height);
-		out.sourcePath       = path;
-		out.mips.resize(meta.mipLevels);
-		for (size_t m = 0; m < meta.mipLevels; ++m) {
-			const Image* im  = img.GetImage(m, 0, 0);
-			TextureMip   mip = {};
-			mip.width        = static_cast<uint32_t>(im->width);
-			mip.height       = static_cast<uint32_t>(im->height);
-			mip.rowPitch     = static_cast<size_t>(mip.width) * 4; // RGBA8
-			mip.bytes.resize(mip.rowPitch * mip.height);
+		out.width     = static_cast<uint32_t>(meta.width);
+		out.height    = static_cast<uint32_t>(meta.height);
+		out.arraySize = static_cast<uint32_t>(std::max<size_t>(meta.arraySize, 1));
+		out.mipLevels = static_cast<uint32_t>(std::max<size_t>(meta.mipLevels, 1));
+		out.format     = meta.format;
+		out.isSRGB     = IsSrgbFormat(meta.format);
+		out.isCubeMap  = meta.IsCubemap();
+		out.dimension  = out.isCubeMap ?
+			                 TEXTURE_DIMENSION::TEXTURE_CUBE :
+			                 TEXTURE_DIMENSION::TEXTURE_2D;
+		out.sourcePath = path;
 
-			for (uint32_t y = 0; y < mip.height; ++y) {
+		out.subresources.reserve(
+			static_cast<size_t>(out.arraySize) * static_cast<size_t>(out.mipLevels)
+		);
+		out.mips.resize(out.mipLevels);
+
+		for (size_t arraySlice = 0; arraySlice < out.arraySize; ++arraySlice) {
+			for (size_t mipLevel = 0; mipLevel < out.mipLevels; ++mipLevel) {
+				const Image* im = img.GetImage(mipLevel, arraySlice, 0);
+				if (!im || !im->pixels) {
+					continue;
+				}
+
+				TextureSubresource subresource = {};
+				subresource.width = static_cast<uint32_t>(im->width);
+				subresource.height = static_cast<uint32_t>(im->height);
+				subresource.rowPitch = static_cast<size_t>(im->rowPitch);
+				subresource.slicePitch = static_cast<size_t>(im->slicePitch);
+				subresource.mipLevel = static_cast<uint32_t>(mipLevel);
+				subresource.arraySlice = static_cast<uint32_t>(arraySlice);
+				subresource.bytes.resize(subresource.slicePitch);
 				memcpy(
-					mip.bytes.data() + y * mip.rowPitch,
-					im->pixels + y * im->rowPitch,
-					std::min(
-						mip.rowPitch,
-						static_cast<size_t>(im->rowPitch)
-					)
+					subresource.bytes.data(), im->pixels, subresource.slicePitch
 				);
+
+				if (arraySlice == 0) {
+					TextureMip mip = {};
+					mip.width      = subresource.width;
+					mip.height     = subresource.height;
+					mip.rowPitch   = subresource.rowPitch;
+					mip.bytes      = subresource.bytes;
+					out.mips[mipLevel] = std::move(mip);
+				}
+
+				out.subresources.emplace_back(std::move(subresource));
 			}
-			out.mips[m] = std::move(mip);
 		}
 
 		r.payload     = std::move(out);

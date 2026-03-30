@@ -90,6 +90,7 @@ namespace Unnamed::Render {
 
 		void CreateTriangleTestResources(Rhi::D3D12Device& dx);
 		void CreateQuadResources(Rhi::D3D12Device& dx);
+		void CreateSkyboxCubeResources(Rhi::D3D12Device& dx);
 		bool EnsureMeshResourceLoaded(
 			RenderDevice& renderDevice, Rhi::D3D12Device& dx,
 			AssetID       meshAssetId
@@ -160,6 +161,10 @@ namespace Unnamed::Render {
 			GeometryPassRes frontGeom = {};
 		};
 
+		struct SkyboxPassRes {
+			GeometryPassRes geom = {};
+		};
+
 		struct DebugLineVertex {
 			float px = 0.0f;
 			float py = 0.0f;
@@ -218,6 +223,7 @@ namespace Unnamed::Render {
 		GeometryPassRes          mGeometryPass        = {};
 		SpritePassRes            mSpritePass          = {};
 		BillboardPassRes         mBillboardPass       = {};
+		SkyboxPassRes            mSkyboxPass          = {};
 		LinePassRes              mLinePass            = {};
 		AdvancedRenderFoundation mAdvancedFoundation  = {};
 
@@ -234,6 +240,7 @@ namespace Unnamed::Render {
 		std::unordered_map<AssetID, MaterialBinding> mMaterialBindings;
 		std::vector<PostFxRuntimePass> mPostFxPasses;
 		std::unordered_map<AssetID, uint32_t> mSpriteTextureIds;
+		std::unordered_map<AssetID, uint32_t> mSkyboxTextureIds;
 		uint32_t mSpriteFallbackTextureId = 0;
 
 		std::vector<MeshDrawItem>     mMainDrawList;
@@ -254,6 +261,9 @@ namespace Unnamed::Render {
 		);
 		uint32_t ResolveSpriteTexture(
 			RenderDevice& renderDevice, const SpriteTextureRef& textureRef
+		);
+		uint32_t EnsureSkyboxTextureLoaded(
+			RenderDevice& renderDevice, AssetID textureAssetId
 		);
 		void        EnsureSpriteFallbackTexture(RenderDevice& renderDevice);
 		void        InitializeDebugLineResources(Rhi::D3D12Device& dx);

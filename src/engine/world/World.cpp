@@ -18,6 +18,7 @@
 #include "engine/rhi/Constants.h"
 #include "engine/scene/Scene.h"
 #include "engine/scene/SceneSerializer.h"
+#include "engine/unnamed/framework/components/SkyboxComponent.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/framework/components/editor/EditorCameraComponent.h"
 #include "engine/unnamed/framework/components/mesh/SkeletalAnimationComponent.h"
@@ -450,6 +451,7 @@ namespace Unnamed {
 	void World::Shutdown() {
 		UnloadScene();
 		mCameraManager.ClearCurrentCamera();
+		mGameplayCueBus.Clear();
 		if (mPhysicsEngine) {
 			mPhysicsEngine->ClearStaticMeshes();
 			mPhysicsEngine.reset();
@@ -639,7 +641,10 @@ namespace Unnamed {
 	) {
 		frameContext.Reset();
 		inputs.views.clear();
+
+#ifdef _DEBUG
 		mDebugDraw.FlushToRenderFrameInputs(inputs);
+#endif
 
 		if (!mScene) {
 			return;
@@ -666,14 +671,14 @@ namespace Unnamed {
 			sceneView.postFxPassOverrides.emplace_back(std::move(passOverride));
 		}
 
-		std::vector<UiCanvasRuntimeEntry>       uiCanvasEntries;
+		std::vector<UiCanvasRuntimeEntry> uiCanvasEntries;
 		uiCanvasEntries.reserve(mScene->GetEntities().size());
 		InputSystem* inputSystem        = ServiceLocator::Get<InputSystem>();
 		static bool  sTextWarningLogged = false;
 		const Vec2   aspectViewportSize = inputSystem ?
-			                                inputSystem->
-			                                GetMouseClientViewportSize() :
-			                                Vec2::zero;
+			                                  inputSystem->
+			                                  GetMouseClientViewportSize() :
+			                                  Vec2::zero;
 		const float runtimeAspect = aspectViewportSize.y > 0.0f ?
 			                            aspectViewportSize.x /
 			                            aspectViewportSize.y :
@@ -697,7 +702,21 @@ namespace Unnamed {
 				continue;
 			}
 
-			auto* transform = entity->GetComponent<TransformComponent>();
+			if (!sceneView.skybox.enabled) {
+				auto* skybox = entity->GetComponent<SkyboxComponent>();
+				if (skybox && skybox->IsActive()) {
+					const AssetID skyboxTextureAssetId = skybox->ResolveTextureAsset(
+						assetManager
+					);
+					if (skyboxTextureAssetId != kInvalidAssetID) {
+						sceneView.skybox.enabled        = true;
+						sceneView.skybox.textureAssetId = skyboxTextureAssetId;
+						sceneView.skybox.intensity      = skybox->GetIntensity();
+					}
+				}
+			}
+
+			auto* transform    = entity->GetComponent<TransformComponent>();
 			auto* meshRenderer = entity->GetComponent<
 				StaticMeshRendererComponent>();
 			auto* skelRenderer = entity->GetComponent<
@@ -727,8 +746,8 @@ namespace Unnamed {
 							assetManager
 						);
 					object.ownerEntityGuid = entity->GetGuid();
-					object.world     = transform->WorldMat();
-					object.isSkinned = false;
+					object.world           = transform->WorldMat();
+					object.isSkinned       = false;
 					sceneView.visibleObjects.emplace_back(object);
 				}
 			}
@@ -747,7 +766,7 @@ namespace Unnamed {
 					ResolveMaterialInstanceAsset(
 						assetManager
 					);
-				object.ownerEntityGuid = entity->GetGuid();
+				object.ownerEntityGuid   = entity->GetGuid();
 				object.world             = transform->WorldMat();
 				object.isSkinned         = false;
 				object.skeletonPaletteId = 0;
@@ -1045,6 +1064,14 @@ namespace Unnamed {
 
 	const WorldCameraManager& World::GetCameraManager() const noexcept {
 		return mCameraManager;
+	}
+
+	GameplayCueBus& World::GetGameplayCueBus() noexcept {
+		return mGameplayCueBus;
+	}
+
+	const GameplayCueBus& World::GetGameplayCueBus() const noexcept {
+		return mGameplayCueBus;
 	}
 
 	void World::SetScene(std::unique_ptr<Scene> scene) {

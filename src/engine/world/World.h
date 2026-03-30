@@ -8,6 +8,7 @@
 #include "core/guidgenerator/GuidGenerator.h"
 #include "core/math/Vec4.h"
 
+#include "engine/world/GameplayCueBus.h"
 #include "engine/world/WorldCameraManager.h"
 #include "engine/world/WorldDebugDraw.h"
 
@@ -102,6 +103,9 @@ namespace Unnamed {
 		[[nodiscard]] const WorldCameraManager&
 		GetCameraManager() const noexcept;
 
+		[[nodiscard]] GameplayCueBus& GetGameplayCueBus() noexcept;
+		[[nodiscard]] const GameplayCueBus& GetGameplayCueBus() const noexcept;
+
 		/// @brief シーンを設定します。既にシーンが存在する場合はアンロードされます。
 		/// @param scene 設定するシーンのユニークポインタ
 		virtual void SetScene(std::unique_ptr<Scene> scene);
@@ -181,6 +185,7 @@ namespace Unnamed {
 		std::unique_ptr<Scene>           mScene;           // 現在のシーン
 		std::unique_ptr<Physics::Engine> mPhysicsEngine;   // 物理エンジン
 		WorldCameraManager               mCameraManager;   // ワールドの現在カメラ管理
+		GameplayCueBus                   mGameplayCueBus;
 		GuidGenerator                    mGuidGenerator;   // GUIDジェネレーター
 		std::string                      mLoadedScenePath; // ロードされたシーンのファイルパス
 		WorldTime                        mTime;            // ワールドの時間情報

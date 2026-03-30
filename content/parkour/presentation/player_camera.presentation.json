@@ -1,0 +1,132 @@
+{
+	"name": "player_camera_presentation",
+	"rules": [
+		{
+			"cueId": "movement.land",
+			"minValue": -3.4028234663852886e+38,
+			"maxValue": 3.4028234663852886e+38,
+			"cooldownSec": 0.0,
+			"outputs": [
+				{
+					"type": "camera.shake",
+					"id": "shake_land",
+					"scale": 1.0
+				},
+				{
+					"type": "audio.play",
+					"id": "se_land",
+					"scale": 1.0
+				}
+			]
+		},
+		{
+			"cueId": "movement.jump",
+			"minValue": -3.4028234663852886e+38,
+			"maxValue": 3.4028234663852886e+38,
+			"cooldownSec": 0.0,
+			"outputs": [
+				{
+					"type": "camera.shake",
+					"id": "shake_jump",
+					"scale": 1.0
+				},
+				{
+					"type": "audio.play",
+					"id": "se_jump",
+					"scale": 1.0
+				}
+			]
+		},
+		{
+			"cueId": "movement.state.enter.parkourspeedvaultmove",
+			"minValue": -3.4028234663852886e+38,
+			"maxValue": 3.4028234663852886e+38,
+			"cooldownSec": 0.0,
+			"outputs": [
+				{
+					"type": "camera.shake",
+					"id": "shake_vault_start",
+					"scale": 1.0
+				}
+			]
+		},
+		{
+			"cueId": "movement.state.enter.parkourslidemove",
+			"minValue": -3.4028234663852886e+38,
+			"maxValue": 3.4028234663852886e+38,
+			"cooldownSec": 0.0,
+			"outputs": [
+				{
+					"type": "camera.fov",
+					"id": "fov_sliding_start",
+					"scale": 1.0
+				}
+			]
+		},
+		{
+			"cueId": "movement.state.exit.parkourslidemove",
+			"minValue": -3.4028234663852886e+38,
+			"maxValue": 3.4028234663852886e+38,
+			"cooldownSec": 0.0,
+			"outputs": [
+				{
+					"type": "camera.fov",
+					"id": "fov_sliding_end",
+					"scale": 1.0
+				}
+			]
+		},
+		{
+			"cueId": "movement.state.update.parkourslidemove",
+			"minValue": -3.4028234663852886e+38,
+			"maxValue": 3.4028234663852886e+38,
+			"cooldownSec": 0.0,
+			"outputs": [
+				{
+					"type": "camera.fov",
+					"id": "fov_sliding_loop",
+					"scale": 1.0
+				}
+			]
+		},
+		{
+			"cueId": "movement.state.enter.parkourwallrunmove",
+			"minValue": -3.4028234663852886e+38,
+			"maxValue": 3.4028234663852886e+38,
+			"cooldownSec": 0.0,
+			"outputs": [
+				{
+					"type": "camera.fov",
+					"id": "fov_wallrun_start",
+					"scale": 1.0
+				}
+			]
+		},
+		{
+			"cueId": "movement.state.exit.parkourwallrunmove",
+			"minValue": -3.4028234663852886e+38,
+			"maxValue": 3.4028234663852886e+38,
+			"cooldownSec": 0.0,
+			"outputs": [
+				{
+					"type": "camera.fov",
+					"id": "fov_wallrun_end",
+					"scale": 1.0
+				}
+			]
+		},
+		{
+			"cueId": "movement.state.update.parkourwallrunmove",
+			"minValue": -3.4028234663852886e+38,
+			"maxValue": 3.4028234663852886e+38,
+			"cooldownSec": 0.0,
+			"outputs": [
+				{
+					"type": "camera.fov",
+					"id": "fov_wallrun_loop",
+					"scale": 1.0
+				}
+			]
+		}
+	]
+}

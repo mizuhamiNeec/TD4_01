@@ -90,18 +90,18 @@
                 },
                 {
                     "active": true,
-                    "data": {},
-                    "guid": 11964708778926788202,
-                    "type": "engine.KinematicMover"
-                },
-                {
-                    "active": true,
                     "data": {
                         "dynamic": true,
                         "enabled": true
                     },
                     "guid": 11530977000138538086,
                     "type": "engine.StaticMeshCollider"
+                },
+                {
+                    "active": true,
+                    "data": {},
+                    "guid": 11964708778926788202,
+                    "type": "engine.KinematicMover"
                 },
                 {
                     "active": true,
@@ -163,9 +163,9 @@
                     "active": true,
                     "data": {
                         "boxHalfExtentsHu": [
-                            16.000045776367188,
-                            36.00010681152344,
-                            16.000045776367188
+                            16.000320434570313,
+                            36.00076675415039,
+                            16.000320434570313
                         ],
                         "collisionEnabled": true,
                         "maxSubSteps": 6,
@@ -220,8 +220,8 @@
                         "pitchDegrees": 0.0,
                         "yawDegrees": 0.0
                     },
-                    "guid": 3111,
-                    "type": "parkour.CameraRotator"
+                    "guid": 16260210602474765800,
+                    "type": "game.CameraRotator"
                 }
             ],
             "folderPath": "Gameplay/Player",
@@ -240,7 +240,7 @@
                         "position": [
                             0.0,
                             0.0,
-                            0.10000000149011612
+                            0.10159999877214432
                         ],
                         "rotation": [
                             0.0,
@@ -831,7 +831,7 @@
                         "parentEntityGuid": 2101,
                         "position": [
                             0.0,
-                            0.0,
+                            -1.6951899528503418,
                             0.0
                         ],
                         "rotation": [
@@ -853,7 +853,7 @@
                     "active": true,
                     "data": {
                         "materialInstancePath": "",
-                        "meshPath": "./content/parkour/models/hand/hand.gltf"
+                        "meshPath": "content/parkour/models/viewmodel/viewmodel.glb"
                     },
                     "guid": 14371380690343291608,
                     "type": "engine.SkeletalMeshRenderer"
@@ -861,10 +861,10 @@
                 {
                     "active": true,
                     "data": {
-                        "clipName": "Crouch",
+                        "clipName": "Jump",
                         "layers": [
                             {
-                                "clipName": "Crouch",
+                                "clipName": "Jump",
                                 "loop": true,
                                 "playOnStart": true,
                                 "speed": 1.0,
@@ -873,7 +873,69 @@
                         ],
                         "loop": true,
                         "playOnStart": true,
-                        "speed": 1.0
+                        "speed": 1.0,
+                        "stateMap": [
+                            {
+                                "blendSec": 0.11999999731779099,
+                                "clipName": "Sprint.001",
+                                "layerIndex": 0,
+                                "loop": true,
+                                "restartOnPlay": true,
+                                "speed": 1.0,
+                                "stateId": "animstate_sprint",
+                                "weight": 1.0
+                            },
+                            {
+                                "blendSec": 0.25,
+                                "clipName": "Jump",
+                                "layerIndex": 0,
+                                "loop": true,
+                                "restartOnPlay": true,
+                                "speed": 1.0,
+                                "stateId": "animstate_jump",
+                                "weight": 1.0
+                            },
+                            {
+                                "blendSec": 0.125,
+                                "clipName": "Vault",
+                                "layerIndex": 0,
+                                "loop": false,
+                                "restartOnPlay": true,
+                                "speed": 1.0,
+                                "stateId": "animstate_vaulting",
+                                "weight": 1.0
+                            },
+                            {
+                                "blendSec": 0.125,
+                                "clipName": "Sliding",
+                                "layerIndex": 0,
+                                "loop": true,
+                                "restartOnPlay": true,
+                                "speed": 1.0,
+                                "stateId": "animstate_sliding",
+                                "weight": 1.0
+                            },
+                            {
+                                "blendSec": 0.125,
+                                "clipName": "BindPose",
+                                "layerIndex": 0,
+                                "loop": true,
+                                "restartOnPlay": true,
+                                "speed": 1.0,
+                                "stateId": "animstate_idle",
+                                "weight": 1.0
+                            },
+                            {
+                                "blendSec": 0.25,
+                                "clipName": "Sprint.001",
+                                "layerIndex": 0,
+                                "loop": true,
+                                "restartOnPlay": false,
+                                "speed": 1.0,
+                                "stateId": "animstate_wallrunning",
+                                "weight": 1.0
+                            }
+                        ]
                     },
                     "guid": 14953038522775958096,
                     "type": "engine.SkeletalAnimation"
@@ -881,8 +943,19 @@
                 {
                     "active": true,
                     "data": {
+                        "animationEntityGuid": 2313,
+                        "cameraFxEntityGuid": 0,
+                        "cueSourceEntityGuid": 2100,
+                        "profilePath": "content/parkour/presentation/player_viewmodel.presentation.json"
+                    },
+                    "guid": 11094975169106168005,
+                    "type": "game.CharacterPresentation"
+                },
+                {
+                    "active": true,
+                    "data": {
                         "attenuation": 16.0,
-                        "locationAmount": 0.0,
+                        "locationAmount": 0.02500000037252903,
                         "swayAmount": 0.5
                     },
                     "guid": 9631003245581126474,
@@ -921,6 +994,159 @@
                     },
                     "guid": 9575242804018874495,
                     "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "cameraEntityGuid": 2103,
+                        "fovPresets": [
+                            {
+                                "deltaDeg": 8.0,
+                                "ease": "OUT_SINE",
+                                "id": "fov_sliding_start",
+                                "inSec": 0.10000000149011612,
+                                "outSec": 0.20000000298023224
+                            },
+                            {
+                                "deltaDeg": 8.0,
+                                "ease": "OUT_SINE",
+                                "id": "fov_sliding_end",
+                                "inSec": 0.0,
+                                "outSec": 0.20000000298023224
+                            },
+                            {
+                                "deltaDeg": 8.0,
+                                "ease": "OUT_SINE",
+                                "id": "fov_sliding_loop",
+                                "inSec": 0.0,
+                                "outSec": 9.999999848243207e+30
+                            },
+                            {
+                                "deltaDeg": 14.0,
+                                "ease": "OUT_SINE",
+                                "id": "fov_wallrun_start",
+                                "inSec": 0.25,
+                                "outSec": 0.20000000298023224
+                            },
+                            {
+                                "deltaDeg": 14.0,
+                                "ease": "OUT_SINE",
+                                "id": "fov_wallrun_end",
+                                "inSec": 0.0,
+                                "outSec": 0.4000000059604645
+                            },
+                            {
+                                "deltaDeg": 14.0,
+                                "ease": "OUT_SINE",
+                                "id": "fov_wallrun_loop",
+                                "inSec": 0.0,
+                                "outSec": 9.999999848243207e+30
+                            }
+                        ],
+                        "shakeEntityGuid": 0,
+                        "shakePresets": [
+                            {
+                                "ampPitchYawDeg": [
+                                    4.0,
+                                    0.25
+                                ],
+                                "decay": 2.0,
+                                "durationSec": 0.25,
+                                "freqHz": 2.0,
+                                "id": "shake_land"
+                            },
+                            {
+                                "ampPitchYawDeg": [
+                                    -4.0,
+                                    0.4000000059604645
+                                ],
+                                "decay": 2.0,
+                                "durationSec": 0.30000001192092896,
+                                "freqHz": 2.0,
+                                "id": "shake_jump"
+                            },
+                            {
+                                "ampPitchYawDeg": [
+                                    0.5,
+                                    0.25
+                                ],
+                                "decay": 0.009999999776482582,
+                                "durationSec": 5.0,
+                                "freqHz": 3.5999999046325684,
+                                "id": "shake_sprint"
+                            },
+                            {
+                                "ampPitchYawDeg": [
+                                    4.0,
+                                    0.25
+                                ],
+                                "decay": 8.0,
+                                "durationSec": 1.0,
+                                "freqHz": 1.0,
+                                "id": "shake_vault_start"
+                            }
+                        ]
+                    },
+                    "guid": 18111242790571240057,
+                    "type": "game.CameraFxController"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "loop": false,
+                        "pitch": 1.0,
+                        "playOnStart": false,
+                        "soundPath": "content/parkour/sounds/se/footstep/Robot_Footstep_Single_v3_02.wav",
+                        "volume": 0.30000001192092896
+                    },
+                    "guid": 17000123456789012345,
+                    "type": "engine.AudioSource"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "loop": false,
+                        "pitch": 1.0,
+                        "playOnStart": false,
+                        "soundPath": "content/parkour/sounds/se/footstep/Robot_Footstep_Single_v2_01.wav",
+                        "volume": 0.36000001430511475
+                    },
+                    "guid": 17000123456789012347,
+                    "type": "engine.AudioSource"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "oneShotPresets": [
+                            {
+                                "id": "se_jump",
+                                "pitch": 1.0,
+                                "sourceComponentGuid": 17000123456789012345,
+                                "sourceEntityGuid": 0,
+                                "volume": 0.30000001192092896
+                            },
+                            {
+                                "id": "se_land",
+                                "pitch": 1.0,
+                                "sourceComponentGuid": 17000123456789012347,
+                                "sourceEntityGuid": 0,
+                                "volume": 0.36000001430511475
+                            }
+                        ]
+                    },
+                    "guid": 17000123456789012346,
+                    "type": "game.AudioFxController"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "animationEntityGuid": 0,
+                        "cameraFxEntityGuid": 0,
+                        "cueSourceEntityGuid": 2100,
+                        "profilePath": "content/parkour/presentation/player_camera.presentation.json"
+                    },
+                    "guid": 13155411561665024994,
+                    "type": "game.CharacterPresentation"
                 }
             ],
             "folderPath": "Gameplay/Player",
@@ -969,8 +1195,8 @@
                         "spaceMode": "WorldBillboard",
                         "uiAssetPath": "content/parkour/ui/crosshair.ui.json",
                         "worldSize": [
-                            128.0,
-                            128.0
+                            256.0,
+                            256.0
                         ]
                     },
                     "guid": 13217018570166250149,
@@ -981,6 +1207,149 @@
             "guid": 2315,
             "isEditorOnly": false,
             "name": "UI_Reticle",
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 18261497223927863732,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "loop": true,
+                        "pitch": 1.0,
+                        "playOnStart": true,
+                        "soundPath": "content/parkour/sounds/bgm/Run.wav",
+                        "volume": 0.3540000021457672
+                    },
+                    "guid": 11414014045292773144,
+                    "type": "engine.AudioSource"
+                }
+            ],
+            "folderPath": "Gameplay/World",
+            "guid": 2316,
+            "isEditorOnly": false,
+            "name": "BGM",
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            6.710999965667725,
+                            0.14660000801086426
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 9383424469052919528,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "billboardDepthMode": "DepthTest",
+                        "pixelSize": [
+                            1920.0,
+                            1080.0
+                        ],
+                        "receiveInput": false,
+                        "sortKey": 0,
+                        "spaceMode": "WorldPlane",
+                        "uiAssetPath": "./content/parkour/ui/MainMenu.ui.json",
+                        "worldSize": [
+                            0.1599999964237213,
+                            0.09000000357627869
+                        ]
+                    },
+                    "guid": 17227513560226567681,
+                    "type": "engine.UiCanvas"
+                }
+            ],
+            "folderPath": "Gameplay/Player",
+            "guid": 2317,
+            "isEditorOnly": false,
+            "name": "UI_Hud",
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 13048029215329857053,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "intensity": 1.0,
+                        "texturePath": "content/core/textures/wave.dds"
+                    },
+                    "guid": 13523057102086617376,
+                    "type": "engine.Skybox"
+                }
+            ],
+            "folderPath": "Gameplay/World",
+            "guid": 2318,
+            "isEditorOnly": false,
+            "name": "Skybox",
             "visible": true
         }
     ],

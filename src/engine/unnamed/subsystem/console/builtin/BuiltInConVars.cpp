@@ -343,5 +343,161 @@ namespace Unnamed {
 			"park_duckfriction", 1.0f, FCVAR::NOTIFY | FCVAR::REPLICATED,
 			"Parkour duck friction."
 		);
+
+		static ConVar park_duck_heightscale(
+			"park_duck_heightscale", 0.75f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Parkour duck collision half-height scale."
+		);
+
+		static ConVar park_doublejump_velocity(
+			"park_doublejump_velocity", 300.0f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Parkour double jump velocity in HU/s."
+		);
+
+		static ConVar park_slide_minspeed(
+			"park_slide_minspeed", 200.0f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Minimum speed in HU/s required to start slide."
+		);
+		static ConVar park_slide_maxtime(
+			"park_slide_maxtime", 20.0f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Maximum slide duration in seconds."
+		);
+		static ConVar park_slide_boostspeed(
+			"park_slide_boostspeed", 50.0f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Additional speed in HU/s when slide starts."
+		);
+		static ConVar park_slide_stopspeed(
+			"park_slide_stopspeed", 50.0f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Slide ends when horizontal speed falls below this HU/s."
+		);
+		static ConVar park_slide_hopspeedcap(
+			"park_slide_hopspeedcap", 5000.0f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Maximum slide speed cap in HU/s."
+		);
+		static ConVar park_slide_gravityscale(
+			"park_slide_gravityscale", 1.75f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Slope gravity scale while sliding."
+		);
+
+		static ConVar park_wallrun_minspeed(
+			"park_wallrun_minspeed", 200.0f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Minimum horizontal speed in HU/s required to wallrun."
+		);
+		static ConVar park_wallrun_maxtime(
+			"park_wallrun_maxtime", 2.5f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Maximum wallrun duration in seconds."
+		);
+		static ConVar park_wallrun_gravityscale(
+			"park_wallrun_gravityscale", 0.1f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Wallrun gravity multiplier."
+		);
+		static ConVar park_wallrun_jumpforce(
+			"park_wallrun_jumpforce", 350.0f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Wallrun jump force in HU/s."
+		);
+		static ConVar park_wallrun_cooldown(
+			"park_wallrun_cooldown", 0.1f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Wallrun cooldown in seconds."
+		);
+		static ConVar park_wallrun_samewallcooldown(
+			"park_wallrun_samewallcooldown", 1.0f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Cooldown before the same wall can be used again."
+		);
+		static ConVar park_wallrun_detachonsideinput(
+			"park_wallrun_detachonsideinput", true,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Detach wallrun when side input pushes away from wall."
+		);
+		static ConVar park_wallrun_verticaldamping(
+			"park_wallrun_verticaldamping", 0.3f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Vertical velocity damping on wallrun start."
+		);
+		static ConVar park_wallrun_maxnormaldot(
+			"park_wallrun_maxnormaldot", 0.5f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Maximum allowed abs(dot(velocityDir, wallNormal))."
+		);
+		static ConVar park_wallrun_startboost(
+			"park_wallrun_startboost", 50.0f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Speed boost in HU/s applied when wallrun starts."
+		);
+		static ConVar park_wallrun_pullforce(
+			"park_wallrun_pullforce", 80.0f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Force toward the wall while wallrunning in HU/s^2."
+		);
+		static ConVar park_wallrun_checkdistance(
+			"park_wallrun_checkdistance", 10.0f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Extra side cast distance in HU when searching wallrun walls."
+		);
+		static ConVar park_wallrun_maintaindistance(
+			"park_wallrun_maintaindistance", 20.0f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Extra cast distance in HU for wallrun wall maintenance."
+		);
+
+		static ConVar park_vault_maxheight(
+			"park_vault_maxheight", 72.0f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Maximum vaultable wall height in HU."
+		);
+		static ConVar park_vault_minspeed(
+			"park_vault_minspeed", 150.0f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Minimum speed in HU/s to start speed vault."
+		);
+		static ConVar park_vault_forwardcheck(
+			"park_vault_forwardcheck", 32.0f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Forward wall check distance in HU for speed vault."
+		);
+		static ConVar park_vault_landingcheck(
+			"park_vault_landingcheck", 72.0f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Additional landing check distance in HU for speed vault."
+		);
+		static ConVar park_vault_duration(
+			"park_vault_duration", 0.25f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Speed vault duration in seconds."
+		);
+		static ConVar park_vault_cooldown(
+			"park_vault_cooldown", 0.3f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Speed vault cooldown in seconds."
+		);
+
+		static ConVar park_blink_distance(
+			"park_blink_distance", 512.0f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Blink distance in HU."
+		);
+		static ConVar park_blink_cooldown(
+			"park_blink_cooldown", 1.0f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Blink cooldown in seconds."
+		);
+		static ConVar park_blink_moveduration(
+			"park_blink_moveduration", 0.08f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Blink interpolation duration in seconds."
+		);
 	}
 }

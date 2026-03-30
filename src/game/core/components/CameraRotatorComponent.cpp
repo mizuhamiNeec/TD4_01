@@ -1,7 +1,5 @@
 #include "CameraRotatorComponent.h"
 
-#include <cmath>
-
 #include <imgui.h>
 
 #include "core/ComponentRegistry.h"
@@ -13,7 +11,6 @@
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
-#include "engine/unnamed/subsystem/console/concommand/ConVar.h"
 #include "engine/unnamed/subsystem/input/InputSystem.h"
 #include "engine/unnamed/subsystem/input/device/gamepad/GamepadDevice.h"
 #include "engine/unnamed/subsystem/input/device/mouse/MouseDevice.h"
@@ -34,14 +31,7 @@ namespace Unnamed {
 
 	void CameraRotatorComponent::PrePhysicsTick(const float deltaTime) {
 		if (!mUseDirectInput) {
-			auto* transform = GetTransform();
-			if (!transform) {
-				return;
-			}
-			transform->SetRotation(
-				Quaternion::AxisAngle(Vec3::up, mCurrentYaw * Math::deg2Rad) *
-				Quaternion::AxisAngle(Vec3::right, mCurrentPitch * Math::deg2Rad)
-			);
+			ApplyRotationFromCurrentAngles();
 			return;
 		}
 
@@ -60,8 +50,7 @@ namespace Unnamed {
 		const Vec2& gamepadDelta,
 		const float deltaTime
 	) {
-		auto* transform = GetTransform();
-		if (!transform || !mConsole) {
+		if (!GetTransform() || !mConsole) {
 			return;
 		}
 
@@ -96,10 +85,7 @@ namespace Unnamed {
 		mCurrentPitch = std::clamp(
 			mCurrentPitch, -pitchUpLimit, pitchDownLimit
 		);
-		transform->SetRotation(
-			Quaternion::AxisAngle(Vec3::up, mCurrentYaw * Math::deg2Rad) *
-			Quaternion::AxisAngle(Vec3::right, mCurrentPitch * Math::deg2Rad)
-		);
+		ApplyRotationFromCurrentAngles();
 	}
 
 	void CameraRotatorComponent::SetDirectInputEnabled(const bool enabled) {
@@ -110,8 +96,19 @@ namespace Unnamed {
 		return mUseDirectInput;
 	}
 
+	void CameraRotatorComponent::SetExternalLookOffsetDegrees(
+		const Vec2& offsetDegrees
+	) {
+		mExternalLookOffsetDegrees = offsetDegrees;
+		ApplyRotationFromCurrentAngles();
+	}
+
+	Vec2 CameraRotatorComponent::GetExternalLookOffsetDegrees() const {
+		return mExternalLookOffsetDegrees;
+	}
+
 	std::string_view CameraRotatorComponent::GetStableName() const {
-		return "parkour.CameraRotator";
+		return "game.CameraRotator";
 	}
 
 	std::string_view CameraRotatorComponent::GetComponentName() const {
@@ -191,6 +188,20 @@ namespace Unnamed {
 		mInput->BindAxis2D("GamepadLook", gamepadLookX, INPUT_AXIS::X, 1.0f);
 		mInput->BindAxis2D("GamepadLook", gamepadLookY, INPUT_AXIS::Y, -1.0f);
 		sBound = true;
+	}
+
+	void CameraRotatorComponent::ApplyRotationFromCurrentAngles() const {
+		auto* transform = GetTransform();
+		if (!transform) {
+			return;
+		}
+
+		const float pitch = mCurrentPitch + mExternalLookOffsetDegrees.x;
+		const float yaw   = mCurrentYaw + mExternalLookOffsetDegrees.y;
+		transform->SetRotation(
+			Quaternion::AxisAngle(Vec3::up, yaw * Math::deg2Rad) *
+			Quaternion::AxisAngle(Vec3::right, pitch * Math::deg2Rad)
+		);
 	}
 
 	REGISTER_COMPONENT(CameraRotatorComponent);

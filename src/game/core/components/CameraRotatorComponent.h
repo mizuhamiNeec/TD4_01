@@ -25,6 +25,8 @@ namespace Unnamed {
 		);
 		void               SetDirectInputEnabled(bool enabled);
 		[[nodiscard]] bool IsDirectInputEnabled() const;
+		void               SetExternalLookOffsetDegrees(const Vec2& offsetDegrees);
+		[[nodiscard]] Vec2 GetExternalLookOffsetDegrees() const;
 
 		[[nodiscard]] std::string_view GetStableName() const override;
 		[[nodiscard]] std::string_view GetComponentName() const override;
@@ -44,6 +46,7 @@ namespace Unnamed {
 	private:
 		[[nodiscard]] TransformComponent* GetTransform() const;
 		void                              BindLookAxisOnce() const;
+		void                              ApplyRotationFromCurrentAngles() const;
 
 		ConsoleSystem* mConsole = nullptr;
 		InputSystem*   mInput   = nullptr;
@@ -57,5 +60,6 @@ namespace Unnamed {
 
 		ConVar<float>* mJoySensitivity = nullptr;
 		bool           mUseDirectInput = true;
+		Vec2           mExternalLookOffsetDegrees = Vec2::zero;
 	};
 }

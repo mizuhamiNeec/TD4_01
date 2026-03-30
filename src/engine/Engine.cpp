@@ -16,6 +16,7 @@
 #include <core/assets/loader/MaterialInstanceAssetLoader.h>
 #include <core/assets/loader/MeshAssetLoader.h>
 #include <core/assets/loader/PostFxChainLoader.h>
+#include <core/assets/loader/PresentationProfileLoader.h>
 #include <core/assets/loader/ShaderProgramLoader.h>
 #include <core/assets/loader/ShaderSourceLoader.h>
 #include <core/assets/loader/SoundAssetLoader.h>
@@ -204,6 +205,9 @@ namespace Unnamed {
 		);
 		mAssetManager->RegisterLoader(
 			std::move(std::make_unique<SoundAssetLoader>())
+		);
+		mAssetManager->RegisterLoader(
+			std::move(std::make_unique<PresentationProfileLoader>())
 		);
 
 		mAudioSystem = std::make_unique<AudioSystem>();

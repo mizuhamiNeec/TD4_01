@@ -52,6 +52,10 @@ namespace Unnamed {
 		writer.Write(mRotationEnabled);
 	}
 
+	uint32_t RotatorComponent::GetIcon() const {
+		return kIcon3DRotation;
+	}
+
 #ifdef _DEBUG
 	void RotatorComponent::DrawInspectorImGui() {
 		ImGui::Checkbox("Enabled", &mRotationEnabled);

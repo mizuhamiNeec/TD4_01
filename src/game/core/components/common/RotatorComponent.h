@@ -28,6 +28,8 @@ namespace Unnamed {
 		void Deserialize(const JsonReader& reader) override;
 		void Serialize(JsonWriter& writer) const override;
 
+		[[nodiscard]] uint32_t GetIcon() const override;
+
 	private:
 		[[nodiscard]] TransformComponent* GetTransform() const;
 

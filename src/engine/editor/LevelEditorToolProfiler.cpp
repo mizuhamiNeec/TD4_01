@@ -2,12 +2,71 @@
 #include "LevelEditorTool.h"
 
 #include <algorithm>
+#include <functional>
 #include <imgui.h>
+#include <limits>
+#include <string_view>
 
 #include "engine/profiler/Profiler.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 
 namespace Unnamed {
+	namespace {
+		[[nodiscard]] std::string_view ExtractProfilerCategory(
+			const std::string_view sampleName
+		) {
+			const size_t dotPos = sampleName.find_last_of('.');
+			if (dotPos == std::string_view::npos || dotPos == 0) {
+				return sampleName;
+			}
+			return sampleName.substr(0, dotPos);
+		}
+
+		[[nodiscard]] ImVec4 BuildCategoryColor(
+			const std::string_view sampleName
+		) {
+			const std::string_view category = ExtractProfilerCategory(sampleName);
+			const size_t           hashValue = std::hash<std::string_view>{}(
+                category
+            );
+			const float hue = static_cast<float>(hashValue % 1024u) / 1024.0f;
+			return ImColor::HSV(hue, 0.75f, 0.95f);
+		}
+
+		[[nodiscard]] float DistanceToLineSegmentSquared(
+			const ImVec2& point,
+			const ImVec2& segmentStart,
+			const ImVec2& segmentEnd
+		) {
+			const ImVec2 segment(
+				segmentEnd.x - segmentStart.x,
+				segmentEnd.y - segmentStart.y
+			);
+			const float segmentLengthSquared =
+				segment.x * segment.x + segment.y * segment.y;
+			if (segmentLengthSquared <= 0.000001f) {
+				const float dx = point.x - segmentStart.x;
+				const float dy = point.y - segmentStart.y;
+				return dx * dx + dy * dy;
+			}
+
+			const float t = std::clamp(
+				((point.x - segmentStart.x) * segment.x +
+				 (point.y - segmentStart.y) * segment.y) /
+					segmentLengthSquared,
+				0.0f,
+				1.0f
+			);
+			const ImVec2 nearestPoint(
+				segmentStart.x + segment.x * t,
+				segmentStart.y + segment.y * t
+			);
+			const float dx = point.x - nearestPoint.x;
+			const float dy = point.y - nearestPoint.y;
+			return dx * dx + dy * dy;
+		}
+	}
+
 	void LevelEditorTool::DrawProfilerWindow() {
 		if (!mShowProfilerWindow) {
 			return;
@@ -47,6 +106,8 @@ namespace Unnamed {
 			const ImVec2 canvasMin = ImGui::GetItemRectMin();
 			const ImVec2 canvasMax = ImGui::GetItemRectMax();
 			ImDrawList*  drawList  = ImGui::GetWindowDrawList();
+			const bool   canvasHovered = ImGui::IsItemHovered();
+			const ImVec2 mousePos = ImGui::GetMousePos();
 
 			drawList->AddRectFilled(
 				canvasMin,
@@ -78,18 +139,17 @@ namespace Unnamed {
 				);
 			}
 
-			const size_t colorCount = std::max<size_t>(1, samples.size());
+			const Profiler::SampleView* hoveredSample = nullptr;
+			float hoveredDistanceSquared = std::numeric_limits<float>::max();
+			constexpr float kHoverDistanceThresholdSquared = 16.0f;
+
 			for (const auto& sample : samples) {
 				if (!sample.history || sample.history->size() < 2) {
 					continue;
 				}
 
-				const ImU32 color = ImColor::HSV(
-					static_cast<float>(sample.colorIndex % colorCount) /
-					static_cast<float>(colorCount),
-					0.75f,
-					0.95f
-				);
+				const ImVec4 colorVec = BuildCategoryColor(sample.name);
+				const ImU32  color = ImGui::GetColorU32(colorVec);
 
 				ImVec2 prev    = {};
 				bool   hasPrev = false;
@@ -110,10 +170,32 @@ namespace Unnamed {
 					);
 					if (hasPrev) {
 						drawList->AddLine(prev, point, color, 1.5f);
+						if (canvasHovered) {
+							const float distanceSquared =
+								DistanceToLineSegmentSquared(mousePos, prev, point);
+							if (distanceSquared < hoveredDistanceSquared) {
+								hoveredDistanceSquared = distanceSquared;
+								hoveredSample          = &sample;
+							}
+						}
 					}
 					prev    = point;
 					hasPrev = true;
 				}
+			}
+
+			if (
+				canvasHovered &&
+				hoveredSample != nullptr &&
+				hoveredDistanceSquared <= kHoverDistanceThresholdSquared
+			) {
+				ImGui::BeginTooltip();
+				ImGui::Text(
+					"%.*s",
+					static_cast<int>(hoveredSample->name.size()),
+					hoveredSample->name.data()
+				);
+				ImGui::EndTooltip();
 			}
 
 			for (const auto& sample : samples) {
@@ -121,12 +203,7 @@ namespace Unnamed {
 					continue;
 				}
 
-				const ImVec4 color = ImColor::HSV(
-					static_cast<float>(sample.colorIndex % colorCount) /
-					static_cast<float>(colorCount),
-					0.75f,
-					0.95f
-				);
+				const ImVec4 color = BuildCategoryColor(sample.name);
 
 				ImGui::PushStyleColor(ImGuiCol_Text, color);
 				ImGui::BulletText(

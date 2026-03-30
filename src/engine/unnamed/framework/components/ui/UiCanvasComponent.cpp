@@ -18,6 +18,7 @@
 #include "engine/gui/UiDocument.h"
 #include "engine/gui/UiRoot.h"
 #include "engine/gui/UiWidget.h"
+#include "engine/ImGui/Icons.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 
@@ -28,8 +29,8 @@ namespace Unnamed {
 		std::string ToModeString(const UI_CANVAS_SPACE_MODE mode) {
 			switch (mode) {
 				case UI_CANVAS_SPACE_MODE::SCREEN: return "Screen";
-				case UI_CANVAS_SPACE_MODE::WORLD_BILLBOARD:
-					return "WorldBillboard";
+				case UI_CANVAS_SPACE_MODE::WORLD_BILLBOARD: return
+						"WorldBillboard";
 				case UI_CANVAS_SPACE_MODE::WORLD_PLANE: return "WorldPlane";
 				default: return "Screen";
 			}
@@ -49,10 +50,10 @@ namespace Unnamed {
 			const UI_CANVAS_BILLBOARD_DEPTH_MODE mode
 		) {
 			switch (mode) {
-				case UI_CANVAS_BILLBOARD_DEPTH_MODE::DEPTH_TEST:
-					return "DepthTest";
-				case UI_CANVAS_BILLBOARD_DEPTH_MODE::ALWAYS_FRONT:
-					return "AlwaysFront";
+				case UI_CANVAS_BILLBOARD_DEPTH_MODE::DEPTH_TEST: return
+						"DepthTest";
+				case UI_CANVAS_BILLBOARD_DEPTH_MODE::ALWAYS_FRONT: return
+						"AlwaysFront";
 				default: return "DepthTest";
 			}
 		}
@@ -67,7 +68,7 @@ namespace Unnamed {
 		}
 	}
 
-	UiCanvasComponent::UiCanvasComponent() = default;
+	UiCanvasComponent::UiCanvasComponent()  = default;
 	UiCanvasComponent::~UiCanvasComponent() = default;
 
 	void UiCanvasComponent::Deserialize(const JsonReader& reader) {
@@ -79,7 +80,9 @@ namespace Unnamed {
 		}
 		if (reader.Has("billboardDepthMode")) {
 			SetBillboardDepthMode(
-				ParseBillboardDepthMode(reader["billboardDepthMode"].GetString())
+				ParseBillboardDepthMode(
+					reader["billboardDepthMode"].GetString()
+				)
 			);
 		}
 		if (reader.Has("pixelSize")) {
@@ -144,7 +147,9 @@ namespace Unnamed {
 			SetUiAssetPath(uiAssetPath);
 		}
 
-		constexpr const char* kModes[] = {"Screen", "WorldBillboard", "WorldPlane"};
+		constexpr const char* kModes[] = {
+			"Screen", "WorldBillboard", "WorldPlane"
+		};
 		int mode = static_cast<int>(mSpaceMode);
 		if (ImGui::Combo("Space Mode", &mode, kModes, IM_ARRAYSIZE(kModes))) {
 			SetSpaceMode(static_cast<UI_CANVAS_SPACE_MODE>(mode));
@@ -179,6 +184,9 @@ namespace Unnamed {
 		ImGui::Checkbox("Receive Input", &mReceiveInput);
 	}
 #endif
+	uint32_t UiCanvasComponent::GetIcon() const {
+		return kIconMonitor;
+	}
 
 	void UiCanvasComponent::SetUiAssetPath(const std::string& path) {
 		const std::string normalized = path.empty() ?
@@ -273,7 +281,9 @@ namespace Unnamed {
 		}
 		if (mUiAssetId == kInvalidAssetID) {
 			if (!mLoggedLoadFailure) {
-				Error(kChannel, "Failed to resolve UI asset '{}'.", mUiAssetPath);
+				Error(
+					kChannel, "Failed to resolve UI asset '{}'.", mUiAssetPath
+				);
 				mLoggedLoadFailure = true;
 			}
 			return false;
@@ -288,10 +298,14 @@ namespace Unnamed {
 			return true;
 		}
 
-		const auto* assetData = assetManager->Get<UiDocumentAssetData>(mUiAssetId);
+		const auto* assetData = assetManager->Get<UiDocumentAssetData>(
+			mUiAssetId
+		);
 		if (!assetData) {
 			if (!mLoggedLoadFailure) {
-				Error(kChannel, "UI asset '{}' payload is invalid.", mUiAssetPath);
+				Error(
+					kChannel, "UI asset '{}' payload is invalid.", mUiAssetPath
+				);
 				mLoggedLoadFailure = true;
 			}
 			return false;
@@ -312,7 +326,9 @@ namespace Unnamed {
 		auto rootWidget = document->TakeRootWidget();
 		if (!rootWidget) {
 			if (!mLoggedLoadFailure) {
-				Error(kChannel, "UI asset '{}' has no root widget.", mUiAssetPath);
+				Error(
+					kChannel, "UI asset '{}' has no root widget.", mUiAssetPath
+				);
 				mLoggedLoadFailure = true;
 			}
 			return false;
@@ -320,9 +336,9 @@ namespace Unnamed {
 
 		mRuntimeRoot = std::make_unique<Gui::UiRoot>();
 		mRuntimeRoot->AddChild(std::move(rootWidget));
-		mLoadedAssetPath   = mUiAssetPath;
+		mLoadedAssetPath    = mUiAssetPath;
 		mLoadedAssetVersion = meta.version;
-		mLoggedLoadFailure = false;
+		mLoggedLoadFailure  = false;
 		return true;
 	}
 

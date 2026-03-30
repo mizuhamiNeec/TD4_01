@@ -44,6 +44,8 @@ namespace Unnamed {
 #ifdef _DEBUG
 		void DrawInspectorImGui() override;
 #endif
+		
+		[[nodiscard]] uint32_t GetIcon() const override;
 
 		void SetUiAssetPath(const std::string& path);
 		[[nodiscard]] const std::string& GetUiAssetPath() const;

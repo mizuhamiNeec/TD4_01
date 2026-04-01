@@ -339,6 +339,15 @@ namespace Unnamed::Physics {
 					filtered.emplace_back(&bvh);
 				}
 			}
+			if (filtered.size() > 1) {
+				std::sort(
+					filtered.begin(),
+					filtered.end(),
+					[](const RegisteredBVH* lhs, const RegisteredBVH* rhs) {
+						return lhs->ownerGuid < rhs->ownerGuid;
+					}
+				);
+			}
 
 			uint32_t stack[64];
 			for (auto* bvh : filtered) {
@@ -373,7 +382,16 @@ namespace Unnamed::Physics {
 								continue;
 							}
 
-							if (penetrationDepth >= bestPenetration) {
+							const bool betterPenetration = penetrationDepth <
+								bestPenetration;
+							const bool equalPenetration = std::abs(
+								penetrationDepth - bestPenetration
+							) <= 1.0e-6f;
+							const bool betterTieBreak = equalPenetration &&
+								(bvh->ownerGuid < bestHit.hitEntityGuid ||
+								 (bvh->ownerGuid == bestHit.hitEntityGuid &&
+								  triIdx < bestHit.triIndex));
+							if (!betterPenetration && !betterTieBreak) {
 								continue;
 							}
 
@@ -676,6 +694,15 @@ namespace Unnamed::Physics {
 				filtered.emplace_back(&bvh);
 			}
 		}
+		if (filtered.size() > 1) {
+			std::sort(
+				filtered.begin(),
+				filtered.end(),
+				[](const RegisteredBVH* lhs, const RegisteredBVH* rhs) {
+					return lhs->ownerGuid < rhs->ownerGuid;
+				}
+			);
+		}
 
 		uint32_t stack[64];
 		for (auto* bvh : filtered) {
@@ -732,6 +759,34 @@ namespace Unnamed::Physics {
 					}
 				}
 			}
+		}
+
+		if (hitCount > 1) {
+			std::sort(
+				outHits,
+				outHits + hitCount,
+				[](const Hit& lhs, const Hit& rhs) {
+					if (lhs.hitEntityGuid != rhs.hitEntityGuid) {
+						return lhs.hitEntityGuid < rhs.hitEntityGuid;
+					}
+					if (lhs.depth != rhs.depth) {
+						return lhs.depth > rhs.depth;
+					}
+					if (lhs.triIndex != rhs.triIndex) {
+						return lhs.triIndex < rhs.triIndex;
+					}
+					if (lhs.normal.x != rhs.normal.x) {
+						return lhs.normal.x < rhs.normal.x;
+					}
+					if (lhs.normal.y != rhs.normal.y) {
+						return lhs.normal.y < rhs.normal.y;
+					}
+					if (lhs.normal.z != rhs.normal.z) {
+						return lhs.normal.z < rhs.normal.z;
+					}
+					return false;
+				}
+			);
 		}
 
 		return hitCount;

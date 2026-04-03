@@ -91,6 +91,11 @@ namespace Unnamed {
 		);
 		ApplyHalfGravity(context.velocity, deltaTime);
 
+		GrappleMotor::UpdateActivation(context, parkour->GetActionFrameInput());
+		GrappleMotor::ApplyPreMove(
+			context, parkour->GetActionFrameInput(), deltaTime
+		);
+
 		KinematicMoveQuery query = {
 			.position    = context.transform->Position(),
 			.velocity    = context.velocity,
@@ -108,11 +113,16 @@ namespace Unnamed {
 
 		context.transform->SetPosition(query.position);
 		context.velocity = query.velocity;
+		GrappleMotor::ApplyPostMove(context);
 
 		Physics::Hit groundHit{};
 		if (context.jumpSnapDisableRemaining <= 0.0f &&
 		    context.velocity.y <= 0.0f &&
-		    IsGrounded(context.resolver, query.position, &groundHit)) {
+		    IsGrounded(
+			    context.resolver,
+			    context.transform->Position(),
+			    &groundHit
+		    )) {
 			context.velocity.y        = 0.0f;
 			context.isGrounded        = true;
 			context.supportEntityGuid = groundHit.hitEntityGuid;

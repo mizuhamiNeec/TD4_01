@@ -61,13 +61,18 @@ namespace Unnamed {
 					                     "park_slide_boostspeed", 50.0f
 				                     )
 			                     );
+
+			const auto speedCap = Math::HtoM(
+				mConsole->GetConVarValueOr(
+					"park_slide_hopspeedcap", 5000.0f
+				)
+			);
+
 			boostedSpeed = std::min(
 				boostedSpeed,
-				Math::HtoM(
-					mConsole->GetConVarValueOr(
-						"park_slide_hopspeedcap", 5000.0f
-					)
-				)
+				speedCap > 0.0f ?
+					speedCap :
+					std::numeric_limits<float>::max() // 0の場合は無制限
 			);
 			const float originalY = context.velocity.y;
 			context.velocity      = runtime.slide.direction * boostedSpeed;

@@ -226,13 +226,25 @@ namespace Unnamed {
 					packed.forward[2]
 				);
 				command.playerInput.movement.jumpPressed =
-					(packed.flags & 0x01u) != 0u;
+					(packed.flags & kDemoMoveFlagJumpPressed) != 0u;
 				command.playerInput.movement.crouchPressed =
-					(packed.flags & 0x02u) != 0u;
+					(packed.flags & kDemoMoveFlagCrouchPressed) != 0u;
 				command.playerInput.movement.sprintPressed =
-					(packed.flags & 0x04u) != 0u;
+					(packed.flags & kDemoMoveFlagSprintPressed) != 0u;
 				command.playerInput.movement.noclip =
-					(packed.flags & 0x08u) != 0u;
+					(packed.flags & kDemoMoveFlagNoclip) != 0u;
+				command.playerInput.action.grapple.grapplePressed =
+					(packed.actionFlags & kDemoActionFlagGrapplePressed) !=
+					0u;
+				command.playerInput.action.grapple.grappleHeld =
+					(packed.actionFlags & kDemoActionFlagGrappleHeld) != 0u;
+				command.playerInput.action.grapple.grappleReleased =
+					(packed.actionFlags & kDemoActionFlagGrappleReleased) !=
+					0u;
+				command.playerInput.action.grapple.reelInHeld =
+					(packed.actionFlags & kDemoActionFlagReelInHeld) != 0u;
+				command.playerInput.action.grapple.reelOutHeld =
+					(packed.actionFlags & kDemoActionFlagReelOutHeld) != 0u;
 				command.playerInput.viewYawDeg   = packed.viewYawDeg;
 				command.playerInput.viewPitchDeg = packed.viewPitchDeg;
 				outFile.commands.emplace_back(command);

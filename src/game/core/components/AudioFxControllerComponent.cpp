@@ -1,16 +1,15 @@
 #include "AudioFxControllerComponent.h"
 
 #include <algorithm>
-#include <cstddef>
-#include <cstring>
 
 #ifdef _DEBUG
 #include <imgui.h>
 #endif
 
 #include "core/ComponentRegistry.h"
-#include "core/json/JsonReader.h"
-#include "core/json/JsonWriter.h"
+#include "core/io/json/JsonReader.h"
+#include "core/io/json/JsonWriter.h"
+#include "core/math/random/Random.h"
 
 #include "engine/ImGui/Icons.h"
 #include "engine/scene/Scene.h"
@@ -25,7 +24,7 @@ namespace Unnamed {
 			const char* label, std::string& value, const size_t capacity = 128
 		) {
 			std::vector<char> buffer(capacity, '\0');
-			const size_t copyLength = std::min(value.size(), capacity - 1);
+			const size_t      copyLength = std::min(value.size(), capacity - 1);
 			if (copyLength > 0) {
 				std::memcpy(buffer.data(), value.data(), copyLength);
 			}
@@ -56,8 +55,13 @@ namespace Unnamed {
 		}
 
 		const float safeIntensity = std::max(0.0f, intensityScale);
+		const float pitchMin      = std::clamp(preset->pitchMin, 0.01f, 4.0f);
+		const float pitchMax      = std::clamp(
+			std::max(preset->pitchMin, preset->pitchMax), 0.01f, 4.0f
+		);
+		const float randomizedPitch = Random::FloatRange(pitchMin, pitchMax);
 		source->SetLoop(false);
-		source->SetPitch(std::clamp(preset->pitch, 0.01f, 4.0f));
+		source->SetPitch(randomizedPitch);
 		source->SetVolume(
 			std::clamp(preset->volume * safeIntensity, 0.0f, 4.0f)
 		);
@@ -65,7 +69,9 @@ namespace Unnamed {
 		return true;
 	}
 
-	bool AudioFxControllerComponent::HasPreset(const std::string_view presetId)
+	bool AudioFxControllerComponent::HasPreset(
+		const std::string_view presetId
+	)
 	const {
 		return FindPreset(presetId) != nullptr;
 	}
@@ -115,13 +121,26 @@ namespace Unnamed {
 				"%.2f"
 			);
 			(void)ImGui::DragFloat(
-				"Pitch",
-				&preset.pitch,
+				"Pitch Min",
+				&preset.pitchMin,
 				0.01f,
 				0.01f,
 				4.0f,
 				"%.2f"
 			);
+			(void)ImGui::DragFloat(
+				"Pitch Max",
+				&preset.pitchMax,
+				0.01f,
+				0.01f,
+				4.0f,
+				"%.2f"
+			);
+			preset.pitchMin = std::clamp(preset.pitchMin, 0.01f, 4.0f);
+			preset.pitchMax = std::clamp(preset.pitchMax, 0.01f, 4.0f);
+			if (preset.pitchMin > preset.pitchMax) {
+				std::swap(preset.pitchMin, preset.pitchMax);
+			}
 
 			if (ImGui::Button("Trigger")) {
 				(void)TriggerOneShot(preset.id, 1.0f);
@@ -139,7 +158,8 @@ namespace Unnamed {
 			removeIndex < mOneShotPresets.size()
 		) {
 			mOneShotPresets.erase(
-				mOneShotPresets.begin() + static_cast<std::ptrdiff_t>(removeIndex)
+				mOneShotPresets.begin() + static_cast<std::ptrdiff_t>(
+					removeIndex)
 			);
 		}
 
@@ -170,7 +190,8 @@ namespace Unnamed {
 					continue;
 				}
 				if (node.Has("sourceEntityGuid")) {
-					preset.sourceEntityGuid = node["sourceEntityGuid"].GetUint64();
+					preset.sourceEntityGuid = node["sourceEntityGuid"].
+						GetUint64();
 				}
 				if (node.Has("sourceComponentGuid")) {
 					preset.sourceComponentGuid =
@@ -179,11 +200,30 @@ namespace Unnamed {
 				if (node.Has("volume")) {
 					preset.volume = node["volume"].GetFloat(preset.volume);
 				}
-				if (node.Has("pitch")) {
-					preset.pitch = node["pitch"].GetFloat(preset.pitch);
+				const bool hasPitchRange =
+					node.Has("pitchMin") || node.Has("pitchMax");
+				if (hasPitchRange) {
+					if (node.Has("pitchMin")) {
+						preset.pitchMin = node["pitchMin"].GetFloat(
+							preset.pitchMin
+						);
+					}
+					if (node.Has("pitchMax")) {
+						preset.pitchMax = node["pitchMax"].GetFloat(
+							preset.pitchMax
+						);
+					}
+				} else if (node.Has("pitch")) {
+					const float legacyPitch = node["pitch"].GetFloat(1.0f);
+					preset.pitchMin         = legacyPitch;
+					preset.pitchMax         = legacyPitch;
 				}
-				preset.volume = std::clamp(preset.volume, 0.0f, 4.0f);
-				preset.pitch = std::clamp(preset.pitch, 0.01f, 4.0f);
+				preset.volume   = std::clamp(preset.volume, 0.0f, 4.0f);
+				preset.pitchMin = std::clamp(preset.pitchMin, 0.01f, 4.0f);
+				preset.pitchMax = std::clamp(preset.pitchMax, 0.01f, 4.0f);
+				if (preset.pitchMin > preset.pitchMax) {
+					std::swap(preset.pitchMin, preset.pitchMax);
+				}
 				mOneShotPresets.emplace_back(std::move(preset));
 			}
 		}
@@ -202,8 +242,10 @@ namespace Unnamed {
 			writer.Write(preset.sourceComponentGuid);
 			writer.Key("volume");
 			writer.Write(preset.volume);
-			writer.Key("pitch");
-			writer.Write(preset.pitch);
+			writer.Key("pitchMin");
+			writer.Write(preset.pitchMin);
+			writer.Key("pitchMax");
+			writer.Write(preset.pitchMax);
 			writer.EndObject();
 		}
 		writer.EndArray();

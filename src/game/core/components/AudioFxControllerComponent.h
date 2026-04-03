@@ -19,7 +19,8 @@ namespace Unnamed {
 			uint64_t    sourceEntityGuid    = 0;
 			uint64_t    sourceComponentGuid = 0;
 			float       volume              = 1.0f;
-			float       pitch               = 1.0f;
+			float       pitchMin            = 1.0f;
+			float       pitchMax            = 1.0f;
 		};
 
 		void OnAttached() override;

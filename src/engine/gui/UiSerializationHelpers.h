@@ -3,8 +3,8 @@
 #include "UiWidget.h"
 #include "components/UiLayoutComponents.h"
 
-#include "core/json/JsonReader.h"
-#include "core/json/JsonWriter.h"
+#include "core/io/json/JsonReader.h"
+#include "core/io/json/JsonWriter.h"
 
 namespace Unnamed::Gui {
 	inline void WriteRect(JsonWriter& writer, const Rect& r) {
@@ -159,12 +159,22 @@ namespace Unnamed::Gui {
 
 	inline UiSizeConstraints ReadConstraints(const JsonReader& node) {
 		UiSizeConstraints c{};
-		if (!node.Valid()) return c;
+		if (!node.Valid()) {
+			return c;
+		}
 
-		if (node.Has("minWidth")) c.minWidth = node["minWidth"].GetFloat();
-		if (node.Has("minHeight")) c.minHeight = node["minHeight"].GetFloat();
-		if (node.Has("maxWidth")) c.maxWidth = node["maxWidth"].GetFloat();
-		if (node.Has("maxHeight")) c.maxHeight = node["maxHeight"].GetFloat();
+		if (node.Has("minWidth")) {
+			c.minWidth = node["minWidth"].GetFloat();
+		}
+		if (node.Has("minHeight")) {
+			c.minHeight = node["minHeight"].GetFloat();
+		}
+		if (node.Has("maxWidth")) {
+			c.maxWidth = node["maxWidth"].GetFloat();
+		}
+		if (node.Has("maxHeight")) {
+			c.maxHeight = node["maxHeight"].GetFloat();
+		}
 		return c;
 	}
 }

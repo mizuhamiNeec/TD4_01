@@ -4,11 +4,13 @@
 
 #include "core/assets/AssetManager.h"
 #include "core/assets/types/ShaderProgramAssetData.h"
-#include "core/json/JsonReader.h"
+#include "core/io/json/JsonReader.h"
 #include "core/path/PathUtil.h"
 #include "core/string/StrUtil.h"
 
 namespace Unnamed {
+	class JsonReader;
+
 	namespace {
 		bool IsShaderProgramPath(const std::string_view path) {
 			return StrUtil::ToLowerCase(std::string(path)).ends_with(

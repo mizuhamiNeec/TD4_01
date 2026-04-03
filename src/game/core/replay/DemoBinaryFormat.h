@@ -24,6 +24,17 @@ namespace Unnamed {
 	constexpr uint32_t kDemoChunkCmds = MakeFourCC('C', 'M', 'D', 'S');
 	constexpr uint32_t kDemoChunkSnap = MakeFourCC('S', 'N', 'A', 'P');
 
+	constexpr uint8_t kDemoMoveFlagJumpPressed   = 0x01u;
+	constexpr uint8_t kDemoMoveFlagCrouchPressed = 0x02u;
+	constexpr uint8_t kDemoMoveFlagSprintPressed = 0x04u;
+	constexpr uint8_t kDemoMoveFlagNoclip        = 0x08u;
+
+	constexpr uint16_t kDemoActionFlagGrapplePressed  = 0x0001u;
+	constexpr uint16_t kDemoActionFlagGrappleHeld     = 0x0002u;
+	constexpr uint16_t kDemoActionFlagGrappleReleased = 0x0004u;
+	constexpr uint16_t kDemoActionFlagReelInHeld      = 0x0008u;
+	constexpr uint16_t kDemoActionFlagReelOutHeld     = 0x0010u;
+
 	struct DemoBinaryFileHeader {
 		uint32_t magic      = kDemoBinaryMagic;
 		uint32_t version    = kDemoBinaryVersion;
@@ -41,7 +52,7 @@ namespace Unnamed {
 		uint64_t subjectEntityGuid = 0;
 		uint8_t  commandType       = 0;
 		uint8_t  flags             = 0;
-		uint16_t reserved0         = 0;
+		uint16_t actionFlags       = 0;
 		float    moveAxis[3]       = {};
 		float    right[3]          = {};
 		float    up[3]             = {};

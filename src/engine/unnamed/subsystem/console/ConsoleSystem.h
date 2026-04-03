@@ -24,20 +24,20 @@ namespace Unnamed {
 
 	/// @brief コンソールログテキスト構造体
 	struct ConsoleLogText {
-		LogLevel             level;
-		std::string          channel;
-		std::string          message;
-		DateTime             timeStamp;
-		std::source_location location;
+		LogLevel             level;     // ログレベル
+		std::string          channel;   // ログチャンネル
+		std::string          message;   // ログメッセージ
+		DateTime             timeStamp; // ログのタイムスタンプ
+		std::source_location location;  // ソースコードの位置情報
 	};
 
 	/// @brief コンソールコマンド実行フラグ
 	enum class EXEC_FLAG : uint8_t {
-		NONE         = 0,
-		SILENT       = 1 << 0,
-		FROM_ENGINE  = 1 << 1,
-		FROM_USER    = 1 << 2,
-		FROM_CONSOLE = 1 << 3,
+		NONE         = 0,      // フラグなし
+		SILENT       = 1 << 0, // 実行ログを出力しない
+		FROM_ENGINE  = 1 << 1, // エンジン内部からの実行(起動時の自動実行など)
+		FROM_USER    = 1 << 2, // ユーザー入力からの実行(キーバインドやUIからの実行など)
+		FROM_CONSOLE = 1 << 3, // コンソールからの実行(上記FROM_USERと重複するが、明示的に区別したい場合に使用)
 	};
 
 	/// @brief EXEC_FLAGのOR演算子オーバーロード

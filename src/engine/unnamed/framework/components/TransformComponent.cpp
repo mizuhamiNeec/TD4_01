@@ -1,8 +1,8 @@
 #include "TransformComponent.h"
 
 #include "core/ComponentRegistry.h"
-#include "core/json/JsonReader.h"
-#include "core/json/JsonWriter.h"
+#include "core/io/json/JsonReader.h"
+#include "core/io/json/JsonWriter.h"
 
 #include "engine/ImGui/ImGuiWidgets.h"
 #include "engine/scene/Scene.h"

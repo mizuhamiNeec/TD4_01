@@ -34,29 +34,51 @@ namespace Unnamed {
 
 		/// @brief エンティティが登録されたときに呼び出されます。
 		void OnRegister();
+
 		/// @brief エンティティが登録された後に呼び出されます。
 		void PostRegister();
 
 		/// @brief 物理演算の前に呼び出されます。
 		/// @param deltaTime 前のフレームからの経過時間（秒）
-		void PrePhysicsTick(float deltaTime) const;
+		void                   PrePhysicsTick(float deltaTime) const;
 		[[nodiscard]] uint32_t PrePhysicsTick(
-			float                    deltaTime,
+			float                     deltaTime,
 			BaseComponent::TICK_GROUP group
 		) const;
+
 		/// @brief 毎フレーム呼び出されます。
 		/// @param deltaTime 前のフレームからの経過時間（秒）
-		void Tick(float deltaTime) const;
+		void                   Tick(float deltaTime) const;
 		[[nodiscard]] uint32_t Tick(
-			float                    deltaTime,
+			float                     deltaTime,
 			BaseComponent::TICK_GROUP group
 		) const;
+
+		/// @brief 固定シミュレーション前の入力反映フェーズで呼び出されます。
+		/// @param frameDeltaTime 描画フレームの経過時間（秒）
+		/// @return 呼び出したコンポーネントの数
+		[[nodiscard]] uint32_t FrameInputTick(float frameDeltaTime) const;
+
 		/// @brief 物理演算の後に呼び出されます。
 		/// @param deltaTime 前のフレームからの経過時間（秒）
 		void PostPhysicsTick(float deltaTime) const;
+
+		/// @brief 指定したTickグループのコンポーネントのPostPhysicsTickを呼び出します。
+		/// @param deltaTime 前のフレームからの経過時間（秒）
+		/// @param group 対象のTickグループ
+		/// @return 呼び出したコンポーネントの数
 		[[nodiscard]] uint32_t PostPhysicsTick(
-			float                    deltaTime,
+			float                     deltaTime,
 			BaseComponent::TICK_GROUP group
+		) const;
+
+		/// @brief 描画フレームで見た目更新を行う際に呼び出されます。
+		/// @param renderDeltaTime 描画フレームの経過時間 [秒]
+		/// @param interpolationAlpha 固定ティック補間係数 [0..1]
+		/// @return 呼び出したコンポーネントの数
+		[[nodiscard]] uint32_t RenderTick(
+			float renderDeltaTime,
+			float interpolationAlpha
 		) const;
 
 		/// @brief レンダリングの前に呼び出されます。
@@ -156,7 +178,7 @@ namespace Unnamed {
 
 		/// @brief コンポーネントを削除します。
 		/// @param component 削除するコンポーネントのポインタ
-		void RemoveComponent(BaseComponent* component);
+		void               RemoveComponent(BaseComponent* component);
 		[[nodiscard]] bool MoveComponentUp(BaseComponent* component);
 		[[nodiscard]] bool MoveComponentDown(BaseComponent* component);
 

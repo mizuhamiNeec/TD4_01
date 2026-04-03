@@ -12,8 +12,11 @@ namespace Unnamed {
 	static constexpr std::string_view kChannel = "Entity";
 
 	namespace {
-		[[nodiscard]] bool IsTransformComponent(const BaseComponent* component) {
-			return component != nullptr && component->GetStableName() == "Transform";
+		[[nodiscard]] bool IsTransformComponent(
+			const BaseComponent* component
+		) {
+			return component != nullptr &&
+			       component->GetStableName() == "Transform";
 		}
 	}
 
@@ -62,7 +65,7 @@ namespace Unnamed {
 	}
 
 	uint32_t Entity::PrePhysicsTick(
-		const float                    deltaTime,
+		const float                     deltaTime,
 		const BaseComponent::TICK_GROUP group
 	) const {
 		if (!mIsActive) {
@@ -97,7 +100,7 @@ namespace Unnamed {
 	}
 
 	uint32_t Entity::Tick(
-		const float                    deltaTime,
+		const float                     deltaTime,
 		const BaseComponent::TICK_GROUP group
 	) const {
 		if (!mIsActive) {
@@ -118,6 +121,22 @@ namespace Unnamed {
 		return invokedCount;
 	}
 
+	uint32_t Entity::FrameInputTick(const float frameDeltaTime) const {
+		if (!mIsActive) {
+			return 0;
+		}
+
+		uint32_t invokedCount = 0;
+		for (const auto& component : mComponents) {
+			if (!component->IsActive()) {
+				continue;
+			}
+			component->OnFrameInputTick(frameDeltaTime);
+			++invokedCount;
+		}
+		return invokedCount;
+	}
+
 	void Entity::PostPhysicsTick(const float deltaTime) const {
 		if (!mIsActive) {
 			return;
@@ -132,7 +151,7 @@ namespace Unnamed {
 	}
 
 	uint32_t Entity::PostPhysicsTick(
-		const float                    deltaTime,
+		const float                     deltaTime,
 		const BaseComponent::TICK_GROUP group
 	) const {
 		if (!mIsActive) {
@@ -148,6 +167,25 @@ namespace Unnamed {
 				continue;
 			}
 			component->PostPhysicsTick(deltaTime);
+			++invokedCount;
+		}
+		return invokedCount;
+	}
+
+	uint32_t Entity::RenderTick(
+		const float renderDeltaTime,
+		const float interpolationAlpha
+	) const {
+		if (!mIsActive) {
+			return 0;
+		}
+
+		uint32_t invokedCount = 0;
+		for (const auto& component : mComponents) {
+			if (!component->IsActive()) {
+				continue;
+			}
+			component->OnRenderTick(renderDeltaTime, interpolationAlpha);
 			++invokedCount;
 		}
 		return invokedCount;
@@ -259,23 +297,13 @@ namespace Unnamed {
 		return raw;
 	}
 
-	void Entity::RebuildComponentTypeIndex() {
-		mComponentsByType.clear();
-		for (const auto& component : mComponents) {
-			if (!component) {
-				continue;
-			}
-			mComponentsByType[component->GetTypeId()].emplace_back(component.get());
-		}
-	}
-
 	void Entity::RemoveComponent(BaseComponent* component) {
 		if (!component) {
 			return;
 		}
 
-		const auto it = std::find_if(
-			mComponents.begin(), mComponents.end(),
+		const auto it = std::ranges::find_if(
+			mComponents,
 			[component](const std::unique_ptr<BaseComponent>& current) {
 				return current.get() == component;
 			}
@@ -297,8 +325,8 @@ namespace Unnamed {
 			return false;
 		}
 
-		const auto it = std::find_if(
-			mComponents.begin(), mComponents.end(),
+		const auto it = std::ranges::find_if(
+			mComponents,
 			[component](const std::unique_ptr<BaseComponent>& current) {
 				return current.get() == component;
 			}
@@ -322,8 +350,8 @@ namespace Unnamed {
 			return false;
 		}
 
-		const auto it = std::find_if(
-			mComponents.begin(), mComponents.end(),
+		const auto it = std::ranges::find_if(
+			mComponents,
 			[component](const std::unique_ptr<BaseComponent>& current) {
 				return current.get() == component;
 			}
@@ -333,7 +361,8 @@ namespace Unnamed {
 		}
 
 		const auto nextIt = std::next(it);
-		if (nextIt == mComponents.end() || IsTransformComponent(nextIt->get())) {
+		if (nextIt == mComponents.end() ||
+		    IsTransformComponent(nextIt->get())) {
 			return false;
 		}
 
@@ -398,6 +427,18 @@ namespace Unnamed {
 		}
 		while (!mFolderPath.empty() && mFolderPath.back() == '/') {
 			mFolderPath.pop_back();
+		}
+	}
+
+	void Entity::RebuildComponentTypeIndex() {
+		mComponentsByType.clear();
+		for (const auto& component : mComponents) {
+			if (!component) {
+				continue;
+			}
+			mComponentsByType[component->GetTypeId()].emplace_back(
+				component.get()
+			);
 		}
 	}
 }

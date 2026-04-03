@@ -18,7 +18,9 @@ namespace Unnamed {
 		~EditorWorld() override;
 
 		void Initialize() override;
-		void Tick(float unscaledDeltaTime, float deltaTime) override;
+		void FixedTick(float fixedDeltaTime) override;
+		void FrameInputTick(float frameDeltaTime) override;
+		void RenderTick(float renderDeltaTime, float interpolationAlpha) override;
 
 		void StartPlayInEditor();
 		void StopPlayInEditor();

@@ -63,21 +63,40 @@ namespace Unnamed {
 		}
 	}
 
-	void EditorWorld::Tick(
-		const float unscaledDeltaTime, const float deltaTime
-	) {
+	void EditorWorld::FixedTick(const float fixedDeltaTime) {
 		if (IsPlaying()) {
 			if (mPlayWorld) {
-				mPlayWorld->Tick(unscaledDeltaTime, deltaTime);
+				mPlayWorld->FixedTick(fixedDeltaTime);
 			}
-		} else {
-			// 先にカメラを更新
-			if (mEditorEntity && mEditorEntity->IsActive()) {
-				mEditorEntity->OnEditorTick(deltaTime);
-			}
-
-			World::EditorTick(unscaledDeltaTime);
+			return;
 		}
+	}
+
+	void EditorWorld::FrameInputTick(const float frameDeltaTime) {
+		if (IsPlaying()) {
+			if (mPlayWorld) {
+				mPlayWorld->FrameInputTick(frameDeltaTime);
+			}
+		}
+	}
+
+	void EditorWorld::RenderTick(
+		const float renderDeltaTime,
+		const float interpolationAlpha
+	) {
+		(void)interpolationAlpha;
+		if (IsPlaying()) {
+			if (mPlayWorld) {
+				mPlayWorld->RenderTick(renderDeltaTime, interpolationAlpha);
+			}
+			return;
+		}
+
+		// 編集モードでは見た目更新を描画フレームに同期する。
+		if (mEditorEntity && mEditorEntity->IsActive()) {
+			mEditorEntity->OnEditorTick(renderDeltaTime);
+		}
+		World::EditorTick(renderDeltaTime);
 	}
 
 	void EditorWorld::StartPlayInEditor() {

@@ -2,19 +2,12 @@
 
 #include "core/ComponentRegistry.h"
 #include "core/assets/AssetManager.h"
-#include "core/assets/types/MeshAssetData.h"
-#include "core/json/JsonReader.h"
-#include "core/json/JsonWriter.h"
+#include "core/io/json/JsonReader.h"
+#include "core/io/json/JsonWriter.h"
 #include "core/math/Math.h"
 
-#include "engine/Engine.h"
-#include "engine/EngineServices.h"
-#include "engine/physics/core/Physics.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
-#include "engine/unnamed/framework/components/mesh/StaticMeshRendererComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
-#include "engine/unnamed/subsystem/interface/ServiceLocator.h"
-#include "engine/world/World.h"
 
 namespace Unnamed {
 	Vec3 TriggerVolumeComponentBase::GetWorldCenter() const noexcept {

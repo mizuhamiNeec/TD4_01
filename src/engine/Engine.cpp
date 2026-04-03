@@ -1,5 +1,6 @@
 #include "Engine.h"
 
+#include <algorithm>
 #include <chrono>
 #include <pch.h>
 
@@ -47,6 +48,7 @@
 #include <engine/unnamed/subsystem/time/TimeSystem.h>
 #include <engine/world/GameWorld.h>
 #include <engine/world/World.h>
+#include <game/core/replay/DemoManager.h>
 
 namespace Unnamed {
 	namespace Rhi {
@@ -166,6 +168,9 @@ namespace Unnamed {
 		if (!mTerminalSystem->Init()) {
 			return false;
 		}
+
+		mDemoManager = std::make_unique<DemoManager>();
+		ServiceLocator::Register<DemoManager>(mDemoManager.get());
 
 		mAssetManager = std::make_unique<AssetManager>();
 		ServiceLocator::Register<AssetManager>(mAssetManager.get());
@@ -423,11 +428,71 @@ namespace Unnamed {
 		}
 #endif
 
-		// ワールドの更新
-		{
-			Profiler::ScopeTimer scope(mProfiler.get(), "World.Tick");
-			if (runtimeWorld) {
-				runtimeWorld->Tick(unscaledDeltaTime, scaledDeltaTime);
+		// ワールドの固定シミュレーション更新 + 描画フレーム更新
+		if (runtimeWorld) {
+			static constexpr uint32_t kMaxFixedTicksPerFrame = 16u;
+
+			const uint32_t tickRate = mDemoManager ?
+				                          mDemoManager->GetSimulationTickRate() :
+				                          DemoManager::ResolveConfiguredTickRate();
+			const float fixedStepSeconds = DemoManager::TickStepSecondsFromRate(
+				tickRate
+			);
+
+			if (mDemoManager &&
+			    (mDemoManager->IsPlayback() || mDemoManager->IsRecording())) {
+				const uint32_t configuredTickRate =
+					DemoManager::ResolveConfiguredTickRate();
+				if (configuredTickRate != tickRate &&
+				    configuredTickRate != mLastLoggedTickrateMismatchConfigured) {
+					Warning(
+						"Engine",
+						"sv_tickrate={} is ignored while demo mode is active. Using tickrate={}.",
+						configuredTickRate,
+						tickRate
+					);
+					mLastLoggedTickrateMismatchConfigured = configuredTickRate;
+				}
+			} else {
+				mLastLoggedTickrateMismatchConfigured = 0;
+			}
+
+			mSimulationAccumulator += std::max(0.0f, scaledDeltaTime);
+			mSimulationAccumulator = std::min(
+				mSimulationAccumulator,
+				fixedStepSeconds * static_cast<float>(kMaxFixedTicksPerFrame)
+			);
+
+			{
+				Profiler::ScopeTimer scope(mProfiler.get(), "World.FrameInputTick");
+				runtimeWorld->FrameInputTick(unscaledDeltaTime);
+			}
+
+			{
+				Profiler::ScopeTimer scope(mProfiler.get(), "World.FixedTick");
+				uint32_t             fixedTickCount = 0;
+				while (
+					mSimulationAccumulator >= fixedStepSeconds &&
+					fixedTickCount < kMaxFixedTicksPerFrame
+				) {
+					runtimeWorld->FixedTick(fixedStepSeconds);
+					mSimulationAccumulator -= fixedStepSeconds;
+					++fixedTickCount;
+				}
+			}
+
+			const float interpolationAlpha = fixedStepSeconds > 0.0f ?
+				                                 std::clamp(
+					                                 mSimulationAccumulator /
+					                                 fixedStepSeconds,
+					                                 0.0f,
+					                                 1.0f
+				                                 ) :
+				                                 0.0f;
+
+			{
+				Profiler::ScopeTimer scope(mProfiler.get(), "World.RenderTick");
+				runtimeWorld->RenderTick(scaledDeltaTime, interpolationAlpha);
 			}
 		}
 
@@ -497,6 +562,8 @@ namespace Unnamed {
 			mWorld->Shutdown();
 			mWorld.reset();
 		}
+		ServiceLocator::Register<DemoManager>(nullptr);
+		mDemoManager.reset();
 
 #ifdef _DEBUG
 		if (mRenderModule) {
@@ -602,6 +669,7 @@ namespace Unnamed {
 		TWorld* raw = newWorld.get();
 
 		mWorld = std::move(newWorld);
+		mSimulationAccumulator = 0.0f;
 
 		mWorld->Initialize();
 		return *raw;

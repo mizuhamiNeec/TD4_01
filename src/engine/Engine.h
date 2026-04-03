@@ -14,6 +14,7 @@ namespace Unnamed {
 	class ImGuiLayer;
 	class ConsoleSystem;
 	class ConCommand;
+	class DemoManager;
 	class World;
 
 	namespace Render {
@@ -77,6 +78,7 @@ namespace Unnamed {
 		// 基幹システム
 		std::unique_ptr<ConsoleSystem>        mConsoleSystem;
 		std::unique_ptr<class TerminalSystem> mTerminalSystem;
+		std::unique_ptr<DemoManager>          mDemoManager;
 
 		std::unique_ptr<class TimeSystem>  mTimeSystem;
 		std::unique_ptr<class InputSystem> mInputSystem;
@@ -100,9 +102,11 @@ namespace Unnamed {
 
 		std::unique_ptr<Render::RenderFrameContext> mRenderFrameContext;
 		float mAssetHotReloadPollAccumulator = 0.0f;
+		float mSimulationAccumulator = 0.0f;
 		uint32_t mFrameIndex = 0;
 		uint32_t mLastResizeWidth = 0;
 		uint32_t mLastResizeHeight = 0;
+		uint32_t mLastLoggedTickrateMismatchConfigured = 0;
 
 #ifdef _DEBUG
 		bool mIsEditorMode = true;

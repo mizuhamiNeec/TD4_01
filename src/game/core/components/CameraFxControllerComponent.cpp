@@ -2,22 +2,20 @@
 
 #include <algorithm>
 #include <array>
-#include <cstddef>
 #include <cmath>
-#include <cstring>
+#include <utility>
 
 #ifdef _DEBUG
 #include <imgui.h>
 #endif
 
 #include "core/ComponentRegistry.h"
-#include "core/json/JsonReader.h"
-#include "core/json/JsonWriter.h"
+#include "core/io/json/JsonReader.h"
+#include "core/io/json/JsonWriter.h"
 #include "core/math/Math.h"
 
 #include "engine/ImGui/Icons.h"
 #include "engine/scene/Scene.h"
-#include "engine/tween/TweenEase.h"
 #include "engine/unnamed/framework/components/CameraComponent.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
@@ -26,42 +24,86 @@
 namespace Unnamed {
 	namespace {
 		struct EaseNamePair {
-			EASE_TYPE        type = EASE_TYPE::LINEAR;
 			std::string_view name = "LINEAR";
+			EASE_TYPE        type = EASE_TYPE::LINEAR;
 		};
 
+		[[nodiscard]] float ComputeLerpAlpha(
+			const float speedPerSec, const float deltaTime
+		) {
+			return std::clamp(speedPerSec * deltaTime, 0.0f, 1.0f);
+		}
+
+		[[nodiscard]] float ResolveLerpSpeed(const float durationSec) {
+			// Avoid one-frame teleport when duration is zero or extremely short.
+			constexpr float kMinDurationSec = 0.05f;
+			return 1.0f / std::max(durationSec, kMinDurationSec);
+		}
+
+		[[nodiscard]] uint32_t Hash1D(const int x, const uint32_t seed) {
+			uint32_t h = static_cast<uint32_t>(x) ^ seed;
+			h          ^= h >> 16;
+			h          *= 0x7feb352du;
+			h          ^= h >> 15;
+			h          *= 0x846ca68bu;
+			h          ^= h >> 16;
+			return h;
+		}
+
+		[[nodiscard]] float HashToUnit(const uint32_t value) {
+			constexpr float kInv24Bit = 1.0f / 16777215.0f;
+			return static_cast<float>(value & 0x00ffffffu) * kInv24Bit;
+		}
+
+		[[nodiscard]] float PerlinFade(const float t) {
+			return t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f);
+		}
+
+		[[nodiscard]] float PerlinNoise1D(const float x, const uint32_t seed) {
+			const int   x0 = static_cast<int>(std::floor(x));
+			const int   x1 = x0 + 1;
+			const float t  = x - static_cast<float>(x0);
+
+			const float gradient0 = HashToUnit(Hash1D(x0, seed)) * 2.0f - 1.0f;
+			const float gradient1 = HashToUnit(Hash1D(x1, seed)) * 2.0f - 1.0f;
+			const float dot0      = gradient0 * t;
+			const float dot1      = gradient1 * (t - 1.0f);
+
+			return Math::Lerp(dot0, dot1, PerlinFade(t)) * 2.0f;
+		}
+
 		constexpr EaseNamePair kEaseNames[] = {
-			{EASE_TYPE::LINEAR, "LINEAR"},
-			{EASE_TYPE::IN_SINE, "IN_SINE"},
-			{EASE_TYPE::OUT_SINE, "OUT_SINE"},
-			{EASE_TYPE::IN_OUT_SINE, "IN_OUT_SINE"},
-			{EASE_TYPE::IN_QUAD, "IN_QUAD"},
-			{EASE_TYPE::OUT_QUAD, "OUT_QUAD"},
-			{EASE_TYPE::IN_OUT_QUAD, "IN_OUT_QUAD"},
-			{EASE_TYPE::IN_CUBIC, "IN_CUBIC"},
-			{EASE_TYPE::OUT_CUBIC, "OUT_CUBIC"},
-			{EASE_TYPE::IN_OUT_CUBIC, "IN_OUT_CUBIC"},
-			{EASE_TYPE::IN_QUART, "IN_QUART"},
-			{EASE_TYPE::OUT_QUART, "OUT_QUART"},
-			{EASE_TYPE::IN_OUT_QUART, "IN_OUT_QUART"},
-			{EASE_TYPE::IN_QUINT, "IN_QUINT"},
-			{EASE_TYPE::OUT_QUINT, "OUT_QUINT"},
-			{EASE_TYPE::IN_OUT_QUINT, "IN_OUT_QUINT"},
-			{EASE_TYPE::IN_EXPO, "IN_EXPO"},
-			{EASE_TYPE::OUT_EXPO, "OUT_EXPO"},
-			{EASE_TYPE::IN_OUT_EXPO, "IN_OUT_EXPO"},
-			{EASE_TYPE::IN_CIRC, "IN_CIRC"},
-			{EASE_TYPE::OUT_CIRC, "OUT_CIRC"},
-			{EASE_TYPE::IN_OUT_CIRC, "IN_OUT_CIRC"},
-			{EASE_TYPE::IN_BACK, "IN_BACK"},
-			{EASE_TYPE::OUT_BACK, "OUT_BACK"},
-			{EASE_TYPE::IN_OUT_BACK, "IN_OUT_BACK"},
-			{EASE_TYPE::IN_ELASTIC, "IN_ELASTIC"},
-			{EASE_TYPE::OUT_ELASTIC, "OUT_ELASTIC"},
-			{EASE_TYPE::IN_OUT_ELASTIC, "IN_OUT_ELASTIC"},
-			{EASE_TYPE::IN_BOUNCE, "IN_BOUNCE"},
-			{EASE_TYPE::OUT_BOUNCE, "OUT_BOUNCE"},
-			{EASE_TYPE::IN_OUT_BOUNCE, "IN_OUT_BOUNCE"},
+			{.name = "LINEAR", .type = EASE_TYPE::LINEAR},
+			{.name = "IN_SINE", .type = EASE_TYPE::IN_SINE},
+			{.name = "OUT_SINE", .type = EASE_TYPE::OUT_SINE},
+			{.name = "IN_OUT_SINE", .type = EASE_TYPE::IN_OUT_SINE},
+			{.name = "IN_QUAD", .type = EASE_TYPE::IN_QUAD},
+			{.name = "OUT_QUAD", .type = EASE_TYPE::OUT_QUAD},
+			{.name = "IN_OUT_QUAD", .type = EASE_TYPE::IN_OUT_QUAD},
+			{.name = "IN_CUBIC", .type = EASE_TYPE::IN_CUBIC},
+			{.name = "OUT_CUBIC", .type = EASE_TYPE::OUT_CUBIC},
+			{.name = "IN_OUT_CUBIC", .type = EASE_TYPE::IN_OUT_CUBIC},
+			{.name = "IN_QUART", .type = EASE_TYPE::IN_QUART},
+			{.name = "OUT_QUART", .type = EASE_TYPE::OUT_QUART},
+			{.name = "IN_OUT_QUART", .type = EASE_TYPE::IN_OUT_QUART},
+			{.name = "IN_QUINT", .type = EASE_TYPE::IN_QUINT},
+			{.name = "OUT_QUINT", .type = EASE_TYPE::OUT_QUINT},
+			{.name = "IN_OUT_QUINT", .type = EASE_TYPE::IN_OUT_QUINT},
+			{.name = "IN_EXPO", .type = EASE_TYPE::IN_EXPO},
+			{.name = "OUT_EXPO", .type = EASE_TYPE::OUT_EXPO},
+			{.name = "IN_OUT_EXPO", .type = EASE_TYPE::IN_OUT_EXPO},
+			{.name = "IN_CIRC", .type = EASE_TYPE::IN_CIRC},
+			{.name = "OUT_CIRC", .type = EASE_TYPE::OUT_CIRC},
+			{.name = "IN_OUT_CIRC", .type = EASE_TYPE::IN_OUT_CIRC},
+			{.name = "IN_BACK", .type = EASE_TYPE::IN_BACK},
+			{.name = "OUT_BACK", .type = EASE_TYPE::OUT_BACK},
+			{.name = "IN_OUT_BACK", .type = EASE_TYPE::IN_OUT_BACK},
+			{.name = "IN_ELASTIC", .type = EASE_TYPE::IN_ELASTIC},
+			{.name = "OUT_ELASTIC", .type = EASE_TYPE::OUT_ELASTIC},
+			{.name = "IN_OUT_ELASTIC", .type = EASE_TYPE::IN_OUT_ELASTIC},
+			{.name = "IN_BOUNCE", .type = EASE_TYPE::IN_BOUNCE},
+			{.name = "OUT_BOUNCE", .type = EASE_TYPE::OUT_BOUNCE},
+			{.name = "IN_OUT_BOUNCE", .type = EASE_TYPE::IN_OUT_BOUNCE},
 		};
 
 #ifdef _DEBUG
@@ -69,7 +111,7 @@ namespace Unnamed {
 			const char* label, std::string& value, const size_t capacity = 128
 		) {
 			std::vector<char> buffer(capacity, '\0');
-			const size_t copyLength = std::min(value.size(), capacity - 1);
+			const size_t      copyLength = std::min(value.size(), capacity - 1);
 			if (copyLength > 0) {
 				std::memcpy(buffer.data(), value.data(), copyLength);
 			}
@@ -90,6 +132,10 @@ namespace Unnamed {
 		mCamera         = ResolveCamera();
 		mShakeTransform = ResolveShakeTransform();
 		if (mCamera) {
+			// Track external FOV changes while preserving our current offset.
+			mBaseFovYDegrees = mCamera->GetFovYDegrees() - mCurrentFovOffset;
+		}
+		if (mCamera) {
 			mBaseFovYDegrees = mCamera->GetFovYDegrees();
 		}
 	}
@@ -97,11 +143,16 @@ namespace Unnamed {
 	void CameraFxControllerComponent::OnDetached() {
 		ResetOutputs();
 		mActiveShakes.clear();
-		mActiveFovAnim = {};
+		mActiveFovAnim      = {};
+		mActiveRotationAnim = {};
 	}
 
-	void CameraFxControllerComponent::OnTick(const float deltaTime) {
-		if (deltaTime <= 0.0f) {
+	void CameraFxControllerComponent::OnRenderTick(
+		const float renderDeltaTime,
+		const float interpolationAlpha
+	) {
+		(void)interpolationAlpha;
+		if (renderDeltaTime <= 0.0f) {
 			return;
 		}
 
@@ -111,7 +162,7 @@ namespace Unnamed {
 		Vec2 shakeOffset = Vec2::zero;
 		for (size_t i = 0; i < mActiveShakes.size();) {
 			ActiveShake& shake = mActiveShakes[i];
-			shake.elapsedSec += deltaTime;
+			shake.elapsedSec   += renderDeltaTime;
 			if (shake.elapsedSec >= shake.durationSec) {
 				mActiveShakes.erase(
 					mActiveShakes.begin() + static_cast<std::ptrdiff_t>(i)
@@ -127,61 +178,73 @@ namespace Unnamed {
 			const float envelope = std::pow(
 				1.0f - normalizedTime, std::max(0.01f, shake.decay)
 			);
-			const float phaseStep = Math::pi * 2.0f * shake.frequencyHz *
-			                        deltaTime;
-			shake.phasePitch += phaseStep;
-			shake.phaseYaw += phaseStep * 0.93f;
-			shakeOffset.x += std::sin(shake.phasePitch) * shake.amplitudeDeg.x *
-			                 envelope;
-			shakeOffset.y += std::sin(shake.phaseYaw) * shake.amplitudeDeg.y *
-			                 envelope;
+			shake.noiseTimeSec     += shake.frequencyHz * renderDeltaTime;
+			const float pitchNoise = PerlinNoise1D(
+				shake.noiseTimeSec + 17.13f, shake.seedPitch
+			);
+			const float yawNoise = PerlinNoise1D(
+				shake.noiseTimeSec + 91.47f, shake.seedYaw
+			);
+			shakeOffset.x += pitchNoise * shake.amplitudeDeg.x * envelope;
+			shakeOffset.y += yawNoise * shake.amplitudeDeg.y * envelope;
 			++i;
 		}
 
-		float fovOffset = mCurrentFovOffset;
-		if (mActiveFovAnim.active) {
-			mActiveFovAnim.elapsedSec += deltaTime;
-			const float totalDuration = std::max(
-				0.0f, mActiveFovAnim.inSec
-			) + std::max(0.0f, mActiveFovAnim.outSec);
-			if (mActiveFovAnim.elapsedSec >= totalDuration) {
-				mActiveFovAnim.active = false;
-				fovOffset             = 0.0f;
-			} else if (mActiveFovAnim.elapsedSec <= mActiveFovAnim.inSec) {
-				const float t = mActiveFovAnim.inSec > 1.0e-4f ?
-					                mActiveFovAnim.elapsedSec / mActiveFovAnim.
-					                inSec :
-					                1.0f;
-				fovOffset = mActiveFovAnim.targetDeltaDeg *
-				            TweenEase::Evaluate(
-					            mActiveFovAnim.ease, std::clamp(t, 0.0f, 1.0f)
-				            );
+		float       fovOffset = mCurrentFovOffset;
+		const float fovSpeed  = std::max(0.0f, mActiveFovAnim.lerpSpeed);
+		if (fovSpeed > 0.0f) {
+			fovOffset = Math::Lerp(
+				fovOffset,
+				mActiveFovAnim.targetDeltaDeg,
+				ComputeLerpAlpha(fovSpeed, renderDeltaTime)
+			);
+		} else {
+			fovOffset = mActiveFovAnim.targetDeltaDeg;
+		}
+
+		Vec3 rotationOffset = mCurrentRotationOffsetDeg;
+		if (mActiveRotationAnim.active) {
+			const float inSec = std::max(0.0f, mActiveRotationAnim.inSec);
+			const float outSec = std::max(0.0f, mActiveRotationAnim.outSec);
+			const float totalDuration = inSec + outSec;
+			if (totalDuration <= 1.0e-6f) {
+				mActiveRotationAnim.active = false;
+				rotationOffset             = Vec3::zero;
 			} else {
-				const float outElapsed = mActiveFovAnim.elapsedSec -
-				                         mActiveFovAnim.inSec;
-				const float outT = mActiveFovAnim.outSec > 1.0e-4f ?
-					                   outElapsed / mActiveFovAnim.outSec :
-					                   1.0f;
-				const float easedOut = TweenEase::Evaluate(
-					mActiveFovAnim.ease, std::clamp(outT, 0.0f, 1.0f)
+				Vec3        targetOffset;
+				float       speed;
+				const float elapsedSec = mActiveRotationAnim.elapsedSec;
+				if (elapsedSec <= inSec) {
+					targetOffset = mActiveRotationAnim.targetEulerDeg;
+					speed        = ResolveLerpSpeed(inSec);
+				} else if (elapsedSec < totalDuration) {
+					targetOffset = Vec3::zero;
+					speed        = ResolveLerpSpeed(outSec);
+				} else {
+					targetOffset               = Vec3::zero;
+					speed                      = ResolveLerpSpeed(outSec);
+					mActiveRotationAnim.active = false;
+				}
+				rotationOffset = Math::Lerp(
+					rotationOffset,
+					targetOffset,
+					ComputeLerpAlpha(speed, renderDeltaTime)
 				);
-				fovOffset = mActiveFovAnim.targetDeltaDeg * (1.0f - easedOut);
+				mActiveRotationAnim.elapsedSec += renderDeltaTime;
 			}
 		} else {
-			fovOffset = 0.0f;
+			rotationOffset = Vec3::zero;
 		}
 
-		if (mCamera && !mActiveFovAnim.active && std::abs(mCurrentFovOffset) <=
-		    1.0e-6f) {
-			mBaseFovYDegrees = mCamera->GetFovYDegrees();
-		}
-
-		mCurrentLookOffset = shakeOffset;
-		mCurrentFovOffset  = fovOffset;
+		mCurrentLookOffset = Vec3(shakeOffset.x, shakeOffset.y, 0.0f) +
+		                     rotationOffset;
+		mCurrentRotationOffsetDeg = rotationOffset;
+		mCurrentFovOffset         = fovOffset;
 		ApplyOutputs(mCurrentLookOffset, mCurrentFovOffset);
 	}
 
-	BaseComponent::TICK_GROUP CameraFxControllerComponent::GetTickGroup() const {
+	BaseComponent::TICK_GROUP
+	CameraFxControllerComponent::GetTickGroup() const {
 		return TICK_GROUP::LATE;
 	}
 
@@ -193,14 +256,15 @@ namespace Unnamed {
 			return;
 		}
 
-		ActiveShake shake = {};
-		shake.amplitudeDeg = preset->ampPitchYawDeg * intensityScale;
-		shake.frequencyHz  = std::max(0.01f, preset->freqHz);
-		shake.durationSec  = std::max(0.01f, preset->durationSec);
-		shake.decay        = std::max(0.01f, preset->decay);
-		shake.phasePitch   = static_cast<float>(mActiveShakes.size()) * 0.73f;
-		shake.phaseYaw     = static_cast<float>(mActiveShakes.size()) * 1.37f +
-		                 Math::pi * 0.5f;
+		ActiveShake shake       = {};
+		shake.amplitudeDeg      = preset->ampPitchYawDeg * intensityScale;
+		shake.frequencyHz       = std::max(0.01f, preset->freqHz);
+		shake.durationSec       = std::max(0.01f, preset->durationSec);
+		shake.decay             = std::max(0.01f, preset->decay);
+		const uint32_t seedBase = std::max(1u, mNextShakeSeed++);
+		shake.seedPitch         = seedBase * 0x9e3779b9u + 0x85ebca6bu;
+		shake.seedYaw           = seedBase * 0xc2b2ae35u + 0x27d4eb2fu;
+		shake.noiseTimeSec      = static_cast<float>(seedBase) * 0.173f;
 		mActiveShakes.emplace_back(shake);
 	}
 
@@ -217,12 +281,24 @@ namespace Unnamed {
 			mBaseFovYDegrees = mCamera->GetFovYDegrees() - mCurrentFovOffset;
 		}
 
-		mActiveFovAnim.active         = true;
-		mActiveFovAnim.elapsedSec     = 0.0f;
-		mActiveFovAnim.targetDeltaDeg = preset->deltaDeg * intensityScale;
-		mActiveFovAnim.inSec          = std::max(0.0f, preset->inSec);
-		mActiveFovAnim.outSec         = std::max(0.0f, preset->outSec);
-		mActiveFovAnim.ease           = preset->ease;
+		mActiveFovAnim.targetDeltaDeg = preset->targetDeltaDeg * intensityScale;
+		mActiveFovAnim.lerpSpeed      = std::max(0.0f, preset->lerpSpeed);
+	}
+
+	void CameraFxControllerComponent::TriggerRotation(
+		const std::string_view presetId, const float intensityScale
+	) {
+		const RotationPreset* preset = FindRotationPreset(presetId);
+		if (!preset || intensityScale <= 0.0f) {
+			return;
+		}
+
+		mActiveRotationAnim.active         = true;
+		mActiveRotationAnim.elapsedSec     = 0.0f;
+		mActiveRotationAnim.targetEulerDeg = preset->eulerDeg * intensityScale;
+		mActiveRotationAnim.inSec          = std::max(0.0f, preset->inSec);
+		mActiveRotationAnim.outSec         = std::max(0.0f, preset->outSec);
+		mActiveRotationAnim.ease           = preset->ease;
 	}
 
 	bool CameraFxControllerComponent::HasShakePreset(
@@ -237,6 +313,12 @@ namespace Unnamed {
 		return FindFovPreset(presetId) != nullptr;
 	}
 
+	bool CameraFxControllerComponent::HasRotationPreset(
+		const std::string_view presetId
+	) const {
+		return FindRotationPreset(presetId) != nullptr;
+	}
+
 	bool CameraFxControllerComponent::GetFovPresetInSec(
 		const std::string_view presetId, float& outInSec
 	) const {
@@ -244,7 +326,7 @@ namespace Unnamed {
 		if (!preset) {
 			return false;
 		}
-		outInSec = std::max(0.0f, preset->inSec);
+		outInSec = 0.0f;
 		return true;
 	}
 
@@ -262,7 +344,7 @@ namespace Unnamed {
 
 #ifdef _DEBUG
 	void CameraFxControllerComponent::DrawInspectorImGui() {
-		mCamera = ResolveCamera();
+		mCamera         = ResolveCamera();
 		mShakeTransform = ResolveShakeTransform();
 
 		Entity* owner = GetOwner();
@@ -280,9 +362,9 @@ namespace Unnamed {
 		ImGui::TextUnformatted("GUID=0 means owner entity.");
 		if (ImGui::Button("Use Owner As Targets")) {
 			mCameraEntityGuid = 0;
-			mShakeEntityGuid = 0;
+			mShakeEntityGuid  = 0;
 			ResetOutputs();
-			mCamera = ResolveCamera();
+			mCamera         = ResolveCamera();
 			mShakeTransform = ResolveShakeTransform();
 		}
 
@@ -293,33 +375,48 @@ namespace Unnamed {
 		ImGui::Text("Base FOV Y: %.3f", mBaseFovYDegrees);
 		ImGui::Text("Current FOV Offset: %.3f", mCurrentFovOffset);
 		ImGui::Text(
-			"Current Look Offset: (%.3f, %.3f)",
+			"Current Look Offset: (%.3f, %.3f, %.3f)",
 			mCurrentLookOffset.x,
-			mCurrentLookOffset.y
+			mCurrentLookOffset.y,
+			mCurrentLookOffset.z
+		);
+		ImGui::Text(
+			"Current Rotation Offset: (%.3f, %.3f, %.3f)",
+			mCurrentRotationOffsetDeg.x,
+			mCurrentRotationOffsetDeg.y,
+			mCurrentRotationOffsetDeg.z
 		);
 		ImGui::Text(
 			"Active Shakes: %d", static_cast<int>(mActiveShakes.size())
 		);
-		ImGui::Text("FOV Anim Active: %s", mActiveFovAnim.active ? "Yes" : "No");
+		ImGui::Text("FOV Target Offset: %.3f", mActiveFovAnim.targetDeltaDeg);
+		ImGui::Text("FOV Lerp Speed: %.3f", mActiveFovAnim.lerpSpeed);
+		ImGui::Text(
+			"Rotation Anim Active: %s",
+			mActiveRotationAnim.active ? "Yes" : "No"
+		);
 
 		if (ImGui::Button("Capture Base FOV")) {
 			if (mCamera) {
-				mBaseFovYDegrees = mCamera->GetFovYDegrees() - mCurrentFovOffset;
+				mBaseFovYDegrees =
+					mCamera->GetFovYDegrees() - mCurrentFovOffset;
 			}
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Reset FX Outputs")) {
 			mActiveShakes.clear();
-			mActiveFovAnim = {};
+			mActiveFovAnim      = {};
+			mActiveRotationAnim = {};
 			ResetOutputs();
 		}
 
 		(void)ImGui::DragFloat(
-			"Trigger Intensity", &mDebugTriggerIntensity, 0.01f, 0.0f, 8.0f, "%.2f"
+			"Trigger Intensity", &mDebugTriggerIntensity, 0.01f, 0.0f, 8.0f,
+			"%.2f"
 		);
 
 		ImGui::SeparatorText("Shake Presets");
-		size_t removeShake = static_cast<size_t>(-1);
+		size_t removeShake = mShakePresets.size();
 		for (size_t i = 0; i < mShakePresets.size(); ++i) {
 			ShakePreset& preset = mShakePresets[i];
 			ImGui::PushID(static_cast<int>(i));
@@ -334,15 +431,19 @@ namespace Unnamed {
 				180.0f,
 				"%.2f"
 			);
-			if (ImGui::DragFloat("Freq Hz", &preset.freqHz, 0.1f, 0.01f, 200.0f, "%.2f")) {
+			if (ImGui::DragFloat(
+				"Freq Hz", &preset.freqHz, 0.1f, 0.01f, 200.0f, "%.2f"
+			)) {
 				preset.freqHz = std::max(0.01f, preset.freqHz);
 			}
 			if (ImGui::DragFloat(
-				    "Duration Sec", &preset.durationSec, 0.01f, 0.01f, 20.0f, "%.2f"
-			    )) {
+				"Duration Sec", &preset.durationSec, 0.01f, 0.01f, 20.0f, "%.2f"
+			)) {
 				preset.durationSec = std::max(0.01f, preset.durationSec);
 			}
-			if (ImGui::DragFloat("Decay", &preset.decay, 0.01f, 0.01f, 8.0f, "%.2f")) {
+			if (ImGui::DragFloat(
+				"Decay", &preset.decay, 0.01f, 0.01f, 8.0f, "%.2f"
+			)) {
 				preset.decay = std::max(0.01f, preset.decay);
 			}
 			if (ImGui::Button("Trigger Shake")) {
@@ -354,51 +455,37 @@ namespace Unnamed {
 			}
 			ImGui::PopID();
 		}
-		if (removeShake != static_cast<size_t>(-1)) {
+		if (removeShake < mShakePresets.size()) {
 			mShakePresets.erase(
 				mShakePresets.begin() + static_cast<std::ptrdiff_t>(removeShake)
 			);
 		}
 		if (ImGui::Button("Add Shake Preset")) {
 			ShakePreset preset = {};
-			preset.id = "new_shake";
+			preset.id          = "new_shake";
 			mShakePresets.emplace_back(std::move(preset));
 		}
 
 		ImGui::SeparatorText("FOV Presets");
-		size_t removeFov = static_cast<size_t>(-1);
+		size_t removeFov = mFovPresets.size();
 		for (size_t i = 0; i < mFovPresets.size(); ++i) {
 			FovPreset& preset = mFovPresets[i];
 			ImGui::PushID(100000 + static_cast<int>(i));
 			ImGui::SeparatorText(("FovPreset " + std::to_string(i)).c_str());
 
 			(void)EditStringField("ID", preset.id);
-			(void)ImGui::DragFloat("Delta Deg", &preset.deltaDeg, 0.05f, -120.0f, 120.0f, "%.2f");
-			if (ImGui::DragFloat("In Sec", &preset.inSec, 0.01f, 0.0f, 20.0f, "%.2f")) {
-				preset.inSec = std::max(0.0f, preset.inSec);
-			}
-			if (ImGui::DragFloat("Out Sec", &preset.outSec, 0.01f, 0.0f, 20.0f, "%.2f")) {
-				preset.outSec = std::max(0.0f, preset.outSec);
-			}
-
-			int currentEaseIndex = 0;
-			for (size_t easeIndex = 0; easeIndex < std::size(kEaseNames); ++easeIndex) {
-				if (kEaseNames[easeIndex].type == preset.ease) {
-					currentEaseIndex = static_cast<int>(easeIndex);
-					break;
-				}
-			}
-			std::array<const char*, std::size(kEaseNames)> easeNames = {};
-			for (size_t easeIndex = 0; easeIndex < std::size(kEaseNames); ++easeIndex) {
-				easeNames[easeIndex] = kEaseNames[easeIndex].name.data();
-			}
-			if (ImGui::Combo(
-				    "Ease",
-				    &currentEaseIndex,
-				    easeNames.data(),
-				    static_cast<int>(easeNames.size())
-			    )) {
-				preset.ease = kEaseNames[currentEaseIndex].type;
+			(void)ImGui::DragFloat(
+				"Target Delta Deg",
+				&preset.targetDeltaDeg,
+				0.05f,
+				-120.0f,
+				120.0f,
+				"%.2f"
+			);
+			if (ImGui::DragFloat(
+				"Lerp Speed", &preset.lerpSpeed, 0.05f, 0.0f, 200.0f, "%.2f"
+			)) {
+				preset.lerpSpeed = std::max(0.0f, preset.lerpSpeed);
 			}
 
 			if (ImGui::Button("Trigger FOV")) {
@@ -410,15 +497,89 @@ namespace Unnamed {
 			}
 			ImGui::PopID();
 		}
-		if (removeFov != static_cast<size_t>(-1)) {
+		if (removeFov < mFovPresets.size()) {
 			mFovPresets.erase(
 				mFovPresets.begin() + static_cast<std::ptrdiff_t>(removeFov)
 			);
 		}
 		if (ImGui::Button("Add FOV Preset")) {
 			FovPreset preset = {};
-			preset.id = "new_fov";
+			preset.id        = "new_fov";
 			mFovPresets.emplace_back(std::move(preset));
+		}
+
+		ImGui::SeparatorText("Rotation Presets");
+		size_t removeRotation = mRotationPresets.size();
+		for (size_t i = 0; i < mRotationPresets.size(); ++i) {
+			RotationPreset& preset = mRotationPresets[i];
+			ImGui::PushID(200000 + static_cast<int>(i));
+			ImGui::SeparatorText(
+				("RotationPreset " + std::to_string(i)).c_str()
+			);
+
+			(void)EditStringField("ID", preset.id);
+			(void)ImGui::DragFloat3(
+				"Euler Deg",
+				&preset.eulerDeg.x,
+				0.05f,
+				-180.0f,
+				180.0f,
+				"%.2f"
+			);
+			if (ImGui::DragFloat(
+				"In Sec", &preset.inSec, 0.01f, 0.0f, 20.0f, "%.2f"
+			)) {
+				preset.inSec = std::max(0.0f, preset.inSec);
+			}
+			if (ImGui::DragFloat(
+				"Out Sec", &preset.outSec, 0.01f, 0.0f, 20.0f, "%.2f"
+			)) {
+				preset.outSec = std::max(0.0f, preset.outSec);
+			}
+
+			int currentEaseIndex = 0;
+			for (size_t easeIndex = 0; easeIndex < std::size(kEaseNames); ++
+			     easeIndex) {
+				if (kEaseNames[easeIndex].type == preset.ease) {
+					currentEaseIndex = static_cast<int>(easeIndex);
+					break;
+				}
+			}
+			std::array<const char*, std::size(kEaseNames)> easeNames = {};
+			for (size_t easeIndex = 0; easeIndex < std::size(kEaseNames); ++
+			     easeIndex) {
+				easeNames[easeIndex] = kEaseNames[easeIndex].name.data();
+			}
+			if (ImGui::Combo(
+				"Ease",
+				&currentEaseIndex,
+				easeNames.data(),
+				static_cast<int>(easeNames.size())
+			)) {
+				preset.ease = kEaseNames[currentEaseIndex].type;
+			}
+
+			if (ImGui::Button("Trigger Rotation")) {
+				TriggerRotation(
+					preset.id, std::max(0.0f, mDebugTriggerIntensity)
+				);
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Remove")) {
+				removeRotation = i;
+			}
+			ImGui::PopID();
+		}
+		if (removeRotation < mRotationPresets.size()) {
+			mRotationPresets.erase(
+				mRotationPresets.begin() +
+				static_cast<std::ptrdiff_t>(removeRotation)
+			);
+		}
+		if (ImGui::Button("Add Rotation Preset")) {
+			RotationPreset preset = {};
+			preset.id             = "new_rotation";
+			mRotationPresets.emplace_back(std::move(preset));
 		}
 	}
 #endif
@@ -426,8 +587,9 @@ namespace Unnamed {
 	void CameraFxControllerComponent::Deserialize(const JsonReader& reader) {
 		mShakePresets.clear();
 		mFovPresets.clear();
+		mRotationPresets.clear();
 		mCameraEntityGuid = 0;
-		mShakeEntityGuid = 0;
+		mShakeEntityGuid  = 0;
 
 		if (reader.Has("cameraEntityGuid")) {
 			mCameraEntityGuid = reader["cameraEntityGuid"].GetUint64();
@@ -493,8 +655,56 @@ namespace Unnamed {
 				if (preset.id.empty()) {
 					continue;
 				}
-				if (node.Has("deltaDeg")) {
-					preset.deltaDeg = node["deltaDeg"].GetFloat(preset.deltaDeg);
+				if (node.Has("targetDeltaDeg")) {
+					preset.targetDeltaDeg = node["targetDeltaDeg"].GetFloat(
+						preset.targetDeltaDeg
+					);
+				} else if (node.Has("deltaDeg")) {
+					preset.targetDeltaDeg = node["deltaDeg"].GetFloat(
+						preset.targetDeltaDeg
+					);
+				}
+				if (node.Has("lerpSpeed")) {
+					preset.lerpSpeed = node["lerpSpeed"].GetFloat(
+						preset.lerpSpeed
+					);
+				} else {
+					const float legacyInSec = node.Has("inSec") ?
+						                          node["inSec"].GetFloat(0.0f) :
+						                          0.0f;
+					const float legacyOutSec = node.Has("outSec") ?
+						                           node["outSec"].GetFloat(
+							                           0.0f
+						                           ) :
+						                           0.0f;
+					const float legacyDuration = legacyInSec > 0.0f ?
+						                             legacyInSec :
+						                             legacyOutSec;
+					preset.lerpSpeed = ResolveLerpSpeed(legacyDuration);
+				}
+
+				preset.lerpSpeed = std::max(0.0f, preset.lerpSpeed);
+				mFovPresets.emplace_back(std::move(preset));
+			}
+		}
+
+		const JsonReader rotationPresets = reader["rotationPresets"];
+		if (rotationPresets.Valid() && rotationPresets.IsArray()) {
+			for (size_t i = 0; i < rotationPresets.Size(); ++i) {
+				const JsonReader node = rotationPresets[i];
+				if (!node.Valid()) {
+					continue;
+				}
+
+				RotationPreset preset = {};
+				if (node.Has("id")) {
+					preset.id = node["id"].GetString();
+				}
+				if (preset.id.empty()) {
+					continue;
+				}
+				if (node.Has("eulerDeg")) {
+					preset.eulerDeg = node["eulerDeg"].GetVec3(preset.eulerDeg);
 				}
 				if (node.Has("inSec")) {
 					preset.inSec = node["inSec"].GetFloat(preset.inSec);
@@ -508,7 +718,7 @@ namespace Unnamed {
 
 				preset.inSec  = std::max(0.0f, preset.inSec);
 				preset.outSec = std::max(0.0f, preset.outSec);
-				mFovPresets.emplace_back(std::move(preset));
+				mRotationPresets.emplace_back(std::move(preset));
 			}
 		}
 	}
@@ -546,8 +756,26 @@ namespace Unnamed {
 			writer.BeginObject();
 			writer.Key("id");
 			writer.Write(preset.id);
-			writer.Key("deltaDeg");
-			writer.Write(preset.deltaDeg);
+			writer.Key("targetDeltaDeg");
+			writer.Write(preset.targetDeltaDeg);
+			writer.Key("lerpSpeed");
+			writer.Write(preset.lerpSpeed);
+			writer.EndObject();
+		}
+		writer.EndArray();
+
+		writer.Key("rotationPresets");
+		writer.BeginArray();
+		for (const RotationPreset& preset : mRotationPresets) {
+			writer.BeginObject();
+			writer.Key("id");
+			writer.Write(preset.id);
+			writer.Key("eulerDeg");
+			writer.BeginArray();
+			writer.Write(preset.eulerDeg.x);
+			writer.Write(preset.eulerDeg.y);
+			writer.Write(preset.eulerDeg.z);
+			writer.EndArray();
 			writer.Key("inSec");
 			writer.Write(preset.inSec);
 			writer.Key("outSec");
@@ -559,7 +787,7 @@ namespace Unnamed {
 		writer.EndArray();
 	}
 
-	CameraComponent* CameraFxControllerComponent::ResolveCamera() {
+	CameraComponent* CameraFxControllerComponent::ResolveCamera() const {
 		Entity* target = nullptr;
 		if (mCameraEntityGuid != 0) {
 			World* world = GetWorld();
@@ -572,7 +800,8 @@ namespace Unnamed {
 		return target ? target->GetComponent<CameraComponent>() : nullptr;
 	}
 
-	TransformComponent* CameraFxControllerComponent::ResolveShakeTransform() {
+	TransformComponent*
+	CameraFxControllerComponent::ResolveShakeTransform() const {
 		Entity* target = nullptr;
 		if (mShakeEntityGuid != 0) {
 			World* world = GetWorld();
@@ -598,8 +827,22 @@ namespace Unnamed {
 	}
 
 	const CameraFxControllerComponent::FovPreset*
-	CameraFxControllerComponent::FindFovPreset(const std::string_view id) const {
+	CameraFxControllerComponent::FindFovPreset(
+		const std::string_view id
+	) const {
 		for (const FovPreset& preset : mFovPresets) {
+			if (preset.id == id) {
+				return &preset;
+			}
+		}
+		return nullptr;
+	}
+
+	const CameraFxControllerComponent::RotationPreset*
+	CameraFxControllerComponent::FindRotationPreset(
+		const std::string_view id
+	) const {
+		for (const RotationPreset& preset : mRotationPresets) {
 			if (preset.id == id) {
 				return &preset;
 			}
@@ -622,7 +865,7 @@ namespace Unnamed {
 		}
 
 		const int idx = reader.GetInt();
-		if (idx < 0 || idx >= static_cast<int>(std::size(kEaseNames))) {
+		if (idx < 0 || std::cmp_greater_equal(idx, std::size(kEaseNames))) {
 			return EASE_TYPE::LINEAR;
 		}
 		return kEaseNames[idx].type;
@@ -631,21 +874,21 @@ namespace Unnamed {
 	std::string_view CameraFxControllerComponent::EaseToString(
 		const EASE_TYPE ease
 	) {
-		for (const EaseNamePair& pair : kEaseNames) {
-			if (pair.type == ease) {
-				return pair.name;
+		for (const auto& [name, type] : kEaseNames) {
+			if (type == ease) {
+				return name;
 			}
 		}
 		return "LINEAR";
 	}
 
 	void CameraFxControllerComponent::ApplyOutputs(
-		const Vec2& lookOffsetDeg, const float fovOffsetDeg
+		const Vec3& lookOffsetDeg, const float fovOffsetDeg
 	) {
 		mShakeTransform = ResolveShakeTransform();
 		if (mShakeTransform) {
 			const Quaternion offsetRotation = Quaternion::EulerDegrees(
-				Vec3(lookOffsetDeg.x, lookOffsetDeg.y, 0.0f)
+				lookOffsetDeg
 			);
 			const Quaternion deltaRotation =
 				mLastAppliedShakeRotation.Inverse() * offsetRotation;
@@ -664,9 +907,10 @@ namespace Unnamed {
 	}
 
 	void CameraFxControllerComponent::ResetOutputs() {
-		mCurrentLookOffset = Vec2::zero;
-		mCurrentFovOffset  = 0.0f;
-		ApplyOutputs(Vec2::zero, 0.0f);
+		mCurrentLookOffset        = Vec3::zero;
+		mCurrentRotationOffsetDeg = Vec3::zero;
+		mCurrentFovOffset         = 0.0f;
+		ApplyOutputs(Vec3::zero, 0.0f);
 	}
 
 	REGISTER_COMPONENT(CameraFxControllerComponent);

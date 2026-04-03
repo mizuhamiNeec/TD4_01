@@ -163,13 +163,11 @@
                     "active": true,
                     "data": {
                         "boxHalfExtentsHu": [
-                            16.000350952148438,
-                            36.00083923339844,
-                            16.000350952148438
+                            16.00037384033203,
+                            36.00089645385742,
+                            16.00037384033203
                         ],
-                        "collisionEnabled": true,
-                        "maxSubSteps": 6,
-                        "simStepSec": 0.008333333767950535
+                        "collisionEnabled": true
                     },
                     "guid": 2,
                     "type": "parkour.ParkourMovement"
@@ -876,13 +874,13 @@
                         "speed": 1.0,
                         "stateMap": [
                             {
-                                "blendSec": 0.11999999731779099,
-                                "clipName": "Sprint.001",
+                                "blendSec": 0.125,
+                                "clipName": "Vault",
                                 "layerIndex": 0,
-                                "loop": true,
+                                "loop": false,
                                 "restartOnPlay": true,
                                 "speed": 1.0,
-                                "stateId": "animstate_sprint",
+                                "stateId": "animstate_vaulting",
                                 "weight": 1.0
                             },
                             {
@@ -896,13 +894,13 @@
                                 "weight": 1.0
                             },
                             {
-                                "blendSec": 0.125,
-                                "clipName": "Vault",
+                                "blendSec": 0.11999999731779099,
+                                "clipName": "Sprint.001",
                                 "layerIndex": 0,
-                                "loop": false,
+                                "loop": true,
                                 "restartOnPlay": true,
                                 "speed": 1.0,
-                                "stateId": "animstate_vaulting",
+                                "stateId": "animstate_sprint",
                                 "weight": 1.0
                             },
                             {
@@ -1040,7 +1038,7 @@
                                     7.5
                                 ],
                                 "id": "rot_wallrun_right_start",
-                                "inSec": 0.11999999731779099,
+                                "inSec": 0.15000000596046448,
                                 "outSec": 9.999999848243207e+30
                             },
                             {
@@ -1051,7 +1049,7 @@
                                     -7.5
                                 ],
                                 "id": "rot_wallrun_left_start",
-                                "inSec": 0.11999999731779099,
+                                "inSec": 0.15000000596046448,
                                 "outSec": 9.999999848243207e+30
                             },
                             {
@@ -1084,8 +1082,8 @@
                                     0.0
                                 ],
                                 "id": "rot_sliding_reset",
-                                "inSec": 0.15000000596046448,
-                                "outSec": 2.0
+                                "inSec": 0.5,
+                                "outSec": 0.0
                             }
                         ],
                         "shakeEntityGuid": 0,

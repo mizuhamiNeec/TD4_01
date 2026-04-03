@@ -9,6 +9,8 @@ namespace Unnamed {
 		Physics::Engine* engine
 	) : mEngine(engine) {}
 
+	BaseKinematicCollisionResolver::~BaseKinematicCollisionResolver() {}
+
 	Vec3 BaseKinematicCollisionResolver::ClipVelocity(
 		const Vec3& in, const Vec3& normal, const float overbounce
 	) {

@@ -50,7 +50,7 @@ namespace Unnamed {
 	class BaseKinematicCollisionResolver {
 	public:
 		explicit BaseKinematicCollisionResolver(Physics::Engine* engine);
-		virtual  ~BaseKinematicCollisionResolver() = default;
+		virtual  ~BaseKinematicCollisionResolver();
 
 		/// @brief ベクトルを法線に沿って反射させます。
 		/// @param in 入力ベクトル
@@ -94,8 +94,8 @@ namespace Unnamed {
 		/// @param maxHits 出力上限
 		/// @return 収集されたヒット数
 		virtual int CollectOverlaps(
-			const Vec3& position,
-			const Vec3& halfExtents,
+			const Vec3&   position,
+			const Vec3&   halfExtents,
 			Physics::Hit* outHits,
 			int           maxHits
 		) const = 0;

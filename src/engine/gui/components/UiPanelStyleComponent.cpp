@@ -1,5 +1,8 @@
 #include "UiPanelStyleComponent.h"
 
+#include "core/io/json/JsonReader.h"
+#include "core/io/json/JsonWriter.h"
+
 #include "engine/gui/UiWidget.h"
 
 namespace Unnamed::Gui {
@@ -14,7 +17,7 @@ namespace Unnamed::Gui {
 		}
 
 		Color ReadColor(const JsonReader& reader, const Color& fallback) {
-			if (!reader.Valid() || reader.Size() < 4) {
+			if (!reader.Valid() || reader.Size() >= 4) {
 				return fallback;
 			}
 			return {

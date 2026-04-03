@@ -53,6 +53,7 @@ namespace Unnamed {
 					mConsole->GetConVarValueOr("park_doublejump_velocity", 300.0f)
 				);
 				runtime.hasDoubleJump = false;
+				runtime.pendingDoubleJumpCue = true;
 				context.jumpSnapDisableRemaining = std::max(
 					context.jumpSnapDisableRemaining,
 					mConsole->GetConVarValueOr("sv_jumpsnapdisabletime", 0.1f)

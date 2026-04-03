@@ -86,6 +86,7 @@ namespace Unnamed {
 		};
 
 		struct ActiveRotationAnim {
+			Vec3      startEulerDeg  = Vec3::zero;
 			Vec3      targetEulerDeg = Vec3::zero;
 			float     inSec          = 0.08f;
 			float     outSec         = 0.12f;

@@ -14,6 +14,8 @@
 #include "core/io/json/JsonWriter.h"
 #include "core/math/Math.h"
 
+#include "engine/tween/TweenEase.h"
+
 #include "engine/ImGui/Icons.h"
 #include "engine/scene/Scene.h"
 #include "engine/unnamed/framework/components/CameraComponent.h"
@@ -211,26 +213,38 @@ namespace Unnamed {
 				mActiveRotationAnim.active = false;
 				rotationOffset             = Vec3::zero;
 			} else {
-				Vec3        targetOffset;
-				float       speed;
-				const float elapsedSec = mActiveRotationAnim.elapsedSec;
+				const float elapsedSec = std::min(
+					mActiveRotationAnim.elapsedSec + renderDeltaTime,
+					totalDuration
+				);
 				if (elapsedSec <= inSec) {
-					targetOffset = mActiveRotationAnim.targetEulerDeg;
-					speed        = ResolveLerpSpeed(inSec);
+					const float t = inSec > 1.0e-6f ? elapsedSec / inSec : 1.0f;
+					const float easedT = TweenEase::Evaluate(
+						mActiveRotationAnim.ease,
+						std::clamp(t, 0.0f, 1.0f)
+					);
+					rotationOffset = Math::Lerp(
+						mActiveRotationAnim.startEulerDeg,
+						mActiveRotationAnim.targetEulerDeg,
+						easedT
+					);
 				} else if (elapsedSec < totalDuration) {
-					targetOffset = Vec3::zero;
-					speed        = ResolveLerpSpeed(outSec);
+					const float outElapsed = elapsedSec - inSec;
+					const float t = outSec > 1.0e-6f ? outElapsed / outSec : 1.0f;
+					const float easedT = TweenEase::Evaluate(
+						mActiveRotationAnim.ease,
+						std::clamp(t, 0.0f, 1.0f)
+					);
+					rotationOffset = Math::Lerp(
+						mActiveRotationAnim.targetEulerDeg,
+						Vec3::zero,
+						easedT
+					);
 				} else {
-					targetOffset               = Vec3::zero;
-					speed                      = ResolveLerpSpeed(outSec);
+					rotationOffset             = Vec3::zero;
 					mActiveRotationAnim.active = false;
 				}
-				rotationOffset = Math::Lerp(
-					rotationOffset,
-					targetOffset,
-					ComputeLerpAlpha(speed, renderDeltaTime)
-				);
-				mActiveRotationAnim.elapsedSec += renderDeltaTime;
+				mActiveRotationAnim.elapsedSec = elapsedSec;
 			}
 		} else {
 			rotationOffset = Vec3::zero;
@@ -295,6 +309,7 @@ namespace Unnamed {
 
 		mActiveRotationAnim.active         = true;
 		mActiveRotationAnim.elapsedSec     = 0.0f;
+		mActiveRotationAnim.startEulerDeg  = mCurrentRotationOffsetDeg;
 		mActiveRotationAnim.targetEulerDeg = preset->eulerDeg * intensityScale;
 		mActiveRotationAnim.inSec          = std::max(0.0f, preset->inSec);
 		mActiveRotationAnim.outSec         = std::max(0.0f, preset->outSec);

@@ -12,6 +12,8 @@ namespace Unnamed {
 	void BaseComponent::OnDetached() {}
 	void BaseComponent::PrePhysicsTick(float) {}
 	void BaseComponent::OnTick(float) {}
+	void BaseComponent::OnFrameInputTick(float) {}
+	void BaseComponent::OnRenderTick(float, float) {}
 	void BaseComponent::PostPhysicsTick(float) {}
 	void BaseComponent::OnPreRender() const {}
 	void BaseComponent::OnRender() const {}

@@ -12,16 +12,16 @@ namespace Unnamed {
 	class JsonReader;
 
 	/// @brief Component は Entity に取り付けられるオブジェクトです。
-	/// 取り付けられた Entity にどの用に振る舞わせるかを定義します。
+	/// @details 取り付けられた Entity にどのように振る舞わせるかを定義します。
 	class BaseComponent {
 	public:
 		// Tickの実行順序
 		enum class TICK_GROUP : uint8_t {
-			EARLY            = 0, //
-			KINEMATIC_SOURCE = 1,
-			COLLIDER_SYNC    = 2,
-			GAMEPLAY         = 3, // ほとんどのゲーム処理はここで行います。(デフォルト)
-			LATE             = 4, //
+			EARLY = 0, // 物理演算の前に処理したいものをここに入れます。
+			KINEMATIC_SOURCE = 1, // 物理演算の前に、Kinematicなオブジェクトの移動をここで反映させます。
+			COLLIDER_SYNC = 2, // 物理演算の前に、コライダーの状態をTransformから同期させる処理をここに入れます。
+			GAMEPLAY = 3, // ほとんどのゲーム処理はここで行います。(デフォルト)
+			LATE = 4, // 物理演算の後に処理したいものをここに入れます。
 		};
 
 		explicit BaseComponent();
@@ -38,6 +38,15 @@ namespace Unnamed {
 		/// @brief 毎フレーム呼び出されます。
 		/// @param deltaTime 前のフレームからの経過時間 [秒]
 		virtual void OnTick(float deltaTime);
+		/// @brief 固定シミュレーション前の入力反映フェーズで呼び出されます。
+		/// @param frameDeltaTime 描画フレームの経過時間 [秒]
+		virtual void OnFrameInputTick(float frameDeltaTime);
+		/// @brief 描画フレームで見た目更新を行う際に呼び出されます。
+		/// @param renderDeltaTime 描画フレームの経過時間 [秒]
+		/// @param interpolationAlpha 固定ティック補間係数 [0..1]
+		virtual void OnRenderTick(
+			float renderDeltaTime, float interpolationAlpha
+		);
 		/// @brief 物理演算の後に呼び出されます。
 		/// @param deltaTime 前のフレームからの経過時間 [秒]
 		virtual void PostPhysicsTick(float deltaTime);

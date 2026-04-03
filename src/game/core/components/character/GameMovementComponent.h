@@ -3,6 +3,8 @@
 #include <string>
 #include <string_view>
 
+#include <json.hpp>
+
 #include "base/BaseCharacterComponent.h"
 
 namespace Unnamed::Physics {
@@ -50,6 +52,10 @@ namespace Unnamed {
 
 		void Deserialize(const JsonReader& reader) override;
 		void Serialize(JsonWriter& writer) const override;
+
+		virtual void                   WriteReplayState(nlohmann::json& outState) const;
+		virtual void                   ReadReplayState(const nlohmann::json& inState);
+		[[nodiscard]] virtual uint64_t ComputeReplayStateHash() const;
 
 	protected:
 		virtual void RegisterMovementStates(

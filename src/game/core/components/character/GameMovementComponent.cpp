@@ -2,18 +2,16 @@
 
 #include <algorithm>
 #include <array>
-#include <cctype>
-#include <cmath>
 
 #ifdef _DEBUG
 #include <imgui.h>
 #endif
 
+#include "../controller/PlayerCharacterController.h"
+
 #include "base/BaseCharacterComponent.h"
 
 #include "core/ComponentRegistry.h"
-#include "core/json/JsonReader.h"
-#include "core/json/JsonWriter.h"
 
 #include "engine/scene/Scene.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
@@ -21,7 +19,6 @@
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
 #include "engine/unnamed/subsystem/console/Log.h"
-#include "engine/unnamed/subsystem/console/concommand/ConVar.h"
 #include "engine/unnamed/subsystem/input/InputSystem.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 #include "engine/world/GameplayCueBus.h"
@@ -29,6 +26,8 @@
 
 #include "game/core/collision/kinematic/BoxKinematicCollisionResolver.h"
 #include "game/core/components/character/state/GameMovementStateMachine.h"
+#include "game/core/replay/DemoManager.h"
+#include "game/core/replay/ReplayHash.h"
 
 #include "state/AirMove.h"
 #include "state/GroundMove.h"
@@ -181,20 +180,54 @@ namespace Unnamed {
 			return;
 		}
 
-		const float    stepSec       = std::max(mSimStepSec, 1.0e-6f);
-		const uint32_t requiredSteps = static_cast<uint32_t>(
-			std::ceil(std::max(0.0f, deltaTime) / stepSec)
-		);
-		const uint32_t frameMaxSteps = std::clamp(
-			std::max(mMaxSubSteps, requiredSteps),
-			1u,
-			32u
-		);
+		DeterministicInputPacket deterministicPacket = {};
+		if (TryDequeueDeterministicInput(deterministicPacket)) {
+			const float stepSeconds = std::max(
+				deterministicPacket.stepSeconds,
+				1.0e-6f
+			);
 
-		mAccumulator               += deltaTime;
-		const float maxAccumulated =
-			stepSec * static_cast<float>(frameMaxSteps);
-		mAccumulator = std::min(mAccumulator, maxAccumulated);
+			if (mSupportCache.grounded && mSupportCache.supportEntityGuid != 0) {
+				mSupportCache.supportLinearVelocity = ResolveSupportLinearVelocity(
+					mSupportCache.supportEntityGuid
+				);
+				mSupportCache.supportStepDelta = ResolveSupportStepDelta(
+					mSupportCache.supportEntityGuid, stepSeconds
+				);
+			} else {
+				mSupportCache.supportLinearVelocity = Vec3::zero;
+				mSupportCache.supportStepDelta      = Vec3::zero;
+			}
+
+			UpdateCollisionHull(transform);
+			mMoveFrameInput = deterministicPacket.input;
+			SimulateStep(transform, deterministicPacket.input, stepSeconds);
+
+			if (Entity* owner = GetOwner()) {
+				if (auto* demoManager = ServiceLocator::Get<DemoManager>()) {
+					demoManager->RecordOrVerifySnapshot(
+						deterministicPacket.tick,
+						*owner
+					);
+				}
+			}
+
+			transform->OnTick(0.0f);
+			return;
+		}
+
+		// PlayerCharacterController が接続されている場合は、
+		// deterministic 入力キューのみで移動更新する。
+		// キュー空フレームで旧フレーム依存フォールバックへ入ると
+		// FPS によって移動量が変わってしまうため、ここで抑止する。
+		if (const Entity* owner = GetOwner()) {
+			if (owner->GetComponent<PlayerCharacterController>() != nullptr) {
+				transform->OnTick(0.0f);
+				return;
+			}
+		}
+
+		const float stepSec = std::max(deltaTime, 1.0e-6f);
 
 		if (mSupportCache.grounded && mSupportCache.supportEntityGuid != 0) {
 			mSupportCache.supportLinearVelocity = ResolveSupportLinearVelocity(
@@ -221,13 +254,7 @@ namespace Unnamed {
 		}
 
 		UpdateCollisionHull(transform);
-
-		uint32_t steps = 0;
-		while (mAccumulator >= stepSec && steps < frameMaxSteps) {
-			SimulateStep(transform, mMoveFrameInput, stepSec);
-			mAccumulator -= stepSec;
-			steps++;
-		}
+		SimulateStep(transform, mMoveFrameInput, stepSec);
 
 		// GameMovement は Transform の TickGroup より後で位置を書き換えるため、
 		// 同フレーム描画での1フレーム遅延を防ぐためにここで行列を確定する。
@@ -345,6 +372,191 @@ namespace Unnamed {
 
 	void GameMovementComponent::Serialize(JsonWriter& writer) const {
 		BaseCharacterComponent::Serialize(writer);
+	}
+
+	void GameMovementComponent::WriteReplayState(nlohmann::json& outState) const {
+		outState["velocity"] = nlohmann::json::array(
+			{mVelocity.x, mVelocity.y, mVelocity.z}
+		);
+		outState["grounded"]         = mGrounded;
+		outState["collisionEnabled"] = mCollisionEnabled;
+		outState["jumpSnapDisableRemaining"] = mJumpSnapDisableRemaining;
+		outState["support"] = nlohmann::json::object(
+			{
+				{"grounded", mSupportCache.grounded},
+				{"supportEntityGuid", mSupportCache.supportEntityGuid},
+				{"supportLinearVelocity",
+				 nlohmann::json::array(
+					 {
+						 mSupportCache.supportLinearVelocity.x,
+						 mSupportCache.supportLinearVelocity.y,
+						 mSupportCache.supportLinearVelocity.z
+					 }
+				 )},
+				{"supportStepDelta",
+				 nlohmann::json::array(
+					 {
+						 mSupportCache.supportStepDelta.x,
+						 mSupportCache.supportStepDelta.y,
+						 mSupportCache.supportStepDelta.z
+					 }
+				 )}
+			}
+		);
+		outState["boxHalfExtents"] = nlohmann::json::array(
+			{mBoxHalfExtents.x, mBoxHalfExtents.y, mBoxHalfExtents.z}
+		);
+		outState["stateName"] = mStateMachine && mStateMachine->GetCurrentState() ?
+			                        std::string(
+				                        mStateMachine->GetCurrentState()->
+				                        GetStateName()
+			                        ) :
+			                        std::string();
+
+		if (TransformComponent* transform = GetTransform()) {
+			const Vec3       position = transform->Position();
+			const Quaternion rotation = transform->Rotation();
+			outState["position"] = nlohmann::json::array(
+				{position.x, position.y, position.z}
+			);
+			outState["rotation"] = nlohmann::json::array(
+				{rotation.x, rotation.y, rotation.z, rotation.w}
+			);
+		}
+	}
+
+	void GameMovementComponent::ReadReplayState(const nlohmann::json& inState) {
+		if (!inState.is_object()) {
+			return;
+		}
+
+		if (const auto it = inState.find("velocity");
+			it != inState.end() && it->is_array() && it->size() == 3) {
+			mVelocity = Vec3(
+				(*it)[0].get<float>(),
+				(*it)[1].get<float>(),
+				(*it)[2].get<float>()
+			);
+		}
+
+		mGrounded = inState.value("grounded", mGrounded);
+		mCollisionEnabled = inState.value("collisionEnabled", mCollisionEnabled);
+		mJumpSnapDisableRemaining = inState.value(
+			"jumpSnapDisableRemaining",
+			mJumpSnapDisableRemaining
+		);
+
+		if (const auto it = inState.find("boxHalfExtents");
+			it != inState.end() && it->is_array() && it->size() == 3) {
+			mBoxHalfExtents = Vec3(
+				(*it)[0].get<float>(),
+				(*it)[1].get<float>(),
+				(*it)[2].get<float>()
+			);
+		}
+
+		if (const auto it = inState.find("support");
+			it != inState.end() && it->is_object()) {
+			mSupportCache.grounded = it->value("grounded", mSupportCache.grounded);
+			mSupportCache.supportEntityGuid = it->value(
+				"supportEntityGuid",
+				mSupportCache.supportEntityGuid
+			);
+			if (const auto itVel = it->find("supportLinearVelocity");
+				itVel != it->end() && itVel->is_array() && itVel->size() == 3) {
+				mSupportCache.supportLinearVelocity = Vec3(
+					(*itVel)[0].get<float>(),
+					(*itVel)[1].get<float>(),
+					(*itVel)[2].get<float>()
+				);
+			}
+			if (const auto itDelta = it->find("supportStepDelta");
+				itDelta != it->end() && itDelta->is_array() && itDelta->size() ==
+				3) {
+				mSupportCache.supportStepDelta = Vec3(
+					(*itDelta)[0].get<float>(),
+					(*itDelta)[1].get<float>(),
+					(*itDelta)[2].get<float>()
+				);
+			}
+		}
+
+		if (TransformComponent* transform = GetTransform()) {
+			if (const auto itPos = inState.find("position");
+				itPos != inState.end() && itPos->is_array() && itPos->size() == 3) {
+				transform->SetPosition(
+					Vec3(
+						(*itPos)[0].get<float>(),
+						(*itPos)[1].get<float>(),
+						(*itPos)[2].get<float>()
+					)
+				);
+			}
+
+			if (const auto itRot = inState.find("rotation");
+				itRot != inState.end() && itRot->is_array() && itRot->size() == 4) {
+				transform->SetRotation(
+					Quaternion(
+						(*itRot)[0].get<float>(),
+						(*itRot)[1].get<float>(),
+						(*itRot)[2].get<float>(),
+						(*itRot)[3].get<float>()
+					)
+				);
+			}
+		}
+
+		if (const auto it = inState.find("stateName");
+			it != inState.end() && it->is_string() && mStateMachine) {
+			const std::string stateName = it->get<std::string>();
+			if (!stateName.empty()) {
+				mStateMachine->ChangeState(stateName);
+			}
+		}
+	}
+
+	uint64_t GameMovementComponent::ComputeReplayStateHash() const {
+		uint64_t hash = ReplayHash::Begin();
+		ReplayHash::AppendFloating(hash, mVelocity.x);
+		ReplayHash::AppendFloating(hash, mVelocity.y);
+		ReplayHash::AppendFloating(hash, mVelocity.z);
+		ReplayHash::AppendPod(hash, mGrounded);
+		ReplayHash::AppendPod(hash, mCollisionEnabled);
+		ReplayHash::AppendFloating(hash, mJumpSnapDisableRemaining);
+
+		ReplayHash::AppendPod(hash, mSupportCache.grounded);
+		ReplayHash::AppendPod(hash, mSupportCache.supportEntityGuid);
+		ReplayHash::AppendFloating(hash, mSupportCache.supportLinearVelocity.x);
+		ReplayHash::AppendFloating(hash, mSupportCache.supportLinearVelocity.y);
+		ReplayHash::AppendFloating(hash, mSupportCache.supportLinearVelocity.z);
+		ReplayHash::AppendFloating(hash, mSupportCache.supportStepDelta.x);
+		ReplayHash::AppendFloating(hash, mSupportCache.supportStepDelta.y);
+		ReplayHash::AppendFloating(hash, mSupportCache.supportStepDelta.z);
+		ReplayHash::AppendFloating(hash, mBoxHalfExtents.x);
+		ReplayHash::AppendFloating(hash, mBoxHalfExtents.y);
+		ReplayHash::AppendFloating(hash, mBoxHalfExtents.z);
+
+		const std::string stateName = mStateMachine && mStateMachine->GetCurrentState() ?
+			                              std::string(
+				                              mStateMachine->GetCurrentState()->
+				                              GetStateName()
+			                              ) :
+			                              std::string();
+		ReplayHash::AppendString(hash, stateName);
+
+		if (const TransformComponent* transform = GetTransform()) {
+			const Vec3       position = transform->Position();
+			const Quaternion rotation = transform->Rotation();
+			ReplayHash::AppendFloating(hash, position.x);
+			ReplayHash::AppendFloating(hash, position.y);
+			ReplayHash::AppendFloating(hash, position.z);
+			ReplayHash::AppendFloating(hash, rotation.x);
+			ReplayHash::AppendFloating(hash, rotation.y);
+			ReplayHash::AppendFloating(hash, rotation.z);
+			ReplayHash::AppendFloating(hash, rotation.w);
+		}
+
+		return hash;
 	}
 
 	TransformComponent* GameMovementComponent::GetTransform() const {
@@ -512,6 +724,33 @@ namespace Unnamed {
 			overlapHits.data(),
 			static_cast<int>(overlapHits.size())
 		);
+		if (overlapCount > 1) {
+			std::sort(
+				overlapHits.begin(),
+				overlapHits.begin() + overlapCount,
+				[](const Physics::Hit& lhs, const Physics::Hit& rhs) {
+					if (lhs.hitEntityGuid != rhs.hitEntityGuid) {
+						return lhs.hitEntityGuid < rhs.hitEntityGuid;
+					}
+					if (lhs.triIndex != rhs.triIndex) {
+						return lhs.triIndex < rhs.triIndex;
+					}
+					if (lhs.depth != rhs.depth) {
+						return lhs.depth > rhs.depth;
+					}
+					if (lhs.normal.x != rhs.normal.x) {
+						return lhs.normal.x < rhs.normal.x;
+					}
+					if (lhs.normal.y != rhs.normal.y) {
+						return lhs.normal.y < rhs.normal.y;
+					}
+					if (lhs.normal.z != rhs.normal.z) {
+						return lhs.normal.z < rhs.normal.z;
+					}
+					return false;
+				}
+			);
+		}
 		for (int i = 0; i < overlapCount; ++i) {
 			const Physics::Hit& hit = overlapHits[i];
 			if (hit.hitEntityGuid == 0 || hit.hitEntityGuid == ownerGuid) {
@@ -548,8 +787,24 @@ namespace Unnamed {
 		}
 
 		Physics::Engine* physics = mCollisionResolver->GetPhysics();
+		std::vector<const Entity*> orderedEntities = {};
+		orderedEntities.reserve(scene->GetEntities().size());
 		for (const auto& entityPtr : scene->GetEntities()) {
-			const Entity* moverEntity = entityPtr.get();
+			if (!entityPtr) {
+				continue;
+			}
+			orderedEntities.emplace_back(entityPtr.get());
+		}
+		if (orderedEntities.size() > 1) {
+			std::ranges::sort(
+				orderedEntities,
+				[](const Entity* lhs, const Entity* rhs) {
+					return lhs->GetGuid() < rhs->GetGuid();
+				}
+			);
+		}
+
+		for (const Entity* moverEntity : orderedEntities) {
 			if (!moverEntity || !moverEntity->IsActive() ||
 			    moverEntity->GetGuid() == ownerGuid) {
 				continue;
@@ -678,6 +933,24 @@ namespace Unnamed {
 				overlapHits.data(),
 				static_cast<int>(overlapHits.size())
 			);
+			if (depenHitCount > 1) {
+				std::sort(
+					overlapHits.begin(),
+					overlapHits.begin() + depenHitCount,
+					[](const Physics::Hit& lhs, const Physics::Hit& rhs) {
+						if (lhs.depth != rhs.depth) {
+							return lhs.depth > rhs.depth;
+						}
+						if (lhs.hitEntityGuid != rhs.hitEntityGuid) {
+							return lhs.hitEntityGuid < rhs.hitEntityGuid;
+						}
+						if (lhs.triIndex != rhs.triIndex) {
+							return lhs.triIndex < rhs.triIndex;
+						}
+						return false;
+					}
+				);
+			}
 
 			float deepestDepth  = 0.0f;
 			Vec3  deepestNormal = Vec3::zero;

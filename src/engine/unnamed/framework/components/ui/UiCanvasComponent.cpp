@@ -1,8 +1,7 @@
 #include "UiCanvasComponent.h"
 
-#include <array>
 #include <algorithm>
-#include <cstring>
+#include <array>
 
 #include <imgui.h>
 
@@ -10,15 +9,14 @@
 #include "core/assets/AssetManager.h"
 #include "core/assets/AssetType.h"
 #include "core/assets/types/UiDocumentAssetData.h"
-#include "core/json/JsonReader.h"
-#include "core/json/JsonWriter.h"
+#include "core/io/json/JsonReader.h"
+#include "core/io/json/JsonWriter.h"
 #include "core/string/StrUtil.h"
 
-#include "engine/ImGui/ImGuiWidgets.h"
 #include "engine/gui/UiDocument.h"
 #include "engine/gui/UiRoot.h"
-#include "engine/gui/UiWidget.h"
 #include "engine/ImGui/Icons.h"
+#include "engine/ImGui/ImGuiWidgets.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 

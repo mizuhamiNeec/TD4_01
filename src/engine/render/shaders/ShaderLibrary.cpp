@@ -5,6 +5,7 @@
 
 #include "core/UnnamedMacro.h"
 #include "core/assets/AssetManager.h"
+#include "core/hash/HashBuilder.h"
 #include "core/assets/FileStamp.h"
 #include "core/string/StrUtil.h"
 
@@ -16,12 +17,8 @@ namespace Unnamed::Render {
 	static constexpr std::string_view kDxilCacheDir =
 		"./content/core/shaders/compiled/";
 
-	static uint64_t HashCombine64(uint64_t a, uint64_t b) {
-		return a ^ b + 0x9e3779b97f4a7c15ull + (a << 6) + (a >> 2);
-	}
-
 	static uint64_t StampToU64(const FileStamp& stamp) {
-		return HashCombine64(
+		return HashBuilder::Combine64(
 			stamp.sizeInBytes,
 			static_cast<uint64_t>(stamp.lastWriteTicks)
 		);
@@ -204,17 +201,27 @@ namespace Unnamed::Render {
 
 		// ソースファイルのパスを正規化してハッシュに含める
 		const std::string srcPath = StrUtil::NormalizePath(src->path);
-		h = HashCombine64(h, std::hash<std::string>{}(srcPath));
+		h = HashBuilder::Combine64(
+			h, static_cast<uint64_t>(std::hash<std::string>{}(srcPath))
+		);
 
-		h = HashCombine64(h, std::hash<std::string>{}(key.entry));
-		h = HashCombine64(h, std::hash<std::string>{}(key.profile));
+		h = HashBuilder::Combine64(
+			h, static_cast<uint64_t>(std::hash<std::string>{}(key.entry))
+		);
+		h = HashBuilder::Combine64(
+			h, static_cast<uint64_t>(std::hash<std::string>{}(key.profile))
+		);
 		for (const auto& [name, value] : key.defines) {
-			h = HashCombine64(h, std::hash<std::string>{}(name));
-			h = HashCombine64(h, std::hash<std::string>{}(value));
+			h = HashBuilder::Combine64(
+				h, static_cast<uint64_t>(std::hash<std::string>{}(name))
+			);
+			h = HashBuilder::Combine64(
+				h, static_cast<uint64_t>(std::hash<std::string>{}(value))
+			);
 		}
 
 		const auto& meta = mAssetManager.Meta(key.shaderSourceId);
-		h                = HashCombine64(
+		h                = HashBuilder::Combine64(
 			h, StampToU64(meta.fileStamp)
 		);
 
@@ -222,8 +229,8 @@ namespace Unnamed::Render {
 			const auto depId : mAssetManager.GetDependencies(key.shaderSourceId)
 		) {
 			const auto& depMeta = mAssetManager.Meta(depId);
-			h = HashCombine64(h, depId);
-			h = HashCombine64(h, StampToU64(depMeta.fileStamp));
+			h = HashBuilder::Combine64(h, depId);
+			h = HashBuilder::Combine64(h, StampToU64(depMeta.fileStamp));
 		}
 
 		return h;

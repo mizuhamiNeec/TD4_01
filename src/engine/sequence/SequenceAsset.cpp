@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <iterator>
 
-#include "core/json/JsonReader.h"
-#include "core/json/JsonWriter.h"
+#include "core/io/json/JsonReader.h"
+#include "core/io/json/JsonWriter.h"
 
 #include "engine/unnamed/subsystem/console/Log.h"
 
@@ -13,42 +13,42 @@ namespace Unnamed {
 		static constexpr std::string_view kChannel = "SequenceAsset";
 
 		struct EaseNamePair {
-			EASE_TYPE            type = EASE_TYPE::LINEAR;
 			std::string_view name = "LINEAR";
+			EASE_TYPE        type = EASE_TYPE::LINEAR;
 		};
 
 		constexpr EaseNamePair kEaseNames[] = {
-			{EASE_TYPE::LINEAR, "LINEAR"},
-			{EASE_TYPE::IN_SINE, "IN_SINE"},
-			{EASE_TYPE::OUT_SINE, "OUT_SINE"},
-			{EASE_TYPE::IN_OUT_SINE, "IN_OUT_SINE"},
-			{EASE_TYPE::IN_QUAD, "IN_QUAD"},
-			{EASE_TYPE::OUT_QUAD, "OUT_QUAD"},
-			{EASE_TYPE::IN_OUT_QUAD, "IN_OUT_QUAD"},
-			{EASE_TYPE::IN_CUBIC, "IN_CUBIC"},
-			{EASE_TYPE::OUT_CUBIC, "OUT_CUBIC"},
-			{EASE_TYPE::IN_OUT_CUBIC, "IN_OUT_CUBIC"},
-			{EASE_TYPE::IN_QUART, "IN_QUART"},
-			{EASE_TYPE::OUT_QUART, "OUT_QUART"},
-			{EASE_TYPE::IN_OUT_QUART, "IN_OUT_QUART"},
-			{EASE_TYPE::IN_QUINT, "IN_QUINT"},
-			{EASE_TYPE::OUT_QUINT, "OUT_QUINT"},
-			{EASE_TYPE::IN_OUT_QUINT, "IN_OUT_QUINT"},
-			{EASE_TYPE::IN_EXPO, "IN_EXPO"},
-			{EASE_TYPE::OUT_EXPO, "OUT_EXPO"},
-			{EASE_TYPE::IN_OUT_EXPO, "IN_OUT_EXPO"},
-			{EASE_TYPE::IN_CIRC, "IN_CIRC"},
-			{EASE_TYPE::OUT_CIRC, "OUT_CIRC"},
-			{EASE_TYPE::IN_OUT_CIRC, "IN_OUT_CIRC"},
-			{EASE_TYPE::IN_BACK, "IN_BACK"},
-			{EASE_TYPE::OUT_BACK, "OUT_BACK"},
-			{EASE_TYPE::IN_OUT_BACK, "IN_OUT_BACK"},
-			{EASE_TYPE::IN_ELASTIC, "IN_ELASTIC"},
-			{EASE_TYPE::OUT_ELASTIC, "OUT_ELASTIC"},
-			{EASE_TYPE::IN_OUT_ELASTIC, "IN_OUT_ELASTIC"},
-			{EASE_TYPE::IN_BOUNCE, "IN_BOUNCE"},
-			{EASE_TYPE::OUT_BOUNCE, "OUT_BOUNCE"},
-			{EASE_TYPE::IN_OUT_BOUNCE, "IN_OUT_BOUNCE"},
+			{.name = "LINEAR", .type = EASE_TYPE::LINEAR},
+			{.name = "IN_SINE", .type = EASE_TYPE::IN_SINE},
+			{.name = "OUT_SINE", .type = EASE_TYPE::OUT_SINE},
+			{.name = "IN_OUT_SINE", .type = EASE_TYPE::IN_OUT_SINE},
+			{.name = "IN_QUAD", .type = EASE_TYPE::IN_QUAD},
+			{.name = "OUT_QUAD", .type = EASE_TYPE::OUT_QUAD},
+			{.name = "IN_OUT_QUAD", .type = EASE_TYPE::IN_OUT_QUAD},
+			{.name = "IN_CUBIC", .type = EASE_TYPE::IN_CUBIC},
+			{.name = "OUT_CUBIC", .type = EASE_TYPE::OUT_CUBIC},
+			{.name = "IN_OUT_CUBIC", .type = EASE_TYPE::IN_OUT_CUBIC},
+			{.name = "IN_QUART", .type = EASE_TYPE::IN_QUART},
+			{.name = "OUT_QUART", .type = EASE_TYPE::OUT_QUART},
+			{.name = "IN_OUT_QUART", .type = EASE_TYPE::IN_OUT_QUART},
+			{.name = "IN_QUINT", .type = EASE_TYPE::IN_QUINT},
+			{.name = "OUT_QUINT", .type = EASE_TYPE::OUT_QUINT},
+			{.name = "IN_OUT_QUINT", .type = EASE_TYPE::IN_OUT_QUINT},
+			{.name = "IN_EXPO", .type = EASE_TYPE::IN_EXPO},
+			{.name = "OUT_EXPO", .type = EASE_TYPE::OUT_EXPO},
+			{.name = "IN_OUT_EXPO", .type = EASE_TYPE::IN_OUT_EXPO},
+			{.name = "IN_CIRC", .type = EASE_TYPE::IN_CIRC},
+			{.name = "OUT_CIRC", .type = EASE_TYPE::OUT_CIRC},
+			{.name = "IN_OUT_CIRC", .type = EASE_TYPE::IN_OUT_CIRC},
+			{.name = "IN_BACK", .type = EASE_TYPE::IN_BACK},
+			{.name = "OUT_BACK", .type = EASE_TYPE::OUT_BACK},
+			{.name = "IN_OUT_BACK", .type = EASE_TYPE::IN_OUT_BACK},
+			{.name = "IN_ELASTIC", .type = EASE_TYPE::IN_ELASTIC},
+			{.name = "OUT_ELASTIC", .type = EASE_TYPE::OUT_ELASTIC},
+			{.name = "IN_OUT_ELASTIC", .type = EASE_TYPE::IN_OUT_ELASTIC},
+			{.name = "IN_BOUNCE", .type = EASE_TYPE::IN_BOUNCE},
+			{.name = "OUT_BOUNCE", .type = EASE_TYPE::OUT_BOUNCE},
+			{.name = "IN_OUT_BOUNCE", .type = EASE_TYPE::IN_OUT_BOUNCE},
 		};
 
 		std::string_view EaseToString(const EASE_TYPE ease) {
@@ -107,11 +107,15 @@ namespace Unnamed {
 				       LOOP_TYPE::RESTART;
 		}
 
-		std::string_view BindingTargetToString(const SEQUENCE_BINDING_TARGET target) {
+		std::string_view BindingTargetToString(
+			const SEQUENCE_BINDING_TARGET target
+		) {
 			return target == SEQUENCE_BINDING_TARGET::UI ? "UI" : "Entity";
 		}
 
-		SEQUENCE_BINDING_TARGET BindingTargetFromReader(const JsonReader& reader) {
+		SEQUENCE_BINDING_TARGET BindingTargetFromReader(
+			const JsonReader& reader
+		) {
 			if (!reader.Valid()) {
 				return SEQUENCE_BINDING_TARGET::ENTITY;
 			}
@@ -126,13 +130,15 @@ namespace Unnamed {
 				}
 			}
 
-			return reader.GetInt() == static_cast<int>(SEQUENCE_BINDING_TARGET::UI) ?
+			return reader.GetInt() == static_cast<int>(
+				       SEQUENCE_BINDING_TARGET::UI) ?
 				       SEQUENCE_BINDING_TARGET::UI :
 				       SEQUENCE_BINDING_TARGET::ENTITY;
 		}
 	}
 
-	std::shared_ptr<SequenceAsset> SequenceAsset::Load(const std::string& path) {
+	std::shared_ptr<SequenceAsset>
+	SequenceAsset::Load(const std::string& path) {
 		const JsonReader reader(path);
 		if (!reader.Valid()) {
 			Error(kChannel, "Failed to open sequence asset '{}'.", path);
@@ -234,18 +240,24 @@ namespace Unnamed {
 			writer.Key("binding");
 			writer.BeginObject();
 			writer.Key("target");
-			writer.Write(std::string(BindingTargetToString(track.binding.target)));
+			writer.Write(
+				std::string(BindingTargetToString(track.binding.target))
+			);
 
 			if (track.binding.target == SEQUENCE_BINDING_TARGET::ENTITY) {
 				writer.Key("entityGuid");
-				writer.Write(static_cast<int64_t>(track.binding.entity.entityGuid));
+				writer.Write(
+					static_cast<int64_t>(track.binding.entity.entityGuid)
+				);
 				writer.Key("componentStableName");
 				writer.Write(track.binding.entity.componentStableName);
 				writer.Key("propertyPath");
 				writer.Write(track.binding.entity.propertyPath);
 			} else {
 				writer.Key("canvasEntityGuid");
-				writer.Write(static_cast<int64_t>(track.binding.ui.canvasEntityGuid));
+				writer.Write(
+					static_cast<int64_t>(track.binding.ui.canvasEntityGuid)
+				);
 				writer.Key("widgetName");
 				writer.Write(track.binding.ui.widgetName);
 				writer.Key("componentType");
@@ -284,7 +296,10 @@ namespace Unnamed {
 
 		const JsonReader versionNode = reader["version"];
 		if (versionNode.Valid() && versionNode.GetInt() != 1) {
-			Error(kChannel, "Unsupported sequence version '{}'.", versionNode.GetInt());
+			Error(
+				kChannel, "Unsupported sequence version '{}'.",
+				versionNode.GetInt()
+			);
 			return false;
 		}
 
@@ -317,8 +332,11 @@ namespace Unnamed {
 
 				if (trackNode.Has("binding")) {
 					const JsonReader bindingNode = trackNode["binding"];
-					track.binding.target = BindingTargetFromReader(bindingNode["target"]);
-					if (track.binding.target == SEQUENCE_BINDING_TARGET::ENTITY) {
+					track.binding.target         = BindingTargetFromReader(
+						bindingNode["target"]
+					);
+					if (track.binding.target ==
+					    SEQUENCE_BINDING_TARGET::ENTITY) {
 						if (bindingNode.Has("entityGuid")) {
 							track.binding.entity.entityGuid =
 								bindingNode["entityGuid"].GetUint64();
@@ -337,7 +355,8 @@ namespace Unnamed {
 								bindingNode["canvasEntityGuid"].GetUint64();
 						}
 						if (bindingNode.Has("widgetName")) {
-							track.binding.ui.widgetName = bindingNode["widgetName"].GetString();
+							track.binding.ui.widgetName = bindingNode[
+								"widgetName"].GetString();
 						}
 						if (bindingNode.Has("componentType")) {
 							track.binding.ui.componentType =
@@ -361,7 +380,9 @@ namespace Unnamed {
 
 						SequenceKeyframe keyframe = {};
 						if (keyNode.Has("time")) {
-							keyframe.time = std::max(0.0f, keyNode["time"].GetFloat());
+							keyframe.time = std::max(
+								0.0f, keyNode["time"].GetFloat()
+							);
 						}
 						if (keyNode.Has("value")) {
 							keyframe.value = keyNode["value"].GetFloat();
@@ -371,10 +392,12 @@ namespace Unnamed {
 						}
 						track.keyframes.emplace_back(keyframe);
 					}
-					std::sort(
-						track.keyframes.begin(),
-						track.keyframes.end(),
-						[](const SequenceKeyframe& a, const SequenceKeyframe& b) {
+					std::ranges::sort(
+						track.keyframes
+						,
+						[](
+						const SequenceKeyframe& a, const SequenceKeyframe& b
+					) {
 							return a.time < b.time;
 						}
 					);

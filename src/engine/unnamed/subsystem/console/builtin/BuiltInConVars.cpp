@@ -320,7 +320,7 @@ namespace Unnamed {
 		);
 
 		static ConVar sv_jumpvelocity(
-			"sv_jumpvelocity", 420.0f, FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"sv_jumpvelocity", 400.0f, FCVAR::NOTIFY | FCVAR::REPLICATED,
 			"Jump velocity in HU/s."
 		);
 		static ConVar sv_jumpsnapdisabletime(

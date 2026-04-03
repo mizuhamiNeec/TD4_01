@@ -3,8 +3,8 @@
 #include <imgui.h>
 
 #include "core/ComponentRegistry.h"
-#include "core/json/JsonReader.h"
-#include "core/json/JsonWriter.h"
+#include "core/io/json/JsonReader.h"
+#include "core/io/json/JsonWriter.h"
 #include "core/math/Quaternion.h"
 
 #include "engine/unnamed/framework/components/TransformComponent.h"

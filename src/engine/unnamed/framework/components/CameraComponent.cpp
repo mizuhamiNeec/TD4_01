@@ -7,8 +7,8 @@
 #include "TransformComponent.h"
 
 #include "core/ComponentRegistry.h"
-#include "core/json/JsonReader.h"
-#include "core/json/JsonWriter.h"
+#include "core/io/json/JsonReader.h"
+#include "core/io/json/JsonWriter.h"
 #include "core/math/Math.h"
 
 #include "engine/unnamed/framework/entity/Entity.h"
@@ -122,8 +122,8 @@ namespace Unnamed {
 		return mFovYDegrees;
 	}
 
-	bool CameraComponent::SetAsCurrentCamera() {
-		Entity* owner = GetOwner();
+	bool CameraComponent::SetAsCurrentCamera() const {
+		const Entity* owner = GetOwner();
 		if (!owner) {
 			return false;
 		}

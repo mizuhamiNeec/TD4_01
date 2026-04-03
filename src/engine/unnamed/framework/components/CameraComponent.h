@@ -36,7 +36,7 @@ namespace Unnamed {
 		void               SetFovYDegrees(float fovYDegrees);
 		[[nodiscard]] float GetFovYDegrees() const noexcept;
 
-		bool               SetAsCurrentCamera();
+		bool               SetAsCurrentCamera() const;
 		[[nodiscard]] bool IsCurrentCamera() const;
 
 		// ---- BaseComponent ------------------------------------------------

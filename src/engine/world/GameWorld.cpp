@@ -30,8 +30,15 @@ namespace Unnamed {
 		World::Shutdown();
 	}
 
-	void GameWorld::Tick(const float unscaledDeltaTime, const float deltaTime) {
-		World::Tick(unscaledDeltaTime, deltaTime);
+	void GameWorld::FixedTick(const float fixedDeltaTime) {
+		World::FixedTick(fixedDeltaTime);
+	}
+
+	void GameWorld::RenderTick(
+		const float renderDeltaTime,
+		const float interpolationAlpha
+	) {
+		World::RenderTick(renderDeltaTime, interpolationAlpha);
 	}
 
 	bool GameWorld::LoadSceneFromFile(const char* path) {

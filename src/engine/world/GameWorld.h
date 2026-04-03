@@ -9,7 +9,8 @@ namespace Unnamed {
 
 		void Initialize() override;
 		void Shutdown() override;
-		void Tick(float unscaledDeltaTime, float deltaTime) override;
+		void FixedTick(float fixedDeltaTime) override;
+		void RenderTick(float renderDeltaTime, float interpolationAlpha) override;
 
 		bool LoadSceneFromFile(const char* path) override;
 		void UnloadScene() override;

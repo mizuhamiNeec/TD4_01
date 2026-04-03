@@ -1,8 +1,12 @@
-﻿#include "KinematicMoverComponent.h"
+#include "KinematicMoverComponent.h"
 
 #include "../TransformComponent.h"
 
 #include "../../entity/Entity.h"
+
+#include "core/ComponentRegistry.h"
+
+#include "game/core/replay/ReplayHash.h"
 
 namespace Unnamed {
 	class TransformComponent;
@@ -117,6 +121,132 @@ namespace Unnamed {
 
 	void KinematicMoverComponent::Serialize(JsonWriter& writer) const {
 		writer;
+	}
+
+	void KinematicMoverComponent::WriteReplayState(nlohmann::json& outState) const {
+		outState = nlohmann::json::object();
+		outState["positionPrev"] = nlohmann::json::array(
+			{mState.positionPrev.x, mState.positionPrev.y, mState.positionPrev.z}
+		);
+		outState["positionCurr"] = nlohmann::json::array(
+			{mState.positionCurr.x, mState.positionCurr.y, mState.positionCurr.z}
+		);
+		outState["rotationPrev"] = nlohmann::json::array(
+			{
+				mState.rotationPrev.x,
+				mState.rotationPrev.y,
+				mState.rotationPrev.z,
+				mState.rotationPrev.w
+			}
+		);
+		outState["rotationCurr"] = nlohmann::json::array(
+			{
+				mState.rotationCurr.x,
+				mState.rotationCurr.y,
+				mState.rotationCurr.z,
+				mState.rotationCurr.w
+			}
+		);
+		outState["linearVelocity"] = nlohmann::json::array(
+			{mState.linearVelocity.x, mState.linearVelocity.y, mState.linearVelocity.z}
+		);
+		outState["deltaPosition"] = nlohmann::json::array(
+			{mState.deltaPosition.x, mState.deltaPosition.y, mState.deltaPosition.z}
+		);
+		outState["frameDeltaTime"] = mState.frameDeltaTime;
+		outState["wasTeleported"]  = mState.wasTeleported;
+	}
+
+	void KinematicMoverComponent::ReadReplayState(const nlohmann::json& inState) {
+		if (!inState.is_object()) {
+			return;
+		}
+
+		if (const auto it = inState.find("positionPrev");
+			it != inState.end() && it->is_array() && it->size() == 3) {
+			mState.positionPrev = Vec3(
+				(*it)[0].get<float>(),
+				(*it)[1].get<float>(),
+				(*it)[2].get<float>()
+			);
+		}
+		if (const auto it = inState.find("positionCurr");
+			it != inState.end() && it->is_array() && it->size() == 3) {
+			mState.positionCurr = Vec3(
+				(*it)[0].get<float>(),
+				(*it)[1].get<float>(),
+				(*it)[2].get<float>()
+			);
+		}
+		if (const auto it = inState.find("rotationPrev");
+			it != inState.end() && it->is_array() && it->size() == 4) {
+			mState.rotationPrev = Quaternion(
+				(*it)[0].get<float>(),
+				(*it)[1].get<float>(),
+				(*it)[2].get<float>(),
+				(*it)[3].get<float>()
+			);
+		}
+		if (const auto it = inState.find("rotationCurr");
+			it != inState.end() && it->is_array() && it->size() == 4) {
+			mState.rotationCurr = Quaternion(
+				(*it)[0].get<float>(),
+				(*it)[1].get<float>(),
+				(*it)[2].get<float>(),
+				(*it)[3].get<float>()
+			);
+		}
+		if (const auto it = inState.find("linearVelocity");
+			it != inState.end() && it->is_array() && it->size() == 3) {
+			mState.linearVelocity = Vec3(
+				(*it)[0].get<float>(),
+				(*it)[1].get<float>(),
+				(*it)[2].get<float>()
+			);
+		}
+		if (const auto it = inState.find("deltaPosition");
+			it != inState.end() && it->is_array() && it->size() == 3) {
+			mState.deltaPosition = Vec3(
+				(*it)[0].get<float>(),
+				(*it)[1].get<float>(),
+				(*it)[2].get<float>()
+			);
+		}
+		mState.frameDeltaTime = inState.value("frameDeltaTime", mState.frameDeltaTime);
+		mState.wasTeleported  = inState.value("wasTeleported", mState.wasTeleported);
+
+		auto* transform = mOwner ? mOwner->GetComponent<TransformComponent>() : nullptr;
+		if (transform) {
+			transform->SetPosition(mState.positionCurr);
+			transform->SetRotation(mState.rotationCurr);
+		}
+	}
+
+	uint64_t KinematicMoverComponent::ComputeReplayStateHash() const {
+		uint64_t hash = ReplayHash::Begin();
+		ReplayHash::AppendFloating(hash, mState.positionPrev.x);
+		ReplayHash::AppendFloating(hash, mState.positionPrev.y);
+		ReplayHash::AppendFloating(hash, mState.positionPrev.z);
+		ReplayHash::AppendFloating(hash, mState.positionCurr.x);
+		ReplayHash::AppendFloating(hash, mState.positionCurr.y);
+		ReplayHash::AppendFloating(hash, mState.positionCurr.z);
+		ReplayHash::AppendFloating(hash, mState.rotationPrev.x);
+		ReplayHash::AppendFloating(hash, mState.rotationPrev.y);
+		ReplayHash::AppendFloating(hash, mState.rotationPrev.z);
+		ReplayHash::AppendFloating(hash, mState.rotationPrev.w);
+		ReplayHash::AppendFloating(hash, mState.rotationCurr.x);
+		ReplayHash::AppendFloating(hash, mState.rotationCurr.y);
+		ReplayHash::AppendFloating(hash, mState.rotationCurr.z);
+		ReplayHash::AppendFloating(hash, mState.rotationCurr.w);
+		ReplayHash::AppendFloating(hash, mState.linearVelocity.x);
+		ReplayHash::AppendFloating(hash, mState.linearVelocity.y);
+		ReplayHash::AppendFloating(hash, mState.linearVelocity.z);
+		ReplayHash::AppendFloating(hash, mState.deltaPosition.x);
+		ReplayHash::AppendFloating(hash, mState.deltaPosition.y);
+		ReplayHash::AppendFloating(hash, mState.deltaPosition.z);
+		ReplayHash::AppendFloating(hash, mState.frameDeltaTime);
+		ReplayHash::AppendPod(hash, mState.wasTeleported);
+		return hash;
 	}
 
 	REGISTER_COMPONENT(KinematicMoverComponent);

@@ -1,7 +1,8 @@
-﻿#pragma once
+#pragma once
+#include <json.hpp>
+
 #include "../base/BaseComponent.h"
 
-#include "core/ComponentRegistry.h"
 #include "core/math/Quaternion.h"
 #include "core/math/Vec3.h"
 
@@ -57,6 +58,10 @@ namespace Unnamed {
 
 		void Deserialize(const JsonReader& reader) override;
 		void Serialize(JsonWriter& writer) const override;
+
+		void WriteReplayState(nlohmann::json& outState) const;
+		void ReadReplayState(const nlohmann::json& inState);
+		[[nodiscard]] uint64_t ComputeReplayStateHash() const;
 
 	private:
 		KinematicMoverState mState;

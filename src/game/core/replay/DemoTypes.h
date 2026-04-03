@@ -9,6 +9,7 @@
 
 #include "DemoBinaryFormat.h"
 #include "game/core/components/character/base/BaseCharacterComponent.h"
+#include "game/core/input/CharacterActionFrameInput.h"
 
 namespace Unnamed {
 	constexpr uint32_t kDemoFileVersion = kDemoBinaryVersion;
@@ -20,6 +21,7 @@ namespace Unnamed {
 
 	struct DemoPlayerInputPayload {
 		MovementFrameInput movement     = {};
+		CharacterActionFrameInput action = {};
 		float              viewYawDeg   = 0.0f;
 		float              viewPitchDeg = 0.0f;
 	};

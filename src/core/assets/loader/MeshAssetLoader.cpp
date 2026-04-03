@@ -4,7 +4,6 @@
 #include <array>
 #include <chrono>
 #include <filesystem>
-#include <fstream>
 #include <unordered_map>
 
 #include <assimp/Importer.hpp>
@@ -13,6 +12,9 @@
 #include <assimp/scene.h>
 
 #include "core/assets/types/MeshAssetData.h"
+#include "core/hash/HashBuilder.h"
+#include "core/io/binary/BinaryReader.h"
+#include "core/io/binary/BinaryWriter.h"
 #include "core/string/StrUtil.h"
 
 #include "engine/profiler/Profiler.h"
@@ -29,7 +31,7 @@ namespace Unnamed {
 			".obj",
 			".gltf",
 			".glb",
-			// FBXはAssimpビルドに含めると重たいので非対応 Gitに上げられない!
+			// FBXはAssimpビルドに含めると重たいので非対応! Gitに上げられない!
 		};
 
 		struct MeshCacheHeader {
@@ -65,14 +67,6 @@ namespace Unnamed {
 			return stamp;
 		}
 
-		/// @brief 2つの64ビット整数を組み合わせて新しいハッシュ値を生成する。std::hashの組み合わせに使う。
-		/// @param a ハッシュ値1
-		/// @param b ハッシュ値2
-		/// @return 組み合わせたハッシュ値
-		uint64_t HashCombine64(const uint64_t a, const uint64_t b) {
-			return a ^ b + 0x9e3779b97f4a7c15ull + (a << 6) + (a >> 2);
-		}
-
 		/// @brief Assimpのインポート設定を表すハッシュ値を生成する。スキンニングの有無によって、頂点処理のフラット化（PreTransformVertices）を切り替えるため、スキンニングの有無も考慮する。
 		/// @param hasSkinning スキンニングがあるか?
 		/// @return インポート設定を表すハッシュ値
@@ -81,31 +75,13 @@ namespace Unnamed {
 				aiProcess_JoinIdenticalVertices | // 重複頂点の結合
 				aiProcess_ImproveCacheLocality |  // 頂点キャッシュ最適化
 				aiProcess_ConvertToLeftHanded;    // このエンジンは左手座標系
-			uint64_t hash = HashCombine64(kBaseFlags, kMeshCacheVersion);
+			uint64_t hash = HashBuilder::Combine64(kBaseFlags, kMeshCacheVersion);
 			if (!hasSkinning) {
-				hash = HashCombine64(hash, aiProcess_PreTransformVertices);
+				hash = HashBuilder::Combine64(
+					hash, aiProcess_PreTransformVertices
+				);
 			}
 			return hash;
-		}
-
-		/// @brief ポッド型の値をバイナリストリームに書き込む。テンプレートで任意の型に対応する。
-		/// @param ofs 出力ストリーム
-		/// @param value 書き込む値
-		/// @return 書き込みに成功したか?
-		template <typename T>
-		bool WritePod(std::ofstream& ofs, const T& value) {
-			ofs.write(reinterpret_cast<const char*>(&value), sizeof(T));
-			return static_cast<bool>(ofs);
-		}
-
-		/// @brief ポッド型の値をバイナリストリームから読み込む。テンプレートで任意の型に対応する。
-		/// @param ifs 入力ストリーム
-		/// @param value 読み込んだ値の格納先
-		/// @return 読み込みに成功したか?
-		template <typename T>
-		bool ReadPod(std::ifstream& ifs, T& value) {
-			ifs.read(reinterpret_cast<char*>(&value), sizeof(T));
-			return static_cast<bool>(ifs);
 		}
 
 		/// @brief Assimpの4x4行列をエンジンのMat4に変換する。Assimpは行優先、エンジンは列優先なので、要素の入れ替えに注意。
@@ -647,13 +623,13 @@ namespace Unnamed {
 			return false;
 		}
 
-		std::ifstream ifs(cachePath, std::ios::binary);
-		if (!ifs) {
+		BinaryReader reader(cachePath.string());
+		if (!reader.IsOpen()) {
 			return false;
 		}
 
 		MeshCacheHeader header = {};
-		if (!ReadPod(ifs, header)) {
+		if (!reader.ReadPod(header)) {
 			return false;
 		}
 		if (header.magic != kMeshCacheMagic || header.version !=
@@ -686,48 +662,26 @@ namespace Unnamed {
 		mesh.indices.resize(header.indexCount);
 		mesh.skeleton.resize(header.skeletonBoneCount);
 
-		if (
-			(header.vertexCount > 0 &&
-			 !static_cast<bool>(ifs.read(
-				 reinterpret_cast<char*>(mesh.vertices.data()),
-				 sizeof(MeshVertex) * mesh.vertices.size()
-			 ))) ||
-			(header.indexCount > 0 &&
-			 !static_cast<bool>(ifs.read(
-				 reinterpret_cast<char*>(mesh.indices.data()),
-				 sizeof(uint32_t) * mesh.indices.size()
-			 )))
-		) {
+		if (!reader.ReadArray(mesh.vertices.data(), mesh.vertices.size()) ||
+		    !reader.ReadArray(mesh.indices.data(), mesh.indices.size())) {
 			return false;
 		}
 
 		for (uint32_t i = 0; i < header.skeletonBoneCount; ++i) {
-			uint32_t nameLen = 0;
-			if (!ReadPod(ifs, nameLen)) {
+			if (!reader.ReadString(mesh.skeleton[i].name) ||
+			    !reader.ReadPod(mesh.skeleton[i].parentIndex)) {
 				return false;
 			}
-			mesh.skeleton[i].name.resize(nameLen);
-			if (
-				nameLen > 0 &&
-				!static_cast<bool>(ifs.read(
-					mesh.skeleton[i].name.data(), nameLen
-				))
-			) {
+			if (!reader.ReadPod(mesh.skeleton[i].inverseBindPose)) {
 				return false;
 			}
-			if (!ReadPod(ifs, mesh.skeleton[i].parentIndex)) {
+			if (!reader.ReadPod(mesh.skeleton[i].bindLocalTranslation)) {
 				return false;
 			}
-			if (!ReadPod(ifs, mesh.skeleton[i].inverseBindPose)) {
+			if (!reader.ReadPod(mesh.skeleton[i].bindLocalRotation)) {
 				return false;
 			}
-			if (!ReadPod(ifs, mesh.skeleton[i].bindLocalTranslation)) {
-				return false;
-			}
-			if (!ReadPod(ifs, mesh.skeleton[i].bindLocalRotation)) {
-				return false;
-			}
-			if (!ReadPod(ifs, mesh.skeleton[i].bindLocalScale)) {
+			if (!reader.ReadPod(mesh.skeleton[i].bindLocalScale)) {
 				return false;
 			}
 		}
@@ -736,38 +690,28 @@ namespace Unnamed {
 		for (uint32_t i = 0; i < header.animationClipCount; ++i) {
 			AnimationClipAssetData& clip = mesh.animationClips[i];
 
-			uint32_t clipNameLen = 0;
-			if (!ReadPod(ifs, clipNameLen)) {
-				return false;
-			}
-			clip.name.resize(clipNameLen);
-			if (
-				clipNameLen > 0 &&
-				!static_cast<bool>(ifs.read(clip.name.data(), clipNameLen))
-			) {
-				return false;
-			}
-
-			if (!ReadPod(ifs, clip.durationSeconds)) {
+			if (!reader.ReadString(clip.name) ||
+			    !reader.ReadPod(clip.durationSeconds)) {
 				return false;
 			}
 
 			uint32_t trackCount = 0;
-			if (!ReadPod(ifs, trackCount)) {
+			if (!reader.ReadPod(trackCount)) {
 				return false;
 			}
 			clip.boneTracks.resize(trackCount);
 			for (uint32_t t = 0; t < trackCount; ++t) {
 				SkeletonBoneTrackAssetData& track = clip.boneTracks[t];
-				if (!ReadPod(ifs, track.boneIndex)) {
+				if (!reader.ReadPod(track.boneIndex)) {
 					return false;
 				}
 
 				uint32_t translationCount = 0;
 				uint32_t rotationCount    = 0;
 				uint32_t scaleCount       = 0;
-				if (!ReadPod(ifs, translationCount) || !ReadPod(ifs, rotationCount) ||
-				    !ReadPod(ifs, scaleCount)) {
+				if (!reader.ReadPod(translationCount) ||
+				    !reader.ReadPod(rotationCount) ||
+				    !reader.ReadPod(scaleCount)) {
 					return false;
 				}
 
@@ -775,26 +719,18 @@ namespace Unnamed {
 				track.rotationKeys.resize(rotationCount);
 				track.scaleKeys.resize(scaleCount);
 
-				if (
-					(translationCount > 0 &&
-					 !static_cast<bool>(ifs.read(
-						 reinterpret_cast<char*>(track.translationKeys.data()),
-						 sizeof(AnimationKeyVec3AssetData) *
-						 track.translationKeys.size()
-					 ))) ||
-					(rotationCount > 0 &&
-					 !static_cast<bool>(ifs.read(
-						 reinterpret_cast<char*>(track.rotationKeys.data()),
-						 sizeof(AnimationKeyQuatAssetData) *
-						 track.rotationKeys.size()
-					 ))) ||
-					(scaleCount > 0 &&
-					 !static_cast<bool>(ifs.read(
-						 reinterpret_cast<char*>(track.scaleKeys.data()),
-						 sizeof(AnimationKeyVec3AssetData) *
-						 track.scaleKeys.size()
-					 )))
-				) {
+				if (!reader.ReadArray(
+					    track.translationKeys.data(),
+					    track.translationKeys.size()
+				    ) ||
+				    !reader.ReadArray(
+					    track.rotationKeys.data(),
+					    track.rotationKeys.size()
+				    ) ||
+				    !reader.ReadArray(
+					    track.scaleKeys.data(),
+					    track.scaleKeys.size()
+				    )) {
 					return false;
 				}
 			}
@@ -833,8 +769,8 @@ namespace Unnamed {
 		std::error_code             ec;
 		std::filesystem::create_directories(cachePath.parent_path(), ec);
 
-		std::ofstream ofs(cachePath, std::ios::binary | std::ios::trunc);
-		if (!ofs) {
+		BinaryWriter writer(cachePath.string());
+		if (!writer.IsOpen()) {
 			return false;
 		}
 
@@ -853,77 +789,48 @@ namespace Unnamed {
 		);
 		header.flags = mesh->hasSkinning ? 0x1u : 0u;
 
-		if (!WritePod(ofs, header)) {
+		if (!writer.WritePod(header)) {
 			return false;
 		}
-		if (
-			(header.vertexCount > 0 &&
-			 !static_cast<bool>(ofs.write(
-				 reinterpret_cast<const char*>(mesh->vertices.data()),
-				 sizeof(MeshVertex) * mesh->vertices.size()
-			 ))) ||
-			(header.indexCount > 0 &&
-			 !static_cast<bool>(ofs.write(
-				 reinterpret_cast<const char*>(mesh->indices.data()),
-				 sizeof(uint32_t) * mesh->indices.size()
-			 )))
-		) {
+		if (!writer.WriteArray(mesh->vertices.data(), mesh->vertices.size()) ||
+		    !writer.WriteArray(mesh->indices.data(), mesh->indices.size())) {
 			return false;
 		}
 
 		for (const auto& bone : mesh->skeleton) {
-			const uint32_t nameLen = static_cast<uint32_t>(bone.name.size());
-			if (!WritePod(ofs, nameLen)) {
+			if (!writer.WriteString(bone.name) ||
+			    !writer.WritePod(bone.parentIndex)) {
 				return false;
 			}
-			if (
-				nameLen > 0 &&
-				!static_cast<bool>(ofs.write(bone.name.data(), nameLen))
-			) {
+			if (!writer.WritePod(bone.inverseBindPose)) {
 				return false;
 			}
-			if (!WritePod(ofs, bone.parentIndex)) {
+			if (!writer.WritePod(bone.bindLocalTranslation)) {
 				return false;
 			}
-			if (!WritePod(ofs, bone.inverseBindPose)) {
+			if (!writer.WritePod(bone.bindLocalRotation)) {
 				return false;
 			}
-			if (!WritePod(ofs, bone.bindLocalTranslation)) {
-				return false;
-			}
-			if (!WritePod(ofs, bone.bindLocalRotation)) {
-				return false;
-			}
-			if (!WritePod(ofs, bone.bindLocalScale)) {
+			if (!writer.WritePod(bone.bindLocalScale)) {
 				return false;
 			}
 		}
 
 		for (const auto& clip : mesh->animationClips) {
-			const uint32_t clipNameLen = static_cast<uint32_t>(clip.name.size());
-			if (!WritePod(ofs, clipNameLen)) {
-				return false;
-			}
-			if (
-				clipNameLen > 0 &&
-				!static_cast<bool>(ofs.write(clip.name.data(), clipNameLen))
-			) {
-				return false;
-			}
-
-			if (!WritePod(ofs, clip.durationSeconds)) {
+			if (!writer.WriteString(clip.name) ||
+			    !writer.WritePod(clip.durationSeconds)) {
 				return false;
 			}
 
 			const uint32_t trackCount = static_cast<uint32_t>(
 				clip.boneTracks.size()
 			);
-			if (!WritePod(ofs, trackCount)) {
+			if (!writer.WritePod(trackCount)) {
 				return false;
 			}
 
 			for (const auto& track : clip.boneTracks) {
-				if (!WritePod(ofs, track.boneIndex)) {
+				if (!writer.WritePod(track.boneIndex)) {
 					return false;
 				}
 
@@ -937,35 +844,25 @@ namespace Unnamed {
 					track.scaleKeys.size()
 				);
 				if (
-					!WritePod(ofs, translationCount) ||
-					!WritePod(ofs, rotationCount) ||
-					!WritePod(ofs, scaleCount)
+					!writer.WritePod(translationCount) ||
+					!writer.WritePod(rotationCount) ||
+					!writer.WritePod(scaleCount)
 				) {
 					return false;
 				}
 
-				if (
-					(translationCount > 0 &&
-					 !static_cast<bool>(ofs.write(
-						 reinterpret_cast<const char*>(
-							 track.translationKeys.data()
-						 ),
-						 sizeof(AnimationKeyVec3AssetData) *
-						 track.translationKeys.size()
-					 ))) ||
-					(rotationCount > 0 &&
-					 !static_cast<bool>(ofs.write(
-						 reinterpret_cast<const char*>(track.rotationKeys.data()),
-						 sizeof(AnimationKeyQuatAssetData) *
-						 track.rotationKeys.size()
-					 ))) ||
-					(scaleCount > 0 &&
-					 !static_cast<bool>(ofs.write(
-						 reinterpret_cast<const char*>(track.scaleKeys.data()),
-						 sizeof(AnimationKeyVec3AssetData) *
-						 track.scaleKeys.size()
-					 )))
-				) {
+				if (!writer.WriteArray(
+					    track.translationKeys.data(),
+					    track.translationKeys.size()
+				    ) ||
+				    !writer.WriteArray(
+					    track.rotationKeys.data(),
+					    track.rotationKeys.size()
+				    ) ||
+				    !writer.WriteArray(
+					    track.scaleKeys.data(),
+					    track.scaleKeys.size()
+				    )) {
 					return false;
 				}
 			}
@@ -974,6 +871,6 @@ namespace Unnamed {
 		if (Profiler* profiler = ServiceLocator::Get<Profiler>()) {
 			profiler->AddSample("MeshImport.CacheWrite", 1.0f);
 		}
-		return static_cast<bool>(ofs);
+		return writer.Flush();
 	}
 }

@@ -4,7 +4,7 @@
 #include <filesystem>
 
 #include "core/assets/types/PresentationProfileAssetData.h"
-#include "core/json/JsonReader.h"
+#include "core/io/json/JsonReader.h"
 #include "core/string/StrUtil.h"
 
 namespace Unnamed {

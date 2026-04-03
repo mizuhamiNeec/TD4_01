@@ -163,9 +163,9 @@
                     "active": true,
                     "data": {
                         "boxHalfExtentsHu": [
-                            16.000320434570313,
-                            36.00076675415039,
-                            16.000320434570313
+                            16.000350952148438,
+                            36.00083923339844,
+                            16.000350952148438
                         ],
                         "collisionEnabled": true,
                         "maxSubSteps": 6,
@@ -955,7 +955,7 @@
                     "active": true,
                     "data": {
                         "attenuation": 16.0,
-                        "locationAmount": 0.02500000037252903,
+                        "locationAmount": 0.0,
                         "swayAmount": 0.5
                     },
                     "guid": 9631003245581126474,
@@ -1001,46 +1001,91 @@
                         "cameraEntityGuid": 2103,
                         "fovPresets": [
                             {
-                                "deltaDeg": 8.0,
-                                "ease": "OUT_SINE",
                                 "id": "fov_sliding_start",
-                                "inSec": 0.10000000149011612,
-                                "outSec": 0.20000000298023224
+                                "lerpSpeed": 10.0,
+                                "targetDeltaDeg": 8.0
                             },
                             {
-                                "deltaDeg": 8.0,
-                                "ease": "OUT_SINE",
                                 "id": "fov_sliding_end",
-                                "inSec": 0.0,
-                                "outSec": 0.20000000298023224
+                                "lerpSpeed": 5.0,
+                                "targetDeltaDeg": 0.0
                             },
                             {
-                                "deltaDeg": 8.0,
-                                "ease": "OUT_SINE",
                                 "id": "fov_sliding_loop",
-                                "inSec": 0.0,
-                                "outSec": 9.999999848243207e+30
+                                "lerpSpeed": 12.0,
+                                "targetDeltaDeg": 8.0
                             },
                             {
-                                "deltaDeg": 14.0,
-                                "ease": "OUT_SINE",
                                 "id": "fov_wallrun_start",
-                                "inSec": 0.25,
-                                "outSec": 0.20000000298023224
+                                "lerpSpeed": 4.0,
+                                "targetDeltaDeg": 14.0
                             },
                             {
-                                "deltaDeg": 14.0,
-                                "ease": "OUT_SINE",
                                 "id": "fov_wallrun_end",
-                                "inSec": 0.0,
-                                "outSec": 0.4000000059604645
+                                "lerpSpeed": 2.5,
+                                "targetDeltaDeg": 0.0
                             },
                             {
-                                "deltaDeg": 14.0,
-                                "ease": "OUT_SINE",
                                 "id": "fov_wallrun_loop",
-                                "inSec": 0.0,
+                                "lerpSpeed": 8.0,
+                                "targetDeltaDeg": 14.0
+                            }
+                        ],
+                        "rotationPresets": [
+                            {
+                                "ease": "OUT_SINE",
+                                "eulerDeg": [
+                                    0.0,
+                                    0.0,
+                                    7.5
+                                ],
+                                "id": "rot_wallrun_right_start",
+                                "inSec": 0.11999999731779099,
                                 "outSec": 9.999999848243207e+30
+                            },
+                            {
+                                "ease": "OUT_SINE",
+                                "eulerDeg": [
+                                    0.0,
+                                    0.0,
+                                    -7.5
+                                ],
+                                "id": "rot_wallrun_left_start",
+                                "inSec": 0.11999999731779099,
+                                "outSec": 9.999999848243207e+30
+                            },
+                            {
+                                "ease": "OUT_SINE",
+                                "eulerDeg": [
+                                    0.0,
+                                    0.0,
+                                    0.0
+                                ],
+                                "id": "rot_wallrun_reset",
+                                "inSec": 0.15000000596046448,
+                                "outSec": 0.0
+                            },
+                            {
+                                "ease": "OUT_SINE",
+                                "eulerDeg": [
+                                    -4.0,
+                                    1.399999976158142,
+                                    -4.0
+                                ],
+                                "id": "rot_sliding_start",
+                                "inSec": 0.15000000596046448,
+                                "outSec": 9.999999848243207e+30
+                            },
+                            {
+                                "ease": "OUT_SINE",
+                                "eulerDeg": [
+                                    0.0,
+                                    0.0,
+                                    0.0
+                                ],
+                                "id": "rot_sliding_reset",
+                                "inSec": 0.15000000596046448,
+                                "outSec": 2.0
                             }
                         ],
                         "shakeEntityGuid": 0,
@@ -1084,6 +1129,16 @@
                                 "durationSec": 1.0,
                                 "freqHz": 1.0,
                                 "id": "shake_vault_start"
+                            },
+                            {
+                                "ampPitchYawDeg": [
+                                    1.5,
+                                    1.5
+                                ],
+                                "decay": 2.0,
+                                "durationSec": 0.75,
+                                "freqHz": 2.0,
+                                "id": "shake_sliding"
                             }
                         ]
                     },
@@ -1120,17 +1175,35 @@
                         "oneShotPresets": [
                             {
                                 "id": "se_jump",
-                                "pitch": 1.0,
+                                "pitchMax": 1.059999942779541,
+                                "pitchMin": 0.949999988079071,
                                 "sourceComponentGuid": 17000123456789012345,
                                 "sourceEntityGuid": 0,
                                 "volume": 0.30000001192092896
                             },
                             {
                                 "id": "se_land",
-                                "pitch": 1.0,
+                                "pitchMax": 1.0399999618530273,
+                                "pitchMin": 0.9200000166893005,
                                 "sourceComponentGuid": 17000123456789012347,
                                 "sourceEntityGuid": 0,
                                 "volume": 0.36000001430511475
+                            },
+                            {
+                                "id": "se_footstep",
+                                "pitchMax": 1.1200000047683716,
+                                "pitchMin": 0.8799999952316284,
+                                "sourceComponentGuid": 17000123456789012345,
+                                "sourceEntityGuid": 0,
+                                "volume": 0.2800000011920929
+                            },
+                            {
+                                "id": "se_wallrun_start",
+                                "pitchMax": 1.100000023841858,
+                                "pitchMin": 0.8999999761581421,
+                                "sourceComponentGuid": 17000123456789012347,
+                                "sourceEntityGuid": 0,
+                                "volume": 0.3400000035762787
                             }
                         ]
                     },
@@ -1243,7 +1316,7 @@
                         "pitch": 1.0,
                         "playOnStart": true,
                         "soundPath": "content/parkour/sounds/bgm/Run.wav",
-                        "volume": 0.3540000021457672
+                        "volume": 0.25
                     },
                     "guid": 11414014045292773144,
                     "type": "engine.AudioSource"
@@ -1253,60 +1326,6 @@
             "guid": 2316,
             "isEditorOnly": false,
             "name": "BGM",
-            "visible": true
-        },
-        {
-            "active": true,
-            "components": [
-                {
-                    "active": true,
-                    "data": {
-                        "parentEntityGuid": 0,
-                        "position": [
-                            0.0,
-                            6.710999965667725,
-                            0.14660000801086426
-                        ],
-                        "rotation": [
-                            0.0,
-                            0.0,
-                            0.0,
-                            1.0
-                        ],
-                        "scale": [
-                            1.0,
-                            1.0,
-                            1.0
-                        ]
-                    },
-                    "guid": 9383424469052919528,
-                    "type": "engine.Transform"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "billboardDepthMode": "DepthTest",
-                        "pixelSize": [
-                            1920.0,
-                            1080.0
-                        ],
-                        "receiveInput": false,
-                        "sortKey": 0,
-                        "spaceMode": "WorldPlane",
-                        "uiAssetPath": "./content/parkour/ui/MainMenu.ui.json",
-                        "worldSize": [
-                            0.1599999964237213,
-                            0.09000000357627869
-                        ]
-                    },
-                    "guid": 17227513560226567681,
-                    "type": "engine.UiCanvas"
-                }
-            ],
-            "folderPath": "Gameplay/Player",
-            "guid": 2317,
-            "isEditorOnly": false,
-            "name": "UI_Hud",
             "visible": true
         },
         {

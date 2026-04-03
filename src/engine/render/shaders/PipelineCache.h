@@ -8,6 +8,7 @@
 
 #include <wrl/client.h>
 
+#include "core/hash/HashBuilder.h"
 #include "engine/rhi/PipelineKey.h"
 
 namespace Unnamed::Render {
@@ -97,72 +98,64 @@ namespace Unnamed::Render {
 		}
 	};
 
-	inline void HashCombine(size_t& seed, size_t value) {
-		seed ^= value + 0x9e3779b97f4a7c15ULL + (seed << 6) + (seed >> 2);
-	}
-
 	inline size_t HashVertexLayout(const Rhi::VertexLayoutDesc& layout) {
-		size_t seed = 0;
-		HashCombine(seed, std::hash<uint32_t>{}(layout.stride));
-		HashCombine(seed, std::hash<size_t>{}(layout.elements.size()));
+		HashBuilder hash = {};
+		hash.AddValue(layout.stride);
+		hash.AddValue(layout.elements.size());
 
 		for (const auto& e : layout.elements) {
-			HashCombine(
-				seed, std::hash<uint8_t>{}(static_cast<uint8_t>(e.semantic))
-			);
-			HashCombine(seed, std::hash<uint8_t>{}(e.semanticIndex));
-			HashCombine(
-				seed, std::hash<uint8_t>{}(static_cast<uint8_t>(e.format))
-			);
-			HashCombine(seed, std::hash<uint16_t>{}(e.offset));
-			HashCombine(seed, std::hash<uint16_t>{}(e.inputSlot));
-			HashCombine(seed, std::hash<bool>{}(e.perInstance));
-			HashCombine(seed, std::hash<uint16_t>{}(e.instanceStepRate));
+			hash.AddEnum(e.semantic);
+			hash.AddValue(e.semanticIndex);
+			hash.AddEnum(e.format);
+			hash.AddValue(e.offset);
+			hash.AddValue(e.inputSlot);
+			hash.AddValue(e.perInstance);
+			hash.AddValue(e.instanceStepRate);
 		}
-		return seed;
+		return hash.Value();
 	}
 
 	struct GraphicsPipelineKeyHash {
 		size_t operator()(const GraphicsPsoKey& k) const noexcept {
-			size_t seed = 0;
+			HashBuilder hash = {};
 
-			HashCombine(seed, ShaderKeyHash{}(k.vs));
-			HashCombine(seed, ShaderKeyHash{}(k.ps));
-			HashCombine(seed, std::hash<void*>{}(k.rootSignature));
-			HashCombine(seed, std::hash<uint8_t>{}(k.numRenderTargets));
-			HashCombine(seed, std::hash<int>{}(k.rtvFormat));
-			HashCombine(seed, std::hash<int>{}(k.primitiveTopologyType));
+			hash.AddHashed(ShaderKeyHash{}(k.vs));
+			hash.AddHashed(ShaderKeyHash{}(k.ps));
+			hash.AddPointer(k.rootSignature);
+			hash.AddValue(k.numRenderTargets);
+			hash.AddEnum(k.rtvFormat);
+			hash.AddEnum(k.primitiveTopologyType);
 
-			HashCombine(seed, std::hash<bool>{}(k.depthEnable));
-			HashCombine(seed, std::hash<int>{}(k.dsvFormat));
-			HashCombine(seed, std::hash<int>{}(k.depthFunc));
-			HashCombine(seed, std::hash<bool>{}(k.stencilEnable));
-			HashCombine(seed, std::hash<uint8_t>{}(k.stencilReadMask));
-			HashCombine(seed, std::hash<uint8_t>{}(k.stencilWriteMask));
-			HashCombine(seed, std::hash<int>{}(k.stencilFrontFailOp));
-			HashCombine(seed, std::hash<int>{}(k.stencilFrontDepthFailOp));
-			HashCombine(seed, std::hash<int>{}(k.stencilFrontPassOp));
-			HashCombine(seed, std::hash<int>{}(k.stencilFrontFunc));
-			HashCombine(seed, std::hash<int>{}(k.stencilBackFailOp));
-			HashCombine(seed, std::hash<int>{}(k.stencilBackDepthFailOp));
-			HashCombine(seed, std::hash<int>{}(k.stencilBackPassOp));
-			HashCombine(seed, std::hash<int>{}(k.stencilBackFunc));
-			HashCombine(seed, std::hash<uint32_t>{}(k.stencilRef));
-			HashCombine(seed, std::hash<int>{}(k.cullMode));
-			HashCombine(seed, std::hash<bool>{}(k.blendEnable));
-			HashCombine(seed, std::hash<int>{}(k.srcBlend));
-			HashCombine(seed, std::hash<int>{}(k.destBlend));
-			HashCombine(seed, std::hash<int>{}(k.blendOp));
-			HashCombine(seed, std::hash<int>{}(k.srcBlendAlpha));
-			HashCombine(seed, std::hash<int>{}(k.destBlendAlpha));
-			HashCombine(seed, std::hash<int>{}(k.blendOpAlpha));
+			hash.AddValue(k.depthEnable);
+			hash.AddEnum(k.dsvFormat);
+			hash.AddEnum(k.depthFunc);
+			hash.AddValue(k.stencilEnable);
+			hash.AddValue(k.stencilReadMask);
+			hash.AddValue(k.stencilWriteMask);
+			hash.AddEnum(k.stencilFrontFailOp);
+			hash.AddEnum(k.stencilFrontDepthFailOp);
+			hash.AddEnum(k.stencilFrontPassOp);
+			hash.AddEnum(k.stencilFrontFunc);
+			hash.AddEnum(k.stencilBackFailOp);
+			hash.AddEnum(k.stencilBackDepthFailOp);
+			hash.AddEnum(k.stencilBackPassOp);
+			hash.AddEnum(k.stencilBackFunc);
+			hash.AddValue(k.stencilRef);
+			hash.AddEnum(k.cullMode);
+			hash.AddValue(k.blendEnable);
+			hash.AddEnum(k.srcBlend);
+			hash.AddEnum(k.destBlend);
+			hash.AddEnum(k.blendOp);
+			hash.AddEnum(k.srcBlendAlpha);
+			hash.AddEnum(k.destBlendAlpha);
+			hash.AddEnum(k.blendOpAlpha);
 
-			HashCombine(seed, std::hash<bool>{}(k.vertexLayout.has_value()));
+			hash.AddValue(k.vertexLayout.has_value());
 			if (k.vertexLayout.has_value()) {
-				HashCombine(seed, HashVertexLayout(*k.vertexLayout));
+				hash.AddHashed(HashVertexLayout(*k.vertexLayout));
 			}
 
-			return seed;
+			return hash.Value();
 		}
 	};
 
@@ -272,15 +265,10 @@ namespace Unnamed::Render {
 
 	struct ComputePipelineKeyHash {
 		size_t operator()(const ComputePipelineKey& k) const noexcept {
-			size_t h  = 0;
-			auto   Hc = [&](size_t x) {
-				h ^= x + 0x9e3779b97f4a7c15ull + (h << 6) + (h >> 2);
-			};
-
-			Hc(ShaderKeyHash{}(k.cs));
-			Hc(std::hash<void*>{}(k.rootSignature));
-
-			return h;
+			HashBuilder hash = {};
+			hash.AddHashed(ShaderKeyHash{}(k.cs));
+			hash.AddPointer(k.rootSignature);
+			return hash.Value();
 		}
 	};
 

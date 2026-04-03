@@ -259,13 +259,14 @@ namespace Unnamed {
 			"sv_maxvelocity", 3500.0f, FCVAR::REPLICATED,
 			"Maximum speed any ballistically moving object is allowed to attain per axis."
 		);
+
 		static ConVar sv_tickrate(
-			"sv_tickrate", 66.0f, FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"sv_tickrate", 66, FCVAR::NOTIFY | FCVAR::REPLICATED,
 			"World fixed simulation tickrate.",
 			true,
-			1.0f,
+			1,
 			true,
-			1000.0f
+			1000
 		);
 
 		// Cheat

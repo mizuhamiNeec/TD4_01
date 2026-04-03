@@ -3,8 +3,8 @@
 #include <imgui.h>
 
 #include "core/ComponentRegistry.h"
-#include "core/json/JsonReader.h"
-#include "core/json/JsonWriter.h"
+#include "core/io/json/JsonReader.h"
+#include "core/io/json/JsonWriter.h"
 #include "core/math/Math.h"
 #include "core/math/Quaternion.h"
 
@@ -15,6 +15,8 @@
 #include "engine/unnamed/subsystem/input/device/gamepad/GamepadDevice.h"
 #include "engine/unnamed/subsystem/input/device/mouse/MouseDevice.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
+
+#include "game/core/replay/ReplayHash.h"
 
 namespace Unnamed {
 	void CameraRotatorComponent::OnAttached() {
@@ -133,6 +135,27 @@ namespace Unnamed {
 		writer.Write(mCurrentYaw);
 	}
 
+	void CameraRotatorComponent::WriteReplayState(nlohmann::json& outState) const {
+		outState["pitchDegrees"] = mCurrentPitch;
+		outState["yawDegrees"]   = mCurrentYaw;
+	}
+
+	void CameraRotatorComponent::ReadReplayState(const nlohmann::json& inState) {
+		if (!inState.is_object()) {
+			return;
+		}
+		mCurrentPitch = inState.value("pitchDegrees", mCurrentPitch);
+		mCurrentYaw   = inState.value("yawDegrees", mCurrentYaw);
+		ApplyRotationFromCurrentAngles();
+	}
+
+	uint64_t CameraRotatorComponent::ComputeReplayStateHash() const {
+		uint64_t hash = ReplayHash::Begin();
+		ReplayHash::AppendFloating(hash, mCurrentPitch);
+		ReplayHash::AppendFloating(hash, mCurrentYaw);
+		return hash;
+	}
+
 #ifdef _DEBUG
 	void CameraRotatorComponent::DrawInspectorImGui() {
 		ImGui::DragFloat("Pitch", &mCurrentPitch, 0.1f, -89.0f, 89.0f);
@@ -148,7 +171,7 @@ namespace Unnamed {
 	}
 
 	Vec2 CameraRotatorComponent::GetLookAnglesDegrees() const {
-		return Vec2(mCurrentPitch, mCurrentYaw);
+		return{mCurrentPitch, mCurrentYaw};
 	}
 
 	BaseComponent::TICK_GROUP CameraRotatorComponent::GetTickGroup() const {

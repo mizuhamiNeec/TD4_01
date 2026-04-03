@@ -2,6 +2,8 @@
 
 #include <string_view>
 
+#include <json.hpp>
+
 #include "engine/unnamed/framework/components/base/BaseComponent.h"
 
 #include "core/math/Vec2.h"
@@ -37,6 +39,10 @@ namespace Unnamed {
 
 		void Deserialize(const JsonReader& reader) override;
 		void Serialize(JsonWriter& writer) const override;
+
+		void WriteReplayState(nlohmann::json& outState) const;
+		void ReadReplayState(const nlohmann::json& inState);
+		[[nodiscard]] uint64_t ComputeReplayStateHash() const;
 
 		void               SetLookAnglesDegrees(float pitch, float yaw);
 		[[nodiscard]] Vec2 GetLookAnglesDegrees() const;

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <json.hpp>
+
 #include "game/core/components/character/GameMovementComponent.h"
 
 namespace Unnamed {
@@ -43,13 +45,15 @@ namespace Unnamed {
 		};
 
 		struct ParkourRuntime {
-			bool            hasDoubleJump  = true;
-			bool            lastJumpHeld   = false;
-			bool            duckHullActive = false;
-			WallRunRuntime  wallRun        = {};
-			SlideRuntime    slide          = {};
-			BlinkRuntime    blink          = {};
-			VaultRuntime    vault          = {};
+			bool           hasDoubleJump           = true;
+			bool           lastJumpHeld            = false;
+			bool           duckHullActive          = false;
+			bool           pendingDoubleJumpCue    = false;
+			float          footstepDistanceAccumHu = 0.0f;
+			WallRunRuntime wallRun                 = {};
+			SlideRuntime   slide                   = {};
+			BlinkRuntime   blink                   = {};
+			VaultRuntime   vault                   = {};
 		};
 
 		~ParkourMovementComponent() override;
@@ -65,10 +69,13 @@ namespace Unnamed {
 
 		void Deserialize(const JsonReader& reader) override;
 		void Serialize(JsonWriter& writer) const override;
+		void WriteReplayState(nlohmann::json& outState) const override;
+		void ReadReplayState(const nlohmann::json& inState) override;
+		[[nodiscard]] uint64_t ComputeReplayStateHash() const override;
 
 		[[nodiscard]] uint32_t GetIcon() const override;
 
-		[[nodiscard]] ParkourRuntime& GetParkourRuntime();
+		[[nodiscard]] ParkourRuntime&       GetParkourRuntime();
 		[[nodiscard]] const ParkourRuntime& GetParkourRuntime() const;
 
 		void TickParkourTimers(float deltaTime);
@@ -78,7 +85,7 @@ namespace Unnamed {
 		[[nodiscard]] bool CanStandAt(const MovementContext& context) const;
 
 		[[nodiscard]] float GetHorizontalSpeedHu(const Vec3& velocity) const;
-		[[nodiscard]] bool  ShouldSlideFromSpeed(float horizontalSpeedHu) const;
+		[[nodiscard]] bool ShouldSlideFromSpeed(float horizontalSpeedHu) const;
 		[[nodiscard]] std::string ResolveGroundStateFromInput(
 			const MovementContext& context
 		) const;
@@ -112,9 +119,9 @@ namespace Unnamed {
 		bool ApplyDuckHull(MovementContext& context);
 		bool ApplyStandHull(MovementContext& context);
 
-		bool mAutoSprintActive = false;
-		ParkourRuntime mRuntime = {};
-		Vec3 mStandingHalfExtents = Vec3::zero;
-		Vec3 mDuckHalfExtents = Vec3::zero;
+		bool           mAutoSprintActive    = false;
+		ParkourRuntime mRuntime             = {};
+		Vec3           mStandingHalfExtents = Vec3::zero;
+		Vec3           mDuckHalfExtents     = Vec3::zero;
 	};
 }

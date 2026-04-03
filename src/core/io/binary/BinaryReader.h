@@ -1,5 +1,6 @@
 #pragma once
 
+#include <bit>
 #include <cstdint>
 #include <fstream>
 #include <string>
@@ -49,7 +50,11 @@ namespace Unnamed {
 		/// @param outValue 読み込んだ値の格納先
 		/// @return 読み込みに成功したか
 		template <typename T>
-		bool ReadPod(T& outValue);
+		bool ReadPod(T& outValue) {
+			static_assert(std::is_standard_layout_v<T>);
+			static_assert(std::endian::native == std::endian::little);
+			return ReadBytes(&outValue, sizeof(T));
+		}
 
 		/// @brief 文字列を読み込む。文字列は、最初にuint32_tでバイト数が続き、その後にUTF-8エンコードされた文字列データが続く形式でエンコードされている必要がある。
 		/// @param outText 読み込んだ文字列の格納先
@@ -62,14 +67,29 @@ namespace Unnamed {
 		/// @param count 要素数
 		/// @return 読み込みに成功したか
 		template <typename T>
-		bool ReadArray(T* outValues, const size_t count);
+		bool ReadArray(T* outValues, const size_t count) {
+			static_assert(std::is_standard_layout_v<T>);
+			return ReadBytes(outValues, sizeof(T) * count);
+		}
 
 		/// @brief 標準レイアウトな値のベクターを読み込む。ベクターは、最初にuint32_tで要素数が続き、その後に要素が連続バイト列としてエンコードされている必要がある。
 		/// @tparam T 読み込む要素型。標準レイアウトである必要がある。
 		/// @param outValues 読み込んだ値の格納先ベクター
 		/// @return 読み込みに成功したか
 		template <typename T>
-		bool ReadVector(std::vector<T>& outValues);
+		bool ReadVector(std::vector<T>& outValues) {
+			static_assert(std::is_standard_layout_v<T>);
+			uint32_t count = 0;
+			if (!ReadPod(count)) {
+				return false;
+			}
+			if (sizeof(T) > 0 &&
+			    Remaining() / sizeof(T) < static_cast<size_t>(count)) {
+				return false;
+			}
+			outValues.resize(count);
+			return ReadArray(outValues.data(), outValues.size());
+		}
 
 	private:
 		std::ifstream mStream;

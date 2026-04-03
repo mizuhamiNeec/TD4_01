@@ -1,7 +1,5 @@
 #include "BinaryReader.h"
 
-#include <bit>
-
 namespace Unnamed {
 	BinaryReader::BinaryReader(const std::string& path) : mStream(
 		path, std::ios::binary
@@ -58,13 +56,6 @@ namespace Unnamed {
 		return Good();
 	}
 
-	template <typename T>
-	bool BinaryReader::ReadPod(T& outValue) {
-		static_assert(std::is_standard_layout_v<T>);
-		static_assert(std::endian::native == std::endian::little);
-		return ReadBytes(&outValue, sizeof(T));
-	}
-
 	bool BinaryReader::ReadString(std::string& outText) {
 		uint32_t sizeBytes = 0;
 		if (!ReadPod(sizeBytes)) {
@@ -75,26 +66,5 @@ namespace Unnamed {
 		}
 		outText.resize(sizeBytes);
 		return ReadBytes(outText.data(), sizeBytes);
-	}
-
-	template <typename T>
-	bool BinaryReader::ReadArray(T* outValues, const size_t count) {
-		static_assert(std::is_standard_layout_v<T>);
-		return ReadBytes(outValues, sizeof(T) * count);
-	}
-
-	template <typename T>
-	bool BinaryReader::ReadVector(std::vector<T>& outValues) {
-		static_assert(std::is_standard_layout_v<T>);
-		uint32_t count = 0;
-		if (!ReadPod(count)) {
-			return false;
-		}
-		if (sizeof(T) > 0 &&
-		    Remaining() / sizeof(T) < static_cast<size_t>(count)) {
-			return false;
-		}
-		outValues.resize(count);
-		return ReadArray(outValues.data(), outValues.size());
 	}
 }

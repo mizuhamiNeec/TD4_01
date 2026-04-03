@@ -226,18 +226,37 @@ namespace Unnamed {
 
 						uint8_t flags = 0;
 						if (command.playerInput.movement.jumpPressed) {
-							flags |= 0x01u;
+							flags |= kDemoMoveFlagJumpPressed;
 						}
 						if (command.playerInput.movement.crouchPressed) {
-							flags |= 0x02u;
+							flags |= kDemoMoveFlagCrouchPressed;
 						}
 						if (command.playerInput.movement.sprintPressed) {
-							flags |= 0x04u;
+							flags |= kDemoMoveFlagSprintPressed;
 						}
 						if (command.playerInput.movement.noclip) {
-							flags |= 0x08u;
+							flags |= kDemoMoveFlagNoclip;
 						}
 						packed.flags = flags;
+
+						uint16_t actionFlags = 0;
+						const auto& grapple  = command.playerInput.action.grapple;
+						if (grapple.grapplePressed) {
+							actionFlags |= kDemoActionFlagGrapplePressed;
+						}
+						if (grapple.grappleHeld) {
+							actionFlags |= kDemoActionFlagGrappleHeld;
+						}
+						if (grapple.grappleReleased) {
+							actionFlags |= kDemoActionFlagGrappleReleased;
+						}
+						if (grapple.reelInHeld) {
+							actionFlags |= kDemoActionFlagReelInHeld;
+						}
+						if (grapple.reelOutHeld) {
+							actionFlags |= kDemoActionFlagReelOutHeld;
+						}
+						packed.actionFlags = actionFlags;
 
 						const auto& movement = command.playerInput.movement;
 						packed.moveAxis[0]   = movement.moveAxis.x;

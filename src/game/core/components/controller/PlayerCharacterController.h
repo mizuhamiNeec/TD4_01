@@ -6,6 +6,7 @@
 #include "../character/base/BaseCharacterComponent.h"
 
 #include "base/BaseCharacterController.h"
+#include "game/core/input/CharacterActionFrameInput.h"
 #include "game/core/replay/DemoTypes.h"
 
 namespace Unnamed {
@@ -39,16 +40,20 @@ namespace Unnamed {
 	protected:
 		void TryBindCameraRotator();
 		[[nodiscard]] MovementFrameInput BuildMovementFrameInput();
+		[[nodiscard]] CharacterActionFrameInput BuildActionFrameInput();
 		[[nodiscard]] DemoTickCommand    BuildPlayerTickCommand(uint64_t tick);
 		void ApplyLookFromCommand(const DemoTickCommand& command, float stepSeconds);
 
 		InputSystem*             mInput = nullptr;
 		CameraRotatorComponent*  mCameraRotator = nullptr;
 		MovementFrameInput       mDebugMoveFrameInput = {};
+		CharacterActionFrameInput mDebugActionFrameInput = {};
 		uint64_t                 mFixedTickCounter = 0;
 		float                    mLastViewYawDeg = 0.0f;
 		float                    mLastViewPitchDeg = 0.0f;
 		uint32_t                 mQueuedSprintPressCount = 0;
+		bool                     mQueuedGrapplePressed = false;
+		bool                     mQueuedGrappleReleased = false;
 		bool                     mRecordingInitialSnapshotCaptured = false;
 		bool                     mWasRecordingMode = false;
 		bool                     mWasPlaybackMode = false;

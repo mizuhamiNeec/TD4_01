@@ -15,6 +15,7 @@
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 #include "engine/world/World.h"
 
+#include "game/core/input/CharacterActionFrameInput.h"
 #include "game/core/replay/DemoManager.h"
 #include "game/core/replay/ReplayHash.h"
 
@@ -63,11 +64,13 @@ namespace Unnamed {
 			mLastViewYawDeg        = lookDegrees.y;
 		}
 
-		mFixedTickCounter     = 0;
-		mQueuedSprintPressCount = 0;
+		mFixedTickCounter                 = 0;
+		mQueuedSprintPressCount           = 0;
+		mQueuedGrapplePressed             = false;
+		mQueuedGrappleReleased            = false;
 		mRecordingInitialSnapshotCaptured = false;
-		mWasRecordingMode = false;
-		mWasPlaybackMode       = false;
+		mWasRecordingMode                 = false;
+		mWasPlaybackMode                  = false;
 	}
 
 	void PlayerCharacterController::OnDetached() {
@@ -75,11 +78,13 @@ namespace Unnamed {
 			mCameraRotator->SetDirectInputEnabled(true);
 			mCameraRotator = nullptr;
 		}
-		mInput = nullptr;
-		mQueuedSprintPressCount = 0;
+		mInput                            = nullptr;
+		mQueuedSprintPressCount           = 0;
+		mQueuedGrapplePressed             = false;
+		mQueuedGrappleReleased            = false;
 		mRecordingInitialSnapshotCaptured = false;
-		mWasRecordingMode = false;
-		mWasPlaybackMode       = false;
+		mWasRecordingMode                 = false;
+		mWasPlaybackMode                  = false;
 
 		BaseCharacterController::OnDetached();
 	}
@@ -90,16 +95,19 @@ namespace Unnamed {
 			return;
 		}
 
-		DemoManager* demoManager = ServiceLocator::Get<DemoManager>();
-		const float fixedTickSeconds =
-			demoManager ? demoManager->GetSimulationStepSeconds() :
-			              DemoManager::TickStepSecondsFromRate(
-				              DemoManager::ResolveConfiguredTickRate()
-			              );
+		DemoManager* demoManager      = ServiceLocator::Get<DemoManager>();
+		const float  fixedTickSeconds =
+			demoManager ?
+				demoManager->GetSimulationStepSeconds() :
+				DemoManager::TickStepSecondsFromRate(
+					DemoManager::ResolveConfiguredTickRate()
+				);
 
-		const uint64_t subjectEntityGuid = GetOwner() ? GetOwner()->GetGuid() : 0;
-		bool           playbackMode      = demoManager && demoManager->IsPlayback();
-		bool           recordingMode     = demoManager && demoManager->IsRecording();
+		const uint64_t subjectEntityGuid = GetOwner() ?
+			                                   GetOwner()->GetGuid() :
+			                                   0;
+		bool playbackMode  = demoManager && demoManager->IsPlayback();
+		bool recordingMode = demoManager && demoManager->IsRecording();
 
 		if (recordingMode && !mWasRecordingMode) {
 			mRecordingInitialSnapshotCaptured = false;
@@ -108,9 +116,15 @@ namespace Unnamed {
 		}
 
 		if (playbackMode && !mWasPlaybackMode) {
-			mFixedTickCounter     = demoManager->GetPlaybackStartTick();
+			mFixedTickCounter       = demoManager->GetPlaybackStartTick();
 			mQueuedSprintPressCount = 0;
+			mQueuedGrapplePressed   = false;
+			mQueuedGrappleReleased  = false;
 			mTarget->ClearDeterministicInputQueue();
+			if (auto* actionReceiver =
+				    dynamic_cast<ICharacterActionInputReceiver*>(mTarget)) {
+				actionReceiver->ClearDeterministicActionInputQueue();
+			}
 			if (Entity* owner = GetOwner()) {
 				if (!demoManager->ApplyInitialSnapshotIfNeeded(*owner)) {
 					(void)demoManager->Stop();
@@ -120,10 +134,10 @@ namespace Unnamed {
 				}
 			}
 		}
-		mWasPlaybackMode = playbackMode;
+		mWasPlaybackMode  = playbackMode;
 		mWasRecordingMode = recordingMode;
 
-		DemoTickCommand command = {};
+		DemoTickCommand command             = {};
 		bool            usedPlaybackCommand = false;
 
 		if (demoManager && playbackMode) {
@@ -150,9 +164,11 @@ namespace Unnamed {
 					);
 				}
 				(void)demoManager->Stop();
-				playbackMode      = false;
-				mWasPlaybackMode  = false;
+				playbackMode            = false;
+				mWasPlaybackMode        = false;
 				mQueuedSprintPressCount = 0;
+				mQueuedGrapplePressed   = false;
+				mQueuedGrappleReleased  = false;
 			}
 		}
 
@@ -182,16 +198,27 @@ namespace Unnamed {
 		}
 
 		mDebugMoveFrameInput = command.playerInput.movement;
+		mDebugActionFrameInput = command.playerInput.action;
 		mTarget->EnqueueDeterministicInput(
 			command.tick,
 			fixedTickSeconds,
 			command.playerInput.movement
 		);
+		if (auto* actionReceiver =
+			    dynamic_cast<ICharacterActionInputReceiver*>(mTarget)) {
+			actionReceiver->EnqueueDeterministicActionInput(
+				command.tick,
+				fixedTickSeconds,
+				command.playerInput.action
+			);
+		}
 
 		++mFixedTickCounter;
 	}
 
-	void PlayerCharacterController::OnFrameInputTick(const float frameDeltaTime) {
+	void PlayerCharacterController::OnFrameInputTick(
+		const float frameDeltaTime
+	) {
 		if (!mTarget || !mInput) {
 			return;
 		}
@@ -207,6 +234,12 @@ namespace Unnamed {
 				mQueuedSprintPressCount + 1u,
 				64u
 			);
+		}
+		if (mInput->IsPressed("grapple")) {
+			mQueuedGrapplePressed = true;
+		}
+		if (mInput->IsReleased("grapple")) {
+			mQueuedGrappleReleased = true;
 		}
 
 		// 見た目の重さを抑えるため、視点はRenderTickで即時反映する。
@@ -237,6 +270,37 @@ namespace Unnamed {
 		return "PlayerCharacterController";
 	}
 
+	void PlayerCharacterController::WriteReplayState(
+		nlohmann::json& outState
+	) const {
+		outState["fixedTickCounter"] = mFixedTickCounter;
+		outState["lastViewYawDeg"]   = mLastViewYawDeg;
+		outState["lastViewPitchDeg"] = mLastViewPitchDeg;
+	}
+
+	void PlayerCharacterController::ReadReplayState(
+		const nlohmann::json& inState
+	) {
+		if (!inState.is_object()) {
+			return;
+		}
+		mFixedTickCounter = inState.value(
+			"fixedTickCounter", mFixedTickCounter
+		);
+		mLastViewYawDeg   = inState.value("lastViewYawDeg", mLastViewYawDeg);
+		mLastViewPitchDeg = inState.value(
+			"lastViewPitchDeg", mLastViewPitchDeg
+		);
+	}
+
+	uint64_t PlayerCharacterController::ComputeReplayStateHash() const {
+		uint64_t hash = ReplayHash::Begin();
+		ReplayHash::AppendPod(hash, mFixedTickCounter);
+		ReplayHash::AppendFloating(hash, mLastViewYawDeg);
+		ReplayHash::AppendFloating(hash, mLastViewPitchDeg);
+		return hash;
+	}
+
 	void PlayerCharacterController::TryBindCameraRotator() {
 		if (mCameraRotator) {
 			return;
@@ -253,7 +317,8 @@ namespace Unnamed {
 					continue;
 				}
 
-				auto* rotator = entityPtr->GetComponent<CameraRotatorComponent>();
+				auto* rotator = entityPtr->GetComponent<
+					CameraRotatorComponent>();
 				if (!rotator) {
 					continue;
 				}
@@ -308,8 +373,8 @@ namespace Unnamed {
 		}
 
 		const Vec2 gamepadMoveAxis = mInput->Axis2D("GamepadMove");
-		input.moveAxis.x += gamepadMoveAxis.x;
-		input.moveAxis.z += gamepadMoveAxis.y;
+		input.moveAxis.x           += gamepadMoveAxis.x;
+		input.moveAxis.z           += gamepadMoveAxis.y;
 
 		if (input.moveAxis.Length() > 1.0f) {
 			input.moveAxis.Normalize();
@@ -328,15 +393,33 @@ namespace Unnamed {
 		return input;
 	}
 
+	CharacterActionFrameInput PlayerCharacterController::BuildActionFrameInput() {
+		CharacterActionFrameInput input = {};
+		if (!mInput) {
+			return input;
+		}
+
+		input.grapple.grapplePressed  = mQueuedGrapplePressed;
+		input.grapple.grappleHeld     = mInput->IsHeld("grapple");
+		input.grapple.grappleReleased = mQueuedGrappleReleased;
+		input.grapple.reelInHeld      = mInput->IsHeld("reelin");
+		input.grapple.reelOutHeld     = mInput->IsHeld("reelout");
+		mQueuedGrapplePressed         = false;
+		mQueuedGrappleReleased        = false;
+
+		return input;
+	}
+
 	DemoTickCommand PlayerCharacterController::BuildPlayerTickCommand(
 		const uint64_t tick
 	) {
-		DemoTickCommand command      = {};
-		command.tick                 = tick;
-		command.subjectEntityGuid    = GetOwner() ? GetOwner()->GetGuid() : 0;
-		command.commandType          = DEMO_COMMAND_TYPE::PLAYER_INPUT;
+		DemoTickCommand command = {};
+		command.tick = tick;
+		command.subjectEntityGuid = GetOwner() ? GetOwner()->GetGuid() : 0;
+		command.commandType = DEMO_COMMAND_TYPE::PLAYER_INPUT;
 		command.playerInput.movement = BuildMovementFrameInput();
-		command.playerInput.viewYawDeg   = mLastViewYawDeg;
+		command.playerInput.action = BuildActionFrameInput();
+		command.playerInput.viewYawDeg = mLastViewYawDeg;
 		command.playerInput.viewPitchDeg = mLastViewPitchDeg;
 		return command;
 	}
@@ -360,31 +443,6 @@ namespace Unnamed {
 		mLastViewYawDeg   = command.playerInput.viewYawDeg;
 	}
 
-	void PlayerCharacterController::WriteReplayState(
-		nlohmann::json& outState
-	) const {
-		outState["fixedTickCounter"] = mFixedTickCounter;
-		outState["lastViewYawDeg"]   = mLastViewYawDeg;
-		outState["lastViewPitchDeg"] = mLastViewPitchDeg;
-	}
-
-	void PlayerCharacterController::ReadReplayState(const nlohmann::json& inState) {
-		if (!inState.is_object()) {
-			return;
-		}
-		mFixedTickCounter = inState.value("fixedTickCounter", mFixedTickCounter);
-		mLastViewYawDeg   = inState.value("lastViewYawDeg", mLastViewYawDeg);
-		mLastViewPitchDeg = inState.value("lastViewPitchDeg", mLastViewPitchDeg);
-	}
-
-	uint64_t PlayerCharacterController::ComputeReplayStateHash() const {
-		uint64_t hash = ReplayHash::Begin();
-		ReplayHash::AppendPod(hash, mFixedTickCounter);
-		ReplayHash::AppendFloating(hash, mLastViewYawDeg);
-		ReplayHash::AppendFloating(hash, mLastViewPitchDeg);
-		return hash;
-	}
-
 #ifdef _DEBUG
 	void PlayerCharacterController::DrawInspectorImGui() {
 		ImGui::BeginDisabled();
@@ -404,6 +462,28 @@ namespace Unnamed {
 		ImGui::Checkbox("Jump", &mDebugMoveFrameInput.jumpPressed);
 		ImGui::Checkbox("Sprint", &mDebugMoveFrameInput.sprintPressed);
 		ImGui::Checkbox("Crouch", &mDebugMoveFrameInput.crouchPressed);
+		ImGui::Separator();
+		ImGui::TextUnformatted("ActionInput");
+		ImGui::Checkbox(
+			"Grapple Pressed",
+			&mDebugActionFrameInput.grapple.grapplePressed
+		);
+		ImGui::Checkbox(
+			"Grapple Held",
+			&mDebugActionFrameInput.grapple.grappleHeld
+		);
+		ImGui::Checkbox(
+			"Grapple Released",
+			&mDebugActionFrameInput.grapple.grappleReleased
+		);
+		ImGui::Checkbox(
+			"ReelIn Held",
+			&mDebugActionFrameInput.grapple.reelInHeld
+		);
+		ImGui::Checkbox(
+			"ReelOut Held",
+			&mDebugActionFrameInput.grapple.reelOutHeld
+		);
 		ImGui::EndDisabled();
 	}
 #endif

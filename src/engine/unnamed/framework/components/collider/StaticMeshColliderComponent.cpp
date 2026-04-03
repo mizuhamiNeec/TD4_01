@@ -10,8 +10,8 @@
 
 #include "core/ComponentRegistry.h"
 #include "core/assets/AssetManager.h"
-#include "core/json/JsonReader.h"
-#include "core/json/JsonWriter.h"
+#include "core/io/json/JsonReader.h"
+#include "core/io/json/JsonWriter.h"
 
 #include "engine/physics/core/Physics.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"

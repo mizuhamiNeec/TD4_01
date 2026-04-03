@@ -10,9 +10,6 @@
 #include "UiDrawCommand.h"
 #include "components/UiComponent.h"
 
-#include "core/json/JsonReader.h"
-#include "core/json/JsonWriter.h"
-
 namespace Unnamed::Gui {
 	/// @brief ウィジェットのダーティフラグ
 	enum class DIRTY_FLAGS : uint32_t {

@@ -21,7 +21,7 @@ namespace Unnamed {
 	public:
 		void OnAttached() override;
 		void OnDetached() override;
-		void OnTick(float deltaTime) override;
+		void OnRenderTick(float renderDeltaTime, float interpolationAlpha) override;
 
 		[[nodiscard]] std::string_view GetStableName() const override;
 		[[nodiscard]] std::string_view GetComponentName() const override;
@@ -41,6 +41,7 @@ namespace Unnamed {
 			AnimationSpeed,
 			CameraShake,
 			CameraFov,
+			CameraRotation,
 			AudioPlay,
 		};
 

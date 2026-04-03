@@ -2,19 +2,18 @@
 #include "LevelEditorTool.h"
 
 #include <algorithm>
-#include <cmath>
 #include <imgui.h>
 #include <imgui_internal.h>
 
 #include "EditorNotification.h"
 
-#include "core/json/JsonReader.h"
+#include "core/io/json/JsonReader.h"
+
 #include "engine/platform/Window.h"
 #include "engine/platform/WindowManager.h"
 #include "engine/render/Renderer.h"
 #include "engine/scene/SceneSerializer.h"
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
-#include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/unnamed/subsystem/console/concommand/ConVar.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 #include "engine/world/EditorWorld.h"
@@ -24,7 +23,7 @@
 namespace Unnamed {
 	LevelEditorTool::LevelEditorTool(
 		WindowManager& windowManager,
-		ImGuiLayer& imGuiLayer
+		ImGuiLayer&    imGuiLayer
 	) : mOwnedEditorWorld(std::make_unique<EditorWorld>()),
 	    mEditorWorld(*mOwnedEditorWorld),
 	    mWindowManager(windowManager),
@@ -40,21 +39,21 @@ namespace Unnamed {
 		mCameraManager.SetPaneBinding(
 			kViewSceneTop,
 			{
-				.kind = ViewportCameraBindingKind::EditorOrthoTop,
+				.kind             = ViewportCameraBindingKind::EditorOrthoTop,
 				.cameraEntityGuid = 0
 			}
 		);
 		mCameraManager.SetPaneBinding(
 			kViewSceneFront,
 			{
-				.kind = ViewportCameraBindingKind::EditorOrthoFront,
+				.kind             = ViewportCameraBindingKind::EditorOrthoFront,
 				.cameraEntityGuid = 0
 			}
 		);
 		mCameraManager.SetPaneBinding(
 			kViewSceneRight,
 			{
-				.kind = ViewportCameraBindingKind::EditorOrthoRight,
+				.kind             = ViewportCameraBindingKind::EditorOrthoRight,
 				.cameraEntityGuid = 0
 			}
 		);
@@ -79,7 +78,7 @@ namespace Unnamed {
 		mEditorWorld.Shutdown();
 		mViewOutputs.clear();
 		mDockInitialized = false;
-		mInitialized = false;
+		mInitialized     = false;
 	}
 
 	void LevelEditorTool::BeginUI() {
@@ -159,7 +158,7 @@ namespace Unnamed {
 			}
 		}
 
-		const float deltaTime = frameContext.unscaledDeltaTime;
+		const float deltaTime         = frameContext.unscaledDeltaTime;
 		mViewportSizeChangedThisFrame = false;
 
 		if (mPresentMode == EDITOR_PRESENT_MODE::VIEWPORT_PANEL) {
@@ -267,49 +266,6 @@ namespace Unnamed {
 		ImGui::End();
 	}
 
-	void LevelEditorTool::TogglePresentMode() {
-		mPresentMode = mPresentMode == EDITOR_PRESENT_MODE::VIEWPORT_PANEL ?
-			               EDITOR_PRESENT_MODE::FULLSCREEN_SWAP_CHAIN :
-			               EDITOR_PRESENT_MODE::VIEWPORT_PANEL;
-	}
-
-	EDITOR_PRESENT_MODE LevelEditorTool::GetPresentMode() const {
-		return mPresentMode;
-	}
-
-	bool LevelEditorTool::IsPlaying() const {
-		return mEditorWorld.IsPlaying();
-	}
-
-	void LevelEditorTool::StartPlayInEditor() {
-		mEditorWorld.StartPlayInEditor();
-	}
-
-	void LevelEditorTool::StopPlayInEditor() {
-		mEditorWorld.StopPlayInEditor();
-	}
-
-	bool LevelEditorTool::IsProfilerWindowOpen() const {
-		return mShowProfilerWindow;
-	}
-
-	void LevelEditorTool::SetProfilerWindowOpen(const bool open) {
-		mShowProfilerWindow = open;
-	}
-
-	void LevelEditorTool::SetViewOutput(
-		const std::string_view         viewKey,
-		const Render::SceneOutputView& output,
-		const Vec2                     size
-	) {
-		ViewOutputCache cache              = {};
-		cache.textureId                    = output.textureId;
-		cache.srvCpu                       = output.srvCpu;
-		cache.srvRevision                  = output.srvRevision;
-		cache.size                         = size;
-		mViewOutputs[std::string(viewKey)] = cache;
-	}
-
 	void LevelEditorTool::CollectRenderViews(Render::RenderFrameInputs& inputs) {
 		Render::RenderViewInput              sourceScene = {};
 		bool                                 hasScene    = false;
@@ -332,17 +288,17 @@ namespace Unnamed {
 		}
 
 		auto buildSceneView = [this, &sourceScene](
-			const std::string_view key,
-			const float            width,
-			const float            height,
+			const std::string_view      key,
+			const float                 width,
+			const float                 height,
 			const ViewportCameraBinding binding,
-			const bool             exposeToUi,
-			const bool             presentToSwapChain
+			const bool                  exposeToUi,
+			const bool                  presentToSwapChain
 		) {
 			Render::RenderViewInput view = sourceScene;
-			view.viewKey = std::string(key);
-			view.type = Render::RENDER_VIEW_TYPE::SCENE;
-			view.sceneViewMode = BuildSceneViewModeForSize(
+			view.viewKey                 = std::string(key);
+			view.type                    = Render::RENDER_VIEW_TYPE::SCENE;
+			view.sceneViewMode           = BuildSceneViewModeForSize(
 				width,
 				height,
 				mViewportLayoutMode == EDITOR_VIEW_LAYOUT_MODE::QUAD
@@ -358,8 +314,8 @@ namespace Unnamed {
 				mEditorWorld, view.sceneViewMode, binding
 			);
 			const Render::RenderCameraInput* fallback = sourceScene.camera.valid ?
-				                                            &sourceScene.camera :
-				                                            nullptr;
+				&sourceScene.camera :
+				nullptr;
 			const EditorViewportCameraManager::ResolvedCamera resolved =
 				mCameraManager.ResolveViewCamera(
 					mEditorWorld,
@@ -459,12 +415,74 @@ namespace Unnamed {
 		outViewKeys.emplace_back(kViewSceneRight);
 	}
 
+	void LevelEditorTool::SetViewOutput(
+		const std::string_view         viewKey,
+		const Render::SceneOutputView& output,
+		const Vec2                     size
+	) {
+		ViewOutputCache cache;
+		cache.textureId                    = output.textureId;
+		cache.srvCpu                       = output.srvCpu;
+		cache.srvRevision                  = output.srvRevision;
+		cache.size                         = size;
+		mViewOutputs[std::string(viewKey)] = cache;
+	}
+
 	std::string_view LevelEditorTool::GetToolId() const {
 		return "tool.level";
 	}
 
 	std::string_view LevelEditorTool::GetDisplayName() const {
 		return "Level Editor";
+	}
+
+	World* LevelEditorTool::GetRuntimeWorld() {
+		return &mEditorWorld;
+	}
+
+	bool LevelEditorTool::IsOpen() const {
+		return mOpen;
+	}
+
+	void LevelEditorTool::SetOpen(const bool open) {
+		if (mOpen != open) {
+			mViewOutputs.clear();
+		}
+		mOpen = open;
+		if (!mOpen) {
+			mDockInitialized    = false;
+			mViewportLookActive = false;
+		}
+	}
+
+	void LevelEditorTool::TogglePresentMode() {
+		mPresentMode = mPresentMode == EDITOR_PRESENT_MODE::VIEWPORT_PANEL ?
+			               EDITOR_PRESENT_MODE::FULLSCREEN_SWAP_CHAIN :
+			               EDITOR_PRESENT_MODE::VIEWPORT_PANEL;
+	}
+
+	EDITOR_PRESENT_MODE LevelEditorTool::GetPresentMode() const {
+		return mPresentMode;
+	}
+
+	bool LevelEditorTool::IsPlaying() const {
+		return mEditorWorld.IsPlaying();
+	}
+
+	void LevelEditorTool::StartPlayInEditor() {
+		mEditorWorld.StartPlayInEditor();
+	}
+
+	void LevelEditorTool::StopPlayInEditor() {
+		mEditorWorld.StopPlayInEditor();
+	}
+
+	bool LevelEditorTool::IsProfilerWindowOpen() const {
+		return mShowProfilerWindow;
+	}
+
+	void LevelEditorTool::SetProfilerWindowOpen(const bool open) {
+		mShowProfilerWindow = open;
 	}
 
 	void LevelEditorTool::LoadImGuizmoSettings() {
@@ -556,7 +574,7 @@ namespace Unnamed {
 
 		const EDITOR_VIEWPORT_RENDER_MODE renderMode =
 			forceFit ? EDITOR_VIEWPORT_RENDER_MODE::FIT_VIEWPORT :
-			           mViewportRenderMode;
+				mViewportRenderMode;
 		switch (renderMode) {
 			case EDITOR_VIEWPORT_RENDER_MODE::FIT_VIEWPORT
 			: sceneRequest.mode = Render::SCENE_RENDER_MODE::FIT_VIEWPORT;
@@ -606,12 +624,6 @@ namespace Unnamed {
 			       mEditorWorld.GetEditableScene();
 	}
 
-	ViewportCameraBinding LevelEditorTool::ResolveViewportBinding(
-		const std::string_view viewKey
-	) const {
-		return mCameraManager.GetPaneBinding(viewKey);
-	}
-
 	Entity* LevelEditorTool::GetSelectedEntity() const {
 		const Scene* scene = GetOutlinerScene();
 		if (!scene || mSelectedEntityId == 0) {
@@ -632,23 +644,10 @@ namespace Unnamed {
 		return true;
 	}
 
-	World* LevelEditorTool::GetRuntimeWorld() {
-		return &mEditorWorld;
-	}
-
-	bool LevelEditorTool::IsOpen() const {
-		return mOpen;
-	}
-
-	void LevelEditorTool::SetOpen(const bool open) {
-		if (mOpen != open) {
-			mViewOutputs.clear();
-		}
-		mOpen = open;
-		if (!mOpen) {
-			mDockInitialized = false;
-			mViewportLookActive = false;
-		}
+	ViewportCameraBinding LevelEditorTool::ResolveViewportBinding(
+		const std::string_view viewKey
+	) const {
+		return mCameraManager.GetPaneBinding(viewKey);
 	}
 }
 

@@ -11,7 +11,7 @@ namespace Unnamed {
 	class ViewmodelSway : public BaseComponent {
 	public:
 		void OnAttached() override;
-		void OnTick(float deltaTime) override;
+		void OnRenderTick(float renderDeltaTime, float interpolationAlpha) override;
 
 		[[nodiscard]] std::string_view GetStableName() const override;
 		[[nodiscard]] std::string_view GetComponentName() const override;

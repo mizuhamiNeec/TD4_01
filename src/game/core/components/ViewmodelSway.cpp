@@ -8,8 +8,8 @@
 #endif
 
 #include "core/ComponentRegistry.h"
-#include "core/json/JsonReader.h"
-#include "core/json/JsonWriter.h"
+#include "core/io/json/JsonReader.h"
+#include "core/io/json/JsonWriter.h"
 #include "core/math/Math.h"
 #include "core/math/Quaternion.h"
 #include "core/math/Vec3.h"
@@ -20,6 +20,15 @@
 
 namespace Unnamed {
 	namespace {
+		[[nodiscard]] bool IsFiniteVec2(const Vec2& value) {
+			return std::isfinite(value.x) && std::isfinite(value.y);
+		}
+
+		[[nodiscard]] bool IsFiniteQuaternion(const Quaternion& value) {
+			return std::isfinite(value.x) && std::isfinite(value.y) &&
+			       std::isfinite(value.z) && std::isfinite(value.w);
+		}
+
 		float DeltaAngleDegrees(const float currentDeg, const float targetDeg) {
 			float delta = std::fmod(targetDeg - currentDeg, 360.0f);
 			if (delta > 180.0f) {
@@ -40,7 +49,7 @@ namespace Unnamed {
 			const float pitchRad = std::atan2(forward.y, horizontalLen);
 			const float yawRad   = std::atan2(forward.x, forward.z);
 
-			return Vec2(pitchRad * Math::rad2Deg, yawRad * Math::rad2Deg);
+			return {pitchRad * Math::rad2Deg, yawRad * Math::rad2Deg};
 		}
 	}
 
@@ -68,10 +77,17 @@ namespace Unnamed {
 		mInitialized = true;
 	}
 
-	void ViewmodelSway::OnTick(float deltaTime) {
+	void ViewmodelSway::OnRenderTick(
+		const float renderDeltaTime,
+		const float interpolationAlpha
+	) {
+		(void)interpolationAlpha;
+		if (renderDeltaTime <= 0.0f || !std::isfinite(renderDeltaTime)) {
+			return;
+		}
+
 		if (!mTransform) {
-			Entity* owner = GetOwner();
-			if (owner) {
+			if (Entity* owner = GetOwner()) {
 				mTransform = owner->GetComponent<TransformComponent>();
 			}
 		}
@@ -94,27 +110,42 @@ namespace Unnamed {
 		}
 
 		const float attenuationT = std::clamp(
-			mAttenuation * deltaTime, 0.0f, 1.0f
+			mAttenuation * renderDeltaTime, 0.0f, 1.0f
 		);
 
-		const Vec2 lookNow = ExtractLookPitchYawDegrees(
-			mLookSource->Rotation()
-		);
+		const Vec2 lookNow = ExtractLookPitchYawDegrees(mLookSource->Rotation());
+		if (!IsFiniteVec2(lookNow) || !IsFiniteVec2(mPrevLookDeg)) {
+			mPrevLookDeg = Vec2::zero;
+			mPitch       = 0.0f;
+			mYaw         = 0.0f;
+			return;
+		}
 
 		const float deltaPitch = DeltaAngleDegrees(mPrevLookDeg.x, lookNow.x);
 		const float deltaYaw   = DeltaAngleDegrees(mPrevLookDeg.y, lookNow.y);
 		mPrevLookDeg           = lookNow;
 
-		mPitch += deltaPitch * mSwayAmount * deltaTime;
-		mYaw   += deltaYaw * mSwayAmount * deltaTime;
+		// deltaPitch/deltaYaw are already frame deltas; applying dt again causes instability.
+		mPitch += deltaPitch * mSwayAmount;
+		mYaw += deltaYaw * mSwayAmount;
 
-		mPitch = std::lerp(mPitch, 0.0f, mAttenuation * deltaTime); // ピッチの減衰
-		mYaw   = std::lerp(mYaw, 0.0f, mAttenuation * deltaTime);   // ヨーの減衰
+		mPitch = std::lerp(mPitch, 0.0f, attenuationT); // ピッチの減衰
+		mYaw   = std::lerp(mYaw, 0.0f, attenuationT);   // ヨーの減衰
+
+		if (!std::isfinite(mPitch) || !std::isfinite(mYaw)) {
+			mPitch = 0.0f;
+			mYaw   = 0.0f;
+		}
 
 		const Quaternion pitch = Quaternion::AxisAngle(Vec3::right, mPitch);
 		const Quaternion yaw   = Quaternion::AxisAngle(Vec3::up, mYaw);
 
 		const Quaternion finalRotation = yaw * pitch;
+		if (!IsFiniteQuaternion(finalRotation)) {
+			mPitch = 0.0f;
+			mYaw   = 0.0f;
+			return;
+		}
 
 		const Vec3 swayPositionOffset = Vec3(deltaYaw, deltaPitch, 0.0f) *
 		                                mLocationAmount;

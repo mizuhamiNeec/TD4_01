@@ -38,6 +38,37 @@
 			]
 		},
 		{
+			"cueId": "movement.doublejump",
+			"minValue": -3.4028234663852886e+38,
+			"maxValue": 3.4028234663852886e+38,
+			"cooldownSec": 0.0,
+			"outputs": [
+				{
+					"type": "camera.shake",
+					"id": "shake_jump",
+					"scale": 0.8999999761581421
+				},
+				{
+					"type": "audio.play",
+					"id": "se_jump",
+					"scale": 1.0
+				}
+			]
+		},
+		{
+			"cueId": "movement.footstep",
+			"minValue": -3.4028234663852886e+38,
+			"maxValue": 3.4028234663852886e+38,
+			"cooldownSec": 0.0,
+			"outputs": [
+				{
+					"type": "audio.play",
+					"id": "se_footstep",
+					"scale": 1.0
+				}
+			]
+		},
+		{
 			"cueId": "movement.state.enter.parkourspeedvaultmove",
 			"minValue": -3.4028234663852886e+38,
 			"maxValue": 3.4028234663852886e+38,
@@ -60,6 +91,16 @@
 					"type": "camera.fov",
 					"id": "fov_sliding_start",
 					"scale": 1.0
+				},
+				{
+					"type": "camera.shake",
+					"id": "shake_sliding",
+					"scale": 1.0
+				},
+				{
+					"type": "camera.rotation",
+					"id": "rot_sliding_start",
+					"scale": 1.0
 				}
 			]
 		},
@@ -72,6 +113,11 @@
 				{
 					"type": "camera.fov",
 					"id": "fov_sliding_end",
+					"scale": 1.0
+				},
+				{
+					"type": "camera.rotation",
+					"id": "rot_sliding_reset",
 					"scale": 1.0
 				}
 			]
@@ -103,6 +149,42 @@
 			]
 		},
 		{
+			"cueId": "movement.wallrun.start.right",
+			"minValue": -3.4028234663852886e+38,
+			"maxValue": 3.4028234663852886e+38,
+			"cooldownSec": 0.0,
+			"outputs": [
+				{
+					"type": "camera.rotation",
+					"id": "rot_wallrun_right_start",
+					"scale": 1.0
+				},
+				{
+					"type": "audio.play",
+					"id": "se_wallrun_start",
+					"scale": 1.0
+				}
+			]
+		},
+		{
+			"cueId": "movement.wallrun.start.left",
+			"minValue": -3.4028234663852886e+38,
+			"maxValue": 3.4028234663852886e+38,
+			"cooldownSec": 0.0,
+			"outputs": [
+				{
+					"type": "camera.rotation",
+					"id": "rot_wallrun_left_start",
+					"scale": 1.0
+				},
+				{
+					"type": "audio.play",
+					"id": "se_wallrun_start",
+					"scale": 1.0
+				}
+			]
+		},
+		{
 			"cueId": "movement.state.exit.parkourwallrunmove",
 			"minValue": -3.4028234663852886e+38,
 			"maxValue": 3.4028234663852886e+38,
@@ -111,6 +193,11 @@
 				{
 					"type": "camera.fov",
 					"id": "fov_wallrun_end",
+					"scale": 1.0
+				},
+				{
+					"type": "camera.rotation",
+					"id": "rot_wallrun_reset",
 					"scale": 1.0
 				}
 			]

@@ -1,14 +1,20 @@
 #pragma once
 
 #include <json.hpp>
+#include <optional>
+
+#include "GrappleMotor.h"
 
 #include "game/core/components/character/GameMovementComponent.h"
+#include "game/core/input/CharacterActionFrameInput.h"
 
 namespace Unnamed {
 	struct MovementContext;
 
 	/// @brief パルクール向けの拡張移動コンポーネントです。
-	class ParkourMovementComponent final : public GameMovementComponent {
+	class ParkourMovementComponent final : public GameMovementComponent,
+	                                       public
+	                                       ICharacterActionInputReceiver {
 	public:
 		struct WallRunRuntime {
 			bool  active            = false;
@@ -54,11 +60,28 @@ namespace Unnamed {
 			SlideRuntime   slide                   = {};
 			BlinkRuntime   blink                   = {};
 			VaultRuntime   vault                   = {};
+
+			GrappleState grapple = {};
 		};
 
 		~ParkourMovementComponent() override;
 
 		void OnAttached() override;
+		void SimulateStep(
+			TransformComponent*       transform,
+			const MovementFrameInput& input,
+			float                     stepSeconds
+		) override;
+
+		void EnqueueDeterministicActionInput(
+			uint64_t                         tick,
+			float                            stepSeconds,
+			const CharacterActionFrameInput& input
+		) override;
+		void ClearDeterministicActionInputQueue() override;
+
+		[[nodiscard]] const CharacterActionFrameInput& GetActionFrameInput()
+		const;
 
 		[[nodiscard]] std::string_view GetStableName() const override;
 		[[nodiscard]] std::string_view GetComponentName() const override;
@@ -119,9 +142,19 @@ namespace Unnamed {
 		bool ApplyDuckHull(MovementContext& context);
 		bool ApplyStandHull(MovementContext& context);
 
-		bool           mAutoSprintActive    = false;
-		ParkourRuntime mRuntime             = {};
-		Vec3           mStandingHalfExtents = Vec3::zero;
-		Vec3           mDuckHalfExtents     = Vec3::zero;
+		bool                      mAutoSprintActive    = false;
+		ParkourRuntime            mRuntime             = {};
+		Vec3                      mStandingHalfExtents = Vec3::zero;
+		Vec3                      mDuckHalfExtents     = Vec3::zero;
+		CharacterActionFrameInput mActionFrameInput    = {};
+
+		struct DeterministicActionInputPacket {
+			uint64_t                  tick        = 0;
+			float                     stepSeconds = 0.0f;
+			CharacterActionFrameInput input       = {};
+		};
+
+		std::optional<DeterministicActionInputPacket>
+		mDeterministicActionInputPacket;
 	};
 }

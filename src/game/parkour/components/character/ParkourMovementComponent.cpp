@@ -74,6 +74,44 @@ namespace Unnamed {
 		ResetParkourRuntime();
 		mStandingHalfExtents = mBoxHalfExtents;
 		RebuildDuckHalfExtents();
+		ClearDeterministicActionInputQueue();
+		mActionFrameInput = {};
+	}
+
+	void ParkourMovementComponent::SimulateStep(
+		TransformComponent*       transform,
+		const MovementFrameInput& input,
+		const float               stepSeconds
+	) {
+		if (mDeterministicActionInputPacket.has_value()) {
+			mActionFrameInput = mDeterministicActionInputPacket->input;
+			mDeterministicActionInputPacket.reset();
+		} else {
+			mActionFrameInput = {};
+		}
+
+		GameMovementComponent::SimulateStep(transform, input, stepSeconds);
+	}
+
+	void ParkourMovementComponent::EnqueueDeterministicActionInput(
+		const uint64_t                   tick,
+		const float                      stepSeconds,
+		const CharacterActionFrameInput& input
+	) {
+		mDeterministicActionInputPacket = DeterministicActionInputPacket{
+			.tick        = tick,
+			.stepSeconds = stepSeconds,
+			.input       = input
+		};
+	}
+
+	void ParkourMovementComponent::ClearDeterministicActionInputQueue() {
+		mDeterministicActionInputPacket.reset();
+	}
+
+	const CharacterActionFrameInput&
+	ParkourMovementComponent::GetActionFrameInput() const {
+		return mActionFrameInput;
 	}
 
 	std::string_view ParkourMovementComponent::GetStableName() const {
@@ -108,6 +146,31 @@ namespace Unnamed {
 		ImGui::Text(
 			"Vault: %s (cool %.2f s)", mRuntime.vault.active ? "true" : "false",
 			mRuntime.vault.cooldown
+		);
+		ImGui::Text(
+			"GrapplePressed: %s", mActionFrameInput.grapple.grapplePressed ?
+				                      "true" :
+				                      "false"
+		);
+		ImGui::Text(
+			"GrappleHeld: %s", mActionFrameInput.grapple.grappleHeld ?
+				                   "true" :
+				                   "false"
+		);
+		ImGui::Text(
+			"GrappleReleased: %s", mActionFrameInput.grapple.grappleReleased ?
+				                       "true" :
+				                       "false"
+		);
+		ImGui::Text(
+			"ReelInHeld: %s", mActionFrameInput.grapple.reelInHeld ?
+				                  "true" :
+				                  "false"
+		);
+		ImGui::Text(
+			"ReelOutHeld: %s", mActionFrameInput.grapple.reelOutHeld ?
+				                   "true" :
+				                   "false"
 		);
 	}
 #endif

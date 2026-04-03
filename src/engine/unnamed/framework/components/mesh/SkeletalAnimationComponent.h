@@ -41,7 +41,7 @@ namespace Unnamed {
 		[[nodiscard]] uint32_t         GetIcon() const override;
 
 		void OnAttached() override;
-		void OnTick(float deltaTime) override;
+		void OnRenderTick(float renderDeltaTime, float interpolationAlpha) override;
 
 		void Deserialize(const JsonReader& reader) override;
 		void Serialize(JsonWriter& writer) const override;

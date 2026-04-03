@@ -5,16 +5,15 @@
 #include <cctype>
 #include <cmath>
 #include <cstdint>
-#include <cstring>
-#include <utility>
 #include <unordered_map>
+#include <utility>
 
 #include <imgui.h>
 
 #include "core/ComponentRegistry.h"
 #include "core/assets/types/MeshAssetData.h"
-#include "core/json/JsonReader.h"
-#include "core/json/JsonWriter.h"
+#include "core/io/json/JsonReader.h"
+#include "core/io/json/JsonWriter.h"
 
 #include "engine/ImGui/Icons.h"
 
@@ -178,12 +177,12 @@ namespace Unnamed {
 			}
 
 			const float invLen = 1.0f / std::sqrt(lenSq);
-			return Quaternion(
+			return {
 				accum.x * invLen,
 				accum.y * invLen,
 				accum.z * invLen,
 				accum.w * invLen
-			);
+			};
 		}
 
 		SkeletalAnimationComponent::AnimationLayerDesc SanitizeLayerDesc(
@@ -197,17 +196,16 @@ namespace Unnamed {
 		SkeletalAnimationComponent::AnimationStateDesc SanitizeStateDesc(
 			SkeletalAnimationComponent::AnimationStateDesc state
 		) {
-			state.weight = std::clamp(state.weight, 0.0f, 64.0f);
-			state.speed  = std::clamp(state.speed, 0.0f, 8.0f);
+			state.weight   = std::clamp(state.weight, 0.0f, 64.0f);
+			state.speed    = std::clamp(state.speed, 0.0f, 8.0f);
 			state.blendSec = std::clamp(state.blendSec, 0.0f, 4.0f);
 			return state;
 		}
 
 		std::string ToLowerAscii(std::string_view text) {
 			std::string lowered(text);
-			std::transform(
-				lowered.begin(),
-				lowered.end(),
+			std::ranges::transform(
+				lowered,
 				lowered.begin(),
 				[](const unsigned char c) {
 					return static_cast<char>(std::tolower(c));
@@ -276,8 +274,8 @@ namespace Unnamed {
 					parentIndex;
 				if (
 					parentIndex >= 0 &&
-					static_cast<uint32_t>(parentIndex) < boneCount &&
-					static_cast<uint32_t>(parentIndex) != boneIndex
+					std::cmp_less(parentIndex, boneCount) &&
+					std::cmp_not_equal(parentIndex, boneIndex)
 				) {
 					const uint32_t parentBoneIndex = static_cast<uint32_t>(
 						parentIndex
@@ -320,8 +318,12 @@ namespace Unnamed {
 		}
 	}
 
-	void SkeletalAnimationComponent::OnTick(const float deltaTime) {
-		if (deltaTime <= 0.0f) {
+	void SkeletalAnimationComponent::OnRenderTick(
+		const float renderDeltaTime,
+		const float interpolationAlpha
+	) {
+		(void)interpolationAlpha;
+		if (renderDeltaTime <= 0.0f) {
 			return;
 		}
 
@@ -337,13 +339,13 @@ namespace Unnamed {
 				continue;
 			}
 
-			layer.playbackTime += deltaTime * layer.desc.speed;
+			layer.playbackTime += renderDeltaTime * layer.desc.speed;
 			ClampLayerPlaybackIfPossible(i);
 			if (layer.transition.active) {
-				layer.transition.elapsedSec += deltaTime;
+				layer.transition.elapsedSec += renderDeltaTime;
 				if (layer.transition.fromSpeed > 0.0f) {
 					layer.transition.fromPlaybackTime +=
-						deltaTime * layer.transition.fromSpeed;
+						renderDeltaTime * layer.transition.fromSpeed;
 					layer.transition.fromPlaybackTime = std::max(
 						0.0f, layer.transition.fromPlaybackTime
 					);
@@ -437,7 +439,9 @@ namespace Unnamed {
 					);
 				}
 				if (stateNode.Has("clipName")) {
-					state.clipName = TrimAscii(stateNode["clipName"].GetString());
+					state.clipName = TrimAscii(
+						stateNode["clipName"].GetString()
+					);
 				}
 				if (stateNode.Has("weight")) {
 					state.weight = stateNode["weight"].GetFloat();
@@ -529,12 +533,12 @@ namespace Unnamed {
 #ifdef _DEBUG
 	void SkeletalAnimationComponent::DrawInspectorImGui() {
 		auto editStringField = [](
-			                     const char* label,
-			                     std::string& value,
-			                     const size_t capacity = 256
-		                     ) {
+			const char*  label,
+			std::string& value,
+			const size_t capacity = 256
+		) {
 			std::vector<char> buffer(capacity, '\0');
-			const size_t copyLength = std::min(value.size(), capacity - 1);
+			const size_t      copyLength = std::min(value.size(), capacity - 1);
 			if (copyLength > 0) {
 				std::memcpy(buffer.data(), value.data(), copyLength);
 			}
@@ -618,7 +622,7 @@ namespace Unnamed {
 			ImGui::PopID();
 		}
 
-		if (removeIndex != static_cast<size_t>(-1)) {
+		if (std::cmp_not_equal(removeIndex, -1)) {
 			(void)RemoveLayer(removeIndex);
 		}
 
@@ -635,7 +639,7 @@ namespace Unnamed {
 			(void)state;
 			stateKeys.emplace_back(stateId);
 		}
-		std::sort(stateKeys.begin(), stateKeys.end());
+		std::ranges::sort(stateKeys);
 
 		std::string removeStateId;
 
@@ -649,14 +653,18 @@ namespace Unnamed {
 			ImGui::PushID(200000 + static_cast<int>(i));
 			ImGui::SeparatorText(("State " + std::to_string(i)).c_str());
 
-			state.stateId = TrimAscii(state.stateId.empty() ? key : state.stateId);
+			state.stateId = TrimAscii(
+				state.stateId.empty() ? key : state.stateId
+			);
 			std::array<char, 256> stateIdBuffer = {};
 			std::memcpy(
 				stateIdBuffer.data(),
 				state.stateId.c_str(),
 				std::min(state.stateId.size(), stateIdBuffer.size() - 1)
 			);
-			if (ImGui::InputText("State ID", stateIdBuffer.data(), stateIdBuffer.size())) {
+			if (ImGui::InputText(
+				"State ID", stateIdBuffer.data(), stateIdBuffer.size()
+			)) {
 				state.stateId = TrimAscii(stateIdBuffer.data());
 			}
 			state.stateId = TrimAscii(state.stateId);
@@ -666,10 +674,14 @@ namespace Unnamed {
 				state.layerIndex = static_cast<size_t>(std::max(0, layerIndex));
 			}
 			(void)editStringField("Clip Name", state.clipName);
-			if (ImGui::DragFloat("Weight", &state.weight, 0.01f, 0.0f, 64.0f, "%.2f")) {
+			if (ImGui::DragFloat(
+				"Weight", &state.weight, 0.01f, 0.0f, 64.0f, "%.2f"
+			)) {
 				state.weight = std::clamp(state.weight, 0.0f, 64.0f);
 			}
-			if (ImGui::DragFloat("Speed", &state.speed, 0.01f, 0.0f, 8.0f, "%.2f")) {
+			if (ImGui::DragFloat(
+				"Speed", &state.speed, 0.01f, 0.0f, 8.0f, "%.2f"
+			)) {
 				state.speed = std::clamp(state.speed, 0.0f, 8.0f);
 			}
 			if (
@@ -709,7 +721,9 @@ namespace Unnamed {
 					}
 				}
 				if (hasDuplicate) {
-					ImGui::TextUnformatted("Warning: duplicate State ID exists.");
+					ImGui::TextUnformatted(
+						"Warning: duplicate State ID exists."
+					);
 				}
 			}
 
@@ -729,8 +743,8 @@ namespace Unnamed {
 		}
 		if (ImGui::Button("Add State")) {
 			AnimationStateDesc state = {};
-			state.stateId = "new_state";
-			int suffix = 1;
+			state.stateId            = "new_state";
+			int suffix               = 1;
 			while (mStateMap.contains(state.stateId)) {
 				state.stateId = "new_state_" + std::to_string(suffix++);
 			}
@@ -741,7 +755,8 @@ namespace Unnamed {
 		}
 	}
 
-	std::vector<std::string> SkeletalAnimationComponent::DebugGetStateIds() const {
+	std::vector<std::string>
+	SkeletalAnimationComponent::DebugGetStateIds() const {
 		std::vector<std::string> ids;
 		ids.reserve(mStateMap.size());
 		for (const auto& [id, state] : mStateMap) {
@@ -752,7 +767,7 @@ namespace Unnamed {
 				ids.emplace_back(normalized);
 			}
 		}
-		std::sort(ids.begin(), ids.end());
+		std::ranges::sort(ids);
 		return ids;
 	}
 #endif
@@ -784,7 +799,7 @@ namespace Unnamed {
 	bool SkeletalAnimationComponent::PlayState(const std::string_view stateId) {
 		auto findState = [&](const std::string_view id) {
 			const std::string trimmedId = TrimAscii(id);
-			auto              it = mStateMap.find(trimmedId);
+			auto              it        = mStateMap.find(trimmedId);
 			if (it != mStateMap.end()) {
 				return it;
 			}
@@ -827,7 +842,7 @@ namespace Unnamed {
 			(void)AddLayer(extra);
 		}
 
-		auto& layer            = mLayers[state.layerIndex];
+		auto& layer = mLayers[state.layerIndex];
 		const AnimationLayerDesc previousLayerDesc = layer.desc;
 		const float previousPlaybackTime = layer.playbackTime;
 		const float previousCachedDuration = layer.cachedClipDuration;
@@ -849,8 +864,8 @@ namespace Unnamed {
 			state.blendSec > 0.0f &&
 			!previousLayerDesc.clipName.empty()
 		) {
-			layer.transition.fromClipName           = previousLayerDesc.clipName;
-			layer.transition.fromPlaybackTime       = std::max(
+			layer.transition.fromClipName     = previousLayerDesc.clipName;
+			layer.transition.fromPlaybackTime = std::max(
 				0.0f, previousPlaybackTime
 			);
 			layer.transition.fromCachedClipDuration = std::max(
@@ -859,7 +874,7 @@ namespace Unnamed {
 			layer.transition.fromSpeed = std::clamp(
 				previousLayerDesc.speed, 0.0f, 8.0f
 			);
-			layer.transition.fromLoop = previousLayerDesc.loop;
+			layer.transition.fromLoop    = previousLayerDesc.loop;
 			layer.transition.durationSec = state.blendSec;
 			layer.transition.elapsedSec  = 0.0f;
 			layer.transition.active      = true;
@@ -872,7 +887,9 @@ namespace Unnamed {
 		return true;
 	}
 
-	bool SkeletalAnimationComponent::HasState(const std::string_view stateId)
+	bool SkeletalAnimationComponent::HasState(
+		const std::string_view stateId
+	)
 	const {
 		const std::string trimmedId = TrimAscii(stateId);
 		if (mStateMap.contains(trimmedId)) {
@@ -888,15 +905,15 @@ namespace Unnamed {
 		}
 
 		const std::string lowered = ToLowerAscii(stripped);
-		for (const auto& [id, state] : mStateMap) {
-			if (
-				ToLowerAscii(TrimAscii(id)) == lowered ||
-				ToLowerAscii(TrimAscii(state.stateId)) == lowered
-			) {
-				return true;
+		return std::ranges::any_of(
+			mStateMap,
+			[&](const auto& entry) {
+				const auto& [id, state] = entry;
+				return
+					ToLowerAscii(TrimAscii(id)) == lowered ||
+					ToLowerAscii(TrimAscii(state.stateId)) == lowered;
 			}
-		}
-		return false;
+		);
 	}
 
 	void SkeletalAnimationComponent::SetClipName(const std::string& clipName) {
@@ -958,12 +975,11 @@ namespace Unnamed {
 	}
 
 	bool SkeletalAnimationComponent::IsPlaying() const noexcept {
-		for (const auto& layer : mLayers) {
-			if (layer.isPlaying) {
-				return true;
+		return std::ranges::any_of(
+			mLayers, [](const auto& layer) {
+				return layer.isPlaying;
 			}
-		}
-		return false;
+		);
 	}
 
 	size_t SkeletalAnimationComponent::GetLayerCount() const noexcept {
@@ -1089,7 +1105,7 @@ namespace Unnamed {
 			);
 			if (!currentClip) {
 				layer.cachedClipDuration = 0.0f;
-				layer.transition.active = false;
+				layer.transition.active  = false;
 				continue;
 			}
 
@@ -1113,16 +1129,18 @@ namespace Unnamed {
 			const float toWeight = std::max(0.0f, layerWeight - fromWeight);
 
 			const auto accumulateClip = [&](
-				                            const AnimationClipAssetData* clip,
-				                            const float playbackTime,
-				                            const bool  loop,
-				                            const float weight
-			                            ) {
+				const AnimationClipAssetData* clip,
+				const float                   playbackTime,
+				const bool                    loop,
+				const float                   weight
+			) {
 				if (!clip || weight <= 1.0e-6f) {
 					return;
 				}
 
-				const float clipDuration = std::max(clip->durationSeconds, 0.0f);
+				const float clipDuration = std::max(
+					clip->durationSeconds, 0.0f
+				);
 				const float sampleTime = ToSampleTime(
 					playbackTime, clipDuration, loop
 				);
@@ -1134,7 +1152,8 @@ namespace Unnamed {
 					trackByBone.emplace(track.boneIndex, &track);
 				}
 
-				for (uint32_t boneIndex = 0; boneIndex < boneCount; ++boneIndex) {
+				for (uint32_t boneIndex = 0; boneIndex < boneCount; ++
+				     boneIndex) {
 					LocalBonePose sampled = bindPose[boneIndex];
 					const auto    it      = trackByBone.find(
 						static_cast<int32_t>(boneIndex)
@@ -1142,7 +1161,8 @@ namespace Unnamed {
 					if (it != trackByBone.end() && it->second) {
 						const auto& track   = *it->second;
 						sampled.translation = SampleVec3Track(
-							track.translationKeys, sampleTime, sampled.translation
+							track.translationKeys, sampleTime,
+							sampled.translation
 						);
 						sampled.rotation = SampleQuatTrack(
 							track.rotationKeys, sampleTime, sampled.rotation
@@ -1160,7 +1180,8 @@ namespace Unnamed {
 						blendedRotation[boneIndex], sampled.rotation, weight
 					);
 
-					blendedScale[boneIndex].weightedSum += sampled.scale * weight;
+					blendedScale[boneIndex].weightedSum += sampled.scale *
+						weight;
 					blendedScale[boneIndex].weightSum += weight;
 				}
 			};
@@ -1172,7 +1193,8 @@ namespace Unnamed {
 				toWeight
 			);
 
-			if (fromWeight > 1.0e-6f && !layer.transition.fromClipName.empty()) {
+			if (fromWeight > 1.0e-6f && !layer.transition.fromClipName.
+			                                   empty()) {
 				const AnimationClipAssetData* fromClip = ResolveClip(
 					mesh, layer.transition.fromClipName
 				);
@@ -1270,8 +1292,8 @@ namespace Unnamed {
 			static_cast<uint32_t>(outBoneMatrices.size())
 		);
 		if (boneCount == 0) {
-			std::fill(
-				outBoneMatrices.begin(), outBoneMatrices.end(), Mat4::identity
+			std::ranges::fill(
+				outBoneMatrices, Mat4::identity
 			);
 			return;
 		}

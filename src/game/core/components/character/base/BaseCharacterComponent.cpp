@@ -1,13 +1,12 @@
 #include "BaseCharacterComponent.h"
 
-#include <algorithm>
 #include <imgui.h>
 
 #include "../state/GameMovementStateMachine.h"
 
 #include "core/ComponentRegistry.h"
-#include "core/json/JsonReader.h"
-#include "core/json/JsonWriter.h"
+#include "core/io/json/JsonReader.h"
+#include "core/io/json/JsonWriter.h"
 #include "core/math/Math.h"
 
 #include "engine/ImGui/Icons.h"
@@ -15,7 +14,6 @@
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/subsystem/console/Log.h"
-
 #include "game/core/collision/kinematic/base/BaseKinematicCollisionResolver.h"
 
 namespace Unnamed {
@@ -27,6 +25,43 @@ namespace Unnamed {
 		const MovementFrameInput& input
 	) {
 		mMoveFrameInput = input;
+	}
+
+	void BaseCharacterComponent::EnqueueDeterministicInput(
+		const DeterministicInputPacket& packet
+	) {
+		mDeterministicInputPacket = packet;
+	}
+
+	void BaseCharacterComponent::EnqueueDeterministicInput(
+		const uint64_t            tick,
+		const float               stepSeconds,
+		const MovementFrameInput& input
+	) {
+		DeterministicInputPacket packet;
+		packet.tick        = tick;
+		packet.stepSeconds = stepSeconds;
+		packet.input       = input;
+		EnqueueDeterministicInput(packet);
+	}
+
+	bool BaseCharacterComponent::TryDequeueDeterministicInput(
+		DeterministicInputPacket& outPacket
+	) {
+		if (!mDeterministicInputPacket.has_value()) {
+			return false;
+		}
+		outPacket = *mDeterministicInputPacket;
+		mDeterministicInputPacket.reset();
+		return true;
+	}
+
+	void BaseCharacterComponent::ClearDeterministicInputQueue() {
+		mDeterministicInputPacket.reset();
+	}
+
+	size_t BaseCharacterComponent::GetDeterministicInputQueueSize() const {
+		return mDeterministicInputPacket.has_value() ? 1ull : 0ull;
 	}
 
 	void BaseCharacterComponent::SimulateStep(
@@ -66,6 +101,7 @@ namespace Unnamed {
 
 	void BaseCharacterComponent::OnAttached() {
 		BaseComponent::OnAttached();
+		ClearDeterministicInputQueue();
 	}
 
 	void BaseCharacterComponent::PrePhysicsTick(const float deltaTime) {
@@ -77,24 +113,7 @@ namespace Unnamed {
 	}
 
 	void BaseCharacterComponent::PostPhysicsTick(const float deltaTime) {
-		TransformComponent* transform = GetTransform();
-		if (!transform) {
-			Error(GetComponentName(), "TransformComponentが見つからないため、移動できません。");
-			return;
-		}
-
-		// 移動は固定ステップでシミュレート
-		mAccumulator               += deltaTime;
-		const float maxAccumulated =
-			mSimStepSec * static_cast<float>(mMaxSubSteps);
-		mAccumulator = std::min(mAccumulator, maxAccumulated);
-
-		uint32_t steps = 0;
-		while (mAccumulator >= mSimStepSec && steps < mMaxSubSteps) {
-			SimulateStep(transform, mMoveFrameInput, mSimStepSec);
-			mAccumulator -= mSimStepSec;
-			steps++;
-		}
+		BaseComponent::PostPhysicsTick(deltaTime);
 	}
 
 	std::string_view BaseCharacterComponent::GetStableName() const {
@@ -109,16 +128,6 @@ namespace Unnamed {
 		const JsonReader collisionEnabled = reader["collisionEnabled"];
 		if (collisionEnabled.Valid()) {
 			mCollisionEnabled = collisionEnabled.GetBool();
-		}
-
-		const JsonReader simStep = reader["simStepSec"];
-		if (simStep.Valid()) {
-			mSimStepSec = std::max(simStep.GetFloat(), 1.0f / 1000.0f);
-		}
-
-		const JsonReader maxSubSteps = reader["maxSubSteps"];
-		if (maxSubSteps.Valid()) {
-			mMaxSubSteps = std::max(1, maxSubSteps.GetInt());
 		}
 
 		const JsonReader boxHalfExtentsHu = reader["boxHalfExtentsHu"];
@@ -138,12 +147,6 @@ namespace Unnamed {
 		writer.Key("collisionEnabled");
 		writer.Write(mCollisionEnabled);
 
-		writer.Key("simStepSec");
-		writer.Write(mSimStepSec);
-
-		writer.Key("maxSubSteps");
-		writer.Write(static_cast<int>(mMaxSubSteps));
-
 		const Vec3 boxHalfExtentsHu = Math::MtoH(mBoxHalfExtents);
 		writer.WriteVec3("boxHalfExtentsHu", boxHalfExtentsHu);
 	}
@@ -154,8 +157,7 @@ namespace Unnamed {
 
 	TransformComponent* BaseCharacterComponent::GetTransform() const {
 		if (Entity* owner = GetOwner()) {
-			auto* transform = owner->GetComponent<TransformComponent>();
-			if (transform) {
+			if (auto* transform = owner->GetComponent<TransformComponent>()) {
 				return transform;
 			}
 			Error(GetComponentName(), "TransformComponentが見つかりませんでした。");
@@ -188,14 +190,6 @@ namespace Unnamed {
 			mVelocity = Math::HtoM(tmp);
 		}
 		ImGui::Checkbox("Collision Enabled", &mCollisionEnabled);
-		ImGui::DragFloat(
-			"Sim Step Sec", &mSimStepSec, 0.0001f, 1.0f / 1000.0f,
-			1.0f / 15.0f, "%.5f"
-		);
-		int maxSubSteps = static_cast<int>(mMaxSubSteps);
-		if (ImGui::DragInt("Max Sub Steps", &maxSubSteps, 1.0f, 1, 16)) {
-			mMaxSubSteps = static_cast<uint32_t>(std::max(1, maxSubSteps));
-		}
 		ImGui::DragFloat3(
 			"Box Half Extents (m)", &mBoxHalfExtents.x, 0.01f, 0.01f,
 			16.0f

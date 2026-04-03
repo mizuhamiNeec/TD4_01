@@ -28,9 +28,12 @@ namespace Unnamed {
 	}
 
 	struct WorldTime {
-		float deltaTime         = 0.0f;
-		float unscaledDeltaTime = 0.0f;
-		float timeSeconds       = 0.0f;
+		float    fixedDeltaTime        = 0.0f;
+		float    renderDeltaTime       = 0.0f;
+		float    renderUnscaledDeltaTime = 0.0f;
+		float    interpolationAlpha    = 0.0f;
+		float    timeSeconds           = 0.0f;
+		uint64_t fixedTickCounter      = 0;
 	};
 
 	class World {
@@ -53,10 +56,17 @@ namespace Unnamed {
 		/// @brief シャットダウンします。
 		virtual void Shutdown();
 
-		/// @brief ティックします。
-		/// @param unscaledDeltaTime 前のフレームからの経過時間（秒）。ゲームの時間スケールの影響を受けません。
-		/// @param deltaTime 前のフレームからの経過時間（秒）
+		/// @brief 互換目的のティック。内部的には FixedTick と RenderTick を順番に実行します。
 		virtual void Tick(float unscaledDeltaTime, float deltaTime);
+
+		/// @brief 固定シミュレーションティックを実行します。
+		virtual void FixedTick(float fixedDeltaTime);
+
+		/// @brief 固定シミュレーション前に、フレーム入力を反映します。
+		virtual void FrameInputTick(float frameDeltaTime);
+
+		/// @brief 描画フレームティックを実行します。
+		virtual void RenderTick(float renderDeltaTime, float interpolationAlpha);
 
 		/// @brief エディタ用のティックします。ゲームの時間スケールの影響を受けません。
 		/// @param unscaledDeltaTime 前のフレームからの経過時間（秒）。ゲームの時間スケールの影響を受けません。
@@ -161,6 +171,8 @@ namespace Unnamed {
 
 		/// @brief ワールド共通のデバッグ描画コンテキストを取得します（const版）。
 		[[nodiscard]] const WorldDebugDraw& GetDebugDraw() const noexcept;
+
+		[[nodiscard]] const WorldTime& GetTime() const noexcept;
 
 	protected:
 		struct PostFxPassOverrides {

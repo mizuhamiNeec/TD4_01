@@ -121,6 +121,28 @@ namespace Unnamed {
 			UiCanvasComponent*  canvas    = nullptr;
 		};
 
+		[[nodiscard]] std::vector<Entity*> CollectActiveEntities(Scene* scene) {
+			std::vector<Entity*> activeEntities = {};
+			if (!scene) {
+				return activeEntities;
+			}
+
+			activeEntities.reserve(scene->GetEntities().size());
+			for (const auto& entity : scene->GetEntities()) {
+				if (!entity || !entity->IsActive()) {
+					continue;
+				}
+				activeEntities.emplace_back(entity.get());
+			}
+			std::ranges::sort(
+				activeEntities,
+				[](const Entity* lhs, const Entity* rhs) {
+					return lhs->GetGuid() < rhs->GetGuid();
+				}
+			);
+			return activeEntities;
+		}
+
 		Vec4 ToVec4(const Gui::Color& color) {
 			return Vec4(color.r, color.g, color.b, color.a);
 		}
@@ -459,33 +481,42 @@ namespace Unnamed {
 	}
 
 	void World::Tick(const float unscaledDeltaTime, const float deltaTime) {
-		// まずは削除予定のエンティティを削除
-		mScene->ProcessPendingEntityDestruction();
+		// 互換ルート: 旧呼び出しは固定1ステップ+描画1ステップとして扱う。
+		FrameInputTick(unscaledDeltaTime);
+		FixedTick(deltaTime);
+		RenderTick(unscaledDeltaTime, 0.0f);
+	}
 
-		mTime.deltaTime         = deltaTime;
-		mTime.unscaledDeltaTime = unscaledDeltaTime;
-		mTime.timeSeconds       += deltaTime;
+	void World::FrameInputTick(const float frameDeltaTime) {
+		if (!mScene) {
+			return;
+		}
+
+		std::vector<Entity*> activeEntities = CollectActiveEntities(mScene.get());
+		for (Entity* entity : activeEntities) {
+			if (!entity) {
+				continue;
+			}
+			(void)entity->FrameInputTick(frameDeltaTime);
+		}
+	}
+
+	void World::FixedTick(const float fixedDeltaTime) {
+		// まずは削除予定のエンティティを削除
+		if (mScene) {
+			mScene->ProcessPendingEntityDestruction();
+		}
+
+		mTime.fixedDeltaTime = fixedDeltaTime;
+		mTime.timeSeconds += fixedDeltaTime;
+		++mTime.fixedTickCounter;
 
 		if (!mScene) {
 			return;
 		}
 
-		std::vector<Entity*> activeEntities;
-		activeEntities.reserve(mScene->GetEntities().size());
-		for (const auto& entity : mScene->GetEntities()) {
-			if (!entity || !entity->IsActive()) {
-				continue;
-			}
-			activeEntities.emplace_back(entity.get());
-		}
-		std::ranges::sort(
-			activeEntities,
-			[](const Entity* lhs, const Entity* rhs) {
-				return lhs->GetGuid() < rhs->GetGuid();
-			}
-		);
-
-		Profiler*  profiler      = ServiceLocator::Get<Profiler>();
+		std::vector<Entity*> activeEntities = CollectActiveEntities(mScene.get());
+		Profiler*            profiler       = ServiceLocator::Get<Profiler>();
 		const auto runPhaseGroup =
 			[&](
 			const TickPhase phase,
@@ -498,18 +529,18 @@ namespace Unnamed {
 				switch (phase) {
 					case TickPhase::PrePhysics
 					: invokedComponentCount += entity->PrePhysicsTick(
-						  deltaTime,
+						  fixedDeltaTime,
 						  group
 					  );
 						break;
 					case TickPhase::Tick: invokedComponentCount += entity->Tick(
-						                      deltaTime,
+						                      fixedDeltaTime,
 						                      group
 					                      );
 						break;
 					case TickPhase::PostPhysics
 					: invokedComponentCount += entity->PostPhysicsTick(
-						  deltaTime,
+						  fixedDeltaTime,
 						  group
 					  );
 						break;
@@ -545,6 +576,63 @@ namespace Unnamed {
 		for (const TickGroup group : kTickGroupOrder) {
 			runPhaseGroup(TickPhase::PostPhysics, group);
 		}
+	}
+
+	void World::RenderTick(
+		const float renderDeltaTime,
+		const float interpolationAlpha
+	) {
+		mTime.renderDeltaTime         = std::max(0.0f, renderDeltaTime);
+		mTime.renderUnscaledDeltaTime = std::max(0.0f, renderDeltaTime);
+		mTime.interpolationAlpha = std::clamp(interpolationAlpha, 0.0f, 1.0f);
+
+		if (!mScene) {
+			if (mPhysicsEngine) {
+				mPhysicsEngine->EndFrame();
+			}
+			return;
+		}
+
+		std::vector<Entity*> activeEntities = CollectActiveEntities(mScene.get());
+		for (Entity* entity : activeEntities) {
+			if (!entity) {
+				continue;
+			}
+			(void)entity->RenderTick(
+				mTime.renderDeltaTime,
+				mTime.interpolationAlpha
+			);
+		}
+
+		// Runtime UI は描画フレームティック側でのみ進める。
+		InputSystem* inputSystem = ServiceLocator::Get<InputSystem>();
+		for (Entity* entity : activeEntities) {
+			if (!entity) {
+				continue;
+			}
+			auto* canvas = entity->GetComponent<UiCanvasComponent>();
+			if (!canvas || !canvas->IsActive()) {
+				continue;
+			}
+			if (!canvas->EnsureRuntimeLoaded()) {
+				continue;
+			}
+			Gui::UiRoot* runtimeRoot = canvas->GetRuntimeRoot();
+			if (!runtimeRoot) {
+				continue;
+			}
+
+			Vec2 runtimeCanvasSize = canvas->GetPixelSize();
+			if (canvas->GetSpaceMode() == UI_CANVAS_SPACE_MODE::SCREEN &&
+			    inputSystem) {
+				const Vec2 viewportSize = inputSystem->GetMouseClientViewportSize();
+				if (viewportSize.x > 0.0f && viewportSize.y > 0.0f) {
+					runtimeCanvasSize = viewportSize;
+				}
+			}
+			runtimeRoot->SetRootSize(runtimeCanvasSize.x, runtimeCanvasSize.y);
+			canvas->TickRuntime(mTime.renderDeltaTime);
+		}
 
 		auto boxes = mPhysicsEngine->GetDebugBVHBoxes();
 		for (const auto& [center, halfSize] : boxes) {
@@ -556,30 +644,29 @@ namespace Unnamed {
 			);
 		}
 
-		for (const auto& entity : activeEntities) {
+		for (const Entity* entity : activeEntities) {
 			const auto transform = entity->GetComponent<TransformComponent>();
-			if (transform) {
-				Mat4             worldMat = transform->WorldMat();
-				const Vec3       pos      = worldMat.GetTranslate();
-				const Quaternion quat     = worldMat.Inverse().ToQuaternion();
-				GetDebugDraw().DrawAxis(
-					pos, quat
-				);
+			if (!transform) {
+				continue;
 			}
+			Mat4             worldMat = transform->WorldMat();
+			const Vec3       pos      = worldMat.GetTranslate();
+			const Quaternion quat     = worldMat.Inverse().ToQuaternion();
+			GetDebugDraw().DrawAxis(pos, quat);
 		}
 
 		mPhysicsEngine->EndFrame();
 	}
 
 	void World::EditorTick(const float unscaledDeltaTime) {
-		// まずは削除予定のエンティティを削除
-		mScene->ProcessPendingEntityDestruction();
-
-		mTime.unscaledDeltaTime = unscaledDeltaTime;
-
 		if (!mScene) {
 			return;
 		}
+
+		// まずは削除予定のエンティティを削除
+		mScene->ProcessPendingEntityDestruction();
+
+		mTime.renderUnscaledDeltaTime = unscaledDeltaTime;
 
 		for (const auto& entity : mScene->GetEntities()) {
 			if (!entity || !entity->IsActive()) {
@@ -837,7 +924,6 @@ namespace Unnamed {
 				}
 			}
 			runtimeRoot->SetRootSize(runtimeCanvasSize.x, runtimeCanvasSize.y);
-			entry.canvas->TickRuntime(mTime.deltaTime);
 			runtimeRoot->UpdateLayout();
 
 			const bool canProcessInput =
@@ -1197,6 +1283,10 @@ namespace Unnamed {
 
 	const WorldDebugDraw& World::GetDebugDraw() const noexcept {
 		return mDebugDraw;
+	}
+
+	const WorldTime& World::GetTime() const noexcept {
+		return mTime;
 	}
 
 	bool World::BuildUiInputCamera(Render::RenderCameraInput& outCamera) const {

@@ -3,8 +3,10 @@
 #include <string_view>
 #include <vector>
 
-#include "core/json/JsonReader.h"
-#include "core/json/JsonWriter.h"
+namespace Unnamed {
+	class JsonReader;
+	class JsonWriter;
+}
 
 namespace Unnamed::Gui {
 	struct UiDrawCommand;

@@ -1,5 +1,8 @@
 #include "UiButtonBehaviorComponent.h"
 
+#include "core/io/json/JsonReader.h"
+#include "core/io/json/JsonWriter.h"
+
 #include "engine/gui/UiWidget.h"
 
 namespace Unnamed::Gui {

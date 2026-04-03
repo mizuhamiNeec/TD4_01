@@ -47,9 +47,9 @@ namespace Unnamed::Gui {
 			bool                      pendingExternal = false;
 		};
 
-		static std::string NormalizePath(std::string path);
-		bool ReloadDocumentFromAsset(ManagedDocument& managed);
-		ManagedDocument* FindManaged(const std::string& path);
+		static std::string     NormalizePath(std::string path);
+		bool                   ReloadDocumentFromAsset(ManagedDocument& managed) const;
+		ManagedDocument*       FindManaged(const std::string& path);
 		const ManagedDocument* FindManaged(const std::string& path) const;
 
 		AssetManager* mAssetManager = nullptr;

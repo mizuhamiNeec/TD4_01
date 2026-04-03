@@ -2,6 +2,7 @@
 
 #include "core/assets/AssetManager.h"
 #include "core/assets/types/UiDocumentAssetData.h"
+#include "core/io/json/JsonReader.h"
 #include "core/string/StrUtil.h"
 
 #include "engine/unnamed/subsystem/console/Log.h"
@@ -168,7 +169,7 @@ namespace Unnamed::Gui {
 		return StrUtil::NormalizePath(std::move(path));
 	}
 
-	bool UiDocumentManager::ReloadDocumentFromAsset(ManagedDocument& managed) {
+	bool UiDocumentManager::ReloadDocumentFromAsset(ManagedDocument& managed) const {
 		if (!mAssetManager || managed.assetId == kInvalidAssetID) {
 			return false;
 		}

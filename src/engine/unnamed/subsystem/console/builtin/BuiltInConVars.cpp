@@ -214,6 +214,19 @@ namespace Unnamed {
 			"Frame rate limiter. 0 = unlimited."
 		);
 
+		static ConVar<std::string> demo_mismatch_policy(
+			"demo_mismatch_policy", "continue", FCVAR::ARCHIVE,
+			"Demo mismatch handling policy: continue | stop."
+		);
+		static ConVar<int> demo_mismatch_log_interval(
+			"demo_mismatch_log_interval", 120, FCVAR::ARCHIVE,
+			"Demo mismatch logging interval in ticks after first 16 logs.",
+			true,
+			1,
+			true,
+			10000
+		);
+
 		//---------------------------------------------------------------------
 		// Debug
 		//---------------------------------------------------------------------
@@ -245,6 +258,14 @@ namespace Unnamed {
 		static ConVar sv_maxvelocity(
 			"sv_maxvelocity", 3500.0f, FCVAR::REPLICATED,
 			"Maximum speed any ballistically moving object is allowed to attain per axis."
+		);
+		static ConVar sv_tickrate(
+			"sv_tickrate", 66.0f, FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"World fixed simulation tickrate.",
+			true,
+			1.0f,
+			true,
+			1000.0f
 		);
 
 		// Cheat
@@ -354,6 +375,24 @@ namespace Unnamed {
 			"park_doublejump_velocity", 300.0f,
 			FCVAR::NOTIFY | FCVAR::REPLICATED,
 			"Parkour double jump velocity in HU/s."
+		);
+
+		static ConVar park_footstep_minspeed(
+			"park_footstep_minspeed", 80.0f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Minimum speed in HU/s required to emit movement.footstep cue."
+		);
+
+		static ConVar park_footstep_stride(
+			"park_footstep_stride", 100.0f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Stride distance in HU used for movement.footstep cue cadence."
+		);
+
+		static ConVar park_footstep_maxspeed(
+			"park_footstep_maxspeed", 600.0f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Maximum speed in HU/s considered for movement.footstep cue cadence."
 		);
 
 		static ConVar park_slide_minspeed(

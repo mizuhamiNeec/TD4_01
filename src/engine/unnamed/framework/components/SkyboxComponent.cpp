@@ -7,8 +7,8 @@
 #include "core/ComponentRegistry.h"
 #include "core/assets/AssetManager.h"
 #include "core/assets/AssetType.h"
-#include "core/json/JsonReader.h"
-#include "core/json/JsonWriter.h"
+#include "core/io/json/JsonReader.h"
+#include "core/io/json/JsonWriter.h"
 #include "core/string/StrUtil.h"
 
 #include "engine/ImGui/Icons.h"
@@ -25,14 +25,6 @@ namespace Unnamed {
 			const JsonReader value = reader[key];
 			return value.Valid() ? value.GetFloat() : fallback;
 		}
-	}
-
-	std::string_view SkyboxComponent::GetStableName() const {
-		return "engine.Skybox";
-	}
-
-	std::string_view SkyboxComponent::GetComponentName() const {
-		return "Skybox";
 	}
 
 	void SkyboxComponent::SetTexturePath(const std::string& path) {
@@ -75,6 +67,14 @@ namespace Unnamed {
 
 	AssetID SkyboxComponent::GetTextureAssetId() const noexcept {
 		return mTextureAssetId;
+	}
+
+	std::string_view SkyboxComponent::GetStableName() const {
+		return "engine.Skybox";
+	}
+
+	std::string_view SkyboxComponent::GetComponentName() const {
+		return "Skybox";
 	}
 
 	void SkyboxComponent::Deserialize(const JsonReader& reader) {

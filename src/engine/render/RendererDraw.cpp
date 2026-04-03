@@ -2,6 +2,8 @@
 
 #include <unordered_map>
 
+#include "core/hash/HashBuilder.h"
+
 namespace Unnamed::Render {
 	bool DrawKey::operator==(const DrawKey& other) const {
 		return pso == other.pso && rootSig == other.rootSig &&
@@ -11,19 +13,14 @@ namespace Unnamed::Render {
 	}
 
 	size_t DrawKeyHash::operator()(const DrawKey& key) const noexcept {
-		size_t hash = 0;
-		auto   mix  = [&hash](const size_t value) {
-			hash ^= value + 0x9e3779b97f4a7c15ULL + (hash << 6) + (hash >> 2);
-		};
-
-		mix(reinterpret_cast<size_t>(key.pso));
-		mix(reinterpret_cast<size_t>(key.rootSig));
-		mix(key.vbv.BufferLocation);
-		mix(key.ibv.BufferLocation);
-		mix(static_cast<size_t>(key.rtvFormat));
-		mix(static_cast<size_t>(key.dsvFormat));
-
-		return hash;
+		HashBuilder hash = {};
+		hash.AddPointer(key.pso);
+		hash.AddPointer(key.rootSig);
+		hash.AddValue(key.vbv.BufferLocation);
+		hash.AddValue(key.ibv.BufferLocation);
+		hash.AddEnum(key.rtvFormat);
+		hash.AddEnum(key.dsvFormat);
+		return hash.Value();
 	}
 
 	std::vector<DrawBatch> BuildDrawBatchesFromItems(

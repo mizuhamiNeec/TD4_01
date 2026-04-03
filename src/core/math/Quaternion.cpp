@@ -113,8 +113,7 @@ Quaternion Quaternion::EulerDegrees(
 	return Euler(x * Math::deg2Rad, y * Math::deg2Rad, z * Math::deg2Rad);
 }
 
-Quaternion Quaternion::AxisAngle(const Vec3& axis, const float angleDeg) {
-	const float angleRad = angleDeg;
+Quaternion Quaternion::AxisAngle(const Vec3& axis, const float angleRad) {
 	return Quaternion(axis, angleRad);
 }
 

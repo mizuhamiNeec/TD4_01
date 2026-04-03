@@ -102,10 +102,10 @@ struct Quaternion {
 	/**
 	 * @brief 軸と角度からクォータニオンを生成する
 	 * @param axis 回転軸
-	 * @param angleDeg 回転角（度数法）
+	 * @param angleRad 回転角（ラジアン）
 	 * @return クォータニオン
 	 */
-	static Quaternion AxisAngle(const Vec3& axis, float angleDeg);
+	static Quaternion AxisAngle(const Vec3& axis, float angleRad);
 
 	/**
 	 * @brief 前方向と上方向から回転を生成する

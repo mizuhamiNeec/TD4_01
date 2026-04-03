@@ -4,7 +4,7 @@
 
 #include "core/assets/AssetManager.h"
 #include "core/assets/types/MaterialAssetData.h"
-#include "core/json/JsonReader.h"
+#include "core/io/json/JsonReader.h"
 #include "core/path/PathUtil.h"
 #include "core/string/StrUtil.h"
 

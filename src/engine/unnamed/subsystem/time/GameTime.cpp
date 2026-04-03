@@ -1,5 +1,3 @@
-#include <algorithm>
-
 #include <engine/unnamed/subsystem/time/GameTime.h>
 
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
@@ -53,8 +51,7 @@ void GameTime::EndFrame() {
 /// @return 前フレームからの経過時間（秒単位）
 template <typename T>
 T GameTime::DeltaTime() {
-	const double clamped = std::min(mDeltaTime, 1.0 / 60.0);
-	return static_cast<T>(clamped);
+	return static_cast<T>(mDeltaTime);
 }
 
 /// @brief タイムスケールが適用された前フレームからの経過時間を取得します。
@@ -62,11 +59,7 @@ T GameTime::DeltaTime() {
 /// @return タイムスケールが適用された前フレームからの経過時間（秒単位）
 template <typename T>
 T GameTime::ScaledDeltaTime() {
-	const double clamped = std::min(
-		mScaledDeltaTime * TimeScale(),
-		1.0 / 60.0 * TimeScale()
-	);
-	return static_cast<T>(clamped);
+	return static_cast<T>(mScaledDeltaTime);
 }
 
 template double GameTime::DeltaTime<double>();

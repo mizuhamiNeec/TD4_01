@@ -124,10 +124,9 @@ namespace Unnamed {
 		const float deltaPitch = DeltaAngleDegrees(mPrevLookDeg.x, lookNow.x);
 		const float deltaYaw   = DeltaAngleDegrees(mPrevLookDeg.y, lookNow.y);
 		mPrevLookDeg           = lookNow;
-
-		// deltaPitch/deltaYaw are already frame deltas; applying dt again causes instability.
-		mPitch += deltaPitch * mSwayAmount;
-		mYaw += deltaYaw * mSwayAmount;
+		
+		mPitch += deltaPitch * mSwayAmount * renderDeltaTime;
+		mYaw += deltaYaw * mSwayAmount * renderDeltaTime;
 
 		mPitch = std::lerp(mPitch, 0.0f, attenuationT); // ピッチの減衰
 		mYaw   = std::lerp(mYaw, 0.0f, attenuationT);   // ヨーの減衰

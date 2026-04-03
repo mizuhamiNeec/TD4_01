@@ -2,14 +2,14 @@
 
 #include "components/UiPanelStyleComponent.h"
 
-	namespace Unnamed::Gui {
+namespace Unnamed::Gui {
 	UiPanel::UiPanel() {
 		(void)GetOrAddComponent<UiPanelStyleComponent>();
 	}
 
 	UiPanel::~UiPanel() = default;
 
-	void UiPanel::SetBackgroundColor(const Color& color) {
+	void UiPanel::SetBackgroundColor(const Color& color) const {
 		if (auto* style = GetStyleComponent()) {
 			style->SetBackgroundColor(color);
 		}
@@ -25,7 +25,7 @@
 		return fallback;
 	}
 
-	void UiPanel::SetCornerRadius(const float radius) {
+	void UiPanel::SetCornerRadius(const float radius) const {
 		if (auto* style = GetStyleComponent()) {
 			style->SetCornerRadius(radius);
 		}

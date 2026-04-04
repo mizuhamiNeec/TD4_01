@@ -1,7 +1,7 @@
 #pragma once
 
 #include <json.hpp>
-#include <optional>
+#include <core/containers/RingBuffer.h>
 
 #include "GrappleMotor.h"
 
@@ -16,6 +16,9 @@ namespace Unnamed {
 	                                       public
 	                                       ICharacterActionInputReceiver {
 	public:
+		/// @brief deterministicアクション入力キューの最大保持件数です。
+		static constexpr size_t kDeterministicActionInputQueueCapacity = 128;
+
 		struct WallRunRuntime {
 			bool  active            = false;
 			Vec3  normal            = Vec3::zero;
@@ -127,6 +130,13 @@ namespace Unnamed {
 		void RegisterMovementStates(
 			GameMovementStateMachine& stateMachine
 		) override;
+
+		/// @brief Parkour移動の初期状態IDを返します。
+		[[nodiscard]] std::string GetInitialStateName() const override;
+
+		/// @brief ノークリップ解除後に戻るParkour空中状態IDを返します。
+		[[nodiscard]] std::string GetAirStateNameForTransitions() const override;
+
 		void OnAfterCoreCueDispatch(
 			std::string_view          previousStateName,
 			std::string_view          currentStateName,
@@ -154,7 +164,10 @@ namespace Unnamed {
 			CharacterActionFrameInput input       = {};
 		};
 
-		std::optional<DeterministicActionInputPacket>
-		mDeterministicActionInputPacket;
+		RingBuffer<
+			DeterministicActionInputPacket,
+			kDeterministicActionInputQueueCapacity
+		>
+		mDeterministicActionInputQueue;
 	};
 }

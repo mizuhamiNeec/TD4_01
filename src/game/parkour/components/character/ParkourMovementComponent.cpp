@@ -7,6 +7,8 @@
 #include "core/ComponentRegistry.h"
 
 // ReSharper disable once CppUnusedIncludeDirective
+#include "core/string/StrUtil.h"
+
 #include "engine/ImGui/Icons.h"
 #include "engine/physics/core/Physics.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
@@ -17,6 +19,7 @@
 #include "game/core/collision/kinematic/base/BaseKinematicCollisionResolver.h"
 #include "game/core/components/character/state/GameMovementStateMachine.h"
 #include "game/core/components/character/state/interface/IMovementState.h"
+#include "game/core/components/character/state/MovementStateIds.h"
 #include "game/core/replay/ReplayHash.h"
 
 #include "state/ParkourMovementStates.h"
@@ -83,9 +86,9 @@ namespace Unnamed {
 		const MovementFrameInput& input,
 		const float               stepSeconds
 	) {
-		if (mDeterministicActionInputPacket.has_value()) {
-			mActionFrameInput = mDeterministicActionInputPacket->input;
-			mDeterministicActionInputPacket.reset();
+		DeterministicActionInputPacket actionPacket = {};
+		if (mDeterministicActionInputQueue.Pop(actionPacket)) {
+			mActionFrameInput = actionPacket.input;
 		} else {
 			mActionFrameInput = {};
 		}
@@ -98,15 +101,15 @@ namespace Unnamed {
 		const float                      stepSeconds,
 		const CharacterActionFrameInput& input
 	) {
-		mDeterministicActionInputPacket = DeterministicActionInputPacket{
+		mDeterministicActionInputQueue.Push(DeterministicActionInputPacket{
 			.tick        = tick,
 			.stepSeconds = stepSeconds,
 			.input       = input
-		};
+		});
 	}
 
 	void ParkourMovementComponent::ClearDeterministicActionInputQueue() {
-		mDeterministicActionInputPacket.reset();
+		mDeterministicActionInputQueue.Clear();
 	}
 
 	const CharacterActionFrameInput&
@@ -146,31 +149,6 @@ namespace Unnamed {
 		ImGui::Text(
 			"Vault: %s (cool %.2f s)", mRuntime.vault.active ? "true" : "false",
 			mRuntime.vault.cooldown
-		);
-		ImGui::Text(
-			"GrapplePressed: %s", mActionFrameInput.grapple.grapplePressed ?
-				                      "true" :
-				                      "false"
-		);
-		ImGui::Text(
-			"GrappleHeld: %s", mActionFrameInput.grapple.grappleHeld ?
-				                   "true" :
-				                   "false"
-		);
-		ImGui::Text(
-			"GrappleReleased: %s", mActionFrameInput.grapple.grappleReleased ?
-				                       "true" :
-				                       "false"
-		);
-		ImGui::Text(
-			"ReelInHeld: %s", mActionFrameInput.grapple.reelInHeld ?
-				                  "true" :
-				                  "false"
-		);
-		ImGui::Text(
-			"ReelOutHeld: %s", mActionFrameInput.grapple.reelOutHeld ?
-				                   "true" :
-				                   "false"
 		);
 	}
 #endif
@@ -652,16 +630,16 @@ namespace Unnamed {
 		if (context.input.crouchPressed) {
 			const float speedHu = GetHorizontalSpeedHu(context.velocity);
 			if (ShouldSlideFromSpeed(speedHu)) {
-				return "ParkourSlideMove";
+				return std::string(MovementStateIds::ParkourSlide);
 			}
-			return "ParkourDuckMove";
+			return std::string(MovementStateIds::ParkourDuck);
 		}
 
 		if (!CanStandAt(context)) {
-			return "ParkourDuckMove";
+			return std::string(MovementStateIds::ParkourDuck);
 		}
 
-		return "ParkourGroundMove";
+		return std::string(MovementStateIds::ParkourGround);
 	}
 
 	bool ParkourMovementComponent::TryStartBlink(MovementContext& context) {
@@ -727,7 +705,7 @@ namespace Unnamed {
 				mConsole->GetConVarValueOr("sv_jumpsnapdisabletime", 0.1f) :
 				0.1f
 		);
-		context.requestedState = "ParkourBlinkMove";
+		context.requestedState = MovementStateIds::ParkourBlink;
 		return true;
 	}
 
@@ -764,7 +742,7 @@ namespace Unnamed {
 
 		if (t >= 1.0f) {
 			mRuntime.blink.active  = false;
-			context.requestedState = "ParkourAirMove";
+			context.requestedState = MovementStateIds::ParkourAir;
 		}
 		return true;
 	}
@@ -917,7 +895,7 @@ namespace Unnamed {
 				                         ) :
 				                         50.0f;
 			context.velocity       += along * Math::HtoM(startBoost);
-			context.requestedState = "ParkourWallRunMove";
+			context.requestedState = MovementStateIds::ParkourWallRun;
 			return true;
 		}
 
@@ -935,7 +913,7 @@ namespace Unnamed {
 		const auto* physics = context.resolver->GetPhysics();
 		if (!physics) {
 			EndWallRun();
-			context.requestedState = "ParkourAirMove";
+			context.requestedState = MovementStateIds::ParkourAir;
 			return false;
 		}
 
@@ -947,7 +925,7 @@ namespace Unnamed {
 			                        2.5f;
 		if (mRuntime.wallRun.time >= maxTime) {
 			EndWallRun();
-			context.requestedState = "ParkourAirMove";
+			context.requestedState = MovementStateIds::ParkourAir;
 			return false;
 		}
 
@@ -971,7 +949,7 @@ namespace Unnamed {
 			&wallHit
 		)) {
 			EndWallRun();
-			context.requestedState = "ParkourAirMove";
+			context.requestedState = MovementStateIds::ParkourAir;
 			return false;
 		}
 
@@ -979,7 +957,7 @@ namespace Unnamed {
 		if (newNormal.IsZero() || newNormal.Dot(mRuntime.wallRun.normal) <
 		    0.5f) {
 			EndWallRun();
-			context.requestedState = "ParkourAirMove";
+			context.requestedState = MovementStateIds::ParkourAir;
 			return false;
 		}
 
@@ -998,7 +976,7 @@ namespace Unnamed {
 
 		if (context.input.crouchPressed || context.isGrounded) {
 			EndWallRun();
-			context.requestedState = "ParkourAirMove";
+			context.requestedState = MovementStateIds::ParkourAir;
 			return false;
 		}
 
@@ -1011,7 +989,7 @@ namespace Unnamed {
 			                         200.0f;
 		if (Math::MtoH(velHorz.Length()) < minSpeedHu * 0.5f) {
 			EndWallRun();
-			context.requestedState = "ParkourAirMove";
+			context.requestedState = MovementStateIds::ParkourAir;
 			return false;
 		}
 
@@ -1030,7 +1008,7 @@ namespace Unnamed {
 					(wallSide < 0.0f && context.input.moveAxis.x < -0.5f)
 				) {
 					EndWallRun();
-					context.requestedState = "ParkourAirMove";
+					context.requestedState = MovementStateIds::ParkourAir;
 					return false;
 				}
 			}
@@ -1063,7 +1041,7 @@ namespace Unnamed {
 						0.1f
 				);
 				EndWallRun();
-				context.requestedState = "ParkourAirMove";
+				context.requestedState = MovementStateIds::ParkourAir;
 				return false;
 			}
 		} else {
@@ -1343,7 +1321,7 @@ namespace Unnamed {
 		context.supportEntityGuid     = 0;
 		context.supportLinearVelocity = Vec3::zero;
 		context.supportStepDelta      = Vec3::zero;
-		context.requestedState        = "ParkourSpeedVaultMove";
+		context.requestedState        = MovementStateIds::ParkourSpeedVault;
 		return true;
 	}
 
@@ -1424,7 +1402,14 @@ namespace Unnamed {
 		GameMovementStateMachine& stateMachine
 	) {
 		RegisterParkourMovementStates(stateMachine);
-		mStateMachine->ChangeState("ParkourAirMove");
+	}
+
+	std::string ParkourMovementComponent::GetInitialStateName() const {
+		return std::string(MovementStateIds::ParkourAir);
+	}
+
+	std::string ParkourMovementComponent::GetAirStateNameForTransitions() const {
+		return std::string(MovementStateIds::ParkourAir);
 	}
 
 	void ParkourMovementComponent::OnAfterCoreCueDispatch(
@@ -1435,7 +1420,7 @@ namespace Unnamed {
 		const bool  isGrounded,
 		const float stepSeconds
 	) {
-		const std::string loweredState         = ToLowerCopy(currentStateName);
+		const std::string loweredState         = StrUtil::ToLowerCase(currentStateName.data());
 		const bool        isParkourGroundState = loweredState ==
 		                                         kStateParkourGroundMoveLower;
 		const bool isWallRunState = loweredState == "parkourwallrunmove";

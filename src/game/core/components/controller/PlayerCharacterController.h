@@ -55,8 +55,6 @@ namespace Unnamed {
 		float                     mLastViewYawDeg                   = 0.0f;
 		float                     mLastViewPitchDeg                 = 0.0f;
 		uint32_t                  mQueuedSprintPressCount           = 0;
-		bool                      mQueuedGrapplePressed             = false;
-		bool                      mQueuedGrappleReleased            = false;
 		uint32_t                  mQueuedPrimaryPressedCount        = 0;
 		uint32_t                  mQueuedPrimaryReleasedCount       = 0;
 		uint32_t                  mQueuedSecondaryPressedCount      = 0;

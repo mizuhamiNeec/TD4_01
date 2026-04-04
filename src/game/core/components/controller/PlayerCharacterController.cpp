@@ -83,8 +83,6 @@ namespace Unnamed {
 
 		mFixedTickCounter                 = 0;
 		mQueuedSprintPressCount           = 0;
-		mQueuedGrapplePressed             = false;
-		mQueuedGrappleReleased            = false;
 		mQueuedPrimaryPressedCount        = 0;
 		mQueuedPrimaryReleasedCount       = 0;
 		mQueuedSecondaryPressedCount      = 0;
@@ -104,8 +102,6 @@ namespace Unnamed {
 		}
 		mInput                            = nullptr;
 		mQueuedSprintPressCount           = 0;
-		mQueuedGrapplePressed             = false;
-		mQueuedGrappleReleased            = false;
 		mQueuedPrimaryPressedCount        = 0;
 		mQueuedPrimaryReleasedCount       = 0;
 		mQueuedSecondaryPressedCount      = 0;
@@ -149,8 +145,6 @@ namespace Unnamed {
 		if (playbackMode && !mWasPlaybackMode) {
 			mFixedTickCounter             = demoManager->GetPlaybackStartTick();
 			mQueuedSprintPressCount       = 0;
-			mQueuedGrapplePressed         = false;
-			mQueuedGrappleReleased        = false;
 			mQueuedPrimaryPressedCount    = 0;
 			mQueuedPrimaryReleasedCount   = 0;
 			mQueuedSecondaryPressedCount  = 0;
@@ -207,8 +201,6 @@ namespace Unnamed {
 				playbackMode                  = false;
 				mWasPlaybackMode              = false;
 				mQueuedSprintPressCount       = 0;
-				mQueuedGrapplePressed         = false;
-				mQueuedGrappleReleased        = false;
 				mQueuedPrimaryPressedCount    = 0;
 				mQueuedPrimaryReleasedCount   = 0;
 				mQueuedSecondaryPressedCount  = 0;
@@ -285,12 +277,6 @@ namespace Unnamed {
 				mQueuedSprintPressCount + 1u,
 				64u
 			);
-		}
-		if (mInput->IsPressed("grapple")) {
-			mQueuedGrapplePressed = true;
-		}
-		if (mInput->IsReleased("grapple")) {
-			mQueuedGrappleReleased = true;
 		}
 		if (mInput->IsPressed("attack1")) {
 			mQueuedPrimaryPressedCount = std::min(
@@ -493,12 +479,6 @@ namespace Unnamed {
 			return input;
 		}
 
-		input.grapple.grapplePressed  = mQueuedGrapplePressed;
-		input.grapple.grappleHeld     = mInput->IsHeld("grapple");
-		input.grapple.grappleReleased = mQueuedGrappleReleased;
-		input.grapple.reelInHeld      = mInput->IsHeld("reelin");
-		input.grapple.reelOutHeld     = mInput->IsHeld("reelout");
-
 		input.weapon.primary.pressed  = mQueuedPrimaryPressedCount > 0;
 		input.weapon.primary.held     = mInput->IsHeld("attack1");
 		input.weapon.primary.released = mQueuedPrimaryReleasedCount > 0;
@@ -534,16 +514,13 @@ namespace Unnamed {
 			--mQueuedCyclePrevPressedCount;
 		}
 
-		mQueuedGrapplePressed  = false;
-		mQueuedGrappleReleased = false;
-
 		return input;
 	}
 
 	DemoTickCommand PlayerCharacterController::BuildPlayerTickCommand(
 		const uint64_t tick
 	) {
-		DemoTickCommand command = {};
+		DemoTickCommand command;
 		command.tick = tick;
 		command.subjectEntityGuid = GetOwner() ? GetOwner()->GetGuid() : 0;
 		command.commandType = DEMO_COMMAND_TYPE::PLAYER_INPUT;
@@ -629,27 +606,6 @@ namespace Unnamed {
 		ImGui::Checkbox(
 			"Weapon Cycle Prev Pressed",
 			&mDebugActionFrameInput.weapon.cyclePrevPressed
-		);
-		ImGui::Separator();
-		ImGui::Checkbox(
-			"Grapple Pressed",
-			&mDebugActionFrameInput.grapple.grapplePressed
-		);
-		ImGui::Checkbox(
-			"Grapple Held",
-			&mDebugActionFrameInput.grapple.grappleHeld
-		);
-		ImGui::Checkbox(
-			"Grapple Released",
-			&mDebugActionFrameInput.grapple.grappleReleased
-		);
-		ImGui::Checkbox(
-			"ReelIn Held",
-			&mDebugActionFrameInput.grapple.reelInHeld
-		);
-		ImGui::Checkbox(
-			"ReelOut Held",
-			&mDebugActionFrameInput.grapple.reelOutHeld
 		);
 		ImGui::EndDisabled();
 	}

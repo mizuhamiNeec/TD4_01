@@ -2,6 +2,8 @@
 
 #include <imgui.h>
 
+#include <game/core/collision/kinematic/base/BaseKinematicCollisionResolver.h>
+
 #include "../state/GameMovementStateMachine.h"
 
 #include "core/ComponentRegistry.h"

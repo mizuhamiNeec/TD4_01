@@ -69,7 +69,7 @@ namespace Unnamed {
 						                     reader, outFile
 					                     );
 						break;
-					case kDemoChunkCmds: parseOk = ReadCmdsChunk(
+					case kDemoChunkCmds: parseOk = ReadCommandsChunk(
 						                     reader, outFile
 					                     );
 						break;
@@ -180,7 +180,7 @@ namespace Unnamed {
 			return true;
 		}
 
-		[[nodiscard]] static bool ReadCmdsChunk(
+		[[nodiscard]] static bool ReadCommandsChunk(
 			BinaryReader& reader, DemoFileV2& outFile
 		) {
 			uint32_t count = 0;
@@ -233,18 +233,33 @@ namespace Unnamed {
 					(packed.flags & kDemoMoveFlagSprintPressed) != 0u;
 				command.playerInput.movement.noclip =
 					(packed.flags & kDemoMoveFlagNoclip) != 0u;
-				command.playerInput.action.grapple.grapplePressed =
-					(packed.actionFlags & kDemoActionFlagGrapplePressed) !=
-					0u;
-				command.playerInput.action.grapple.grappleHeld =
-					(packed.actionFlags & kDemoActionFlagGrappleHeld) != 0u;
-				command.playerInput.action.grapple.grappleReleased =
-					(packed.actionFlags & kDemoActionFlagGrappleReleased) !=
-					0u;
-				command.playerInput.action.grapple.reelInHeld =
-					(packed.actionFlags & kDemoActionFlagReelInHeld) != 0u;
-				command.playerInput.action.grapple.reelOutHeld =
-					(packed.actionFlags & kDemoActionFlagReelOutHeld) != 0u;
+				command.playerInput.action.weapon.primary.pressed =
+				(packed.actionFlags &
+				 kDemoActionFlagWeaponPrimaryPressed) != 0u;
+				command.playerInput.action.weapon.primary.held =
+				(packed.actionFlags &
+				 kDemoActionFlagWeaponPrimaryHeld) != 0u;
+				command.playerInput.action.weapon.primary.released =
+				(packed.actionFlags &
+				 kDemoActionFlagWeaponPrimaryReleased) != 0u;
+				command.playerInput.action.weapon.secondary.pressed =
+				(packed.actionFlags &
+				 kDemoActionFlagWeaponSecondaryPressed) != 0u;
+				command.playerInput.action.weapon.secondary.held =
+				(packed.actionFlags &
+				 kDemoActionFlagWeaponSecondaryHeld) != 0u;
+				command.playerInput.action.weapon.secondary.released =
+				(packed.actionFlags &
+				 kDemoActionFlagWeaponSecondaryReleased) != 0u;
+				command.playerInput.action.weapon.reloadPressed =
+				(packed.actionFlags &
+				 kDemoActionFlagWeaponReloadPressed) != 0u;
+				command.playerInput.action.weapon.cycleNextPressed =
+				(packed.actionFlags &
+				 kDemoActionFlagWeaponCycleNextPressed) != 0u;
+				command.playerInput.action.weapon.cyclePrevPressed =
+				(packed.actionFlags &
+				 kDemoActionFlagWeaponCyclePrevPressed) != 0u;
 				command.playerInput.viewYawDeg   = packed.viewYawDeg;
 				command.playerInput.viewPitchDeg = packed.viewPitchDeg;
 				outFile.commands.emplace_back(command);

@@ -34,6 +34,15 @@ namespace Unnamed {
 	constexpr uint16_t kDemoActionFlagGrappleReleased = 0x0004u;
 	constexpr uint16_t kDemoActionFlagReelInHeld      = 0x0008u;
 	constexpr uint16_t kDemoActionFlagReelOutHeld     = 0x0010u;
+	constexpr uint16_t kDemoActionFlagWeaponPrimaryPressed = 0x0020u;
+	constexpr uint16_t kDemoActionFlagWeaponPrimaryHeld = 0x0040u;
+	constexpr uint16_t kDemoActionFlagWeaponPrimaryReleased = 0x0080u;
+	constexpr uint16_t kDemoActionFlagWeaponSecondaryPressed = 0x0100u;
+	constexpr uint16_t kDemoActionFlagWeaponSecondaryHeld = 0x0200u;
+	constexpr uint16_t kDemoActionFlagWeaponSecondaryReleased = 0x0400u;
+	constexpr uint16_t kDemoActionFlagWeaponReloadPressed = 0x0800u;
+	constexpr uint16_t kDemoActionFlagWeaponCycleNextPressed = 0x1000u;
+	constexpr uint16_t kDemoActionFlagWeaponCyclePrevPressed = 0x2000u;
 
 	struct DemoBinaryFileHeader {
 		uint32_t magic      = kDemoBinaryMagic;

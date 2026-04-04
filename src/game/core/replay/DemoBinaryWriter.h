@@ -240,21 +240,36 @@ namespace Unnamed {
 						packed.flags = flags;
 
 						uint16_t actionFlags = 0;
-						const auto& grapple  = command.playerInput.action.grapple;
-						if (grapple.grapplePressed) {
-							actionFlags |= kDemoActionFlagGrapplePressed;
+						const auto& weapon = command.playerInput.action.weapon;
+						if (weapon.primary.pressed) {
+							actionFlags |= kDemoActionFlagWeaponPrimaryPressed;
 						}
-						if (grapple.grappleHeld) {
-							actionFlags |= kDemoActionFlagGrappleHeld;
+						if (weapon.primary.held) {
+							actionFlags |= kDemoActionFlagWeaponPrimaryHeld;
 						}
-						if (grapple.grappleReleased) {
-							actionFlags |= kDemoActionFlagGrappleReleased;
+						if (weapon.primary.released) {
+							actionFlags |= kDemoActionFlagWeaponPrimaryReleased;
 						}
-						if (grapple.reelInHeld) {
-							actionFlags |= kDemoActionFlagReelInHeld;
+						if (weapon.secondary.pressed) {
+							actionFlags |= kDemoActionFlagWeaponSecondaryPressed;
 						}
-						if (grapple.reelOutHeld) {
-							actionFlags |= kDemoActionFlagReelOutHeld;
+						if (weapon.secondary.held) {
+							actionFlags |= kDemoActionFlagWeaponSecondaryHeld;
+						}
+						if (weapon.secondary.released) {
+							actionFlags |=
+								kDemoActionFlagWeaponSecondaryReleased;
+						}
+						if (weapon.reloadPressed) {
+							actionFlags |= kDemoActionFlagWeaponReloadPressed;
+						}
+						if (weapon.cycleNextPressed) {
+							actionFlags |=
+								kDemoActionFlagWeaponCycleNextPressed;
+						}
+						if (weapon.cyclePrevPressed) {
+							actionFlags |=
+								kDemoActionFlagWeaponCyclePrevPressed;
 						}
 						packed.actionFlags = actionFlags;
 

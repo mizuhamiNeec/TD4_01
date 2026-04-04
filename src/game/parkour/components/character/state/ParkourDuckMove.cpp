@@ -3,6 +3,7 @@
 #include "engine/unnamed/framework/components/TransformComponent.h"
 
 #include "game/core/collision/kinematic/base/BaseKinematicCollisionResolver.h"
+#include "game/core/components/character/state/MovementStateIds.h"
 #include "game/parkour/components/character/ParkourMovementComponent.h"
 
 namespace Unnamed {
@@ -15,7 +16,7 @@ namespace Unnamed {
 		float            deltaTime
 	) {
 		if (mConsole->GetConVarValueOr("noclip", false)) {
-			context.requestedState = "NoclipMove";
+			context.requestedState = MovementStateIds::Noclip;
 			return;
 		}
 
@@ -23,7 +24,7 @@ namespace Unnamed {
 			context.movementComponent
 		);
 		if (!parkour) {
-			context.requestedState = "ParkourGroundMove";
+			context.requestedState = MovementStateIds::ParkourGround;
 			return;
 		}
 
@@ -65,7 +66,9 @@ namespace Unnamed {
 
 		if (context.input.jumpPressed) {
 			runtime.hasDoubleJump = true;
-			ExecuteJumpAndLeaveGround(context, deltaTime, "ParkourAirMove");
+			ExecuteJumpAndLeaveGround(
+				context, deltaTime, MovementStateIds::ParkourAir
+			);
 			return;
 		}
 
@@ -91,7 +94,7 @@ namespace Unnamed {
 			context.supportEntityGuid     = 0;
 			context.supportLinearVelocity = Vec3::zero;
 			context.supportStepDelta      = Vec3::zero;
-			context.requestedState        = "ParkourAirMove";
+			context.requestedState        = MovementStateIds::ParkourAir;
 			return;
 		}
 
@@ -101,13 +104,13 @@ namespace Unnamed {
 
 		const float speedHu = parkour->GetHorizontalSpeedHu(context.velocity);
 		if (context.input.crouchPressed && parkour->ShouldSlideFromSpeed(speedHu)) {
-			context.requestedState = "ParkourSlideMove";
+			context.requestedState = MovementStateIds::ParkourSlide;
 			return;
 		}
 
 		if (!context.input.crouchPressed) {
 			if (parkour->SetDuckHullEnabled(context, false)) {
-				context.requestedState = "ParkourGroundMove";
+				context.requestedState = MovementStateIds::ParkourGround;
 			}
 		}
 	}
@@ -115,6 +118,6 @@ namespace Unnamed {
 	void ParkourDuckMove::Exit() {}
 
 	std::string_view ParkourDuckMove::GetStateName() {
-		return "ParkourDuckMove";
+		return MovementStateIds::ParkourDuck;
 	}
 }

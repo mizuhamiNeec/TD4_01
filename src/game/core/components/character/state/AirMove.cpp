@@ -5,6 +5,7 @@
 #include "engine/unnamed/framework/components/TransformComponent.h"
 
 #include "game/core/collision/kinematic/base/BaseKinematicCollisionResolver.h"
+#include "game/core/components/character/state/MovementStateIds.h"
 
 namespace Unnamed {
 	namespace {
@@ -25,7 +26,7 @@ namespace Unnamed {
 
 	void AirMove::Tick(MovementContext& context, float deltaTime) {
 		if (mConsole->GetConVarValueOr("noclip", false)) {
-			context.requestedState = "NoclipMove";
+			context.requestedState = MovementStateIds::Noclip;
 			return;
 		}
 
@@ -90,14 +91,14 @@ namespace Unnamed {
 			context.velocity.y        = 0.0f;
 			context.isGrounded        = true;
 			context.supportEntityGuid = groundHit.hitEntityGuid;
-			context.requestedState    = "GroundMove";
+			context.requestedState    = MovementStateIds::Ground;
 		}
 	}
 
 	void AirMove::Exit() {}
 
 	std::string_view AirMove::GetStateName() {
-		return "AirMove";
+		return MovementStateIds::Air;
 	}
 
 	void AirMove::AirAccelerate(

@@ -6,6 +6,7 @@
 #include "engine/unnamed/framework/components/TransformComponent.h"
 
 #include "game/core/collision/kinematic/base/BaseKinematicCollisionResolver.h"
+#include "game/core/components/character/state/MovementStateIds.h"
 #include "game/parkour/components/character/ParkourMovementComponent.h"
 
 namespace Unnamed {
@@ -17,7 +18,7 @@ namespace Unnamed {
 
 	void ParkourAirMove::Tick(MovementContext& context, float deltaTime) {
 		if (mConsole->GetConVarValueOr("noclip", false)) {
-			context.requestedState = "NoclipMove";
+			context.requestedState = MovementStateIds::Noclip;
 			return;
 		}
 
@@ -26,7 +27,8 @@ namespace Unnamed {
 		);
 		auto syncJumpHeld = [&context, parkour]() {
 			if (parkour) {
-				parkour->GetParkourRuntime().lastJumpHeld = context.input.jumpPressed;
+				parkour->GetParkourRuntime().lastJumpHeld = context.input.
+					jumpPressed;
 			}
 		};
 
@@ -45,22 +47,26 @@ namespace Unnamed {
 				return;
 			}
 
-			auto& runtime = parkour->GetParkourRuntime();
-			const bool jumpPressed = context.input.jumpPressed;
+			auto&      runtime         = parkour->GetParkourRuntime();
+			const bool jumpPressed     = context.input.jumpPressed;
 			const bool jumpPressedEdge = jumpPressed && !runtime.lastJumpHeld;
 			if (jumpPressedEdge && runtime.hasDoubleJump) {
 				context.velocity.y = Math::HtoM(
-					mConsole->GetConVarValueOr("park_doublejump_velocity", 300.0f)
+					mConsole->GetConVarValueOr(
+						"park_doublejump_velocity", 300.0f
+					)
 				);
-				runtime.hasDoubleJump = false;
-				runtime.pendingDoubleJumpCue = true;
+				runtime.hasDoubleJump            = false;
+				runtime.pendingDoubleJumpCue     = true;
 				context.jumpSnapDisableRemaining = std::max(
 					context.jumpSnapDisableRemaining,
 					mConsole->GetConVarValueOr("sv_jumpsnapdisabletime", 0.1f)
 				);
 			}
 
-			(void)parkour->SetDuckHullEnabled(context, context.input.crouchPressed);
+			(void)parkour->SetDuckHullEnabled(
+				context, context.input.crouchPressed
+			);
 		}
 
 		context.isGrounded               = false;
@@ -91,11 +97,6 @@ namespace Unnamed {
 		);
 		ApplyHalfGravity(context.velocity, deltaTime);
 
-		GrappleMotor::UpdateActivation(context, parkour->GetActionFrameInput());
-		GrappleMotor::ApplyPreMove(
-			context, parkour->GetActionFrameInput(), deltaTime
-		);
-
 		KinematicMoveQuery query = {
 			.position    = context.transform->Position(),
 			.velocity    = context.velocity,
@@ -113,7 +114,6 @@ namespace Unnamed {
 
 		context.transform->SetPosition(query.position);
 		context.velocity = query.velocity;
-		GrappleMotor::ApplyPostMove(context);
 
 		Physics::Hit groundHit{};
 		if (context.jumpSnapDisableRemaining <= 0.0f &&
@@ -127,8 +127,13 @@ namespace Unnamed {
 			context.isGrounded        = true;
 			context.supportEntityGuid = groundHit.hitEntityGuid;
 			context.requestedState    = parkour ?
-				parkour->ResolveGroundStateFromInput(context) :
-				"ParkourGroundMove";
+				                            parkour->
+				                            ResolveGroundStateFromInput(
+					                            context
+				                            ) :
+				                            std::string(
+					                            MovementStateIds::ParkourGround
+				                            );
 			if (parkour) {
 				parkour->GetParkourRuntime().hasDoubleJump = true;
 			}
@@ -142,6 +147,6 @@ namespace Unnamed {
 	}
 
 	std::string_view ParkourAirMove::GetStateName() {
-		return "ParkourAirMove";
+		return MovementStateIds::ParkourAir;
 	}
 }

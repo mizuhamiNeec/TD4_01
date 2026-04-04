@@ -5,6 +5,7 @@
 #include "engine/unnamed/framework/components/TransformComponent.h"
 
 #include "game/core/collision/kinematic/base/BaseKinematicCollisionResolver.h"
+#include "game/core/components/character/state/MovementStateIds.h"
 #include "game/parkour/components/character/ParkourMovementComponent.h"
 
 namespace Unnamed {
@@ -17,7 +18,7 @@ namespace Unnamed {
 		float            deltaTime
 	) {
 		if (mConsole->GetConVarValueOr("noclip", false)) {
-			context.requestedState = "NoclipMove";
+			context.requestedState = MovementStateIds::Noclip;
 			return;
 		}
 
@@ -25,7 +26,7 @@ namespace Unnamed {
 			context.movementComponent
 		);
 		if (!parkour) {
-			context.requestedState = "ParkourGroundMove";
+			context.requestedState = MovementStateIds::ParkourGround;
 			return;
 		}
 
@@ -104,7 +105,9 @@ namespace Unnamed {
 
 		if (context.input.jumpPressed) {
 			runtime.slide.active = false;
-			ExecuteJumpAndLeaveGround(context, deltaTime, "ParkourAirMove");
+			ExecuteJumpAndLeaveGround(
+				context, deltaTime, MovementStateIds::ParkourAir
+			);
 			return;
 		}
 
@@ -130,7 +133,7 @@ namespace Unnamed {
 			context.supportEntityGuid     = 0;
 			context.supportLinearVelocity = Vec3::zero;
 			context.supportStepDelta      = Vec3::zero;
-			context.requestedState        = "ParkourAirMove";
+			context.requestedState        = MovementStateIds::ParkourAir;
 			return;
 		}
 
@@ -157,10 +160,10 @@ namespace Unnamed {
 		    )) {
 			runtime.slide.active   = false;
 			context.requestedState = context.input.crouchPressed ?
-				                         "ParkourDuckMove" :
+				                         std::string(MovementStateIds::ParkourDuck) :
 				                         (parkour->CanStandAt(context) ?
-					                          "ParkourGroundMove" :
-					                          "ParkourDuckMove");
+					                          std::string(MovementStateIds::ParkourGround) :
+					                          std::string(MovementStateIds::ParkourDuck));
 			return;
 		}
 
@@ -170,24 +173,24 @@ namespace Unnamed {
 		    )) {
 			runtime.slide.active   = false;
 			context.requestedState = context.input.crouchPressed ?
-				                         "ParkourDuckMove" :
+				                         std::string(MovementStateIds::ParkourDuck) :
 				                         (parkour->CanStandAt(context) ?
-					                          "ParkourGroundMove" :
-					                          "ParkourDuckMove");
+					                          std::string(MovementStateIds::ParkourGround) :
+					                          std::string(MovementStateIds::ParkourDuck));
 			return;
 		}
 
 		if (!context.input.crouchPressed) {
 			runtime.slide.active   = false;
 			context.requestedState = parkour->CanStandAt(context) ?
-				                         "ParkourGroundMove" :
-				                         "ParkourDuckMove";
+				                         std::string(MovementStateIds::ParkourGround) :
+				                         std::string(MovementStateIds::ParkourDuck);
 		}
 	}
 
 	void ParkourSlideMove::Exit() {}
 
 	std::string_view ParkourSlideMove::GetStateName() {
-		return "ParkourSlideMove";
+		return MovementStateIds::ParkourSlide;
 	}
 }

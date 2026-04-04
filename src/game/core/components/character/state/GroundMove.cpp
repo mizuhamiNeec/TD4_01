@@ -6,6 +6,7 @@
 #include "engine/world/World.h"
 
 #include "game/core/collision/kinematic/base/BaseKinematicCollisionResolver.h"
+#include "game/core/components/character/state/MovementStateIds.h"
 
 namespace Unnamed {
 	namespace {
@@ -31,7 +32,7 @@ namespace Unnamed {
 		MovementContext& context, const float deltaTime
 	) {
 		if (mConsole->GetConVarValueOr("noclip", false)) {
-			context.requestedState = "NoclipMove";
+			context.requestedState = MovementStateIds::Noclip;
 			return;
 		}
 
@@ -88,7 +89,7 @@ namespace Unnamed {
 		);
 
 		if (context.input.jumpPressed) {
-			ExecuteJumpAndLeaveGround(context, deltaTime, "AirMove");
+			ExecuteJumpAndLeaveGround(context, deltaTime, MovementStateIds::Air);
 			return;
 		}
 
@@ -120,7 +121,7 @@ namespace Unnamed {
 			context.supportEntityGuid     = 0;
 			context.supportLinearVelocity = Vec3::zero;
 			context.supportStepDelta      = Vec3::zero;
-			context.requestedState        = "AirMove";
+			context.requestedState        = MovementStateIds::Air;
 			return;
 		}
 
@@ -132,7 +133,7 @@ namespace Unnamed {
 	void GroundMove::Exit() {}
 
 	std::string_view GroundMove::GetStateName() {
-		return "GroundMove";
+		return MovementStateIds::Ground;
 	}
 
 	void GroundMove::ExecuteJumpAndLeaveGround(

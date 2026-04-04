@@ -1,12 +1,13 @@
 ﻿#include "NoclipMove.h"
 
 #include "engine/unnamed/framework/components/TransformComponent.h"
+#include "game/core/components/character/state/MovementStateIds.h"
 
 namespace Unnamed {
 	void NoclipMove::Enter(ConsoleSystem* console) {
 		if (!console) {
 			Error(
-				"GroundMove",
+				"NoclipMove",
 				"ConsoleSystem is not available."
 			);
 			return;
@@ -22,7 +23,9 @@ namespace Unnamed {
 #endif
 
 		if (!mConsole->GetConVarValueOr("noclip", false)) {
-			context.requestedState = "ParkourAirMove";
+			context.requestedState = context.defaultAirStateName.empty() ?
+				                         std::string(MovementStateIds::Air) :
+				                         context.defaultAirStateName;
 			return;
 		}
 
@@ -53,7 +56,7 @@ namespace Unnamed {
 	void NoclipMove::Exit() {}
 
 	std::string_view NoclipMove::GetStateName() {
-		return "NoclipMove";
+		return MovementStateIds::Noclip;
 	}
 
 	void NoclipMove::ApplyFriction(
@@ -88,10 +91,10 @@ namespace Unnamed {
 			return;
 		}
 
-		const float maxGroundSpeed = mConsole->GetConVarValueOr(
-			"sv_maxspeed", 320.0f
-		);
-		const float wishSpd = std::min(wishSpeed, maxGroundSpeed);
+		const float maxNoclipSpeed =
+			mConsole->GetConVarValueOr("sv_maxspeed", 320.0f) *
+			mConsole->GetConVarValueOr("sv_noclipspeed", 5.0f);
+		const float wishSpd = std::min(wishSpeed, maxNoclipSpeed);
 
 		Vec3 currentHorizontal = Math::MtoH(currentVel);
 		currentHorizontal.y    = 0.0f;

@@ -5,6 +5,7 @@
 #include "engine/unnamed/framework/components/TransformComponent.h"
 
 #include "game/core/collision/kinematic/base/BaseKinematicCollisionResolver.h"
+#include "game/core/components/character/state/MovementStateIds.h"
 #include "game/parkour/components/character/ParkourMovementComponent.h"
 
 namespace Unnamed {
@@ -17,7 +18,7 @@ namespace Unnamed {
 		float            deltaTime
 	) {
 		if (mConsole->GetConVarValueOr("noclip", false)) {
-			context.requestedState = "NoclipMove";
+			context.requestedState = MovementStateIds::Noclip;
 			return;
 		}
 
@@ -25,7 +26,7 @@ namespace Unnamed {
 			context.movementComponent
 		);
 		if (!parkour) {
-			context.requestedState = "ParkourAirMove";
+			context.requestedState = MovementStateIds::ParkourAir;
 			return;
 		}
 
@@ -118,6 +119,6 @@ namespace Unnamed {
 	void ParkourWallRunMove::Exit() {}
 
 	std::string_view ParkourWallRunMove::GetStateName() {
-		return "ParkourWallRunMove";
+		return MovementStateIds::ParkourWallRun;
 	}
 }

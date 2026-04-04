@@ -1,5 +1,6 @@
 #include "ParkourBlinkMove.h"
 
+#include "game/core/components/character/state/MovementStateIds.h"
 #include "game/parkour/components/character/ParkourMovementComponent.h"
 
 namespace Unnamed {
@@ -12,7 +13,7 @@ namespace Unnamed {
 		float            deltaTime
 	) {
 		if (mConsole->GetConVarValueOr("noclip", false)) {
-			context.requestedState = "NoclipMove";
+			context.requestedState = MovementStateIds::Noclip;
 			return;
 		}
 
@@ -20,20 +21,20 @@ namespace Unnamed {
 			context.movementComponent
 		);
 		if (!parkour) {
-			context.requestedState = "ParkourAirMove";
+			context.requestedState = MovementStateIds::ParkourAir;
 			return;
 		}
 
 		parkour->TickParkourTimers(deltaTime);
 		parkour->GetParkourRuntime().lastJumpHeld = context.input.jumpPressed;
 		if (!parkour->UpdateBlink(context, deltaTime)) {
-			context.requestedState = "ParkourAirMove";
+			context.requestedState = MovementStateIds::ParkourAir;
 		}
 	}
 
 	void ParkourBlinkMove::Exit() {}
 
 	std::string_view ParkourBlinkMove::GetStateName() {
-		return "ParkourBlinkMove";
+		return MovementStateIds::ParkourBlink;
 	}
 }

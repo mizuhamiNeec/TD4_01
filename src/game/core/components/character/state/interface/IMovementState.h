@@ -15,11 +15,12 @@ namespace Unnamed {
 		BaseKinematicCollisionResolver* resolver; // リゾルバへのポインタ
 		Vec3 halfExtents; // キャラクター衝突ハルの半径 [m]
 		std::string requestedState; // 次フレームで遷移したい状態名（空なら遷移なし）
-		bool isGrounded = false;
-		uint64_t supportEntityGuid = 0;
-		Vec3 supportLinearVelocity = Vec3::zero;
-		Vec3 supportStepDelta = Vec3::zero;
-		float jumpSnapDisableRemaining = 0.0f;
+		bool isGrounded = false; // 地面に接地しているか
+		uint64_t supportEntityGuid = 0; // サポートしている地面などのEntityのGUID（0ならサポートなし）
+		Vec3 supportLinearVelocity = Vec3::zero; // サポートの線形速度
+		Vec3 supportStepDelta = Vec3::zero; // ステップアップのためのサポートからの位置変化量
+		float jumpSnapDisableRemaining = 0.0f; // ジャンプスナップを無効にする残り時間 [秒]
+		std::string defaultAirStateName; // ノークリップ解除時などに戻る空中状態名
 		GameMovementComponent* movementComponent = nullptr;
 	};
 

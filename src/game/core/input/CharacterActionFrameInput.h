@@ -3,17 +3,27 @@
 #include <cstdint>
 
 namespace Unnamed {
-	struct GrappleInput {
-		bool grapplePressed  = false;
-		bool grappleHeld     = false;
-		bool grappleReleased = false;
-
-		bool reelInHeld  = false;
-		bool reelOutHeld = false;
+	/// @brief 汎用アクションのトリガー状態を保持します。
+	struct ActionTriggerInput {
+		bool pressed  = false;
+		bool held     = false;
+		bool released = false;
 	};
 
+	/// @brief 武器/ツール共通の入力状態を保持します。
+	/// @details 銃以外（近接、投擲、グラップル補助装置など）にも使える汎用アクション入力です。
+	struct WeaponActionInput {
+		ActionTriggerInput primary   = {};
+		ActionTriggerInput secondary = {};
+
+		bool reloadPressed    = false;
+		bool cycleNextPressed = false;
+		bool cyclePrevPressed = false;
+	};
+
+	/// @brief キャラクターが固定ティックで消費するアクション入力パケットです。
 	struct CharacterActionFrameInput {
-		GrappleInput grapple = {};
+		WeaponActionInput weapon = {};
 	};
 
 	/// @brief キャラクター固有アクション入力の受け口です。

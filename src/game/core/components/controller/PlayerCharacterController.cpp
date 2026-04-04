@@ -40,6 +40,23 @@ namespace Unnamed {
 			input->BindAxis2D("GamepadMove", gamepadMoveY, INPUT_AXIS::Y, 1.0f);
 			sBound = true;
 		}
+
+		template <typename Fn>
+		void ForEachActionInputReceiver(Entity* owner, Fn&& fn) {
+			if (!owner) {
+				return;
+			}
+			owner->ForEachComponent(
+				[&fn](auto& component) {
+					if (auto* receiver = dynamic_cast<
+						ICharacterActionInputReceiver*>(
+						&component
+					)) {
+						fn(*receiver);
+					}
+				}
+			);
+		}
 	}
 
 	PlayerCharacterController::~PlayerCharacterController() = default;
@@ -68,6 +85,13 @@ namespace Unnamed {
 		mQueuedSprintPressCount           = 0;
 		mQueuedGrapplePressed             = false;
 		mQueuedGrappleReleased            = false;
+		mQueuedPrimaryPressedCount        = 0;
+		mQueuedPrimaryReleasedCount       = 0;
+		mQueuedSecondaryPressedCount      = 0;
+		mQueuedSecondaryReleasedCount     = 0;
+		mQueuedReloadPressedCount         = 0;
+		mQueuedCycleNextPressedCount      = 0;
+		mQueuedCyclePrevPressedCount      = 0;
 		mRecordingInitialSnapshotCaptured = false;
 		mWasRecordingMode                 = false;
 		mWasPlaybackMode                  = false;
@@ -82,6 +106,13 @@ namespace Unnamed {
 		mQueuedSprintPressCount           = 0;
 		mQueuedGrapplePressed             = false;
 		mQueuedGrappleReleased            = false;
+		mQueuedPrimaryPressedCount        = 0;
+		mQueuedPrimaryReleasedCount       = 0;
+		mQueuedSecondaryPressedCount      = 0;
+		mQueuedSecondaryReleasedCount     = 0;
+		mQueuedReloadPressedCount         = 0;
+		mQueuedCycleNextPressedCount      = 0;
+		mQueuedCyclePrevPressedCount      = 0;
 		mRecordingInitialSnapshotCaptured = false;
 		mWasRecordingMode                 = false;
 		mWasPlaybackMode                  = false;
@@ -116,15 +147,24 @@ namespace Unnamed {
 		}
 
 		if (playbackMode && !mWasPlaybackMode) {
-			mFixedTickCounter       = demoManager->GetPlaybackStartTick();
-			mQueuedSprintPressCount = 0;
-			mQueuedGrapplePressed   = false;
-			mQueuedGrappleReleased  = false;
+			mFixedTickCounter             = demoManager->GetPlaybackStartTick();
+			mQueuedSprintPressCount       = 0;
+			mQueuedGrapplePressed         = false;
+			mQueuedGrappleReleased        = false;
+			mQueuedPrimaryPressedCount    = 0;
+			mQueuedPrimaryReleasedCount   = 0;
+			mQueuedSecondaryPressedCount  = 0;
+			mQueuedSecondaryReleasedCount = 0;
+			mQueuedReloadPressedCount     = 0;
+			mQueuedCycleNextPressedCount  = 0;
+			mQueuedCyclePrevPressedCount  = 0;
 			mTarget->ClearDeterministicInputQueue();
-			if (auto* actionReceiver =
-				    dynamic_cast<ICharacterActionInputReceiver*>(mTarget)) {
-				actionReceiver->ClearDeterministicActionInputQueue();
-			}
+			ForEachActionInputReceiver(
+				GetOwner(),
+				[](ICharacterActionInputReceiver& receiver) {
+					receiver.ClearDeterministicActionInputQueue();
+				}
+			);
 			if (Entity* owner = GetOwner()) {
 				if (!demoManager->ApplyInitialSnapshotIfNeeded(*owner)) {
 					(void)demoManager->Stop();
@@ -164,11 +204,18 @@ namespace Unnamed {
 					);
 				}
 				(void)demoManager->Stop();
-				playbackMode            = false;
-				mWasPlaybackMode        = false;
-				mQueuedSprintPressCount = 0;
-				mQueuedGrapplePressed   = false;
-				mQueuedGrappleReleased  = false;
+				playbackMode                  = false;
+				mWasPlaybackMode              = false;
+				mQueuedSprintPressCount       = 0;
+				mQueuedGrapplePressed         = false;
+				mQueuedGrappleReleased        = false;
+				mQueuedPrimaryPressedCount    = 0;
+				mQueuedPrimaryReleasedCount   = 0;
+				mQueuedSecondaryPressedCount  = 0;
+				mQueuedSecondaryReleasedCount = 0;
+				mQueuedReloadPressedCount     = 0;
+				mQueuedCycleNextPressedCount  = 0;
+				mQueuedCyclePrevPressedCount  = 0;
 			}
 		}
 
@@ -197,21 +244,25 @@ namespace Unnamed {
 			}
 		}
 
-		mDebugMoveFrameInput = command.playerInput.movement;
+		mDebugMoveFrameInput   = command.playerInput.movement;
 		mDebugActionFrameInput = command.playerInput.action;
 		mTarget->EnqueueDeterministicInput(
 			command.tick,
 			fixedTickSeconds,
 			command.playerInput.movement
 		);
-		if (auto* actionReceiver =
-			    dynamic_cast<ICharacterActionInputReceiver*>(mTarget)) {
-			actionReceiver->EnqueueDeterministicActionInput(
-				command.tick,
-				fixedTickSeconds,
-				command.playerInput.action
-			);
-		}
+		ForEachActionInputReceiver(
+			GetOwner(),
+			[&command, fixedTickSeconds](
+			ICharacterActionInputReceiver& receiver
+		) {
+				receiver.EnqueueDeterministicActionInput(
+					command.tick,
+					fixedTickSeconds,
+					command.playerInput.action
+				);
+			}
+		);
 
 		++mFixedTickCounter;
 	}
@@ -240,6 +291,48 @@ namespace Unnamed {
 		}
 		if (mInput->IsReleased("grapple")) {
 			mQueuedGrappleReleased = true;
+		}
+		if (mInput->IsPressed("attack1")) {
+			mQueuedPrimaryPressedCount = std::min(
+				mQueuedPrimaryPressedCount + 1u,
+				64u
+			);
+		}
+		if (mInput->IsReleased("attack1")) {
+			mQueuedPrimaryReleasedCount = std::min(
+				mQueuedPrimaryReleasedCount + 1u,
+				64u
+			);
+		}
+		if (mInput->IsPressed("attack2")) {
+			mQueuedSecondaryPressedCount = std::min(
+				mQueuedSecondaryPressedCount + 1u,
+				64u
+			);
+		}
+		if (mInput->IsReleased("attack2")) {
+			mQueuedSecondaryReleasedCount = std::min(
+				mQueuedSecondaryReleasedCount + 1u,
+				64u
+			);
+		}
+		if (mInput->IsPressed("reload")) {
+			mQueuedReloadPressedCount = std::min(
+				mQueuedReloadPressedCount + 1u,
+				64u
+			);
+		}
+		if (mInput->IsPressed("invnext")) {
+			mQueuedCycleNextPressedCount = std::min(
+				mQueuedCycleNextPressedCount + 1u,
+				64u
+			);
+		}
+		if (mInput->IsPressed("invprev")) {
+			mQueuedCyclePrevPressedCount = std::min(
+				mQueuedCyclePrevPressedCount + 1u,
+				64u
+			);
 		}
 
 		// 見た目の重さを抑えるため、視点はRenderTickで即時反映する。
@@ -393,7 +486,8 @@ namespace Unnamed {
 		return input;
 	}
 
-	CharacterActionFrameInput PlayerCharacterController::BuildActionFrameInput() {
+	CharacterActionFrameInput
+	PlayerCharacterController::BuildActionFrameInput() {
 		CharacterActionFrameInput input = {};
 		if (!mInput) {
 			return input;
@@ -404,8 +498,44 @@ namespace Unnamed {
 		input.grapple.grappleReleased = mQueuedGrappleReleased;
 		input.grapple.reelInHeld      = mInput->IsHeld("reelin");
 		input.grapple.reelOutHeld     = mInput->IsHeld("reelout");
-		mQueuedGrapplePressed         = false;
-		mQueuedGrappleReleased        = false;
+
+		input.weapon.primary.pressed  = mQueuedPrimaryPressedCount > 0;
+		input.weapon.primary.held     = mInput->IsHeld("attack1");
+		input.weapon.primary.released = mQueuedPrimaryReleasedCount > 0;
+		if (input.weapon.primary.pressed) {
+			--mQueuedPrimaryPressedCount;
+		}
+		if (input.weapon.primary.released) {
+			--mQueuedPrimaryReleasedCount;
+		}
+
+		input.weapon.secondary.pressed  = mQueuedSecondaryPressedCount > 0;
+		input.weapon.secondary.held     = mInput->IsHeld("attack2");
+		input.weapon.secondary.released = mQueuedSecondaryReleasedCount > 0;
+		if (input.weapon.secondary.pressed) {
+			--mQueuedSecondaryPressedCount;
+		}
+		if (input.weapon.secondary.released) {
+			--mQueuedSecondaryReleasedCount;
+		}
+
+		input.weapon.reloadPressed = mQueuedReloadPressedCount > 0;
+		if (input.weapon.reloadPressed) {
+			--mQueuedReloadPressedCount;
+		}
+
+		input.weapon.cycleNextPressed = mQueuedCycleNextPressedCount > 0;
+		if (input.weapon.cycleNextPressed) {
+			--mQueuedCycleNextPressedCount;
+		}
+
+		input.weapon.cyclePrevPressed = mQueuedCyclePrevPressedCount > 0;
+		if (input.weapon.cyclePrevPressed) {
+			--mQueuedCyclePrevPressedCount;
+		}
+
+		mQueuedGrapplePressed  = false;
+		mQueuedGrappleReleased = false;
 
 		return input;
 	}
@@ -464,6 +594,43 @@ namespace Unnamed {
 		ImGui::Checkbox("Crouch", &mDebugMoveFrameInput.crouchPressed);
 		ImGui::Separator();
 		ImGui::TextUnformatted("ActionInput");
+		ImGui::Checkbox(
+			"Weapon Primary Pressed",
+			&mDebugActionFrameInput.weapon.primary.pressed
+		);
+		ImGui::Checkbox(
+			"Weapon Primary Held",
+			&mDebugActionFrameInput.weapon.primary.held
+		);
+		ImGui::Checkbox(
+			"Weapon Primary Released",
+			&mDebugActionFrameInput.weapon.primary.released
+		);
+		ImGui::Checkbox(
+			"Weapon Secondary Pressed",
+			&mDebugActionFrameInput.weapon.secondary.pressed
+		);
+		ImGui::Checkbox(
+			"Weapon Secondary Held",
+			&mDebugActionFrameInput.weapon.secondary.held
+		);
+		ImGui::Checkbox(
+			"Weapon Secondary Released",
+			&mDebugActionFrameInput.weapon.secondary.released
+		);
+		ImGui::Checkbox(
+			"Weapon Reload Pressed",
+			&mDebugActionFrameInput.weapon.reloadPressed
+		);
+		ImGui::Checkbox(
+			"Weapon Cycle Next Pressed",
+			&mDebugActionFrameInput.weapon.cycleNextPressed
+		);
+		ImGui::Checkbox(
+			"Weapon Cycle Prev Pressed",
+			&mDebugActionFrameInput.weapon.cyclePrevPressed
+		);
+		ImGui::Separator();
 		ImGui::Checkbox(
 			"Grapple Pressed",
 			&mDebugActionFrameInput.grapple.grapplePressed

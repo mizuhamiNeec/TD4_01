@@ -14,7 +14,6 @@
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/subsystem/console/Log.h"
-#include "game/core/collision/kinematic/base/BaseKinematicCollisionResolver.h"
 
 namespace Unnamed {
 	constexpr float kDefaultMoveSpeedHu = 320.0f;
@@ -30,7 +29,7 @@ namespace Unnamed {
 	void BaseCharacterComponent::EnqueueDeterministicInput(
 		const DeterministicInputPacket& packet
 	) {
-		mDeterministicInputPacket = packet;
+		mDeterministicInputQueue.Push(packet);
 	}
 
 	void BaseCharacterComponent::EnqueueDeterministicInput(
@@ -48,20 +47,15 @@ namespace Unnamed {
 	bool BaseCharacterComponent::TryDequeueDeterministicInput(
 		DeterministicInputPacket& outPacket
 	) {
-		if (!mDeterministicInputPacket.has_value()) {
-			return false;
-		}
-		outPacket = *mDeterministicInputPacket;
-		mDeterministicInputPacket.reset();
-		return true;
+		return mDeterministicInputQueue.Pop(outPacket);
 	}
 
 	void BaseCharacterComponent::ClearDeterministicInputQueue() {
-		mDeterministicInputPacket.reset();
+		mDeterministicInputQueue.Clear();
 	}
 
 	size_t BaseCharacterComponent::GetDeterministicInputQueueSize() const {
-		return mDeterministicInputPacket.has_value() ? 1ull : 0ull;
+		return mDeterministicInputQueue.Size();
 	}
 
 	void BaseCharacterComponent::SimulateStep(
@@ -82,9 +76,10 @@ namespace Unnamed {
 		const Vec3 forward = input.forward.Normalized();
 
 		// カメラの基底ベクトルに入力軸を掛け合わせて、ワールド空間での移動方向を計算
-		const Vec3 wishDir = right * input.moveAxis.x + forward * input.moveAxis
-		                     .z +
-		                     up * input.moveAxis.y;
+		const Vec3 wishDir =
+			right * input.moveAxis.x +
+			forward * input.moveAxis.z +
+			up * input.moveAxis.y;
 
 		// 移動速度を計算
 		mVelocity = wishDir.Normalized() * moveSpeedM;

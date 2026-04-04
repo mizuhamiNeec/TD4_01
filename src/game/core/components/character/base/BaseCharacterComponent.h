@@ -1,6 +1,6 @@
 #pragma once
 #include <memory>
-#include <optional>
+#include <core/containers/RingBuffer.h>
 
 #include "core/math/Math.h"
 #include "core/math/Vec3.h"
@@ -39,6 +39,9 @@ namespace Unnamed {
 	/// @brief 衝突付きでの移動を処理するコンポーネントの基底クラスです。
 	class BaseCharacterComponent : public BaseComponent {
 	public:
+		/// @brief deterministic入力キューの最大保持件数です。
+		static constexpr size_t kDeterministicInputQueueCapacity = 128;
+
 		using BaseComponent::BaseComponent;
 		~BaseCharacterComponent() override;
 
@@ -109,8 +112,10 @@ namespace Unnamed {
 
 		std::unique_ptr<BaseKinematicCollisionResolver> mCollisionResolver;
 
-		MovementFrameInput                      mMoveFrameInput;
-		std::optional<DeterministicInputPacket> mDeterministicInputPacket;
+		MovementFrameInput mMoveFrameInput;
+		
+		RingBuffer<DeterministicInputPacket, kDeterministicInputQueueCapacity>
+		mDeterministicInputQueue;
 
 		Vec3 mVelocity = Vec3::zero; // キャラクターの現在の速度
 

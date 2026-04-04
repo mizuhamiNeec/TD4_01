@@ -12,6 +12,7 @@
 #include "base/BaseCharacterComponent.h"
 
 #include "core/ComponentRegistry.h"
+#include "core/string/StrUtil.h"
 
 #include "engine/scene/Scene.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
@@ -31,12 +32,12 @@
 
 #include "state/AirMove.h"
 #include "state/GroundMove.h"
+#include "state/MovementStateIds.h"
 #include "state/NoclipMove.h"
 
 namespace Unnamed {
 	namespace {
-		constexpr char kStateAirMove[]        = "AirMove";
-		constexpr int  kMaxPassiveOverlapHits = 64;
+		constexpr int kMaxPassiveOverlapHits = 64;
 
 		struct PassiveMoverInfluence {
 			uint64_t guid      = 0;
@@ -56,10 +57,12 @@ namespace Unnamed {
 
 		const bool        wasGrounded            = mSupportCache.grounded;
 		const float       preStepVerticalSpeedHu = Math::MtoH(mVelocity.y);
-		const std::string previousStateName      = ToLowerCopy(
-			mStateMachine->GetCurrentState() ?
-				mStateMachine->GetCurrentState()->GetStateName() :
-				""
+		const std::string previousStateName      = StrUtil::ToLowerCase(
+			std::string(
+				mStateMachine->GetCurrentState() ?
+					mStateMachine->GetCurrentState()->GetStateName() :
+					""
+			)
 		);
 
 		(void)ApplyPassiveMotionStep(transform, stepSeconds);
@@ -76,6 +79,7 @@ namespace Unnamed {
 			.supportLinearVelocity    = mSupportCache.supportLinearVelocity,
 			.supportStepDelta         = mSupportCache.supportStepDelta,
 			.jumpSnapDisableRemaining = mJumpSnapDisableRemaining,
+			.defaultAirStateName      = GetAirStateNameForTransitions(),
 			.movementComponent        = this
 		};
 
@@ -88,13 +92,18 @@ namespace Unnamed {
 			context.jumpSnapDisableRemaining
 		);
 
-		const std::string currentStateName = ToLowerCopy(
-			mStateMachine->GetCurrentState() ?
-				mStateMachine->GetCurrentState()->GetStateName() :
-				""
+		const std::string currentStateName = StrUtil::ToLowerCase(
+			std::string(
+				mStateMachine->GetCurrentState() ?
+					mStateMachine->GetCurrentState()->GetStateName() :
+					""
+			)
 		);
 
-		if (!previousStateName.empty() && previousStateName != currentStateName) {
+		if (
+			!previousStateName.empty() &&
+			previousStateName != currentStateName
+		) {
 			PublishCue("movement.state.exit." + previousStateName);
 			if (!currentStateName.empty()) {
 				PublishCue("movement.state.enter." + currentStateName);
@@ -187,10 +196,12 @@ namespace Unnamed {
 				1.0e-6f
 			);
 
-			if (mSupportCache.grounded && mSupportCache.supportEntityGuid != 0) {
-				mSupportCache.supportLinearVelocity = ResolveSupportLinearVelocity(
-					mSupportCache.supportEntityGuid
-				);
+			if (mSupportCache.grounded && mSupportCache.supportEntityGuid !=
+			    0) {
+				mSupportCache.supportLinearVelocity =
+					ResolveSupportLinearVelocity(
+						mSupportCache.supportEntityGuid
+					);
 				mSupportCache.supportStepDelta = ResolveSupportStepDelta(
 					mSupportCache.supportEntityGuid, stepSeconds
 				);
@@ -281,9 +292,18 @@ namespace Unnamed {
 			.input = mMoveFrameInput,
 		};
 
-		const Vec3 wishDir = mStateMachine->GetCurrentState()->GetWishDirHoriz(
-			context
-		);
+		if (!mStateMachine) {
+			return;
+		}
+
+		const std::shared_ptr<IMovementState> currentState =
+			mStateMachine->GetCurrentState();
+
+		if (!currentState) {
+			return;
+		}
+
+		const Vec3 wishDir = currentState->GetWishDirHoriz(context);
 
 		// デバッグ描画: 移動方向をレイで表示
 		transform->GetWorld()->GetDebugDraw().DrawRay(
@@ -321,7 +341,11 @@ namespace Unnamed {
 	}
 
 	std::string GameMovementComponent::GetInitialStateName() const {
-		return kStateAirMove;
+		return std::string(MovementStateIds::Air);
+	}
+
+	std::string GameMovementComponent::GetAirStateNameForTransitions() const {
+		return std::string(MovementStateIds::Air);
 	}
 
 	void GameMovementComponent::UpdateCollisionHull(
@@ -374,39 +398,46 @@ namespace Unnamed {
 		BaseCharacterComponent::Serialize(writer);
 	}
 
-	void GameMovementComponent::WriteReplayState(nlohmann::json& outState) const {
+	void GameMovementComponent::WriteReplayState(
+		nlohmann::json& outState
+	) const {
 		outState["velocity"] = nlohmann::json::array(
 			{mVelocity.x, mVelocity.y, mVelocity.z}
 		);
-		outState["grounded"]         = mGrounded;
-		outState["collisionEnabled"] = mCollisionEnabled;
+		outState["grounded"]                 = mGrounded;
+		outState["collisionEnabled"]         = mCollisionEnabled;
 		outState["jumpSnapDisableRemaining"] = mJumpSnapDisableRemaining;
-		outState["support"] = nlohmann::json::object(
+		outState["support"]                  = nlohmann::json::object(
 			{
 				{"grounded", mSupportCache.grounded},
 				{"supportEntityGuid", mSupportCache.supportEntityGuid},
-				{"supportLinearVelocity",
-				 nlohmann::json::array(
-					 {
-						 mSupportCache.supportLinearVelocity.x,
-						 mSupportCache.supportLinearVelocity.y,
-						 mSupportCache.supportLinearVelocity.z
-					 }
-				 )},
-				{"supportStepDelta",
-				 nlohmann::json::array(
-					 {
-						 mSupportCache.supportStepDelta.x,
-						 mSupportCache.supportStepDelta.y,
-						 mSupportCache.supportStepDelta.z
-					 }
-				 )}
+				{
+					"supportLinearVelocity",
+					nlohmann::json::array(
+						{
+							mSupportCache.supportLinearVelocity.x,
+							mSupportCache.supportLinearVelocity.y,
+							mSupportCache.supportLinearVelocity.z
+						}
+					)
+				},
+				{
+					"supportStepDelta",
+					nlohmann::json::array(
+						{
+							mSupportCache.supportStepDelta.x,
+							mSupportCache.supportStepDelta.y,
+							mSupportCache.supportStepDelta.z
+						}
+					)
+				}
 			}
 		);
 		outState["boxHalfExtents"] = nlohmann::json::array(
 			{mBoxHalfExtents.x, mBoxHalfExtents.y, mBoxHalfExtents.z}
 		);
-		outState["stateName"] = mStateMachine && mStateMachine->GetCurrentState() ?
+		outState["stateName"] = mStateMachine && mStateMachine->
+		                        GetCurrentState() ?
 			                        std::string(
 				                        mStateMachine->GetCurrentState()->
 				                        GetStateName()
@@ -416,7 +447,7 @@ namespace Unnamed {
 		if (TransformComponent* transform = GetTransform()) {
 			const Vec3       position = transform->Position();
 			const Quaternion rotation = transform->Rotation();
-			outState["position"] = nlohmann::json::array(
+			outState["position"]      = nlohmann::json::array(
 				{position.x, position.y, position.z}
 			);
 			outState["rotation"] = nlohmann::json::array(
@@ -439,8 +470,10 @@ namespace Unnamed {
 			);
 		}
 
-		mGrounded = inState.value("grounded", mGrounded);
-		mCollisionEnabled = inState.value("collisionEnabled", mCollisionEnabled);
+		mGrounded         = inState.value("grounded", mGrounded);
+		mCollisionEnabled = inState.value(
+			"collisionEnabled", mCollisionEnabled
+		);
 		mJumpSnapDisableRemaining = inState.value(
 			"jumpSnapDisableRemaining",
 			mJumpSnapDisableRemaining
@@ -457,7 +490,9 @@ namespace Unnamed {
 
 		if (const auto it = inState.find("support");
 			it != inState.end() && it->is_object()) {
-			mSupportCache.grounded = it->value("grounded", mSupportCache.grounded);
+			mSupportCache.grounded = it->value(
+				"grounded", mSupportCache.grounded
+			);
 			mSupportCache.supportEntityGuid = it->value(
 				"supportEntityGuid",
 				mSupportCache.supportEntityGuid
@@ -471,7 +506,8 @@ namespace Unnamed {
 				);
 			}
 			if (const auto itDelta = it->find("supportStepDelta");
-				itDelta != it->end() && itDelta->is_array() && itDelta->size() ==
+				itDelta != it->end() && itDelta->is_array() && itDelta->size()
+				==
 				3) {
 				mSupportCache.supportStepDelta = Vec3(
 					(*itDelta)[0].get<float>(),
@@ -483,7 +519,8 @@ namespace Unnamed {
 
 		if (TransformComponent* transform = GetTransform()) {
 			if (const auto itPos = inState.find("position");
-				itPos != inState.end() && itPos->is_array() && itPos->size() == 3) {
+				itPos != inState.end() && itPos->is_array() && itPos->size() ==
+				3) {
 				transform->SetPosition(
 					Vec3(
 						(*itPos)[0].get<float>(),
@@ -494,7 +531,8 @@ namespace Unnamed {
 			}
 
 			if (const auto itRot = inState.find("rotation");
-				itRot != inState.end() && itRot->is_array() && itRot->size() == 4) {
+				itRot != inState.end() && itRot->is_array() && itRot->size() ==
+				4) {
 				transform->SetRotation(
 					Quaternion(
 						(*itRot)[0].get<float>(),
@@ -536,7 +574,8 @@ namespace Unnamed {
 		ReplayHash::AppendFloating(hash, mBoxHalfExtents.y);
 		ReplayHash::AppendFloating(hash, mBoxHalfExtents.z);
 
-		const std::string stateName = mStateMachine && mStateMachine->GetCurrentState() ?
+		const std::string stateName = mStateMachine && mStateMachine->
+		                              GetCurrentState() ?
 			                              std::string(
 				                              mStateMachine->GetCurrentState()->
 				                              GetStateName()
@@ -786,7 +825,7 @@ namespace Unnamed {
 			tryAddInfluence(moverGuid, moverStepDelta);
 		}
 
-		Physics::Engine* physics = mCollisionResolver->GetPhysics();
+		Physics::Engine*           physics = mCollisionResolver->GetPhysics();
 		std::vector<const Entity*> orderedEntities = {};
 		orderedEntities.reserve(scene->GetEntities().size());
 		for (const auto& entityPtr : scene->GetEntities()) {
@@ -1012,21 +1051,6 @@ namespace Unnamed {
 		mDebugLastPublishedCueValue2 = cue.value2;
 		++mDebugPublishedCueCount;
 #endif
-	}
-
-	std::string GameMovementComponent::ToLowerCopy(
-		const std::string_view text
-	) {
-		std::string lower(text);
-		std::transform(
-			lower.begin(),
-			lower.end(),
-			lower.begin(),
-			[](const unsigned char c) {
-				return static_cast<char>(std::tolower(c));
-			}
-		);
-		return lower;
 	}
 
 	REGISTER_COMPONENT(GameMovementComponent);

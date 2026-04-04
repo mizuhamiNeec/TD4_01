@@ -36,7 +36,7 @@ namespace Unnamed {
 		void PrePhysicsTick(float deltaTime) override;
 		void OnTick(float deltaTime) override;
 		void PostPhysicsTick(float deltaTime) override;
-		
+
 		void OnEditorTick(float deltaTime) override;
 
 		[[nodiscard]] TICK_GROUP GetTickGroup() const override {
@@ -53,15 +53,21 @@ namespace Unnamed {
 		void Deserialize(const JsonReader& reader) override;
 		void Serialize(JsonWriter& writer) const override;
 
-		virtual void                   WriteReplayState(nlohmann::json& outState) const;
-		virtual void                   ReadReplayState(const nlohmann::json& inState);
+		virtual void WriteReplayState(nlohmann::json& outState) const;
+		virtual void ReadReplayState(const nlohmann::json& inState);
 		[[nodiscard]] virtual uint64_t ComputeReplayStateHash() const;
 
 	protected:
 		virtual void RegisterMovementStates(
 			GameMovementStateMachine& stateMachine
 		);
+
+		/// @brief 初期状態として開始する移動状態IDを返します。
 		[[nodiscard]] virtual std::string GetInitialStateName() const;
+
+		/// @brief ノークリップ解除後に戻る空中状態IDを返します。
+		[[nodiscard]] virtual std::string GetAirStateNameForTransitions() const;
+
 		virtual void UpdateCollisionHull(TransformComponent* transform) const;
 
 		[[nodiscard]] TransformComponent* GetTransform() const override;
@@ -77,7 +83,6 @@ namespace Unnamed {
 		void PublishCue(
 			std::string id, float value = 0.0f, float value2 = 0.0f
 		);
-		static std::string ToLowerCopy(std::string_view text);
 		virtual void OnAfterCoreCueDispatch(
 			std::string_view          previousStateName,
 			std::string_view          currentStateName,

@@ -808,9 +808,9 @@ namespace Unnamed::Rhi {
 			sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 			sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 			sampler.MinLOD = 0.0f;
-			sampler.MaxLOD = D3D12_FLOAT32_MAX;
+			sampler.MaxLOD = 0.0f;
 			sampler.MaxAnisotropy = 16;
-			sampler.MipLODBias = -1.0f;
+			sampler.MipLODBias = 0.0f;
 			sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 			sampler.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
 			sampler.ShaderRegister = 0; // s0

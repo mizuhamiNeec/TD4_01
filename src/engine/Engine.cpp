@@ -212,7 +212,7 @@ namespace Unnamed {
 			std::move(std::make_unique<SoundAssetLoader>())
 		);
 		mAssetManager->RegisterLoader(
-			std::move(std::make_unique<PresentationProfileLoader>())
+			std::move(std::make_unique<EventPresentationLoader>())
 		);
 
 		mAudioSystem = std::make_unique<AudioSystem>();

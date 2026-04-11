@@ -34,7 +34,7 @@ namespace Unnamed {
 		PostFxChainAssetData,
 		SoundAssetData,
 		UiDocumentAssetData,
-		PresentationProfileAssetData
+		EventPresentationAssetData
 	>;
 
 	/// @brief アセットのロード結果を表す構造体

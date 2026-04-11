@@ -297,7 +297,7 @@ namespace Unnamed::EditorContentBrowser {
 						break;
 					case ASSET_TYPE::UI_DOCUMENT: icon = kIconDesktopLandscape;
 						break;
-					case ASSET_TYPE::PRESENTATION_PROFILE: icon = kIconJson;
+					case ASSET_TYPE::EVENT_PRESENTATION: icon = kIconJson;
 						break;
 				}
 			}

@@ -22,8 +22,10 @@ std::string Unnamed::ToString(const ASSET_TYPE e) {
 	}
 }
 
-Unnamed::ASSET_TYPE Unnamed::GuessAssetTypeFromPath(const std::string_view path) {
-	auto toLower = [](std::string value) {
+Unnamed::ASSET_TYPE Unnamed::GuessAssetTypeFromPath(
+	const std::string_view path
+) {
+	auto ToLower = [](std::string value) {
 		std::ranges::transform(
 			value,
 			value.begin(),
@@ -33,52 +35,51 @@ Unnamed::ASSET_TYPE Unnamed::GuessAssetTypeFromPath(const std::string_view path)
 		);
 		return value;
 	};
-	const std::string lower = toLower(std::string(path));
+	const std::string lower = ToLower(std::string(path));
 
-	auto endsWith = [&](const std::string_view suffix) {
+	auto EndsWith = [&](const std::string_view suffix) {
 		return lower.size() >= suffix.size() &&
-		       lower.compare(lower.size() - suffix.size(), suffix.size(), suffix)
-		       == 0;
+		       lower.ends_with(suffix);
 	};
 
 	if (
-		endsWith(".png") || endsWith(".jpg") || endsWith(".jpeg") ||
-		endsWith(".dds") || endsWith(".bmp") || endsWith(".tga") ||
-		endsWith(".tif") || endsWith(".tiff") || endsWith(".hdr")
+		EndsWith(".png") || EndsWith(".jpg") || EndsWith(".jpeg") ||
+		EndsWith(".dds") || EndsWith(".bmp") || EndsWith(".tga") ||
+		EndsWith(".tif") || EndsWith(".tiff") || EndsWith(".hdr")
 	) {
 		return ASSET_TYPE::TEXTURE;
 	}
 	if (
-		endsWith(".wav") || endsWith(".ogg") || endsWith(".mp3") ||
-		endsWith(".flac")
+		EndsWith(".wav") || EndsWith(".ogg") || EndsWith(".mp3") ||
+		EndsWith(".flac")
 	) {
 		return ASSET_TYPE::SOUND;
 	}
 	if (
-		endsWith(".gltf") || endsWith(".glb") || endsWith(".fbx") ||
-		endsWith(".obj")
+		EndsWith(".gltf") || EndsWith(".glb") || EndsWith(".fbx") ||
+		EndsWith(".obj")
 	) {
 		return ASSET_TYPE::MESH;
 	}
-	if (endsWith(".shader.json")) {
+	if (EndsWith(".shader.json")) {
 		return ASSET_TYPE::SHADER_PROGRAM;
 	}
-	if (endsWith(".material.json")) {
+	if (EndsWith(".material.json")) {
 		return ASSET_TYPE::MATERIAL;
 	}
-	if (endsWith(".matinst.json")) {
+	if (EndsWith(".matinst.json")) {
 		return ASSET_TYPE::MATERIAL_INSTANCE;
 	}
-	if (endsWith(".postfx.json")) {
+	if (EndsWith(".postfx.json")) {
 		return ASSET_TYPE::POST_FX_CHAIN;
 	}
-	if (endsWith(".ui.json")) {
+	if (EndsWith(".ui.json")) {
 		return ASSET_TYPE::UI_DOCUMENT;
 	}
 	if (EndsWith(".event_presentation.json")) {
 		return ASSET_TYPE::EVENT_PRESENTATION;
 	}
-	if (endsWith(".hlsl") || endsWith(".hlsli")) {
+	if (EndsWith(".hlsl") || EndsWith(".hlsli")) {
 		return ASSET_TYPE::SHADER_SOURCE;
 	}
 	return ASSET_TYPE::UNKNOWN;

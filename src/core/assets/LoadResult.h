@@ -5,11 +5,11 @@
 #include "AssetID.h"
 #include "FileStamp.h"
 
+#include "types/EventPresentationAssetData.h"
 #include "types/MaterialAssetData.h"
 #include "types/MaterialInstanceAssetData.h"
 #include "types/MeshAssetData.h"
 #include "types/PostFxChainAssetData.h"
-#include "types/PresentationProfileAssetData.h"
 #include "types/ShaderProgramAssetData.h"
 #include "types/ShaderSourceAssetData.h"
 #include "types/SoundAssetData.h"

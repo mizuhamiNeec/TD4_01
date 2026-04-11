@@ -283,6 +283,7 @@ namespace Unnamed {
 		// デバッグ描画: 現在の速度を矢印で表示
 		GetWorld()->GetDebugDraw().DrawArrow(
 			transform->Position(),
+			transform->GetPosition(),
 			mVelocity * 0.25f, // 普通に出したら長いので縮める
 			Vec4::yellow,
 			0.125f
@@ -308,6 +309,7 @@ namespace Unnamed {
 		// デバッグ描画: 移動方向をレイで表示
 		transform->GetWorld()->GetDebugDraw().DrawRay(
 			transform->Position(),
+			transform->GetPosition(),
 			wishDir.Normalized(),
 			Vec4::white
 		);
@@ -319,6 +321,8 @@ namespace Unnamed {
 		world->GetDebugDraw().DrawBox(
 			GetTransform()->Position(),
 			GetTransform()->Rotation(),
+			transform->GetPosition(),
+			transform->GetRotation(),
 			mBoxHalfExtents * 2.0f,
 			Vec4::cyan
 		);
@@ -361,6 +365,7 @@ namespace Unnamed {
 		if (boxResolver) {
 			boxResolver->UpdateHull(transform->Position(), mBoxHalfExtents);
 		}
+			boxResolver->UpdateHull(transform->GetPosition(), mBoxHalfExtents);
 	}
 
 	void GameMovementComponent::OnAfterCoreCueDispatch(
@@ -445,8 +450,8 @@ namespace Unnamed {
 			                        std::string();
 
 		if (TransformComponent* transform = GetTransform()) {
-			const Vec3       position = transform->Position();
-			const Quaternion rotation = transform->Rotation();
+			const Vec3       position = transform->GetPosition();
+			const Quaternion rotation = transform->GetRotation();
 			outState["position"]      = nlohmann::json::array(
 				{position.x, position.y, position.z}
 			);
@@ -584,8 +589,8 @@ namespace Unnamed {
 		ReplayHash::AppendString(hash, stateName);
 
 		if (const TransformComponent* transform = GetTransform()) {
-			const Vec3       position = transform->Position();
-			const Quaternion rotation = transform->Rotation();
+			const Vec3       position = transform->GetPosition();
+			const Quaternion rotation = transform->GetRotation();
 			ReplayHash::AppendFloating(hash, position.x);
 			ReplayHash::AppendFloating(hash, position.y);
 			ReplayHash::AppendFloating(hash, position.z);
@@ -701,10 +706,10 @@ namespace Unnamed {
 
 				const auto* transform = entity->GetComponent<
 					TransformComponent>();
-				if (!transform || !transform->Parent()) {
+				if (!transform || !transform->GetParent()) {
 					break;
 				}
-				entity = transform->Parent()->GetOwner();
+				entity = transform->GetParent()->GetOwner();
 			}
 			return nullptr;
 		};
@@ -719,7 +724,7 @@ namespace Unnamed {
 			mBoxHalfExtents + Vec3(contactSkinM, contactSkinM, contactSkinM);
 		const float sweepExtra = contactSkinM + Math::HtoM(0.5f);
 
-		Vec3 position = transform->Position();
+		Vec3 position = transform->GetPosition();
 		std::array<Physics::Hit, kMaxPassiveOverlapHits> overlapHits{};
 		std::array<PassiveMoverInfluence, kMaxPassiveOverlapHits> influences{};
 		int influenceCount = 0;

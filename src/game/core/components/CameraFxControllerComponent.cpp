@@ -908,7 +908,7 @@ namespace Unnamed {
 			const Quaternion deltaRotation =
 				mLastAppliedShakeRotation.Inverse() * offsetRotation;
 			mShakeTransform->SetRotation(
-				mShakeTransform->Rotation() * deltaRotation
+				mShakeTransform->GetRotation() * deltaRotation
 			);
 			mLastAppliedShakeRotation = offsetRotation;
 		} else {

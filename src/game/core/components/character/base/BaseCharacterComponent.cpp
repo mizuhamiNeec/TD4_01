@@ -87,7 +87,7 @@ namespace Unnamed {
 		mVelocity = wishDir.Normalized() * moveSpeedM;
 
 		// デフォルトは移動するだけ
-		Vec3 position = transform->Position();
+		Vec3 position = transform->GetPosition();
 
 		// 移動量を加算
 		position += mVelocity * stepSeconds;

@@ -298,7 +298,7 @@ namespace Unnamed {
 				if (current == possibleAncestor) {
 					return true;
 				}
-				current = current->Parent();
+				current = current->GetParent();
 			}
 			return false;
 		}
@@ -441,13 +441,16 @@ namespace Unnamed {
 				Entity*     entity    = entityPtr.get();
 				const auto* transform = entity->GetComponent<
 					TransformComponent>();
-				if (!transform || !transform->Parent() || !transform->Parent()->
-				    GetOwner()) {
+				if (
+					!transform ||
+					!transform->GetParent() ||
+					!transform->GetParent()->GetOwner()
+				) {
 					continue;
 				}
-				childEntitiesByParent[transform->Parent()->GetOwner()->
-				                                 GetGuid()]
-					.emplace_back(entity);
+				childEntitiesByParent[
+					transform->GetParent()->GetOwner()->GetGuid()
+				].emplace_back(entity);
 			}
 
 			std::function<void(Entity*)> drawEntityNode;
@@ -694,7 +697,7 @@ namespace Unnamed {
 								                        TransformComponent>() :
 							                        nullptr;
 						const auto* parentTransform = transform ?
-							transform->Parent() :
+							transform->GetParent() :
 							nullptr;
 						const Entity* parentEntity = parentTransform ?
 							parentTransform->GetOwner() :

@@ -408,7 +408,7 @@ namespace Unnamed {
 					continue;
 				}
 				if (controlledTransform &&
-				    rotatorTransform->Parent() != controlledTransform) {
+				    rotatorTransform->GetParent() != controlledTransform) {
 					continue;
 				}
 

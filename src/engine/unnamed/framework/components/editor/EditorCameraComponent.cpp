@@ -100,7 +100,7 @@ namespace Unnamed {
 
 		Accelerate(mWishDir, mMoveSpeed, 20.0f, deltaTime);
 
-		Vec3 pos = transform->Position();
+		Vec3 pos = transform->GetPosition();
 		pos      += mVelocity * deltaTime;
 
 		transform->SetPosition(pos);
@@ -170,8 +170,8 @@ namespace Unnamed {
 			return false;
 		}
 
-		const Vec3       position = transform->Position();
-		const Quaternion rotation = transform->Rotation();
+		const Vec3       position = transform->GetPosition();
+		const Quaternion rotation = transform->GetRotation();
 		const Mat4       world    =
 			Mat4::FromQuaternion(rotation) *
 			Mat4::Scale(Vec3::one) *
@@ -205,7 +205,7 @@ namespace Unnamed {
 		outCamera.view      = view;
 		outCamera.proj      = proj;
 		outCamera.viewProj  = view * proj;
-		outCamera.cameraPos = transform->Position();
+		outCamera.cameraPos = transform->GetPosition();
 		outCamera.exposureEv = mExposureEv;
 		outCamera.nearZ     = mNearZ;
 		outCamera.farZ      = mFarZ;
@@ -314,7 +314,7 @@ namespace Unnamed {
 		mMoveSpeed    = std::clamp(mMoveSpeed, 0.125f, 65535.0f);
 		mOldMoveSpeed = mMoveSpeed;
 
-		const Quaternion currentRot = transform->Rotation();
+		const Quaternion currentRot = transform->GetRotation();
 		const Mat4       rotMatrix  = Mat4::FromQuaternion(currentRot);
 
 		mWishDir = rotMatrix.GetRight() * mMoveInput.x +

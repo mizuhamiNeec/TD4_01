@@ -23,7 +23,7 @@ namespace Unnamed {
 		const Quaternion deltaRotation = Quaternion::EulerDegrees(
 			mRotationRate * deltaTime
 		);
-		transform->SetRotation(transform->Rotation() * deltaRotation);
+		transform->SetRotation(transform->GetRotation() * deltaRotation);
 	}
 
 	void RotatorComponent::Deserialize(const JsonReader& reader) {

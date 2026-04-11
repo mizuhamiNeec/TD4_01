@@ -50,10 +50,10 @@ namespace Unnamed {
 			return;
 		}
 
-		mState.positionPrev   = transform->Position();
-		mState.positionCurr   = transform->Position();
-		mState.rotationPrev   = transform->Rotation();
-		mState.rotationCurr   = transform->Rotation();
+		mState.positionPrev   = transform->GetPosition();
+		mState.positionCurr   = transform->GetPosition();
+		mState.rotationPrev   = transform->GetRotation();
+		mState.rotationCurr   = transform->GetRotation();
 		mState.linearVelocity = Vec3::zero;
 		mState.deltaPosition  = Vec3::zero;
 		mState.frameDeltaTime = 0.0f;
@@ -69,8 +69,8 @@ namespace Unnamed {
 		mState.positionPrev = mState.positionCurr;
 		mState.rotationPrev = mState.rotationCurr;
 
-		mState.positionCurr = transform->Position();
-		mState.rotationCurr = transform->Rotation();
+		mState.positionCurr = transform->GetPosition();
+		mState.rotationCurr = transform->GetRotation();
 
 		mState.wasTeleported = false;
 	}
@@ -83,8 +83,8 @@ namespace Unnamed {
 			return;
 		}
 
-		mState.positionCurr = transform->Position();
-		mState.rotationCurr = transform->Rotation();
+		mState.positionCurr = transform->GetPosition();
+		mState.rotationCurr = transform->GetRotation();
 
 		mState.deltaPosition  = mState.positionCurr - mState.positionPrev;
 		mState.frameDeltaTime = deltaTime;

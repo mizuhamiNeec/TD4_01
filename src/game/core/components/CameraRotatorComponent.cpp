@@ -23,7 +23,7 @@ namespace Unnamed {
 		mInput = ServiceLocator::Get<InputSystem>();
 		BindLookAxisOnce();
 		if (const TransformComponent* transform = GetTransform()) {
-			const Vec3 eulerDegrees = transform->Rotation().ToEulerDegrees();
+			const Vec3 eulerDegrees = transform->GetRotation().ToEulerDegrees();
 			mCurrentPitch           = eulerDegrees.x;
 			mCurrentYaw             = eulerDegrees.y;
 		}

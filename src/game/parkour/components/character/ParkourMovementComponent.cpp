@@ -597,7 +597,7 @@ namespace Unnamed {
 		);
 
 		const Box testBox = {
-			.center   = context.transform->Position() + Vec3::up * deltaHalfY,
+			.center   = context.transform->GetPosition() + Vec3::up * deltaHalfY,
 			.halfSize = mStandingHalfExtents
 		};
 
@@ -1553,7 +1553,7 @@ namespace Unnamed {
 			mStandingHalfExtents.y - mDuckHalfExtents.y
 		);
 		context.transform->SetPosition(
-			context.transform->Position() - Vec3::up * deltaHalfY
+			context.transform->GetPosition() - Vec3::up * deltaHalfY
 		);
 
 		mBoxHalfExtents         = mDuckHalfExtents;
@@ -1580,7 +1580,7 @@ namespace Unnamed {
 			mStandingHalfExtents.y - mDuckHalfExtents.y
 		);
 		context.transform->SetPosition(
-			context.transform->Position() + Vec3::up * deltaHalfY
+			context.transform->GetPosition() + Vec3::up * deltaHalfY
 		);
 
 		mBoxHalfExtents         = mStandingHalfExtents;

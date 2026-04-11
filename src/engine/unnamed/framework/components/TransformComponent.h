@@ -23,6 +23,11 @@ namespace Unnamed {
 		[[nodiscard]] Vec3                Scale() const noexcept;
 		[[nodiscard]] TransformComponent* Parent() const noexcept;
 		[[nodiscard]] const Mat4&         WorldMat() const noexcept;
+		[[nodiscard]] Vec3                GetPosition() const noexcept;
+		[[nodiscard]] Quaternion          GetRotation() const noexcept;
+		[[nodiscard]] Vec3                GetScale() const noexcept;
+		[[nodiscard]] TransformComponent* GetParent() const noexcept;
+		[[nodiscard]] const Mat4&         GetWorldMat() const noexcept;
 
 		void SetPosition(Vec3 position) noexcept;
 		void SetRotation(Quaternion rotation) noexcept;

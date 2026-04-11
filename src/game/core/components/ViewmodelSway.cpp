@@ -71,9 +71,9 @@ namespace Unnamed {
 			return;
 		}
 
-		mBaseLocalPosition = mTransform->Position();
-		mBaseLocalRotation = mTransform->Rotation();
-		mPrevLookDeg = ExtractLookPitchYawDegrees(mLookSource->Rotation());
+		mBaseLocalPosition = mTransform->GetPosition();
+		mBaseLocalRotation = mTransform->GetRotation();
+		mPrevLookDeg = ExtractLookPitchYawDegrees(mLookSource->GetRotation());
 		mInitialized = true;
 	}
 
@@ -101,9 +101,9 @@ namespace Unnamed {
 		}
 
 		if (!mInitialized) {
-			mBaseLocalPosition = mTransform->Position();
-			mBaseLocalRotation = mTransform->Rotation();
-			mPrevLookDeg = ExtractLookPitchYawDegrees(mLookSource->Rotation());
+			mBaseLocalPosition = mTransform->GetPosition();
+			mBaseLocalRotation = mTransform->GetRotation();
+			mPrevLookDeg = ExtractLookPitchYawDegrees(mLookSource->GetRotation());
 			mPitch = 0.0f;
 			mYaw = 0.0f;
 			mInitialized = true;
@@ -113,7 +113,7 @@ namespace Unnamed {
 			mAttenuation * renderDeltaTime, 0.0f, 1.0f
 		);
 
-		const Vec2 lookNow = ExtractLookPitchYawDegrees(mLookSource->Rotation());
+		const Vec2 lookNow = ExtractLookPitchYawDegrees(mLookSource->GetRotation());
 		if (!IsFiniteVec2(lookNow) || !IsFiniteVec2(mPrevLookDeg)) {
 			mPrevLookDeg = Vec2::zero;
 			mPitch       = 0.0f;
@@ -152,7 +152,7 @@ namespace Unnamed {
 			mBaseLocalPosition + swayPositionOffset;
 		mTransform->SetPosition(
 			Math::Lerp(
-				mTransform->Position(), targetLocalPosition, attenuationT
+				mTransform->GetPosition(), targetLocalPosition, attenuationT
 			)
 		);
 
@@ -223,7 +223,7 @@ namespace Unnamed {
 			return nullptr;
 		}
 
-		return mTransform->Parent();
+		return mTransform->GetParent();
 	}
 
 	REGISTER_COMPONENT(ViewmodelSway);

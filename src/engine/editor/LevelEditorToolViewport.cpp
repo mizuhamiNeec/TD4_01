@@ -36,7 +36,7 @@ namespace Unnamed {
 		if (!transform) {
 			return;
 		}
-		Mat4 world = transform->WorldMat();
+		Mat4 world = transform->GetWorldMat();
 
 		const EditorViewportCameraManager::ResolvedCamera camera = mCameraManager.
 			ResolveViewCamera(

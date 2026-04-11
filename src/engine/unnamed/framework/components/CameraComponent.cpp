@@ -95,7 +95,7 @@ namespace Unnamed {
 			return false;
 		}
 
-		const Mat4 world = transform->WorldMat();
+		const Mat4 world = transform->RenderWorldMat();
 		outCamera.view   = world.Inverse();
 		outCamera.proj   = Mat4::PerspectiveFovD3D(
 			mFovYDegrees * Math::deg2Rad,

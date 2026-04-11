@@ -11,23 +11,32 @@
 
 namespace Unnamed {
 	Vec3 TransformComponent::Position() const noexcept {
+	Vec3 TransformComponent::GetPosition() const noexcept {
 		return mLocalPos;
 	}
 
-	Quaternion TransformComponent::Rotation() const noexcept {
+	Quaternion TransformComponent::GetRotation() const noexcept {
 		return mLocalRot;
 	}
 
-	Vec3 TransformComponent::Scale() const noexcept {
+	Vec3 TransformComponent::GetScale() const noexcept {
 		return mLocalScale;
 	}
 
-	TransformComponent* TransformComponent::Parent() const noexcept {
+	TransformComponent* TransformComponent::GetParent() const noexcept {
 		return mParent;
 	}
 
-	const Mat4& TransformComponent::WorldMat() const noexcept {
+	const Mat4& TransformComponent::GetWorldMat() const noexcept {
 		return mWorldMat;
+	}
+
+	const Mat4& TransformComponent::RenderWorldMat() const noexcept {
+		mRenderWorldMat = BuildRenderLocalMatrix();
+		if (mParent) {
+			mRenderWorldMat = mRenderWorldMat * mParent->RenderWorldMat();
+		}
+		return mRenderWorldMat;
 	}
 
 	void TransformComponent::SetPosition(const Vec3 position) noexcept {
@@ -68,13 +77,13 @@ namespace Unnamed {
 			if (mIsDirty) {
 				localWorld = Mat4::Affine(mLocalScale, mLocalRot, mLocalPos);
 				if (mParent) {
-					localWorld = localWorld * mParent->WorldMat();
+					localWorld = localWorld * mParent->GetWorldMat();
 				}
 			}
 
 			Mat4 newLocal = localWorld;
 			if (parent) {
-				newLocal = localWorld * parent->WorldMat().Inverse();
+				newLocal = localWorld * parent->GetWorldMat().Inverse();
 			}
 			preservedPosition = newLocal.GetTranslate();
 			preservedRotation = newLocal.ToQuaternion();
@@ -204,7 +213,7 @@ namespace Unnamed {
 			// ワールド行列を計算
 			if (mParent) {
 				// 親がいる場合は親のワールド行列を掛ける
-				mWorldMat = localMat * mParent->WorldMat();
+				mWorldMat = localMat * mParent->GetWorldMat();
 			} else {
 				// 親がいない場合はローカル行列がそのままワールド行列
 				mWorldMat = localMat;

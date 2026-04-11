@@ -94,9 +94,9 @@ namespace Unnamed {
 						if (!typed) {
 							return;
 						}
-						const Vec3       position = typed->Position();
-						const Quaternion rotation = typed->Rotation();
-						const Vec3       scale    = typed->Scale();
+						const Vec3       position = typed->GetPosition();
+						const Quaternion rotation = typed->GetRotation();
+						const Vec3       scale    = typed->GetScale();
 						outState["position"] = nlohmann::json::array(
 							{position.x, position.y, position.z}
 						);
@@ -155,9 +155,9 @@ namespace Unnamed {
 					if (!typed) {
 						return 0ull;
 					}
-					const Vec3       position = typed->Position();
-					const Quaternion rotation = typed->Rotation();
-					const Vec3       scale    = typed->Scale();
+					const Vec3       position = typed->GetPosition();
+					const Quaternion rotation = typed->GetRotation();
+					const Vec3       scale    = typed->GetScale();
 					uint64_t         hash     = ReplayHash::Begin();
 					ReplayHash::AppendFloating(hash, position.x);
 					ReplayHash::AppendFloating(hash, position.y);

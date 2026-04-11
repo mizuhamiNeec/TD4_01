@@ -119,7 +119,7 @@ namespace Unnamed {
 			return;
 		}
 
-		const Mat4 world = transform->WorldMat();
+		const Mat4 world = transform->GetWorldMat();
 		if (
 			mRegistered &&
 			mRegisteredAsDynamic == mDynamic &&

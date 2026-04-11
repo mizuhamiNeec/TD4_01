@@ -12,7 +12,7 @@
 namespace Unnamed {
 	Vec3 TriggerVolumeComponentBase::GetWorldCenter() const noexcept {
 		if (const auto* transform = GetTransform()) {
-			return transform->WorldMat().TransformPoint(mLocalCenter);
+			return transform->GetWorldMat().TransformPoint(mLocalCenter);
 		}
 		return mLocalCenter;
 	}

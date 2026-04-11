@@ -41,7 +41,7 @@ namespace Unnamed {
 			return;
 		}
 
-		Vec3 current = transform->Position();
+		Vec3 current = transform->GetPosition();
 		for (uint32_t i = 0; i < 32 && remainingDistance > 0.0f; ++i) {
 			const Vec3  target   = mMoveToPointB ? mPointB : mPointA;
 			const Vec3  toTarget = target - current;

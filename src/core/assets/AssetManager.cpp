@@ -410,9 +410,9 @@ namespace Unnamed {
 			}
 		}
 
-		std::sort(changed.begin(), changed.end());
+		std::ranges::sort(changed);
 		changed.erase(
-			std::unique(changed.begin(), changed.end()), changed.end()
+			std::ranges::unique(changed).begin(), changed.end()
 		);
 
 		std::vector<AssetID> reloaded;

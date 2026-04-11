@@ -189,6 +189,15 @@ namespace Unnamed::Physics {
 			Vec3     hitNormal;
 			Triangle hitTriangle{};
 			bool     hasHitTriangle = false;
+			float    bestStartSolidTOI       = 1.0f;
+			float    bestStartSolidDepth     = -1.0f;
+			uint32_t startSolidHitTri        = UINT32_MAX;
+			uint64_t startSolidHitEntityGuid = 0;
+			Vec3     startSolidHitNormal     = Vec3::zero;
+			Vec3     startSolidOverlapNormal = Vec3::zero;
+			float    startSolidOverlapDepth  = 0.0f;
+			Triangle startSolidHitTriangle{};
+			bool     hasStartSolidHit        = false;
 
 #ifdef _DEBUG
 			struct StackItem {
@@ -202,6 +211,9 @@ namespace Unnamed::Physics {
 			const RegisteredBVH*   bestPathBVH = nullptr;
 			std::vector<PathEntry> bestPathData;
 			int                    bestPathLeaf = -1;
+			const RegisteredBVH*   bestStartSolidPathBVH = nullptr;
+			std::vector<PathEntry> bestStartSolidPathData;
+			int                    bestStartSolidPathLeaf = -1;
 #else
 			struct StackItem {
 				uint32_t nodeIndex;
@@ -273,6 +285,49 @@ namespace Unnamed::Physics {
 							)) {
 								continue;
 							}
+							float overlapDepth = 0.0f;
+							Vec3  overlapNormal = Vec3::zero;
+							const bool isStartSolidCandidate =
+								toi <= startSolidToiEpsilon &&
+								cast.OverlapAtStart(
+									tri,
+									overlapDepth,
+									overlapNormal
+								) &&
+								overlapDepth > kOverlapDepthEpsilon;
+							if (isStartSolidCandidate) {
+								// 開始重なりヒットは sweep の後続ヒットを隠しやすいので、
+								// 通常ヒットが見つからなかった場合のフォールバックとして保持します。
+								const bool betterStartDepth = overlapDepth >
+									bestStartSolidDepth + 1.0e-6f;
+								const bool equalStartDepth = std::abs(
+									                             overlapDepth -
+									                             bestStartSolidDepth
+								                             ) <= 1.0e-6f;
+								const bool betterStartToi = toi <
+								                            bestStartSolidTOI - 1.0e-6f;
+								if (
+									!hasStartSolidHit ||
+									betterStartDepth ||
+									(equalStartDepth && betterStartToi)
+								) {
+									bestStartSolidTOI       = toi;
+									bestStartSolidDepth     = overlapDepth;
+									startSolidHitTri        = triIdx;
+									startSolidHitEntityGuid = bvh->ownerGuid;
+									startSolidHitNormal     = nrm;
+									startSolidOverlapNormal = overlapNormal;
+									startSolidOverlapDepth  = overlapDepth;
+									startSolidHitTriangle   = tri;
+									hasStartSolidHit        = true;
+#ifdef _DEBUG
+									bestStartSolidPathBVH  = bvh;
+									bestStartSolidPathData = traversal;
+									bestStartSolidPathLeaf = currentEntry;
+#endif
+								}
+								continue;
+							}
 							if (toi < bestTOI) {
 								bestTOI        = toi;
 								hitTri         = triIdx;
@@ -292,8 +347,23 @@ namespace Unnamed::Physics {
 				}
 			}
 
+			bool usingStartSolidFallback = false;
 			if (hitTri == UINT32_MAX || !hasHitTriangle) {
-				return false;
+				if (startSolidHitTri == UINT32_MAX || !hasStartSolidHit) {
+					return false;
+				}
+				usingStartSolidFallback = true;
+				bestTOI                 = bestStartSolidTOI;
+				hitTri                  = startSolidHitTri;
+				hitEntityGuid           = startSolidHitEntityGuid;
+				hitNormal               = startSolidHitNormal;
+				hitTriangle             = startSolidHitTriangle;
+				hasHitTriangle          = true;
+#ifdef _DEBUG
+				bestPathBVH  = bestStartSolidPathBVH;
+				bestPathData = bestStartSolidPathData;
+				bestPathLeaf = bestStartSolidPathLeaf;
+#endif
 			}
 
 #ifdef _DEBUG
@@ -333,8 +403,16 @@ namespace Unnamed::Physics {
 				constexpr float normalEpsilon = 1e-12f;
 				float           overlapDepth  = 0.0f;
 				Vec3            overlapNrm    = Vec3::zero;
-				bool            startSolid    = false;
-				if (
+				bool            startSolid    = usingStartSolidFallback;
+				if (usingStartSolidFallback) {
+					overlapDepth = startSolidOverlapDepth;
+					overlapNrm   = startSolidOverlapNormal;
+					if (
+						overlapNrm.SqrLength() > normalEpsilon
+					) {
+						hitNormal = overlapNrm;
+					}
+				} else if (
 					bestTOI <= startSolidToiEpsilon ||
 					hitNormal.SqrLength() <= normalEpsilon
 				) {
@@ -375,7 +453,7 @@ namespace Unnamed::Physics {
 						finalNormal = Vec3::up;
 					}
 				}
-				outHit->t      = bestTOI;
+				outHit->toi    = bestTOI;
 				outHit->depth  = startSolid ? overlapDepth : 0.0f;
 				outHit->normal = finalNormal;
 				outHit->pos    = cast.ComputeImpactPoint(

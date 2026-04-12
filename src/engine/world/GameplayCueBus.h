@@ -1,17 +1,149 @@
 #pragma once
 
 #include <algorithm>
+#include <cctype>
 #include <cstdint>
 #include <functional>
 #include <string>
+#include <string_view>
+#include <unordered_map>
 #include <vector>
 
+#include "core/math/Vec2.h"
+#include "core/math/Vec3.h"
+
 namespace Unnamed {
+	/// @brief GameplayCue の型付き named payload コンテナです。
+	struct GameplayCuePayloadBag final {
+		/// @brief bool payload を設定します。
+		void SetBool(const std::string_view name, const bool value);
+
+		/// @brief float payload を設定します。
+		void SetFloat(const std::string_view name, const float value);
+
+		/// @brief Vec2 payload を設定します。
+		void SetVec2(const std::string_view name, const Vec2& value);
+
+		/// @brief Vec3 payload を設定します。
+		void SetVec3(const std::string_view name, const Vec3& value);
+
+		/// @brief EntityId(uint64_t) payload を設定します。
+		void SetEntityId(const std::string_view name, const uint64_t value);
+
+		/// @brief bool payload を取得します。
+		[[nodiscard]] bool TryGetBool(
+			const std::string_view name, bool& outValue
+		) const;
+
+		/// @brief float payload を取得します。
+		[[nodiscard]] bool TryGetFloat(
+			const std::string_view name,
+			float&                 outValue
+		) const;
+
+		/// @brief Vec2 payload を取得します。
+		[[nodiscard]] bool TryGetVec2(
+			const std::string_view name,
+			Vec2&                  outValue
+		) const;
+
+		/// @brief Vec3 payload を取得します。
+		[[nodiscard]] bool TryGetVec3(
+			const std::string_view name,
+			Vec3&                  outValue
+		) const;
+
+		/// @brief EntityId(uint64_t) payload を取得します。
+		[[nodiscard]] bool TryGetEntityId(
+			const std::string_view name,
+			uint64_t&              outValue
+		) const;
+
+		/// @brief payload をクリアします。
+		void Clear();
+
+	private:
+		template <class TValue>
+		bool TryGetValue(
+			const std::unordered_map<std::string, TValue>& map,
+			const std::string_view name, TValue& outValue
+		) const {
+			const std::string key = NormalizeKey(name);
+			if (key.empty()) {
+				return false;
+			}
+			const auto found = map.find(key);
+			if (found == map.end()) {
+				return false;
+			}
+			outValue = found->second;
+			return true;
+		}
+
+		[[nodiscard]] static std::string NormalizeKey(
+			const std::string_view name
+		);
+
+		std::unordered_map<std::string, bool>     mBoolValues;
+		std::unordered_map<std::string, float>    mFloatValues;
+		std::unordered_map<std::string, Vec2>     mVec2Values;
+		std::unordered_map<std::string, Vec3>     mVec3Values;
+		std::unordered_map<std::string, uint64_t> mEntityIdValues;
+	};
+
 	struct GameplayCue {
-		std::string id;
-		uint64_t    sourceEntityGuid = 0;
-		float       value            = 0.0f;
-		float       value2           = 0.0f;
+		std::string           id;
+		uint64_t              sourceEntityGuid = 0;
+		float                 value            = 0.0f;
+		float                 value2           = 0.0f;
+		GameplayCuePayloadBag payload          = {};
+
+		/// @brief bool payload を設定します。
+		void SetBool(const std::string_view name, const bool payloadValue);
+
+		/// @brief float payload を設定します。
+		void SetFloat(const std::string_view name, const float payloadValue);
+
+		/// @brief Vec2 payload を設定します。
+		void SetVec2(const std::string_view name, const Vec2& payloadValue);
+
+		/// @brief Vec3 payload を設定します。
+		void SetVec3(const std::string_view name, const Vec3& payloadValue);
+
+		/// @brief EntityId(uint64_t) payload を設定します。
+		void SetEntityId(
+			const std::string_view name, const uint64_t payloadValue
+		);
+
+		/// @brief bool payload を取得します。
+		[[nodiscard]] bool TryGetBool(
+			const std::string_view name,
+			bool&                  outValue
+		) const;
+
+		/// @brief float payload を取得します。
+		[[nodiscard]] bool TryGetFloat(
+			const std::string_view name,
+			float&                 outValue
+		) const;
+
+		/// @brief Vec2 payload を取得します。
+		[[nodiscard]] bool TryGetVec2(
+			const std::string_view name,
+			Vec2&                  outValue
+		) const;
+
+		/// @brief Vec3 payload を取得します。
+		[[nodiscard]] bool TryGetVec3(
+			const std::string_view name,
+			Vec3&                  outValue
+		) const;
+
+		/// @brief EntityId(uint64_t) payload を取得します。
+		[[nodiscard]] bool TryGetEntityId(
+			const std::string_view name,
+			uint64_t&              outValue
+		) const;
 	};
 
 	struct GameplayCueFilter {
@@ -24,75 +156,25 @@ namespace Unnamed {
 		using Handle   = uint64_t;
 		using Callback = std::function<void(const GameplayCue&)>;
 
+		/// @brief 指定したフィルタ条件で GameplayCue を購読します。
+		/// @param filter   購読する GameplayCue の条件
+		/// @param callback 条件に合致する GameplayCue が発行されたときに呼び出されるコールバック関数
+		/// @return 購読のハンドル。購読解除の際に使用します。無効な購読ルールやコールバックが指定された場合は0を返します。
 		[[nodiscard]] Handle Subscribe(
 			const GameplayCueFilter& filter, Callback callback
-		) {
-			if (
-				filter.cueId.empty() ||
-				filter.sourceEntityGuid == 0 ||
-				!callback
-			) {
-				return 0;
-			}
+		);
 
-			const Handle handle = mNextHandle++;
-			mListeners.emplace_back(
-				Listener{
-					.handle   = handle,
-					.filter   = filter,
-					.callback = std::move(callback),
-					.active   = true
-				}
-			);
-			return handle;
-		}
+		/// @brief 指定したハンドルの購読を解除します。
+		/// @param handle 購読のハンドル
+		/// @return 購読が正常に解除された場合はtrue。無効なハンドルが指定された場合や、すでに解除されている場合はfalse。
+		bool Unsubscribe(const Handle handle);
 
-		bool Unsubscribe(const Handle handle) {
-			if (handle == 0) {
-				return false;
-			}
+		/// @brief 条件に合致する GameplayCue を発行します。
+		/// @param cue 発行する GameplayCue。id と sourceEntityGuid は必須で、空のidや0のsourceEntityGuidを持つcueは無視されます。
+		void Publish(const GameplayCue& cue);
 
-			for (Listener& listener : mListeners) {
-				if (listener.handle != handle || !listener.active) {
-					continue;
-				}
-
-				listener.active = false;
-				listener.callback = nullptr;
-				PruneInactiveListeners();
-				return true;
-			}
-			return false;
-		}
-
-		void Publish(const GameplayCue& cue) {
-			if (cue.id.empty() || cue.sourceEntityGuid == 0) {
-				return;
-			}
-
-			std::vector<Listener> snapshot;
-			snapshot.reserve(mListeners.size());
-			for (const Listener& listener : mListeners) {
-				if (!listener.active || !listener.callback) {
-					continue;
-				}
-				snapshot.emplace_back(listener);
-			}
-
-			mIsPublishing = true;
-			for (const Listener& listener : snapshot) {
-				if (!Matches(listener.filter, cue)) {
-					continue;
-				}
-				listener.callback(cue);
-			}
-			mIsPublishing = false;
-			PruneInactiveListeners();
-		}
-
-		void Clear() {
-			mListeners.clear();
-		}
+		/// @brief 登録された購読ルールとコールバックをすべてクリアします。
+		void Clear();
 
 	private:
 		struct Listener {
@@ -102,24 +184,16 @@ namespace Unnamed {
 			bool              active   = false;
 		};
 
+		/// @brief 指定したフィルタ条件が GameplayCue と合致するかを判定します。
+		/// @param filter 購読ルールのフィルタ条件
+		/// @param cue    発行された GameplayCue
+		/// @return 条件が合致する場合はtrue。cueId と sourceEntityGuid の両方がフィルタ条件と完全一致する必要があります。
 		[[nodiscard]] static bool Matches(
 			const GameplayCueFilter& filter, const GameplayCue& cue
-		) {
-			return filter.sourceEntityGuid == cue.sourceEntityGuid &&
-			       filter.cueId == cue.id;
-		}
+		);
 
-		void PruneInactiveListeners() {
-			if (mIsPublishing) {
-				return;
-			}
-			std::erase_if(
-				mListeners,
-				[](const Listener& listener) {
-					return !listener.active || !listener.callback;
-				}
-			);
-		}
+		/// @brief 無効な購読をリストから削除します。
+		void PruneInactiveListeners();
 
 		std::vector<Listener> mListeners;
 		Handle                mNextHandle   = 1;

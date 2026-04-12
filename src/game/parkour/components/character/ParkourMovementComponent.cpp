@@ -1,7 +1,6 @@
 #include "ParkourMovementComponent.h"
 
 #include <algorithm>
-#include <array>
 #include <imgui.h>
 
 #include "core/ComponentRegistry.h"
@@ -14,15 +13,15 @@
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/primitive/Primitives.h"
+#include "engine/unnamed/subsystem/console/ConsoleSystem.h"
+#include "engine/unnamed/subsystem/console/concommand/ConVar.h"
 #include "engine/world/World.h"
 
 #include "game/core/collision/kinematic/base/BaseKinematicCollisionResolver.h"
 #include "game/core/components/character/state/GameMovementStateMachine.h"
-#include "game/core/components/character/state/interface/IMovementState.h"
-#include "game/core/components/character/state/MovementStateIds.h"
 #include "game/core/replay/ReplayHash.h"
 
-#include "state/ParkourMovementStates.h"
+#include "ability/ParkourMovementAbilities.h"
 
 namespace Unnamed {
 	namespace {
@@ -30,23 +29,6 @@ namespace Unnamed {
 			"parkourgroundmove";
 		constexpr float kForwardSprintDotThreshold = 0.7f;
 		constexpr float kMinSprintMoveSpeedHu      = 5.0f;
-
-		Vec3 HorizontalNormalized(Vec3 value) {
-			value.y = 0.0f;
-			if (value.IsZero()) {
-				return Vec3::zero;
-			}
-			value.Normalize();
-			return value;
-		}
-
-		Vec3 SafeNormalized(Vec3 value) {
-			if (value.IsZero()) {
-				return Vec3::zero;
-			}
-			value.Normalize();
-			return value;
-		}
 
 		bool TryReadVec3FromObject(
 			const nlohmann::json& object,
@@ -79,6 +61,15 @@ namespace Unnamed {
 		RebuildDuckHalfExtents();
 		ClearDeterministicActionInputQueue();
 		mActionFrameInput = {};
+		auto& [jump, crouch, slide, wallRun, doubleJump, speedVault, blink, grapple] = GetCapabilitySet();
+		jump = true;
+		crouch = true;
+		slide = true;
+		wallRun = true;
+		doubleJump = true;
+		speedVault = true;
+		blink = true;
+		grapple = true;
 	}
 
 	void ParkourMovementComponent::SimulateStep(
@@ -93,7 +84,13 @@ namespace Unnamed {
 			mActionFrameInput = {};
 		}
 
+		TickParkourTimers(stepSeconds);
 		GameMovementComponent::SimulateStep(transform, input, stepSeconds);
+		// 旧State実装と同じ入力エッジ判定に合わせるため、毎tick最後に同期します。
+		mRuntime.lastJumpHeld = input.jumpPressed;
+		if (mGrounded) {
+			mRuntime.hasDoubleJump = true;
+		}
 	}
 
 	void ParkourMovementComponent::EnqueueDeterministicActionInput(
@@ -301,6 +298,24 @@ namespace Unnamed {
 				}
 			}
 		);
+		runtime["grapple"] = nlohmann::json::object(
+			{
+				{"active", mRuntime.grapple.isActive},
+				{"latched", mRuntime.grapple.isLatched},
+				{
+					"anchorPoint", nlohmann::json::array(
+						{
+							mRuntime.grapple.anchorPoint.x,
+							mRuntime.grapple.anchorPoint.y,
+							mRuntime.grapple.anchorPoint.z
+						}
+					)
+				},
+				{"ropeLength", mRuntime.grapple.ropeLength},
+				{"minRopeLength", mRuntime.grapple.minRopeLength},
+				{"maxRopeLength", mRuntime.grapple.maxRopeLength}
+			}
+		);
 
 		outState["runtime"] = std::move(runtime);
 	}
@@ -462,6 +477,36 @@ namespace Unnamed {
 					mRuntime.vault.preVelocity
 				);
 			}
+
+			if (const auto itGrapple = runtime.find("grapple");
+				itGrapple != runtime.end() && itGrapple->is_object()) {
+				const nlohmann::json& grapple = *itGrapple;
+				mRuntime.grapple.isActive = grapple.value(
+					"active",
+					mRuntime.grapple.isActive
+				);
+				mRuntime.grapple.isLatched = grapple.value(
+					"latched",
+					mRuntime.grapple.isLatched
+				);
+				(void)TryReadVec3FromObject(
+					grapple,
+					"anchorPoint",
+					mRuntime.grapple.anchorPoint
+				);
+				mRuntime.grapple.ropeLength = grapple.value(
+					"ropeLength",
+					mRuntime.grapple.ropeLength
+				);
+				mRuntime.grapple.minRopeLength = grapple.value(
+					"minRopeLength",
+					mRuntime.grapple.minRopeLength
+				);
+				mRuntime.grapple.maxRopeLength = grapple.value(
+					"maxRopeLength",
+					mRuntime.grapple.maxRopeLength
+				);
+			}
 		}
 
 		if (mStandingHalfExtents.IsZero()) {
@@ -540,6 +585,14 @@ namespace Unnamed {
 		ReplayHash::AppendFloating(hash, mRuntime.vault.preVelocity.x);
 		ReplayHash::AppendFloating(hash, mRuntime.vault.preVelocity.y);
 		ReplayHash::AppendFloating(hash, mRuntime.vault.preVelocity.z);
+		ReplayHash::AppendPod(hash, mRuntime.grapple.isActive);
+		ReplayHash::AppendPod(hash, mRuntime.grapple.isLatched);
+		ReplayHash::AppendFloating(hash, mRuntime.grapple.anchorPoint.x);
+		ReplayHash::AppendFloating(hash, mRuntime.grapple.anchorPoint.y);
+		ReplayHash::AppendFloating(hash, mRuntime.grapple.anchorPoint.z);
+		ReplayHash::AppendFloating(hash, mRuntime.grapple.ropeLength);
+		ReplayHash::AppendFloating(hash, mRuntime.grapple.minRopeLength);
+		ReplayHash::AppendFloating(hash, mRuntime.grapple.maxRopeLength);
 		return hash;
 	}
 
@@ -566,6 +619,14 @@ namespace Unnamed {
 		mRuntime.vault.cooldown = std::max(
 			0.0f, mRuntime.vault.cooldown - clampedDt
 		);
+	}
+
+	void ParkourMovementComponent::PublishParkourMovementCue(
+		const std::string_view id,
+		const float            value,
+		const float            value2
+	) {
+		PublishCue(std::string(id), value, value2);
 	}
 
 	bool ParkourMovementComponent::SetDuckHullEnabled(
@@ -624,431 +685,23 @@ namespace Unnamed {
 		return horizontalSpeedHu >= minSlideSpeedHu;
 	}
 
-	std::string ParkourMovementComponent::ResolveGroundStateFromInput(
+	bool ParkourMovementComponent::WantsDuckStance(
 		const MovementContext& context
 	) const {
 		if (context.input.crouchPressed) {
-			const float speedHu = GetHorizontalSpeedHu(context.velocity);
-			if (ShouldSlideFromSpeed(speedHu)) {
-				return std::string(MovementStateIds::ParkourSlide);
-			}
-			return std::string(MovementStateIds::ParkourDuck);
-		}
-
-		if (!CanStandAt(context)) {
-			return std::string(MovementStateIds::ParkourDuck);
-		}
-
-		return std::string(MovementStateIds::ParkourGround);
-	}
-
-	bool ParkourMovementComponent::TryStartBlink(MovementContext& context) {
-		if (!context.transform || !context.resolver) {
-			return false;
-		}
-
-		if (!context.input.sprintPressed || mRuntime.blink.active ||
-		    mRuntime.vault.active || mRuntime.blink.cooldown > 0.0f) {
-			return false;
-		}
-
-		const Vec3 dir = SafeNormalized(context.input.forward);
-		if (dir.IsZero()) {
-			return false;
-		}
-
-		const float blinkDistanceHu = mConsole ?
-			                              mConsole->GetConVarValueOr(
-				                              "park_blink_distance", 512.0f
-			                              ) :
-			                              512.0f;
-		const Vec3 startPos       = context.transform->Position();
-		Vec3       targetPos      = startPos;
-		Vec3       pseudoVelocity = dir * Math::HtoM(blinkDistanceHu);
-		context.resolver->SlideMove(targetPos, pseudoVelocity, 1.0f);
-
-		const Vec3 blinkDelta = targetPos - startPos;
-		if (blinkDelta.SqrLength() <= 1.0e-10f) {
-			return false;
-		}
-
-		const float verticalSpeed      = context.velocity.y;
-		Vec3        horizontalVelocity = context.velocity;
-		horizontalVelocity.y           = 0.0f;
-		const float horizontalSpeed    = horizontalVelocity.Length();
-
-		Vec3 horizontalDelta = blinkDelta;
-		horizontalDelta.y    = 0.0f;
-		if (!horizontalDelta.IsZero() && horizontalSpeed > 0.0f) {
-			horizontalDelta.Normalize();
-			context.velocity   = horizontalDelta * horizontalSpeed;
-			context.velocity.y = verticalSpeed;
-		}
-
-		mRuntime.blink.active    = true;
-		mRuntime.blink.moveTime  = 0.0f;
-		mRuntime.blink.startPos  = startPos;
-		mRuntime.blink.targetPos = targetPos;
-		mRuntime.blink.cooldown  = mConsole ?
-			                           mConsole->GetConVarValueOr(
-				                           "park_blink_cooldown", 1.0f
-			                           ) :
-			                           1.0f;
-
-		context.isGrounded               = false;
-		context.supportEntityGuid        = 0;
-		context.supportLinearVelocity    = Vec3::zero;
-		context.supportStepDelta         = Vec3::zero;
-		context.jumpSnapDisableRemaining = std::max(
-			context.jumpSnapDisableRemaining,
-			mConsole ?
-				mConsole->GetConVarValueOr("sv_jumpsnapdisabletime", 0.1f) :
-				0.1f
-		);
-		context.requestedState = MovementStateIds::ParkourBlink;
-		return true;
-	}
-
-	bool ParkourMovementComponent::UpdateBlink(
-		MovementContext& context,
-		const float      deltaTime
-	) {
-		if (!mRuntime.blink.active || !context.transform) {
-			return false;
-		}
-
-		const float duration = std::max(
-			1.0e-4f,
-			mConsole ?
-				mConsole->GetConVarValueOr("park_blink_moveduration", 0.08f) :
-				0.08f
-		);
-		mRuntime.blink.moveTime += std::max(0.0f, deltaTime);
-		const float t           = std::clamp(
-			mRuntime.blink.moveTime / duration, 0.0f, 1.0f
-		);
-		const Vec3 position = Math::Lerp(
-			mRuntime.blink.startPos,
-			mRuntime.blink.targetPos,
-			t
-		);
-		context.transform->SetPosition(position);
-		UpdateCollisionHull(context.transform);
-
-		context.isGrounded            = false;
-		context.supportEntityGuid     = 0;
-		context.supportLinearVelocity = Vec3::zero;
-		context.supportStepDelta      = Vec3::zero;
-
-		if (t >= 1.0f) {
-			mRuntime.blink.active  = false;
-			context.requestedState = MovementStateIds::ParkourAir;
-		}
-		return true;
-	}
-
-	bool ParkourMovementComponent::TryStartWallRun(MovementContext& context) {
-		if (!context.transform || !context.resolver) {
-			return false;
-		}
-		const auto* physics = context.resolver->GetPhysics();
-		if (!physics) {
-			return false;
-		}
-
-		if (context.isGrounded || context.input.crouchPressed ||
-		    mRuntime.wallRun.active) {
-			return false;
-		}
-
-		Vec3 velHorz          = context.velocity;
-		velHorz.y             = 0.0f;
-		const float minSpeedM = Math::HtoM(
-			mConsole ?
-				mConsole->GetConVarValueOr("park_wallrun_minspeed", 200.0f) :
-				200.0f
-		);
-		if (velHorz.SqrLength() < minSpeedM * minSpeedM) {
-			return false;
-		}
-
-		const float cooldown = mConsole ?
-			                       mConsole->GetConVarValueOr(
-				                       "park_wallrun_cooldown", 0.1f
-			                       ) :
-			                       0.1f;
-		if (mRuntime.wallRun.timeSinceLast < cooldown) {
-			return false;
-		}
-
-		Vec3 forward = HorizontalNormalized(context.input.forward);
-		if (forward.IsZero()) {
-			return false;
-		}
-
-		Vec3 right = HorizontalNormalized(context.input.right);
-		if (right.IsZero()) {
-			right = SafeNormalized(Vec3::up.Cross(forward));
-			if (right.IsZero()) {
-				return false;
-			}
-		}
-
-		const float sideCheckDistance = context.halfExtents.x + Math::HtoM(
-			                                mConsole ?
-				                                mConsole->GetConVarValueOr(
-					                                "park_wallrun_checkdistance",
-					                                10.0f
-				                                ) :
-				                                10.0f
-		                                );
-
-		const std::array<Vec3, 2> checkDirections = {
-			right,
-			-right
-		};
-
-		for (const Vec3& checkDir : checkDirections) {
-			Physics::Hit hit{};
-			Box          probe = {
-				.center   = context.transform->Position(),
-				.halfSize = context.halfExtents
-			};
-			if (!physics->BoxCast(probe, checkDir, sideCheckDistance, &hit)) {
-				continue;
-			}
-
-			Vec3 wallNormal = SafeNormalized(hit.normal);
-			if (wallNormal.IsZero() || std::abs(wallNormal.y) > 0.2f) {
-				continue;
-			}
-
-			if (!velHorz.IsZero()) {
-				const Vec3  velDir = velHorz.Normalized();
-				const float dot    = std::abs(velDir.Dot(wallNormal));
-				const float maxDot = mConsole ?
-					                     mConsole->GetConVarValueOr(
-						                     "park_wallrun_maxnormaldot", 0.5f
-					                     ) :
-					                     0.5f;
-				if (dot > maxDot) {
-					continue;
-				}
-			}
-
-			const float sameWallCooldown = mConsole ?
-				                               mConsole->GetConVarValueOr(
-					                               "park_wallrun_samewallcooldown",
-					                               1.0f
-				                               ) :
-				                               1.0f;
-			if (
-				mRuntime.wallRun.timeSinceLast < sameWallCooldown &&
-				wallNormal.Dot(mRuntime.wallRun.lastWallNormal) > 0.9f
-			) {
-				continue;
-			}
-
-			mRuntime.wallRun.active            = true;
-			mRuntime.wallRun.normal            = wallNormal;
-			mRuntime.wallRun.time              = 0.0f;
-			mRuntime.wallRun.jumpWasHeldOnInit = context.input.jumpPressed;
-			mRuntime.hasDoubleJump             = true;
-			mRuntime.slide.active              = false;
-			const bool isRightWall             = checkDir.Dot(right) > 0.0f;
-			PublishCue(
-				isRightWall ?
-					"movement.wallrun.start.right" :
-					"movement.wallrun.start.left"
-			);
-
-			Vec3 along = SafeNormalized(Vec3::up.Cross(wallNormal));
-			if (along.Dot(forward) < 0.0f) {
-				along = -along;
-			}
-			mRuntime.wallRun.direction = along;
-
-			const float originalY    = context.velocity.y;
-			const float currentSpeed = velHorz.Length();
-			const float alongSpeed   = velHorz.Dot(along);
-			if (std::abs(alongSpeed) > 1.0e-3f) {
-				context.velocity = along * std::abs(alongSpeed);
-			} else {
-				context.velocity = along * currentSpeed;
-			}
-
-			const float verticalDamping = mConsole ?
-				                              mConsole->GetConVarValueOr(
-					                              "park_wallrun_verticaldamping",
-					                              0.3f
-				                              ) :
-				                              0.3f;
-			if (originalY > 0.0f) {
-				context.velocity.y = originalY * verticalDamping;
-			} else if (originalY < 0.0f) {
-				context.velocity.y = originalY * 0.3f;
-			}
-
-			const float startBoost = mConsole ?
-				                         mConsole->GetConVarValueOr(
-					                         "park_wallrun_startboost", 50.0f
-				                         ) :
-				                         50.0f;
-			context.velocity       += along * Math::HtoM(startBoost);
-			context.requestedState = MovementStateIds::ParkourWallRun;
 			return true;
 		}
-
-		return false;
+		if (!CanStandAt(context)) {
+			return true;
+		}
+		return (mActiveAbilityMask & AbilitySlotToMask(MOVEMENT_ABILITY_SLOT::SLIDE)
+		       ) != 0;
 	}
 
-	bool ParkourMovementComponent::UpdateWallRun(
-		MovementContext& context,
-		const float      deltaTime
+	void ParkourMovementComponent::SyncCollisionHull(
+		TransformComponent* transform
 	) {
-		if (!mRuntime.wallRun.active || !context.transform || !context.
-		    resolver) {
-			return false;
-		}
-		const auto* physics = context.resolver->GetPhysics();
-		if (!physics) {
-			EndWallRun();
-			context.requestedState = MovementStateIds::ParkourAir;
-			return false;
-		}
-
-		mRuntime.wallRun.time += std::max(0.0f, deltaTime);
-		const float maxTime   = mConsole ?
-			                        mConsole->GetConVarValueOr(
-				                        "park_wallrun_maxtime", 2.5f
-			                        ) :
-			                        2.5f;
-		if (mRuntime.wallRun.time >= maxTime) {
-			EndWallRun();
-			context.requestedState = MovementStateIds::ParkourAir;
-			return false;
-		}
-
-		const float maintainDistance = context.halfExtents.x + Math::HtoM(
-			                               mConsole ?
-				                               mConsole->GetConVarValueOr(
-					                               "park_wallrun_maintaindistance",
-					                               20.0f
-				                               ) :
-				                               20.0f
-		                               );
-		Physics::Hit wallHit{};
-		Box          probe = {
-			.center   = context.transform->Position(),
-			.halfSize = context.halfExtents
-		};
-		if (!physics->BoxCast(
-			probe,
-			-mRuntime.wallRun.normal,
-			maintainDistance,
-			&wallHit
-		)) {
-			EndWallRun();
-			context.requestedState = MovementStateIds::ParkourAir;
-			return false;
-		}
-
-		const Vec3 newNormal = SafeNormalized(wallHit.normal);
-		if (newNormal.IsZero() || newNormal.Dot(mRuntime.wallRun.normal) <
-		    0.5f) {
-			EndWallRun();
-			context.requestedState = MovementStateIds::ParkourAir;
-			return false;
-		}
-
-		mRuntime.wallRun.normal = SafeNormalized(
-			mRuntime.wallRun.normal * 0.8f + newNormal * 0.2f
-		);
-
-		Vec3 projectedDir = Math::ProjectOnPlane(
-			HorizontalNormalized(context.input.forward),
-			mRuntime.wallRun.normal
-		);
-		if (!projectedDir.IsZero()) {
-			projectedDir.Normalize();
-			mRuntime.wallRun.direction = projectedDir;
-		}
-
-		if (context.input.crouchPressed || context.isGrounded) {
-			EndWallRun();
-			context.requestedState = MovementStateIds::ParkourAir;
-			return false;
-		}
-
-		Vec3 velHorz           = context.velocity;
-		velHorz.y              = 0.0f;
-		const float minSpeedHu = mConsole ?
-			                         mConsole->GetConVarValueOr(
-				                         "park_wallrun_minspeed", 200.0f
-			                         ) :
-			                         200.0f;
-		if (Math::MtoH(velHorz.Length()) < minSpeedHu * 0.5f) {
-			EndWallRun();
-			context.requestedState = MovementStateIds::ParkourAir;
-			return false;
-		}
-
-		const bool detachOnSideInput = mConsole ?
-			                               mConsole->GetConVarValueOr(
-				                               "park_wallrun_detachonsideinput",
-				                               true
-			                               ) :
-			                               true;
-		if (detachOnSideInput && std::abs(context.input.moveAxis.x) > 0.5f) {
-			Vec3 camRight = HorizontalNormalized(context.input.right);
-			if (!camRight.IsZero()) {
-				const float wallSide = camRight.Dot(mRuntime.wallRun.normal);
-				if (
-					(wallSide > 0.0f && context.input.moveAxis.x > 0.5f) ||
-					(wallSide < 0.0f && context.input.moveAxis.x < -0.5f)
-				) {
-					EndWallRun();
-					context.requestedState = MovementStateIds::ParkourAir;
-					return false;
-				}
-			}
-		}
-
-		if (context.input.jumpPressed) {
-			if (!mRuntime.wallRun.jumpWasHeldOnInit) {
-				const float jumpForceHu = mConsole ?
-					                          mConsole->GetConVarValueOr(
-						                          "park_wallrun_jumpforce",
-						                          350.0f
-					                          ) :
-					                          350.0f;
-				const Vec3 forwardVel =
-					mRuntime.wallRun.direction *
-					context.velocity.Dot(mRuntime.wallRun.direction);
-				Vec3 awayDir = mRuntime.wallRun.normal * 0.7f + Vec3::up;
-				awayDir.Normalize();
-				context.velocity = forwardVel + awayDir * Math::HtoM(
-					                   jumpForceHu
-				                   );
-				mRuntime.hasDoubleJump = true;
-				PublishCue("movement.wallrun.jump");
-				context.jumpSnapDisableRemaining = std::max(
-					context.jumpSnapDisableRemaining,
-					mConsole ?
-						mConsole->GetConVarValueOr(
-							"sv_jumpsnapdisabletime", 0.1f
-						) :
-						0.1f
-				);
-				EndWallRun();
-				context.requestedState = MovementStateIds::ParkourAir;
-				return false;
-			}
-		} else {
-			mRuntime.wallRun.jumpWasHeldOnInit = false;
-		}
-
-		return true;
+		UpdateCollisionHull(transform);
 	}
 
 	void ParkourMovementComponent::EndWallRun() {
@@ -1063,353 +716,65 @@ namespace Unnamed {
 		mRuntime.wallRun.jumpWasHeldOnInit = false;
 	}
 
-	bool ParkourMovementComponent::TryStartSpeedVault(
-		MovementContext& context
-	) {
-		if (!context.transform || !context.resolver) {
-			return false;
-		}
-		auto* physics = context.resolver->GetPhysics();
-		if (!physics) {
-			return false;
-		}
-
-		if (context.isGrounded || context.input.crouchPressed ||
-		    mRuntime.vault.active || mRuntime.vault.cooldown > 0.0f) {
-			return false;
-		}
-		if (context.input.moveAxis.z < 0.5f) {
-			return false;
-		}
-
-		const float minSpeedHu = mConsole ?
-			                         mConsole->GetConVarValueOr(
-				                         "park_vault_minspeed", 150.0f
-			                         ) :
-			                         150.0f;
-		Vec3 velocityH = context.velocity;
-		velocityH.y    = 0.0f;
-		if (Math::MtoH(velocityH.Length()) < minSpeedHu) {
-			return false;
-		}
-
-		if (!ApplyStandHull(context)) {
-			return false;
-		}
-
-		Vec3 forward = HorizontalNormalized(context.input.forward);
-		if (forward.IsZero()) {
-			return false;
-		}
-
-		const Vec3  centerPos     = context.transform->Position();
-		const float halfWidthM    = context.halfExtents.x;
-		const float halfHeightM   = context.halfExtents.y;
-		const float playerHeightM = halfHeightM * 2.0f;
-		const Vec3  feetPos       = centerPos - Vec3::up * halfHeightM;
-
-		const float checkDistM = Math::HtoM(
-			mConsole ?
-				mConsole->GetConVarValueOr("park_vault_forwardcheck", 32.0f) :
-				32.0f
-		);
-		const float maxVaultHeightM = Math::HtoM(
-			mConsole ?
-				mConsole->GetConVarValueOr("park_vault_maxheight", 72.0f) :
-				72.0f
-		);
-
-		const Box forwardProbe = {
-			.center   = feetPos + Vec3::up * (playerHeightM * 0.25f),
-			.halfSize = {
-				halfWidthM,
-				playerHeightM * 0.25f,
-				halfWidthM
-			}
-		};
-
-		Physics::Hit wallHit{};
-		float        distToWall = 0.0f;
-		bool         wallFound  = false;
-		if (physics->BoxCast(
-			forwardProbe, forward, checkDistM + halfWidthM, &wallHit
-		)) {
-			const Vec3 wallNormal = SafeNormalized(wallHit.normal);
-			if (std::abs(wallNormal.y) > 0.3f) {
-				return false;
-			}
-			distToWall = std::max(0.0f, wallHit.t);
-			wallFound  = true;
-		}
-
-		if (!wallFound) {
-			Physics::Hit overlapHit{};
-			if (physics->BoxOverlap(forwardProbe, &overlapHit)) {
-				const Vec3 wallNormal = SafeNormalized(overlapHit.normal);
-				if (std::abs(wallNormal.y) > 0.3f) {
-					return false;
-				}
-				distToWall = 0.0f;
-				wallFound  = true;
-			}
-		}
-
-		if (!wallFound) {
-			return false;
-		}
-
-		float       wallTopHeightM = 0.0f;
-		bool        foundTop       = false;
-		const float probeStepM     = Math::HtoM(8.0f);
-		const float probeSizeM     = Math::HtoM(4.0f);
-		const float startCheckM    = -Math::HtoM(16.0f);
-		for (
-			float testHeight = startCheckM;
-			testHeight <= maxVaultHeightM + probeStepM;
-			testHeight += probeStepM
-		) {
-			const Box topProbe = {
-				.center   = feetPos + Vec3::up * testHeight,
-				.halfSize = {
-					probeSizeM,
-					probeSizeM,
-					probeSizeM
-				}
-			};
-			Physics::Hit topHit{};
-			if (!physics->BoxCast(
-				topProbe, forward, checkDistM + halfWidthM * 2.0f, &topHit
-			)) {
-				wallTopHeightM = testHeight;
-				foundTop       = true;
-				break;
-			}
-		}
-
-		if (!foundTop || wallTopHeightM > maxVaultHeightM) {
-			return false;
-		}
-
-		{
-			const Vec3 surfaceCheckPos =
-				feetPos + forward * (distToWall + halfWidthM) +
-				Vec3::up * (wallTopHeightM + Math::HtoM(8.0f));
-			const Box surfaceProbe = {
-				.center   = surfaceCheckPos,
-				.halfSize = {
-					probeSizeM,
-					probeSizeM,
-					probeSizeM
-				}
-			};
-			Physics::Hit surfaceHit{};
-			if (physics->BoxCast(
-				surfaceProbe, Vec3::down, Math::HtoM(16.0f), &surfaceHit
-			)) {
-				if (surfaceHit.normal.y < 0.7f) {
-					return false;
-				}
-			}
-		}
-
-		float wallThicknessM = 0.0f;
-		{
-			const Vec3 thicknessCheckPos =
-				feetPos + Vec3::up * (wallTopHeightM - probeStepM);
-			const Box thicknessProbe = {
-				.center   = thicknessCheckPos,
-				.halfSize = {
-					probeSizeM,
-					probeSizeM,
-					probeSizeM
-				}
-			};
-			Physics::Hit thicknessHit{};
-			if (physics->BoxCast(
-				thicknessProbe, forward, Math::HtoM(256.0f), &thicknessHit
-			)) {
-				wallThicknessM = thicknessHit.t + probeSizeM * 2.0f;
-			} else {
-				wallThicknessM = halfWidthM * 2.0f;
-			}
-		}
-
-		const float overWallOffsetM = std::max(
-			distToWall + wallThicknessM + halfWidthM + Math::HtoM(8.0f),
-			halfWidthM * 3.0f + Math::HtoM(8.0f)
-		);
-		const Vec3 overWallPos =
-			feetPos + forward * overWallOffsetM +
-			Vec3::up * (wallTopHeightM + Math::HtoM(4.0f));
-
-		const Box landingProbe = {
-			.center   = overWallPos,
-			.halfSize = {
-				halfWidthM,
-				Math::HtoM(2.0f),
-				halfWidthM
-			}
-		};
-
-		Physics::Hit landHit{};
-		const float  dropCheckDistM = std::max(
-			maxVaultHeightM + Math::HtoM(32.0f),
-			Math::HtoM(
-				mConsole ?
-					mConsole->GetConVarValueOr(
-						"park_vault_landingcheck", 72.0f
-					) :
-					72.0f
-			)
-		);
-		if (!physics->BoxCast(
-			landingProbe, Vec3::down, dropCheckDistM, &landHit
-		)) {
-			return false;
-		}
-		if (landHit.normal.y < 0.7f) {
-			return false;
-		}
-
-		Vec3 landingFeetPos = overWallPos + Vec3::down * landHit.t;
-		if (landingFeetPos.y < feetPos.y) {
-			landingFeetPos.y = feetPos.y;
-		}
-
-		const Box landingHull = {
-			.center   = landingFeetPos + Vec3::up * halfHeightM,
-			.halfSize = context.halfExtents
-		};
-		Physics::Hit overlapHit{};
-		if (physics->BoxOverlap(landingHull, &overlapHit)) {
-			return false;
-		}
-
-		{
-			const Box backCheckProbe = {
-				.center   = landingFeetPos + Vec3::up * halfHeightM,
-				.halfSize = {
-					probeSizeM,
-					halfHeightM,
-					probeSizeM
-				}
-			};
-			Physics::Hit backHit{};
-			if (physics->BoxCast(
-				backCheckProbe, -forward, overWallOffsetM, &backHit
-			)) {
-				if (backHit.normal.Dot(forward) > 0.3f) {
-					return false;
-				}
-			}
-		}
-
-		const float apexForwardM = std::max(halfWidthM, distToWall * 0.5f);
-		const Vec3  apexFeetPos  =
-			feetPos + forward * apexForwardM +
-			Vec3::up * (wallTopHeightM + Math::HtoM(8.0f));
-
-		mRuntime.vault.active      = true;
-		mRuntime.vault.time        = 0.0f;
-		mRuntime.vault.startPos    = centerPos;
-		mRuntime.vault.apexPos     = apexFeetPos + Vec3::up * halfHeightM;
-		mRuntime.vault.endPos      = landingFeetPos + Vec3::up * halfHeightM;
-		mRuntime.vault.preVelocity = context.velocity;
-
-		context.velocity              = Vec3::zero;
-		context.isGrounded            = false;
-		context.supportEntityGuid     = 0;
-		context.supportLinearVelocity = Vec3::zero;
-		context.supportStepDelta      = Vec3::zero;
-		context.requestedState        = MovementStateIds::ParkourSpeedVault;
-		return true;
-	}
-
-	bool ParkourMovementComponent::UpdateSpeedVault(
-		MovementContext& context,
-		const float      deltaTime
-	) {
-		if (!mRuntime.vault.active || !context.transform) {
-			return false;
-		}
-
-		const float duration = std::max(
-			1.0e-4f,
-			mConsole ?
-				mConsole->GetConVarValueOr("park_vault_duration", 0.25f) :
-				0.25f
-		);
-		mRuntime.vault.time += std::max(0.0f, deltaTime);
-		const float t = std::clamp(mRuntime.vault.time / duration, 0.0f, 1.0f);
-		const float u = 1.0f - t;
-
-		const Vec3 position =
-			mRuntime.vault.startPos * (u * u) +
-			mRuntime.vault.apexPos * (2.0f * u * t) +
-			mRuntime.vault.endPos * (t * t);
-		context.transform->SetPosition(position);
-		UpdateCollisionHull(context.transform);
-
-		context.velocity              = Vec3::zero;
-		context.isGrounded            = false;
-		context.supportEntityGuid     = 0;
-		context.supportLinearVelocity = Vec3::zero;
-		context.supportStepDelta      = Vec3::zero;
-
-		if (t < 1.0f) {
-			return true;
-		}
-
-		mRuntime.vault.active   = false;
-		mRuntime.vault.cooldown = mConsole ?
-			                          mConsole->GetConVarValueOr(
-				                          "park_vault_cooldown", 0.3f
-			                          ) :
-			                          0.3f;
-
-		Vec3 horizontalVel          = mRuntime.vault.preVelocity;
-		horizontalVel.y             = 0.0f;
-		float       horizontalSpeed = horizontalVel.Length();
-		const float minExitSpeed    = Math::HtoM(
-			mConsole ?
-				mConsole->GetConVarValueOr("park_vault_minspeed", 150.0f) :
-				150.0f
-		);
-		if (horizontalSpeed < minExitSpeed) {
-			horizontalSpeed = minExitSpeed;
-		}
-
-		Vec3 vaultDir = mRuntime.vault.endPos - mRuntime.vault.startPos;
-		vaultDir.y    = 0.0f;
-		if (!vaultDir.IsZero()) {
-			vaultDir.Normalize();
-		} else {
-			vaultDir = HorizontalNormalized(context.input.forward);
-			if (vaultDir.IsZero()) {
-				vaultDir = Vec3::forward;
-			}
-		}
-
-		context.velocity       = vaultDir * horizontalSpeed;
-		context.velocity.y     = 0.0f;
-		context.isGrounded     = true;
-		mRuntime.hasDoubleJump = true;
-		context.requestedState = ResolveGroundStateFromInput(context);
-		return true;
-	}
-
-	void ParkourMovementComponent::RegisterMovementStates(
+	void ParkourMovementComponent::RegisterMovementModes(
 		GameMovementStateMachine& stateMachine
 	) {
-		RegisterParkourMovementStates(stateMachine);
+		GameMovementComponent::RegisterMovementModes(stateMachine);
 	}
 
-	std::string ParkourMovementComponent::GetInitialStateName() const {
-		return std::string(MovementStateIds::ParkourAir);
+	void ParkourMovementComponent::RegisterMovementAbilities(
+		GameMovementStateMachine& stateMachine
+	) {
+		RegisterParkourMovementAbilities(stateMachine);
 	}
 
-	std::string ParkourMovementComponent::GetAirStateNameForTransitions() const {
-		return std::string(MovementStateIds::ParkourAir);
+	MOVEMENT_MODE_ID ParkourMovementComponent::GetInitialMode() const {
+		return MOVEMENT_MODE_ID::AIR;
+	}
+
+	MOVEMENT_MODE_ID ParkourMovementComponent::GetAirModeForTransitions() const {
+		return MOVEMENT_MODE_ID::AIR;
+	}
+
+	std::string ParkourMovementComponent::ResolvePresentationStateName() const {
+		if (
+			(mActiveAbilityMask & AbilitySlotToMask(MOVEMENT_ABILITY_SLOT::BLINK)) !=
+			0
+		) {
+			return "ParkourBlinkMove";
+		}
+		if (
+			(mActiveAbilityMask &
+			 AbilitySlotToMask(MOVEMENT_ABILITY_SLOT::SPEED_VAULT)) != 0
+		) {
+			return "ParkourSpeedVaultMove";
+		}
+		if (
+			(mActiveAbilityMask &
+			 AbilitySlotToMask(MOVEMENT_ABILITY_SLOT::WALL_RUN)) != 0
+		) {
+			return "ParkourWallRunMove";
+		}
+		if (
+			(mActiveAbilityMask & AbilitySlotToMask(MOVEMENT_ABILITY_SLOT::SLIDE)) !=
+			0
+		) {
+			return "ParkourSlideMove";
+		}
+
+		if (mCurrentModeId == MOVEMENT_MODE_ID::GROUND) {
+			return mRuntime.duckHullActive ?
+				       std::string("ParkourDuckMove") :
+				       std::string("ParkourGroundMove");
+		}
+		if (mCurrentModeId == MOVEMENT_MODE_ID::NOCLIP) {
+			return "NoclipMove";
+		}
+		return "ParkourAirMove";
+	}
+
+	bool ParkourMovementComponent::UseSprintSpeedAsDefaultGroundSpeed() const {
+		return true;
 	}
 
 	void ParkourMovementComponent::OnAfterCoreCueDispatch(
@@ -1458,6 +823,9 @@ namespace Unnamed {
 		                          horizontalSpeedHu >= kMinSprintMoveSpeedHu &&
 		                          forwardDot >= kForwardSprintDotThreshold;
 		if (shouldSprint != mAutoSprintActive) {
+			// movement.sprint.start / movement.sprint.end payload contract:
+			// value  = unused (0)
+			// value2 = unused (0)
 			PublishCue(
 				shouldSprint ? "movement.sprint.start" : "movement.sprint.end"
 			);
@@ -1467,14 +835,23 @@ namespace Unnamed {
 			const float sprintRatio = std::clamp(
 				horizontalSpeedHu / sprintSpeedSafeHu, 0.0f, 2.0f
 			);
+			// movement.sprint.update payload contract:
+			// value  = sprint ratio [0..2] (horizontalSpeedHu / sv_sprintspeed)
+			// value2 = unused (0)
+			// named:
+			//   payload.sprintRatio
 			PublishCue("movement.sprint.update", sprintRatio);
 		}
 
 		if (!loweredState.empty()) {
+			// movement.state.update.* payload contract:
+			// value  = state update intensity (currently 1.0 while active)
+			// value2 = unused (0)
 			PublishCue("movement.state.update." + loweredState, 1.0f);
 		}
 
 		if (mRuntime.pendingDoubleJumpCue) {
+			// movement.doublejump: 現状は payload 未使用（value/value2 は 0）。
 			PublishCue("movement.doublejump");
 			mRuntime.pendingDoubleJumpCue = false;
 		}
@@ -1518,6 +895,12 @@ namespace Unnamed {
 		);
 		while (mRuntime.footstepDistanceAccumHu >= safeStrideHu) {
 			mRuntime.footstepDistanceAccumHu -= safeStrideHu;
+			// movement.footstep payload contract:
+			// value  = footstepScale (speed-normalized intensity, [0..2])
+			// value2 = capped horizontal speed in HU/s
+			// named:
+			//   payload.footstepScale
+			//   payload.horizontalSpeedHuPerSec
 			PublishCue("movement.footstep", footstepScale, cappedSpeedHu);
 		}
 	}

@@ -6,6 +6,7 @@
 #include <json.hpp>
 
 #include "base/BaseCharacterComponent.h"
+#include "movement/MovementTypes.h"
 
 namespace Unnamed::Physics {
 	class Engine;
@@ -56,19 +57,32 @@ namespace Unnamed {
 		virtual void WriteReplayState(nlohmann::json& outState) const;
 		virtual void ReadReplayState(const nlohmann::json& inState);
 		[[nodiscard]] virtual uint64_t ComputeReplayStateHash() const;
+		/// @brief 地上移動の基準速度を常にスプリント値へ固定するかを返します。
+		[[nodiscard]] virtual bool UseSprintSpeedAsDefaultGroundSpeed() const;
 
 	protected:
-		virtual void RegisterMovementStates(
+		/// @brief Locomotion Modeを登録します。
+		virtual void RegisterMovementModes(
 			GameMovementStateMachine& stateMachine
 		);
 
-		/// @brief 初期状態として開始する移動状態IDを返します。
-		[[nodiscard]] virtual std::string GetInitialStateName() const;
+		/// @brief Movement Abilityを登録します。
+		virtual void RegisterMovementAbilities(
+			GameMovementStateMachine& stateMachine
+		);
 
-		/// @brief ノークリップ解除後に戻る空中状態IDを返します。
-		[[nodiscard]] virtual std::string GetAirStateNameForTransitions() const;
+		/// @brief 初期Modeを返します。
+		[[nodiscard]] virtual MOVEMENT_MODE_ID GetInitialMode() const;
+
+		/// @brief ノークリップ解除後に戻る空中Modeを返します。
+		[[nodiscard]] virtual MOVEMENT_MODE_ID GetAirModeForTransitions() const;
+
+		/// @brief 表示/Cue向けの現在移動状態ラベルを解決します。
+		[[nodiscard]] virtual std::string ResolvePresentationStateName() const;
 
 		virtual void UpdateCollisionHull(TransformComponent* transform) const;
+		[[nodiscard]] MovementCapabilitySet& GetCapabilitySet();
+		[[nodiscard]] const MovementCapabilitySet& GetCapabilitySet() const;
 
 		[[nodiscard]] TransformComponent* GetTransform() const override;
 		[[nodiscard]] Vec3                ResolveSupportLinearVelocity(
@@ -80,6 +94,8 @@ namespace Unnamed {
 		[[nodiscard]] bool ApplyPassiveMotionStep(
 			TransformComponent* transform, float stepSeconds
 		);
+		/// @brief GameplayCue を発火します。
+		/// @details value/value2 の意味は Cue ごとに異なるため、発火箇所で必ず契約コメントを残します。
 		void PublishCue(
 			std::string id, float value = 0.0f, float value2 = 0.0f
 		);
@@ -103,8 +119,12 @@ namespace Unnamed {
 			Vec3     supportStepDelta      = Vec3::zero;
 		};
 
-		SupportCache mSupportCache;
-		float        mJumpSnapDisableRemaining = 0.0f;
+		SupportCache              mSupportCache;
+		float                     mJumpSnapDisableRemaining = 0.0f;
+		MovementCapabilitySet     mCapabilitySet = {};
+		MOVEMENT_MODE_ID          mCurrentModeId = MOVEMENT_MODE_ID::AIR;
+		uint64_t                  mActiveAbilityMask = 0;
+		static constexpr uint32_t kMovementRuntimeVersion = 2;
 
 #ifdef _DEBUG
 		std::string mDebugLastPublishedCueId;

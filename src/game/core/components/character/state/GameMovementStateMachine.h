@@ -1,14 +1,17 @@
-﻿#pragma once
-#include <memory>
-#include <string>
-#include <unordered_map>
+#pragma once
 
-#include "interface/IMovementState.h"
+#include <array>
+#include <memory>
+#include <string_view>
+#include <vector>
+
+#include "interface/IMovementAbility.h"
+#include "interface/IMovementMode.h"
 
 namespace Unnamed {
 	class ConsoleSystem;
-	class BaseCharacterComponent;
 
+	/// @brief Locomotion ModeとAbilityを統合管理する状態機械です。
 	class GameMovementStateMachine {
 	public:
 		GameMovementStateMachine();
@@ -20,21 +23,49 @@ namespace Unnamed {
 		/// @brief 現在状態を1フレーム更新します。
 		void Tick(MovementContext& context, float deltaTime);
 
-		/// @brief 指定した状態IDへ遷移します。
-		void ChangeState(const std::string& stateName);
+		/// @brief Modeを登録します。
+		void AddMode(const std::shared_ptr<IMovementMode>& mode);
 
-		/// @brief 状態を登録します。既存IDと重複した場合は上書きします。
-		void AddState(const std::shared_ptr<IMovementState>& state);
+		/// @brief Abilityを登録します。
+		void AddAbility(const std::shared_ptr<IMovementAbility>& ability);
 
-		[[nodiscard]] std::shared_ptr<IMovementState> GetCurrentState() const;
+		/// @brief 初期Modeを設定します。
+		void SetInitialMode(MOVEMENT_MODE_ID modeId);
+
+		[[nodiscard]] MOVEMENT_MODE_ID GetCurrentModeId() const;
+		[[nodiscard]] std::string_view GetCurrentModeName() const;
+		[[nodiscard]] uint64_t GetActiveAbilityMask() const;
+		[[nodiscard]] bool IsAbilityActive(MOVEMENT_ABILITY_SLOT slot) const;
 
 	private:
+		struct AbilityEntry {
+			std::shared_ptr<IMovementAbility> ability = nullptr;
+			bool active = false;
+		};
+
+		void ApplyModeTransition(
+			MovementContext& context,
+			MOVEMENT_MODE_ID toMode,
+			std::string_view reason,
+			std::string_view source
+		);
+
+		void StopAbilitiesInvalidInMode(
+			MovementContext& context,
+			MOVEMENT_MODE_ID modeId
+		);
+
+		[[nodiscard]] uint64_t RebuildAbilityMask() const;
+		[[nodiscard]] IMovementMode* GetMode(MOVEMENT_MODE_ID modeId) const;
+
 		ConsoleSystem* mConsole = nullptr;
-		BaseCharacterComponent* mCharacterComponent = nullptr;
 		bool mHasReportedMissingConsole = false;
 
-		std::unordered_map<std::string, std::shared_ptr<IMovementState>>
-		mStates;
-		std::shared_ptr<IMovementState> mCurrentState = nullptr;
+		std::array<std::shared_ptr<IMovementMode>, static_cast<size_t>(
+			MOVEMENT_MODE_ID::COUNT
+		)> mModes = {};
+		std::vector<AbilityEntry> mAbilities = {};
+		MOVEMENT_MODE_ID mCurrentModeId = MOVEMENT_MODE_ID::AIR;
+		uint64_t mActiveAbilityMask = 0;
 	};
 }

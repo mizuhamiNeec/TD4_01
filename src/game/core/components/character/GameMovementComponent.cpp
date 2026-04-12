@@ -12,6 +12,8 @@
 #include "base/BaseCharacterComponent.h"
 
 #include "core/ComponentRegistry.h"
+#include "core/io/json/JsonReader.h"
+#include "core/io/json/JsonWriter.h"
 #include "core/string/StrUtil.h"
 
 #include "engine/scene/Scene.h"
@@ -20,6 +22,7 @@
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
 #include "engine/unnamed/subsystem/console/Log.h"
+#include "engine/unnamed/subsystem/console/concommand/ConVar.h"
 #include "engine/unnamed/subsystem/input/InputSystem.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 #include "engine/world/GameplayCueBus.h"
@@ -30,10 +33,10 @@
 #include "game/core/replay/DemoManager.h"
 #include "game/core/replay/ReplayHash.h"
 
-#include "state/AirMove.h"
-#include "state/GroundMove.h"
-#include "state/MovementStateIds.h"
-#include "state/NoclipMove.h"
+#include "state/ability/CoreMovementAbilities.h"
+#include "state/mode/AirMovementMode.h"
+#include "state/mode/GroundMovementMode.h"
+#include "state/mode/NoclipMovementMode.h"
 
 namespace Unnamed {
 	namespace {
@@ -58,33 +61,36 @@ namespace Unnamed {
 		const bool        wasGrounded            = mSupportCache.grounded;
 		const float       preStepVerticalSpeedHu = Math::MtoH(mVelocity.y);
 		const std::string previousStateName      = StrUtil::ToLowerCase(
-			std::string(
-				mStateMachine->GetCurrentState() ?
-					mStateMachine->GetCurrentState()->GetStateName() :
-					""
-			)
+			ResolvePresentationStateName()
 		);
 
 		(void)ApplyPassiveMotionStep(transform, stepSeconds);
 
-		MovementContext context = {
-			.input                    = input,
-			.transform                = transform,
-			.velocity                 = mVelocity,
-			.resolver                 = mCollisionResolver.get(),
-			.halfExtents              = mBoxHalfExtents,
-			.requestedState           = "",
-			.isGrounded               = mSupportCache.grounded,
-			.supportEntityGuid        = mSupportCache.supportEntityGuid,
-			.supportLinearVelocity    = mSupportCache.supportLinearVelocity,
-			.supportStepDelta         = mSupportCache.supportStepDelta,
-			.jumpSnapDisableRemaining = mJumpSnapDisableRemaining,
-			.defaultAirStateName      = GetAirStateNameForTransitions(),
-			.movementComponent        = this
-		};
+		mCurrentModeId = mStateMachine->GetCurrentModeId();
+		mActiveAbilityMask = mStateMachine->GetActiveAbilityMask();
+		MovementContext context = {};
+		context.input = input;
+		context.transform = transform;
+		context.velocity = mVelocity;
+		context.resolver = mCollisionResolver.get();
+		context.halfExtents = mBoxHalfExtents;
+		context.isGrounded = mSupportCache.grounded;
+		context.supportEntityGuid = mSupportCache.supportEntityGuid;
+		context.supportLinearVelocity = mSupportCache.supportLinearVelocity;
+		context.supportStepDelta = mSupportCache.supportStepDelta;
+		context.jumpSnapDisableRemaining = mJumpSnapDisableRemaining;
+		context.defaultAirMode = GetAirModeForTransitions();
+		context.movementComponent = this;
+		context.capabilitySet = &mCapabilitySet;
+		context.modeState.currentMode = mCurrentModeId;
+		context.modeState.previousMode = mCurrentModeId;
+		context.modeState.changedThisTick = false;
+		context.activeAbilityMask = mActiveAbilityMask;
 
 		UpdateCollisionHull(transform);
 		mStateMachine->Tick(context, stepSeconds);
+		mCurrentModeId            = mStateMachine->GetCurrentModeId();
+		mActiveAbilityMask        = mStateMachine->GetActiveAbilityMask();
 		mVelocity                 = context.velocity;
 		mGrounded                 = context.isGrounded;
 		mJumpSnapDisableRemaining = std::max(
@@ -93,19 +99,19 @@ namespace Unnamed {
 		);
 
 		const std::string currentStateName = StrUtil::ToLowerCase(
-			std::string(
-				mStateMachine->GetCurrentState() ?
-					mStateMachine->GetCurrentState()->GetStateName() :
-					""
-			)
+			ResolvePresentationStateName()
 		);
 
 		if (
 			!previousStateName.empty() &&
 			previousStateName != currentStateName
 		) {
+			// movement.state.exit.* payload contract:
+			// value/value2 are currently unused (default 0).
 			PublishCue("movement.state.exit." + previousStateName);
 			if (!currentStateName.empty()) {
+				// movement.state.enter.* payload contract:
+				// value/value2 are currently unused (default 0).
 				PublishCue("movement.state.enter." + currentStateName);
 			}
 		}
@@ -116,6 +122,7 @@ namespace Unnamed {
 			input.jumpPressed &&
 			context.velocity.y > 0.0f
 		) {
+			// movement.jump: 現状は payload 未使用（value/value2 は 0）。
 			PublishCue("movement.jump");
 		}
 
@@ -124,6 +131,12 @@ namespace Unnamed {
 			const float landStrength = std::clamp(
 				downSpeedHu / 400.0f, 0.0f, 200.0f
 			);
+			// movement.land payload contract:
+			// value  = normalized land strength [0..200]
+			// value2 = impactSpeed (downward speed in HU/s, >= 0)
+			// named:
+			//   payload.landStrength
+			//   payload.impactSpeedHuPerSec
 			PublishCue("movement.land", landStrength, downSpeedHu);
 		}
 
@@ -162,8 +175,11 @@ namespace Unnamed {
 		mStateMachine = std::make_unique<GameMovementStateMachine>();
 		mStateMachine->Init();
 
-		RegisterMovementStates(*mStateMachine);
-		mStateMachine->ChangeState(GetInitialStateName());
+		RegisterMovementModes(*mStateMachine);
+		RegisterMovementAbilities(*mStateMachine);
+		mStateMachine->SetInitialMode(GetInitialMode());
+		mCurrentModeId     = mStateMachine->GetCurrentModeId();
+		mActiveAbilityMask = mStateMachine->GetActiveAbilityMask();
 
 		auto* physicsEngine = GetWorld() ?
 			                      &GetWorld()->GetPhysicsEngine() :
@@ -256,7 +272,7 @@ namespace Unnamed {
 			);
 			if (!supportFrameDelta.IsZero()) {
 				transform->SetPosition(
-					transform->Position() + supportFrameDelta
+					transform->GetPosition() + supportFrameDelta
 				);
 			}
 		} else {
@@ -280,16 +296,17 @@ namespace Unnamed {
 			);
 			return;
 		}
+		auto& worldDebugDraw = GetWorld()->GetDebugDraw();
+
 		// デバッグ描画: 現在の速度を矢印で表示
-		GetWorld()->GetDebugDraw().DrawArrow(
-			transform->Position(),
+		worldDebugDraw.DrawArrow(
 			transform->GetPosition(),
 			mVelocity * 0.25f, // 普通に出したら長いので縮める
 			Vec4::yellow,
 			0.125f
 		);
 
-		MovementContext context = {
+		const MovementContext context = {
 			.input = mMoveFrameInput,
 		};
 
@@ -297,30 +314,39 @@ namespace Unnamed {
 			return;
 		}
 
-		const std::shared_ptr<IMovementState> currentState =
-			mStateMachine->GetCurrentState();
-
-		if (!currentState) {
-			return;
-		}
-
-		const Vec3 wishDir = currentState->GetWishDirHoriz(context);
+		const Vec3 right   = context.input.right.Normalized();
+		Vec3       forward = context.input.forward.Normalized();
+		forward.y          = 0.0f;
+		forward.Normalize();
+		Vec3 wishDir =
+			right * context.input.moveAxis.x +
+			forward * context.input.moveAxis.z;
+		wishDir.y = 0.0f;
 
 		// デバッグ描画: 移動方向をレイで表示
-		transform->GetWorld()->GetDebugDraw().DrawRay(
-			transform->Position(),
+		worldDebugDraw.DrawRay(
 			transform->GetPosition(),
 			wishDir.Normalized(),
 			Vec4::white
 		);
+
+		// デバッグ描画: 当たり判定のボックスを表示
+		worldDebugDraw.DrawBox(
+			transform->GetPosition(),
+			transform->GetRotation(),
+			mBoxHalfExtents * 2.0f,
+			Vec4::cyan
+		);
 	}
 
 	void GameMovementComponent::OnEditorTick(float) {
-		auto* world = GetWorld();
+		auto*                     world     = GetWorld();
+		const TransformComponent* transform = GetTransform();
+		if (!world || !transform) {
+			return;
+		}
 
 		world->GetDebugDraw().DrawBox(
-			GetTransform()->Position(),
-			GetTransform()->Rotation(),
 			transform->GetPosition(),
 			transform->GetRotation(),
 			mBoxHalfExtents * 2.0f,
@@ -336,20 +362,35 @@ namespace Unnamed {
 		return "GameMovement";
 	}
 
-	void GameMovementComponent::RegisterMovementStates(
+	bool GameMovementComponent::UseSprintSpeedAsDefaultGroundSpeed() const {
+		return false;
+	}
+
+	void GameMovementComponent::RegisterMovementModes(
 		GameMovementStateMachine& stateMachine
 	) {
-		stateMachine.AddState(std::make_shared<NoclipMove>());
-		stateMachine.AddState(std::make_shared<AirMove>());
-		stateMachine.AddState(std::make_shared<GroundMove>());
+		stateMachine.AddMode(std::make_shared<NoclipMovementMode>());
+		stateMachine.AddMode(std::make_shared<AirMovementMode>());
+		stateMachine.AddMode(std::make_shared<GroundMovementMode>());
 	}
 
-	std::string GameMovementComponent::GetInitialStateName() const {
-		return std::string(MovementStateIds::Air);
+	void GameMovementComponent::RegisterMovementAbilities(
+		GameMovementStateMachine& stateMachine
+	) {
+		stateMachine.AddAbility(std::make_shared<JumpMovementAbility>());
+		stateMachine.AddAbility(std::make_shared<CrouchMovementAbility>());
 	}
 
-	std::string GameMovementComponent::GetAirStateNameForTransitions() const {
-		return std::string(MovementStateIds::Air);
+	MOVEMENT_MODE_ID GameMovementComponent::GetInitialMode() const {
+		return MOVEMENT_MODE_ID::AIR;
+	}
+
+	MOVEMENT_MODE_ID GameMovementComponent::GetAirModeForTransitions() const {
+		return MOVEMENT_MODE_ID::AIR;
+	}
+
+	std::string GameMovementComponent::ResolvePresentationStateName() const {
+		return std::string(ToString(mCurrentModeId));
 	}
 
 	void GameMovementComponent::UpdateCollisionHull(
@@ -363,9 +404,17 @@ namespace Unnamed {
 			mCollisionResolver.get()
 		);
 		if (boxResolver) {
-			boxResolver->UpdateHull(transform->Position(), mBoxHalfExtents);
-		}
 			boxResolver->UpdateHull(transform->GetPosition(), mBoxHalfExtents);
+		}
+	}
+
+	MovementCapabilitySet& GameMovementComponent::GetCapabilitySet() {
+		return mCapabilitySet;
+	}
+
+	const MovementCapabilitySet& GameMovementComponent::GetCapabilitySet()
+	const {
+		return mCapabilitySet;
 	}
 
 	void GameMovementComponent::OnAfterCoreCueDispatch(
@@ -380,6 +429,21 @@ namespace Unnamed {
 #ifdef _DEBUG
 	void GameMovementComponent::DrawInspectorImGui() {
 		BaseCharacterComponent::DrawInspectorImGui();
+
+		ImGui::SeparatorText("Movement Capabilities");
+		ImGui::Checkbox("Jump", &mCapabilitySet.jump);
+		ImGui::Checkbox("Crouch", &mCapabilitySet.crouch);
+		ImGui::Checkbox("Slide", &mCapabilitySet.slide);
+		ImGui::Checkbox("WallRun", &mCapabilitySet.wallRun);
+		ImGui::Checkbox("DoubleJump", &mCapabilitySet.doubleJump);
+		ImGui::Checkbox("SpeedVault", &mCapabilitySet.speedVault);
+		ImGui::Checkbox("Blink", &mCapabilitySet.blink);
+		ImGui::Checkbox("Grapple", &mCapabilitySet.grapple);
+		ImGui::Text(
+			"Mode: %s | ActiveAbilities: 0x%016llX",
+			ToString(mCurrentModeId).data(),
+			static_cast<unsigned long long>(mActiveAbilityMask)
+		);
 
 		ImGui::SeparatorText("Gameplay Cue Debug");
 		ImGui::Text(
@@ -397,10 +461,50 @@ namespace Unnamed {
 
 	void GameMovementComponent::Deserialize(const JsonReader& reader) {
 		BaseCharacterComponent::Deserialize(reader);
+		if (const JsonReader caps = reader["movementCapabilities"]; caps.
+			Valid()) {
+			mCapabilitySet.jump   = caps["jump"].GetBool(mCapabilitySet.jump);
+			mCapabilitySet.crouch = caps["crouch"].GetBool(
+				mCapabilitySet.crouch
+			);
+			mCapabilitySet.slide = caps["slide"].GetBool(mCapabilitySet.slide);
+			mCapabilitySet.wallRun = caps["wallRun"].GetBool(
+				mCapabilitySet.wallRun
+			);
+			mCapabilitySet.doubleJump = caps["doubleJump"].GetBool(
+				mCapabilitySet.doubleJump
+			);
+			mCapabilitySet.speedVault = caps["speedVault"].GetBool(
+				mCapabilitySet.speedVault
+			);
+			mCapabilitySet.blink = caps["blink"].GetBool(mCapabilitySet.blink);
+			mCapabilitySet.grapple = caps["grapple"].GetBool(
+				mCapabilitySet.grapple
+			);
+		}
 	}
 
 	void GameMovementComponent::Serialize(JsonWriter& writer) const {
 		BaseCharacterComponent::Serialize(writer);
+		writer.Key("movementCapabilities");
+		writer.BeginObject();
+		writer.Key("jump");
+		writer.Write(mCapabilitySet.jump);
+		writer.Key("crouch");
+		writer.Write(mCapabilitySet.crouch);
+		writer.Key("slide");
+		writer.Write(mCapabilitySet.slide);
+		writer.Key("wallRun");
+		writer.Write(mCapabilitySet.wallRun);
+		writer.Key("doubleJump");
+		writer.Write(mCapabilitySet.doubleJump);
+		writer.Key("speedVault");
+		writer.Write(mCapabilitySet.speedVault);
+		writer.Key("blink");
+		writer.Write(mCapabilitySet.blink);
+		writer.Key("grapple");
+		writer.Write(mCapabilitySet.grapple);
+		writer.EndObject();
 	}
 
 	void GameMovementComponent::WriteReplayState(
@@ -441,13 +545,21 @@ namespace Unnamed {
 		outState["boxHalfExtents"] = nlohmann::json::array(
 			{mBoxHalfExtents.x, mBoxHalfExtents.y, mBoxHalfExtents.z}
 		);
-		outState["stateName"] = mStateMachine && mStateMachine->
-		                        GetCurrentState() ?
-			                        std::string(
-				                        mStateMachine->GetCurrentState()->
-				                        GetStateName()
-			                        ) :
-			                        std::string();
+		outState["movementRuntimeVersion"] = kMovementRuntimeVersion;
+		outState["modeId"] = static_cast<uint32_t>(mCurrentModeId);
+		outState["activeAbilityMask"] = mActiveAbilityMask;
+		outState["capabilities"] = nlohmann::json::object(
+			{
+				{"jump", mCapabilitySet.jump},
+				{"crouch", mCapabilitySet.crouch},
+				{"slide", mCapabilitySet.slide},
+				{"wallRun", mCapabilitySet.wallRun},
+				{"doubleJump", mCapabilitySet.doubleJump},
+				{"speedVault", mCapabilitySet.speedVault},
+				{"blink", mCapabilitySet.blink},
+				{"grapple", mCapabilitySet.grapple}
+			}
+		);
 
 		if (TransformComponent* transform = GetTransform()) {
 			const Vec3       position = transform->GetPosition();
@@ -549,12 +661,66 @@ namespace Unnamed {
 			}
 		}
 
-		if (const auto it = inState.find("stateName");
-			it != inState.end() && it->is_string() && mStateMachine) {
-			const std::string stateName = it->get<std::string>();
-			if (!stateName.empty()) {
-				mStateMachine->ChangeState(stateName);
+		const bool hasRuntimeVersion =
+			inState.contains("movementRuntimeVersion");
+		if (hasRuntimeVersion) {
+			if (const auto it = inState.find("modeId");
+				it != inState.end() && it->is_number_unsigned()) {
+				const uint32_t rawMode = it->get<uint32_t>();
+				if (rawMode < static_cast<uint32_t>(MOVEMENT_MODE_ID::COUNT)) {
+					mCurrentModeId = static_cast<MOVEMENT_MODE_ID>(rawMode);
+				}
 			}
+			mActiveAbilityMask = inState.value(
+				"activeAbilityMask",
+				mActiveAbilityMask
+			);
+			if (const auto it = inState.find("capabilities");
+				it != inState.end() && it->is_object()) {
+				mCapabilitySet.jump   = it->value("jump", mCapabilitySet.jump);
+				mCapabilitySet.crouch = it->value(
+					"crouch",
+					mCapabilitySet.crouch
+				);
+				mCapabilitySet.slide = it->value("slide", mCapabilitySet.slide);
+				mCapabilitySet.wallRun = it->value(
+					"wallRun",
+					mCapabilitySet.wallRun
+				);
+				mCapabilitySet.doubleJump = it->value(
+					"doubleJump",
+					mCapabilitySet.doubleJump
+				);
+				mCapabilitySet.speedVault = it->value(
+					"speedVault",
+					mCapabilitySet.speedVault
+				);
+				mCapabilitySet.blink = it->value("blink", mCapabilitySet.blink);
+				mCapabilitySet.grapple = it->value(
+					"grapple",
+					mCapabilitySet.grapple
+				);
+			}
+		} else if (const auto it = inState.find("stateName");
+			it != inState.end() && it->is_string()) {
+			Warning(
+				GetComponentName(),
+				"Legacy movement replay schema detected. Deterministic compatibility is best-effort."
+			);
+			const std::string stateName = StrUtil::ToLowerCase(
+				it->get<std::string>()
+			);
+			if (stateName.find("noclip") != std::string::npos) {
+				mCurrentModeId = MOVEMENT_MODE_ID::NOCLIP;
+			} else if (stateName.find("ground") != std::string::npos) {
+				mCurrentModeId = MOVEMENT_MODE_ID::GROUND;
+			} else {
+				mCurrentModeId = MOVEMENT_MODE_ID::AIR;
+			}
+		}
+
+		if (mStateMachine) {
+			mStateMachine->SetInitialMode(mCurrentModeId);
 		}
 	}
 
@@ -579,14 +745,20 @@ namespace Unnamed {
 		ReplayHash::AppendFloating(hash, mBoxHalfExtents.y);
 		ReplayHash::AppendFloating(hash, mBoxHalfExtents.z);
 
-		const std::string stateName = mStateMachine && mStateMachine->
-		                              GetCurrentState() ?
-			                              std::string(
-				                              mStateMachine->GetCurrentState()->
-				                              GetStateName()
-			                              ) :
-			                              std::string();
-		ReplayHash::AppendString(hash, stateName);
+		ReplayHash::AppendPod(
+			hash,
+			static_cast<uint32_t>(kMovementRuntimeVersion)
+		);
+		ReplayHash::AppendPod(hash, static_cast<uint32_t>(mCurrentModeId));
+		ReplayHash::AppendPod(hash, mActiveAbilityMask);
+		ReplayHash::AppendPod(hash, mCapabilitySet.jump);
+		ReplayHash::AppendPod(hash, mCapabilitySet.crouch);
+		ReplayHash::AppendPod(hash, mCapabilitySet.slide);
+		ReplayHash::AppendPod(hash, mCapabilitySet.wallRun);
+		ReplayHash::AppendPod(hash, mCapabilitySet.doubleJump);
+		ReplayHash::AppendPod(hash, mCapabilitySet.speedVault);
+		ReplayHash::AppendPod(hash, mCapabilitySet.blink);
+		ReplayHash::AppendPod(hash, mCapabilitySet.grapple);
 
 		if (const TransformComponent* transform = GetTransform()) {
 			const Vec3       position = transform->GetPosition();
@@ -917,51 +1089,51 @@ namespace Unnamed {
 			tryAddInfluence(moverGuid, moverStepDelta);
 		}
 
-		if (influenceCount <= 0) {
-			return false;
-		}
-
-		std::sort(
-			influences.begin(),
-			influences.begin() + influenceCount,
-			[](
-			const PassiveMoverInfluence& lhs, const PassiveMoverInfluence& rhs
-		) {
-				const float lhsLenSq = lhs.stepDelta.SqrLength();
-				const float rhsLenSq = rhs.stepDelta.SqrLength();
-				if (lhsLenSq == rhsLenSq) {
-					return lhs.guid < rhs.guid;
-				}
-				return lhsLenSq > rhsLenSq;
-			}
-		);
-
 		UpdateCollisionHull(transform);
 		bool positionChanged = false;
-		for (int i = 0; i < influenceCount; ++i) {
-			const Vec3 desiredDelta = influences[i].stepDelta;
-			if (desiredDelta.SqrLength() <= 1.0e-12f) {
-				continue;
-			}
+		if (influenceCount > 0) {
+			std::sort(
+				influences.begin(),
+				influences.begin() + influenceCount,
+				[](
+				const PassiveMoverInfluence& lhs,
+				const PassiveMoverInfluence& rhs
+			) {
+					const float lhsLenSq = lhs.stepDelta.SqrLength();
+					const float rhsLenSq = rhs.stepDelta.SqrLength();
+					if (lhsLenSq == rhsLenSq) {
+						return lhs.guid < rhs.guid;
+					}
+					return lhsLenSq > rhsLenSq;
+				}
+			);
 
-			const Vec3 beforePosition = position;
-			Vec3       pseudoVelocity = desiredDelta;
-			mCollisionResolver->SlideMove(position, pseudoVelocity, 1.0f);
+			for (int i = 0; i < influenceCount; ++i) {
+				const Vec3 desiredDelta = influences[i].stepDelta;
+				if (desiredDelta.SqrLength() <= 1.0e-12f) {
+					continue;
+				}
 
-			const Vec3 appliedDelta = position - beforePosition;
-			if (!appliedDelta.IsZero(1.0e-6f)) {
-				positionChanged = true;
-			}
+				const Vec3 beforePosition = position;
+				Vec3       pseudoVelocity = desiredDelta;
+				mCollisionResolver->SlideMove(position, pseudoVelocity, 1.0f);
 
-			const Vec3 residual = desiredDelta - appliedDelta;
-			if (residual.SqrLength() > 1.0e-10f) {
-				const Vec3 blockNormal = residual.Normalized();
-				if (mVelocity.Dot(blockNormal) < 0.0f) {
-					mVelocity = BaseKinematicCollisionResolver::ClipVelocity(
-						mVelocity,
-						blockNormal,
-						1.0f
-					);
+				const Vec3 appliedDelta = position - beforePosition;
+				if (!appliedDelta.IsZero(1.0e-6f)) {
+					positionChanged = true;
+				}
+
+				const Vec3 residual = desiredDelta - appliedDelta;
+				if (residual.SqrLength() > 1.0e-10f) {
+					const Vec3 blockNormal = residual.Normalized();
+					if (mVelocity.Dot(blockNormal) < 0.0f) {
+						mVelocity =
+							BaseKinematicCollisionResolver::ClipVelocity(
+								mVelocity,
+								blockNormal,
+								1.0f
+							);
+					}
 				}
 			}
 		}
@@ -996,30 +1168,67 @@ namespace Unnamed {
 				);
 			}
 
-			float deepestDepth  = 0.0f;
-			Vec3  deepestNormal = Vec3::zero;
+			Vec3  correctionVector = Vec3::zero;
+			Vec3  fallbackNormal   = Vec3::zero;
+			float deepestDepth     = 0.0f;
+			int   validHitCount    = 0;
 			for (int i = 0; i < depenHitCount; ++i) {
 				const Physics::Hit& hit = overlapHits[i];
 				if (hit.hitEntityGuid == 0 || hit.hitEntityGuid == ownerGuid) {
 					continue;
 				}
 
-				if (hit.depth > deepestDepth && hit.normal.SqrLength() >
-				    1.0e-12f) {
-					deepestDepth  = hit.depth;
-					deepestNormal = hit.normal.Normalized();
+				if (hit.normal.SqrLength() <= 1.0e-12f) {
+					continue;
+				}
+
+				const Vec3  normal     = hit.normal.Normalized();
+				const float depenDepth = std::max(
+					0.0f,
+					hit.depth - contactSkinM
+				);
+				if (depenDepth <= 1.0e-6f) {
+					continue;
+				}
+
+				correctionVector += normal * depenDepth;
+				++validHitCount;
+				if (depenDepth > deepestDepth) {
+					deepestDepth   = depenDepth;
+					fallbackNormal = normal;
 				}
 			}
 
-			if (deepestDepth <= contactSkinM + 1.0e-6f || deepestNormal.
-			    IsZero()) {
+			if (validHitCount <= 0 || deepestDepth <= 1.0e-6f ||
+			    fallbackNormal.IsZero()) {
 				break;
 			}
 
+			Vec3 correctionDir =
+				correctionVector.SqrLength() > 1.0e-12f ?
+					correctionVector.Normalized() :
+					fallbackNormal;
+
+			if (correctionDir.IsZero()) {
+				correctionDir = fallbackNormal;
+			}
+			if (correctionDir.IsZero()) {
+				break;
+			}
+
+			const float averageDepth = correctionVector.SqrLength() > 1.0e-12f ?
+				                           correctionVector.Length() /
+				                           static_cast<float>(validHitCount) :
+				                           deepestDepth;
+			
 			const float depenBias  = Math::HtoM(0.05f);
-			const float correction =
-				std::max(0.0f, deepestDepth - contactSkinM) + depenBias;
-			position        += deepestNormal * correction;
+			
+			const float correction = std::max(
+				                         deepestDepth * 0.5f,
+				                         averageDepth
+			                         ) +
+			                         depenBias;
+			position        += correctionDir * correction;
 			positionChanged = true;
 		}
 
@@ -1048,6 +1257,16 @@ namespace Unnamed {
 		cue.sourceEntityGuid = owner->GetGuid();
 		cue.value            = value;
 		cue.value2           = value2;
+		// value/value2 互換を維持しつつ、named payload も同時に供給します。
+		if (cue.id == "movement.land") {
+			cue.SetFloat("landStrength", value);
+			cue.SetFloat("impactSpeedHuPerSec", value2);
+		} else if (cue.id == "movement.footstep") {
+			cue.SetFloat("footstepScale", value);
+			cue.SetFloat("horizontalSpeedHuPerSec", value2);
+		} else if (cue.id == "movement.sprint.update") {
+			cue.SetFloat("sprintRatio", value);
+		}
 		world->GetGameplayCueBus().Publish(cue);
 
 #ifdef _DEBUG

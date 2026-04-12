@@ -169,10 +169,14 @@ namespace Unnamed {
 	void BaseCharacterComponent::DrawInspectorImGui() {
 		if (mStateMachine) {
 			ImGui::Text(
-				"CurrentState: %s",
-				mStateMachine->GetCurrentState() ?
-					mStateMachine->GetCurrentState()->GetStateName().data() :
-					"Null"
+				"CurrentMode: %s",
+				mStateMachine->GetCurrentModeName().data()
+			);
+			ImGui::Text(
+				"ActiveAbilityMask: 0x%016llX",
+				static_cast<unsigned long long>(
+					mStateMachine->GetActiveAbilityMask()
+				)
 			);
 		}
 		ImGui::Text("Grounded: %s", mGrounded ? "true" : "false");
@@ -196,3 +200,4 @@ namespace Unnamed {
 
 	REGISTER_COMPONENT(BaseCharacterComponent);
 }
+

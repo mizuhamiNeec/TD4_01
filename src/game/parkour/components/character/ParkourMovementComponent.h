@@ -105,6 +105,12 @@ namespace Unnamed {
 		[[nodiscard]] const ParkourRuntime& GetParkourRuntime() const;
 
 		void TickParkourTimers(float deltaTime);
+		/// @brief Parkour移動Abilityから共通Cueを発火します。
+		void PublishParkourMovementCue(
+			std::string_view id,
+			float            value = 0.0f,
+			float            value2 = 0.0f
+		);
 
 		bool SetDuckHullEnabled(MovementContext& context, bool enabled);
 		[[nodiscard]] bool IsDuckHullEnabled() const;
@@ -112,30 +118,26 @@ namespace Unnamed {
 
 		[[nodiscard]] float GetHorizontalSpeedHu(const Vec3& velocity) const;
 		[[nodiscard]] bool ShouldSlideFromSpeed(float horizontalSpeedHu) const;
-		[[nodiscard]] std::string ResolveGroundStateFromInput(
-			const MovementContext& context
-		) const;
-
-		bool TryStartBlink(MovementContext& context);
-		bool UpdateBlink(MovementContext& context, float deltaTime);
-
-		bool TryStartWallRun(MovementContext& context);
-		bool UpdateWallRun(MovementContext& context, float deltaTime);
+		[[nodiscard]] bool WantsDuckStance(const MovementContext& context) const;
+		void SyncCollisionHull(TransformComponent* transform);
 		void EndWallRun();
 
-		bool TryStartSpeedVault(MovementContext& context);
-		bool UpdateSpeedVault(MovementContext& context, float deltaTime);
-
 	protected:
-		void RegisterMovementStates(
+		void RegisterMovementModes(
+			GameMovementStateMachine& stateMachine
+		) override;
+		void RegisterMovementAbilities(
 			GameMovementStateMachine& stateMachine
 		) override;
 
-		/// @brief Parkour移動の初期状態IDを返します。
-		[[nodiscard]] std::string GetInitialStateName() const override;
+		/// @brief Parkour移動の初期Modeを返します。
+		[[nodiscard]] MOVEMENT_MODE_ID GetInitialMode() const override;
 
 		/// @brief ノークリップ解除後に戻るParkour空中状態IDを返します。
-		[[nodiscard]] std::string GetAirStateNameForTransitions() const override;
+		[[nodiscard]] MOVEMENT_MODE_ID GetAirModeForTransitions() const override;
+		[[nodiscard]] std::string ResolvePresentationStateName() const override;
+		/// @brief Parkour地上移動は常時スプリント基準にするためtrueを返します。
+		[[nodiscard]] bool UseSprintSpeedAsDefaultGroundSpeed() const override;
 
 		void OnAfterCoreCueDispatch(
 			std::string_view          previousStateName,

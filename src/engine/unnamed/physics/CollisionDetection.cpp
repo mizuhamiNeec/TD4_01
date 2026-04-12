@@ -599,11 +599,12 @@ namespace Unnamed::Physics {
 		// 1) テストする軸 13 本
 		Vec3 axes[13];
 		int  axisCnt = 0;
+		const Vec3 boxAxes[3] = {Vec3::right, Vec3::up, Vec3::forward};
 
 		// (a) ボックスのローカル軸
-		axes[axisCnt++] = Vec3::right;
-		axes[axisCnt++] = Vec3::up;
-		axes[axisCnt++] = Vec3::forward;
+		axes[axisCnt++] = boxAxes[0];
+		axes[axisCnt++] = boxAxes[1];
+		axes[axisCnt++] = boxAxes[2];
 
 		// (b) 三角形の面法線
 		Vec3 triN = (tri.v1 - tri.v0).Cross(tri.v2 - tri.v0);
@@ -615,8 +616,9 @@ namespace Unnamed::Physics {
 		// (c) エッジ × ボックス軸
 		Vec3 triEdges[3] = {tri.v1 - tri.v0, tri.v2 - tri.v1, tri.v0 - tri.v2};
 		for (auto triEdge : triEdges) {
-			for (int a = 0; a < 3; ++a) {
-				Vec3 axis = triEdge.Cross(axes[a]);
+			for (const Vec3& boxAxis : boxAxes) {
+				// SAT の 9 本は edge × boxAxis で固定し、triNormal との交差軸を混ぜない。
+				Vec3 axis = triEdge.Cross(boxAxis);
 				if (!axis.IsZero()) {
 					axis.Normalize();
 					axes[axisCnt++] = axis;

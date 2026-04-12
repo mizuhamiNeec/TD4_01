@@ -2,27 +2,35 @@
 
 #include <algorithm>
 #include <array>
-#include <cmath>
 
 #include "core/math/Math.h"
 #include "engine/physics/core/Physics.h"
+#include "engine/unnamed/subsystem/console/Log.h"
 
 namespace Unnamed {
 	namespace {
-		constexpr float    kEpsilon            = 1e-6f;
-		constexpr float    kNormalEpsilon      = 1e-12f;
-		constexpr float    kDuplicatePlaneDot  = 0.97f;
-		constexpr float    kSkinHu             = 1.0f; // 衝突面からの停止距離（HU）
-		constexpr float    kOverbounce         = 1.0f;
-		constexpr uint32_t kMaxClipPlanes      = 5;
-		constexpr uint32_t kMaxSlideBump       = 8;
-		constexpr float    kMinConsumedFrac    = 1e-5f;
-		constexpr float    kZeroToiEpsilon     = 1e-6f;
-		constexpr float    kZeroToiConsumed    = 0.05f;
-		constexpr float    kTouchDepthRatio    = 0.01f;
-		constexpr float    kGroundNormalY      = 0.7f; // ステップダウン判定の法線の最小Y成分
+		constexpr float    kEpsilon = 1e-6f; // 小さい値。
+		constexpr float    kNormalEpsilon = 1e-12f; // 法線ベクトルの長さがこれ以下なら無効とみなす。
+		constexpr float    kDuplicatePlaneDot = 0.97f; // 同一平面とみなす法線の閾値
+		constexpr float    kSkinHu = 1.0f; // 衝突面からの停止距離（HU）
+		constexpr float    kOverbounce = 1.01f;
+		constexpr uint32_t kMaxClipPlanes = 5;
+		constexpr uint32_t kMaxSlideBump = 8;
+		constexpr float    kMinConsumedFrac = 1e-5f;
+		constexpr float    kZeroToiEpsilon = 1e-6f;
+		constexpr float    kZeroToiConsumed = 0.05f;
+		constexpr float    kZeroToiSeparateDot = 1e-3f;
+		constexpr float    kTouchDepthRatio = 0.01f;
+		constexpr float    kGroundNormalY = 0.7f; // ステップダウン判定の法線の最小Y成分
 		constexpr float    kStepSelectHorizEps = 1e-8f;
-		constexpr float    kStepSelectDownEps  = 1e-5f;
+		constexpr float    kStepSelectDownEps = 1e-5f;
+
+		[[nodiscard]] float HitDistanceM(
+			const Physics::Hit& hit,
+			const float         castLength
+		) {
+			return std::clamp(hit.toi, 0.0f, 1.0f) * std::max(0.0f, castLength);
+		}
 	}
 
 	void BoxKinematicCollisionResolver::UpdateHull(
@@ -37,8 +45,9 @@ namespace Unnamed {
 	void BoxKinematicCollisionResolver::SlideMove(
 		Vec3& position, Vec3& velocity, const float timeTotal
 	) const {
-		int   numPlanes = 0;
-		float timeLeft  = timeTotal;
+		int         numPlanes = 0;
+		float       timeLeft  = timeTotal;
+		const float skin      = SkinM();
 
 		const Vec3 primalVelocity = velocity;
 
@@ -62,7 +71,6 @@ namespace Unnamed {
 			box.center = position;
 			Physics::Hit hit{};
 
-			const float skin       = SkinM();
 			const float castLength = moveLen + skin;
 
 			if (!mEngine->BoxCast(
@@ -81,7 +89,7 @@ namespace Unnamed {
 			// ─── 前進距離を計算 ───
 			// hit.toi = [0, 1] の TOI。実距離に変換してから面から SkinM() 手前で止まる。moveLen を上限に。
 			const float hitDistance =
-				std::clamp(hit.t, 0.0f, 1.0f) * castLength;
+				HitDistanceM(hit, castLength);
 			float allowedDist = std::min(
 				moveLen,
 				std::max(0.0f, hitDistance - skin)
@@ -160,10 +168,10 @@ namespace Unnamed {
 
 			// ─── クリッピング ───
 			if (numPlanes == 1) {
-				// 面が1枚 — シンプルにクリップ
+				// 面が1枚 — 普通にクリップ
 				velocity = ClipVelocity(velocity, planes[0], kOverbounce);
 			} else {
-				// 複数面: 現在のvelocityをクリップし、全面と整合する解を探す
+				// 複数面: 今の速度をクリップし、全面と整合する解を探す
 				Vec3 clipped;
 				int  i;
 				for (i = 0; i < numPlanes; ++i) {
@@ -303,12 +311,12 @@ namespace Unnamed {
 			boxUp.center              = position;
 
 			if (mEngine->BoxCast(boxUp, Vec3::up, upCastLength, &upHit)) {
-				
 				const float hitDistance =
 					std::clamp(upHit.toi, 0.0f, 1.0f) *
 					upCastLength;
-				
+
 				stepRise = std::clamp(hitDistance - skin, 0.0f, stepHeightM);
+
 				if (stepRise < skin) {
 					position = downPos;
 					velocity = downVel;
@@ -332,8 +340,8 @@ namespace Unnamed {
 
 		const float upDistSq       = horizDistSq(position, savedPos);
 		const bool  climbedTooHigh = position.y >
-		                             (savedPos.y + stepHeightM +
-		                              kStepSelectDownEps);
+		                            (savedPos.y + stepHeightM +
+		                             kStepSelectDownEps);
 
 		if (climbedTooHigh || upDistSq <= downDistSq + kStepSelectHorizEps) {
 			position = downPos;
@@ -341,9 +349,7 @@ namespace Unnamed {
 			return;
 		}
 
-		if (velocity.y < 0.0f) {
-			velocity.y = 0.0f;
-		}
+		velocity.y = std::max(velocity.y, 0.0f);
 	}
 
 	bool BoxKinematicCollisionResolver::ProbeGround(
@@ -369,8 +375,8 @@ namespace Unnamed {
 	}
 
 	int BoxKinematicCollisionResolver::CollectOverlaps(
-		const Vec3& position,
-		const Vec3& halfExtents,
+		const Vec3&   position,
+		const Vec3&   halfExtents,
 		Physics::Hit* outHits,
 		const int     maxHits
 	) const {
@@ -378,8 +384,8 @@ namespace Unnamed {
 			return 0;
 		}
 
-		Box box = {
-			.center = position,
+		const Box box = {
+			.center   = position,
 			.halfSize = halfExtents
 		};
 		return mEngine->BoxOverlap(box, outHits, maxHits);

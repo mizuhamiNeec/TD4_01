@@ -582,9 +582,18 @@ namespace Unnamed {
 		const float renderDeltaTime,
 		const float interpolationAlpha
 	) {
-		mTime.renderDeltaTime         = std::max(0.0f, renderDeltaTime);
+		mTime.renderDeltaTime = std::max(0.0f, renderDeltaTime);
 		mTime.renderUnscaledDeltaTime = std::max(0.0f, renderDeltaTime);
-		mTime.interpolationAlpha = std::clamp(interpolationAlpha, 0.0f, 1.0f);
+		ConsoleSystem* console = ServiceLocator::Get<ConsoleSystem>();
+		const bool     interpolationEnabled =
+			console ?
+				console->GetConVarValueOr("cl_interpolate", true) :
+				true;
+		// cl_interpolateが無効のときは現在値をそのまま描画します。
+		mTime.interpolationAlpha =
+			interpolationEnabled ?
+				std::clamp(interpolationAlpha, 0.0f, 1.0f) :
+				1.0f;
 
 		if (!mScene) {
 			if (mPhysicsEngine) {

@@ -213,6 +213,11 @@ namespace Unnamed {
 			"fps_max", 360.0, FCVAR::ARCHIVE,
 			"Frame rate limiter. 0 = unlimited."
 		);
+		
+		static ConVar cl_interpolate(
+			"cl_interpolate", true, FCVAR::ARCHIVE,
+			"Enable Source-style render interpolation for fixed-tick simulation."
+		);
 
 		static ConVar<std::string> demo_mismatch_policy(
 			"demo_mismatch_policy", "continue", FCVAR::ARCHIVE,

@@ -40,10 +40,10 @@ namespace Unnamed {
 	namespace {
 		using TickGroup = BaseComponent::TICK_GROUP;
 
-		enum class TickPhase : uint8_t {
-			PrePhysics  = 0,
-			Tick        = 1,
-			PostPhysics = 2,
+		enum class TICK_PHASE : uint8_t {
+			PRE_PHYSICS  = 0,
+			TICK         = 1,
+			POST_PHYSICS = 2,
 		};
 
 		static constexpr std::array<TickGroup, 5> kTickGroupOrder = {
@@ -108,7 +108,7 @@ namespace Unnamed {
 			}
 		};
 
-		[[nodiscard]] constexpr size_t ToPhaseIndex(const TickPhase phase) {
+		[[nodiscard]] constexpr size_t ToPhaseIndex(const TICK_PHASE phase) {
 			return static_cast<size_t>(phase);
 		}
 
@@ -235,26 +235,27 @@ namespace Unnamed {
 		Profiler*            profiler       = ServiceLocator::Get<Profiler>();
 		const auto runPhaseGroup =
 			[&](
-			const TickPhase phase,
-			const TickGroup group
+			const TICK_PHASE phase,
+			const TickGroup  group
 		) {
 			const auto start                 = std::chrono::steady_clock::now();
 			uint32_t   invokedComponentCount = 0;
 
 			for (Entity* entity : activeEntities) {
 				switch (phase) {
-					case TickPhase::PrePhysics
+					case TICK_PHASE::PRE_PHYSICS
 					: invokedComponentCount += entity->PrePhysicsTick(
 						  fixedDeltaTime,
 						  group
 					  );
 						break;
-					case TickPhase::Tick: invokedComponentCount += entity->Tick(
-						                      fixedDeltaTime,
-						                      group
-					                      );
+					case TICK_PHASE::TICK
+					: invokedComponentCount += entity->Tick(
+						  fixedDeltaTime,
+						  group
+					  );
 						break;
-					case TickPhase::PostPhysics
+					case TICK_PHASE::POST_PHYSICS
 					: invokedComponentCount += entity->PostPhysicsTick(
 						  fixedDeltaTime,
 						  group
@@ -284,13 +285,14 @@ namespace Unnamed {
 		};
 
 		for (const TickGroup group : kTickGroupOrder) {
-			runPhaseGroup(TickPhase::PrePhysics, group);
+			RunPhaseGroup(TICK_PHASE::PRE_PHYSICS, group);
 		}
 		for (const TickGroup group : kTickGroupOrder) {
-			runPhaseGroup(TickPhase::Tick, group);
+			RunPhaseGroup(TICK_PHASE::TICK, group);
 		}
 		for (const TickGroup group : kTickGroupOrder) {
 			runPhaseGroup(TickPhase::PostPhysics, group);
+			RunPhaseGroup(TICK_PHASE::POST_PHYSICS, group);
 		}
 	}
 
@@ -789,7 +791,7 @@ namespace Unnamed {
 				const int32_t sort =
 					canvasSort * 10000 + static_cast<int32_t>(i);
 
-				if (draw.type == Gui::UiDrawCommandType::RECT) {
+				if (draw.type == Gui::UI_DRAW_COMMAND_TYPE::RECT) {
 					if (
 						entry.canvas->GetSpaceMode() ==
 						UI_CANVAS_SPACE_MODE::SCREEN

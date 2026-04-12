@@ -115,7 +115,7 @@ namespace Unnamed::Gui {
 		const Rect& rect = owner.GetGlobalRect();
 
 		UiDrawCommand rectCommand = {};
-		rectCommand.type          = UiDrawCommandType::RECT;
+		rectCommand.type          = UI_DRAW_COMMAND_TYPE::RECT;
 		rectCommand.rect.rect     = rect;
 		rectCommand.rect.fillColor = background;
 		rectCommand.rect.cornerRadius = mCornerRadius;
@@ -125,7 +125,7 @@ namespace Unnamed::Gui {
 
 		if (!mText.empty()) {
 			UiDrawCommand textCommand = {};
-			textCommand.type          = UiDrawCommandType::TEXT;
+			textCommand.type          = UI_DRAW_COMMAND_TYPE::TEXT;
 			textCommand.text.text     = mText;
 			textCommand.text.color    = mTextColor;
 			textCommand.text.fontSize = mFontSize;

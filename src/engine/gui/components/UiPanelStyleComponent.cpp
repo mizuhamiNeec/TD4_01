@@ -70,7 +70,7 @@ namespace Unnamed::Gui {
 		}
 
 		UiDrawCommand command = {};
-		command.type          = UiDrawCommandType::RECT;
+		command.type          = UI_DRAW_COMMAND_TYPE::RECT;
 		command.rect.rect     = owner.GetGlobalRect();
 		command.rect.fillColor = mBackgroundColor;
 		command.rect.cornerRadius = mCornerRadius;

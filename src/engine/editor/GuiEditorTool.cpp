@@ -202,7 +202,7 @@ namespace Unnamed {
 		mGuiPreviewSprites.reserve(mGuiPreviewDrawCommands.size());
 		for (size_t i = 0; i < mGuiPreviewDrawCommands.size(); ++i) {
 			const auto& draw = mGuiPreviewDrawCommands[i];
-			if (draw.type == Gui::UiDrawCommandType::RECT) {
+			if (draw.type == Gui::UI_DRAW_COMMAND_TYPE::RECT) {
 				mGuiPreviewSprites.emplace_back(
 					UiCanvasRuntime::BuildScreenSprite(
 						draw.rect, static_cast<int32_t>(i)

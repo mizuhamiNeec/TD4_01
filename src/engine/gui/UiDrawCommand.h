@@ -11,7 +11,7 @@ namespace Unnamed::Gui {
 		float a = 1.0f;
 	};
 
-	enum class UiDrawCommandType {
+	enum class UI_DRAW_COMMAND_TYPE {
 		RECT,
 		TEXT,
 	};
@@ -32,7 +32,7 @@ namespace Unnamed::Gui {
 	};
 
 	struct UiDrawCommand {
-		UiDrawCommandType type{UiDrawCommandType::RECT};
+		UI_DRAW_COMMAND_TYPE type{UI_DRAW_COMMAND_TYPE::RECT};
 		UiDrawCommandRect rect;
 		UiDrawCommandText text;
 	};

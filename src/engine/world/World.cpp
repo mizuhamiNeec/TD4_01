@@ -391,10 +391,11 @@ namespace Unnamed {
 			if (!transform) {
 				continue;
 			}
-			Mat4             worldMat = transform->WorldMat();
-			const Vec3       pos      = worldMat.GetTranslate();
-			const Quaternion quat     = worldMat.Inverse().ToQuaternion();
-			GetDebugDraw().DrawAxis(pos, quat);
+			Mat4       worldMat = transform->RenderWorldMat();
+			const Vec3 pos      = worldMat.GetTranslate();
+			GetDebugDraw().DrawAxis(
+				pos, transform->Right(), transform->Up(), transform->Forward()
+			);
 		}
 
 		mPhysicsEngine->EndFrame();
@@ -575,7 +576,7 @@ namespace Unnamed {
 							assetManager
 						);
 					object.ownerEntityGuid = entity->GetGuid();
-					object.world           = transform->WorldMat();
+					object.world           = transform->RenderWorldMat();
 					object.isSkinned       = false;
 					sceneView.visibleObjects.emplace_back(object);
 				}
@@ -596,7 +597,7 @@ namespace Unnamed {
 						assetManager
 					);
 				object.ownerEntityGuid   = entity->GetGuid();
-				object.world             = transform->WorldMat();
+				object.world             = transform->RenderWorldMat();
 				object.isSkinned         = false;
 				object.skeletonPaletteId = 0;
 
@@ -710,7 +711,7 @@ namespace Unnamed {
 					)) {
 						Vec3 axisRight      = Vec3::right;
 						Vec3 axisUp         = Vec3::up;
-						Mat4 transformWorld = entry.transform->WorldMat();
+						Mat4 transformWorld = entry.transform->RenderWorldMat();
 						Vec3 center         = transformWorld.GetTranslate();
 
 						if (
@@ -722,9 +723,10 @@ namespace Unnamed {
 							axisRight = cameraWorld.GetRight().Normalized();
 							axisUp    = cameraWorld.GetUp().Normalized();
 						} else {
-							axisRight = entry.transform->WorldMat().GetRight().
-							                  Normalized();
-							axisUp = entry.transform->WorldMat().GetUp().
+							axisRight = entry.
+							            transform->RenderWorldMat().GetRight().
+							            Normalized();
+							axisUp = entry.transform->RenderWorldMat().GetUp().
 							               Normalized();
 						}
 
@@ -834,7 +836,7 @@ namespace Unnamed {
 
 			inputs.views.emplace_back(std::move(canvasSpriteView));
 
-			Mat4       transformWorld = entry.transform->WorldMat();
+			Mat4       transformWorld = entry.transform->RenderWorldMat();
 			const Vec3 center         = transformWorld.GetTranslate();
 			if (
 				entry.canvas->GetSpaceMode() ==

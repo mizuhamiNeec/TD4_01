@@ -44,15 +44,18 @@ namespace Unnamed::Render {
 		D3D12_STENCIL_OP      stencilBackPassOp = D3D12_STENCIL_OP_KEEP;
 		D3D12_COMPARISON_FUNC stencilBackFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 
-		uint32_t        stencilRef     = 0;
-		D3D12_CULL_MODE cullMode       = D3D12_CULL_MODE_BACK;
-		bool            blendEnable    = false;
-		D3D12_BLEND     srcBlend       = D3D12_BLEND_ONE;
-		D3D12_BLEND     destBlend      = D3D12_BLEND_ZERO;
-		D3D12_BLEND_OP  blendOp        = D3D12_BLEND_OP_ADD;
-		D3D12_BLEND     srcBlendAlpha  = D3D12_BLEND_ONE;
-		D3D12_BLEND     destBlendAlpha = D3D12_BLEND_ZERO;
-		D3D12_BLEND_OP  blendOpAlpha   = D3D12_BLEND_OP_ADD;
+		bool            depthWriteEnable = true;
+		uint8_t         colorWriteMask   = static_cast<uint8_t>(
+			D3D12_COLOR_WRITE_ENABLE_ALL
+		);
+		D3D12_CULL_MODE cullMode         = D3D12_CULL_MODE_BACK;
+		bool            blendEnable      = false;
+		D3D12_BLEND     srcBlend         = D3D12_BLEND_ONE;
+		D3D12_BLEND     destBlend        = D3D12_BLEND_ZERO;
+		D3D12_BLEND_OP  blendOp          = D3D12_BLEND_OP_ADD;
+		D3D12_BLEND     srcBlendAlpha    = D3D12_BLEND_ONE;
+		D3D12_BLEND     destBlendAlpha   = D3D12_BLEND_ZERO;
+		D3D12_BLEND_OP  blendOpAlpha     = D3D12_BLEND_OP_ADD;
 
 		bool operator==(const GraphicsPsoKey& rhs) const {
 			return vs == rhs.vs &&
@@ -75,7 +78,8 @@ namespace Unnamed::Render {
 			       stencilBackDepthFailOp == rhs.stencilBackDepthFailOp &&
 			       stencilBackPassOp == rhs.stencilBackPassOp &&
 			       stencilBackFunc == rhs.stencilBackFunc &&
-			       stencilRef == rhs.stencilRef &&
+			       depthWriteEnable == rhs.depthWriteEnable &&
+			       colorWriteMask == rhs.colorWriteMask &&
 			       cullMode == rhs.cullMode &&
 			       blendEnable == rhs.blendEnable &&
 			       srcBlend == rhs.srcBlend &&
@@ -140,7 +144,8 @@ namespace Unnamed::Render {
 			hash.AddEnum(k.stencilBackDepthFailOp);
 			hash.AddEnum(k.stencilBackPassOp);
 			hash.AddEnum(k.stencilBackFunc);
-			hash.AddValue(k.stencilRef);
+			hash.AddValue(k.depthWriteEnable);
+			hash.AddValue(k.colorWriteMask);
 			hash.AddEnum(k.cullMode);
 			hash.AddValue(k.blendEnable);
 			hash.AddEnum(k.srcBlend);
@@ -223,7 +228,10 @@ namespace Unnamed::Render {
 			if (a.stencilBackFunc != b.stencilBackFunc) {
 				return false;
 			}
-			if (a.stencilRef != b.stencilRef) {
+			if (a.depthWriteEnable != b.depthWriteEnable) {
+				return false;
+			}
+			if (a.colorWriteMask != b.colorWriteMask) {
 				return false;
 			}
 			if (a.cullMode != b.cullMode) {

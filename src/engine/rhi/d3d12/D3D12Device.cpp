@@ -662,6 +662,12 @@ namespace Unnamed::Rhi {
 	}
 
 	void D3D12Device::CreatePipelines() {
+		CreateComputeRootSignature();
+		CreateFullscreenRootSignature();
+		CreateGeometryRootSignature();
+	}
+
+	void D3D12Device::CreateComputeRootSignature() {
 		// コンピュートルートシグネチャ UAV(u0)
 		{
 			D3D12_DESCRIPTOR_RANGE range = {};
@@ -701,7 +707,9 @@ namespace Unnamed::Rhi {
 				)
 			);
 		}
+	}
 
+	void D3D12Device::CreateFullscreenRootSignature() {
 		// フルスクリーン ルートシグネチャ
 		// CBV(b0)=PostFxParams, SRV(t0)=SourceTexture, static sampler(s0)
 		{
@@ -762,7 +770,9 @@ namespace Unnamed::Rhi {
 				)
 			);
 		}
+	}
 
+	void D3D12Device::CreateGeometryRootSignature() {
 		// Geometry RootSignature:
 		// CBV(b0)=Frame, CBV(b1)=Object, CBV(b2)=Material, CBV(b3)=Skinning, SRV(t0)=BaseColor
 		{

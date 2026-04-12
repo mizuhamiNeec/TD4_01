@@ -3,9 +3,9 @@
 #include <string>
 
 #include "RenderDevice.h"
+#include "RendererPipelineCatalog.h"
 
 #include "core/assets/AssetManager.h"
-#include "core/assets/types/ShaderProgramAssetData.h"
 
 #include "engine/rhi/d3d12/D3D12Device.h"
 #include "engine/rhi/d3d12/D3D12Util.h"
@@ -19,13 +19,121 @@ namespace Unnamed::Render {
 		) {
 			return assetManager.LoadFromFile(path, type);
 		}
+
+		Rhi::VertexLayoutDesc BuildGeometryVertexLayout() {
+			return Rhi::VertexLayoutDesc{
+				.stride   = sizeof(float) * 16,
+				.elements = {
+					Rhi::VertexElementDesc{
+						.semantic         = Rhi::VertexSemantic::POSITION,
+						.semanticIndex    = 0,
+						.format           = Rhi::VertexFormat::FLOAT3,
+						.offset           = 0,
+						.inputSlot        = 0,
+						.perInstance      = false,
+						.instanceStepRate = 0,
+					},
+					Rhi::VertexElementDesc{
+						.semantic         = Rhi::VertexSemantic::NORMAL,
+						.semanticIndex    = 0,
+						.format           = Rhi::VertexFormat::FLOAT3,
+						.offset           = sizeof(float) * 3,
+						.inputSlot        = 0,
+						.perInstance      = false,
+						.instanceStepRate = 0,
+					},
+					Rhi::VertexElementDesc{
+						.semantic         = Rhi::VertexSemantic::TEXCOORD,
+						.semanticIndex    = 0,
+						.format           = Rhi::VertexFormat::FLOAT2,
+						.offset           = sizeof(float) * 6,
+						.inputSlot        = 0,
+						.perInstance      = false,
+						.instanceStepRate = 0,
+					},
+					Rhi::VertexElementDesc{
+						.semantic         = Rhi::VertexSemantic::TEXCOORD,
+						.semanticIndex    = 1,
+						.format           = Rhi::VertexFormat::FLOAT4,
+						.offset           = sizeof(float) * 8,
+						.inputSlot        = 0,
+						.perInstance      = false,
+						.instanceStepRate = 0,
+					},
+					Rhi::VertexElementDesc{
+						.semantic         = Rhi::VertexSemantic::TEXCOORD,
+						.semanticIndex    = 2,
+						.format           = Rhi::VertexFormat::FLOAT4,
+						.offset           = sizeof(float) * 12,
+						.inputSlot        = 0,
+						.perInstance      = false,
+						.instanceStepRate = 0,
+					},
+				}
+			};
+		}
+
+		Rhi::VertexLayoutDesc BuildSpriteVertexLayout() {
+			return Rhi::VertexLayoutDesc{
+				.stride   = sizeof(float) * 5,
+				.elements = {
+					Rhi::VertexElementDesc{
+						.semantic         = Rhi::VertexSemantic::POSITION,
+						.semanticIndex    = 0,
+						.format           = Rhi::VertexFormat::FLOAT3,
+						.offset           = 0,
+						.inputSlot        = 0,
+						.perInstance      = false,
+						.instanceStepRate = 0,
+					},
+					Rhi::VertexElementDesc{
+						.semantic         = Rhi::VertexSemantic::TEXCOORD,
+						.semanticIndex    = 0,
+						.format           = Rhi::VertexFormat::FLOAT2,
+						.offset           = sizeof(float) * 3,
+						.inputSlot        = 0,
+						.perInstance      = false,
+						.instanceStepRate = 0,
+					},
+				}
+			};
+		}
+
+		Rhi::VertexLayoutDesc BuildLineVertexLayout() {
+			return Rhi::VertexLayoutDesc{
+				.stride   = sizeof(float) * 7,
+				.elements = {
+					Rhi::VertexElementDesc{
+						.semantic         = Rhi::VertexSemantic::POSITION,
+						.semanticIndex    = 0,
+						.format           = Rhi::VertexFormat::FLOAT3,
+						.offset           = 0,
+						.inputSlot        = 0,
+						.perInstance      = false,
+						.instanceStepRate = 0,
+					},
+					Rhi::VertexElementDesc{
+						.semantic         = Rhi::VertexSemantic::COLOR,
+						.semanticIndex    = 0,
+						.format           = Rhi::VertexFormat::FLOAT4,
+						.offset           = sizeof(float) * 3,
+						.inputSlot        = 0,
+						.perInstance      = false,
+						.instanceStepRate = 0,
+					},
+				}
+			};
+		}
 	}
 
 	Renderer::Renderer(ConsoleSystem* console) : mConsole(console) {}
 
-	void Renderer::Init(RenderDevice& renderDevice) {
+	void Renderer::RebuildPipelineCatalog(
+		RenderDevice& renderDevice, Rhi::D3D12Device& dx
+	) {
 		auto& assetManager = renderDevice.GetAssetManager();
-		auto& dx = dynamic_cast<Rhi::D3D12Device&>(renderDevice.GetRhiDevice());
+
+		mPipelineRegistry.Clear();
 
 		const AssetID fullscreenProgramId = LoadAsset(
 			assetManager,
@@ -83,316 +191,181 @@ namespace Unnamed::Render {
 			ASSET_TYPE::SHADER_PROGRAM
 		);
 
-		mFullscreenPass.rootSig = dx.GetFsRootSignature();
-		ResolveShaderProgramStageKey(
-			renderDevice, fullscreenProgramId, "vs", mFullscreenPass.psoKey.vs
-		);
-		ResolveShaderProgramStageKey(
-			renderDevice, fullscreenProgramId, "ps", mFullscreenPass.psoKey.ps
-		);
-
-		mFullscreenPass.psoKey.depthEnable = false;
-		mFullscreenPass.psoKey.dsvFormat   = DXGI_FORMAT_UNKNOWN;
-		mFullscreenPass.psoKey.depthFunc   = D3D12_COMPARISON_FUNC_ALWAYS;
-
-		mFullscreenPass.psoKey.rootSignature = mFullscreenPass.rootSig;
-
-		// フルスクリーンパスは頂点バッファ使わない
-		mFullscreenPass.psoKey.vertexLayout = std::nullopt;
-
-		mFullscreenPass.psoKey.rtvFormat = Rhi::ToDxgiFormat(
+		const DXGI_FORMAT swapChainFormat = Rhi::ToDxgiFormat(
 			dx.GetSwapChain().GetFormat()
 		);
+		const Rhi::VertexLayoutDesc geometryLayout = BuildGeometryVertexLayout();
+		const Rhi::VertexLayoutDesc spriteLayout   = BuildSpriteVertexLayout();
+		const Rhi::VertexLayoutDesc lineLayout     = BuildLineVertexLayout();
 
-		mHdrCopyPass.rootSig = dx.GetFsRootSignature();
-		ResolveShaderProgramStageKey(
-			renderDevice, fullscreenProgramId, "vs", mHdrCopyPass.psoKey.vs
+		mFullscreenPass.pipeline = mPipelineRegistry.RegisterGraphics(
+			RendererPipelineCatalog::MakeFullscreenPreset(
+				"FullscreenCopy",
+				fullscreenProgramId,
+				dx.GetFsRootSignature(),
+				swapChainFormat
+			)
 		);
-		ResolveShaderProgramStageKey(
-			renderDevice, fullscreenProgramId, "ps", mHdrCopyPass.psoKey.ps
-		);
-		mHdrCopyPass.psoKey.depthEnable   = false;
-		mHdrCopyPass.psoKey.dsvFormat     = DXGI_FORMAT_UNKNOWN;
-		mHdrCopyPass.psoKey.depthFunc     = D3D12_COMPARISON_FUNC_ALWAYS;
-		mHdrCopyPass.psoKey.rootSignature = mHdrCopyPass.rootSig;
-		mHdrCopyPass.psoKey.vertexLayout  = std::nullopt;
-		mHdrCopyPass.psoKey.rtvFormat     = kSceneHdrColorFormat;
+		mFullscreenPass.resolved = nullptr;
 
-		mToneMapPass.rootSig = dx.GetFsRootSignature();
-		ResolveShaderProgramStageKey(
-			renderDevice, toneMapExposureProgramId, "vs", mToneMapPass.psoKey.vs
+		mHdrCopyPass.pipeline = mPipelineRegistry.RegisterGraphics(
+			RendererPipelineCatalog::MakeFullscreenPreset(
+				"HdrCopy",
+				fullscreenProgramId,
+				dx.GetFsRootSignature(),
+				kSceneHdrColorFormat
+			)
 		);
-		ResolveShaderProgramStageKey(
-			renderDevice, toneMapExposureProgramId, "ps", mToneMapPass.psoKey.ps
-		);
-		mToneMapPass.psoKey.depthEnable   = false;
-		mToneMapPass.psoKey.dsvFormat     = DXGI_FORMAT_UNKNOWN;
-		mToneMapPass.psoKey.depthFunc     = D3D12_COMPARISON_FUNC_ALWAYS;
-		mToneMapPass.psoKey.rootSignature = mToneMapPass.rootSig;
-		mToneMapPass.psoKey.vertexLayout  = std::nullopt;
-		mToneMapPass.psoKey.rtvFormat     = kSceneLdrColorFormat;
+		mHdrCopyPass.resolved = nullptr;
 
-		mBloomDownsamplePass.rootSig = dx.GetFsRootSignature();
-		ResolveShaderProgramStageKey(
-			renderDevice, bloomDownsampleProgramId, "vs",
-			mBloomDownsamplePass.psoKey.vs
+		mToneMapPass.pipeline = mPipelineRegistry.RegisterGraphics(
+			RendererPipelineCatalog::MakeFullscreenPreset(
+				"ToneMapExposure",
+				toneMapExposureProgramId,
+				dx.GetFsRootSignature(),
+				kSceneLdrColorFormat
+			)
 		);
-		ResolveShaderProgramStageKey(
-			renderDevice, bloomDownsampleProgramId, "ps",
-			mBloomDownsamplePass.psoKey.ps
-		);
-		mBloomDownsamplePass.psoKey.depthEnable = false;
-		mBloomDownsamplePass.psoKey.dsvFormat = DXGI_FORMAT_UNKNOWN;
-		mBloomDownsamplePass.psoKey.depthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
-		mBloomDownsamplePass.psoKey.rootSignature = mBloomDownsamplePass.
-			rootSig;
-		mBloomDownsamplePass.psoKey.vertexLayout = std::nullopt;
-		mBloomDownsamplePass.psoKey.rtvFormat    = kSceneHdrColorFormat;
+		mToneMapPass.resolved = nullptr;
 
-		mBloomUpsamplePass.rootSig = dx.GetFsRootSignature();
-		ResolveShaderProgramStageKey(
-			renderDevice, bloomUpsampleProgramId, "vs",
-			mBloomUpsamplePass.psoKey.vs
+		auto bloomDownsampleSpec = RendererPipelineCatalog::MakeFullscreenPreset(
+			"BloomDownsample",
+			bloomDownsampleProgramId,
+			dx.GetFsRootSignature(),
+			kSceneHdrColorFormat
 		);
-		ResolveShaderProgramStageKey(
-			renderDevice, bloomUpsampleProgramId, "ps",
-			mBloomUpsamplePass.psoKey.ps
+		mBloomDownsamplePass.pipeline = mPipelineRegistry.RegisterGraphics(
+			bloomDownsampleSpec
 		);
-		mBloomUpsamplePass.psoKey.depthEnable    = false;
-		mBloomUpsamplePass.psoKey.dsvFormat      = DXGI_FORMAT_UNKNOWN;
-		mBloomUpsamplePass.psoKey.depthFunc      = D3D12_COMPARISON_FUNC_ALWAYS;
-		mBloomUpsamplePass.psoKey.rootSignature  = mBloomUpsamplePass.rootSig;
-		mBloomUpsamplePass.psoKey.vertexLayout   = std::nullopt;
-		mBloomUpsamplePass.psoKey.rtvFormat      = kSceneHdrColorFormat;
-		mBloomUpsamplePass.psoKey.blendEnable    = true;
-		mBloomUpsamplePass.psoKey.srcBlend       = D3D12_BLEND_ONE;
-		mBloomUpsamplePass.psoKey.destBlend      = D3D12_BLEND_ONE;
-		mBloomUpsamplePass.psoKey.srcBlendAlpha  = D3D12_BLEND_ONE;
-		mBloomUpsamplePass.psoKey.destBlendAlpha = D3D12_BLEND_ONE;
+		mBloomDownsamplePass.resolved = nullptr;
 
-		mBloomCombinePass.rootSig = dx.GetFsRootSignature();
-		ResolveShaderProgramStageKey(
-			renderDevice, bloomCombineProgramId, "vs",
-			mBloomCombinePass.psoKey.vs
+		auto bloomUpsampleSpec = RendererPipelineCatalog::MakeFullscreenPreset(
+			"BloomUpsample",
+			bloomUpsampleProgramId,
+			dx.GetFsRootSignature(),
+			kSceneHdrColorFormat
 		);
-		ResolveShaderProgramStageKey(
-			renderDevice, bloomCombineProgramId, "ps",
-			mBloomCombinePass.psoKey.ps
+		bloomUpsampleSpec.psoTemplate.blendEnable    = true;
+		bloomUpsampleSpec.psoTemplate.srcBlend       = D3D12_BLEND_ONE;
+		bloomUpsampleSpec.psoTemplate.destBlend      = D3D12_BLEND_ONE;
+		bloomUpsampleSpec.psoTemplate.srcBlendAlpha  = D3D12_BLEND_ONE;
+		bloomUpsampleSpec.psoTemplate.destBlendAlpha = D3D12_BLEND_ONE;
+		mBloomUpsamplePass.pipeline = mPipelineRegistry.RegisterGraphics(
+			bloomUpsampleSpec
 		);
-		mBloomCombinePass.psoKey.depthEnable    = false;
-		mBloomCombinePass.psoKey.dsvFormat      = DXGI_FORMAT_UNKNOWN;
-		mBloomCombinePass.psoKey.depthFunc      = D3D12_COMPARISON_FUNC_ALWAYS;
-		mBloomCombinePass.psoKey.rootSignature  = mBloomCombinePass.rootSig;
-		mBloomCombinePass.psoKey.vertexLayout   = std::nullopt;
-		mBloomCombinePass.psoKey.rtvFormat      = kSceneHdrColorFormat;
-		mBloomCombinePass.psoKey.blendEnable    = true;
-		mBloomCombinePass.psoKey.srcBlend       = D3D12_BLEND_ONE;
-		mBloomCombinePass.psoKey.destBlend      = D3D12_BLEND_ONE;
-		mBloomCombinePass.psoKey.srcBlendAlpha  = D3D12_BLEND_ONE;
-		mBloomCombinePass.psoKey.destBlendAlpha = D3D12_BLEND_ONE;
+		mBloomUpsamplePass.resolved = nullptr;
 
-		mDepthVisPass.rootSig = dx.GetFsRootSignature();
-		ResolveShaderProgramStageKey(
-			renderDevice, fullscreenProgramId, "vs", mDepthVisPass.psoKey.vs
+		auto bloomCombineSpec = RendererPipelineCatalog::MakeFullscreenPreset(
+			"BloomCombine",
+			bloomCombineProgramId,
+			dx.GetFsRootSignature(),
+			kSceneHdrColorFormat
 		);
-		ResolveShaderProgramStageKey(
-			renderDevice, depthVisProgramId, "ps", mDepthVisPass.psoKey.ps
+		bloomCombineSpec.psoTemplate.blendEnable    = true;
+		bloomCombineSpec.psoTemplate.srcBlend       = D3D12_BLEND_ONE;
+		bloomCombineSpec.psoTemplate.destBlend      = D3D12_BLEND_ONE;
+		bloomCombineSpec.psoTemplate.srcBlendAlpha  = D3D12_BLEND_ONE;
+		bloomCombineSpec.psoTemplate.destBlendAlpha = D3D12_BLEND_ONE;
+		mBloomCombinePass.pipeline = mPipelineRegistry.RegisterGraphics(
+			bloomCombineSpec
 		);
-		mDepthVisPass.psoKey.rootSignature = mDepthVisPass.rootSig;
-		mDepthVisPass.psoKey.vertexLayout  = std::nullopt;
-		mDepthVisPass.psoKey.rtvFormat     = Rhi::ToDxgiFormat(
-			dx.GetSwapChain().GetFormat()
+		mBloomCombinePass.resolved = nullptr;
+
+		mDepthVisPass.pipeline = mPipelineRegistry.RegisterGraphics(
+			RendererPipelineCatalog::MakeFullscreenPreset(
+				"DepthVis",
+				depthVisProgramId,
+				dx.GetFsRootSignature(),
+				swapChainFormat
+			)
 		);
+		mDepthVisPass.resolved = nullptr;
 
-		mComputePass.rootSig = dx.GetCsRootSignature();
-		ResolveShaderProgramStageKey(
-			renderDevice, csProgramId, "cs", mComputePass.psoKey.cs
+		mComputePass.pipeline = mPipelineRegistry.RegisterCompute(
+			RendererPipelineCatalog::MakeComputePreset(
+				"ComputeWriteUav",
+				csProgramId,
+				dx.GetCsRootSignature()
+			)
 		);
-		mComputePass.psoKey.rootSignature = mComputePass.rootSig;
+		mComputePass.resolved = nullptr;
 
-		mGeometryPass.rootSig = dx.GetGeomRootSignature();
-
-		ResolveShaderProgramStageKey(
-			renderDevice, geomProgramId, "vs", mGeometryPass.psoKey.vs
+		mGeometryPass.pipeline = mPipelineRegistry.RegisterGraphics(
+			RendererPipelineCatalog::MakeGeometryPreset(
+				"Geometry",
+				geomProgramId,
+				dx.GetGeomRootSignature(),
+				kSceneHdrColorFormat,
+				DXGI_FORMAT_D32_FLOAT_S8X24_UINT,
+				geometryLayout
+			)
 		);
-		ResolveShaderProgramStageKey(
-			renderDevice, geomProgramId, "ps", mGeometryPass.psoKey.ps
+		mGeometryPass.resolved = nullptr;
+
+		auto skyboxSpec = RendererPipelineCatalog::MakeGeometryPreset(
+			"Skybox",
+			skyboxProgramId,
+			dx.GetGeomRootSignature(),
+			kSceneHdrColorFormat,
+			DXGI_FORMAT_D32_FLOAT_S8X24_UINT,
+			geometryLayout
 		);
+		skyboxSpec.psoTemplate.cullMode = D3D12_CULL_MODE_NONE;
+		mSkyboxPass.geom.pipeline = mPipelineRegistry.RegisterGraphics(skyboxSpec);
+		mSkyboxPass.geom.resolved = nullptr;
 
-		mGeometryPass.psoKey.rootSignature = mGeometryPass.rootSig;
-
-		mGeometryPass.psoKey.rtvFormat   = kSceneHdrColorFormat;
-		mGeometryPass.psoKey.depthEnable = true;
-		mGeometryPass.psoKey.dsvFormat   = DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
-		mGeometryPass.psoKey.depthFunc   = D3D12_COMPARISON_FUNC_GREATER_EQUAL;
-
-		mGeometryPass.psoKey.vertexLayout = Rhi::VertexLayoutDesc{
-			.stride   = sizeof(float) * 16,
-			.elements = {
-				Rhi::VertexElementDesc{
-					.semantic         = Rhi::VertexSemantic::POSITION,
-					.semanticIndex    = 0,
-					.format           = Rhi::VertexFormat::FLOAT3,
-					.offset           = 0,
-					.inputSlot        = 0,
-					.perInstance      = false,
-					.instanceStepRate = 0,
-				},
-				Rhi::VertexElementDesc{
-					.semantic         = Rhi::VertexSemantic::NORMAL,
-					.semanticIndex    = 0,
-					.format           = Rhi::VertexFormat::FLOAT3,
-					.offset           = sizeof(float) * 3,
-					.inputSlot        = 0,
-					.perInstance      = false,
-					.instanceStepRate = 0,
-				},
-				Rhi::VertexElementDesc{
-					.semantic         = Rhi::VertexSemantic::TEXCOORD,
-					.semanticIndex    = 0,
-					.format           = Rhi::VertexFormat::FLOAT2,
-					.offset           = sizeof(float) * 6,
-					.inputSlot        = 0,
-					.perInstance      = false,
-					.instanceStepRate = 0,
-				},
-				Rhi::VertexElementDesc{
-					.semantic         = Rhi::VertexSemantic::TEXCOORD,
-					.semanticIndex    = 1,
-					.format           = Rhi::VertexFormat::FLOAT4,
-					.offset           = sizeof(float) * 8,
-					.inputSlot        = 0,
-					.perInstance      = false,
-					.instanceStepRate = 0,
-				},
-				Rhi::VertexElementDesc{
-					.semantic         = Rhi::VertexSemantic::TEXCOORD,
-					.semanticIndex    = 2,
-					.format           = Rhi::VertexFormat::FLOAT4,
-					.offset           = sizeof(float) * 12,
-					.inputSlot        = 0,
-					.perInstance      = false,
-					.instanceStepRate = 0,
-				},
-			}
-		};
-
-		mSkyboxPass.geom.rootSig = dx.GetGeomRootSignature();
-		ResolveShaderProgramStageKey(
-			renderDevice, skyboxProgramId, "vs", mSkyboxPass.geom.psoKey.vs
+		auto spriteSpec = RendererPipelineCatalog::MakeSpritePreset(
+			"ScreenSprite",
+			spriteOverlayProgramId,
+			dx.GetGeomRootSignature(),
+			kSceneLdrColorFormat,
+			spriteLayout
 		);
-		ResolveShaderProgramStageKey(
-			renderDevice, skyboxProgramId, "ps", mSkyboxPass.geom.psoKey.ps
-		);
-		mSkyboxPass.geom.psoKey.rootSignature = mSkyboxPass.geom.rootSig;
-		mSkyboxPass.geom.psoKey.rtvFormat     = kSceneHdrColorFormat;
-		mSkyboxPass.geom.psoKey.depthEnable   = true;
-		mSkyboxPass.geom.psoKey.dsvFormat = DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
-		mSkyboxPass.geom.psoKey.depthFunc = D3D12_COMPARISON_FUNC_GREATER_EQUAL;
-		mSkyboxPass.geom.psoKey.cullMode  = D3D12_CULL_MODE_NONE;
-		mSkyboxPass.geom.psoKey.vertexLayout = mGeometryPass.psoKey.vertexLayout;
+		mSpritePass.geom.pipeline = mPipelineRegistry.RegisterGraphics(spriteSpec);
+		mSpritePass.geom.resolved = nullptr;
 
-		mSpritePass.geom.rootSig = dx.GetGeomRootSignature();
-		ResolveShaderProgramStageKey(
-			renderDevice, spriteOverlayProgramId, "vs",
-			mSpritePass.geom.psoKey.vs
+		auto billboardDepthSpec = spriteSpec;
+		billboardDepthSpec.debugName              = "WorldBillboardDepth";
+		billboardDepthSpec.psoTemplate.rtvFormat  = kSceneHdrColorFormat;
+		billboardDepthSpec.psoTemplate.depthEnable = true;
+		billboardDepthSpec.psoTemplate.depthWriteEnable = true;
+		billboardDepthSpec.psoTemplate.dsvFormat = DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
+		billboardDepthSpec.psoTemplate.depthFunc = D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+		mBillboardPass.depthGeom.pipeline = mPipelineRegistry.RegisterGraphics(
+			billboardDepthSpec
 		);
-		ResolveShaderProgramStageKey(
-			renderDevice, spriteOverlayProgramId, "ps",
-			mSpritePass.geom.psoKey.ps
-		);
-		mSpritePass.geom.psoKey.rootSignature = mSpritePass.geom.rootSig;
-		mSpritePass.geom.psoKey.vertexLayout  = Rhi::VertexLayoutDesc{
-			.stride   = sizeof(float) * 5,
-			.elements = {
-				Rhi::VertexElementDesc{
-					.semantic         = Rhi::VertexSemantic::POSITION,
-					.semanticIndex    = 0,
-					.format           = Rhi::VertexFormat::FLOAT3,
-					.offset           = 0,
-					.inputSlot        = 0,
-					.perInstance      = false,
-					.instanceStepRate = 0,
-				},
-				Rhi::VertexElementDesc{
-					.semantic         = Rhi::VertexSemantic::TEXCOORD,
-					.semanticIndex    = 0,
-					.format           = Rhi::VertexFormat::FLOAT2,
-					.offset           = sizeof(float) * 3,
-					.inputSlot        = 0,
-					.perInstance      = false,
-					.instanceStepRate = 0,
-				},
-			}
-		};
-		mSpritePass.geom.psoKey.rtvFormat      = kSceneLdrColorFormat;
-		mSpritePass.geom.psoKey.depthEnable    = false;
-		mSpritePass.geom.psoKey.dsvFormat      = DXGI_FORMAT_UNKNOWN;
-		mSpritePass.geom.psoKey.cullMode       = D3D12_CULL_MODE_NONE;
-		mSpritePass.geom.psoKey.blendEnable    = true;
-		mSpritePass.geom.psoKey.srcBlend       = D3D12_BLEND_SRC_ALPHA;
-		mSpritePass.geom.psoKey.destBlend      = D3D12_BLEND_INV_SRC_ALPHA;
-		mSpritePass.geom.psoKey.srcBlendAlpha  = D3D12_BLEND_ONE;
-		mSpritePass.geom.psoKey.destBlendAlpha = D3D12_BLEND_INV_SRC_ALPHA;
+		mBillboardPass.depthGeom.resolved = nullptr;
 
-		mBillboardPass.depthGeom.rootSig = dx.GetGeomRootSignature();
-		mBillboardPass.depthGeom.psoKey = mSpritePass.geom.psoKey;
-		mBillboardPass.depthGeom.psoKey.rootSignature =
-			mBillboardPass.depthGeom.rootSig;
-		mBillboardPass.depthGeom.psoKey.rtvFormat = kSceneHdrColorFormat;
-		mBillboardPass.depthGeom.psoKey.depthEnable = true;
-		mBillboardPass.depthGeom.psoKey.dsvFormat =
-			DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
-		mBillboardPass.depthGeom.psoKey.depthFunc =
-			D3D12_COMPARISON_FUNC_GREATER_EQUAL;
-
-		mBillboardPass.frontGeom.rootSig = dx.GetGeomRootSignature();
-		mBillboardPass.frontGeom.psoKey = mBillboardPass.depthGeom.psoKey;
-		mBillboardPass.frontGeom.psoKey.rootSignature =
-			mBillboardPass.frontGeom.rootSig;
-		mBillboardPass.frontGeom.psoKey.depthEnable = false;
-		mBillboardPass.frontGeom.psoKey.dsvFormat = DXGI_FORMAT_UNKNOWN;
-		mBillboardPass.frontGeom.psoKey.depthFunc =
+		auto billboardFrontSpec = billboardDepthSpec;
+		billboardFrontSpec.debugName                   = "WorldBillboardFront";
+		billboardFrontSpec.psoTemplate.depthEnable     = false;
+		billboardFrontSpec.psoTemplate.depthWriteEnable = false;
+		billboardFrontSpec.psoTemplate.dsvFormat       = DXGI_FORMAT_UNKNOWN;
+		billboardFrontSpec.psoTemplate.depthFunc       =
 			D3D12_COMPARISON_FUNC_ALWAYS;
+		mBillboardPass.frontGeom.pipeline = mPipelineRegistry.RegisterGraphics(
+			billboardFrontSpec
+		);
+		mBillboardPass.frontGeom.resolved = nullptr;
 
-		mLinePass.rootSig = dx.GetGeomRootSignature();
-		ResolveShaderProgramStageKey(
-			renderDevice, debugLineProgramId, "vs", mLinePass.psoKey.vs
+		mLinePass.pipeline = mPipelineRegistry.RegisterGraphics(
+			RendererPipelineCatalog::MakeLinePreset(
+				"DebugLine",
+				debugLineProgramId,
+				dx.GetGeomRootSignature(),
+				kSceneHdrColorFormat,
+				DXGI_FORMAT_D32_FLOAT_S8X24_UINT,
+				lineLayout
+			)
 		);
-		ResolveShaderProgramStageKey(
-			renderDevice, debugLineProgramId, "ps", mLinePass.psoKey.ps
-		);
-		mLinePass.psoKey.rootSignature = mLinePass.rootSig;
-		mLinePass.psoKey.vertexLayout  = Rhi::VertexLayoutDesc{
-			.stride   = sizeof(float) * 7,
-			.elements = {
-				Rhi::VertexElementDesc{
-					.semantic         = Rhi::VertexSemantic::POSITION,
-					.semanticIndex    = 0,
-					.format           = Rhi::VertexFormat::FLOAT3,
-					.offset           = 0,
-					.inputSlot        = 0,
-					.perInstance      = false,
-					.instanceStepRate = 0,
-				},
-				Rhi::VertexElementDesc{
-					.semantic         = Rhi::VertexSemantic::COLOR,
-					.semanticIndex    = 0,
-					.format           = Rhi::VertexFormat::FLOAT4,
-					.offset           = sizeof(float) * 3,
-					.inputSlot        = 0,
-					.perInstance      = false,
-					.instanceStepRate = 0,
-				},
-			}
-		};
-		mLinePass.psoKey.rtvFormat = kSceneHdrColorFormat;
-		mLinePass.psoKey.depthEnable = true;
-		mLinePass.psoKey.dsvFormat = DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
-		mLinePass.psoKey.depthFunc = D3D12_COMPARISON_FUNC_GREATER_EQUAL;
-		mLinePass.psoKey.cullMode = D3D12_CULL_MODE_NONE;
-		mLinePass.psoKey.primitiveTopologyType =
-			D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+		mLinePass.resolved = nullptr;
+
+		LoadPostFxChain(renderDevice);
+	}
+
+	void Renderer::Init(RenderDevice& renderDevice) {
+		auto& dx = dynamic_cast<Rhi::D3D12Device&>(renderDevice.GetRhiDevice());
+		RebuildPipelineCatalog(renderDevice, dx);
 
 		mFrameCb.Init(
 			dx.GetDevice(), dx.GetFramesInFlight(), L"FrameConstants"
@@ -426,7 +399,6 @@ namespace Unnamed::Render {
 		mBillboardPass.frontGeom.indexCount = mSpritePass.geom.indexCount;
 		LoadSceneMeshResources(renderDevice, dx);
 		LoadMaterialResources(renderDevice, dx);
-		LoadPostFxChain(renderDevice);
 		renderDevice.GetRegistry().OnResize(
 			dx.GetSwapChain().GetWidth(),
 			dx.GetSwapChain().GetHeight(),
@@ -434,45 +406,5 @@ namespace Unnamed::Render {
 		);
 		mGraph.Reset();
 		mGraphBuilt = false;
-	}
-
-	bool Renderer::ResolveShaderProgramStageKey(
-		RenderDevice& renderDevice, const AssetID shaderProgramId,
-		const char*   stage, ShaderKey&           outKey
-	) const {
-		auto&       assetManager = renderDevice.GetAssetManager();
-		const auto* program      = assetManager.Get<ShaderProgramAssetData>(
-			shaderProgramId
-		);
-		if (!program) {
-			return false;
-		}
-
-		const std::optional<ShaderProgramStage>* src = nullptr;
-		if (std::string_view(stage) == "vs") {
-			src = &program->vs;
-		}
-		if (std::string_view(stage) == "ps") {
-			src = &program->ps;
-		}
-		if (std::string_view(stage) == "cs") {
-			src = &program->cs;
-		}
-		if (!src || !src->has_value()) {
-			return false;
-		}
-
-		const AssetID shaderSourceId = LoadAsset(
-			assetManager, src->value().sourcePath, ASSET_TYPE::SHADER_SOURCE
-		);
-		if (shaderSourceId == kInvalidAssetID) {
-			return false;
-		}
-
-		outKey.shaderSourceId = shaderSourceId;
-		outKey.entry          = src->value().entry;
-		outKey.profile        = src->value().profile;
-		outKey.defines        = src->value().defines;
-		return true;
 	}
 }

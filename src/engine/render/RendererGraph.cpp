@@ -15,6 +15,7 @@
 
 #include "rendergraph/RenderGraphBuilder.h"
 #include "rendergraph/RenderPassContext.h"
+#include "shaders/RootSignatureSlots.h"
 
 namespace Unnamed::Render {
 	namespace {
@@ -413,7 +414,8 @@ namespace Unnamed::Render {
 							return;
 						}
 						if (
-							!mSkyboxPass.geom.pso ||
+							!mSkyboxPass.geom.resolved ||
+							!mSkyboxPass.geom.resolved->pso ||
 							!mSkyboxPass.geom.vb ||
 							!mSkyboxPass.geom.ib
 						) {
@@ -470,15 +472,27 @@ namespace Unnamed::Render {
 							state.depthTextureId
 						);
 						pass.SetGraphicsPipeline(
-							mSkyboxPass.geom.rootSig, mSkyboxPass.geom.pso
+							mSkyboxPass.geom.resolved->rootSignature,
+							mSkyboxPass.geom.resolved->pso
 						);
 						pass.SetVertexBuffer(mSkyboxPass.geom.vbv);
 						pass.SetIndexBuffer(mSkyboxPass.geom.ibv);
-						pass.BindGraphicsCbv(0, frameCb);
-						pass.BindGraphicsCbv(1, objectCb);
-						pass.BindGraphicsCbv(2, materialCb);
-						pass.BindGraphicsCbv(3, objectCb);
-						pass.BindGraphicsSrvTable(4, skyboxTextureId);
+						pass.BindGraphicsCbv(
+							ToRootIndex(GEOM_ROOT_SLOT::FRAME), frameCb
+						);
+						pass.BindGraphicsCbv(
+							ToRootIndex(GEOM_ROOT_SLOT::OBJECT), objectCb
+						);
+						pass.BindGraphicsCbv(
+							ToRootIndex(GEOM_ROOT_SLOT::MATERIAL), materialCb
+						);
+						pass.BindGraphicsCbv(
+							ToRootIndex(GEOM_ROOT_SLOT::SKINNING), objectCb
+						);
+						pass.BindGraphicsSrvTable(
+							ToRootIndex(GEOM_ROOT_SLOT::BASE_COLOR_TEXTURE),
+							skyboxTextureId
+						);
 						pass.DrawIndexedTest(mSkyboxPass.geom.indexCount);
 					}
 				);
@@ -528,13 +542,16 @@ namespace Unnamed::Render {
 							std::span<const uint32_t>(&state.colorTextureId, 1),
 							state.depthTextureId
 						);
-						if (!mGeometryPass.pso) {
+						if (!mGeometryPass.resolved || !mGeometryPass.resolved->pso) {
 							return;
 						}
 						pass.SetGraphicsPipeline(
-							mGeometryPass.rootSig, mGeometryPass.pso
+							mGeometryPass.resolved->rootSignature,
+							mGeometryPass.resolved->pso
 						);
-						pass.BindGraphicsCbv(0, frameCb);
+						pass.BindGraphicsCbv(
+							ToRootIndex(GEOM_ROOT_SLOT::FRAME), frameCb
+						);
 
 						const MaterialBinding* fallbackMaterial = nullptr;
 						if (const auto it = mMaterialBindings.find(
@@ -617,10 +634,19 @@ namespace Unnamed::Render {
 
 							pass.SetVertexBuffer(mesh.vbv);
 							pass.SetIndexBuffer(mesh.ibv);
-							pass.BindGraphicsCbv(1, objectCb);
-							pass.BindGraphicsCbv(2, materialCb);
-							pass.BindGraphicsCbv(3, skinningCb);
-							pass.BindGraphicsSrvTable(4, textureId);
+							pass.BindGraphicsCbv(
+								ToRootIndex(GEOM_ROOT_SLOT::OBJECT), objectCb
+							);
+							pass.BindGraphicsCbv(
+								ToRootIndex(GEOM_ROOT_SLOT::MATERIAL), materialCb
+							);
+							pass.BindGraphicsCbv(
+								ToRootIndex(GEOM_ROOT_SLOT::SKINNING), skinningCb
+							);
+							pass.BindGraphicsSrvTable(
+								ToRootIndex(GEOM_ROOT_SLOT::BASE_COLOR_TEXTURE),
+								textureId
+							);
 							pass.DrawIndexedTest(mesh.indexCount);
 						}
 					}
@@ -643,7 +669,8 @@ namespace Unnamed::Render {
 						const RenderViewInput& view = mFrameViews[viewIndex];
 						if (view.worldBillboards.empty()) {
 							return;
-						}
+						}
+
 						if (!std::any_of(
 							view.worldBillboards.begin(),
 							view.worldBillboards.end(),
@@ -683,13 +710,19 @@ namespace Unnamed::Render {
 							std::span<const uint32_t>(&state.colorTextureId, 1),
 							state.depthTextureId
 						);
-						if (!mBillboardPass.depthGeom.pso) {
+						if (
+							!mBillboardPass.depthGeom.resolved ||
+							!mBillboardPass.depthGeom.resolved->pso
+						) {
 							return;
 						}
 						pass.SetGraphicsPipeline(
-							mBillboardPass.depthGeom.rootSig, mBillboardPass.depthGeom.pso
+							mBillboardPass.depthGeom.resolved->rootSignature,
+							mBillboardPass.depthGeom.resolved->pso
 						);
-						pass.BindGraphicsCbv(0, frameCb);
+						pass.BindGraphicsCbv(
+							ToRootIndex(GEOM_ROOT_SLOT::FRAME), frameCb
+						);
 						pass.SetVertexBuffer(mBillboardPass.depthGeom.vbv);
 						pass.SetIndexBuffer(mBillboardPass.depthGeom.ibv);
 
@@ -748,11 +781,17 @@ namespace Unnamed::Render {
 								allocator.AllocateConstantBuffer(
 									&material, sizeof(material)
 								);
-							pass.BindGraphicsCbv(1, objectCb);
-							pass.BindGraphicsCbv(2, materialCb);
-							pass.BindGraphicsCbv(3, objectCb);
+							pass.BindGraphicsCbv(
+								ToRootIndex(GEOM_ROOT_SLOT::OBJECT), objectCb
+							);
+							pass.BindGraphicsCbv(
+								ToRootIndex(GEOM_ROOT_SLOT::MATERIAL), materialCb
+							);
+							pass.BindGraphicsCbv(
+								ToRootIndex(GEOM_ROOT_SLOT::SKINNING), objectCb
+							);
 							pass.BindGraphicsSrvTable(
-								4,
+								ToRootIndex(GEOM_ROOT_SLOT::BASE_COLOR_TEXTURE),
 								ResolveSpriteTexture(
 									renderDevice, billboard.texture
 								)
@@ -805,13 +844,19 @@ namespace Unnamed::Render {
 							std::span<const uint32_t>(&state.colorTextureId, 1),
 							state.depthTextureId
 						);
-						if (!mBillboardPass.depthGeom.pso) {
+						if (
+							!mBillboardPass.depthGeom.resolved ||
+							!mBillboardPass.depthGeom.resolved->pso
+						) {
 							return;
 						}
 						pass.SetGraphicsPipeline(
-							mBillboardPass.depthGeom.rootSig, mBillboardPass.depthGeom.pso
+							mBillboardPass.depthGeom.resolved->rootSignature,
+							mBillboardPass.depthGeom.resolved->pso
 						);
-						pass.BindGraphicsCbv(0, frameCb);
+						pass.BindGraphicsCbv(
+							ToRootIndex(GEOM_ROOT_SLOT::FRAME), frameCb
+						);
 						pass.SetVertexBuffer(mBillboardPass.depthGeom.vbv);
 						pass.SetIndexBuffer(mBillboardPass.depthGeom.ibv);
 
@@ -877,11 +922,18 @@ namespace Unnamed::Render {
 									&material, sizeof(material)
 								);
 
-							pass.BindGraphicsCbv(1, objectCb);
-							pass.BindGraphicsCbv(2, materialCb);
-							pass.BindGraphicsCbv(3, objectCb);
+							pass.BindGraphicsCbv(
+								ToRootIndex(GEOM_ROOT_SLOT::OBJECT), objectCb
+							);
+							pass.BindGraphicsCbv(
+								ToRootIndex(GEOM_ROOT_SLOT::MATERIAL), materialCb
+							);
+							pass.BindGraphicsCbv(
+								ToRootIndex(GEOM_ROOT_SLOT::SKINNING), objectCb
+							);
 							pass.BindGraphicsSrvTable(
-								4, ResolveSpriteTexture(
+								ToRootIndex(GEOM_ROOT_SLOT::BASE_COLOR_TEXTURE),
+								ResolveSpriteTexture(
 									renderDevice, sprite.texture
 								)
 							);
@@ -901,7 +953,11 @@ namespace Unnamed::Render {
 					[this, state, viewIndex, &renderDevice](
 					RenderPassContext& pass
 				) {
-						if (mLinePass.frameVertexCount == 0 || !mLinePass.pso) {
+						if (
+							mLinePass.frameVertexCount == 0 ||
+							!mLinePass.resolved ||
+							!mLinePass.resolved->pso
+						) {
 							return;
 						}
 
@@ -928,9 +984,12 @@ namespace Unnamed::Render {
 							state.depthTextureId
 						);
 						pass.SetGraphicsPipeline(
-							mLinePass.rootSig, mLinePass.pso
+							mLinePass.resolved->rootSignature,
+							mLinePass.resolved->pso
 						);
-						pass.BindGraphicsCbv(0, frameCb);
+						pass.BindGraphicsCbv(
+							ToRootIndex(GEOM_ROOT_SLOT::FRAME), frameCb
+						);
 						pass.SetVertexBuffer(mLinePass.frameVbv);
 						pass.SetPrimitiveTopology(
 							D3D_PRIMITIVE_TOPOLOGY_LINELIST
@@ -984,14 +1043,19 @@ namespace Unnamed::Render {
 						);
 						pass.SetSrvUavHeap();
 						pass.SetRenderTarget(state.colorTextureId);
-						if (!mBillboardPass.frontGeom.pso) {
+						if (
+							!mBillboardPass.frontGeom.resolved ||
+							!mBillboardPass.frontGeom.resolved->pso
+						) {
 							return;
 						}
 						pass.SetGraphicsPipeline(
-							mBillboardPass.frontGeom.rootSig,
-							mBillboardPass.frontGeom.pso
+							mBillboardPass.frontGeom.resolved->rootSignature,
+							mBillboardPass.frontGeom.resolved->pso
 						);
-						pass.BindGraphicsCbv(0, frameCb);
+						pass.BindGraphicsCbv(
+							ToRootIndex(GEOM_ROOT_SLOT::FRAME), frameCb
+						);
 						pass.SetVertexBuffer(mBillboardPass.frontGeom.vbv);
 						pass.SetIndexBuffer(mBillboardPass.frontGeom.ibv);
 
@@ -1048,11 +1112,17 @@ namespace Unnamed::Render {
 									&material,
 									sizeof(material)
 								);
-							pass.BindGraphicsCbv(1, objectCb);
-							pass.BindGraphicsCbv(2, materialCb);
-							pass.BindGraphicsCbv(3, objectCb);
+							pass.BindGraphicsCbv(
+								ToRootIndex(GEOM_ROOT_SLOT::OBJECT), objectCb
+							);
+							pass.BindGraphicsCbv(
+								ToRootIndex(GEOM_ROOT_SLOT::MATERIAL), materialCb
+							);
+							pass.BindGraphicsCbv(
+								ToRootIndex(GEOM_ROOT_SLOT::SKINNING), objectCb
+							);
 							pass.BindGraphicsSrvTable(
-								4,
+								ToRootIndex(GEOM_ROOT_SLOT::BASE_COLOR_TEXTURE),
 								ResolveSpriteTexture(renderDevice, billboard.texture)
 							);
 							pass.DrawIndexedTest(mBillboardPass.frontGeom.indexCount);
@@ -1188,19 +1258,23 @@ namespace Unnamed::Render {
 									);
 									pass.SetSrvUavHeap();
 									pass.SetRenderTarget(dstId);
-									auto* pso = renderDevice.GetPipelineCache().
-										GetOrCreateGraphicsPso(
-											mBloomDownsamplePass.psoKey
-										);
-									if (!pso) {
+									if (
+										!mBloomDownsamplePass.resolved ||
+										!mBloomDownsamplePass.resolved->pso
+									) {
 										return;
 									}
 									pass.SetGraphicsPipeline(
-										mBloomDownsamplePass.rootSig, pso
+										mBloomDownsamplePass.resolved->rootSignature,
+										mBloomDownsamplePass.resolved->pso
 									);
-									pass.BindGraphicsCbv(0, bloomCb);
+									pass.BindGraphicsCbv(
+										ToRootIndex(FS_ROOT_SLOT::POST_FX_PARAMS),
+										bloomCb
+									);
 									pass.BindGraphicsSrvTable(
-										1, downsampleSrcId
+										ToRootIndex(FS_ROOT_SLOT::SOURCE_TEXTURE),
+										downsampleSrcId
 									);
 									pass.DrawFullscreenTriangle();
 								}
@@ -1270,18 +1344,24 @@ namespace Unnamed::Render {
 									);
 									pass.SetSrvUavHeap();
 									pass.SetRenderTarget(dstHighId);
-									auto* pso = renderDevice.GetPipelineCache().
-										GetOrCreateGraphicsPso(
-											mBloomUpsamplePass.psoKey
-										);
-									if (!pso) {
+									if (
+										!mBloomUpsamplePass.resolved ||
+										!mBloomUpsamplePass.resolved->pso
+									) {
 										return;
 									}
 									pass.SetGraphicsPipeline(
-										mBloomUpsamplePass.rootSig, pso
+										mBloomUpsamplePass.resolved->rootSignature,
+										mBloomUpsamplePass.resolved->pso
 									);
-									pass.BindGraphicsCbv(0, bloomCb);
-									pass.BindGraphicsSrvTable(1, srcLowId);
+									pass.BindGraphicsCbv(
+										ToRootIndex(FS_ROOT_SLOT::POST_FX_PARAMS),
+										bloomCb
+									);
+									pass.BindGraphicsSrvTable(
+										ToRootIndex(FS_ROOT_SLOT::SOURCE_TEXTURE),
+										srcLowId
+									);
 									pass.DrawFullscreenTriangle();
 								}
 							);
@@ -1312,17 +1392,17 @@ namespace Unnamed::Render {
 								);
 								pass.SetSrvUavHeap();
 								pass.SetRenderTarget(bloomCombinedOutId);
-								auto* pso = renderDevice.GetPipelineCache().
-									GetOrCreateGraphicsPso(
-										mHdrCopyPass.psoKey
-									);
-								if (!pso) {
+								if (!mHdrCopyPass.resolved || !mHdrCopyPass.resolved->pso) {
 									return;
 								}
 								pass.SetGraphicsPipeline(
-									mHdrCopyPass.rootSig, pso
+									mHdrCopyPass.resolved->rootSignature,
+									mHdrCopyPass.resolved->pso
 								);
-								pass.BindGraphicsSrvTable(1, baseCopyInId);
+								pass.BindGraphicsSrvTable(
+									ToRootIndex(FS_ROOT_SLOT::SOURCE_TEXTURE),
+									baseCopyInId
+								);
 								PostFxParamsConstants defaultParams = {};
 								auto& allocator = static_cast<Rhi::D3D12Device&>
 								(
@@ -1332,7 +1412,10 @@ namespace Unnamed::Render {
 									allocator.AllocateConstantBuffer(
 										&defaultParams, sizeof(defaultParams)
 									);
-								pass.BindGraphicsCbv(0, copyCb);
+								pass.BindGraphicsCbv(
+									ToRootIndex(FS_ROOT_SLOT::POST_FX_PARAMS),
+									copyCb
+								);
 								pass.DrawFullscreenTriangle();
 							}
 						);
@@ -1370,18 +1453,24 @@ namespace Unnamed::Render {
 								);
 								pass.SetSrvUavHeap();
 								pass.SetRenderTarget(bloomCombinedOutId);
-								auto* pso = renderDevice.GetPipelineCache().
-									GetOrCreateGraphicsPso(
-										mBloomCombinePass.psoKey
-									);
-								if (!pso) {
+								if (
+									!mBloomCombinePass.resolved ||
+									!mBloomCombinePass.resolved->pso
+								) {
 									return;
 								}
 								pass.SetGraphicsPipeline(
-									mBloomCombinePass.rootSig, pso
+									mBloomCombinePass.resolved->rootSignature,
+									mBloomCombinePass.resolved->pso
 								);
-								pass.BindGraphicsCbv(0, bloomCompositeCb);
-								pass.BindGraphicsSrvTable(1, bloomBaseId);
+								pass.BindGraphicsCbv(
+									ToRootIndex(FS_ROOT_SLOT::POST_FX_PARAMS),
+									bloomCompositeCb
+								);
+								pass.BindGraphicsSrvTable(
+									ToRootIndex(FS_ROOT_SLOT::SOURCE_TEXTURE),
+									bloomBaseId
+								);
 								pass.DrawFullscreenTriangle();
 							}
 						);
@@ -1422,16 +1511,20 @@ namespace Unnamed::Render {
 								static_cast<float>(state.height)
 							);
 							pass.SetSrvUavHeap();
-
-							auto* pso = renderDevice.GetPipelineCache().
-								GetOrCreateGraphicsPso(passRes.pass.psoKey);
-							if (!pso) {
+							if (!passRes.pass.resolved || !passRes.pass.resolved->pso) {
 								return;
 							}
-							pass.SetGraphicsPipeline(passRes.pass.rootSig, pso);
+							pass.SetGraphicsPipeline(
+								passRes.pass.resolved->rootSignature,
+								passRes.pass.resolved->pso
+							);
 							pass.SetRenderTarget(outId);
-							pass.BindGraphicsCbv(0, postFxCb);
-							pass.BindGraphicsSrvTable(1, inId);
+							pass.BindGraphicsCbv(
+								ToRootIndex(FS_ROOT_SLOT::POST_FX_PARAMS), postFxCb
+							);
+							pass.BindGraphicsSrvTable(
+								ToRootIndex(FS_ROOT_SLOT::SOURCE_TEXTURE), inId
+							);
 							pass.DrawFullscreenTriangle();
 						}
 					);
@@ -1471,16 +1564,19 @@ namespace Unnamed::Render {
 						);
 						pass.SetSrvUavHeap();
 						pass.SetRenderTarget(toneMapOutputId);
-						auto* pso = renderDevice.GetPipelineCache().
-						                         GetOrCreateGraphicsPso(
-							                         mToneMapPass.psoKey
-						                         );
-						if (!pso) {
+						if (!mToneMapPass.resolved || !mToneMapPass.resolved->pso) {
 							return;
 						}
-						pass.SetGraphicsPipeline(mToneMapPass.rootSig, pso);
-						pass.BindGraphicsCbv(0, toneMapCb);
-						pass.BindGraphicsSrvTable(1, toneMapInputId);
+						pass.SetGraphicsPipeline(
+							mToneMapPass.resolved->rootSignature,
+							mToneMapPass.resolved->pso
+						);
+						pass.BindGraphicsCbv(
+							ToRootIndex(FS_ROOT_SLOT::POST_FX_PARAMS), toneMapCb
+						);
+						pass.BindGraphicsSrvTable(
+							ToRootIndex(FS_ROOT_SLOT::SOURCE_TEXTURE), toneMapInputId
+						);
 						pass.DrawFullscreenTriangle();
 					}
 				);
@@ -1536,14 +1632,16 @@ namespace Unnamed::Render {
 					);
 					pass.SetSrvUavHeap();
 					pass.SetRenderTarget(outputId);
-					if (!mSpritePass.geom.pso) {
+					if (!mSpritePass.geom.resolved || !mSpritePass.geom.resolved->pso) {
 						return;
 					}
 					pass.SetGraphicsPipeline(
-						mSpritePass.geom.rootSig,
-						mSpritePass.geom.pso
+						mSpritePass.geom.resolved->rootSignature,
+						mSpritePass.geom.resolved->pso
 					);
-					pass.BindGraphicsCbv(0, frameCb);
+					pass.BindGraphicsCbv(
+						ToRootIndex(GEOM_ROOT_SLOT::FRAME), frameCb
+					);
 					pass.SetVertexBuffer(mSpritePass.geom.vbv);
 					pass.SetIndexBuffer(mSpritePass.geom.ibv);
 
@@ -1590,11 +1688,18 @@ namespace Unnamed::Render {
 								&material, sizeof(material)
 							);
 
-						pass.BindGraphicsCbv(1, objectCb);
-						pass.BindGraphicsCbv(2, materialCb);
-						pass.BindGraphicsCbv(3, objectCb);
+						pass.BindGraphicsCbv(
+							ToRootIndex(GEOM_ROOT_SLOT::OBJECT), objectCb
+						);
+						pass.BindGraphicsCbv(
+							ToRootIndex(GEOM_ROOT_SLOT::MATERIAL), materialCb
+						);
+						pass.BindGraphicsCbv(
+							ToRootIndex(GEOM_ROOT_SLOT::SKINNING), objectCb
+						);
 						pass.BindGraphicsSrvTable(
-							4, ResolveSpriteTexture(
+							ToRootIndex(GEOM_ROOT_SLOT::BASE_COLOR_TEXTURE),
+							ResolveSpriteTexture(
 								renderDevice, sprite.texture
 							)
 						);
@@ -1659,17 +1764,20 @@ namespace Unnamed::Render {
 								&params, sizeof(params)
 							);
 
-						auto* pso = renderDevice.GetPipelineCache().
-						                         GetOrCreateGraphicsPso(
-							                         mFullscreenPass.psoKey
-						                         );
-						if (!pso) {
+						if (!mFullscreenPass.resolved || !mFullscreenPass.resolved->pso) {
 							return;
 						}
-						pass.SetGraphicsPipeline(mFullscreenPass.rootSig, pso);
+						pass.SetGraphicsPipeline(
+							mFullscreenPass.resolved->rootSignature,
+							mFullscreenPass.resolved->pso
+						);
 
-						pass.BindGraphicsCbv(0, postFxCb);
-						pass.BindGraphicsSrvTable(1, presentTexture);
+						pass.BindGraphicsCbv(
+							ToRootIndex(FS_ROOT_SLOT::POST_FX_PARAMS), postFxCb
+						);
+						pass.BindGraphicsSrvTable(
+							ToRootIndex(FS_ROOT_SLOT::SOURCE_TEXTURE), presentTexture
+						);
 						pass.DrawFullscreenTriangle();
 					}
 				);

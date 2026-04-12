@@ -22,7 +22,7 @@
 
 #include "rendergraph/RenderGraph.h"
 
-#include "shaders/PipelineCache.h"
+#include "shaders/PipelineRegistry.h"
 
 namespace Unnamed::Render {
 	struct RenderFrameInputs;
@@ -102,29 +102,24 @@ namespace Unnamed::Render {
 			RenderDevice& renderDevice, Rhi::D3D12Device& dx
 		);
 		void LoadPostFxChain(RenderDevice& renderDevice);
-
-		bool ResolveShaderProgramStageKey(
-			RenderDevice& renderDevice,
-			AssetID       shaderProgramId,
-			const char*   stage,
-			ShaderKey&    outKey
-		) const;
+		void RebuildPipelineCatalog(
+			RenderDevice& renderDevice, Rhi::D3D12Device& dx
+		);
+		void ResolveRegisteredPipelines(RenderDevice& renderDevice);
 
 		struct FullscreenPassRes {
-			ID3D12RootSignature* rootSig = nullptr; // TODO: DX12から独立
-			GraphicsPsoKey       psoKey  = {};
+			PipelineHandle                  pipeline = {};
+			const ResolvedGraphicsPipeline* resolved = nullptr;
 		};
 
 		struct ComputePassRes {
-			ID3D12RootSignature* rootSig = nullptr;
-			ComputePipelineKey   psoKey  = {};
+			PipelineHandle                 pipeline = {};
+			const ResolvedComputePipeline* resolved = nullptr;
 		};
 
 		struct GeometryPassRes {
-			ID3D12RootSignature* rootSig = nullptr;
-			GraphicsPsoKey       psoKey  = {};
-
-			ID3D12PipelineState* pso = nullptr;
+			PipelineHandle                  pipeline = {};
+			const ResolvedGraphicsPipeline* resolved = nullptr;
 
 			Microsoft::WRL::ComPtr<ID3D12Resource> vb;
 			Microsoft::WRL::ComPtr<ID3D12Resource> ib;
@@ -132,9 +127,6 @@ namespace Unnamed::Render {
 			D3D12_INDEX_BUFFER_VIEW                ibv        = {};
 			uint32_t                               indexCount = 0;
 			AABB                                   localAABB  = {};
-
-			DXGI_FORMAT rtvFormat = DXGI_FORMAT_UNKNOWN;
-			DXGI_FORMAT dsvFormat = DXGI_FORMAT_UNKNOWN;
 		};
 
 		struct MaterialBinding {
@@ -176,9 +168,8 @@ namespace Unnamed::Render {
 		};
 
 		struct LinePassRes {
-			ID3D12RootSignature* rootSig = nullptr;
-			GraphicsPsoKey       psoKey  = {};
-			ID3D12PipelineState* pso     = nullptr;
+			PipelineHandle                  pipeline = {};
+			const ResolvedGraphicsPipeline* resolved = nullptr;
 
 			Microsoft::WRL::ComPtr<ID3D12Resource> dynamicVb;
 			DebugLineVertex*                       mappedVertices   = nullptr;
@@ -211,6 +202,7 @@ namespace Unnamed::Render {
 		ConsoleSystem* mConsole = nullptr;
 
 		RenderGraph mGraph;
+		PipelineRegistry mPipelineRegistry;
 
 		FullscreenPassRes        mFullscreenPass      = {};
 		FullscreenPassRes        mHdrCopyPass         = {};

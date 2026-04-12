@@ -111,7 +111,14 @@ namespace Unnamed::Rhi {
 		void        CreateSrvUavHeap();
 		void        CreateRtvHeap();
 		void        CreateDsvHeap();
+		/// @brief 使用するルートシグネチャ群を作成します。
 		void        CreatePipelines();
+		/// @brief コンピュート用ルートシグネチャを作成します。
+		void        CreateComputeRootSignature();
+		/// @brief フルスクリーン描画用ルートシグネチャを作成します。
+		void        CreateFullscreenRootSignature();
+		/// @brief ジオメトリ描画用ルートシグネチャを作成します。
+		void        CreateGeometryRootSignature();
 		void        CreateCommandObjects();
 		void        CreateFenceObjects();
 		void        WaitForFrame(uint32_t frameIndex) const;

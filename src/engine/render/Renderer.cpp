@@ -94,7 +94,7 @@ namespace Unnamed::Render {
 			LoadMaterialResources(renderDevice, dx);
 		}
 		if (postFxDirty) {
-			LoadPostFxChain(renderDevice);
+			RebuildPipelineCatalog(renderDevice, dx);
 		}
 
 		mFrameViews      = inputs.views;
@@ -319,30 +319,7 @@ namespace Unnamed::Render {
 			EnsureSpriteFallbackTexture(renderDevice);
 		}
 
-		mGeometryPass.pso =
-			renderDevice.GetPipelineCache().GetOrCreateGraphicsPso(
-				mGeometryPass.psoKey
-			);
-		mSkyboxPass.geom.pso =
-			renderDevice.GetPipelineCache().GetOrCreateGraphicsPso(
-				mSkyboxPass.geom.psoKey
-			);
-		mSpritePass.geom.pso =
-			renderDevice.GetPipelineCache().GetOrCreateGraphicsPso(
-				mSpritePass.geom.psoKey
-			);
-		mBillboardPass.depthGeom.pso =
-			renderDevice.GetPipelineCache().GetOrCreateGraphicsPso(
-				mBillboardPass.depthGeom.psoKey
-			);
-		mBillboardPass.frontGeom.pso =
-			renderDevice.GetPipelineCache().GetOrCreateGraphicsPso(
-				mBillboardPass.frontGeom.psoKey
-			);
-		mLinePass.pso =
-			renderDevice.GetPipelineCache().GetOrCreateGraphicsPso(
-				mLinePass.psoKey
-			);
+		ResolveRegisteredPipelines(renderDevice);
 
 		rhi.BeginFrame();
 		mAdvancedFoundation.BeginFrame();
@@ -476,6 +453,58 @@ namespace Unnamed::Render {
 		width  = std::max(2u, width);
 		height = std::max(2u, height);
 		return {width, height};
+	}
+
+	void Renderer::ResolveRegisteredPipelines(RenderDevice& renderDevice) {
+		mPipelineRegistry.ResolveAll(renderDevice);
+
+		mFullscreenPass.resolved      = mPipelineRegistry.GetGraphics(
+			mFullscreenPass.pipeline
+		);
+		mHdrCopyPass.resolved         = mPipelineRegistry.GetGraphics(
+			mHdrCopyPass.pipeline
+		);
+		mToneMapPass.resolved         = mPipelineRegistry.GetGraphics(
+			mToneMapPass.pipeline
+		);
+		mBloomDownsamplePass.resolved = mPipelineRegistry.GetGraphics(
+			mBloomDownsamplePass.pipeline
+		);
+		mBloomUpsamplePass.resolved   = mPipelineRegistry.GetGraphics(
+			mBloomUpsamplePass.pipeline
+		);
+		mBloomCombinePass.resolved    = mPipelineRegistry.GetGraphics(
+			mBloomCombinePass.pipeline
+		);
+		mDepthVisPass.resolved        = mPipelineRegistry.GetGraphics(
+			mDepthVisPass.pipeline
+		);
+		mComputePass.resolved         = mPipelineRegistry.GetCompute(
+			mComputePass.pipeline
+		);
+
+		mGeometryPass.resolved        = mPipelineRegistry.GetGraphics(
+			mGeometryPass.pipeline
+		);
+		mSkyboxPass.geom.resolved     = mPipelineRegistry.GetGraphics(
+			mSkyboxPass.geom.pipeline
+		);
+		mSpritePass.geom.resolved     = mPipelineRegistry.GetGraphics(
+			mSpritePass.geom.pipeline
+		);
+		mBillboardPass.depthGeom.resolved = mPipelineRegistry.GetGraphics(
+			mBillboardPass.depthGeom.pipeline
+		);
+		mBillboardPass.frontGeom.resolved = mPipelineRegistry.GetGraphics(
+			mBillboardPass.frontGeom.pipeline
+		);
+		mLinePass.resolved = mPipelineRegistry.GetGraphics(mLinePass.pipeline);
+
+		for (auto& pass : mPostFxPasses) {
+			pass.pass.resolved = mPipelineRegistry.GetGraphics(
+				pass.pass.pipeline
+			);
+		}
 	}
 
 	uint32_t Renderer::ResolveSpriteTexture(

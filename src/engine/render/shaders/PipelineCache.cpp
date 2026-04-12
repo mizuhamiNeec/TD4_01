@@ -102,6 +102,10 @@ namespace Unnamed::Render {
 		desc.BlendState.RenderTarget[0].SrcBlendAlpha = key.srcBlendAlpha;
 		desc.BlendState.RenderTarget[0].DestBlendAlpha = key.destBlendAlpha;
 		desc.BlendState.RenderTarget[0].BlendOpAlpha = key.blendOpAlpha;
+		for (uint32_t i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; ++i) {
+			desc.BlendState.RenderTarget[i].RenderTargetWriteMask =
+				key.colorWriteMask;
+		}
 		desc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 		desc.RasterizerState.CullMode = key.cullMode;
 
@@ -123,7 +127,9 @@ namespace Unnamed::Render {
 
 		if (key.depthEnable) {
 			desc.DepthStencilState.DepthEnable    = TRUE;
-			desc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+			desc.DepthStencilState.DepthWriteMask = key.depthWriteEnable ?
+				                                D3D12_DEPTH_WRITE_MASK_ALL :
+				                                D3D12_DEPTH_WRITE_MASK_ZERO;
 			desc.DepthStencilState.DepthFunc      = key.depthFunc;
 		} else {
 			desc.DepthStencilState.DepthEnable = FALSE;

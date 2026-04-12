@@ -167,7 +167,17 @@
                             36.00089645385742,
                             16.00037384033203
                         ],
-                        "collisionEnabled": true
+                        "collisionEnabled": true,
+                        "movementCapabilities": {
+                            "blink": true,
+                            "crouch": true,
+                            "doubleJump": true,
+                            "grapple": true,
+                            "jump": true,
+                            "slide": true,
+                            "speedVault": true,
+                            "wallRun": true
+                        }
                     },
                     "guid": 2,
                     "type": "parkour.ParkourMovement"
@@ -177,6 +187,55 @@
                     "data": {},
                     "guid": 512,
                     "type": "game.PlayerCharacterController"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "allowCycleWrap": true,
+                        "autoEquipOnPickup": true,
+                        "definitions": [
+                            {
+                                "autoEquipOnPickup": true,
+                                "canStack": false,
+                                "displayName": "Fists",
+                                "dropPolicy": "cannot_drop",
+                                "itemClass": "weapon",
+                                "itemId": "weapon.fists",
+                                "keepInLoadoutIfEmpty": true,
+                                "maxStack": 1,
+                                "weapon": {
+                                    "automatic": false,
+                                    "damage": 22.0,
+                                    "fireIntervalSec": 0.3499999940395355,
+                                    "modeId": "melee",
+                                    "projectileSpeedMps": 0.0,
+                                    "radiusMeters": 0.44999998807907104,
+                                    "rangeMeters": 1.7999999523162842
+                                }
+                            }
+                        ],
+                        "entries": [
+                            {
+                                "instanceGuid": 1,
+                                "itemId": "weapon.fists",
+                                "stackCount": 1
+                            }
+                        ],
+                        "equippedIndex": 0,
+                        "maxEntries": 8,
+                        "nextInstanceGuid": 2
+                    },
+                    "guid": 13530906570563040777,
+                    "type": "game.InventorySystem"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "drawDebugTrace": true,
+                        "verboseLogging": true
+                    },
+                    "guid": 17059442565900959099,
+                    "type": "game.WeaponSystem"
                 }
             ],
             "folderPath": "Gameplay/Player",
@@ -941,17 +1000,6 @@
                 {
                     "active": true,
                     "data": {
-                        "animationEntityGuid": 2313,
-                        "cameraFxEntityGuid": 0,
-                        "cueSourceEntityGuid": 2100,
-                        "profilePath": "content/parkour/presentation/player_viewmodel.presentation.json"
-                    },
-                    "guid": 11094975169106168005,
-                    "type": "game.CharacterPresentation"
-                },
-                {
-                    "active": true,
-                    "data": {
                         "attenuation": 16.0,
                         "locationAmount": 0.0,
                         "swayAmount": 0.5
@@ -1038,7 +1086,7 @@
                                     7.5
                                 ],
                                 "id": "rot_wallrun_right_start",
-                                "inSec": 0.15000000596046448,
+                                "inSec": 0.11999999731779099,
                                 "outSec": 9.999999848243207e+30
                             },
                             {
@@ -1049,7 +1097,7 @@
                                     -7.5
                                 ],
                                 "id": "rot_wallrun_left_start",
-                                "inSec": 0.15000000596046448,
+                                "inSec": 0.11999999731779099,
                                 "outSec": 9.999999848243207e+30
                             },
                             {
@@ -1082,8 +1130,8 @@
                                     0.0
                                 ],
                                 "id": "rot_sliding_reset",
-                                "inSec": 0.5,
-                                "outSec": 0.0
+                                "inSec": 0.15000000596046448,
+                                "outSec": 2.0
                             }
                         ],
                         "shakeEntityGuid": 0,
@@ -1211,13 +1259,15 @@
                 {
                     "active": true,
                     "data": {
-                        "animationEntityGuid": 0,
+                        "animationEntityGuid": 2313,
+                        "assetPath": "content/parkour/presentation/player_movement_v2.event_presentation.json",
+                        "audioFxEntityGuid": 0,
                         "cameraFxEntityGuid": 0,
                         "cueSourceEntityGuid": 2100,
-                        "profilePath": "content/parkour/presentation/player_camera.presentation.json"
+                        "verboseLog": false
                     },
-                    "guid": 13155411561665024994,
-                    "type": "game.CharacterPresentation"
+                    "guid": 14936246943620978950,
+                    "type": "game.EventPresentation"
                 }
             ],
             "folderPath": "Gameplay/Player",
@@ -1314,7 +1364,7 @@
                         "pitch": 1.0,
                         "playOnStart": true,
                         "soundPath": "content/parkour/sounds/bgm/Run.wav",
-                        "volume": 0.25
+                        "volume": 0.4000000059604645
                     },
                     "guid": 11414014045292773144,
                     "type": "engine.AudioSource"

@@ -402,7 +402,7 @@ namespace Unnamed {
 					continue;
 				}
 
-				auto* rotatorTransform =
+				const auto* rotatorTransform =
 					entityPtr->GetComponent<TransformComponent>();
 				if (!rotatorTransform) {
 					continue;

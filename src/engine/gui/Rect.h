@@ -10,15 +10,15 @@ namespace Unnamed::Gui {
 		float height = 0.0f; // 高さ
 
 		[[nodiscard]] Vec2 Position() const {
-			return Vec2{x, y};
+			return {x, y};
 		}
 
 		[[nodiscard]] Vec2 Size() const {
-			return Vec2{width, height};
+			return {width, height};
 		}
 
 		[[nodiscard]] Vec2 Center() const {
-			return Vec2{x + width * 0.5f, y + height * 0.5f};
+			return {x + width * 0.5f, y + height * 0.5f};
 		}
 	};
 

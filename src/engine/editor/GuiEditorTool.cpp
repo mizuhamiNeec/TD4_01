@@ -258,12 +258,11 @@ namespace Unnamed {
 		if (viewKey != kViewGuiPreview) {
 			return;
 		}
-		ViewOutputCache cache = {};
-		cache.textureId = output.textureId;
-		cache.srvCpu = output.srvCpu;
+		auto& cache = mViewOutputs[std::string(viewKey)];
+		cache.textureId   = output.textureId;
+		cache.srvCpu      = output.srvCpu;
 		cache.srvRevision = output.srvRevision;
-		cache.size = size;
-		mViewOutputs[std::string(viewKey)] = cache;
+		cache.size        = size;
 	}
 
 	bool GuiEditorTool::IsOpen() const {

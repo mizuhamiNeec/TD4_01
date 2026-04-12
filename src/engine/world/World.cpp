@@ -291,8 +291,23 @@ namespace Unnamed {
 			RunPhaseGroup(TICK_PHASE::TICK, group);
 		}
 		for (const TickGroup group : kTickGroupOrder) {
-			runPhaseGroup(TickPhase::PostPhysics, group);
 			RunPhaseGroup(TICK_PHASE::POST_PHYSICS, group);
+		}
+	}
+
+	void World::FrameInputTick(const float frameDeltaTime) {
+		if (!mScene) {
+			return;
+		}
+
+		std::vector<Entity*> activeEntities = CollectActiveEntities(
+			mScene.get()
+		);
+		for (Entity* entity : activeEntities) {
+			if (!entity) {
+				continue;
+			}
+			(void)entity->FrameInputTick(frameDeltaTime);
 		}
 	}
 

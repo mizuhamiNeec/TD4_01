@@ -17,7 +17,7 @@ namespace Unnamed::Gui {
 		}
 
 		Color ReadColor(const JsonReader& reader, const Color& fallback) {
-			if (!reader.Valid() || reader.Size() >= 4) {
+			if (!reader.Valid() || reader.Size() < 4) {
 				return fallback;
 			}
 			return {

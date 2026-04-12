@@ -4,6 +4,8 @@
 #include <imgui.h>
 
 #include "core/ComponentRegistry.h"
+#include "core/math/Quaternion.h"
+#include "core/math/Vec4.h"
 
 // ReSharper disable once CppUnusedIncludeDirective
 #include "core/string/StrUtil.h"
@@ -29,6 +31,9 @@ namespace Unnamed {
 			"parkourgroundmove";
 		constexpr float kForwardSprintDotThreshold = 0.7f;
 		constexpr float kMinSprintMoveSpeedHu      = 5.0f;
+		constexpr float kDuckSweepMinDistanceHu    = 0.05f;
+		constexpr float kDuckSweepBlockToiEpsilon  = 1.0e-4f;
+		constexpr float kUnduckHeadroomPaddingHu   = 0.5f;
 
 		bool TryReadVec3FromObject(
 			const nlohmann::json& object,
@@ -85,7 +90,9 @@ namespace Unnamed {
 		}
 
 		TickParkourTimers(stepSeconds);
+		ResetDuckStandDebugFrame();
 		GameMovementComponent::SimulateStep(transform, input, stepSeconds);
+		DrawDuckStandDebug(transform);
 		// 旧State実装と同じ入力エッジ判定に合わせるため、毎tick最後に同期します。
 		mRuntime.lastJumpHeld = input.jumpPressed;
 		if (mGrounded) {
@@ -640,9 +647,51 @@ namespace Unnamed {
 		return mRuntime.duckHullActive;
 	}
 
-	bool ParkourMovementComponent::CanStandAt(
+	Vec3 ParkourMovementComponent::ComputeHullCenterOffsetForDuckState(
+		const MovementContext& context,
+		const bool             toDuck
+	) const {
+		const float deltaHalfY = std::max(
+			0.0f,
+			mStandingHalfExtents.y - mDuckHalfExtents.y
+		);
+		if (deltaHalfY <= 0.0f) {
+			return Vec3::zero;
+		}
+
+		// Source系と同様に、地上では足元固定、空中では頭側固定でハルを切り替えます。
+		const bool grounded = IsDuckGrounded(context);
+		if (toDuck) {
+			return grounded ? -Vec3::up * deltaHalfY : Vec3::up * deltaHalfY;
+		}
+		return grounded ? Vec3::up * deltaHalfY : -Vec3::up * deltaHalfY;
+	}
+
+	bool ParkourMovementComponent::IsDuckGrounded(
 		const MovementContext& context
 	) const {
+		return context.isGrounded ||
+			context.modeState.currentMode == MOVEMENT_MODE_ID::GROUND;
+	}
+
+	bool ParkourMovementComponent::CanOccupyHull(
+		const MovementContext& context,
+		const Vec3&            targetCenter,
+		const Vec3&            targetHalfExtents,
+		const bool             checkSweepPath,
+		HullOccupancyDebugInfo* outDebugInfo
+	) const {
+		if (outDebugInfo) {
+			*outDebugInfo = {};
+			outDebugInfo->checkSweepPath   = checkSweepPath;
+			outDebugInfo->sweepStartCenter = context.transform ?
+				                                 context.transform->GetPosition() :
+				                                 Vec3::zero;
+			outDebugInfo->sweepEndCenter   = targetCenter;
+			outDebugInfo->sweepHalfExtents = targetHalfExtents;
+			outDebugInfo->sweepReachableCenter = targetCenter;
+		}
+
 		if (!context.transform || !context.resolver) {
 			return true;
 		}
@@ -652,18 +701,176 @@ namespace Unnamed {
 			return true;
 		}
 
+		const Vec3  startCenter    = context.transform->GetPosition();
+		const Vec3  sweepDelta     = targetCenter - startCenter;
+		const float sweepDistanceM = sweepDelta.Length();
+		const float minSweepM      = Math::HtoM(kDuckSweepMinDistanceHu);
+
+		// 立ち/しゃがみ切り替え時の中心移動をスイープして、経路上の干渉を事前検出します。
+		if (checkSweepPath && sweepDistanceM > minSweepM) {
+			const Vec3 dir = sweepDelta / sweepDistanceM;
+			const Box  sweepBox = {
+				.center   = startCenter,
+				.halfSize = targetHalfExtents
+			};
+
+			Physics::Hit sweepHit{};
+			if (physics->BoxCast(sweepBox, dir, sweepDistanceM, &sweepHit)) {
+				if (outDebugInfo) {
+					outDebugInfo->sweepHit = true;
+					outDebugInfo->sweepHitToi = std::clamp(
+						sweepHit.toi, 0.0f, 1.0f
+					);
+					outDebugInfo->sweepHitPos    = sweepHit.pos;
+					outDebugInfo->sweepHitNormal = sweepHit.normal;
+					outDebugInfo->sweepReachableCenter =
+						startCenter + dir * (sweepDistanceM * outDebugInfo->sweepHitToi);
+				}
+				if (sweepHit.startSolid || sweepHit.allsolid ||
+				    sweepHit.toi < 1.0f - kDuckSweepBlockToiEpsilon) {
+					if (outDebugInfo) {
+						outDebugInfo->sweepBlocked = true;
+					}
+					return false;
+				}
+			}
+		}
+
+		const Box targetBox = {
+			.center   = targetCenter,
+			.halfSize = targetHalfExtents
+		};
+		Physics::Hit overlapHit{};
+		if (physics->BoxOverlap(targetBox, &overlapHit)) {
+			if (outDebugInfo) {
+				outDebugInfo->overlapBlocked   = true;
+				outDebugInfo->overlapHitPos    = overlapHit.pos;
+				outDebugInfo->overlapHitNormal = overlapHit.normal;
+			}
+			return false;
+		}
+		return true;
+	}
+
+	bool ParkourMovementComponent::CanStandAt(
+		const MovementContext& context
+	) const {
+		if (!context.transform) {
+			return true;
+		}
+
+		const bool debugEnabled = IsDuckDebugDrawEnabled();
+		if (debugEnabled) {
+			mDuckStandDebug.evaluateStandCalled = true;
+			mDuckStandDebug.standAllowed        = false;
+			mDuckStandDebug.grounded            = IsDuckGrounded(context);
+			mDuckStandDebug.currentCenter       = context.transform->GetPosition();
+			mDuckStandDebug.currentHalfExtents  = mBoxHalfExtents;
+		}
+
+		Vec3 standCenter = context.transform->GetPosition();
+		const bool grounded = IsDuckGrounded(context);
+		if (mRuntime.duckHullActive) {
+			standCenter += ComputeHullCenterOffsetForDuckState(context, false);
+		}
+
+		Vec3 standCheckCenter      = standCenter;
+		Vec3 standCheckHalfExtents = mStandingHalfExtents;
+		const float headroomPadM   = Math::HtoM(kUnduckHeadroomPaddingHu);
+		if (headroomPadM > 0.0f) {
+			// 立ち判定で天井側のみわずかにマージンを持たせ、境界接触での誤復帰を防ぎます。
+			standCheckCenter += Vec3::up * (headroomPadM * 0.5f);
+			standCheckHalfExtents.y += headroomPadM * 0.5f;
+		}
+		if (debugEnabled) {
+			mDuckStandDebug.standTargetCenter      = standCheckCenter;
+			mDuckStandDebug.standTargetHalfExtents = standCheckHalfExtents;
+		}
+
+		// 地上 unduck は足元固定で遷移するため、終点占有判定を優先します。
+		// 空中 unduck のみ経路スイープを有効化して干渉を防ぎます。
+		HullOccupancyDebugInfo occupancyDebug = {};
+		if (!CanOccupyHull(
+			context,
+			standCheckCenter,
+			standCheckHalfExtents,
+			!grounded,
+			debugEnabled ? &occupancyDebug : nullptr
+		)) {
+			if (debugEnabled) {
+				mDuckStandDebug.standOccupancy = occupancyDebug;
+			}
+			return false;
+		}
+		if (debugEnabled) {
+			mDuckStandDebug.standOccupancy = occupancyDebug;
+		}
+
+		if (!grounded || !mRuntime.duckHullActive) {
+			if (debugEnabled) {
+				mDuckStandDebug.standAllowed = true;
+			}
+			return true;
+		}
+
+		const auto* physics = context.resolver ? context.resolver->GetPhysics() :
+		                                       nullptr;
+		if (!physics) {
+			if (debugEnabled) {
+				mDuckStandDebug.standAllowed = true;
+			}
+			return true;
+		}
+
+		// 地上 unduck は「立ちで追加される上部体積」を専用スラブとして上方向にスイープします。
+		// duck ハル全体を上げるだけでは、上端側の追加体積を取りこぼすケースがあります。
 		const float deltaHalfY = std::max(
 			0.0f,
 			mStandingHalfExtents.y - mDuckHalfExtents.y
 		);
+		const float castLength = deltaHalfY + std::max(0.0f, headroomPadM);
+		if (castLength <= 1.0e-6f || deltaHalfY <= 1.0e-6f) {
+			if (debugEnabled) {
+				mDuckStandDebug.standAllowed = true;
+			}
+			return true;
+		}
 
-		const Box testBox = {
-			.center   = context.transform->GetPosition() + Vec3::up * deltaHalfY,
-			.halfSize = mStandingHalfExtents
+		Vec3 headProbeHalf = mStandingHalfExtents;
+		headProbeHalf.y = deltaHalfY * 0.5f + headroomPadM * 0.5f;
+		const Box headProbeBox = {
+			.center = context.transform->GetPosition() +
+				Vec3::up * (mDuckHalfExtents.y + headProbeHalf.y),
+			.halfSize = headProbeHalf
 		};
-
-		Physics::Hit hit{};
-		return !physics->BoxOverlap(testBox, &hit);
+		if (debugEnabled) {
+			mDuckStandDebug.headSweepUsed        = true;
+			mDuckStandDebug.headSweepStartCenter = headProbeBox.center;
+			mDuckStandDebug.headSweepHalfExtents = headProbeBox.halfSize;
+			mDuckStandDebug.headSweepLength      = castLength;
+			mDuckStandDebug.headSweepReachableCenter =
+				headProbeBox.center + Vec3::up * castLength;
+		}
+		Physics::Hit sweepHit{};
+		if (!physics->BoxCast(headProbeBox, Vec3::up, castLength, &sweepHit)) {
+			if (debugEnabled) {
+				mDuckStandDebug.standAllowed = true;
+			}
+			return true;
+		}
+		const float hitToi = std::clamp(sweepHit.toi, 0.0f, 1.0f);
+		const bool blocked = sweepHit.startSolid || sweepHit.allsolid ||
+			sweepHit.toi < 1.0f - kDuckSweepBlockToiEpsilon;
+		if (debugEnabled) {
+			mDuckStandDebug.headSweepHitToi = hitToi;
+			mDuckStandDebug.headSweepBlocked = blocked;
+			mDuckStandDebug.headSweepHitPos = sweepHit.pos;
+			mDuckStandDebug.headSweepHitNormal = sweepHit.normal;
+			mDuckStandDebug.headSweepReachableCenter =
+				headProbeBox.center + Vec3::up * (castLength * hitToi);
+			mDuckStandDebug.standAllowed = !blocked;
+		}
+		return !blocked;
 	}
 
 	float ParkourMovementComponent::GetHorizontalSpeedHu(
@@ -922,54 +1129,265 @@ namespace Unnamed {
 		mRuntime.wallRun.timeSinceLast = 999.0f;
 	}
 
+	bool ParkourMovementComponent::IsDuckDebugDrawEnabled() const {
+		return mConsole &&
+			mConsole->GetConVarValueOr("park_duck_debugdraw", true);
+	}
+
+	void ParkourMovementComponent::ResetDuckStandDebugFrame() {
+		mDuckStandDebug = {};
+	}
+
+	void ParkourMovementComponent::DrawDuckStandDebug(
+		TransformComponent* transform
+	) const {
+		if (!IsDuckDebugDrawEnabled() || !transform) {
+			return;
+		}
+		World* world = transform->GetWorld();
+		if (!world) {
+			return;
+		}
+
+		const DuckStandDebugFrame& debug = mDuckStandDebug;
+		if (!debug.evaluateStandCalled && !debug.standApplyAttempted &&
+		    !debug.duckApplyAttempted) {
+			return;
+		}
+
+		auto& debugDraw = world->GetDebugDraw();
+		const Vec4 currentColor = Vec4(1.0f, 0.85f, 0.2f, 1.0f);
+		const Vec4 targetColor = debug.standAllowed ?
+			                         Vec4(0.2f, 1.0f, 0.2f, 1.0f) :
+			                         Vec4(1.0f, 0.2f, 0.2f, 1.0f);
+		const Vec4 pathColor = Vec4::cyan;
+		const Vec4 hitColor = Vec4::red;
+		const Vec4 reachedColor = Vec4(0.2f, 1.0f, 0.6f, 1.0f);
+		const Vec4 headCastColor = Vec4::orange;
+		const Vec4 appliedStandColor = debug.standApplySucceeded ?
+			                               Vec4::magenta :
+			                               Vec4::darkGray;
+		const Vec4 appliedDuckColor = debug.duckApplySucceeded ?
+			                              Vec4::blue :
+			                              Vec4::darkGray;
+
+		if (debug.evaluateStandCalled) {
+			debugDraw.DrawBox(
+				debug.currentCenter,
+				Quaternion::identity,
+				debug.currentHalfExtents * 2.0f,
+				currentColor
+			);
+			debugDraw.DrawBox(
+				debug.standTargetCenter,
+				Quaternion::identity,
+				debug.standTargetHalfExtents * 2.0f,
+				targetColor
+			);
+		}
+
+		const HullOccupancyDebugInfo& occupancy = debug.standOccupancy;
+		if (occupancy.checkSweepPath) {
+			debugDraw.DrawArrow(
+				occupancy.sweepStartCenter,
+				occupancy.sweepEndCenter - occupancy.sweepStartCenter,
+				pathColor,
+				Math::HtoM(4.0f)
+			);
+			debugDraw.DrawBox(
+				occupancy.sweepStartCenter,
+				Quaternion::identity,
+				occupancy.sweepHalfExtents * 2.0f,
+				Vec4::lightGray
+			);
+			debugDraw.DrawBox(
+				occupancy.sweepReachableCenter,
+				Quaternion::identity,
+				occupancy.sweepHalfExtents * 2.0f,
+				reachedColor
+			);
+			if (occupancy.sweepBlocked) {
+				debugDraw.DrawSphere(
+					occupancy.sweepHitPos,
+					Quaternion::identity,
+					Math::HtoM(2.0f),
+					hitColor,
+					10
+				);
+				debugDraw.DrawArrow(
+					occupancy.sweepHitPos,
+					occupancy.sweepHitNormal * Math::HtoM(12.0f),
+					hitColor,
+					Math::HtoM(2.0f)
+				);
+			}
+		}
+		if (occupancy.overlapBlocked) {
+			debugDraw.DrawSphere(
+				occupancy.overlapHitPos,
+				Quaternion::identity,
+				Math::HtoM(2.0f),
+				hitColor,
+				10
+			);
+			debugDraw.DrawArrow(
+				occupancy.overlapHitPos,
+				occupancy.overlapHitNormal * Math::HtoM(12.0f),
+				hitColor,
+				Math::HtoM(2.0f)
+			);
+		}
+
+		if (debug.headSweepUsed) {
+			const Vec3 headCastVec = Vec3::up * debug.headSweepLength;
+			debugDraw.DrawArrow(
+				debug.headSweepStartCenter,
+				headCastVec,
+				headCastColor,
+				Math::HtoM(4.0f)
+			);
+			debugDraw.DrawBox(
+				debug.headSweepStartCenter,
+				Quaternion::identity,
+				debug.headSweepHalfExtents * 2.0f,
+				headCastColor
+			);
+			debugDraw.DrawBox(
+				debug.headSweepReachableCenter,
+				Quaternion::identity,
+				debug.headSweepHalfExtents * 2.0f,
+				reachedColor
+			);
+			if (debug.headSweepBlocked) {
+				debugDraw.DrawSphere(
+					debug.headSweepHitPos,
+					Quaternion::identity,
+					Math::HtoM(2.0f),
+					hitColor,
+					10
+				);
+				debugDraw.DrawArrow(
+					debug.headSweepHitPos,
+					debug.headSweepHitNormal * Math::HtoM(12.0f),
+					hitColor,
+					Math::HtoM(2.0f)
+				);
+			}
+		}
+
+		if (debug.standApplyAttempted) {
+			debugDraw.DrawBox(
+				debug.standAppliedCenter,
+				Quaternion::identity,
+				debug.standAppliedHalfExtents * 2.0f,
+				appliedStandColor
+			);
+		}
+		if (debug.duckApplyAttempted) {
+			debugDraw.DrawBox(
+				debug.duckAppliedCenter,
+				Quaternion::identity,
+				debug.duckAppliedHalfExtents * 2.0f,
+				appliedDuckColor
+			);
+		}
+	}
+
 	bool ParkourMovementComponent::ApplyDuckHull(MovementContext& context) {
+		if (IsDuckDebugDrawEnabled()) {
+			mDuckStandDebug.duckApplyAttempted   = true;
+			mDuckStandDebug.duckApplySucceeded   = false;
+			mDuckStandDebug.duckAppliedCenter    = context.transform ?
+				                                       context.transform->GetPosition() :
+				                                       Vec3::zero;
+			mDuckStandDebug.duckAppliedHalfExtents = mDuckHalfExtents;
+		}
+
 		if (mRuntime.duckHullActive) {
 			context.halfExtents = mBoxHalfExtents;
+			if (IsDuckDebugDrawEnabled()) {
+				mDuckStandDebug.duckApplySucceeded = true;
+				mDuckStandDebug.duckAppliedCenter = context.transform ?
+					                                   context.transform->GetPosition() :
+					                                   Vec3::zero;
+				mDuckStandDebug.duckAppliedHalfExtents = mBoxHalfExtents;
+			}
 			return true;
 		}
 		if (!context.transform) {
 			return false;
 		}
 
-		const float deltaHalfY = std::max(
-			0.0f,
-			mStandingHalfExtents.y - mDuckHalfExtents.y
-		);
-		context.transform->SetPosition(
-			context.transform->GetPosition() - Vec3::up * deltaHalfY
-		);
+		const Vec3 startCenter  = context.transform->GetPosition();
+		const Vec3 targetCenter = startCenter +
+			ComputeHullCenterOffsetForDuckState(context, true);
+		const bool grounded = IsDuckGrounded(context);
+
+		// 優先は Source系の地上/空中オフセット。詰まる場合のみ中心据え置きへフォールバックします。
+		Vec3 applyCenter = targetCenter;
+		if (!CanOccupyHull(context, targetCenter, mDuckHalfExtents, !grounded)) {
+			if (!CanOccupyHull(context, startCenter, mDuckHalfExtents, false)) {
+				context.halfExtents = mBoxHalfExtents;
+				return false;
+			}
+			applyCenter = startCenter;
+		}
+		context.transform->SetPosition(applyCenter);
 
 		mBoxHalfExtents         = mDuckHalfExtents;
 		context.halfExtents     = mDuckHalfExtents;
 		mRuntime.duckHullActive = true;
 		UpdateCollisionHull(context.transform);
+		if (IsDuckDebugDrawEnabled()) {
+			mDuckStandDebug.duckApplySucceeded   = true;
+			mDuckStandDebug.duckAppliedCenter    = applyCenter;
+			mDuckStandDebug.duckAppliedHalfExtents = mDuckHalfExtents;
+		}
 		return true;
 	}
 
 	bool ParkourMovementComponent::ApplyStandHull(MovementContext& context) {
+		if (IsDuckDebugDrawEnabled()) {
+			mDuckStandDebug.standApplyAttempted = true;
+			mDuckStandDebug.standApplySucceeded = false;
+			mDuckStandDebug.standAppliedCenter = context.transform ?
+				                                     context.transform->GetPosition() :
+				                                     Vec3::zero;
+			mDuckStandDebug.standAppliedHalfExtents = mStandingHalfExtents;
+		}
+
 		if (!mRuntime.duckHullActive) {
 			context.halfExtents = mBoxHalfExtents;
+			if (IsDuckDebugDrawEnabled()) {
+				mDuckStandDebug.standApplySucceeded = true;
+				mDuckStandDebug.standAppliedCenter = context.transform ?
+					                                     context.transform->GetPosition() :
+					                                     Vec3::zero;
+				mDuckStandDebug.standAppliedHalfExtents = mBoxHalfExtents;
+			}
 			return true;
 		}
 		if (!context.transform) {
 			return false;
 		}
 		if (!CanStandAt(context)) {
+			context.halfExtents = mBoxHalfExtents;
 			return false;
 		}
 
-		const float deltaHalfY = std::max(
-			0.0f,
-			mStandingHalfExtents.y - mDuckHalfExtents.y
-		);
-		context.transform->SetPosition(
-			context.transform->GetPosition() + Vec3::up * deltaHalfY
-		);
+		const Vec3 standCenter = context.transform->GetPosition() +
+			ComputeHullCenterOffsetForDuckState(context, false);
+		context.transform->SetPosition(standCenter);
 
 		mBoxHalfExtents         = mStandingHalfExtents;
 		context.halfExtents     = mStandingHalfExtents;
 		mRuntime.duckHullActive = false;
 		UpdateCollisionHull(context.transform);
+		if (IsDuckDebugDrawEnabled()) {
+			mDuckStandDebug.standApplySucceeded = true;
+			mDuckStandDebug.standAppliedCenter = standCenter;
+			mDuckStandDebug.standAppliedHalfExtents = mStandingHalfExtents;
+		}
 		return true;
 	}
 

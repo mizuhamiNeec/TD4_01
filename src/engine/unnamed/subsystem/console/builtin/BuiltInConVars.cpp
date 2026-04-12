@@ -376,6 +376,11 @@ namespace Unnamed {
 			FCVAR::NOTIFY | FCVAR::REPLICATED,
 			"Parkour duck collision half-height scale."
 		);
+		static ConVar park_duck_debugdraw(
+			"park_duck_debugdraw", true,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Draw parkour duck/unduck hull and cast debug overlays."
+		);
 
 		static ConVar park_doublejump_velocity(
 			"park_doublejump_velocity", 300.0f,

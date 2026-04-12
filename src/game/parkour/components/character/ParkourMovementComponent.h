@@ -112,8 +112,11 @@ namespace Unnamed {
 			float            value2 = 0.0f
 		);
 
+		/// @brief しゃがみハルの有効/無効を切り替えます。
 		bool SetDuckHullEnabled(MovementContext& context, bool enabled);
+		/// @brief 現在しゃがみハルを使用中かどうかを返します。
 		[[nodiscard]] bool IsDuckHullEnabled() const;
+		/// @brief 現在位置から「立ち」へ遷移可能かを判定します。
 		[[nodiscard]] bool CanStandAt(const MovementContext& context) const;
 
 		[[nodiscard]] float GetHorizontalSpeedHu(const Vec3& velocity) const;
@@ -149,13 +152,87 @@ namespace Unnamed {
 		) override;
 
 	private:
+		/// @brief 1回のハル占有判定で収集したデバッグ情報です。
+		struct HullOccupancyDebugInfo {
+			bool  checkSweepPath      = false;
+			Vec3  sweepStartCenter    = Vec3::zero;
+			Vec3  sweepEndCenter      = Vec3::zero;
+			Vec3  sweepHalfExtents    = Vec3::zero;
+			bool  sweepHit            = false;
+			bool  sweepBlocked        = false;
+			float sweepHitToi         = 1.0f;
+			Vec3  sweepHitPos         = Vec3::zero;
+			Vec3  sweepHitNormal      = Vec3::zero;
+			Vec3  sweepReachableCenter = Vec3::zero;
+
+			bool overlapBlocked   = false;
+			Vec3 overlapHitPos    = Vec3::zero;
+			Vec3 overlapHitNormal = Vec3::zero;
+		};
+
+		/// @brief Duck/UnDuck判定を可視化するフレームデータです。
+		struct DuckStandDebugFrame {
+			bool evaluateStandCalled = false;
+			bool standAllowed        = false;
+			bool grounded            = false;
+
+			Vec3 currentCenter      = Vec3::zero;
+			Vec3 currentHalfExtents = Vec3::zero;
+			Vec3 standTargetCenter  = Vec3::zero;
+			Vec3 standTargetHalfExtents = Vec3::zero;
+
+			HullOccupancyDebugInfo standOccupancy = {};
+
+			bool  headSweepUsed           = false;
+			Vec3  headSweepStartCenter    = Vec3::zero;
+			Vec3  headSweepHalfExtents    = Vec3::zero;
+			float headSweepLength         = 0.0f;
+			bool  headSweepBlocked        = false;
+			float headSweepHitToi         = 1.0f;
+			Vec3  headSweepHitPos         = Vec3::zero;
+			Vec3  headSweepHitNormal      = Vec3::zero;
+			Vec3  headSweepReachableCenter = Vec3::zero;
+
+			bool standApplyAttempted   = false;
+			bool standApplySucceeded   = false;
+			Vec3 standAppliedCenter    = Vec3::zero;
+			Vec3 standAppliedHalfExtents = Vec3::zero;
+
+			bool duckApplyAttempted   = false;
+			bool duckApplySucceeded   = false;
+			Vec3 duckAppliedCenter    = Vec3::zero;
+			Vec3 duckAppliedHalfExtents = Vec3::zero;
+		};
+
 		void RebuildDuckHalfExtents();
 		void ResetParkourRuntime();
+		/// @brief Duck/UnDuckデバッグ表示を有効にするかを返します。
+		[[nodiscard]] bool IsDuckDebugDrawEnabled() const;
+		/// @brief 1フレーム分のDuck/UnDuckデバッグ状態をリセットします。
+		void ResetDuckStandDebugFrame();
+		/// @brief Duck/UnDuckの判定状態をデバッグ描画します。
+		void DrawDuckStandDebug(TransformComponent* transform) const;
+		/// @brief 地上/空中の状態に応じたハル中心オフセットを返します。
+		[[nodiscard]] Vec3 ComputeHullCenterOffsetForDuckState(
+			const MovementContext& context,
+			bool                   toDuck
+		) const;
+		/// @brief しゃがみ用の接地判定フラグを返します。
+		[[nodiscard]] bool IsDuckGrounded(const MovementContext& context) const;
+		/// @brief 指定ハルを配置できるか（経路スイープ込み）を判定します。
+		[[nodiscard]] bool CanOccupyHull(
+			const MovementContext& context,
+			const Vec3&            targetCenter,
+			const Vec3&            targetHalfExtents,
+			bool                   checkSweepPath,
+			HullOccupancyDebugInfo* outDebugInfo = nullptr
+		) const;
 		bool ApplyDuckHull(MovementContext& context);
 		bool ApplyStandHull(MovementContext& context);
 
 		bool                      mAutoSprintActive    = false;
 		ParkourRuntime            mRuntime             = {};
+		mutable DuckStandDebugFrame mDuckStandDebug    = {};
 		Vec3                      mStandingHalfExtents = Vec3::zero;
 		Vec3                      mDuckHalfExtents     = Vec3::zero;
 		CharacterActionFrameInput mActionFrameInput    = {};

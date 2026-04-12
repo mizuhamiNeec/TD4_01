@@ -10,6 +10,7 @@
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/primitive/Primitives.h"
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
+#include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/unnamed/subsystem/console/concommand/ConVar.h"
 
 #include "game/core/collision/kinematic/base/BaseKinematicCollisionResolver.h"
@@ -21,6 +22,8 @@
 namespace Unnamed {
 	namespace {
 		constexpr float kJumpDetachBiasHu = 1.0f;
+		constexpr float kPathSweepBlockToiEpsilon = 1.0e-4f;
+		constexpr std::string_view kVaultLogChannel = "Parkour/Vault";
 
 		Vec3 HorizontalNormalized(Vec3 value) {
 			value.y = 0.0f;
@@ -162,23 +165,261 @@ namespace Unnamed {
 			bool isRightWall = false;
 		};
 
+		/// @brief ShapeCast のヒットが移動を妨げるか判定します。
+		/// @param hit 判定対象のヒット情報
+		/// @return 経路をブロックしている場合は true
+		[[nodiscard]] bool IsBlockingCastHit(const Physics::Hit& hit) {
+			return hit.startSolid || hit.allsolid ||
+			       hit.toi < 1.0f - kPathSweepBlockToiEpsilon;
+		}
+
+		/// @brief ハルの移動経路が通行可能かを段階的に検証します。
+		/// @param physics 物理エンジン
+		/// @param startHull 開始時のハル
+		/// @param pathDelta 検証する移動ベクトル
+		/// @param stepLengthM 1ステップあたりの最大キャスト長
+		/// @return 経路が終点まで到達可能なら true
+		[[nodiscard]] bool CanTraverseHullPath(
+			const Physics::Engine* physics,
+			const Box&             startHull,
+			const Vec3&            pathDelta,
+			const float            stepLengthM,
+			const bool             debugLogEnabled,
+			const char*            pathLabel
+		) {
+			if (!physics) {
+				if (debugLogEnabled) {
+					DevMsg(
+						kVaultLogChannel,
+						"[{}] path check failed: physics is null",
+						pathLabel
+					);
+				}
+				return false;
+			}
+
+			const float travelLengthM = pathDelta.Length();
+			const float minStepM = Math::HtoM(4.0f);
+			const float maxStepM = std::max(stepLengthM, minStepM);
+			if (travelLengthM <= 1.0e-6f) {
+				return true;
+			}
+
+			const Vec3 direction = pathDelta / travelLengthM;
+			float remainingM = travelLengthM;
+			Vec3 stepStartCenter = startHull.center;
+			int stepIndex = 0;
+			while (remainingM > 1.0e-6f) {
+				++stepIndex;
+				const float stepM = std::min(remainingM, maxStepM);
+				const Box stepHull = {
+					.center   = stepStartCenter,
+					.halfSize = startHull.halfSize
+				};
+				Physics::Hit sweepHit = {};
+				if (physics->BoxCast(stepHull, direction, stepM, &sweepHit) &&
+				    IsBlockingCastHit(sweepHit)) {
+					if (debugLogEnabled) {
+						DevMsg(
+							kVaultLogChannel,
+							"[{}] path blocked by cast: step={} stepLenM={:.4f} toi={:.4f} startSolid={} allsolid={} hitPos=({:.3f},{:.3f},{:.3f}) hitN=({:.3f},{:.3f},{:.3f})",
+							pathLabel,
+							stepIndex,
+							stepM,
+							sweepHit.toi,
+							sweepHit.startSolid,
+							sweepHit.allsolid,
+							sweepHit.pos.x,
+							sweepHit.pos.y,
+							sweepHit.pos.z,
+							sweepHit.normal.x,
+							sweepHit.normal.y,
+							sweepHit.normal.z
+						);
+					}
+					return false;
+				}
+
+				// 長距離スイープの取りこぼしを避けるため、各ステップ終点も Overlap で保証します。
+				stepStartCenter += direction * stepM;
+				const Box stepEndHull = {
+					.center   = stepStartCenter,
+					.halfSize = startHull.halfSize
+				};
+				Physics::Hit overlapHit = {};
+				if (physics->BoxOverlap(stepEndHull, &overlapHit)) {
+					if (debugLogEnabled) {
+						DevMsg(
+							kVaultLogChannel,
+							"[{}] path blocked by overlap: step={} endCenter=({:.3f},{:.3f},{:.3f}) hitPos=({:.3f},{:.3f},{:.3f}) hitN=({:.3f},{:.3f},{:.3f})",
+							pathLabel,
+							stepIndex,
+							stepEndHull.center.x,
+							stepEndHull.center.y,
+							stepEndHull.center.z,
+							overlapHit.pos.x,
+							overlapHit.pos.y,
+							overlapHit.pos.z,
+							overlapHit.normal.x,
+							overlapHit.normal.y,
+							overlapHit.normal.z
+						);
+					}
+					return false;
+				}
+
+				remainingM -= stepM;
+			}
+			return true;
+		}
+
+		/// @brief Vault の「崖上面」を複数サンプルの下向きキャストで探索します。
+		/// @param physics 物理エンジン
+		/// @param feetPos プレイヤー足元位置
+		/// @param wallAnchorPos 壁接触近傍のアンカー位置
+		/// @param traverseDir Vault の進行方向
+		/// @param wallTopHeightM 推定された壁上端高さ（feet 基準）
+		/// @param halfWidthM プレイヤー半幅
+		/// @param probeSizeM 探索プローブ半径
+		/// @param maxVaultHeightM Vault 許容最大高さ
+		/// @param debugLogEnabled デバッグログ有効
+		/// @param outLedgeGroundHeightM 見つかった上面の地面高さ
+		/// @return 上面を見つけたら true
+		[[nodiscard]] bool TryFindVaultLedgeSurface(
+			const Physics::Engine* physics,
+			const Vec3&            feetPos,
+			const Vec3&            wallAnchorPos,
+			const Vec3&            traverseDir,
+			const float            wallTopHeightM,
+			const float            halfWidthM,
+			const float            probeSizeM,
+			const float            maxVaultHeightM,
+			const bool             debugLogEnabled,
+			float&                 outLedgeGroundHeightM
+		) {
+			if (!physics || traverseDir.IsZero()) {
+				return false;
+			}
+
+			const float expectedTopY     = feetPos.y + wallTopHeightM;
+			const float probeVerticalM   = Math::HtoM(8.0f);
+			const float castLengthM      = std::max(Math::HtoM(16.0f), maxVaultHeightM + Math::HtoM(16.0f));
+			const float maxDropFromTopM  = Math::HtoM(24.0f);
+			const float forwardStartM    = std::max(halfWidthM, probeSizeM);
+			const float forwardEndM      = forwardStartM + std::max(halfWidthM * 2.0f, Math::HtoM(24.0f));
+			const float forwardStepM     = std::max(probeSizeM, Math::HtoM(4.0f));
+			const float lateralExtentM   = std::max(probeSizeM, Math::HtoM(8.0f));
+			const float lateralStepM     = std::max(probeSizeM, Math::HtoM(4.0f));
+			const Vec3  lateralDir       = SafeNormalized(Vec3::up.Cross(traverseDir));
+			const bool  useLateralSearch = !lateralDir.IsZero();
+
+			int castAttempts = 0;
+			int walkableHits = 0;
+			for (float forwardOffsetM = forwardStartM;
+			     forwardOffsetM <= forwardEndM + 1.0e-6f;
+			     forwardOffsetM += forwardStepM) {
+				for (float lateralOffsetM = useLateralSearch ? -lateralExtentM : 0.0f;
+				     lateralOffsetM <= (useLateralSearch ? lateralExtentM + 1.0e-6f : 0.0f);
+				     lateralOffsetM += (useLateralSearch ? lateralStepM : 1.0f)) {
+					++castAttempts;
+					Vec3 probeCenter = wallAnchorPos +
+						traverseDir * forwardOffsetM +
+						lateralDir * lateralOffsetM;
+					probeCenter.y = expectedTopY + probeVerticalM;
+					const Box surfaceProbe = {
+						.center   = probeCenter,
+						.halfSize = {
+							probeSizeM,
+							probeSizeM,
+							probeSizeM
+						}
+					};
+
+					Physics::Hit surfaceHit = {};
+					if (!physics->BoxCast(
+						surfaceProbe,
+						Vec3::down,
+						castLengthM,
+						&surfaceHit
+					)) {
+						continue;
+					}
+					if (surfaceHit.normal.y < 0.7f) {
+						continue;
+					}
+					++walkableHits;
+
+					const float surfaceDistanceM = std::clamp(
+							surfaceHit.toi, 0.0f, 1.0f
+						) * castLengthM;
+					const float groundY = probeCenter.y - surfaceDistanceM -
+					                      surfaceProbe.halfSize.y;
+					if (expectedTopY - groundY > maxDropFromTopM) {
+						continue;
+					}
+
+					outLedgeGroundHeightM = groundY;
+					return true;
+				}
+			}
+
+			if (debugLogEnabled) {
+				DevMsg(
+					kVaultLogChannel,
+					"ledge surface search failed: attempts={} walkableHits={} expectedTopY={:.3f} anchor=({:.3f},{:.3f},{:.3f}) dir=({:.3f},{:.3f},{:.3f})",
+					castAttempts,
+					walkableHits,
+					expectedTopY,
+					wallAnchorPos.x,
+					wallAnchorPos.y,
+					wallAnchorPos.z,
+					traverseDir.x,
+					traverseDir.y,
+					traverseDir.z
+				);
+			}
+			return false;
+		}
+
 		bool TryBuildSpeedVaultTrajectory(
 			const MovementContext& context,
 			ConsoleSystem*         console,
 			SpeedVaultTrajectory&  outTrajectory
 		) {
+			const bool debugVaultLog = console ?
+				                           console->GetConVarValueOr(
+					                           "park_vault_debuglog", false
+				                           ) :
+				                           false;
+#define VAULT_FAIL(fmt, ...) \
+	do { \
+		if (debugVaultLog) { \
+			DevMsg(kVaultLogChannel, fmt, ##__VA_ARGS__); \
+		} \
+		return false; \
+	} while (false)
+
 			if (!context.transform || !context.resolver) {
-				return false;
+				VAULT_FAIL(
+					"reject: missing transform/resolver transform={} resolver={}",
+					context.transform != nullptr,
+					context.resolver != nullptr
+				);
 			}
 
 			auto* physics = context.resolver->GetPhysics();
 			if (!physics) {
-				return false;
+				VAULT_FAIL("reject: physics is null");
 			}
 
 			const Vec3 forward = HorizontalNormalized(context.input.forward);
 			if (forward.IsZero()) {
-				return false;
+				VAULT_FAIL(
+					"reject: forward is zero inputForward=({:.3f},{:.3f},{:.3f})",
+					context.input.forward.x,
+					context.input.forward.y,
+					context.input.forward.z
+				);
 			}
 
 			Vec3 velocityH = context.velocity;
@@ -189,14 +430,23 @@ namespace Unnamed {
 				                         ) :
 				                         150.0f;
 			if (Math::MtoH(velocityH.Length()) < minSpeedHu) {
-				return false;
+				VAULT_FAIL(
+					"reject: speed too low speedHu={:.2f} minHu={:.2f}",
+					Math::MtoH(velocityH.Length()),
+					minSpeedHu
+				);
 			}
 
 			const Vec3 centerPos = context.transform->GetPosition();
 			const float halfWidthM = context.halfExtents.x;
 			const float halfHeightM = context.halfExtents.y;
 			if (halfWidthM <= 0.0f || halfHeightM <= 0.0f) {
-				return false;
+				VAULT_FAIL(
+					"reject: invalid half extents half=({:.4f},{:.4f},{:.4f})",
+					context.halfExtents.x,
+					context.halfExtents.y,
+					context.halfExtents.z
+				);
 			}
 			const float playerHeightM = halfHeightM * 2.0f;
 			const Vec3 feetPos = centerPos - Vec3::up * halfHeightM;
@@ -224,6 +474,10 @@ namespace Unnamed {
 			Physics::Hit wallHit = {};
 			float distToWall = 0.0f;
 			bool wallFound = false;
+			bool wallDetectedByOverlap = false;
+			Vec3 wallNormal = Vec3::zero;
+			Vec3 wallContactPos = Vec3::zero;
+			bool hasWallContactPos = false;
 			const float wallCheckCastLength = checkDistM + halfWidthM;
 			if (physics->BoxCast(
 				forwardProbe,
@@ -231,26 +485,98 @@ namespace Unnamed {
 				wallCheckCastLength,
 				&wallHit
 			)) {
-				const Vec3 wallNormal = SafeNormalized(wallHit.normal);
+				wallNormal = SafeNormalized(wallHit.normal);
 				if (std::abs(wallNormal.y) > 0.3f) {
-					return false;
+					VAULT_FAIL(
+						"reject: wall cast normal too vertical wallN=({:.3f},{:.3f},{:.3f})",
+						wallNormal.x,
+						wallNormal.y,
+						wallNormal.z
+					);
 				}
 				// Hit は TOI で返るため、壁までの実距離に変換します。
 				distToWall = std::clamp(wallHit.toi, 0.0f, 1.0f) * wallCheckCastLength;
+				wallContactPos = wallHit.pos;
+				hasWallContactPos = true;
 				wallFound = true;
 			}
 			if (!wallFound) {
 				Physics::Hit overlapHit = {};
 				if (physics->BoxOverlap(forwardProbe, &overlapHit)) {
-					const Vec3 wallNormal = SafeNormalized(overlapHit.normal);
+					wallNormal = SafeNormalized(overlapHit.normal);
 					if (std::abs(wallNormal.y) > 0.3f) {
-						return false;
+						VAULT_FAIL(
+							"reject: wall overlap normal too vertical wallN=({:.3f},{:.3f},{:.3f})",
+							wallNormal.x,
+							wallNormal.y,
+							wallNormal.z
+						);
 					}
 					wallFound = true;
+					wallDetectedByOverlap = true;
 				}
 			}
 			if (!wallFound) {
-				return false;
+				VAULT_FAIL(
+					"reject: wall not found checkDistM={:.3f} forward=({:.3f},{:.3f},{:.3f})",
+					checkDistM,
+					forward.x,
+					forward.y,
+					forward.z
+				);
+			}
+			// Vault の進行方向は入力方向を優先します。
+			Vec3 vaultTraverseDir = forward;
+			if (vaultTraverseDir.IsZero()) {
+				VAULT_FAIL(
+					"reject: vault traverse dir is zero wallN=({:.3f},{:.3f},{:.3f})",
+					wallNormal.x,
+					wallNormal.y,
+					wallNormal.z
+				);
+			}
+
+			float distToWallAlongTraverseM = distToWall;
+			bool hasTraverseDistance = false;
+			{
+				// Y 回転した壁では forward 距離をそのまま使うと不足しやすいため、
+				// 壁接触点と法線から「進行方向に対する壁距離」を先に見積もります。
+				if (!wallDetectedByOverlap && hasWallContactPos) {
+					const float denom = wallNormal.Dot(vaultTraverseDir);
+					if (std::abs(denom) > 1.0e-4f) {
+						const float planeDistance = wallNormal.Dot(
+							wallContactPos - forwardProbe.center
+						) / denom;
+						if (std::isfinite(planeDistance)) {
+							distToWallAlongTraverseM = std::max(0.0f, planeDistance);
+							hasTraverseDistance      = true;
+						}
+					}
+				}
+
+				Physics::Hit traverseHit = {};
+				const float traverseCheckLengthM = checkDistM + halfWidthM * 2.0f;
+				if (physics->BoxCast(
+					forwardProbe,
+					vaultTraverseDir,
+					traverseCheckLengthM,
+					&traverseHit
+				) && IsBlockingCastHit(traverseHit)) {
+					distToWallAlongTraverseM = std::clamp(
+							traverseHit.toi, 0.0f, 1.0f
+						) * traverseCheckLengthM;
+					hasTraverseDistance = true;
+				} else if (wallDetectedByOverlap) {
+					distToWallAlongTraverseM = 0.0f;
+					hasTraverseDistance      = true;
+				}
+
+				if (!hasTraverseDistance) {
+					const Vec3 forwardHitDelta = forward * distToWall;
+					distToWallAlongTraverseM   = std::max(
+						0.0f, forwardHitDelta.Dot(vaultTraverseDir)
+					);
+				}
 			}
 
 			float wallTopHeightM = 0.0f;
@@ -274,7 +600,7 @@ namespace Unnamed {
 				Physics::Hit topHit = {};
 				if (!physics->BoxCast(
 					topProbe,
-					forward,
+					vaultTraverseDir,
 					checkDistM + halfWidthM * 2.0f,
 					&topHit
 				)) {
@@ -284,31 +610,41 @@ namespace Unnamed {
 				}
 			}
 			if (!foundTop || wallTopHeightM > maxVaultHeightM) {
-				return false;
+				VAULT_FAIL(
+					"reject: top probe failed foundTop={} wallTopM={:.3f} maxTopM={:.3f}",
+					foundTop,
+					wallTopHeightM,
+					maxVaultHeightM
+				);
 			}
 
+			float ledgeGroundHeightM = 0.0f;
 			{
-				const Vec3 surfaceCheckPos =
-					feetPos + forward * (distToWall + halfWidthM) +
-					Vec3::up * (wallTopHeightM + Math::HtoM(8.0f));
-				const Box surfaceProbe = {
-					.center   = surfaceCheckPos,
-					.halfSize = {
-						probeSizeM,
-						probeSizeM,
-						probeSizeM
-					}
-				};
-				Physics::Hit surfaceHit = {};
-				if (physics->BoxCast(
-					surfaceProbe,
-					Vec3::down,
-					Math::HtoM(16.0f),
-					&surfaceHit
+				Vec3 wallAnchorPos = feetPos +
+					vaultTraverseDir * distToWallAlongTraverseM;
+				if (hasWallContactPos) {
+					wallAnchorPos = wallContactPos;
+				}
+				wallAnchorPos.y = feetPos.y;
+				if (!TryFindVaultLedgeSurface(
+					physics,
+					feetPos,
+					wallAnchorPos,
+					vaultTraverseDir,
+					wallTopHeightM,
+					halfWidthM,
+					probeSizeM,
+					maxVaultHeightM,
+					debugVaultLog,
+					ledgeGroundHeightM
 				)) {
-					if (surfaceHit.normal.y < 0.7f) {
-						return false;
-					}
+					VAULT_FAIL(
+						"reject: no ledge surface hit anchor=({:.3f},{:.3f},{:.3f}) wallTopM={:.3f}",
+						wallAnchorPos.x,
+						wallAnchorPos.y,
+						wallAnchorPos.z,
+						wallTopHeightM
+					);
 				}
 			}
 
@@ -328,7 +664,7 @@ namespace Unnamed {
 				const float thicknessCastLength = Math::HtoM(256.0f);
 				if (physics->BoxCast(
 					thicknessProbe,
-					forward,
+					vaultTraverseDir,
 					thicknessCastLength,
 					&thicknessHit
 				)) {
@@ -340,12 +676,77 @@ namespace Unnamed {
 			}
 
 			const float overWallOffsetM = std::max(
-				distToWall + wallThicknessM + halfWidthM + Math::HtoM(8.0f),
+				distToWallAlongTraverseM + wallThicknessM + halfWidthM + Math::HtoM(8.0f),
 				halfWidthM * 3.0f + Math::HtoM(8.0f)
 			);
 			const Vec3 overWallPos =
-				feetPos + forward * overWallOffsetM +
+				feetPos + vaultTraverseDir * overWallOffsetM +
 				Vec3::up * (wallTopHeightM + Math::HtoM(4.0f));
+
+			const float routeClearanceM = Math::HtoM(
+				console ?
+					console->GetConVarValueOr(
+						"park_vault_routeclearance", 2.0f
+					) :
+					2.0f
+			);
+			const float routeCastStepM = Math::HtoM(
+				console ?
+					console->GetConVarValueOr(
+						"park_vault_routecaststep", 12.0f
+					) :
+					12.0f
+			);
+			const float routeTopCenterY = ledgeGroundHeightM + halfHeightM +
+			                              std::max(0.0f, routeClearanceM);
+			Vec3 verticalRouteTarget = centerPos;
+			verticalRouteTarget.y = std::max(verticalRouteTarget.y, routeTopCenterY);
+			const Box routeHull = {
+				.center   = centerPos,
+				.halfSize = context.halfExtents
+			};
+			if (!CanTraverseHullPath(
+				physics,
+				routeHull,
+				verticalRouteTarget - centerPos,
+				routeCastStepM,
+				debugVaultLog,
+				"vertical_route"
+			)) {
+				VAULT_FAIL(
+					"reject: vertical route blocked topCenterY={:.3f} startY={:.3f}",
+					verticalRouteTarget.y,
+					centerPos.y
+				);
+			}
+
+			// Overlap 検出起点では壁距離が 0 になりやすいので、最低限の前方経路を保証します。
+			const float routeForwardDistanceM = wallDetectedByOverlap ?
+				                                    std::max(
+					                                    overWallOffsetM,
+					                                    halfWidthM * 2.0f + Math::HtoM(8.0f)
+				                                    ) :
+				                                    overWallOffsetM;
+			const Box horizontalRouteHull = {
+				.center   = verticalRouteTarget,
+				.halfSize = context.halfExtents
+			};
+			if (!CanTraverseHullPath(
+				physics,
+				horizontalRouteHull,
+				vaultTraverseDir * routeForwardDistanceM,
+				routeCastStepM,
+				debugVaultLog,
+				"forward_route"
+			)) {
+				VAULT_FAIL(
+					"reject: forward route blocked distM={:.3f} dir=({:.3f},{:.3f},{:.3f})",
+					routeForwardDistanceM,
+					vaultTraverseDir.x,
+					vaultTraverseDir.y,
+					vaultTraverseDir.z
+				);
+			}
 
 			const Box landingProbe = {
 				.center   = overWallPos,
@@ -372,10 +773,17 @@ namespace Unnamed {
 				dropCheckDistM,
 				&landHit
 			)) {
-				return false;
+				VAULT_FAIL(
+					"reject: landing cast miss dropCheckM={:.3f} landingProbeY={:.3f}",
+					dropCheckDistM,
+					landingProbe.center.y
+				);
 			}
 			if (landHit.normal.y < 0.7f) {
-				return false;
+				VAULT_FAIL(
+					"reject: landing surface too steep normalY={:.3f}",
+					landHit.normal.y
+				);
 			}
 
 			const float landingDistanceM = std::clamp(landHit.toi, 0.0f, 1.0f) *
@@ -391,7 +799,15 @@ namespace Unnamed {
 			};
 			Physics::Hit overlapHit = {};
 			if (physics->BoxOverlap(landingHull, &overlapHit)) {
-				return false;
+				VAULT_FAIL(
+					"reject: landing hull overlap endCenter=({:.3f},{:.3f},{:.3f}) hitPos=({:.3f},{:.3f},{:.3f})",
+					landingHull.center.x,
+					landingHull.center.y,
+					landingHull.center.z,
+					overlapHit.pos.x,
+					overlapHit.pos.y,
+					overlapHit.pos.z
+				);
 			}
 
 			{
@@ -406,25 +822,35 @@ namespace Unnamed {
 				Physics::Hit backHit = {};
 				if (physics->BoxCast(
 					backCheckProbe,
-					-forward,
+					-vaultTraverseDir,
 					overWallOffsetM,
 					&backHit
 				)) {
-					if (backHit.normal.Dot(forward) > 0.3f) {
-						return false;
+					if (backHit.normal.Dot(vaultTraverseDir) > 0.3f) {
+						VAULT_FAIL(
+							"reject: back check blocked dot={:.3f} hitN=({:.3f},{:.3f},{:.3f})",
+							backHit.normal.Dot(vaultTraverseDir),
+							backHit.normal.x,
+							backHit.normal.y,
+							backHit.normal.z
+						);
 					}
 				}
 			}
 
-			const float apexForwardM = std::max(halfWidthM, distToWall * 0.5f);
+			const float apexForwardM = std::max(
+				halfWidthM,
+				distToWallAlongTraverseM * 0.5f
+			);
 			const Vec3 apexFeetPos =
-				feetPos + forward * apexForwardM +
+				feetPos + vaultTraverseDir * apexForwardM +
 				Vec3::up * (wallTopHeightM + Math::HtoM(8.0f));
 
 			outTrajectory.startPos = centerPos;
 			outTrajectory.apexPos = apexFeetPos + Vec3::up * halfHeightM;
 			outTrajectory.endPos = landingFeetPos + Vec3::up * halfHeightM;
 			outTrajectory.preVelocity = context.velocity;
+#undef VAULT_FAIL
 			return true;
 		}
 
@@ -580,8 +1006,8 @@ namespace Unnamed {
 				    context.IsAbilityActive(MOVEMENT_ABILITY_SLOT::SLIDE)) {
 					return true;
 				}
-				(void)parkour->SetDuckHullEnabled(context, false);
-				return false;
+				// 解除要求があっても立てない場合は crouch を維持します。
+				return !parkour->SetDuckHullEnabled(context, false);
 			}
 			void Stop(MovementContext& context) override {
 				if (auto* parkour = AsParkour(context)) {

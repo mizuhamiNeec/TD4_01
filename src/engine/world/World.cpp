@@ -2,8 +2,8 @@
 
 #include <algorithm>
 #include <array>
-#include <chrono>
 #include <cfloat>
+#include <chrono>
 
 #include "core/assets/AssetManager.h"
 #include "core/assets/types/MeshAssetData.h"
@@ -27,9 +27,11 @@
 #include "engine/unnamed/framework/components/mesh/StaticMeshRendererComponent.h"
 #include "engine/unnamed/framework/components/ui/UiCanvasComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
-#include "engine/unnamed/physics/CollisionDetection.h"
 #include "engine/unnamed/primitive/Primitives.h"
+#include "engine/unnamed/subsystem/console/ConsoleSystem.h"
 #include "engine/unnamed/subsystem/console/Log.h"
+// ReSharper disable once CppUnusedIncludeDirective
+#include "engine/unnamed/subsystem/console/concommand/ConVar.h"
 #include "engine/unnamed/subsystem/input/InputSystem.h"
 #include "engine/unnamed/subsystem/input/device/mouse/MouseDevice.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
@@ -46,7 +48,7 @@ namespace Unnamed {
 			POST_PHYSICS = 2,
 		};
 
-		static constexpr std::array<TickGroup, 5> kTickGroupOrder = {
+		constexpr std::array kTickGroupOrder = {
 			TickGroup::EARLY,
 			TickGroup::KINEMATIC_SOURCE,
 			TickGroup::COLLIDER_SYNC,
@@ -54,7 +56,7 @@ namespace Unnamed {
 			TickGroup::LATE,
 		};
 
-		static constexpr std::array<std::array<const char*, 5>, 3>
+		constexpr std::array<std::array<const char*, 5>, 3>
 		kPhaseGroupTimeSampleNames = {
 			{
 				{
@@ -122,7 +124,9 @@ namespace Unnamed {
 			UiCanvasComponent*  canvas    = nullptr;
 		};
 
-		[[nodiscard]] std::vector<Entity*> CollectActiveEntities(Scene* scene) {
+		[[nodiscard]] std::vector<Entity*> CollectActiveEntities(
+			const Scene* scene
+		) {
 			std::vector<Entity*> activeEntities = {};
 			if (!scene) {
 				return activeEntities;
@@ -203,20 +207,6 @@ namespace Unnamed {
 		RenderTick(unscaledDeltaTime, 0.0f);
 	}
 
-	void World::FrameInputTick(const float frameDeltaTime) {
-		if (!mScene) {
-			return;
-		}
-
-		std::vector<Entity*> activeEntities = CollectActiveEntities(mScene.get());
-		for (Entity* entity : activeEntities) {
-			if (!entity) {
-				continue;
-			}
-			(void)entity->FrameInputTick(frameDeltaTime);
-		}
-	}
-
 	void World::FixedTick(const float fixedDeltaTime) {
 		// まずは削除予定のエンティティを削除
 		if (mScene) {
@@ -224,16 +214,18 @@ namespace Unnamed {
 		}
 
 		mTime.fixedDeltaTime = fixedDeltaTime;
-		mTime.timeSeconds += fixedDeltaTime;
+		mTime.timeSeconds    += fixedDeltaTime;
 		++mTime.fixedTickCounter;
 
 		if (!mScene) {
 			return;
 		}
 
-		std::vector<Entity*> activeEntities = CollectActiveEntities(mScene.get());
-		Profiler*            profiler       = ServiceLocator::Get<Profiler>();
-		const auto runPhaseGroup =
+		std::vector<Entity*> activeEntities = CollectActiveEntities(
+			mScene.get()
+		);
+		Profiler*  profiler      = ServiceLocator::Get<Profiler>();
+		const auto RunPhaseGroup =
 			[&](
 			const TICK_PHASE phase,
 			const TickGroup  group
@@ -261,7 +253,6 @@ namespace Unnamed {
 						  group
 					  );
 						break;
-					default: break;
 				}
 			}
 
@@ -335,8 +326,11 @@ namespace Unnamed {
 			return;
 		}
 
-		std::vector<Entity*> activeEntities = CollectActiveEntities(mScene.get());
-		for (Entity* entity : activeEntities) {
+		const std::vector<Entity*> activeEntities = CollectActiveEntities(
+			mScene.get()
+		);
+
+		for (const Entity* entity : activeEntities) {
 			if (!entity) {
 				continue;
 			}
@@ -347,7 +341,7 @@ namespace Unnamed {
 		}
 
 		// Runtime UI は描画フレームティック側でのみ進める。
-		InputSystem* inputSystem = ServiceLocator::Get<InputSystem>();
+		const InputSystem* inputSystem = ServiceLocator::Get<InputSystem>();
 		for (Entity* entity : activeEntities) {
 			if (!entity) {
 				continue;
@@ -367,7 +361,8 @@ namespace Unnamed {
 			Vec2 runtimeCanvasSize = canvas->GetPixelSize();
 			if (canvas->GetSpaceMode() == UI_CANVAS_SPACE_MODE::SCREEN &&
 			    inputSystem) {
-				const Vec2 viewportSize = inputSystem->GetMouseClientViewportSize();
+				const Vec2 viewportSize = inputSystem->
+					GetMouseClientViewportSize();
 				if (viewportSize.x > 0.0f && viewportSize.y > 0.0f) {
 					runtimeCanvasSize = viewportSize;
 				}
@@ -376,8 +371,10 @@ namespace Unnamed {
 			canvas->TickRuntime(mTime.renderDeltaTime);
 		}
 
-		auto boxes = mPhysicsEngine->GetDebugBVHBoxes();
-		for (const auto& [center, halfSize] : boxes) {
+		for (
+			const auto& [center, halfSize] :
+			mPhysicsEngine->GetDebugBVHBoxes()
+		) {
 			GetDebugDraw().DrawBox(
 				center,
 				Quaternion::identity,
@@ -535,13 +532,14 @@ namespace Unnamed {
 			if (!sceneView.skybox.enabled) {
 				auto* skybox = entity->GetComponent<SkyboxComponent>();
 				if (skybox && skybox->IsActive()) {
-					const AssetID skyboxTextureAssetId = skybox->ResolveTextureAsset(
-						assetManager
-					);
+					const AssetID skyboxTextureAssetId =
+						skybox->ResolveTextureAsset(
+							assetManager
+						);
 					if (skyboxTextureAssetId != kInvalidAssetID) {
-						sceneView.skybox.enabled        = true;
+						sceneView.skybox.enabled = true;
 						sceneView.skybox.textureAssetId = skyboxTextureAssetId;
-						sceneView.skybox.intensity      = skybox->GetIntensity();
+						sceneView.skybox.intensity = skybox->GetIntensity();
 					}
 				}
 			}
@@ -1039,5 +1037,6 @@ namespace Unnamed {
 	}
 
 	void World::OnSceneLoaded() {}
+	
 	void World::OnSceneUnloaded() {}
 }

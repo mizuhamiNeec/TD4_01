@@ -18,7 +18,8 @@ namespace Unnamed {
 		~GameMovementStateMachine();
 
 		/// @brief 状態機械で利用するサービス参照を初期化します。
-		void Init();
+		/// @param console Mode/Ability に渡す ConsoleSystem 参照
+		void Init(ConsoleSystem* console);
 
 		/// @brief 現在状態を1フレーム更新します。
 		void Tick(MovementContext& context, float deltaTime);

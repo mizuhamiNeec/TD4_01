@@ -34,7 +34,6 @@
 #include "engine/unnamed/framework/components/mesh/SkeletalAnimationComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/subsystem/console/Log.h"
-#include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 #include "engine/world/World.h"
 
 namespace Unnamed {
@@ -411,8 +410,7 @@ namespace Unnamed {
 			if (mAssetPath.empty()) {
 				state.status =
 					"Graph rebuild skipped: asset path is empty.";
-			} else if (AssetManager* assetManager =
-				           ServiceLocator::Get<AssetManager>()) {
+			} else if (AssetManager* assetManager = GetAssetManager()) {
 				AssetID assetId = mAssetId;
 				if (assetId == kInvalidAssetID) {
 					assetId = assetManager->LoadFromFile(
@@ -656,7 +654,7 @@ namespace Unnamed {
 			return false;
 		}
 
-		AssetManager* assetManager = ServiceLocator::Get<AssetManager>();
+		AssetManager* assetManager = GetAssetManager();
 		if (!assetManager) {
 			Warning(kChannel, "AssetManager is not available.");
 			return false;
@@ -773,7 +771,7 @@ namespace Unnamed {
 			return;
 		}
 
-		AssetManager* assetManager = ServiceLocator::Get<AssetManager>();
+		AssetManager* assetManager = GetAssetManager();
 		if (!assetManager) {
 			return;
 		}

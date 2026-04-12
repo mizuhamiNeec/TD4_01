@@ -15,7 +15,7 @@
 #include "engine/scene/SceneSerializer.h"
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
 #include "engine/unnamed/subsystem/console/concommand/ConVar.h"
-#include "engine/unnamed/subsystem/interface/ServiceLocator.h"
+#include "engine/unnamed/subsystem/input/InputSystem.h"
 #include "engine/world/EditorWorld.h"
 
 #include "thirdparty/ImGuizmo/ImGuizmo.h"
@@ -62,12 +62,22 @@ namespace Unnamed {
 	LevelEditorTool::~LevelEditorTool() = default;
 
 	void LevelEditorTool::Initialize(const EditorToolServices& services) {
-		(void)services;
 		if (mInitialized) {
 			return;
 		}
+		mEditorWorld.SetServices(
+			{
+				.console = services.console,
+				.inputSystem = services.inputSystem,
+				.profiler = services.profiler,
+				.assetManager = services.assetManager,
+				.demoManager = services.demoManager
+			}
+		);
+		mConsoleSystem = services.console;
+		mInputSystem   = services.inputSystem;
 		mEditorWorld.Initialize();
-		LoadImGuizmoSettings();
+		LoadImGuizmoSettings(mConsoleSystem);
 		mInitialized = true;
 	}
 
@@ -76,6 +86,8 @@ namespace Unnamed {
 			return;
 		}
 		mEditorWorld.Shutdown();
+		mConsoleSystem = nullptr;
+		mInputSystem   = nullptr;
 		mViewOutputs.clear();
 		mDockInitialized = false;
 		mInitialized     = false;
@@ -164,7 +176,7 @@ namespace Unnamed {
 		if (mPresentMode == EDITOR_PRESENT_MODE::VIEWPORT_PANEL) {
 			ImGui::SetNextWindowDockID(dockSpaceId, ImGuiCond_FirstUseEver);
 			DrawViewport(deltaTime);
-			const auto input = ServiceLocator::Get<InputSystem>();
+			const auto input = mInputSystem;
 			mEditorWorld.SetEditorCameraLookEnabled(mViewportLookActive);
 			if (input) {
 				if (const Window* window = mWindowManager.FindWindowById(
@@ -226,7 +238,7 @@ namespace Unnamed {
 			const Render::SceneViewRenderMode sceneRequest =
 				BuildSceneViewModeForSize(width, height);
 
-			const auto input = ServiceLocator::Get<InputSystem>();
+			const auto input = mInputSystem;
 			mEditorWorld.SetEditorCameraLookEnabled(
 				input && input->IsHeld("ed_look")
 			);
@@ -485,9 +497,14 @@ namespace Unnamed {
 		mShowProfilerWindow = open;
 	}
 
-	void LevelEditorTool::LoadImGuizmoSettings() {
-		auto guizmoConfig = ServiceLocator::Get<ConsoleSystem>()->GetConVarAs<
-			ConVar<std::string>>("im_guizmoconfigpath");
+	void LevelEditorTool::LoadImGuizmoSettings(ConsoleSystem* console) {
+		if (!console) {
+			return;
+		}
+
+		auto guizmoConfig = console->GetConVarAs<ConVar<std::string>>(
+			"im_guizmoconfigpath"
+		);
 
 		auto Vec4ToImVec4 = [](const Vec4& vec) {
 			return ImVec4(vec.x, vec.y, vec.z, vec.w);
@@ -652,4 +669,3 @@ namespace Unnamed {
 }
 
 #endif
-

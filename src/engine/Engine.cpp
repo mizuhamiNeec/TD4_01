@@ -313,6 +313,10 @@ namespace Unnamed {
 #ifdef _DEBUG
 			mUEditorRuntime = std::make_unique<EditorRuntime>(
 				mConsoleSystem.get(),
+				mInputSystem.get(),
+				mAssetManager.get(),
+				mDemoManager.get(),
+				mProfiler.get(),
 				*mWindowManager,
 				*mRenderModule,
 				*mUImGuiLayer
@@ -670,6 +674,16 @@ namespace Unnamed {
 			std::forward<Args>(args)...
 		);
 		TWorld* raw = newWorld.get();
+		raw->SetServices(
+			{
+				.console = mConsoleSystem.get(),
+				.inputSystem = mInputSystem.get(),
+				.profiler = mProfiler.get(),
+				.assetManager = mAssetManager.get(),
+				.demoManager = mDemoManager.get(),
+				.audioSystem = mAudioSystem.get()
+			}
+		);
 
 		mWorld = std::move(newWorld);
 

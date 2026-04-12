@@ -8,6 +8,11 @@ namespace Unnamed {
 	class World;
 	class Scene;
 	class Entity;
+	class ConsoleSystem;
+	class InputSystem;
+	class AssetManager;
+	class DemoManager;
+	class AudioSystem;
 	class JsonWriter;
 	class JsonReader;
 
@@ -100,6 +105,26 @@ namespace Unnamed {
 		/// @brief このコンポーネントが所属するワールドを取得します。
 		/// @return 所属するワールドのポインタ
 		[[nodiscard]] World* GetWorld() const noexcept;
+
+		/// @brief このコンポーネントに紐づく ConsoleSystem を取得します。
+		/// @return ConsoleSystem へのポインタ。未設定時は nullptr
+		[[nodiscard]] ConsoleSystem* GetConsoleSystem() const noexcept;
+
+		/// @brief このコンポーネントに紐づく InputSystem を取得します。
+		/// @return InputSystem へのポインタ。未設定時は nullptr
+		[[nodiscard]] InputSystem* GetInputSystem() const noexcept;
+
+		/// @brief このコンポーネントに紐づく AssetManager を取得します。
+		/// @return AssetManager へのポインタ。未設定時は nullptr
+		[[nodiscard]] AssetManager* GetAssetManager() const noexcept;
+
+		/// @brief このコンポーネントに紐づく DemoManager を取得します。
+		/// @return DemoManager へのポインタ。未設定時は nullptr
+		[[nodiscard]] DemoManager* GetDemoManager() const noexcept;
+
+		/// @brief このコンポーネントに紐づく AudioSystem を取得します。
+		/// @return AudioSystem へのポインタ。未設定時は nullptr
+		[[nodiscard]] AudioSystem* GetAudioSystem() const noexcept;
 
 		/// @brief コンポーネントがアクティブかどうかを取得します。
 		/// @return アクティブな場合は true、非アクティブな場合は false

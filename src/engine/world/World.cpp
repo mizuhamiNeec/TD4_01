@@ -34,7 +34,6 @@
 #include "engine/unnamed/subsystem/console/concommand/ConVar.h"
 #include "engine/unnamed/subsystem/input/InputSystem.h"
 #include "engine/unnamed/subsystem/input/device/mouse/MouseDevice.h"
-#include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 
 namespace Unnamed {
 	static constexpr std::string_view kChannel = "World";
@@ -224,7 +223,7 @@ namespace Unnamed {
 		std::vector<Entity*> activeEntities = CollectActiveEntities(
 			mScene.get()
 		);
-		Profiler*  profiler      = ServiceLocator::Get<Profiler>();
+		Profiler*  profiler      = mServices.profiler;
 		const auto RunPhaseGroup =
 			[&](
 			const TICK_PHASE phase,
@@ -308,7 +307,7 @@ namespace Unnamed {
 	) {
 		mTime.renderDeltaTime = std::max(0.0f, renderDeltaTime);
 		mTime.renderUnscaledDeltaTime = std::max(0.0f, renderDeltaTime);
-		ConsoleSystem* console = ServiceLocator::Get<ConsoleSystem>();
+		ConsoleSystem* console = mServices.console;
 		const bool     interpolationEnabled =
 			console ?
 				console->GetConVarValueOr("cl_interpolate", true) :
@@ -341,7 +340,7 @@ namespace Unnamed {
 		}
 
 		// Runtime UI は描画フレームティック側でのみ進める。
-		const InputSystem* inputSystem = ServiceLocator::Get<InputSystem>();
+		const InputSystem* inputSystem = mServices.inputSystem;
 		for (Entity* entity : activeEntities) {
 			if (!entity) {
 				continue;
@@ -500,7 +499,7 @@ namespace Unnamed {
 
 		std::vector<UiCanvasRuntimeEntry> uiCanvasEntries;
 		uiCanvasEntries.reserve(mScene->GetEntities().size());
-		InputSystem* inputSystem        = ServiceLocator::Get<InputSystem>();
+		InputSystem* inputSystem        = mServices.inputSystem;
 		static bool  sTextWarningLogged = false;
 		const Vec2   aspectViewportSize = inputSystem ?
 			                                  inputSystem->
@@ -1029,6 +1028,40 @@ namespace Unnamed {
 
 	const WorldTime& World::GetTime() const noexcept {
 		return mTime;
+	}
+
+	void World::SetServices(const WorldServices& services) noexcept {
+		// ワールドごとに必要な外部サービスを保持し、
+		// ServiceLocator への直接依存を減らします。
+		mServices = services;
+	}
+
+	const WorldServices& World::GetServices() const noexcept {
+		return mServices;
+	}
+
+	ConsoleSystem* World::GetConsoleSystem() const noexcept {
+		return mServices.console;
+	}
+
+	InputSystem* World::GetInputSystem() const noexcept {
+		return mServices.inputSystem;
+	}
+
+	Profiler* World::GetProfiler() const noexcept {
+		return mServices.profiler;
+	}
+
+	AssetManager* World::GetAssetManager() const noexcept {
+		return mServices.assetManager;
+	}
+
+	DemoManager* World::GetDemoManager() const noexcept {
+		return mServices.demoManager;
+	}
+
+	AudioSystem* World::GetAudioSystem() const noexcept {
+		return mServices.audioSystem;
 	}
 
 	bool World::BuildUiInputCamera(Render::RenderCameraInput& outCamera) const {

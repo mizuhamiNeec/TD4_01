@@ -12,7 +12,6 @@
 #include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/unnamed/subsystem/input/InputSystem.h"
 #include "engine/unnamed/subsystem/input/device/gamepad/GamepadDevice.h"
-#include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 #include "engine/world/World.h"
 
 #include "game/core/input/CharacterActionFrameInput.h"
@@ -64,7 +63,7 @@ namespace Unnamed {
 	void PlayerCharacterController::OnAttached() {
 		BaseCharacterController::OnAttached();
 
-		if (auto* inputSystem = ServiceLocator::Get<InputSystem>()) {
+		if (auto* inputSystem = GetInputSystem()) {
 			mInput = inputSystem;
 			BindGamepadMoveAxisOnce(mInput);
 		} else {
@@ -122,7 +121,7 @@ namespace Unnamed {
 			return;
 		}
 
-		DemoManager* demoManager      = ServiceLocator::Get<DemoManager>();
+		DemoManager* demoManager      = GetDemoManager();
 		const float  fixedTickSeconds =
 			demoManager ?
 				demoManager->GetSimulationStepSeconds() :
@@ -266,7 +265,7 @@ namespace Unnamed {
 			return;
 		}
 
-		if (auto* demoManager = ServiceLocator::Get<DemoManager>();
+		if (auto* demoManager = GetDemoManager();
 			demoManager && demoManager->IsPlayback()) {
 			return;
 		}

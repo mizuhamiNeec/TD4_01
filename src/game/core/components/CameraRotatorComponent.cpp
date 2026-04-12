@@ -14,13 +14,12 @@
 #include "engine/unnamed/subsystem/input/InputSystem.h"
 #include "engine/unnamed/subsystem/input/device/gamepad/GamepadDevice.h"
 #include "engine/unnamed/subsystem/input/device/mouse/MouseDevice.h"
-#include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 
 #include "game/core/replay/ReplayHash.h"
 
 namespace Unnamed {
 	void CameraRotatorComponent::OnAttached() {
-		mInput = ServiceLocator::Get<InputSystem>();
+		mInput = GetInputSystem();
 		BindLookAxisOnce();
 		if (const TransformComponent* transform = GetTransform()) {
 			const Vec3 eulerDegrees = transform->GetRotation().ToEulerDegrees();
@@ -28,7 +27,7 @@ namespace Unnamed {
 			mCurrentYaw             = eulerDegrees.y;
 		}
 
-		mConsole = ServiceLocator::Get<ConsoleSystem>();
+		mConsole = GetConsoleSystem();
 	}
 
 	void CameraRotatorComponent::PrePhysicsTick(const float deltaTime) {

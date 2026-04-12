@@ -24,7 +24,6 @@
 #include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/unnamed/subsystem/console/concommand/ConVar.h"
 #include "engine/unnamed/subsystem/input/InputSystem.h"
-#include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 #include "engine/world/GameplayCueBus.h"
 #include "engine/world/World.h"
 
@@ -169,11 +168,11 @@ namespace Unnamed {
 	void GameMovementComponent::OnAttached() {
 		BaseCharacterComponent::OnAttached();
 
-		mInput   = ServiceLocator::Get<InputSystem>();
-		mConsole = ServiceLocator::Get<ConsoleSystem>();
+		mInput   = GetInputSystem();
+		mConsole = GetConsoleSystem();
 
 		mStateMachine = std::make_unique<GameMovementStateMachine>();
-		mStateMachine->Init();
+		mStateMachine->Init(mConsole);
 
 		RegisterMovementModes(*mStateMachine);
 		RegisterMovementAbilities(*mStateMachine);
@@ -231,7 +230,7 @@ namespace Unnamed {
 			SimulateStep(transform, deterministicPacket.input, stepSeconds);
 
 			if (Entity* owner = GetOwner()) {
-				if (auto* demoManager = ServiceLocator::Get<DemoManager>()) {
+				if (auto* demoManager = GetDemoManager()) {
 					demoManager->RecordOrVerifySnapshot(
 						deterministicPacket.tick,
 						*owner

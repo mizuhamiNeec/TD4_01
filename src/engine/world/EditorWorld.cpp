@@ -11,7 +11,6 @@
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/unnamed/subsystem/input/InputSystem.h"
-#include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 #include "engine/world/GameWorld.h"
 
 namespace Unnamed {
@@ -106,6 +105,7 @@ namespace Unnamed {
 
 		const auto totalStart     = std::chrono::steady_clock::now();
 		auto       playWorld      = std::make_unique<GameWorld>();
+		playWorld->SetServices(GetServices());
 		const auto worldInitStart = std::chrono::steady_clock::now();
 		playWorld->Initialize();
 		const auto worldInitEnd = std::chrono::steady_clock::now();
@@ -148,7 +148,7 @@ namespace Unnamed {
 		}
 		mPlayWorld->Shutdown();
 		mPlayWorld.reset();
-		if (auto* input = ServiceLocator::Get<InputSystem>()) {
+		if (auto* input = GetInputSystem()) {
 			input->SetMouseCursorLocked(false);
 			input->SetMouseCursorVisible(true);
 			input->ClearMouseCursorLockAnchor();

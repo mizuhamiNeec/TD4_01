@@ -3,6 +3,7 @@
 #include "../../entity/Entity.h"
 
 #include "engine/ImGui/Icons.h"
+#include "engine/world/World.h"
 
 namespace Unnamed {
 	BaseComponent::BaseComponent()  = default;
@@ -43,6 +44,31 @@ namespace Unnamed {
 
 	World* BaseComponent::GetWorld() const noexcept {
 		return mOwner ? mOwner->GetWorld() : nullptr;
+	}
+
+	ConsoleSystem* BaseComponent::GetConsoleSystem() const noexcept {
+		World* world = GetWorld();
+		return world ? world->GetConsoleSystem() : nullptr;
+	}
+
+	InputSystem* BaseComponent::GetInputSystem() const noexcept {
+		World* world = GetWorld();
+		return world ? world->GetInputSystem() : nullptr;
+	}
+
+	AssetManager* BaseComponent::GetAssetManager() const noexcept {
+		World* world = GetWorld();
+		return world ? world->GetAssetManager() : nullptr;
+	}
+
+	DemoManager* BaseComponent::GetDemoManager() const noexcept {
+		World* world = GetWorld();
+		return world ? world->GetDemoManager() : nullptr;
+	}
+
+	AudioSystem* BaseComponent::GetAudioSystem() const noexcept {
+		World* world = GetWorld();
+		return world ? world->GetAudioSystem() : nullptr;
 	}
 
 	bool BaseComponent::IsActive() const noexcept {

@@ -25,6 +25,8 @@ namespace Unnamed {
 	class WindowManager;
 	class EditorWorld;
 	class ImGuiLayer;
+	class ConsoleSystem;
+	class InputSystem;
 
 	namespace Render {
 		struct SceneOutputView;
@@ -96,7 +98,7 @@ namespace Unnamed {
 			Vec2 size = Vec2::zero;
 		};
 
-		static void LoadImGuizmoSettings();
+		static void LoadImGuizmoSettings(ConsoleSystem* console);
 
 		[[nodiscard]] Render::SceneViewRenderMode BuildSceneViewModeForSize(
 			float width,
@@ -137,6 +139,8 @@ namespace Unnamed {
 		EditorWorld& mEditorWorld;
 		WindowManager& mWindowManager;
 		ImGuiLayer& mImGuiLayer;
+		ConsoleSystem* mConsoleSystem = nullptr;
+		InputSystem*   mInputSystem = nullptr;
 
 		EntityId mSelectedEntityId = 0;
 		bool mOpen = true;

@@ -10,6 +10,10 @@
 
 namespace Unnamed {
 	class ConsoleSystem;
+	class InputSystem;
+	class AssetManager;
+	class DemoManager;
+	class Profiler;
 	class WindowManager;
 	class ImGuiLayer;
 
@@ -25,6 +29,10 @@ namespace Unnamed {
 	public:
 		EditorToolHost(
 			ConsoleSystem*        console,
+			InputSystem*          inputSystem,
+			AssetManager*         assetManager,
+			DemoManager*          demoManager,
+			Profiler*             profiler,
 			WindowManager&        windowManager,
 			Render::RenderModule& renderModule,
 			ImGuiLayer&           imGuiLayer
@@ -52,6 +60,10 @@ namespace Unnamed {
 		ImGuiLayer&           mImGuiLayer;
 
 		ConsoleSystem* mConsole = nullptr;
+		InputSystem*   mInputSystem = nullptr;
+		AssetManager*  mAssetManager = nullptr;
+		DemoManager*   mDemoManager = nullptr;
+		Profiler*      mProfiler = nullptr;
 
 		std::vector<std::unique_ptr<IEditorTool>> mOwnedTools;
 		LevelEditorTool*                          mLevelTool = nullptr;

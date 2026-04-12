@@ -7,6 +7,10 @@ namespace Unnamed {
 	class WindowManager;
 	class ImGuiLayer;
 	class World;
+	class InputSystem;
+	class AssetManager;
+	class DemoManager;
+	class Profiler;
 
 	namespace Render {
 		class RenderModule;
@@ -17,6 +21,10 @@ namespace Unnamed {
 	public:
 		EditorRuntime(
 			ConsoleSystem*        console,
+			InputSystem*          inputSystem,
+			AssetManager*         assetManager,
+			DemoManager*          demoManager,
+			Profiler*             profiler,
 			WindowManager&        windowManager,
 			Render::RenderModule& renderModule,
 			ImGuiLayer&           imGuiLayer

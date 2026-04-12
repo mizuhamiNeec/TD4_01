@@ -8,6 +8,11 @@
 #include "core/math/Vec2.h"
 
 namespace Unnamed {
+	class ConsoleSystem;
+	class InputSystem;
+	class AssetManager;
+	class DemoManager;
+	class Profiler;
 	class ImGuiLayer;
 	class WindowManager;
 	class World;
@@ -22,6 +27,11 @@ namespace Unnamed {
 		WindowManager*       windowManager = nullptr;
 		Render::RenderModule* renderModule  = nullptr;
 		ImGuiLayer*          imGuiLayer    = nullptr;
+		ConsoleSystem*       console       = nullptr;
+		InputSystem*         inputSystem   = nullptr;
+		AssetManager*        assetManager  = nullptr;
+		DemoManager*         demoManager   = nullptr;
+		Profiler*            profiler      = nullptr;
 	};
 
 	struct EditorToolFrameContext {

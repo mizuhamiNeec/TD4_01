@@ -19,6 +19,11 @@ namespace Unnamed {
 
 	class Scene;
 	class AssetManager;
+	class ConsoleSystem;
+	class InputSystem;
+	class Profiler;
+	class AudioSystem;
+	class DemoManager;
 	class JsonReader;
 
 	namespace Render {
@@ -34,6 +39,17 @@ namespace Unnamed {
 		float    interpolationAlpha    = 0.0f;
 		float    timeSeconds           = 0.0f;
 		uint64_t fixedTickCounter      = 0;
+	};
+
+	/// @brief World が参照する外部サービス群です。
+	/// @details ServiceLocator 依存を削減するために、Engine 側で構築して注入します。
+	struct WorldServices {
+		ConsoleSystem* console = nullptr;
+		InputSystem*   inputSystem = nullptr;
+		Profiler*      profiler = nullptr;
+		AssetManager*  assetManager = nullptr;
+		DemoManager*   demoManager = nullptr;
+		AudioSystem*   audioSystem = nullptr;
 	};
 
 	class World {
@@ -174,6 +190,32 @@ namespace Unnamed {
 
 		[[nodiscard]] const WorldTime& GetTime() const noexcept;
 
+		/// @brief World が利用するサービス参照を設定します。
+		/// @param services 注入するサービス群
+		void SetServices(const WorldServices& services) noexcept;
+
+		/// @brief World が利用するサービス参照を取得します。
+		/// @return 現在設定されているサービス群
+		[[nodiscard]] const WorldServices& GetServices() const noexcept;
+
+		/// @brief ConsoleSystem 参照を取得します。
+		[[nodiscard]] ConsoleSystem* GetConsoleSystem() const noexcept;
+
+		/// @brief InputSystem 参照を取得します。
+		[[nodiscard]] InputSystem* GetInputSystem() const noexcept;
+
+		/// @brief Profiler 参照を取得します。
+		[[nodiscard]] Profiler* GetProfiler() const noexcept;
+
+		/// @brief AssetManager 参照を取得します。
+		[[nodiscard]] AssetManager* GetAssetManager() const noexcept;
+
+		/// @brief DemoManager 参照を取得します。
+		[[nodiscard]] DemoManager* GetDemoManager() const noexcept;
+
+		/// @brief AudioSystem 参照を取得します。
+		[[nodiscard]] AudioSystem* GetAudioSystem() const noexcept;
+
 	protected:
 		struct PostFxPassOverrides {
 			std::unordered_map<std::string, Vec4>  colorParams;
@@ -202,5 +244,6 @@ namespace Unnamed {
 		std::string                      mLoadedScenePath; // ロードされたシーンのファイルパス
 		WorldTime                        mTime;            // ワールドの時間情報
 		WorldDebugDraw                   mDebugDraw;
+		WorldServices                    mServices;
 	};
 }

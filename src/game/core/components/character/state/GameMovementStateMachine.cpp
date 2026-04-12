@@ -5,7 +5,6 @@
 #include "../movement/MovementTransitionRouter.h"
 
 #include "engine/unnamed/subsystem/console/Log.h"
-#include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 
 namespace Unnamed {
 	namespace {
@@ -15,8 +14,8 @@ namespace Unnamed {
 	GameMovementStateMachine::GameMovementStateMachine() = default;
 	GameMovementStateMachine::~GameMovementStateMachine() = default;
 
-	void GameMovementStateMachine::Init() {
-		mConsole = ServiceLocator::Get<ConsoleSystem>();
+	void GameMovementStateMachine::Init(ConsoleSystem* console) {
+		mConsole = console;
 		mHasReportedMissingConsole = false;
 		if (!mConsole) {
 			Error(kChannel, "コンソールシステムの取得に失敗しました。");

@@ -4,11 +4,24 @@
 namespace Unnamed {
 	EditorRuntime::EditorRuntime(
 		ConsoleSystem*        console,
+		InputSystem*          inputSystem,
+		AssetManager*         assetManager,
+		DemoManager*          demoManager,
+		Profiler*             profiler,
 		WindowManager&        windowManager,
 		Render::RenderModule& renderModule,
 		ImGuiLayer&           imGuiLayer
 	) : mConsole(console),
-	    mToolHost(console, windowManager, renderModule, imGuiLayer) {
+	    mToolHost(
+		    console,
+		    inputSystem,
+		    assetManager,
+		    demoManager,
+		    profiler,
+		    windowManager,
+		    renderModule,
+		    imGuiLayer
+	    ) {
 		mToolHost.Initialize();
 	}
 

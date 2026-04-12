@@ -18,13 +18,21 @@ namespace Unnamed {
 
 	EditorToolHost::EditorToolHost(
 		ConsoleSystem*        console,
+		InputSystem*          inputSystem,
+		AssetManager*         assetManager,
+		DemoManager*          demoManager,
+		Profiler*             profiler,
 		WindowManager&        windowManager,
 		Render::RenderModule& renderModule,
 		ImGuiLayer&           imGuiLayer
 	) : mWindowManager(windowManager),
 	    mRenderModule(renderModule),
 	    mImGuiLayer(imGuiLayer),
-	    mConsole(console) {
+	    mConsole(console),
+	    mInputSystem(inputSystem),
+	    mAssetManager(assetManager),
+	    mDemoManager(demoManager),
+	    mProfiler(profiler) {
 		if (!mConsole) {
 			Error(
 				kChannel, "ConsoleSystemが見つかりませんでした。エディタツールホストは正しく動作しません。"
@@ -46,6 +54,11 @@ namespace Unnamed {
 			.windowManager = &mWindowManager,
 			.renderModule  = &mRenderModule,
 			.imGuiLayer    = &mImGuiLayer,
+			.console       = mConsole,
+			.inputSystem   = mInputSystem,
+			.assetManager  = mAssetManager,
+			.demoManager   = mDemoManager,
+			.profiler      = mProfiler,
 		};
 		for (auto& tool : mOwnedTools) {
 			if (!tool) {

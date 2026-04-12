@@ -87,6 +87,12 @@ namespace Unnamed {
 		mCurrentPitch = std::clamp(
 			mCurrentPitch, -pitchUpLimit, pitchDownLimit
 		);
+		if (TransformComponent* transform = GetTransform()) {
+			if (!mouseDelta.IsZero() || !gamepadDelta.IsZero()) {
+				// 視点の回転はすぐに反映させる。
+				transform->RequestInterpolationResync();
+			}
+		}
 		ApplyRotationFromCurrentAngles();
 	}
 
@@ -135,12 +141,16 @@ namespace Unnamed {
 		writer.Write(mCurrentYaw);
 	}
 
-	void CameraRotatorComponent::WriteReplayState(nlohmann::json& outState) const {
+	void CameraRotatorComponent::WriteReplayState(
+		nlohmann::json& outState
+	) const {
 		outState["pitchDegrees"] = mCurrentPitch;
 		outState["yawDegrees"]   = mCurrentYaw;
 	}
 
-	void CameraRotatorComponent::ReadReplayState(const nlohmann::json& inState) {
+	void CameraRotatorComponent::ReadReplayState(
+		const nlohmann::json& inState
+	) {
 		if (!inState.is_object()) {
 			return;
 		}
@@ -171,7 +181,7 @@ namespace Unnamed {
 	}
 
 	Vec2 CameraRotatorComponent::GetLookAnglesDegrees() const {
-		return{mCurrentPitch, mCurrentYaw};
+		return {mCurrentPitch, mCurrentYaw};
 	}
 
 	BaseComponent::TICK_GROUP CameraRotatorComponent::GetTickGroup() const {

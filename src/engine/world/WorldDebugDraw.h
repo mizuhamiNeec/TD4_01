@@ -36,8 +36,10 @@ namespace Unnamed {
 
 		/// @brief 座標軸を描画します。
 		/// @param position 座標軸の中心位置
-		/// @param orientation 座標軸の回転
-		void DrawAxis(Vec3 position, Quaternion orientation);
+		/// @param right
+		/// @param up
+		/// @param forward
+		void DrawAxis(Vec3 position, Vec3 right, Vec3 up, Vec3 forward);
 
 		/// @brief 円を描画します。
 		/// @param position 円の中心位置

@@ -42,12 +42,8 @@ namespace Unnamed {
 	}
 
 	void WorldDebugDraw::DrawAxis(
-		const Vec3 position, const Quaternion orientation
+		const Vec3 position, const Vec3 right, const Vec3 up, const Vec3 forward
 	) {
-		const Vec3 right   = orientation * Vec3::right;
-		const Vec3 up      = orientation * Vec3::up;
-		const Vec3 forward = orientation * Vec3::forward;
-
 		DrawRay(position, right, Vec4::red);
 		DrawRay(position, up, Vec4::green);
 		DrawRay(position, forward, Vec4::blue);

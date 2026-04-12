@@ -9,34 +9,13 @@
 #include "core/assets/AssetManager.h"
 #include "core/string/StrUtil.h"
 
+#include "engine/gui/UiCanvasRuntime.h"
 #include "engine/render/Renderer.h"
 #include "engine/ui/ImGuiLayer.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 
 namespace Unnamed {
-	namespace {
-		Vec4 ToVec4(const Gui::Color& color) {
-			return Vec4(color.r, color.g, color.b, color.a);
-		}
-
-		Render::ScreenSpriteInput BuildScreenSprite(
-			const Gui::UiDrawCommandRect& rect,
-			const int32_t sortKey
-		) {
-			Render::ScreenSpriteInput sprite = {};
-			sprite.texture.source = Render::SPRITE_TEXTURE_SOURCE::ASSET;
-			sprite.texture.textureAssetId = kInvalidAssetID;
-			sprite.positionPx = Vec2(rect.rect.x, rect.rect.y);
-			sprite.sizePx = Vec2(rect.rect.width, rect.rect.height);
-			sprite.anchor = Vec2(0.0f, 0.0f);
-			sprite.rotationRad = 0.0f;
-			sprite.color = ToVec4(rect.fillColor);
-			sprite.sortKey = sortKey;
-			return sprite;
-		}
-	}
-
 	GuiEditorTool::GuiEditorTool(ImGuiLayer& imGuiLayer)
 		: mImGuiLayer(imGuiLayer) {}
 
@@ -225,7 +204,9 @@ namespace Unnamed {
 			const auto& draw = mGuiPreviewDrawCommands[i];
 			if (draw.type == Gui::UiDrawCommandType::RECT) {
 				mGuiPreviewSprites.emplace_back(
-					BuildScreenSprite(draw.rect, static_cast<int32_t>(i))
+					UiCanvasRuntime::BuildScreenSprite(
+						draw.rect, static_cast<int32_t>(i)
+					)
 				);
 				continue;
 			}

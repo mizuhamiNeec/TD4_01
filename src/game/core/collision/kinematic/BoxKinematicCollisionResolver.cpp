@@ -79,7 +79,7 @@ namespace Unnamed {
 			}
 
 			// ─── 前進距離を計算 ───
-			// hit.t = [0, 1] の TOI。実距離に変換してから面から SkinM() 手前で止まる。moveLen を上限に。
+			// hit.toi = [0, 1] の TOI。実距離に変換してから面から SkinM() 手前で止まる。moveLen を上限に。
 			const float hitDistance =
 				std::clamp(hit.t, 0.0f, 1.0f) * castLength;
 			float allowedDist = std::min(
@@ -102,10 +102,18 @@ namespace Unnamed {
 				(!hit.startSolid || shallowStartSolid) &&
 				hitDistance <= kZeroToiEpsilon &&
 				allowedDist <= kEpsilon;
-			// ゼロTOIかつ離反方向ならヒットを無視して移動を許可する。
-			if (zeroToiContact && dir.Dot(normal) >= -kEpsilon) {
-				position += move;
-				break;
+			// ゼロTOIかつ明確に離反方向の接触は「その場接触」として扱い、
+			// このbumpでは残り時間だけ消費して再キャストします。
+			// 残移動を丸ごと通すと開始重なりの壁ヒットで床ヒットを飛ばしやすくなるため避けます。
+			if (
+				zeroToiContact &&
+				dir.Dot(normal) > kZeroToiSeparateDot
+			) {
+				timeLeft *= (1.0f - kZeroToiConsumed);
+				if (timeLeft < 1e-7f) {
+					break;
+				}
+				continue;
 			}
 
 			if (allowedDist > 1e-7f) {
@@ -253,7 +261,7 @@ namespace Unnamed {
 			}
 
 			const float hitDistance =
-				std::clamp(hit.t, 0.0f, 1.0f) * castLength;
+				std::clamp(hit.toi, 0.0f, 1.0f) * castLength;
 			const float drop = std::clamp(hitDistance - skin, 0.0f, maxDrop);
 			targetPos        += Vec3::down * drop;
 			return true;
@@ -295,8 +303,11 @@ namespace Unnamed {
 			boxUp.center              = position;
 
 			if (mEngine->BoxCast(boxUp, Vec3::up, upCastLength, &upHit)) {
-				const float hitDistance = std::clamp(upHit.t, 0.0f, 1.0f) *
-				                          upCastLength;
+				
+				const float hitDistance =
+					std::clamp(upHit.toi, 0.0f, 1.0f) *
+					upCastLength;
+				
 				stepRise = std::clamp(hitDistance - skin, 0.0f, stepHeightM);
 				if (stepRise < skin) {
 					position = downPos;

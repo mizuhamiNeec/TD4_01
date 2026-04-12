@@ -5,7 +5,7 @@
 namespace Unnamed::Physics {
 	// ヒット情報
 	struct Hit {
-		float    t             = FLT_MAX; // 0～1（キャストのTOI）。Overlap系は1.0f
+		float    toi           = FLT_MAX; // 0～1（キャストのTOI）。Overlap系は1.0f
 		float    depth         = 0.0f;
 		Vec3     pos           = Vec3::zero;
 		Vec3     normal        = Vec3::zero;

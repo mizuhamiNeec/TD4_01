@@ -523,6 +523,21 @@ namespace Unnamed {
 			FCVAR::NOTIFY | FCVAR::REPLICATED,
 			"Additional landing check distance in HU for speed vault."
 		);
+		static ConVar park_vault_debuglog(
+			"park_vault_debuglog", false,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Enable detailed reject logs for speed vault trajectory checks."
+		);
+		static ConVar park_vault_routeclearance(
+			"park_vault_routeclearance", 2.0f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Extra clearance in HU added above ledge top when validating vault route."
+		);
+		static ConVar park_vault_routecaststep(
+			"park_vault_routecaststep", 12.0f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Max per-step cast length in HU when validating segmented vault route."
+		);
 		static ConVar park_vault_duration(
 			"park_vault_duration", 0.25f,
 			FCVAR::NOTIFY | FCVAR::REPLICATED,

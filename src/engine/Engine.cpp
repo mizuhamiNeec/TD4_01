@@ -13,11 +13,11 @@
 #include <utility>
 
 #include <core/assets/AssetManager.h>
+#include <core/assets/loader/EventPresentationLoader.h>
 #include <core/assets/loader/MaterialAssetLoader.h>
 #include <core/assets/loader/MaterialInstanceAssetLoader.h>
 #include <core/assets/loader/MeshAssetLoader.h>
 #include <core/assets/loader/PostFxChainLoader.h>
-#include <core/assets/loader/PresentationProfileLoader.h>
 #include <core/assets/loader/ShaderProgramLoader.h>
 #include <core/assets/loader/ShaderSourceLoader.h>
 #include <core/assets/loader/SoundAssetLoader.h>
@@ -433,7 +433,8 @@ namespace Unnamed {
 			static constexpr uint32_t kMaxFixedTicksPerFrame = 16u;
 
 			const uint32_t tickRate = mDemoManager ?
-				                          mDemoManager->GetSimulationTickRate() :
+				                          mDemoManager->
+				                          GetSimulationTickRate() :
 				                          DemoManager::ResolveConfiguredTickRate();
 			const float fixedStepSeconds = DemoManager::TickStepSecondsFromRate(
 				tickRate
@@ -444,7 +445,8 @@ namespace Unnamed {
 				const uint32_t configuredTickRate =
 					DemoManager::ResolveConfiguredTickRate();
 				if (configuredTickRate != tickRate &&
-				    configuredTickRate != mLastLoggedTickrateMismatchConfigured) {
+				    configuredTickRate !=
+				    mLastLoggedTickrateMismatchConfigured) {
 					Warning(
 						"Engine",
 						"sv_tickrate={} is ignored while demo mode is active. Using tickrate={}.",
@@ -464,7 +466,9 @@ namespace Unnamed {
 			);
 
 			{
-				Profiler::ScopeTimer scope(mProfiler.get(), "World.FrameInputTick");
+				Profiler::ScopeTimer scope(
+					mProfiler.get(), "World.FrameInputTick"
+				);
 				runtimeWorld->FrameInputTick(unscaledDeltaTime);
 			}
 
@@ -481,16 +485,15 @@ namespace Unnamed {
 				}
 			}
 
-			const float interpolationAlpha = fixedStepSeconds > 0.0f ?
-				                                 std::clamp(
-					                                 mSimulationAccumulator /
-					                                 fixedStepSeconds,
-					                                 0.0f,
-					                                 1.0f
-				                                 ) :
-				                                 0.0f;
-
 			{
+				const float interpolationAlpha =
+					fixedStepSeconds > 0.0f ?
+						std::clamp(
+							mSimulationAccumulator / fixedStepSeconds,
+							0.0f,
+							1.0f
+						) :
+						0.0f;
 				Profiler::ScopeTimer scope(mProfiler.get(), "World.RenderTick");
 				runtimeWorld->RenderTick(scaledDeltaTime, interpolationAlpha);
 			}
@@ -669,6 +672,7 @@ namespace Unnamed {
 		TWorld* raw = newWorld.get();
 
 		mWorld = std::move(newWorld);
+
 		mSimulationAccumulator = 0.0f;
 
 		mWorld->Initialize();

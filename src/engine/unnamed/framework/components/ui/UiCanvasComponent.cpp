@@ -262,7 +262,7 @@ namespace Unnamed {
 			return false;
 		}
 
-		auto* assetManager = ServiceLocator::Get<AssetManager>();
+		auto* assetManager = GetAssetManager();
 		if (!assetManager) {
 			if (!mLoggedLoadFailure) {
 				Error(kChannel, "AssetManager is not available.");

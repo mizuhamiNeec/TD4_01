@@ -7,6 +7,7 @@
 #include <imgui_internal.h>
 
 #include "core/assets/AssetManager.h"
+#include "core/assets/AssetType.h"
 #include "core/string/StrUtil.h"
 
 #include "engine/gui/UiCanvasRuntime.h"
@@ -200,6 +201,7 @@ namespace Unnamed {
 
 		mGuiPreviewSprites.clear();
 		mGuiPreviewSprites.reserve(mGuiPreviewDrawCommands.size());
+		auto* assetManager = ServiceLocator::Get<AssetManager>();
 		for (size_t i = 0; i < mGuiPreviewDrawCommands.size(); ++i) {
 			const auto& draw = mGuiPreviewDrawCommands[i];
 			if (draw.type == Gui::UI_DRAW_COMMAND_TYPE::RECT) {
@@ -208,6 +210,24 @@ namespace Unnamed {
 						draw.rect, static_cast<int32_t>(i)
 					)
 				);
+				continue;
+			}
+
+			if (draw.type == Gui::UI_DRAW_COMMAND_TYPE::IMAGE) {
+				Render::ScreenSpriteInput sprite = UiCanvasRuntime::BuildScreenSprite(
+					draw.image,
+					static_cast<int32_t>(i)
+				);
+				if (assetManager && !draw.image.texturePath.empty()) {
+					const AssetID textureAssetId = assetManager->LoadFromFile(
+						draw.image.texturePath,
+						ASSET_TYPE::TEXTURE
+					);
+					if (textureAssetId != kInvalidAssetID) {
+						sprite.texture.textureAssetId = textureAssetId;
+					}
+				}
+				mGuiPreviewSprites.emplace_back(std::move(sprite));
 				continue;
 			}
 

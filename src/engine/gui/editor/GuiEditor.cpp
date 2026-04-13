@@ -6,15 +6,19 @@
 #include <cstdio>
 #include <imgui.h>
 
+#include "core/assets/AssetType.h"
 #include "core/string/StrUtil.h"
 
 #include "engine/gui/UiRoot.h"
 #include "engine/gui/UiScreenStack.h"
 #include "engine/gui/UiWidget.h"
 #include "engine/gui/components/UiButtonBehaviorComponent.h"
+#include "engine/gui/components/UiDigitStripComponent.h"
 #include "engine/gui/components/UiLayoutComponents.h"
 #include "engine/gui/components/UiPanelStyleComponent.h"
+#include "engine/gui/components/UiTextureComponent.h"
 #include "engine/gui/components/UiTransformComponent.h"
+#include "engine/ImGui/ImGuiWidgets.h"
 #include "engine/render/Renderer.h"
 #include "engine/ui/ImGuiLayer.h"
 #include "engine/unnamed/subsystem/console/Log.h"
@@ -865,6 +869,78 @@ namespace Unnamed::Gui {
 						button->SetFontSize(fontSize);
 						changed = true;
 					}
+				} else if (
+					auto* texture = dynamic_cast<UiTextureComponent*>(component)
+				) {
+					std::string texturePath = texture->GetTexturePath();
+					if (
+						ImGuiWidgets::AssetPathPicker(
+							"Texture",
+							texturePath,
+							ImGuiWidgets::AssetTypeToMask(ASSET_TYPE::TEXTURE)
+						)
+					) {
+						texture->SetTexturePath(texturePath);
+						changed = true;
+					}
+
+					Color color = texture->GetColor();
+					if (DrawColor4("Color", color)) {
+						texture->SetColor(color);
+						changed = true;
+					}
+
+					Vec2 uvMin = texture->GetUvMin();
+					float uvMinArray[2] = {uvMin.x, uvMin.y};
+					if (ImGui::DragFloat2("UV Min", uvMinArray, 0.001f, 0.0f, 1.0f)) {
+						texture->SetUvMin(Vec2(uvMinArray[0], uvMinArray[1]));
+						changed = true;
+					}
+
+					Vec2 uvMax = texture->GetUvMax();
+					float uvMaxArray[2] = {uvMax.x, uvMax.y};
+					if (ImGui::DragFloat2("UV Max", uvMaxArray, 0.001f, 0.0f, 1.0f)) {
+						texture->SetUvMax(Vec2(uvMaxArray[0], uvMaxArray[1]));
+						changed = true;
+					}
+				} else if (
+					auto* strip = dynamic_cast<UiDigitStripComponent*>(component)
+				) {
+					std::string texturePath = strip->GetStripTexturePath();
+					if (
+						ImGuiWidgets::AssetPathPicker(
+							"Strip Texture",
+							texturePath,
+							ImGuiWidgets::AssetTypeToMask(ASSET_TYPE::TEXTURE)
+						)
+					) {
+						strip->SetStripTexturePath(texturePath);
+						changed = true;
+					}
+
+					int value = strip->GetValue();
+					if (ImGui::DragInt("Value", &value, 1.0f, 0, 99999999)) {
+						strip->SetValue(value);
+						changed = true;
+					}
+
+					int minDigits = strip->GetMinDigits();
+					if (ImGui::DragInt("Min Digits", &minDigits, 1.0f, 1, 16)) {
+						strip->SetMinDigits(minDigits);
+						changed = true;
+					}
+
+					float spacing = strip->GetDigitSpacing();
+					if (ImGui::DragFloat("Digit Spacing", &spacing, 0.1f, 0.0f, 256.0f)) {
+						strip->SetDigitSpacing(spacing);
+						changed = true;
+					}
+
+					Color color = strip->GetColor();
+					if (DrawColor4("Color", color)) {
+						strip->SetColor(color);
+						changed = true;
+					}
 				}
 
 				ImGui::TreePop();
@@ -900,12 +976,12 @@ namespace Unnamed::Gui {
 		);
 		if (!componentTypeLabels.empty()) {
 			ImGui::Combo(
-				"Add Component",
+				"Add Component##GuiEditorAddComponentCombo",
 				&context.addComponentTypeIndex,
 				componentTypeLabels.data(),
 				static_cast<int>(componentTypeLabels.size())
 			);
-			if (ImGui::Button("Add Component")) {
+			if (ImGui::Button("Add Component##GuiEditorAddComponentButton")) {
 				const std::string_view typeName = componentTypes[static_cast<size_t>(
 					context.addComponentTypeIndex
 				)];

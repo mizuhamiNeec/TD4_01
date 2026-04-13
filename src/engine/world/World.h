@@ -4,10 +4,12 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <vector>
 
 #include "core/guidgenerator/GuidGenerator.h"
 #include "core/math/Vec4.h"
 
+#include "engine/render/frame/RenderFrameInputs.h"
 #include "engine/world/GameplayCueBus.h"
 #include "engine/world/WorldCameraManager.h"
 #include "engine/world/WorldDebugDraw.h"
@@ -188,6 +190,10 @@ namespace Unnamed {
 		/// @brief ワールド共通のデバッグ描画コンテキストを取得します（const版）。
 		[[nodiscard]] const WorldDebugDraw& GetDebugDraw() const noexcept;
 
+		/// @brief 画面空間デバッグスプライトを1件キューに積みます。
+		void QueueDebugScreenSprite(const Render::ScreenSpriteInput& sprite);
+		void QueueDebugScreenSprite(Render::ScreenSpriteInput&& sprite);
+
 		[[nodiscard]] const WorldTime& GetTime() const noexcept;
 
 		/// @brief World が利用するサービス参照を設定します。
@@ -244,6 +250,7 @@ namespace Unnamed {
 		std::string                      mLoadedScenePath; // ロードされたシーンのファイルパス
 		WorldTime                        mTime;            // ワールドの時間情報
 		WorldDebugDraw                   mDebugDraw;
+		std::vector<Render::ScreenSpriteInput> mDebugScreenSprites;
 		WorldServices                    mServices;
 	};
 }

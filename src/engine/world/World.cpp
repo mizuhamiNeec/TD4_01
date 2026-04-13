@@ -6,6 +6,7 @@
 #include <chrono>
 
 #include "core/assets/AssetManager.h"
+#include "core/assets/AssetType.h"
 #include "core/assets/types/MeshAssetData.h"
 #include "core/string/StrUtil.h"
 
@@ -818,7 +819,34 @@ namespace Unnamed {
 							UiCanvasRuntime::BuildScreenSprite(draw.rect, sort)
 						);
 					}
-				} else if (!sTextWarningLogged) {
+					continue;
+				}
+
+				if (draw.type == Gui::UI_DRAW_COMMAND_TYPE::IMAGE) {
+					Render::ScreenSpriteInput sprite =
+						UiCanvasRuntime::BuildScreenSprite(draw.image, sort);
+					if (!draw.image.texturePath.empty()) {
+						const AssetID textureAssetId = assetManager.LoadFromFile(
+							draw.image.texturePath,
+							ASSET_TYPE::TEXTURE
+						);
+						if (textureAssetId != kInvalidAssetID) {
+							sprite.texture.textureAssetId = textureAssetId;
+						}
+					}
+
+					if (
+						entry.canvas->GetSpaceMode() ==
+						UI_CANVAS_SPACE_MODE::SCREEN
+					) {
+						sceneView.screenSprites.emplace_back(std::move(sprite));
+					} else {
+						canvasSpriteView.screenSprites.emplace_back(std::move(sprite));
+					}
+					continue;
+				}
+
+				if (!sTextWarningLogged) {
 					Warning(
 						kChannel,
 						"UiDrawCommand TEXT is not supported in runtime pass yet (Phase2)."
@@ -868,6 +896,16 @@ namespace Unnamed {
 				sprite.uvFlipY         = true;
 				sceneView.worldSprites.emplace_back(sprite);
 			}
+		}
+
+		if (!mDebugScreenSprites.empty()) {
+			sceneView.screenSprites.reserve(
+				sceneView.screenSprites.size() + mDebugScreenSprites.size()
+			);
+			for (auto& sprite : mDebugScreenSprites) {
+				sceneView.screenSprites.emplace_back(std::move(sprite));
+			}
+			mDebugScreenSprites.clear();
 		}
 
 		inputs.views.emplace_back(std::move(sceneView));
@@ -1024,6 +1062,16 @@ namespace Unnamed {
 
 	const WorldDebugDraw& World::GetDebugDraw() const noexcept {
 		return mDebugDraw;
+	}
+
+	void World::QueueDebugScreenSprite(
+		const Render::ScreenSpriteInput& sprite
+	) {
+		mDebugScreenSprites.emplace_back(sprite);
+	}
+
+	void World::QueueDebugScreenSprite(Render::ScreenSpriteInput&& sprite) {
+		mDebugScreenSprites.emplace_back(std::move(sprite));
 	}
 
 	const WorldTime& World::GetTime() const noexcept {

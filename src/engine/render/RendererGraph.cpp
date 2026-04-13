@@ -761,12 +761,9 @@ namespace Unnamed::Render {
 							object.world.m[3][2] = billboard.worldPosition.z;
 							object.worldInverseTranspose =
 								object.world.Inverse().Transpose();
-							object.skinningInfo = Vec4(
-								0.0f,
-								0.0f,
-								billboard.uvFlipY ? 1.0f : 0.0f,
-								0.0f
-							);
+							const float uvMinY = billboard.uvFlipY ? 1.0f : 0.0f;
+							const float uvMaxY = billboard.uvFlipY ? 0.0f : 1.0f;
+							object.skinningInfo = Vec4(0.0f, uvMinY, 1.0f, uvMaxY);
 
 							Rhi::MaterialConstants material = {};
 							material.baseColor              = billboard.color;
@@ -901,12 +898,9 @@ namespace Unnamed::Render {
 							object.world.m[3][2] = sprite.worldPosition.z;
 							object.worldInverseTranspose =
 								object.world.Inverse().Transpose();
-							object.skinningInfo = Vec4(
-								0.0f,
-								0.0f,
-								sprite.uvFlipY ? 1.0f : 0.0f,
-								0.0f
-							);
+							const float uvMinY = sprite.uvFlipY ? 1.0f : 0.0f;
+							const float uvMaxY = sprite.uvFlipY ? 0.0f : 1.0f;
+							object.skinningInfo = Vec4(0.0f, uvMinY, 1.0f, uvMaxY);
 
 							Rhi::MaterialConstants material = {};
 							material.baseColor              = sprite.color;
@@ -1093,12 +1087,9 @@ namespace Unnamed::Render {
 							object.world.m[3][2] = billboard.worldPosition.z;
 							object.worldInverseTranspose =
 								object.world.Inverse().Transpose();
-							object.skinningInfo = Vec4(
-								0.0f,
-								0.0f,
-								billboard.uvFlipY ? 1.0f : 0.0f,
-								0.0f
-							);
+							const float uvMinY = billboard.uvFlipY ? 1.0f : 0.0f;
+							const float uvMaxY = billboard.uvFlipY ? 0.0f : 1.0f;
+							object.skinningInfo = Vec4(0.0f, uvMinY, 1.0f, uvMaxY);
 
 							Rhi::MaterialConstants material = {};
 							material.baseColor              = billboard.color;
@@ -1667,12 +1658,11 @@ namespace Unnamed::Render {
 						               );
 						object.worldInverseTranspose =
 							object.world.Inverse().Transpose();
-						object.skinningInfo = Vec4(
-							0.0f,
-							0.0f,
-							sprite.uvFlipY ? 1.0f : 0.0f,
-							0.0f
-						);
+						const float uvMinY = sprite.uvFlipY ? 1.0f : 0.0f;
+						const float uvMaxY = sprite.uvFlipY ? 0.0f : 1.0f;
+						const float uvMinX = sprite.uvMin.x;
+						const float uvMaxX = sprite.uvMax.x;
+						object.skinningInfo = Vec4(uvMinX, uvMinY, uvMaxX, uvMaxY);
 
 						Rhi::MaterialConstants material = {};
 						material.baseColor              = sprite.color;

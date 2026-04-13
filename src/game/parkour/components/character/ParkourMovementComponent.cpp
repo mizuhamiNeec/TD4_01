@@ -1,9 +1,15 @@
 #include "ParkourMovementComponent.h"
 
 #include <algorithm>
+#include <cfloat>
+#include <cmath>
 #include <imgui.h>
 
+#include "core/assets/AssetManager.h"
+#include "core/assets/AssetType.h"
 #include "core/ComponentRegistry.h"
+#include "core/io/json/JsonReader.h"
+#include "core/io/json/JsonWriter.h"
 #include "core/math/Quaternion.h"
 #include "core/math/Vec4.h"
 
@@ -12,16 +18,20 @@
 
 #include "engine/ImGui/Icons.h"
 #include "engine/physics/core/Physics.h"
+#include "engine/scene/Scene.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/primitive/Primitives.h"
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
 #include "engine/unnamed/subsystem/console/concommand/ConVar.h"
+#include "engine/unnamed/subsystem/input/InputSystem.h"
 #include "engine/world/World.h"
 
 #include "game/core/collision/kinematic/base/BaseKinematicCollisionResolver.h"
 #include "game/core/components/character/state/GameMovementStateMachine.h"
 #include "game/core/replay/ReplayHash.h"
+#include "game/parkour/components/trigger/CheckpointComponent.h"
+#include "game/parkour/components/trigger/GoalComponent.h"
 
 #include "ability/ParkourMovementAbilities.h"
 
@@ -54,6 +64,21 @@ namespace Unnamed {
 			);
 			return true;
 		}
+
+		[[nodiscard]] bool IsAabbOverlapping(
+			const Vec3& minA,
+			const Vec3& maxA,
+			const Vec3& minB,
+			const Vec3& maxB
+		) {
+			return minA.x <= maxB.x && maxA.x >= minB.x &&
+			       minA.y <= maxB.y && maxA.y >= minB.y &&
+			       minA.z <= maxB.z && maxA.z >= minB.z;
+		}
+
+		[[nodiscard]] float Clamp01(const float v) {
+			return std::clamp(v, 0.0f, 1.0f);
+		}
 	}
 
 	ParkourMovementComponent::~ParkourMovementComponent() = default;
@@ -62,6 +87,7 @@ namespace Unnamed {
 		GameMovementComponent::OnAttached();
 		mAutoSprintActive = false;
 		ResetParkourRuntime();
+		ResetCourseProgress();
 		mStandingHalfExtents = mBoxHalfExtents;
 		RebuildDuckHalfExtents();
 		ClearDeterministicActionInputQueue();
@@ -77,6 +103,31 @@ namespace Unnamed {
 		grapple = true;
 	}
 
+	void ParkourMovementComponent::OnEditorTick(const float deltaTime) {
+		GameMovementComponent::OnEditorTick(deltaTime);
+		TransformComponent* transform = GetTransform();
+		TickCourseProgress(transform);
+		QueueCoursePinSprites(
+			transform,
+			mLastCourseCheckpoints,
+			mLastCourseGoals,
+			mLastAllCheckpointsPassed
+		);
+	}
+
+	void ParkourMovementComponent::OnRenderTick(
+		const float renderDeltaTime,
+		const float interpolationAlpha
+	) {
+		GameMovementComponent::OnRenderTick(renderDeltaTime, interpolationAlpha);
+		QueueCoursePinSprites(
+			GetTransform(),
+			mLastCourseCheckpoints,
+			mLastCourseGoals,
+			mLastAllCheckpointsPassed
+		);
+	}
+
 	void ParkourMovementComponent::SimulateStep(
 		TransformComponent*       transform,
 		const MovementFrameInput& input,
@@ -90,6 +141,10 @@ namespace Unnamed {
 		}
 
 		TickParkourTimers(stepSeconds);
+		if (mReloadRespawnEnabled && mActionFrameInput.weapon.reloadPressed) {
+			RespawnToLastCheckpoint(transform);
+		}
+		TickCourseProgress(transform);
 		ResetDuckStandDebugFrame();
 		GameMovementComponent::SimulateStep(transform, input, stepSeconds);
 		DrawDuckStandDebug(transform);
@@ -154,17 +209,51 @@ namespace Unnamed {
 			"Vault: %s (cool %.2f s)", mRuntime.vault.active ? "true" : "false",
 			mRuntime.vault.cooldown
 		);
+
+		ImGui::SeparatorText("Parkour Course");
+		ImGui::Checkbox("Reload Respawn Enabled", &mReloadRespawnEnabled);
+		ImGui::Checkbox("Course Debug Draw", &mCourseDebugDraw);
+		ImGui::Checkbox("Course Pin Sprite", &mCoursePinSpriteEnabled);
+		ImGui::Text("Next Checkpoint Index: %d", mNextCheckpointIndex);
+		ImGui::Text(
+			"Checkpoints Passed: %d / %d",
+			static_cast<int>(mTouchedCheckpointIndices.size()),
+			static_cast<int>(mOrderedCheckpointIndices.size())
+		);
+		ImGui::Text("Last Checkpoint Index: %d", mLastCheckpointIndex);
+		ImGui::Text("Course Cleared: %s", mCourseCleared ? "true" : "false");
+		if (ImGui::Button("Reset Course Progress")) {
+			ResetCourseProgress();
+		}
 	}
 #endif
 
 	void ParkourMovementComponent::Deserialize(const JsonReader& reader) {
 		GameMovementComponent::Deserialize(reader);
+		if (const JsonReader reloadRespawn = reader["reloadRespawnEnabled"];
+			reloadRespawn.Valid()) {
+			mReloadRespawnEnabled = reloadRespawn.GetBool(mReloadRespawnEnabled);
+		}
+		if (const JsonReader courseDebugDraw = reader["courseDebugDraw"];
+			courseDebugDraw.Valid()) {
+			mCourseDebugDraw = courseDebugDraw.GetBool(mCourseDebugDraw);
+		}
+		if (const JsonReader coursePin = reader["coursePinSpriteEnabled"];
+			coursePin.Valid()) {
+			mCoursePinSpriteEnabled = coursePin.GetBool(mCoursePinSpriteEnabled);
+		}
 		mStandingHalfExtents = mBoxHalfExtents;
 		RebuildDuckHalfExtents();
 	}
 
 	void ParkourMovementComponent::Serialize(JsonWriter& writer) const {
 		GameMovementComponent::Serialize(writer);
+		writer.Key("reloadRespawnEnabled");
+		writer.Write(mReloadRespawnEnabled);
+		writer.Key("courseDebugDraw");
+		writer.Write(mCourseDebugDraw);
+		writer.Key("coursePinSpriteEnabled");
+		writer.Write(mCoursePinSpriteEnabled);
 	}
 
 	void ParkourMovementComponent::WriteReplayState(
@@ -1112,6 +1201,394 @@ namespace Unnamed {
 		}
 	}
 
+	void ParkourMovementComponent::ResetCourseProgress() {
+		mTouchedCheckpointIndices.clear();
+		mOrderedCheckpointIndices.clear();
+		mLastCourseCheckpoints.clear();
+		mLastCourseGoals.clear();
+		mLastAllCheckpointsPassed = false;
+		mNextCheckpointIndex = 0;
+		mLastCheckpointIndex = -1;
+		mCourseCleared = false;
+		mLastCheckpointRespawnPosition = mCourseSpawnPosition;
+	}
+
+	void ParkourMovementComponent::EnsureCourseSpawnInitialized(
+		const TransformComponent* transform
+	) {
+		if (mCourseSpawnInitialized || !transform) {
+			return;
+		}
+		mCourseSpawnPosition = transform->GetPosition();
+		mLastCheckpointRespawnPosition = mCourseSpawnPosition;
+		mCourseSpawnInitialized = true;
+	}
+
+	int32_t ParkourMovementComponent::ResolveNextCheckpointIndex() const {
+		for (const int32_t index : mOrderedCheckpointIndices) {
+			if (!mTouchedCheckpointIndices.contains(index)) {
+				return index;
+			}
+		}
+		return mOrderedCheckpointIndices.empty() ? 0 :
+		       mOrderedCheckpointIndices.back() + 1;
+	}
+
+	void ParkourMovementComponent::RespawnToLastCheckpoint(
+		TransformComponent* transform
+	) {
+		if (!transform) {
+			return;
+		}
+
+		EnsureCourseSpawnInitialized(transform);
+		const Vec3 targetPosition = mLastCheckpointIndex >= 0 ?
+			                            mLastCheckpointRespawnPosition :
+			                            mCourseSpawnPosition;
+
+		transform->SetPosition(targetPosition);
+		mVelocity = Vec3::zero;
+		mRuntime.wallRun.active = false;
+		mRuntime.slide.active = false;
+		mRuntime.blink.active = false;
+		mRuntime.vault.active = false;
+		mRuntime.grapple = {};
+		SyncCollisionHull(transform);
+	}
+
+	void ParkourMovementComponent::DrawCourseDebug(
+		const TransformComponent* transform,
+		const std::vector<CourseTriggerSnapshot>& checkpoints,
+		const std::vector<CourseTriggerSnapshot>& goals,
+		const bool allCheckpointsPassed
+	) const {
+		if (!IsCourseDebugDrawEnabled() || !transform) {
+			return;
+		}
+		World* world = transform->GetWorld();
+		if (!world) {
+			return;
+		}
+
+		auto& debugDraw = world->GetDebugDraw();
+		const Vec4 checkpointDoneColor = Vec4(0.2f, 0.95f, 0.2f, 1.0f);
+		const Vec4 checkpointNextColor = Vec4(1.0f, 0.85f, 0.2f, 1.0f);
+		const Vec4 checkpointPendingColor = Vec4(0.55f, 0.55f, 0.55f, 1.0f);
+		const Vec4 respawnLineColor = Vec4(0.8f, 0.8f, 1.0f, 1.0f);
+		const Vec4 goalLockedColor = Vec4(1.0f, 0.25f, 0.25f, 1.0f);
+		const Vec4 goalReadyColor = Vec4(0.3f, 0.9f, 1.0f, 1.0f);
+		const Vec4 goalClearedColor = Vec4(0.2f, 1.0f, 0.6f, 1.0f);
+
+		for (const CourseTriggerSnapshot& checkpoint : checkpoints) {
+			const bool done =
+				mTouchedCheckpointIndices.contains(checkpoint.index);
+			const bool isNext = !done && checkpoint.index == mNextCheckpointIndex;
+			const Vec4 color = done ? checkpointDoneColor :
+			                  isNext ? checkpointNextColor :
+			                           checkpointPendingColor;
+			debugDraw.DrawBox(
+				checkpoint.worldCenter,
+				Quaternion::identity,
+				checkpoint.worldHalfExtents * 2.0f,
+				color
+			);
+			debugDraw.DrawLine(
+				checkpoint.worldCenter,
+				checkpoint.respawnPosition,
+				respawnLineColor
+			);
+		}
+
+		for (const CourseTriggerSnapshot& goal : goals) {
+			const Vec4 color = mCourseCleared ? goalClearedColor :
+			                  allCheckpointsPassed ? goalReadyColor :
+			                                        goalLockedColor;
+			debugDraw.DrawBox(
+				goal.worldCenter,
+				Quaternion::identity,
+				goal.worldHalfExtents * 2.0f,
+				color
+			);
+		}
+	}
+
+	void ParkourMovementComponent::TickCourseProgress(
+		TransformComponent* transform
+	) {
+		if (!transform) {
+			return;
+		}
+
+		EnsureCourseSpawnInitialized(transform);
+		World* world = transform->GetWorld();
+		if (!world) {
+			return;
+		}
+
+		const Scene& scene = world->GetScene();
+		std::vector<CourseTriggerSnapshot> checkpoints = {};
+		std::vector<CourseTriggerSnapshot> goals = {};
+		checkpoints.reserve(16);
+		goals.reserve(8);
+
+		for (const auto& entityPtr : scene.GetEntities()) {
+			if (!entityPtr || !entityPtr->IsActive()) {
+				continue;
+			}
+			Entity* entity = entityPtr.get();
+			if (const auto* checkpoint = entity->GetComponent<CheckpointComponent>();
+				checkpoint && checkpoint->IsActive()) {
+				checkpoints.emplace_back(CourseTriggerSnapshot{
+					.index = checkpoint->GetIndex(),
+					.worldCenter = checkpoint->GetWorldCenter(),
+					.worldHalfExtents = checkpoint->GetWorldHalfExtentsMeters(),
+					.respawnPosition = checkpoint->GetRespawnPosition(),
+				});
+			}
+
+			if (const auto* goal = entity->GetComponent<GoalComponent>();
+				goal && goal->IsActive()) {
+				goals.emplace_back(CourseTriggerSnapshot{
+					.index = goal->GetIndex(),
+					.worldCenter = goal->GetWorldCenter(),
+					.worldHalfExtents = goal->GetWorldHalfExtentsMeters(),
+					.respawnPosition = Vec3::zero,
+				});
+			}
+		}
+
+		std::sort(
+			checkpoints.begin(),
+			checkpoints.end(),
+			[](const CourseTriggerSnapshot& a, const CourseTriggerSnapshot& b) {
+				if (a.index != b.index) {
+					return a.index < b.index;
+				}
+				return a.worldCenter.SqrLength() < b.worldCenter.SqrLength();
+			}
+		);
+
+		mOrderedCheckpointIndices.clear();
+		mOrderedCheckpointIndices.reserve(checkpoints.size());
+		for (const CourseTriggerSnapshot& checkpoint : checkpoints) {
+			if (mOrderedCheckpointIndices.empty() ||
+			    mOrderedCheckpointIndices.back() != checkpoint.index) {
+				mOrderedCheckpointIndices.emplace_back(checkpoint.index);
+			}
+		}
+
+		mNextCheckpointIndex = ResolveNextCheckpointIndex();
+
+		const Vec3 playerCenter = transform->GetPosition();
+		const Vec3 playerMin = playerCenter - mBoxHalfExtents;
+		const Vec3 playerMax = playerCenter + mBoxHalfExtents;
+
+		for (const CourseTriggerSnapshot& checkpoint : checkpoints) {
+			const Vec3 triggerMin = checkpoint.worldCenter - checkpoint.worldHalfExtents;
+			const Vec3 triggerMax = checkpoint.worldCenter + checkpoint.worldHalfExtents;
+			if (!IsAabbOverlapping(playerMin, playerMax, triggerMin, triggerMax)) {
+				continue;
+			}
+
+			if (mTouchedCheckpointIndices.contains(checkpoint.index)) {
+				continue;
+			}
+
+			if (checkpoint.index != mNextCheckpointIndex) {
+				continue;
+			}
+
+			mTouchedCheckpointIndices.insert(checkpoint.index);
+			mLastCheckpointIndex = checkpoint.index;
+			mLastCheckpointRespawnPosition = checkpoint.respawnPosition;
+			mNextCheckpointIndex = ResolveNextCheckpointIndex();
+		}
+
+		bool allCheckpointsPassed = true;
+		for (const int32_t index : mOrderedCheckpointIndices) {
+			if (!mTouchedCheckpointIndices.contains(index)) {
+				allCheckpointsPassed = false;
+				break;
+			}
+		}
+
+		if (!mCourseCleared && allCheckpointsPassed) {
+			for (const CourseTriggerSnapshot& goal : goals) {
+				const Vec3 triggerMin = goal.worldCenter - goal.worldHalfExtents;
+				const Vec3 triggerMax = goal.worldCenter + goal.worldHalfExtents;
+				if (IsAabbOverlapping(playerMin, playerMax, triggerMin, triggerMax)) {
+					mCourseCleared = true;
+					break;
+				}
+			}
+		}
+
+		mLastCourseCheckpoints       = checkpoints;
+		mLastCourseGoals             = goals;
+		mLastAllCheckpointsPassed    = allCheckpointsPassed;
+
+		DrawCourseDebug(transform, checkpoints, goals, allCheckpointsPassed);
+	}
+
+	void ParkourMovementComponent::QueueCoursePinSprites(
+		const TransformComponent* transform,
+		const std::vector<CourseTriggerSnapshot>& checkpoints,
+		const std::vector<CourseTriggerSnapshot>& goals,
+		const bool allCheckpointsPassed
+	) {
+		if (!mCoursePinSpriteEnabled || !transform) {
+			return;
+		}
+
+		World* world = transform->GetWorld();
+		if (!world) {
+			return;
+		}
+
+		const auto cameraInfo = world->GetCameraManager().GetCurrentCameraInfo();
+		if (!cameraInfo.valid) {
+			return;
+		}
+
+		Vec3 targetWorldPos = Vec3::zero;
+		bool hasTarget = false;
+		for (const CourseTriggerSnapshot& checkpoint : checkpoints) {
+			if (checkpoint.index == mNextCheckpointIndex) {
+				targetWorldPos = checkpoint.worldCenter;
+				hasTarget = true;
+				break;
+			}
+		}
+		if (!hasTarget && allCheckpointsPassed && !goals.empty()) {
+			targetWorldPos = goals.front().worldCenter;
+			hasTarget = true;
+		}
+		if (!hasTarget) {
+			return;
+		}
+
+		InputSystem* input = GetInputSystem();
+		const Vec2 viewportSize = input ? input->GetMouseClientViewportSize() : Vec2::zero;
+		if (viewportSize.x <= 1.0f || viewportSize.y <= 1.0f) {
+			return;
+		}
+
+		if (mCoursePinTextureAssetId == kInvalidAssetID) {
+			if (AssetManager* assetManager = GetAssetManager()) {
+				mCoursePinTextureAssetId = assetManager->LoadFromFile(
+					"content/parkour/textures/ping.png",
+					ASSET_TYPE::TEXTURE
+				);
+			}
+		}
+		if (mCourseArrowTextureAssetId == kInvalidAssetID) {
+			if (AssetManager* assetManager = GetAssetManager()) {
+				mCourseArrowTextureAssetId = assetManager->LoadFromFile(
+					"content/parkour/textures/arrow.png",
+					ASSET_TYPE::TEXTURE
+				);
+			}
+		}
+
+		if (mCoursePinTextureAssetId == kInvalidAssetID ||
+		    mCourseArrowTextureAssetId == kInvalidAssetID) {
+			return;
+		}
+
+		const Mat4& viewProj = cameraInfo.camera.viewProj;
+		const Vec4 clip = Vec4(targetWorldPos, 1.0f) * viewProj;
+		if (std::abs(clip.w) <= 1.0e-6f) {
+			return;
+		}
+
+		Vec3 ndc = Vec3(clip.x, clip.y, clip.z) / clip.w;
+		Vec2 screenPos = Vec2(
+			(ndc.x * 0.5f + 0.5f) * viewportSize.x,
+			(1.0f - (ndc.y * 0.5f + 0.5f)) * viewportSize.y
+		);
+
+		const Vec2 center = viewportSize * 0.5f;
+		Vec2 toCenter = screenPos - center;
+		if (clip.w < 0.0f) {
+			toCenter = -toCenter;
+			screenPos = center + toCenter;
+		}
+
+		const float margin = 100.0f;
+		const float safeMarginX = std::min(
+			margin,
+			std::max(0.0f, viewportSize.x * 0.5f - 1.0f)
+		);
+		const float safeMarginY = std::min(
+			margin,
+			std::max(0.0f, viewportSize.y * 0.5f - 1.0f)
+		);
+		const float minX = safeMarginX;
+		const float minY = safeMarginY;
+		const float maxX = viewportSize.x - safeMarginX;
+		const float maxY = viewportSize.y - safeMarginY;
+		const float clampMinX = std::min(minX, maxX);
+		const float clampMaxX = std::max(minX, maxX);
+		const float clampMinY = std::min(minY, maxY);
+		const float clampMaxY = std::max(minY, maxY);
+		bool isOutOfScreen = clip.w < 0.0f ||
+		                     screenPos.x < minX || screenPos.x > maxX ||
+		                     screenPos.y < minY || screenPos.y > maxY;
+
+		if (isOutOfScreen) {
+			Vec2 dir = toCenter;
+			const float len = std::hypot(dir.x, dir.y);
+			if (len > 1.0e-6f) {
+				dir /= len;
+			} else {
+				dir = Vec2(1.0f, 0.0f);
+			}
+
+			const float tx = std::abs(dir.x) > 1.0e-6f ?
+				(std::max(maxX - center.x, center.x - minX) / std::abs(dir.x)) :
+				FLT_MAX;
+			const float ty = std::abs(dir.y) > 1.0e-6f ?
+				(std::max(maxY - center.y, center.y - minY) / std::abs(dir.y)) :
+				FLT_MAX;
+			const float t = std::min(tx, ty);
+			screenPos = center + dir * t;
+			screenPos.x = std::clamp(screenPos.x, clampMinX, clampMaxX);
+			screenPos.y = std::clamp(screenPos.y, clampMinY, clampMaxY);
+			toCenter = screenPos - center;
+		}
+
+		const float distanceFromCenter = std::hypot(toCenter.x, toCenter.y);
+		const float maxDist = std::max(
+			1.0f,
+			std::hypot(center.x, center.y)
+		);
+		const float t = Clamp01(distanceFromCenter / maxDist);
+		const float alpha = std::lerp(0.025f, 1.0f, t);
+
+		Render::ScreenSpriteInput pin = {};
+		pin.texture.source = Render::SPRITE_TEXTURE_SOURCE::ASSET;
+		pin.texture.textureAssetId = mCoursePinTextureAssetId;
+		pin.positionPx = screenPos;
+		pin.sizePx = Vec2(42.0f, 42.0f);
+		pin.anchor = Vec2(0.5f, 0.5f);
+		pin.color = Vec4(1.0f, 1.0f, 1.0f, alpha);
+		pin.sortKey = 300000;
+		world->QueueDebugScreenSprite(std::move(pin));
+
+		if (isOutOfScreen) {
+			Render::ScreenSpriteInput arrow = {};
+			arrow.texture.source = Render::SPRITE_TEXTURE_SOURCE::ASSET;
+			arrow.texture.textureAssetId = mCourseArrowTextureAssetId;
+			arrow.positionPx = screenPos;
+			arrow.sizePx = Vec2(34.0f, 34.0f);
+			arrow.anchor = Vec2(0.5f, 0.5f);
+			arrow.rotationRad = std::atan2(toCenter.x, -toCenter.y);
+			arrow.color = Vec4(1.0f, 1.0f, 1.0f, 0.95f);
+			arrow.sortKey = 300001;
+			world->QueueDebugScreenSprite(std::move(arrow));
+		}
+	}
+
 	void ParkourMovementComponent::RebuildDuckHalfExtents() {
 		const float duckScale = std::clamp(
 			mConsole ?
@@ -1132,6 +1609,10 @@ namespace Unnamed {
 	bool ParkourMovementComponent::IsDuckDebugDrawEnabled() const {
 		return mConsole &&
 			mConsole->GetConVarValueOr("park_duck_debugdraw", true);
+	}
+
+	bool ParkourMovementComponent::IsCourseDebugDrawEnabled() const {
+		return mCourseDebugDraw;
 	}
 
 	void ParkourMovementComponent::ResetDuckStandDebugFrame() {

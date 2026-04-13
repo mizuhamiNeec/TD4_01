@@ -2,6 +2,9 @@
 
 #include <json.hpp>
 #include <core/containers/RingBuffer.h>
+#include <core/assets/AssetID.h>
+#include <unordered_set>
+#include <vector>
 
 #include "GrappleMotor.h"
 
@@ -70,6 +73,8 @@ namespace Unnamed {
 		~ParkourMovementComponent() override;
 
 		void OnAttached() override;
+		void OnEditorTick(float deltaTime) override;
+		void OnRenderTick(float renderDeltaTime, float interpolationAlpha) override;
 		void SimulateStep(
 			TransformComponent*       transform,
 			const MovementFrameInput& input,
@@ -152,6 +157,13 @@ namespace Unnamed {
 		) override;
 
 	private:
+		struct CourseTriggerSnapshot {
+			int32_t index = 0;
+			Vec3    worldCenter = Vec3::zero;
+			Vec3    worldHalfExtents = Vec3::zero;
+			Vec3    respawnPosition = Vec3::zero;
+		};
+
 		/// @brief 1回のハル占有判定で収集したデバッグ情報です。
 		struct HullOccupancyDebugInfo {
 			bool  checkSweepPath      = false;
@@ -206,8 +218,26 @@ namespace Unnamed {
 
 		void RebuildDuckHalfExtents();
 		void ResetParkourRuntime();
+		void ResetCourseProgress();
+		void EnsureCourseSpawnInitialized(const TransformComponent* transform);
+		void TickCourseProgress(TransformComponent* transform);
+		void DrawCourseDebug(
+			const TransformComponent* transform,
+			const std::vector<CourseTriggerSnapshot>& checkpoints,
+			const std::vector<CourseTriggerSnapshot>& goals,
+			bool allCheckpointsPassed
+		) const;
+		void QueueCoursePinSprites(
+			const TransformComponent* transform,
+			const std::vector<CourseTriggerSnapshot>& checkpoints,
+			const std::vector<CourseTriggerSnapshot>& goals,
+			bool allCheckpointsPassed
+		);
+		[[nodiscard]] int32_t ResolveNextCheckpointIndex() const;
+		void RespawnToLastCheckpoint(TransformComponent* transform);
 		/// @brief Duck/UnDuckデバッグ表示を有効にするかを返します。
 		[[nodiscard]] bool IsDuckDebugDrawEnabled() const;
+		[[nodiscard]] bool IsCourseDebugDrawEnabled() const;
 		/// @brief 1フレーム分のDuck/UnDuckデバッグ状態をリセットします。
 		void ResetDuckStandDebugFrame();
 		/// @brief Duck/UnDuckの判定状態をデバッグ描画します。
@@ -233,6 +263,22 @@ namespace Unnamed {
 		bool                      mAutoSprintActive    = false;
 		ParkourRuntime            mRuntime             = {};
 		mutable DuckStandDebugFrame mDuckStandDebug    = {};
+		Vec3                      mCourseSpawnPosition = Vec3::zero;
+		Vec3                      mLastCheckpointRespawnPosition = Vec3::zero;
+		std::vector<int32_t>      mOrderedCheckpointIndices = {};
+		std::unordered_set<int32_t> mTouchedCheckpointIndices = {};
+		std::vector<CourseTriggerSnapshot> mLastCourseCheckpoints = {};
+		std::vector<CourseTriggerSnapshot> mLastCourseGoals = {};
+		bool                      mLastAllCheckpointsPassed = false;
+		int32_t                   mNextCheckpointIndex = 0;
+		int32_t                   mLastCheckpointIndex = -1;
+		bool                      mCourseCleared = false;
+		bool                      mCourseSpawnInitialized = false;
+		bool                      mReloadRespawnEnabled = true;
+		bool                      mCourseDebugDraw = true;
+		bool                      mCoursePinSpriteEnabled = true;
+		AssetID                   mCoursePinTextureAssetId = kInvalidAssetID;
+		AssetID                   mCourseArrowTextureAssetId = kInvalidAssetID;
 		Vec3                      mStandingHalfExtents = Vec3::zero;
 		Vec3                      mDuckHalfExtents     = Vec3::zero;
 		CharacterActionFrameInput mActionFrameInput    = {};

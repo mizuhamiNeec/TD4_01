@@ -114,6 +114,8 @@ namespace Unnamed::Render {
 		float   rotationRad    = 0.0f;
 		Vec4    color          = Vec4::one;
 		int32_t sortKey        = 0;
+		Vec2    uvMin          = Vec2(0.0f, 0.0f);
+		Vec2    uvMax          = Vec2(1.0f, 1.0f);
 		bool    uvFlipY        = false;
 	};
 

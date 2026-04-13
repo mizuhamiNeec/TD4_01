@@ -648,11 +648,15 @@ namespace Unnamed::EditorContentBrowser {
 			);
 		}
 
+		constexpr float windowWidth  = 1024.0f;
+		constexpr float windowHeight = 768.0f;
+		ImGui::SetNextWindowSize(ImVec2(windowWidth, windowHeight));
+
 		if (
 			ImGui::BeginPopupModal(
 				popupId.c_str(),
 				nullptr,
-				ImGuiWindowFlags_AlwaysAutoResize
+				ImGuiWindowFlags_NoSavedSettings
 			)
 		) {
 			(void)DrawTopBar(pickerState);

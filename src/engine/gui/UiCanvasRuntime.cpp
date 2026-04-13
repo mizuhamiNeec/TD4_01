@@ -28,14 +28,31 @@ namespace Unnamed {
 			const Gui::UiDrawCommandRect& rect, const int32_t sortKey
 		) {
 			Render::ScreenSpriteInput sprite = {};
-			sprite.texture.source = Render::SPRITE_TEXTURE_SOURCE::ASSET;
-			sprite.texture.textureAssetId = kInvalidAssetID;
-			sprite.positionPx = Vec2(rect.rect.x, rect.rect.y);
-			sprite.sizePx = Vec2(rect.rect.width, rect.rect.height);
-			sprite.anchor = Vec2(0.0f, 0.0f);
-			sprite.rotationRad = 0.0f;
-			sprite.color = ToVec4(rect.fillColor);
-			sprite.sortKey = sortKey;
+			sprite.texture.source            = Render::SPRITE_TEXTURE_SOURCE::ASSET;
+			sprite.texture.textureAssetId    = kInvalidAssetID;
+			sprite.positionPx                = Vec2(rect.rect.x, rect.rect.y);
+			sprite.sizePx                    = Vec2(rect.rect.width, rect.rect.height);
+			sprite.anchor                    = Vec2(0.0f, 0.0f);
+			sprite.rotationRad               = 0.0f;
+			sprite.color                     = ToVec4(rect.fillColor);
+			sprite.sortKey                   = sortKey;
+			return sprite;
+		}
+
+		Render::ScreenSpriteInput BuildScreenSprite(
+			const Gui::UiDrawCommandImage& image, const int32_t sortKey
+		) {
+			Render::ScreenSpriteInput sprite = {};
+			sprite.texture.source            = Render::SPRITE_TEXTURE_SOURCE::ASSET;
+			sprite.texture.textureAssetId    = kInvalidAssetID;
+			sprite.positionPx                = Vec2(image.rect.x, image.rect.y);
+			sprite.sizePx                    = Vec2(image.rect.width, image.rect.height);
+			sprite.anchor                    = Vec2(0.0f, 0.0f);
+			sprite.rotationRad               = 0.0f;
+			sprite.color                     = ToVec4(image.color);
+			sprite.sortKey                   = sortKey;
+			sprite.uvMin                     = image.uvMin;
+			sprite.uvMax                     = image.uvMax;
 			return sprite;
 		}
 

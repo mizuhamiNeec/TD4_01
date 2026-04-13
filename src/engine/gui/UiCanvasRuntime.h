@@ -26,6 +26,10 @@ namespace Unnamed {
 			const Gui::UiDrawCommandRect& rect, int32_t sortKey
 		);
 
+		[[nodiscard]] Render::ScreenSpriteInput BuildScreenSprite(
+			const Gui::UiDrawCommandImage& image, int32_t sortKey
+		);
+
 		/// @brief マウス位置からワールド空間レイを構築します。
 		/// @param camera 使用するカメラ入力
 		/// @param mousePos マウス位置

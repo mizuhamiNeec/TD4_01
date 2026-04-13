@@ -14,7 +14,11 @@ VsOut VsMain(VsIn input) {
 	VsOut        output;
 	const float4 worldPos = mul(float4(input.pos, 1.0f), gWorld);
 	output.pos            = mul(worldPos, gViewProj);
-	const float flippedV  = 1.0f - input.uv.y;
-	output.uv             = float2(input.uv.x, flippedV);
+	// TODO: uv専用に変える
+	const float2 uvMin    = gSkinningInfo.xy;
+	const float2 uvMax    = gSkinningInfo.zw;
+	const float2 uvRange  = lerp(uvMin, uvMax, input.uv);
+	const float  flippedV = 1.0f - uvRange.y;
+	output.uv             = float2(uvRange.x, flippedV);
 	return output;
 }

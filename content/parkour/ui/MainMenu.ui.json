@@ -373,6 +373,66 @@
                 "enabled": true,
                 "name": "MainPanel",
                 "visible": true
+            },
+            {
+                "children": [],
+                "components": [
+                    {
+                        "data": {
+                            "anchors": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "constraints": {
+                                "maxHeight": 3.4028234663852886e+38,
+                                "maxWidth": 3.4028234663852886e+38,
+                                "minHeight": 0.0,
+                                "minWidth": 0.0
+                            },
+                            "margins": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "pivot": [
+                                0.5,
+                                0.0
+                            ],
+                            "rect": [
+                                960.0,
+                                0.0,
+                                64.0,
+                                64.0
+                            ],
+                            "sizePolicy": [
+                                "Fixed",
+                                "Fixed"
+                            ]
+                        },
+                        "type": "Transform"
+                    },
+                    {
+                        "data": {
+                            "color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "digitSpacing": 0.0,
+                            "minDigits": 1,
+                            "stripTexturePath": "content/parkour/textures/digits.png",
+                            "value": 0
+                        },
+                        "type": "DigitStrip"
+                    }
+                ],
+                "enabled": true,
+                "name": "Widget",
+                "visible": true
             }
         ],
         "components": [
@@ -412,18 +472,6 @@
                     ]
                 },
                 "type": "Transform"
-            },
-            {
-                "data": {
-                    "padding": [
-                        0.0,
-                        0.0,
-                        0.0,
-                        0.0
-                    ],
-                    "spacing": 0.0
-                },
-                "type": "VerticalLayout"
             }
         ],
         "enabled": true,

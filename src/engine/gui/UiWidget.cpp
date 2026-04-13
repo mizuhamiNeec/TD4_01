@@ -10,8 +10,10 @@
 
 #include "UiSerializationHelpers.h"
 #include "components/UiButtonBehaviorComponent.h"
+#include "components/UiDigitStripComponent.h"
 #include "components/UiLayoutComponents.h"
 #include "components/UiPanelStyleComponent.h"
+#include "components/UiTextureComponent.h"
 #include "components/UiTransformComponent.h"
 
 namespace Unnamed::Gui {
@@ -154,6 +156,12 @@ namespace Unnamed::Gui {
 		if (typeName == "ButtonBehavior") {
 			return std::make_unique<UiButtonBehaviorComponent>();
 		}
+		if (typeName == "Texture") {
+			return std::make_unique<UiTextureComponent>();
+		}
+		if (typeName == "DigitStrip") {
+			return std::make_unique<UiDigitStripComponent>();
+		}
 		return nullptr;
 	}
 
@@ -164,6 +172,8 @@ namespace Unnamed::Gui {
 			"HorizontalLayout",
 			"PanelStyle",
 			"ButtonBehavior",
+			"Texture",
+			"DigitStrip",
 		};
 	}
 

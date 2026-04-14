@@ -31,7 +31,9 @@ namespace Unnamed {
 		return kIconArticle;
 	}
 
+#ifdef _DEBUG
 	void ConsoleScriptComponent::DrawInspectorImGui() {}
+#endif
 
 	void ConsoleScriptComponent::Deserialize(const JsonReader& reader) {
 		const JsonReader attached = reader["attached"];

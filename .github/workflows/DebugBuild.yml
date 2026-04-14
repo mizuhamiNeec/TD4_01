@@ -34,7 +34,7 @@ jobs:
         run: ls ./
 
       - name: Compile my project
-        run: premake5 vs2022
+        run: premake5 vs2026
         
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v2

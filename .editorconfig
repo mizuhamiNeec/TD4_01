@@ -2,3 +2,28 @@
 
 [*.{c++,cc,cpp,cppm,cxx,h,h++,hh,hlsl,hlsli,hlslinc,hpp,hxx,inl,ipp,ixx,tlh,tli}]
 charset = utf-8
+end_of_line = crlf
+
+[*.{cfg}]
+charset = utf-8
+end_of_line = crlf
+indent_style = tab
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+// 複数行位置揃え
+align_after_open_bracket = true
+align_after_open_bracket_pattern = ^.*\(\s*$
+align_after_open_bracket_exclude_pattern = ^.*\(\s*\).*$
+align_after_open_bracket_exclude_pattern = ^.*\{\s*$
+align_after_open_bracket_exclude_pattern = ^.*\{\s*\}.*$
+align_after_open_bracket_exclude_pattern = ^.*\[\s*$
+align_after_open_bracket_exclude_pattern = ^.*\[\s*\].*$
+align_after_open_bracket_exclude_pattern = ^.*<\s*$
+align_after_open_bracket_exclude_pattern = ^.*<\s*>.*$
+align_after_open_bracket_exclude_pattern = ^.*=\s*$
+align_after_open_bracket_exclude_pattern = ^.*=\s*.*$
+align_after_open_bracket_exclude_pattern = ^.*:\s*$
+align_after_open_bracket_exclude_pattern = ^.*:\s*.*$
+align_after_open_bracket_exclude_pattern = ^.*\s\s*$
+align_after_open_bracket_exclude_pattern = ^.*\s\s+.*$  

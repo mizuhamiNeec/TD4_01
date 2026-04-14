@@ -11,6 +11,7 @@
 # --- VS Project ---
 *.vcxproj
 *.sln
+*.slnx
 *.vcxproj.filters
 
 # --- Build results / intermediates ---
@@ -54,8 +55,9 @@ _ReSharper*/
 # ImGui config (user local)
 imgui.ini
 
-# DirectXTex Compiled Shaders
+# Compiled Shaders
 **/DirectXTex/Shaders/Compiled/
+**/Shaders/Compiled/
 
 # --- Repo-specific ---
 /ClassDiagram.cd

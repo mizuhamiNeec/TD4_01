@@ -1,4 +1,4 @@
-﻿#include <pch.h>
+#include <pch.h>
 
 #include <engine/unnamed/subsystem/console/interface/IConsole.h>
 

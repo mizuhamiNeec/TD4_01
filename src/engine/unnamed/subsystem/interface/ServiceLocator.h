@@ -37,10 +37,12 @@ public:
 	template <typename T>
 	static T* Get() {
 		auto& mapInstance = ServiceLocatorMap::Get();
-		if (!mapInstance.IsValid()) { return nullptr; }
+		if (!mapInstance.IsValid()) {
+			return nullptr;
+		}
 
 		const auto it = mapInstance.GetMap().find(typeid(T));
-		return (it != mapInstance.GetMap().end()) ?
+		return it != mapInstance.GetMap().end() ?
 			       static_cast<T*>(it->second) :
 			       nullptr;
 	}

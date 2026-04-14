@@ -1,4 +1,4 @@
-﻿#include "ServiceLocator.h"
+#include "ServiceLocator.h"
 
 /// @brief サービスロケーターマップのシングルトンインスタンスを取得します
 /// @return サービスロケーターマップの参照
@@ -15,7 +15,11 @@ std::unordered_map<std::type_index, void*>& ServiceLocatorMap::GetMap() {
 
 /// @brief サービスロケーターマップが有効かどうかを取得します
 /// @return 有効ならtrue
-bool ServiceLocatorMap::IsValid() const { return !mDestroyed; }
+bool ServiceLocatorMap::IsValid() const {
+	return !mDestroyed;
+}
 
 /// @brief デストラクタ
-ServiceLocatorMap::~ServiceLocatorMap() { mDestroyed = true; }
+ServiceLocatorMap::~ServiceLocatorMap() {
+	mDestroyed = true;
+}

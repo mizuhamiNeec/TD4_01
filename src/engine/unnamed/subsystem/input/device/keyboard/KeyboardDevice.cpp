@@ -1,4 +1,4 @@
-﻿#include "KeyboardDevice.h"
+#include "KeyboardDevice.h"
 
 #include <ranges>
 
@@ -20,7 +20,9 @@ namespace Unnamed {
 	/// @brief 生の入力を処理する
 	/// @param raw 生の入力データ
 	void KeyboardDevice::HandleRawInput(const RAWINPUT& raw) {
-		if (raw.header.dwType != RIM_TYPEKEYBOARD) { return; }
+		if (raw.header.dwType != RIM_TYPEKEYBOARD) {
+			return;
+		}
 
 		const RAWKEYBOARD& keyboard = raw.data.keyboard;
 		uint32_t           vk       = keyboard.VKey;
@@ -57,7 +59,9 @@ namespace Unnamed {
 	/// @param key 入力キー
 	/// @return キーが押されているかどうか
 	bool KeyboardDevice::GetKeyState(const InputKey& key) const {
-		if (key.device != InputDeviceType::KEYBOARD) { return false; }
+		if (key.device != InputDeviceType::KEYBOARD) {
+			return false;
+		}
 		const auto it = mKeyStates.find(key.code);
 		return it != mKeyStates.end() ? it->second : false;
 	}
@@ -66,7 +70,9 @@ namespace Unnamed {
 	/// @param key 入力キー
 	/// @return アナログ値
 	float KeyboardDevice::GetAnalogValue(const InputKey& key) const {
-		if (key.device != InputDeviceType::KEYBOARD) { return 0.0f; }
+		if (key.device != InputDeviceType::KEYBOARD) {
+			return 0.0f;
+		}
 		const auto it = mKeyStates.find(key.code);
 		return it != mKeyStates.end() && it->second ? 1.0f : 0.0f;
 	}
@@ -88,5 +94,7 @@ namespace Unnamed {
 	}
 
 	/// @brief キー状態をリセットする
-	void KeyboardDevice::ResetStates() { mKeyStates.clear(); }
+	void KeyboardDevice::ResetStates() {
+		mKeyStates.clear();
+	}
 }

@@ -1,10 +1,10 @@
-﻿#pragma once
+#pragma once
 #include <string>
 
 namespace Unnamed {
-	enum class ENGINE_MODE {
+	enum class RUN_MODE {
 		EDITOR,
-		GAME,
+		STANDALONE,
 	};
 
 	enum class WINDOW_MODE : uint8_t {
@@ -13,8 +13,12 @@ namespace Unnamed {
 		FULLSCREEN,
 	};
 
+	enum class BACKEND_TYPE : uint8_t {
+		D3D12,
+	};
+
 	struct EngineConfig {
-		ENGINE_MODE mode;
+		RUN_MODE mode;
 
 		struct Window {
 			std::string title     = "Unnamed Engine";
@@ -22,8 +26,6 @@ namespace Unnamed {
 			int32_t     height    = 720;
 			WINDOW_MODE mode      = WINDOW_MODE::WINDOWED;
 			bool        resizable = true;
-
-			bool dpiAware = true; // DPI認識を有効にするか?
 		} window;
 	};
 }

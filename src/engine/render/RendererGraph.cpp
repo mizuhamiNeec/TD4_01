@@ -1,0 +1,1815 @@
+#include "Renderer.h"
+
+#include <algorithm>
+#include <cctype>
+#include <cmath>
+#include <unordered_set>
+#include <utility>
+
+#include "RenderDevice.h"
+
+#include "core/math/Math.h"
+
+#include "engine/rhi/d3d12/D3D12Device.h"
+#include "engine/rhi/d3d12/D3D12Util.h"
+
+#include "rendergraph/RenderGraphBuilder.h"
+#include "rendergraph/RenderPassContext.h"
+#include "shaders/RootSignatureSlots.h"
+
+namespace Unnamed::Render {
+	namespace {
+		Rhi::FrameConstants BuildSceneFrameConstants(
+			const RenderCameraInput& camera,
+			const uint32_t           width,
+			const uint32_t           height,
+			const float              time
+		) {
+			Rhi::FrameConstants frame  = {};
+			const float         aspect = height > 0 ?
+				                     static_cast<float>(width) /
+				                     static_cast<float>(height) :
+				                     16.0f / 9.0f;
+			const Mat4 fallbackView = Mat4::identity;
+			const Mat4 fallbackProj = Mat4::PerspectiveFovD3D(
+				90.0f * Math::deg2Rad,
+				aspect,
+				0.001f,
+				10000.0f,
+				ProjectionDepthMode::ReverseZ
+			);
+			frame.view = camera.valid ? camera.view : fallbackView;
+			frame.proj = camera.valid ? camera.proj : fallbackProj;
+			frame.viewProj = frame.view * frame.proj;
+			frame.cameraPos = camera.valid ? camera.cameraPos : Vec3::zero;
+			frame.time = time;
+			return frame;
+		}
+
+		Mat4 BuildOrthographic(
+			const uint32_t width, const uint32_t height
+		) {
+			return Mat4::MakeOrthographicMat(
+				0.0f,
+				0.0f,
+				static_cast<float>(width),
+				static_cast<float>(height),
+				0.0f,
+				1.0f
+			);
+		}
+
+		struct PostFxParamsConstants {
+			Vec4 scalar0 = Vec4::zero;
+			Vec4 scalar1 = Vec4::zero;
+			Vec4 color0  = Vec4::one;
+			Vec4 color1  = Vec4::zero;
+		};
+
+		std::string CompactLowerKey(const std::string_view key) {
+			std::string result;
+			result.reserve(key.size());
+			for (const unsigned char ch : key) {
+				if (ch == '_' || ch == '-' || ch == '.' || ch == ' ') {
+					continue;
+				}
+				result.push_back(static_cast<char>(std::tolower(ch)));
+			}
+			return result;
+		}
+
+		bool EqualsIgnoreCase(
+			const std::string_view lhs, const std::string_view rhs
+		) {
+			if (lhs.size() != rhs.size()) {
+				return false;
+			}
+			for (size_t i = 0; i < lhs.size(); ++i) {
+				if (
+					std::tolower(static_cast<unsigned char>(lhs[i])) !=
+					std::tolower(static_cast<unsigned char>(rhs[i]))
+				) {
+					return false;
+				}
+			}
+			return true;
+		}
+
+		const PostFxPassOverride* FindPostFxPassOverride(
+			const std::string_view                 passName,
+			const std::vector<PostFxPassOverride>& overrides
+		) {
+			for (const auto& passOverride : overrides) {
+				if (EqualsIgnoreCase(passOverride.passName, passName)) {
+					return &passOverride;
+				}
+			}
+			return nullptr;
+		}
+
+		float* ResolveScalarComponent(
+			PostFxParamsConstants& params, const int vecIndex,
+			const char             component
+		) {
+			Vec4* vec = nullptr;
+			switch (vecIndex) {
+				case 0: vec = &params.scalar0;
+					break;
+				case 1: vec = &params.scalar1;
+					break;
+				default: return nullptr;
+			}
+			switch (component) {
+				case 'x': return &vec->x;
+				case 'y': return &vec->y;
+				case 'z': return &vec->z;
+				case 'w': return &vec->w;
+				default: return nullptr;
+			}
+		}
+
+		void ApplyScalarParam(
+			const std::string_view name, const float value,
+			PostFxParamsConstants& outParams
+		) {
+			// Common naming convention:
+			// Intensity/Threshold/Radius/Amount -> scalar0.xyzw
+			// Exposure/Saturation/Contrast/Gamma -> scalar1.xyzw
+			// Scalar0X .. Scalar1W (or S0X .. S1W) -> explicit component mapping.
+			const std::string key = CompactLowerKey(name);
+			if (key.empty()) {
+				return;
+			}
+			if (key == "intensity") {
+				outParams.scalar0.x = value;
+				return;
+			}
+			if (key == "threshold") {
+				outParams.scalar0.y = value;
+				return;
+			}
+			if (key == "radius") {
+				outParams.scalar0.z = value;
+				return;
+			}
+			if (key == "amount") {
+				outParams.scalar0.w = value;
+				return;
+			}
+			if (key == "knee") {
+				outParams.scalar0.w = value;
+				return;
+			}
+			if (key == "exposure") {
+				outParams.scalar1.x = value;
+				return;
+			}
+			if (key == "saturation") {
+				outParams.scalar1.y = value;
+				return;
+			}
+			if (key == "contrast") {
+				outParams.scalar1.z = value;
+				return;
+			}
+			if (key == "gamma") {
+				outParams.scalar1.w = value;
+				return;
+			}
+
+			if (key.rfind("scalar", 0) == 0 && key.size() >= 8) {
+				const int  vecIndex  = key[6] - '0';
+				const char component = key[7];
+				if (float* dst = ResolveScalarComponent(
+					outParams, vecIndex, component
+				); dst) {
+					*dst = value;
+				}
+				return;
+			}
+
+			if (key.size() == 3 && key[0] == 's' && std::isdigit(key[1])) {
+				const int  vecIndex  = key[1] - '0';
+				const char component = key[2];
+				if (float* dst = ResolveScalarComponent(
+					outParams, vecIndex, component
+				); dst) {
+					*dst = value;
+				}
+			}
+		}
+
+		void ApplyColorParam(
+			const std::string_view name, const Vec4& value,
+			PostFxParamsConstants& outParams
+		) {
+			// Common naming convention:
+			// Tint/Color/Color0 -> color0, Color1/SecondaryColor -> color1.
+			const std::string key = CompactLowerKey(name);
+			if (key.empty()) {
+				return;
+			}
+			if (key == "tint" || key == "color" || key == "color0") {
+				outParams.color0 = value;
+				return;
+			}
+			if (key == "color1" || key == "secondarycolor") {
+				outParams.color1 = value;
+			}
+		}
+	}
+
+	void Renderer::BuildGraph(
+		RenderDevice&                       renderDevice,
+		const std::vector<RenderViewInput>& frameViews
+	) {
+		mGraphBuilt = true;
+		mGraph.SetRenderDevice(renderDevice);
+
+		for (const RenderViewInput& view : frameViews) {
+			auto& state = mViewStates[view.viewKey];
+			if (state.type == RENDER_VIEW_TYPE::SCENE) {
+				if (state.colorTextureId == 0) {
+					state.colorTextureId = mGraph.CreateTexture(
+						{
+							.width          = state.width,
+							.height         = state.height,
+							.resourceFormat = kSceneHdrColorFormat,
+							.allowUav       = false,
+							.allowRtv       = true,
+							.debugName      = "ViewColor_" + view.viewKey,
+							.extentMode     = RG_EXTENT_MODE::FIXED,
+						}
+					);
+				}
+				if (state.postFxTextureAId == 0) {
+					state.postFxTextureAId = mGraph.CreateTexture(
+						{
+							.width          = state.width,
+							.height         = state.height,
+							.resourceFormat = kSceneHdrColorFormat,
+							.allowRtv       = true,
+							.debugName      = "ViewPostFxA_" + view.viewKey,
+							.extentMode     = RG_EXTENT_MODE::FIXED,
+						}
+					);
+				}
+				if (state.postFxTextureBId == 0) {
+					state.postFxTextureBId = mGraph.CreateTexture(
+						{
+							.width          = state.width,
+							.height         = state.height,
+							.resourceFormat = kSceneHdrColorFormat,
+							.allowRtv       = true,
+							.debugName      = "ViewPostFxB_" + view.viewKey,
+							.extentMode     = RG_EXTENT_MODE::FIXED,
+						}
+					);
+				}
+				if (state.outputTextureId == 0) {
+					state.outputTextureId = mGraph.CreateTexture(
+						{
+							.width          = state.width,
+							.height         = state.height,
+							.resourceFormat = kSceneLdrColorFormat,
+							.allowRtv       = true,
+							.debugName      = "ViewOutputLdr_" + view.viewKey,
+							.extentMode     = RG_EXTENT_MODE::FIXED,
+						}
+					);
+				}
+
+				// TODO: vectorのリサイズって重いんかな?重そうだな...
+				state.bloomMipTextureIds.resize(
+					std::max(
+						mConsole->GetConVarValueOr("post_bloommipcount", 5),
+						1
+					)
+				);
+
+				for (uint32_t i = 0; i < state.bloomMipTextureIds.size(); ++i) {
+					if (state.bloomMipTextureIds[i] != 0) {
+						continue;
+					}
+					const uint32_t bloomWidth = std::max(
+						1u, state.width >> static_cast<uint32_t>(i + 1)
+					);
+					const uint32_t bloomHeight = std::max(
+						1u, state.height >> static_cast<uint32_t>(i + 1)
+					);
+					state.bloomMipTextureIds[i] = mGraph.CreateTexture(
+						{
+							.width          = bloomWidth,
+							.height         = bloomHeight,
+							.resourceFormat = kSceneHdrColorFormat,
+							.allowRtv       = true,
+							.debugName      =
+							"ViewBloomMip" + std::to_string(i) + "_" +
+							view.viewKey,
+							.extentMode = RG_EXTENT_MODE::FIXED,
+						}
+					);
+				}
+				if (state.depthTextureId == 0) {
+					state.depthTextureId = mGraph.CreateTexture(
+						{
+							.width = state.width,
+							.height = state.height,
+							.resourceFormat = DXGI_FORMAT_R32G8X24_TYPELESS,
+							.allowDsv = true,
+							.srvFormat = DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS,
+							.dsvFormat = DXGI_FORMAT_D32_FLOAT_S8X24_UINT,
+							.debugName = "ViewDepth_" + view.viewKey,
+							.optimizedClearDepth = 0.0f,
+							.optimizedClearStencil = 0,
+							.extentMode = RG_EXTENT_MODE::FIXED,
+						}
+					);
+				}
+			} else if (state.outputTextureId == 0) {
+				state.outputTextureId = mGraph.CreateTexture(
+					{
+						.width          = state.width,
+						.height         = state.height,
+						.resourceFormat = kSceneLdrColorFormat,
+						.allowRtv       = true,
+						.debugName      = "SpriteOnly_" + view.viewKey,
+						.extentMode     = RG_EXTENT_MODE::FIXED,
+					}
+				);
+			}
+		}
+
+		for (size_t viewIndex = 0; viewIndex < frameViews.size(); ++viewIndex) {
+			const RenderViewInput& view = frameViews[viewIndex];
+			const auto             state = mViewStates[view.viewKey];
+			const std::string      prefix = "View[" + view.viewKey + "] ";
+			const auto             collectTextureIds = [this, &renderDevice](
+				const auto& sprites
+			) {
+				std::vector<uint32_t> ids;
+				ids.reserve(sprites.size());
+				std::unordered_set<uint32_t> seen;
+				seen.reserve(sprites.size());
+				for (const auto& sprite : sprites) {
+					const uint32_t textureId =
+						ResolveSpriteTexture(renderDevice, sprite.texture);
+					if (textureId == 0) {
+						continue;
+					}
+					if (seen.insert(textureId).second) {
+						ids.emplace_back(textureId);
+					}
+				}
+				return ids;
+			};
+			const std::vector<uint32_t> worldBillboardTextureIds =
+				collectTextureIds(view.worldBillboards);
+			const std::vector<uint32_t> worldSpriteTextureIds =
+				collectTextureIds(
+					view.worldSprites
+				);
+			const std::vector<uint32_t> screenSpriteTextureIds =
+				collectTextureIds(
+					view.screenSprites
+				);
+			const uint32_t skyboxTextureId =
+				view.type == RENDER_VIEW_TYPE::SCENE && view.skybox.enabled ?
+					EnsureSkyboxTextureLoaded(
+						renderDevice, view.skybox.textureAssetId
+					) :
+					0;
+
+			uint32_t colorId  = state.colorTextureId;
+			uint32_t depthId  = state.depthTextureId;
+			uint32_t outputId = state.outputTextureId;
+			if (view.type == RENDER_VIEW_TYPE::SCENE) {
+				mGraph.AddPass(
+					prefix + "Clear",
+					[colorId, depthId](RenderGraphBuilder& b) {
+						b.WriteRt(colorId);
+						b.WriteDepth(depthId);
+						if (true) {
+							b.ClearColor(colorId, 0.1f, 0.1f, 0.2f, 1.0f);
+						}
+						b.ClearDepth(depthId, 0.0f, 0);
+					},
+					[](RenderPassContext&) {}
+				);
+
+				mGraph.AddPass(
+					prefix + "Skybox",
+					[colorId, depthId, skyboxTextureId](RenderGraphBuilder& b) {
+						b.WriteRt(colorId);
+						b.WriteDepth(depthId);
+						if (skyboxTextureId != 0) {
+							b.ReadSrvPs(skyboxTextureId);
+						}
+					},
+					[this, viewIndex, state, skyboxTextureId, &renderDevice](
+					RenderPassContext& pass
+				) {
+						const RenderViewInput& view = mFrameViews[viewIndex];
+						if (!view.skybox.enabled || skyboxTextureId == 0) {
+							return;
+						}
+						if (
+							!mSkyboxPass.geom.resolved ||
+							!mSkyboxPass.geom.resolved->pso ||
+							!mSkyboxPass.geom.vb ||
+							!mSkyboxPass.geom.ib
+						) {
+							return;
+						}
+
+						auto& allocator = static_cast<Rhi::D3D12Device&>(
+							renderDevice.GetRhiDevice()
+						).GetFrameUploadAllocator();
+						Rhi::FrameConstants frame = BuildSceneFrameConstants(
+							view.camera, state.width, state.height, 0.0f
+						);
+						Rhi::ObjectConstants object = {};
+						object.world                = Mat4::identity;
+						object.world.m[3][0]        = frame.cameraPos.x;
+						object.world.m[3][1]        = frame.cameraPos.y;
+						object.world.m[3][2]        = frame.cameraPos.z;
+						object.worldInverseTranspose =
+							object.world.Inverse().Transpose();
+						object.skinningInfo = Vec4::zero;
+
+						Rhi::MaterialConstants material = {};
+						material.baseColor = Vec4(
+							view.skybox.intensity,
+							view.skybox.intensity,
+							view.skybox.intensity,
+							1.0f
+						);
+						material.opacity    = 1.0f;
+						material.domainMode = 0.0f;
+
+						const D3D12_GPU_VIRTUAL_ADDRESS frameCb =
+							allocator.AllocateConstantBuffer(
+								&frame, sizeof(frame)
+							);
+						const D3D12_GPU_VIRTUAL_ADDRESS objectCb =
+							allocator.AllocateConstantBuffer(
+								&object, sizeof(object)
+							);
+						const D3D12_GPU_VIRTUAL_ADDRESS materialCb =
+							allocator.AllocateConstantBuffer(
+								&material, sizeof(material)
+							);
+
+						pass.SetViewportAndScissor(
+							0.0f,
+							0.0f,
+							static_cast<float>(state.width),
+							static_cast<float>(state.height)
+						);
+						pass.SetSrvUavHeap();
+						pass.SetRenderTargetAndDepth(
+							std::span<const uint32_t>(&state.colorTextureId, 1),
+							state.depthTextureId
+						);
+						pass.SetGraphicsPipeline(
+							mSkyboxPass.geom.resolved->rootSignature,
+							mSkyboxPass.geom.resolved->pso
+						);
+						pass.SetVertexBuffer(mSkyboxPass.geom.vbv);
+						pass.SetIndexBuffer(mSkyboxPass.geom.ibv);
+						pass.BindGraphicsCbv(
+							ToRootIndex(GEOM_ROOT_SLOT::FRAME), frameCb
+						);
+						pass.BindGraphicsCbv(
+							ToRootIndex(GEOM_ROOT_SLOT::OBJECT), objectCb
+						);
+						pass.BindGraphicsCbv(
+							ToRootIndex(GEOM_ROOT_SLOT::MATERIAL), materialCb
+						);
+						pass.BindGraphicsCbv(
+							ToRootIndex(GEOM_ROOT_SLOT::SKINNING), objectCb
+						);
+						pass.BindGraphicsSrvTable(
+							ToRootIndex(GEOM_ROOT_SLOT::BASE_COLOR_TEXTURE),
+							skyboxTextureId
+						);
+						pass.DrawIndexedTest(mSkyboxPass.geom.indexCount);
+					}
+				);
+
+				mGraph.AddPass(
+					prefix + "Geometry",
+					[colorId, depthId](RenderGraphBuilder& b) {
+						b.WriteRt(colorId);
+						b.WriteDepth(depthId);
+					},
+					[this, viewIndex, state, &renderDevice](
+					RenderPassContext& pass
+				) {
+						const RenderViewInput& view = mFrameViews[viewIndex];
+						if (view.visibleObjects.empty()) {
+							return;
+						}
+
+						auto& allocator = static_cast<Rhi::D3D12Device&>(
+							renderDevice.GetRhiDevice()
+						).GetFrameUploadAllocator();
+						Rhi::FrameConstants frame = BuildSceneFrameConstants(
+							view.camera, state.width, state.height, 0.0f
+						);
+						const D3D12_GPU_VIRTUAL_ADDRESS frameCb =
+							allocator.AllocateConstantBuffer(
+								&frame, sizeof(frame)
+							);
+
+						Rhi::SkinningPaletteConstants identityPalette = {};
+						for (auto& bone : identityPalette.bones) {
+							bone = Mat4::identity;
+						}
+						const D3D12_GPU_VIRTUAL_ADDRESS identitySkinCb =
+							allocator.AllocateConstantBuffer(
+								&identityPalette, sizeof(identityPalette)
+							);
+
+						pass.SetViewportAndScissor(
+							0.0f,
+							0.0f,
+							static_cast<float>(state.width),
+							static_cast<float>(state.height)
+						);
+						pass.SetSrvUavHeap();
+						pass.SetRenderTargetAndDepth(
+							std::span<const uint32_t>(&state.colorTextureId, 1),
+							state.depthTextureId
+						);
+						if (!mGeometryPass.resolved || !mGeometryPass.resolved->pso) {
+							return;
+						}
+						pass.SetGraphicsPipeline(
+							mGeometryPass.resolved->rootSignature,
+							mGeometryPass.resolved->pso
+						);
+						pass.BindGraphicsCbv(
+							ToRootIndex(GEOM_ROOT_SLOT::FRAME), frameCb
+						);
+
+						const MaterialBinding* fallbackMaterial = nullptr;
+						if (const auto it = mMaterialBindings.find(
+							mDefaultMaterialInstance
+						); it != mMaterialBindings.end()) {
+							fallbackMaterial = &it->second;
+						}
+
+						for (const auto& objectInput : view.visibleObjects) {
+							const auto meshIt = mSceneMeshesByAsset.find(
+								objectInput.meshAssetId
+							);
+							if (meshIt == mSceneMeshesByAsset.end()) {
+								continue;
+							}
+							const MeshBuffer& mesh = meshIt->second;
+
+							Rhi::ObjectConstants object  = {};
+							object.world                 = objectInput.world;
+							object.worldInverseTranspose =
+								object.world.Inverse().Transpose();
+							object.skinningInfo = Vec4(
+								0.0f, objectInput.isSkinned ? 1.0f : 0.0f, 0.0f,
+								0.0f
+							);
+
+							Rhi::MaterialConstants material        = {};
+							uint32_t               textureId       = 0;
+							const MaterialBinding* materialBinding =
+								fallbackMaterial;
+							if (const auto matIt = mMaterialBindings.find(
+								objectInput.materialInstanceId
+							); matIt != mMaterialBindings.end()) {
+								materialBinding = &matIt->second;
+							}
+							if (materialBinding) {
+								material  = materialBinding->constants;
+								textureId = materialBinding->albedoTextureId;
+							}
+							if (textureId == 0) {
+								EnsureSpriteFallbackTexture(renderDevice);
+								textureId = mSpriteFallbackTextureId;
+							}
+
+							Rhi::SkinningPaletteConstants skinPalette =
+								identityPalette;
+							if (
+								objectInput.isSkinned &&
+								objectInput.skeletonPaletteId < view.
+								skinningPalettes.size()
+							) {
+								const auto& sourcePalette = view.
+									skinningPalettes[
+										objectInput.skeletonPaletteId];
+								const uint32_t maxBones = std::min<uint32_t>(
+									static_cast<uint32_t>(sourcePalette.
+										boneMatrices.size()),
+									Rhi::SkinningPaletteConstants::kMaxBones
+								);
+								for (uint32_t i = 0; i < maxBones; ++i) {
+									skinPalette.bones[i] = sourcePalette.
+										boneMatrices[i];
+								}
+							}
+
+							const D3D12_GPU_VIRTUAL_ADDRESS objectCb =
+								allocator.AllocateConstantBuffer(
+									&object, sizeof(object)
+								);
+							const D3D12_GPU_VIRTUAL_ADDRESS materialCb =
+								allocator.AllocateConstantBuffer(
+									&material, sizeof(material)
+								);
+							const D3D12_GPU_VIRTUAL_ADDRESS skinningCb =
+								objectInput.isSkinned ?
+									allocator.AllocateConstantBuffer(
+										&skinPalette, sizeof(skinPalette)
+									) :
+									identitySkinCb;
+
+							pass.SetVertexBuffer(mesh.vbv);
+							pass.SetIndexBuffer(mesh.ibv);
+							pass.BindGraphicsCbv(
+								ToRootIndex(GEOM_ROOT_SLOT::OBJECT), objectCb
+							);
+							pass.BindGraphicsCbv(
+								ToRootIndex(GEOM_ROOT_SLOT::MATERIAL), materialCb
+							);
+							pass.BindGraphicsCbv(
+								ToRootIndex(GEOM_ROOT_SLOT::SKINNING), skinningCb
+							);
+							pass.BindGraphicsSrvTable(
+								ToRootIndex(GEOM_ROOT_SLOT::BASE_COLOR_TEXTURE),
+								textureId
+							);
+							pass.DrawIndexedTest(mesh.indexCount);
+						}
+					}
+				);
+
+				mGraph.AddPass(
+					prefix + "WorldBillboardDepth",
+					[colorId, depthId, worldBillboardTextureIds](
+					RenderGraphBuilder& b
+				) {
+						b.WriteRt(colorId);
+						b.WriteDepth(depthId);
+						for (const uint32_t texId : worldBillboardTextureIds) {
+							b.ReadSrvPs(texId);
+						}
+					},
+					[this, viewIndex, state, &renderDevice](
+					RenderPassContext& pass
+				) {
+						const RenderViewInput& view = mFrameViews[viewIndex];
+						if (view.worldBillboards.empty()) {
+							return;
+						}
+
+						if (!std::any_of(
+							view.worldBillboards.begin(),
+							view.worldBillboards.end(),
+							[](const WorldBillboardInput& billboard) {
+								return billboard.depthTest;
+							}
+						)) {
+							return;
+						}
+
+						auto& allocator = static_cast<Rhi::D3D12Device&>(
+							renderDevice.GetRhiDevice()
+						).GetFrameUploadAllocator();
+						Rhi::FrameConstants frame = BuildSceneFrameConstants(
+							view.camera, state.width, state.height, 0.0f
+						);
+						const D3D12_GPU_VIRTUAL_ADDRESS frameCb =
+							allocator.AllocateConstantBuffer(
+								&frame, sizeof(frame)
+							);
+
+						const Mat4 cameraWorld = frame.view.Inverse();
+						const Vec3 cameraRight = cameraWorld.GetRight().
+							Normalized();
+						const Vec3 cameraUp = cameraWorld.GetUp().Normalized();
+						const Vec3 cameraForward = cameraWorld.GetForward().
+							Normalized();
+
+						pass.SetViewportAndScissor(
+							0.0f,
+							0.0f,
+							static_cast<float>(state.width),
+							static_cast<float>(state.height)
+						);
+						pass.SetSrvUavHeap();
+						pass.SetRenderTargetAndDepth(
+							std::span<const uint32_t>(&state.colorTextureId, 1),
+							state.depthTextureId
+						);
+						if (
+							!mBillboardPass.depthGeom.resolved ||
+							!mBillboardPass.depthGeom.resolved->pso
+						) {
+							return;
+						}
+						pass.SetGraphicsPipeline(
+							mBillboardPass.depthGeom.resolved->rootSignature,
+							mBillboardPass.depthGeom.resolved->pso
+						);
+						pass.BindGraphicsCbv(
+							ToRootIndex(GEOM_ROOT_SLOT::FRAME), frameCb
+						);
+						pass.SetVertexBuffer(mBillboardPass.depthGeom.vbv);
+						pass.SetIndexBuffer(mBillboardPass.depthGeom.ibv);
+
+						for (const auto& billboard : view.worldBillboards) {
+							if (!billboard.depthTest) {
+								continue;
+							}
+							const float cosine = std::cos(
+								billboard.rotationRad
+							);
+							const float sine = std::sin(billboard.rotationRad);
+							const Vec3  rotatedRight =
+								cameraRight * cosine + cameraUp * sine;
+							const Vec3 rotatedUp =
+								cameraRight * -sine + cameraUp * cosine;
+
+							Rhi::ObjectConstants object = {};
+							object.world                = Mat4::identity;
+							object.world.m[0][0]        =
+								rotatedRight.x * billboard.sizeWorld.x * 0.5f;
+							object.world.m[0][1] =
+								rotatedRight.y * billboard.sizeWorld.x * 0.5f;
+							object.world.m[0][2] =
+								rotatedRight.z * billboard.sizeWorld.x * 0.5f;
+							object.world.m[1][0] =
+								rotatedUp.x * billboard.sizeWorld.y * 0.5f;
+							object.world.m[1][1] =
+								rotatedUp.y * billboard.sizeWorld.y * 0.5f;
+							object.world.m[1][2] =
+								rotatedUp.z * billboard.sizeWorld.y * 0.5f;
+							object.world.m[2][0] = cameraForward.x;
+							object.world.m[2][1] = cameraForward.y;
+							object.world.m[2][2] = cameraForward.z;
+							object.world.m[3][0] = billboard.worldPosition.x;
+							object.world.m[3][1] = billboard.worldPosition.y;
+							object.world.m[3][2] = billboard.worldPosition.z;
+							object.worldInverseTranspose =
+								object.world.Inverse().Transpose();
+							const float uvMinY = billboard.uvFlipY ? 1.0f : 0.0f;
+							const float uvMaxY = billboard.uvFlipY ? 0.0f : 1.0f;
+							object.skinningInfo = Vec4(0.0f, uvMinY, 1.0f, uvMaxY);
+
+							Rhi::MaterialConstants material = {};
+							material.baseColor              = billboard.color;
+							material.opacity                = billboard.color.w;
+							material.domainMode             = 0.0f;
+
+							const D3D12_GPU_VIRTUAL_ADDRESS objectCb =
+								allocator.AllocateConstantBuffer(
+									&object, sizeof(object)
+								);
+							const D3D12_GPU_VIRTUAL_ADDRESS materialCb =
+								allocator.AllocateConstantBuffer(
+									&material, sizeof(material)
+								);
+							pass.BindGraphicsCbv(
+								ToRootIndex(GEOM_ROOT_SLOT::OBJECT), objectCb
+							);
+							pass.BindGraphicsCbv(
+								ToRootIndex(GEOM_ROOT_SLOT::MATERIAL), materialCb
+							);
+							pass.BindGraphicsCbv(
+								ToRootIndex(GEOM_ROOT_SLOT::SKINNING), objectCb
+							);
+							pass.BindGraphicsSrvTable(
+								ToRootIndex(GEOM_ROOT_SLOT::BASE_COLOR_TEXTURE),
+								ResolveSpriteTexture(
+									renderDevice, billboard.texture
+								)
+							);
+							pass.DrawIndexedTest(
+								mBillboardPass.depthGeom.indexCount
+							);
+						}
+					}
+				);
+
+				mGraph.AddPass(
+					prefix + "WorldSprite",
+					[colorId, depthId, worldSpriteTextureIds](
+					RenderGraphBuilder& b
+				) {
+						b.WriteRt(colorId);
+						b.WriteDepth(depthId);
+						for (const uint32_t texId : worldSpriteTextureIds) {
+							b.ReadSrvPs(texId);
+						}
+					},
+					[this, viewIndex, state, &renderDevice](
+					RenderPassContext& pass
+				) {
+						const RenderViewInput& view = mFrameViews[viewIndex];
+						if (view.worldSprites.empty()) {
+							return;
+						}
+
+						auto& allocator = static_cast<Rhi::D3D12Device&>(
+							renderDevice.GetRhiDevice()
+						).GetFrameUploadAllocator();
+						Rhi::FrameConstants frame = BuildSceneFrameConstants(
+							view.camera, state.width, state.height, 0.0f
+						);
+						const D3D12_GPU_VIRTUAL_ADDRESS frameCb =
+							allocator.AllocateConstantBuffer(
+								&frame, sizeof(frame)
+							);
+
+						pass.SetViewportAndScissor(
+							0.0f,
+							0.0f,
+							static_cast<float>(state.width),
+							static_cast<float>(state.height)
+						);
+						pass.SetSrvUavHeap();
+						pass.SetRenderTargetAndDepth(
+							std::span<const uint32_t>(&state.colorTextureId, 1),
+							state.depthTextureId
+						);
+						if (
+							!mBillboardPass.depthGeom.resolved ||
+							!mBillboardPass.depthGeom.resolved->pso
+						) {
+							return;
+						}
+						pass.SetGraphicsPipeline(
+							mBillboardPass.depthGeom.resolved->rootSignature,
+							mBillboardPass.depthGeom.resolved->pso
+						);
+						pass.BindGraphicsCbv(
+							ToRootIndex(GEOM_ROOT_SLOT::FRAME), frameCb
+						);
+						pass.SetVertexBuffer(mBillboardPass.depthGeom.vbv);
+						pass.SetIndexBuffer(mBillboardPass.depthGeom.ibv);
+
+						for (const auto& sprite : view.worldSprites) {
+							Vec3 right = sprite.worldRight;
+							Vec3 up    = sprite.worldUp;
+							if (right.SqrLength() < 1e-6f) {
+								right = Vec3::right;
+							}
+							if (up.SqrLength() < 1e-6f) {
+								up = Vec3::up;
+							}
+							right             = right.Normalized();
+							up                = up.Normalized();
+							const Vec3 normal = right.Cross(up).Normalized();
+
+							const float cosine = std::cos(sprite.rotationRad);
+							const float sine = std::sin(sprite.rotationRad);
+							const Vec3  rotatedRight =
+								right * cosine + up * sine;
+							const Vec3 rotatedUp = right * -sine + up * cosine;
+
+							Rhi::ObjectConstants object = {};
+							object.world                = Mat4::identity;
+							object.world.m[0][0]        =
+								rotatedRight.x * sprite.sizeWorld.x * 0.5f;
+							object.world.m[0][1] =
+								rotatedRight.y * sprite.sizeWorld.x * 0.5f;
+							object.world.m[0][2] =
+								rotatedRight.z * sprite.sizeWorld.x * 0.5f;
+							object.world.m[1][0] =
+								rotatedUp.x * sprite.sizeWorld.y * 0.5f;
+							object.world.m[1][1] =
+								rotatedUp.y * sprite.sizeWorld.y * 0.5f;
+							object.world.m[1][2] =
+								rotatedUp.z * sprite.sizeWorld.y * 0.5f;
+							object.world.m[2][0] = normal.x;
+							object.world.m[2][1] = normal.y;
+							object.world.m[2][2] = normal.z;
+							object.world.m[3][0] = sprite.worldPosition.x;
+							object.world.m[3][1] = sprite.worldPosition.y;
+							object.world.m[3][2] = sprite.worldPosition.z;
+							object.worldInverseTranspose =
+								object.world.Inverse().Transpose();
+							const float uvMinY = sprite.uvFlipY ? 1.0f : 0.0f;
+							const float uvMaxY = sprite.uvFlipY ? 0.0f : 1.0f;
+							object.skinningInfo = Vec4(0.0f, uvMinY, 1.0f, uvMaxY);
+
+							Rhi::MaterialConstants material = {};
+							material.baseColor              = sprite.color;
+							material.opacity                = sprite.color.w;
+							material.domainMode             = 0.0f;
+
+							const D3D12_GPU_VIRTUAL_ADDRESS objectCb =
+								allocator.AllocateConstantBuffer(
+									&object, sizeof(object)
+								);
+							const D3D12_GPU_VIRTUAL_ADDRESS materialCb =
+								allocator.AllocateConstantBuffer(
+									&material, sizeof(material)
+								);
+
+							pass.BindGraphicsCbv(
+								ToRootIndex(GEOM_ROOT_SLOT::OBJECT), objectCb
+							);
+							pass.BindGraphicsCbv(
+								ToRootIndex(GEOM_ROOT_SLOT::MATERIAL), materialCb
+							);
+							pass.BindGraphicsCbv(
+								ToRootIndex(GEOM_ROOT_SLOT::SKINNING), objectCb
+							);
+							pass.BindGraphicsSrvTable(
+								ToRootIndex(GEOM_ROOT_SLOT::BASE_COLOR_TEXTURE),
+								ResolveSpriteTexture(
+									renderDevice, sprite.texture
+								)
+							);
+							pass.DrawIndexedTest(
+								mBillboardPass.depthGeom.indexCount
+							);
+						}
+					}
+				);
+
+				mGraph.AddPass(
+					prefix + "DebugLines",
+					[colorId, depthId](RenderGraphBuilder& b) {
+						b.WriteRt(colorId);
+						b.WriteDepth(depthId);
+					},
+					[this, state, viewIndex, &renderDevice](
+					RenderPassContext& pass
+				) {
+						if (
+							mLinePass.frameVertexCount == 0 ||
+							!mLinePass.resolved ||
+							!mLinePass.resolved->pso
+						) {
+							return;
+						}
+
+						const RenderViewInput& view = mFrameViews[viewIndex];
+						auto& allocator = static_cast<Rhi::D3D12Device&>(
+							renderDevice.GetRhiDevice()
+						).GetFrameUploadAllocator();
+						Rhi::FrameConstants frame = BuildSceneFrameConstants(
+							view.camera, state.width, state.height, 0.0f
+						);
+						const D3D12_GPU_VIRTUAL_ADDRESS frameCb =
+							allocator.AllocateConstantBuffer(
+								&frame, sizeof(frame)
+							);
+
+						pass.SetViewportAndScissor(
+							0.0f,
+							0.0f,
+							static_cast<float>(state.width),
+							static_cast<float>(state.height)
+						);
+						pass.SetRenderTargetAndDepth(
+							std::span<const uint32_t>(&state.colorTextureId, 1),
+							state.depthTextureId
+						);
+						pass.SetGraphicsPipeline(
+							mLinePass.resolved->rootSignature,
+							mLinePass.resolved->pso
+						);
+						pass.BindGraphicsCbv(
+							ToRootIndex(GEOM_ROOT_SLOT::FRAME), frameCb
+						);
+						pass.SetVertexBuffer(mLinePass.frameVbv);
+						pass.SetPrimitiveTopology(
+							D3D_PRIMITIVE_TOPOLOGY_LINELIST
+						);
+						pass.DrawInstanced(mLinePass.frameVertexCount, 1);
+					}
+				);
+
+				mGraph.AddPass(
+					prefix + "WorldBillboardFront",
+					[colorId, worldBillboardTextureIds](RenderGraphBuilder& b) {
+						b.WriteRt(colorId);
+						for (const uint32_t texId : worldBillboardTextureIds) {
+							b.ReadSrvPs(texId);
+						}
+					},
+					[this, viewIndex, state, &renderDevice](RenderPassContext& pass) {
+						const RenderViewInput& view = mFrameViews[viewIndex];
+						if (view.worldBillboards.empty()) {
+							return;
+						}
+						if (!std::any_of(
+							view.worldBillboards.begin(),
+							view.worldBillboards.end(),
+							[](const WorldBillboardInput& billboard) {
+								return !billboard.depthTest;
+							}
+						)) {
+							return;
+						}
+
+						auto& allocator = static_cast<Rhi::D3D12Device&>(
+							renderDevice.GetRhiDevice()
+						).GetFrameUploadAllocator();
+						Rhi::FrameConstants frame = BuildSceneFrameConstants(
+							view.camera, state.width, state.height, 0.0f
+						);
+						const D3D12_GPU_VIRTUAL_ADDRESS frameCb =
+							allocator.AllocateConstantBuffer(&frame, sizeof(frame));
+
+						const Mat4 cameraWorld = frame.view.Inverse();
+						const Vec3 cameraRight = cameraWorld.GetRight().Normalized();
+						const Vec3 cameraUp = cameraWorld.GetUp().Normalized();
+						const Vec3 cameraForward = cameraWorld.GetForward().Normalized();
+
+						pass.SetViewportAndScissor(
+							0.0f,
+							0.0f,
+							static_cast<float>(state.width),
+							static_cast<float>(state.height)
+						);
+						pass.SetSrvUavHeap();
+						pass.SetRenderTarget(state.colorTextureId);
+						if (
+							!mBillboardPass.frontGeom.resolved ||
+							!mBillboardPass.frontGeom.resolved->pso
+						) {
+							return;
+						}
+						pass.SetGraphicsPipeline(
+							mBillboardPass.frontGeom.resolved->rootSignature,
+							mBillboardPass.frontGeom.resolved->pso
+						);
+						pass.BindGraphicsCbv(
+							ToRootIndex(GEOM_ROOT_SLOT::FRAME), frameCb
+						);
+						pass.SetVertexBuffer(mBillboardPass.frontGeom.vbv);
+						pass.SetIndexBuffer(mBillboardPass.frontGeom.ibv);
+
+						for (const auto& billboard : view.worldBillboards) {
+							if (billboard.depthTest) {
+								continue;
+							}
+
+							const float cosine = std::cos(billboard.rotationRad);
+							const float sine = std::sin(billboard.rotationRad);
+							const Vec3  rotatedRight =
+								cameraRight * cosine + cameraUp * sine;
+							const Vec3 rotatedUp =
+								cameraRight * -sine + cameraUp * cosine;
+
+							Rhi::ObjectConstants object = {};
+							object.world                = Mat4::identity;
+							object.world.m[0][0] =
+								rotatedRight.x * billboard.sizeWorld.x * 0.5f;
+							object.world.m[0][1] =
+								rotatedRight.y * billboard.sizeWorld.x * 0.5f;
+							object.world.m[0][2] =
+								rotatedRight.z * billboard.sizeWorld.x * 0.5f;
+							object.world.m[1][0] =
+								rotatedUp.x * billboard.sizeWorld.y * 0.5f;
+							object.world.m[1][1] =
+								rotatedUp.y * billboard.sizeWorld.y * 0.5f;
+							object.world.m[1][2] =
+								rotatedUp.z * billboard.sizeWorld.y * 0.5f;
+							object.world.m[2][0] = cameraForward.x;
+							object.world.m[2][1] = cameraForward.y;
+							object.world.m[2][2] = cameraForward.z;
+							object.world.m[3][0] = billboard.worldPosition.x;
+							object.world.m[3][1] = billboard.worldPosition.y;
+							object.world.m[3][2] = billboard.worldPosition.z;
+							object.worldInverseTranspose =
+								object.world.Inverse().Transpose();
+							const float uvMinY = billboard.uvFlipY ? 1.0f : 0.0f;
+							const float uvMaxY = billboard.uvFlipY ? 0.0f : 1.0f;
+							object.skinningInfo = Vec4(0.0f, uvMinY, 1.0f, uvMaxY);
+
+							Rhi::MaterialConstants material = {};
+							material.baseColor              = billboard.color;
+							material.opacity                = billboard.color.w;
+							material.domainMode             = 0.0f;
+
+							const D3D12_GPU_VIRTUAL_ADDRESS objectCb =
+								allocator.AllocateConstantBuffer(&object, sizeof(object));
+							const D3D12_GPU_VIRTUAL_ADDRESS materialCb =
+								allocator.AllocateConstantBuffer(
+									&material,
+									sizeof(material)
+								);
+							pass.BindGraphicsCbv(
+								ToRootIndex(GEOM_ROOT_SLOT::OBJECT), objectCb
+							);
+							pass.BindGraphicsCbv(
+								ToRootIndex(GEOM_ROOT_SLOT::MATERIAL), materialCb
+							);
+							pass.BindGraphicsCbv(
+								ToRootIndex(GEOM_ROOT_SLOT::SKINNING), objectCb
+							);
+							pass.BindGraphicsSrvTable(
+								ToRootIndex(GEOM_ROOT_SLOT::BASE_COLOR_TEXTURE),
+								ResolveSpriteTexture(renderDevice, billboard.texture)
+							);
+							pass.DrawIndexedTest(mBillboardPass.frontGeom.indexCount);
+						}
+					}
+				);
+
+				uint32_t postFxInputId             = state.colorTextureId;
+				uint32_t postFxOutputId            = state.postFxTextureAId;
+				auto     BuildResolvedPostFxParams =
+					[&view](const PostFxRuntimePass& passRes) {
+					PostFxParamsConstants     params       = {};
+					const PostFxPassOverride* viewOverride =
+						FindPostFxPassOverride(
+							passRes.name, view.postFxPassOverrides
+						);
+					for (const auto& [name, value] : passRes.scalarDefaults) {
+						ApplyScalarParam(name, value, params);
+					}
+					for (const auto& [name, value] : passRes.colorDefaults) {
+						ApplyColorParam(name, value, params);
+					}
+					if (viewOverride) {
+						for (const auto& [name, value] : viewOverride->
+						     scalarParams) {
+							ApplyScalarParam(name, value, params);
+						}
+						for (const auto& [name, value] : viewOverride->
+						     colorParams) {
+							ApplyColorParam(name, value, params);
+						}
+					}
+					return std::pair{params, viewOverride};
+				};
+
+				struct BloomPyramidConstants {
+					Vec4 params0 = Vec4::zero;
+					// x=invSrcW, y=invSrcH, z=threshold, w=knee
+					Vec4 params1 = Vec4::zero;
+					// x=radius, y=intensity, z=firstPass
+				};
+
+				for (size_t i = 0; i < mPostFxPasses.size(); ++i) {
+					const auto passRes = mPostFxPasses[i];
+					const auto [resolvedParams, viewOverride] =
+						BuildResolvedPostFxParams(passRes);
+					bool passEnabled = passRes.enabled;
+					if (viewOverride && viewOverride->hasEnabledOverride) {
+						passEnabled = viewOverride->enabled;
+					}
+					if (!passEnabled) {
+						continue;
+					}
+
+					if (EqualsIgnoreCase(passRes.name, "Bloom")) {
+						const int mipCount = static_cast<int>(state.
+							bloomMipTextureIds.size());
+
+						const float bloomIntensity = std::max(
+							resolvedParams.scalar0.x, 0.0f
+						);
+						if (bloomIntensity <= 0.0f) {
+							continue;
+						}
+						const float bloomThreshold = resolvedParams.scalar0.y;
+						const float bloomRadius    = std::max(
+							resolvedParams.scalar0.z, 0.0f
+						);
+						const float bloomKnee = std::max(
+							resolvedParams.scalar0.w, 0.0f
+						);
+
+						uint32_t srcId = postFxInputId;
+						for (uint32_t level = 0; std::cmp_less(level, mipCount);
+						     ++level) {
+							const uint32_t dstId = state.bloomMipTextureIds[
+								level];
+							const uint32_t srcWidth = std::max(
+								1u, state.width >> level
+							);
+							const uint32_t srcHeight = std::max(
+								1u, state.height >> level
+							);
+							const uint32_t dstWidth = std::max(
+								1u, state.width >> static_cast<uint32_t>(
+									    level + 1)
+							);
+							const uint32_t dstHeight = std::max(
+								1u, state.height >> static_cast<uint32_t>(
+									    level + 1)
+							);
+
+							BloomPyramidConstants bloomCbData = {};
+							bloomCbData.params0               = Vec4(
+								1.0f / static_cast<float>(srcWidth),
+								1.0f / static_cast<float>(srcHeight),
+								bloomThreshold,
+								bloomKnee
+							);
+							bloomCbData.params1 = Vec4(
+								bloomRadius, bloomIntensity,
+								level == 0 ? 1.0f : 0.0f, 0.0f
+							);
+
+							auto& allocator = static_cast<Rhi::D3D12Device&>(
+								renderDevice.GetRhiDevice()
+							).GetFrameUploadAllocator();
+							const D3D12_GPU_VIRTUAL_ADDRESS bloomCb =
+								allocator.AllocateConstantBuffer(
+									&bloomCbData, sizeof(bloomCbData)
+								);
+
+							const uint32_t downsampleSrcId = srcId;
+							mGraph.AddPass(
+								prefix + "BloomDownsample[" + std::to_string(
+									level
+								) + "]",
+								[downsampleSrcId, dstId](
+								RenderGraphBuilder& b
+							) {
+									b.ReadSrvPs(downsampleSrcId);
+									b.WriteRt(dstId);
+								},
+								[this, dstId, dstWidth, dstHeight, bloomCb,
+									downsampleSrcId, &renderDevice](
+								RenderPassContext& pass
+							) {
+									pass.SetViewportAndScissor(
+										0.0f,
+										0.0f,
+										static_cast<float>(dstWidth),
+										static_cast<float>(dstHeight)
+									);
+									pass.SetSrvUavHeap();
+									pass.SetRenderTarget(dstId);
+									if (
+										!mBloomDownsamplePass.resolved ||
+										!mBloomDownsamplePass.resolved->pso
+									) {
+										return;
+									}
+									pass.SetGraphicsPipeline(
+										mBloomDownsamplePass.resolved->rootSignature,
+										mBloomDownsamplePass.resolved->pso
+									);
+									pass.BindGraphicsCbv(
+										ToRootIndex(FS_ROOT_SLOT::POST_FX_PARAMS),
+										bloomCb
+									);
+									pass.BindGraphicsSrvTable(
+										ToRootIndex(FS_ROOT_SLOT::SOURCE_TEXTURE),
+										downsampleSrcId
+									);
+									pass.DrawFullscreenTriangle();
+								}
+							);
+
+							srcId = dstId;
+						}
+
+						for (
+							uint32_t level = mipCount - 1; level > 0; --level
+						) {
+							const uint32_t srcLowId = state.bloomMipTextureIds[
+								level];
+							const uint32_t dstHighId = state.bloomMipTextureIds[
+								level - 1];
+							const uint32_t srcWidth = std::max(
+								1u, state.width >> static_cast<uint32_t>(
+									    level + 1)
+							);
+							const uint32_t srcHeight = std::max(
+								1u, state.height >> static_cast<uint32_t>(
+									    level + 1)
+							);
+							const uint32_t dstWidth = std::max(
+								1u, state.width >> level
+							);
+							const uint32_t dstHeight = std::max(
+								1u, state.height >> level
+							);
+
+							BloomPyramidConstants bloomCbData = {};
+							bloomCbData.params0               = Vec4(
+								1.0f / static_cast<float>(srcWidth),
+								1.0f / static_cast<float>(srcHeight),
+								0.0f,
+								0.0f
+							);
+							bloomCbData.params1 = Vec4(
+								bloomRadius, bloomIntensity, 0.0f, 0.0f
+							);
+
+							auto& allocator = static_cast<Rhi::D3D12Device&>(
+								renderDevice.GetRhiDevice()
+							).GetFrameUploadAllocator();
+							const D3D12_GPU_VIRTUAL_ADDRESS bloomCb =
+								allocator.AllocateConstantBuffer(
+									&bloomCbData, sizeof(bloomCbData)
+								);
+
+							mGraph.AddPass(
+								prefix + "BloomUpsample[" + std::to_string(
+									level
+								) + "]",
+								[srcLowId, dstHighId](RenderGraphBuilder& b) {
+									b.ReadSrvPs(srcLowId);
+									b.WriteRt(dstHighId);
+								},
+								[this, dstHighId, dstWidth, dstHeight, bloomCb,
+									srcLowId, &renderDevice](
+								RenderPassContext& pass
+							) {
+									pass.SetViewportAndScissor(
+										0.0f,
+										0.0f,
+										static_cast<float>(dstWidth),
+										static_cast<float>(dstHeight)
+									);
+									pass.SetSrvUavHeap();
+									pass.SetRenderTarget(dstHighId);
+									if (
+										!mBloomUpsamplePass.resolved ||
+										!mBloomUpsamplePass.resolved->pso
+									) {
+										return;
+									}
+									pass.SetGraphicsPipeline(
+										mBloomUpsamplePass.resolved->rootSignature,
+										mBloomUpsamplePass.resolved->pso
+									);
+									pass.BindGraphicsCbv(
+										ToRootIndex(FS_ROOT_SLOT::POST_FX_PARAMS),
+										bloomCb
+									);
+									pass.BindGraphicsSrvTable(
+										ToRootIndex(FS_ROOT_SLOT::SOURCE_TEXTURE),
+										srcLowId
+									);
+									pass.DrawFullscreenTriangle();
+								}
+							);
+						}
+
+						const uint32_t bloomBaseId = state.bloomMipTextureIds[
+							0];
+						const uint32_t baseCopyInId       = postFxInputId;
+						const uint32_t bloomCombinedOutId = postFxOutputId;
+
+						mGraph.AddPass(
+							prefix + "BloomBaseCopy",
+							[baseCopyInId, bloomCombinedOutId](
+							RenderGraphBuilder& b
+						) {
+								b.ReadSrvPs(baseCopyInId);
+								b.WriteRt(bloomCombinedOutId);
+							},
+							[this, state, baseCopyInId, bloomCombinedOutId, &
+								renderDevice](
+							RenderPassContext& pass
+						) {
+								pass.SetViewportAndScissor(
+									0.0f,
+									0.0f,
+									static_cast<float>(state.width),
+									static_cast<float>(state.height)
+								);
+								pass.SetSrvUavHeap();
+								pass.SetRenderTarget(bloomCombinedOutId);
+								if (!mHdrCopyPass.resolved || !mHdrCopyPass.resolved->pso) {
+									return;
+								}
+								pass.SetGraphicsPipeline(
+									mHdrCopyPass.resolved->rootSignature,
+									mHdrCopyPass.resolved->pso
+								);
+								pass.BindGraphicsSrvTable(
+									ToRootIndex(FS_ROOT_SLOT::SOURCE_TEXTURE),
+									baseCopyInId
+								);
+								PostFxParamsConstants defaultParams = {};
+								auto& allocator = static_cast<Rhi::D3D12Device&>
+								(
+									renderDevice.GetRhiDevice()
+								).GetFrameUploadAllocator();
+								const D3D12_GPU_VIRTUAL_ADDRESS copyCb =
+									allocator.AllocateConstantBuffer(
+										&defaultParams, sizeof(defaultParams)
+									);
+								pass.BindGraphicsCbv(
+									ToRootIndex(FS_ROOT_SLOT::POST_FX_PARAMS),
+									copyCb
+								);
+								pass.DrawFullscreenTriangle();
+							}
+						);
+
+						BloomPyramidConstants bloomCompositeCbData = {};
+						bloomCompositeCbData.params1               = Vec4(
+							bloomRadius, bloomIntensity, 0.0f, 0.0f
+						);
+						auto& allocator = static_cast<Rhi::D3D12Device&>(
+							renderDevice.GetRhiDevice()
+						).GetFrameUploadAllocator();
+						const D3D12_GPU_VIRTUAL_ADDRESS bloomCompositeCb =
+							allocator.AllocateConstantBuffer(
+								&bloomCompositeCbData,
+								sizeof(bloomCompositeCbData)
+							);
+
+						mGraph.AddPass(
+							prefix + "BloomComposite",
+							[bloomBaseId, bloomCombinedOutId](
+							RenderGraphBuilder& b
+						) {
+								b.ReadSrvPs(bloomBaseId);
+								b.WriteRt(bloomCombinedOutId);
+							},
+							[this, state, bloomCombinedOutId, bloomBaseId,
+								bloomCompositeCb, &renderDevice](
+							RenderPassContext& pass
+						) {
+								pass.SetViewportAndScissor(
+									0.0f,
+									0.0f,
+									static_cast<float>(state.width),
+									static_cast<float>(state.height)
+								);
+								pass.SetSrvUavHeap();
+								pass.SetRenderTarget(bloomCombinedOutId);
+								if (
+									!mBloomCombinePass.resolved ||
+									!mBloomCombinePass.resolved->pso
+								) {
+									return;
+								}
+								pass.SetGraphicsPipeline(
+									mBloomCombinePass.resolved->rootSignature,
+									mBloomCombinePass.resolved->pso
+								);
+								pass.BindGraphicsCbv(
+									ToRootIndex(FS_ROOT_SLOT::POST_FX_PARAMS),
+									bloomCompositeCb
+								);
+								pass.BindGraphicsSrvTable(
+									ToRootIndex(FS_ROOT_SLOT::SOURCE_TEXTURE),
+									bloomBaseId
+								);
+								pass.DrawFullscreenTriangle();
+							}
+						);
+
+						postFxInputId  = bloomCombinedOutId;
+						postFxOutputId = postFxOutputId == state.
+						                 postFxTextureAId ?
+							                 state.postFxTextureBId :
+							                 state.postFxTextureAId;
+						continue;
+					}
+
+					auto& allocator = static_cast<Rhi::D3D12Device&>(
+						renderDevice.GetRhiDevice()
+					).GetFrameUploadAllocator();
+					const D3D12_GPU_VIRTUAL_ADDRESS postFxCb =
+						allocator.AllocateConstantBuffer(
+							&resolvedParams, sizeof(resolvedParams)
+						);
+
+					const auto inId  = postFxInputId;
+					const auto outId = postFxOutputId;
+
+					mGraph.AddPass(
+						prefix + "PostFx_" + passRes.name,
+						[inId, outId](RenderGraphBuilder& b) {
+							b.ReadSrvPs(inId);
+							b.WriteRt(outId);
+						},
+						[this, passRes, inId, outId, state, postFxCb, &
+							renderDevice](
+						RenderPassContext& pass
+					) {
+							pass.SetViewportAndScissor(
+								0.0f,
+								0.0f,
+								static_cast<float>(state.width),
+								static_cast<float>(state.height)
+							);
+							pass.SetSrvUavHeap();
+							if (!passRes.pass.resolved || !passRes.pass.resolved->pso) {
+								return;
+							}
+							pass.SetGraphicsPipeline(
+								passRes.pass.resolved->rootSignature,
+								passRes.pass.resolved->pso
+							);
+							pass.SetRenderTarget(outId);
+							pass.BindGraphicsCbv(
+								ToRootIndex(FS_ROOT_SLOT::POST_FX_PARAMS), postFxCb
+							);
+							pass.BindGraphicsSrvTable(
+								ToRootIndex(FS_ROOT_SLOT::SOURCE_TEXTURE), inId
+							);
+							pass.DrawFullscreenTriangle();
+						}
+					);
+
+					postFxInputId  = outId;
+					postFxOutputId = postFxOutputId == state.postFxTextureAId ?
+						                 state.postFxTextureBId :
+						                 state.postFxTextureAId;
+				}
+
+				PostFxParamsConstants toneMapParams = {};
+				toneMapParams.scalar1.x = view.camera.exposureEv;
+				auto& allocator = static_cast<Rhi::D3D12Device&>(
+					renderDevice.GetRhiDevice()
+				).GetFrameUploadAllocator();
+				const D3D12_GPU_VIRTUAL_ADDRESS toneMapCb =
+					allocator.AllocateConstantBuffer(
+						&toneMapParams, sizeof(toneMapParams)
+					);
+				const uint32_t toneMapInputId  = postFxInputId;
+				const uint32_t toneMapOutputId = state.outputTextureId;
+				mGraph.AddPass(
+					prefix + "ToneMapExposure",
+					[toneMapInputId, toneMapOutputId](RenderGraphBuilder& b) {
+						b.ReadSrvPs(toneMapInputId);
+						b.WriteRt(toneMapOutputId);
+					},
+					[this, state, toneMapInputId, toneMapOutputId, toneMapCb, &
+						renderDevice](
+					RenderPassContext& pass
+				) {
+						pass.SetViewportAndScissor(
+							0.0f,
+							0.0f,
+							static_cast<float>(state.width),
+							static_cast<float>(state.height)
+						);
+						pass.SetSrvUavHeap();
+						pass.SetRenderTarget(toneMapOutputId);
+						if (!mToneMapPass.resolved || !mToneMapPass.resolved->pso) {
+							return;
+						}
+						pass.SetGraphicsPipeline(
+							mToneMapPass.resolved->rootSignature,
+							mToneMapPass.resolved->pso
+						);
+						pass.BindGraphicsCbv(
+							ToRootIndex(FS_ROOT_SLOT::POST_FX_PARAMS), toneMapCb
+						);
+						pass.BindGraphicsSrvTable(
+							ToRootIndex(FS_ROOT_SLOT::SOURCE_TEXTURE), toneMapInputId
+						);
+						pass.DrawFullscreenTriangle();
+					}
+				);
+
+				outputId = toneMapOutputId;
+			}
+
+			if (view.type == RENDER_VIEW_TYPE::SPRITE_ONLY) {
+				mGraph.AddPass(
+					prefix + "Clear",
+					[outputId](RenderGraphBuilder& b) {
+						b.WriteRt(outputId);
+						b.ClearColor(outputId, 0.0f, 0.0f, 0.0f, 0.0f);
+					},
+					[](RenderPassContext&) {}
+				);
+			}
+
+			mGraph.AddPass(
+				prefix + "ScreenSprites",
+				[outputId, screenSpriteTextureIds](RenderGraphBuilder& b) {
+					b.WriteRt(outputId);
+					for (const uint32_t texId : screenSpriteTextureIds) {
+						b.ReadSrvPs(texId);
+					}
+				},
+				[this, viewIndex, state, outputId, &renderDevice](
+				RenderPassContext& pass
+			) {
+					const RenderViewInput& view = mFrameViews[viewIndex];
+					if (view.screenSprites.empty()) {
+						return;
+					}
+
+					auto& allocator = static_cast<Rhi::D3D12Device&>(
+						renderDevice.GetRhiDevice()
+					).GetFrameUploadAllocator();
+
+					Rhi::FrameConstants frame = {};
+					frame.view                = Mat4::identity;
+					frame.proj                = BuildOrthographic(
+						state.width, state.height
+					);
+					frame.viewProj = frame.view * frame.proj;
+					const D3D12_GPU_VIRTUAL_ADDRESS frameCb =
+						allocator.AllocateConstantBuffer(&frame, sizeof(frame));
+
+					pass.SetViewportAndScissor(
+						0.0f,
+						0.0f,
+						static_cast<float>(state.width),
+						static_cast<float>(state.height)
+					);
+					pass.SetSrvUavHeap();
+					pass.SetRenderTarget(outputId);
+					if (!mSpritePass.geom.resolved || !mSpritePass.geom.resolved->pso) {
+						return;
+					}
+					pass.SetGraphicsPipeline(
+						mSpritePass.geom.resolved->rootSignature,
+						mSpritePass.geom.resolved->pso
+					);
+					pass.BindGraphicsCbv(
+						ToRootIndex(GEOM_ROOT_SLOT::FRAME), frameCb
+					);
+					pass.SetVertexBuffer(mSpritePass.geom.vbv);
+					pass.SetIndexBuffer(mSpritePass.geom.ibv);
+
+					for (const auto& sprite : view.screenSprites) {
+						const Vec2 center = Vec2(
+							sprite.positionPx.x +
+							(0.5f - sprite.anchor.x) * sprite.sizePx.x,
+							sprite.positionPx.y +
+							(0.5f - sprite.anchor.y) * sprite.sizePx.y
+						);
+
+						Rhi::ObjectConstants object = {};
+						object.world                = Mat4::Scale(
+							               Vec3(
+								               sprite.sizePx.x * 0.5f,
+								               sprite.sizePx.y * 0.5f,
+								               1.0f
+							               )
+						               ) * Mat4::RotateZ(
+							               sprite.rotationRad
+						               ) * Mat4::Translate(
+							               Vec3(center.x, center.y, 0.0f)
+						               );
+						object.worldInverseTranspose =
+							object.world.Inverse().Transpose();
+						const float uvMinY = sprite.uvFlipY ? 1.0f : 0.0f;
+						const float uvMaxY = sprite.uvFlipY ? 0.0f : 1.0f;
+						const float uvMinX = sprite.uvMin.x;
+						const float uvMaxX = sprite.uvMax.x;
+						object.skinningInfo = Vec4(uvMinX, uvMinY, uvMaxX, uvMaxY);
+
+						Rhi::MaterialConstants material = {};
+						material.baseColor              = sprite.color;
+						material.opacity                = sprite.color.w;
+						material.domainMode             = 0.0f;
+
+						const D3D12_GPU_VIRTUAL_ADDRESS objectCb =
+							allocator.AllocateConstantBuffer(
+								&object, sizeof(object)
+							);
+						const D3D12_GPU_VIRTUAL_ADDRESS materialCb =
+							allocator.AllocateConstantBuffer(
+								&material, sizeof(material)
+							);
+
+						pass.BindGraphicsCbv(
+							ToRootIndex(GEOM_ROOT_SLOT::OBJECT), objectCb
+						);
+						pass.BindGraphicsCbv(
+							ToRootIndex(GEOM_ROOT_SLOT::MATERIAL), materialCb
+						);
+						pass.BindGraphicsCbv(
+							ToRootIndex(GEOM_ROOT_SLOT::SKINNING), objectCb
+						);
+						pass.BindGraphicsSrvTable(
+							ToRootIndex(GEOM_ROOT_SLOT::BASE_COLOR_TEXTURE),
+							ResolveSpriteTexture(
+								renderDevice, sprite.texture
+							)
+						);
+						pass.DrawIndexedTest(mSpritePass.geom.indexCount);
+					}
+				}
+			);
+
+			mViewStates[view.viewKey].outputTextureId = outputId;
+		}
+
+		std::vector<uint32_t> uiReadableOutputs;
+		uiReadableOutputs.reserve(frameViews.size());
+		for (const RenderViewInput& view : frameViews) {
+			if (!view.output.exposeToUi) {
+				continue;
+			}
+			const auto it = mViewStates.find(view.viewKey);
+			if (it == mViewStates.end() || it->second.outputTextureId == 0) {
+				continue;
+			}
+			uiReadableOutputs.emplace_back(it->second.outputTextureId);
+		}
+		if (!uiReadableOutputs.empty()) {
+			mGraph.AddPass(
+				"PrepareUiViewOutputs",
+				[uiReadableOutputs](RenderGraphBuilder& b) {
+					for (const uint32_t texId : uiReadableOutputs) {
+						b.ReadSrvPs(texId);
+					}
+				},
+				[](RenderPassContext&) {}
+			);
+		}
+
+		if (!mPresentViewKey.empty()) {
+			const auto presentIt = mViewStates.find(mPresentViewKey);
+			if (
+				presentIt != mViewStates.end() &&
+				presentIt->second.outputTextureId != 0
+			) {
+				const uint32_t presentTexture = presentIt->second.
+					outputTextureId;
+				mGraph.AddPass(
+					"FullscreenSampleSrv",
+					[presentTexture](RenderGraphBuilder& b) {
+						b.ReadSrvPs(presentTexture);
+						b.WriteBackBufferRt();
+					},
+					[this, presentTexture, &renderDevice](
+					RenderPassContext& pass
+				) {
+						pass.SetViewportToBackBuffer();
+						pass.SetSrvUavHeap();
+
+						PostFxParamsConstants params = {};
+						auto& allocator = static_cast<Rhi::D3D12Device&>(
+							renderDevice.GetRhiDevice()
+						).GetFrameUploadAllocator();
+						const D3D12_GPU_VIRTUAL_ADDRESS postFxCb =
+							allocator.AllocateConstantBuffer(
+								&params, sizeof(params)
+							);
+
+						if (!mFullscreenPass.resolved || !mFullscreenPass.resolved->pso) {
+							return;
+						}
+						pass.SetGraphicsPipeline(
+							mFullscreenPass.resolved->rootSignature,
+							mFullscreenPass.resolved->pso
+						);
+
+						pass.BindGraphicsCbv(
+							ToRootIndex(FS_ROOT_SLOT::POST_FX_PARAMS), postFxCb
+						);
+						pass.BindGraphicsSrvTable(
+							ToRootIndex(FS_ROOT_SLOT::SOURCE_TEXTURE), presentTexture
+						);
+						pass.DrawFullscreenTriangle();
+					}
+				);
+			}
+		} else {
+			bool clearBackBuffer = false;
+			for (const RenderViewInput& view : frameViews) {
+				if (view.output.clearSwapChainWhenNotPresenting) {
+					clearBackBuffer = true;
+					break;
+				}
+			}
+			if (clearBackBuffer) {
+				mGraph.AddPass(
+					"EditorBackBufferClearPass",
+					[](RenderGraphBuilder& b) {
+						b.WriteBackBufferRt();
+						b.ClearColor(
+							RenderGraph::kBackBufferId,
+							0.02f,
+							0.02f,
+							0.02f,
+							1.0f
+						);
+					},
+					[](RenderPassContext&) {}
+				);
+			}
+		}
+
+		mGraph.AddPass(
+			"ImGuiMainPass",
+			[](RenderGraphBuilder& b) {
+				b.WriteBackBufferRt();
+			},
+			[this](RenderPassContext& pass) {
+				if (mUiMainRenderCallback) {
+					mUiMainRenderCallback(pass);
+				}
+			}
+		);
+	}
+}
+
+

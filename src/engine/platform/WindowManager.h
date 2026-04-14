@@ -1,26 +1,97 @@
 #pragma once
+#include <cstdint>
+#include <memory>
+#include <optional>
 #include <unordered_map>
+#include <vector>
 
-#include <engine/platform/Window.h>
+#include "IPlatformEvents.h"
+#include "Window.h"
 
-struct WindowDesc;
+#include "engine/EngineConfig.h"
+#include "engine/unnamed/subsystem/input/InputSystem.h"
 
-/// @class WindowManager
-/// @brief 複数ウィンドウを管理します。
-class WindowManager {
-public:
-	explicit WindowManager(HINSTANCE hInstance);
+namespace Unnamed {
+	class WindowManager final {
+	public:
+		WindowManager();
+		~WindowManager();
 
-	void Shutdown();
+		/// @brief 初期化処理
+		/// @param mainWindowConfig メインウィンドウの設定
+		/// @return 成功したらtrue、失敗したらfalse
+		bool Init(const EngineConfig::Window& mainWindowConfig);
 
-	Window& CreateNewWindow(const WindowDesc& desc);
-	void    DestroyWindow(uint32_t windowId);
+		/// @brief 終了処理
+		void Shutdown();
 
-	std::unordered_map<uint32_t, Window>&         GetWindows();
-	std::optional<std::reference_wrapper<Window>> Get(uint32_t windowId);
+		/// @brief プラットフォームイベントを処理します。
+		void ProcessMessage();
 
-private:
-	HINSTANCE                            mHInstance;
-	std::atomic<uint32_t>                mNextWindowId = {1};
-	std::unordered_map<uint32_t, Window> mWindows;
-};
+		/// @brief 終了すべきかどうかを返す
+		/// @return 終了すべきならtrue、そうでなければfalse
+		[[nodiscard]] bool ShouldQuit() const;
+
+		/// @brief メインウィンドウのIDを取得する
+		/// @return メインウィンドウのID
+		[[nodiscard]] WindowId GetMainWindowId() const;
+
+		/// @brief 新しいウィンドウを作成する
+		/// @param desc ウィンドウの説明
+		/// @return 作成したウィンドウのID。失敗した場合はstd::nulloptを返す
+		std::optional<WindowId> CreateNewWindow(const WindowDesc& desc);
+
+		/// @brief ウィンドウを破棄すします。
+		/// @param id 破棄するウィンドウのID
+		void DestroyWindow(WindowId id);
+
+		/// @brief IDからウィンドウを探します。
+		/// @return 見つかったウィンドウへのポインタ。見つからなかった場合はnullptrを返す
+		[[nodiscard]]
+		Window* FindWindowById(WindowId id);
+
+		/// @brief IDからウィンドウを探します。 (const版)
+		[[nodiscard]] const Window* FindWindowById(WindowId id) const;
+
+		/// @brief すべてのウィンドウIDを取得します。
+		[[nodiscard]] std::vector<WindowId> GetAllWindowIds() const;
+
+		/// @brief プラットフォームイベントのコールバックを登録します。
+		/// @param events 登録するイベントコールバックのインターフェースへのポインタ
+		void RegisterPlatformEvents(IPlatformEvents* events);
+
+	private:
+		/// @brief ウィンドウクラスが登録されていることを保証します。登録されていない場合は登録します。
+		/// @return 登録に成功したらtrue、失敗したらfalse
+		bool EnsureWindowClassRegistered();
+
+		/// @brief ネイティブウィンドウを作成します。
+		/// @param desc ウィンドウの説明
+		/// @return 作成したウィンドウのHWND。失敗した場合はstd::nulloptを返す
+		std::optional<HWND> CreateNativeWindow(const WindowDesc& desc);
+
+		/// @brief ウィンドウプロシージャの静的コールバック関数
+		/// @param hwnd ウィンドウハンドル
+		/// @param msg メッセージID
+		/// @param wParam メッセージのWPARAM
+		/// @param lParam メッセージのLPARAM
+		/// @return メッセージ処理の結果を返す
+		static LRESULT CALLBACK StaticWndProc(
+			HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
+		);
+
+		/// @brief ウィンドウのダークモード設定を変更する
+		/// @param hwnd ウィンドウハンドル
+		/// @param isSystemDarkTheme ダークテーマを使用するかどうか
+		static void SetUseImmersiveDarkMode(HWND hwnd, bool isSystemDarkTheme);
+
+		WindowId mMainWindowId = {};
+		uint32_t mNextWindowId = 1;
+		std::unordered_map<uint32_t, std::unique_ptr<Window>> mWindows;
+
+		static IPlatformEvents* mPlatformEvents;
+
+		bool mInitialized           = false;
+		bool mWindowClassRegistered = false;
+	};
+}

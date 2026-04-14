@@ -2,13 +2,12 @@
 
 #include <fstream>
 
-#include <core/unnamed/string/StrUtil.h>
+#include <core/string/StrUtil.h>
 
-#include <engine/OldConsole/Console.h>
 #include <engine/unnamed/subsystem/console/Log.h>
 
 namespace Unnamed {
-	static constexpr std::string_view kChannel = "ConsoleScriptParser";
+	static constexpr std::string_view kChannel = "ConScrP";
 
 	/// @brief コンストラクタ
 	/// @param path スクリプトファイルのパス
@@ -18,15 +17,13 @@ namespace Unnamed {
 		// 存在しない場合は作る
 		if (!inputFile) {
 			Msg(
-				kChannel,
-				"Script file not found. Creating a new one: {}",
+				kChannel, "Script file not found. Creating a new one: {}",
 				std::string(path)
 			);
 			std::ofstream outputFile(path.data());
 			if (!outputFile) {
 				Error(
-					kChannel,
-					"Failed to create script file: {}",
+					kChannel, "Failed to create script file: {}",
 					std::string(path)
 				);
 				throw std::runtime_error("Failed to create script file");
@@ -52,9 +49,10 @@ namespace Unnamed {
 				line.empty() ||
 				line[0] == ';' ||
 				line[0] == '/' && line.size() > 1 && line[1] == '/'
-			) { continue; }
+			) {
+				continue;
+			}
 
-			Console::SubmitCommand(line);
 			ServiceLocator::Get<ConsoleSystem>()->ExecuteCommand(line);
 		}
 	}

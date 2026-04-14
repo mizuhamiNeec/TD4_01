@@ -1,0 +1,69 @@
+#pragma once
+#include <array>
+#include <cfloat>
+#include <cstdint>
+#include <string>
+#include <vector>
+
+#include "core/math/Mat4.h"
+#include "core/math/Quaternion.h"
+#include "core/math/Vec2.h"
+#include "core/math/Vec3.h"
+
+namespace Unnamed {
+	/// @brief メッシュの頂点データ構造体
+	struct MeshVertex {
+		Vec3                    position    = Vec3::zero;
+		Vec3                    normal      = Vec3::up;
+		Vec2                    uv          = Vec2::zero;
+		std::array<uint16_t, 4> boneIndices = {0, 0, 0, 0};
+		std::array<float, 4>    boneWeights = {0.0f, 0.0f, 0.0f, 0.0f};
+	};
+
+	/// @brief スケルトンのボーンデータ構造体
+	struct SkeletonBoneAssetData {
+		std::string name;
+		int32_t     parentIndex     = -1;
+		Mat4        inverseBindPose = Mat4::identity;
+		Vec3        bindLocalTranslation = Vec3::zero;
+		Quaternion  bindLocalRotation = Quaternion::identity;
+		Vec3        bindLocalScale = Vec3::one;
+	};
+
+	struct AnimationKeyVec3AssetData {
+		float timeSeconds = 0.0f;
+		Vec3  value       = Vec3::zero;
+	};
+
+	struct AnimationKeyQuatAssetData {
+		float      timeSeconds = 0.0f;
+		Quaternion value       = Quaternion::identity;
+	};
+
+	struct SkeletonBoneTrackAssetData {
+		int32_t                                   boneIndex = -1;
+		std::vector<AnimationKeyVec3AssetData>    translationKeys;
+		std::vector<AnimationKeyQuatAssetData>    rotationKeys;
+		std::vector<AnimationKeyVec3AssetData>    scaleKeys;
+	};
+
+	struct AnimationClipAssetData {
+		std::string                           name;
+		float                                 durationSeconds = 0.0f;
+		std::vector<SkeletonBoneTrackAssetData> boneTracks;
+	};
+
+	/// @brief メッシュアセットのデータ構造体
+	struct MeshAssetData {
+		std::vector<MeshVertex>            vertices;
+		std::vector<uint32_t>              indices;
+		std::vector<SkeletonBoneAssetData> skeleton;
+		std::vector<AnimationClipAssetData> animationClips;
+		bool                               hasSkinning = false;
+
+		Vec3 localBoundsMin = Vec3(FLT_MAX);
+		Vec3 localBoundsMax = Vec3(-FLT_MAX);
+
+		std::string sourcePath;
+	};
+}

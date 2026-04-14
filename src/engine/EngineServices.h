@@ -7,6 +7,8 @@ namespace Unnamed {
 
 	class EngineServices {
 	public:
-		static Engine* Get() { return ::ServiceLocator::Get<Unnamed::Engine>(); }
+		static Engine* Get() {
+			return ServiceLocator::Get<Engine>();
+		}
 	};
 }

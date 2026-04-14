@@ -1,11 +1,12 @@
 #include "BuiltInCommands.h"
 
 #include <engine/unnamed/subsystem/console/ConsoleSystem.h>
-#include <engine/unnamed/subsystem/console/concommand/UnnamedConCommand.h>
-#include <engine/unnamed/subsystem/console/concommand/UnnamedConVar.h>
+#include <engine/unnamed/subsystem/console/concommand/ConCommand.h>
+#include <engine/unnamed/subsystem/console/concommand/ConVar.h>
 #include <engine/unnamed/subsystem/interface/ServiceLocator.h>
 
 #include "engine/unnamed/subsystem/console/ConsoleScriptParser.h"
+#include "game/core/replay/DemoManager.h"
 
 namespace Unnamed {
 	void RegisterBuiltInCommands() {
@@ -15,9 +16,11 @@ namespace Unnamed {
 			const std::vector<std::string>& values,
 			auto                            parse
 		) {
-			if (!var || values.empty()) return;
-			using T         = decltype(var->GetValue());
-			const T current = static_cast<T>(*var);
+			if (!var || values.empty()) {
+				return;
+			}
+			using t         = decltype(var->GetValue());
+			const t current = static_cast<t>(*var);
 
 			for (size_t i = 0; i < values.size(); ++i) {
 				if (current == parse(values[i])) {
@@ -33,15 +36,17 @@ namespace Unnamed {
 			Msg(kChannelNone, "Toggle: {}", var->GetValue());
 		};
 
-		static UnnamedConCommand toggle(
+		static ConCommand toggle(
 			"toggle",
 			[ToggleSequence](std::vector<std::string> args) {
 				// 引数がなければ何もせず終了。
-				if (args.empty()) { return false; }
+				if (args.empty()) {
+					return false;
+				}
 
 				auto* console = ServiceLocator::Get<ConsoleSystem>();
 				// 最初の引数がCVar名、その後が切り替えたい値のリスト
-				const std::vector<std::string> argValues(
+				const std::vector argValues(
 					args.begin() + 1, args.end()
 				);
 				const auto argSize = argValues.size();            // 値の数
@@ -51,17 +56,19 @@ namespace Unnamed {
 					case CVAR_TYPE::NONE: break;
 
 					case CVAR_TYPE::BOOL: {
-						const auto bVar = dynamic_cast<UnnamedConVar<bool>*>(
+						const auto bVar = dynamic_cast<ConVar<bool>*>(
 							var);
-						bool bValue = static_cast<bool>(*bVar);
+						const bool bValue = static_cast<bool>(*bVar);
 						bVar->SetValue(!bValue);
 						Msg(kChannelNone, "Toggle: {}", bVar->GetValue());
 					}
 					break;
 
 					case CVAR_TYPE::INT: {
-						if (argSize == 0) return false;
-						auto* iVar = dynamic_cast<UnnamedConVar<int>*>(var);
+						if (argSize == 0) {
+							return false;
+						}
+						auto* iVar = dynamic_cast<ConVar<int>*>(var);
 						ToggleSequence(
 							iVar, argValues, [](const std::string& s) {
 								return std::stoi(s);
@@ -71,8 +78,10 @@ namespace Unnamed {
 					break;
 
 					case CVAR_TYPE::FLOAT: {
-						if (argSize == 0) return false;
-						auto* fVar = dynamic_cast<UnnamedConVar<float>*>(var);
+						if (argSize == 0) {
+							return false;
+						}
+						auto* fVar = dynamic_cast<ConVar<float>*>(var);
 						ToggleSequence(
 							fVar, argValues, [](const std::string& s) {
 								return std::stof(s);
@@ -82,8 +91,10 @@ namespace Unnamed {
 					break;
 
 					case CVAR_TYPE::DOUBLE: {
-						if (argSize == 0) return false;
-						auto* dVar = dynamic_cast<UnnamedConVar<double>*>(var);
+						if (argSize == 0) {
+							return false;
+						}
+						auto* dVar = dynamic_cast<ConVar<double>*>(var);
 						ToggleSequence(
 							dVar, argValues, [](const std::string& s) {
 								return std::stod(s);
@@ -93,8 +104,10 @@ namespace Unnamed {
 					break;
 
 					case CVAR_TYPE::STRING: {
-						if (argSize == 0) return false;
-						auto* sVar = dynamic_cast<UnnamedConVar<std::string>*>(
+						if (argSize == 0) {
+							return false;
+						}
+						auto* sVar = dynamic_cast<ConVar<std::string>*>(
 							var);
 						ToggleSequence(
 							sVar, argValues, [](const std::string& s) {
@@ -105,6 +118,10 @@ namespace Unnamed {
 					break;
 					case CVAR_TYPE::VEC3:
 						// 使う...か?
+						Error(
+							"Toggle",
+							"Vec3 type is not supported for toggle command."
+						);
 						break;
 				}
 				return true;
@@ -112,7 +129,7 @@ namespace Unnamed {
 			"Usage: toggle <cvar> <value 1> <value 2> <value 3> ..."
 		);
 
-		static UnnamedConCommand exec(
+		static ConCommand exec(
 			"exec",
 			[](const std::vector<std::string>& args) {
 				if (args.empty()) {
@@ -125,5 +142,67 @@ namespace Unnamed {
 			},
 			"Execute a console script file."
 		);
+
+		static ConCommand demoRecord(
+			"demo_record",
+			[](std::vector<std::string> args) {
+				auto* demoManager = ServiceLocator::Get<DemoManager>();
+				if (!demoManager) {
+					Error(kChannelNone, "DemoManager is not available.");
+					return false;
+				}
+				const std::string path = args.empty() ? std::string() : args[0];
+				return demoManager->StartRecording(path);
+			},
+			"Start demo recording. Usage: demo_record [path]"
+		);
+
+		static ConCommand demoPlay(
+			"demo_play",
+			[](std::vector<std::string> args) {
+				auto* demoManager = ServiceLocator::Get<DemoManager>();
+				if (!demoManager) {
+					Error(kChannelNone, "DemoManager is not available.");
+					return false;
+				}
+				if (args.empty()) {
+					Error(kChannelNone, "Usage: demo_play <path>");
+					return false;
+				}
+				return demoManager->StartPlayback(args[0]);
+			},
+			"Start demo playback. Usage: demo_play <path>"
+		);
+
+		static ConCommand demoStop(
+			"demo_stop",
+			[](std::vector<std::string>) {
+				auto* demoManager = ServiceLocator::Get<DemoManager>();
+				if (!demoManager) {
+					Error(kChannelNone, "DemoManager is not available.");
+					return false;
+				}
+				return demoManager->Stop();
+			},
+			"Stop demo recording/playback."
+		);
+
+		static ConCommand demoStatus(
+			"demo_status",
+			[](std::vector<std::string>) {
+				auto* demoManager = ServiceLocator::Get<DemoManager>();
+				if (!demoManager) {
+					Error(kChannelNone, "DemoManager is not available.");
+					return false;
+				}
+				Msg(kChannelNone, "{}", demoManager->BuildStatusString());
+				return true;
+			},
+			"Show demo manager status."
+		);
+
+		ServerCommand();
 	}
+
+	void ServerCommand() {}
 }

@@ -1,37 +1,43 @@
 #pragma once
 
+#include <format>
 #include <memory>
 #include <source_location>
+#include <type_traits>
 #include <unordered_map>
 
-#include <core/unnamed/containers/RingBuffer.h>
+#include <core/containers/RingBuffer.h>
 
+#include <engine/unnamed/subsystem/console/ConsoleFileLogSink.h>
 #include <engine/unnamed/subsystem/console/ConsoleUI.h>
-#include <engine/unnamed/subsystem/console/concommand/base/UnnamedConCommandBase.h>
+#include <engine/unnamed/subsystem/console/concommand/base/ConCommandBase.h>
 #include <engine/unnamed/subsystem/console/interface/IConsole.h>
 #include <engine/unnamed/subsystem/interface/ISubsystem.h>
-#include <engine/unnamed/time/DateTime.h>
 
 namespace Unnamed {
-	class UnnamedConCommandBase;
-	constexpr uint32_t kConsoleBufferSize = 1024;
+	constexpr uint32_t kConsoleBufferSize = 1024; // ログバッファのサイズ
+
+	class ConCommandBase;
+	class ConCommand;
+	template <typename T>
+	class ConVar;
 
 	/// @brief コンソールログテキスト構造体
 	struct ConsoleLogText {
-		LogLevel             level;
-		std::string          channel;
-		std::string          message;
-		DateTime             timeStamp;
-		std::source_location location;
+		LogLevel             level;     // ログレベル
+		std::string          channel;   // ログチャンネル
+		std::string          message;   // ログメッセージ
+		DateTime             timeStamp; // ログのタイムスタンプ
+		std::source_location location;  // ソースコードの位置情報
 	};
 
 	/// @brief コンソールコマンド実行フラグ
-	enum class EXEC_FLAG {
-		NONE         = 0,
-		SILENT       = 1 << 0,
-		FROM_ENGINE  = 1 << 1,
-		FROM_USER    = 1 << 2,
-		FROM_CONSOLE = 1 << 3,
+	enum class EXEC_FLAG : uint8_t {
+		NONE         = 0,      // フラグなし
+		SILENT       = 1 << 0, // 実行ログを出力しない
+		FROM_ENGINE  = 1 << 1, // エンジン内部からの実行(起動時の自動実行など)
+		FROM_USER    = 1 << 2, // ユーザー入力からの実行(キーバインドやUIからの実行など)
+		FROM_CONSOLE = 1 << 3, // コンソールからの実行(上記FROM_USERと重複するが、明示的に区別したい場合に使用)
 	};
 
 	/// @brief EXEC_FLAGのOR演算子オーバーロード
@@ -39,6 +45,12 @@ namespace Unnamed {
 	/// @param rhs 右辺
 	/// @return 演算結果
 	EXEC_FLAG operator|=(EXEC_FLAG& lhs, const EXEC_FLAG& rhs);
+
+	/// @brief EXEC_FLAGのOR演算子オーバーロード
+	/// @param lhs 左辺
+	/// @param rhs 右辺
+	/// @return 演算結果
+	EXEC_FLAG operator|(EXEC_FLAG lhs, const EXEC_FLAG& rhs);
 
 	/// @brief EXEC_FLAGのAND演算子オーバーロード
 	/// @param lhs 左辺
@@ -60,6 +72,7 @@ namespace Unnamed {
 		bool Init() override;
 
 		/// @brief 更新
+		/// @note ImGuiのコンテキスト内で呼んでください。
 		void Update(float deltaTime) override;
 
 		/// @brief シャットダウン
@@ -88,11 +101,12 @@ namespace Unnamed {
 
 		/// @brief コンソールコマンドを登録します
 		/// @param conCommand 登録するコマンドへのポインタ
-		void RegisterConCommand(UnnamedConCommandBase* conCommand);
+		void RegisterConCommand(ConCommandBase* conCommand);
+		void UnregisterConCommand(const ConCommandBase* conCommand);
 
 		/// @brief コンソール変数を登録します
 		/// @param conVar 登録する変数へのポインタ
-		void RegisterConVar(UnnamedConCommandBase* conVar);
+		void RegisterConVar(ConCommandBase* conVar);
 
 		/// @brief コンソールにコマンドを送信します。
 		/// @param command コマンド文字列
@@ -102,50 +116,116 @@ namespace Unnamed {
 			EXEC_FLAG          flag = EXEC_FLAG::FROM_ENGINE
 		);
 
-		/// @brief 登録されている全てのコンソールコマンドを取得します
+		/// @brief 登録されている全てのコンソール変数を取得します
 		[[nodiscard]]
-		std::unordered_map<std::string, UnnamedConCommandBase*> GetConVars();
+		std::unordered_map<std::string, ConCommandBase*> GetConVars();
 
 		/// @brief 名前からコンソール変数を取得します
 		/// @param name 変数名
 		/// @return 変数へのポインタ（存在しない場合はnullptr）
-		UnnamedConCommandBase* GetConVar(std::string_view name);
+		ConCommandBase* GetConVar(std::string_view name);
 
-		/// @brief UnnamedConCommandBaseからCVAR_TYPEを取得します
+		/// @brief 名前からコンソールコマンドを取得します
+		/// @param name コマンド名
+		/// @return コマンドへのポインタ（存在しない場合はnullptr）
+		ConCommandBase* GetConCommand(std::string_view name);
+
+		/// @brief ConVarの現在値を文字列で取得します
+		/// @param name 変数名
+		/// @return 値文字列（存在しない/ConVarでない場合は空文字）
+		[[nodiscard]] std::string GetConVarValueString(
+			std::string_view name
+		) const;
+
+		/// @brief ConCommandBaseからCVAR_TYPEを取得します
 		/// @param var 変数へのポインタ
 		/// @return 変数の型
 		[[nodiscard]]
-		static enum class CVAR_TYPE GetConVarType(UnnamedConCommandBase* var);
+		static enum class CVAR_TYPE GetConVarType(ConCommandBase* var);
 
 		/// @brief 指定した型のコンソール変数を名前から取得します
 		/// @tparam TVar 取得する変数の型
 		/// @param name 変数名
-		/// @return 変数へのポインタ（存在しない場合や型が異なる場合はnullptr）
+		/// @return 変数へのポインタ（無効な場合はnullptr）
 		template <class TVar>
 		[[nodiscard]] TVar* GetConVarAs(const std::string_view name) {
 			static_assert(
-				std::is_base_of_v<UnnamedConCommandBase, TVar>,
-				"TVar must be derived from UnnamedConCommandBase"
+				std::is_base_of_v<ConCommandBase, TVar>,
+				"TVar must be derived from ConCommandBase"
 			);
 
 			auto* base = GetConVar(name);
-			if (!base) { return nullptr; }
+			if (!base) {
+				return nullptr;
+			}
 
-			if (GetConVarType(base) != TVar::kType) { return nullptr; }
-
-			return static_cast<TVar*>(base);
+			return dynamic_cast<TVar*>(base);
 		}
+
+		/// @brief 指定した型のコンソール変数の値を取得します。存在しない/型不一致の場合はフォールバック値を返します。
+		/// @tparam T 取得する変数の型
+		/// @param name 変数名
+		/// @param fallback フォールバック値
+		/// @return 変数の値、またはフォールバック値
+		template <typename T>
+		[[nodiscard]] T GetConVarValueOr(
+			const std::string_view name,
+			const T&               fallback
+		) {
+			if (const auto* var = GetConVarAs<ConVar<T>>(name)) {
+				return var->GetValue();
+			}
+			Print(
+				LogLevel::Warning, "Console",
+				std::format(
+					"CVar '{}' not found. Returning fallback value.", name
+				),
+				std::source_location::current()
+			);
+			return fallback;
+		}
+
+		/// @brief 入力テキストに基づいて曖昧検索でコンソール変数を検索します
+		/// @param input 検索キーワード
+		/// @param maxResults 最大結果数
+		/// @return マッチしたconvar名のベクター（スコア順でソート、高スコアから低スコア）
+		[[nodiscard]]
+		std::vector<std::string> FindSimilarConVars(
+			std::string_view input, size_t maxResults = 10
+		);
+
+		/// @brief 入力テキストに基づいて曖昧検索でコンソールコマンドを検索します
+		/// @param input 検索キーワード
+		/// @param maxResults 最大結果数
+		/// @return マッチしたconcommand名のベクター（スコア順でソート、高スコアから低スコア）
+		[[nodiscard]]
+		std::vector<std::string> FindSimilarConCommands(
+			std::string_view input, size_t maxResults = 10
+		);
 
 	private:
 		/// @brief 一般コマンドを登録します
 		void RegisterCommonCommands();
 
+		/// @brief コマンド引数から変数に値をセットします。
+		/// @param var 対象の変数
+		/// @param args コマンド引数のベクター
+		void SetVarFromArgs(
+			ConCommandBase* var, const std::vector<std::string>& args
+		);
+
 		// ログのリングバッファ
 		RingBuffer<ConsoleLogText, kConsoleBufferSize> mLogBuffer;
 
+		// ファイル出力
+		ConsoleFileLogSink mFileLogSink;
+		bool               mEnableFileLog = true;
+
 		// 登録されているコマンドと変数のマップ
-		std::unordered_map<std::string, UnnamedConCommandBase*> mConCommands;
-		std::unordered_map<std::string, UnnamedConCommandBase*> mConVars;
+		std::unordered_map<std::string, ConCommandBase*> mConCommands;
+		std::unordered_map<std::string, ConCommandBase*> mConVars;
+		std::unique_ptr<ConCommand>                      mHelpCommand;
+		std::unique_ptr<ConCommand>                      mClearCommand;
 
 #ifdef _DEBUG // デバッグ時(ImGui有効化時)にはコンソールUIを有効化
 		std::unique_ptr<ConsoleUI> mConsoleUI;

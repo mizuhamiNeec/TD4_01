@@ -3013,7 +3013,7 @@ IMGUIZMO_NAMESPACE {
 		// behind camera
 		vec_t camSpacePosition;
 		camSpacePosition.TransformPoint(makeVect(0.f, 0.f, 0.f), gContext.mMVP);
-		if (!gContext.mIsOrthographic && camSpacePosition.z < 0.001f && !
+		if (!gContext.mIsOrthographic && camSpacePosition.w < 0.001f && !
 			gContext.mbUsing) {
 			return false;
 		}
@@ -3133,24 +3133,24 @@ IMGUIZMO_NAMESPACE {
 					directionUnary[perpYIndex],
 				};
 
-				// clipping
-				/*
-				bool skipFace = false;
-				for (unsigned int iCoord = 0; iCoord < 4; iCoord++)
-				{
-				   vec_t camSpacePosition;
-				   camSpacePosition.TransformPoint(faceCoords[iCoord] * 0.5f * invert, res);
-				   if (camSpacePosition.z < 0.001f)
-				   {
-				      skipFace = true;
-				      break;
-				   }
-				}
-				if (skipFace)
-				{
-				   continue;
-				}
-				*/
+			// clipping
+			/*
+			bool skipFace = false;
+			for (unsigned int iCoord = 0; iCoord < 4; iCoord++)
+			{
+			   vec_t camSpacePosition;
+			   camSpacePosition.TransformPoint(faceCoords[iCoord] * 0.5f * invert, res);
+			   if (camSpacePosition.w < 0.001f)
+			   {
+			      skipFace = true;
+			      break;
+			   }
+			}
+			if (skipFace)
+			{
+			   continue;
+			}
+			*/
 				vec_t centerPosition, centerPositionVP;
 				centerPosition.TransformPoint(
 					directionUnary[normalIndex] * 0.5f * invert,
@@ -3191,6 +3191,10 @@ IMGUIZMO_NAMESPACE {
 		      [](void const* _a, void const* _b) {
 			      CubeFace* a = (CubeFace*)_a;
 			      CubeFace* b = (CubeFace*)_b;
+			      if (gContext.mReversed) {
+				      if (a->z < b->z) { return -1; }
+				      return 1;
+			      }
 			      if (a->z < b->z) {
 				      return 1;
 			      }

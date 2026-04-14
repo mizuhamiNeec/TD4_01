@@ -1,10 +1,11 @@
-﻿#include "MouseDevice.h"
+#include "MouseDevice.h"
 
 
 namespace Unnamed {
 	/// @brief コンストラクタ
 	/// @param hWnd ウィンドウハンドル
 	MouseDevice::MouseDevice(const HWND hWnd) {
+		mWindowHandle = hWnd;
 		RAWINPUTDEVICE rid;
 		rid.usUsagePage = 0x01;
 		rid.usUsage     = 0x02; // マウス
@@ -23,7 +24,9 @@ namespace Unnamed {
 	/// @brief 生の入力を処理する
 	/// @param raw 生の入力データ
 	void MouseDevice::HandleRawInput(const RAWINPUT& raw) {
-		if (raw.header.dwType != RIM_TYPEMOUSE) { return; }
+		if (raw.header.dwType != RIM_TYPEMOUSE) {
+			return;
+		}
 		const auto& mouseData = raw.data.mouse;
 
 		// 第5ボタンまでの状態を取得 マウスの形をしたキーボードは知らん
@@ -84,7 +87,9 @@ namespace Unnamed {
 	/// @param key 入力キー
 	/// @return 押されているかどうか
 	bool MouseDevice::GetKeyState(const InputKey& key) const {
-		if (key.device != InputDeviceType::MOUSE) { return false; }
+		if (key.device != InputDeviceType::MOUSE) {
+			return false;
+		}
 		const auto it = mButtonStates.find(key.code);
 		return it != mButtonStates.end() ? it->second : false;
 	}
@@ -93,10 +98,18 @@ namespace Unnamed {
 	/// @param key 入力キー
 	/// @return アナログ値
 	float MouseDevice::GetAnalogValue(const InputKey& key) const {
-		if (key.device != InputDeviceType::MOUSE) { return 0.0f; }
-		if (key.code == VM_X) { return static_cast<float>(mDeltaX); }
-		if (key.code == VM_Y) { return static_cast<float>(mDeltaY); }
-		if (key.code == VM_WHEEL) { return static_cast<float>(mWheelDelta); }
+		if (key.device != InputDeviceType::MOUSE) {
+			return 0.0f;
+		}
+		if (key.code == VM_X) {
+			return static_cast<float>(mDeltaX);
+		}
+		if (key.code == VM_Y) {
+			return static_cast<float>(mDeltaY);
+		}
+		if (key.code == VM_WHEEL) {
+			return static_cast<float>(mWheelDelta);
+		}
 		return 0.0f;
 	}
 

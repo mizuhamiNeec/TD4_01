@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <string_view>
 
@@ -18,6 +18,13 @@ namespace Unnamed {
 		Execute, // コマンドの実行時に使用されます。
 		Waiting, // コマンドの実行待機時に使用されます。
 		Success, // 成功メッセージ
+
+		Bool,   // 真偽値用
+		Int,    // 整数用
+		Float,  // 浮動小数点数用
+		Double, // 倍精度浮動小数点数用
+		String, // 文字列用
+		Vec3,   // 3次元ベクトル用
 	};
 
 	const char* ToString(LogLevel e);

@@ -2,15 +2,15 @@
 	"fontpath": {
 		"default": {
 			"path": "./content/core/fonts/JetBrainsMono.ttf",
-			"size": 14.0
+			"size": 16.0
 		},
 		"japanese": {
 			"path": "./content/core/fonts/NotoSansJP.ttf",
-			"size": 14.0
+			"size": 16.0
 		},
 		"icon": {
 			"path": "./content/core/fonts/MaterialSymbolsRounded_Filled_28pt-Regular.ttf",
-			"size": 14.0
+			"size": 16.0
 		}
 	},
 	"fontconfig": {

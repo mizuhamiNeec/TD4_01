@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -41,13 +41,26 @@ namespace Unnamed {
 		[[nodiscard]] InputDeviceType GetDeviceType() const override;
 		void ResetStates() override;
 
-		[[nodiscard]] int GetDeltaX() const { return mDeltaX; }
-		[[nodiscard]] int GetDeltaY() const { return mDeltaY; }
-		[[nodiscard]] int GetWheelDelta() const { return mWheelDelta; }
+		[[nodiscard]] int GetDeltaX() const {
+			return mDeltaX;
+		}
+
+		[[nodiscard]] int GetDeltaY() const {
+			return mDeltaY;
+		}
+
+		[[nodiscard]] int GetWheelDelta() const {
+			return mWheelDelta;
+		}
+
+		[[nodiscard]] HWND GetWindowHandle() const {
+			return mWindowHandle;
+		}
 
 		void ResetDelta();
 
 	private:
+		HWND                               mWindowHandle   = nullptr;
 		std::unordered_map<uint32_t, bool> mButtonStates;
 		int                                mDeltaX         = 0;
 		int                                mDeltaY         = 0;

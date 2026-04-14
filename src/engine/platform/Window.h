@@ -1,38 +1,82 @@
 ﻿#pragma once
-#include <string>
 #include <cstdint>
+#include <optional>
+#include <string>
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
 #include <Windows.h>
 
-/// @brief ウィンドウの説明構造体
-struct WindowDesc {
-	std::string title;
-	uint32_t    width  = 1280;
-	uint32_t    height = 720;
-	DWORD       style  = WS_OVERLAPPEDWINDOW;
-};
+#include "engine/EngineConfig.h"
 
-/// @brief ウィンドウクラス
-class Window {
-public:
-	Window(const WindowDesc& desc, HINSTANCE hInstance, uint32_t wndId);
-	~Window();
+namespace Unnamed {
+	struct WindowId {
+		uint32_t value = 0;
 
-	[[nodiscard]] HWND     GetHWnd() const;
-	[[nodiscard]] uint32_t GetID() const;
+		friend bool operator==(const WindowId a, const WindowId b) {
+			return a.value == b.value;
+		}
 
-	void Show(int cmdShow = SW_SHOWDEFAULT) const;
+		friend bool operator!=(const WindowId a, const WindowId b) {
+			return !(a == b);
+		}
+	};
 
-private:
-	static LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-	static constexpr auto   kClassName = L"WindowClass";
+	struct WindowDesc {
+		std::string title     = "Unnamed Window";
+		int32_t     width     = 1280;
+		int32_t     height    = 720;
+		WINDOW_MODE mode      = WINDOW_MODE::WINDOWED;
+		bool        resizable = true;
+		bool        visible   = true;
+	};
 
-	HWND     mHWnd;
-	uint32_t mWndId;
-};
+	struct WindowResizeEvent {
+		int32_t width        = 0;
+		int32_t height       = 0;
+		bool    isLiveResize = false;
+	};
+
+	class Window final {
+	public:
+		Window(WindowId id, WindowDesc desc, HWND hwnd);
+
+		/// @brief ウィンドウのIDを取得します。
+		[[nodiscard]] WindowId GetId() const;
+
+		/// @brief ウィンドウのHWNDを取得します。
+		[[nodiscard]] HWND GetHwnd() const;
+
+		/// @brief ウィンドウの説明を取得します。
+		[[nodiscard]] WindowDesc GetDesc() const;
+
+		/// @brief ウィンドウが閉じるべきかどうかを返します。WindowManagerがこれを見て実際の破棄を行います。
+		[[nodiscard]] bool ShouldClose() const;
+
+		/// @brief ウィンドウが最小化されているかどうかを返します。
+		[[nodiscard]] bool IsMinimized() const;
+
+		/// @brief 保留中のリサイズイベントを消費します。リサイズイベントがない場合はstd::nulloptを返します。
+		std::optional<WindowResizeEvent> ConsumeResizeEvent();
+
+		/// @brief ウィンドウメッセージを処理します。WindowManagerから呼び出されます。
+		LRESULT HandleMessage(
+			HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam
+		);
+
+		/// @brief フルスクリーンとウィンドウモードを切り替えます。
+		void ToggleFullscreen() const;
+
+	private:
+		/// @brief ウィンドウを閉じるようにマークします。実際の破棄はWindowManagerが行います。
+		void MarkCloseRequested();
+
+		HWND              mHwnd          = nullptr;
+		WindowDesc        mDesc          = {};
+		WindowResizeEvent mPendingResize = {};
+		WindowId          mId            = {};
+
+		bool mShouldClose      = false;
+		bool mMinimized        = false;
+		bool mHasPendingResize = false;
+		bool mInLiveResize     = false;
+	};
+}

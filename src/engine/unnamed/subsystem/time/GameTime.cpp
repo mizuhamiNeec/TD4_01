@@ -1,7 +1,8 @@
-#include <algorithm>
-
-#include <engine/OldConsole/ConVarManager.h>
 #include <engine/unnamed/subsystem/time/GameTime.h>
+
+#include "engine/unnamed/subsystem/console/ConsoleSystem.h"
+#include "engine/unnamed/subsystem/console/concommand/ConVar.h"
+#include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 
 /// @brief コンストラクタ
 GameTime::GameTime() :
@@ -10,14 +11,7 @@ GameTime::GameTime() :
 	mDeltaTime(1.0 / 60.0),
 	mScaledDeltaTime(1.0 / 60.0),
 	mTotalTime(0),
-	mFrameCount(0) {
-	// コンソール変数の登録
-	ConVarManager::RegisterConVar<float>(
-		"host_timescale",
-		1.0f,
-		"Prescale the clock by this amount."
-	);
-}
+	mFrameCount(0) {}
 
 /// @brief ゲーム開始時の処理を行います。
 void GameTime::StartGame() {
@@ -30,7 +24,7 @@ void GameTime::StartGame() {
 /// @brief フレーム開始時の処理を行います。
 void GameTime::EndFrame() {
 	// フレーム終了時刻を記録
-	TimePoint frameEndTime = Clock::now();
+	const TimePoint frameEndTime = Clock::now();
 
 	// デルタ計算
 	mDeltaTime = std::chrono::duration<double>(
@@ -38,9 +32,10 @@ void GameTime::EndFrame() {
 	).count();
 
 	// タイムスケールを取得
-	mTimeScale = ConVarManager::GetConVar(
+	mTimeScale = ServiceLocator::Get<Unnamed::ConsoleSystem>()->GetConVarAs<
+		Unnamed::ConVar<float>>(
 		"host_timescale"
-	)->GetValueAsFloat();
+	)->GetValue();
 
 	// 各値を更新
 	mScaledDeltaTime = mDeltaTime * mTimeScale;
@@ -56,8 +51,7 @@ void GameTime::EndFrame() {
 /// @return 前フレームからの経過時間（秒単位）
 template <typename T>
 T GameTime::DeltaTime() {
-	const double clamped = std::min(mDeltaTime, 1.0 / 60.0);
-	return static_cast<T>(clamped);
+	return static_cast<T>(mDeltaTime);
 }
 
 /// @brief タイムスケールが適用された前フレームからの経過時間を取得します。
@@ -65,11 +59,7 @@ T GameTime::DeltaTime() {
 /// @return タイムスケールが適用された前フレームからの経過時間（秒単位）
 template <typename T>
 T GameTime::ScaledDeltaTime() {
-	const double clamped = std::min(
-		mScaledDeltaTime * TimeScale(),
-		(1.0 / 60.0) * TimeScale()
-	);
-	return static_cast<T>(clamped);
+	return static_cast<T>(mScaledDeltaTime);
 }
 
 template double GameTime::DeltaTime<double>();
@@ -79,12 +69,18 @@ template float  GameTime::ScaledDeltaTime<float>();
 
 /// @brief ゲームの起動から経過した時間を取得します。
 /// @return ゲームの起動から経過した時間（秒単位）
-double GameTime::TotalTime() const { return static_cast<float>(mTotalTime); }
+double GameTime::TotalTime() const {
+	return static_cast<float>(mTotalTime);
+}
 
 /// @brief ゲームの時間スケールを取得します。
 /// @return ゲームの時間スケール
-float GameTime::TimeScale() { return mTimeScale; }
+float GameTime::TimeScale() const {
+	return mTimeScale;
+}
 
 /// @brief 現在のフレーム数を取得します。
 /// @return 現在のフレーム数
-uint64_t GameTime::FrameCount() const { return mFrameCount; }
+uint64_t GameTime::FrameCount() const {
+	return mFrameCount;
+}

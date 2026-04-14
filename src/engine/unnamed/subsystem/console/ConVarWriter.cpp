@@ -3,7 +3,7 @@
 #include <fstream>
 
 #include <engine/unnamed/subsystem/console/ConsoleSystem.h>
-#include <engine/unnamed/subsystem/console/concommand/UnnamedConVar.h>
+#include <engine/unnamed/subsystem/console/concommand/ConVar.h>
 #include <engine/unnamed/subsystem/interface/ServiceLocator.h>
 
 namespace Unnamed {
@@ -16,15 +16,16 @@ namespace Unnamed {
 			);
 		}
 
-		auto console = ServiceLocator::Get<ConsoleSystem>();
-		auto vars    = console->GetConVars();
+		const auto console = ServiceLocator::Get<ConsoleSystem>();
+		const auto vars    = console->GetConVars();
 
 		for (const auto& var : vars) {
 			if (var.second->HasFlags(FCVAR::ARCHIVE)) {
 				switch (GetConVarType(var.second)) {
 					case CVAR_TYPE::NONE: break;
 					case CVAR_TYPE::BOOL: {
-						auto* bVar = dynamic_cast<UnnamedConVar<bool>*>(var.
+						const auto* bVar = dynamic_cast<ConVar<bool>*>(
+							var.
 							second);
 						std::string valueStr = static_cast<bool>(*bVar) ?
 							                       "true" :
@@ -34,7 +35,8 @@ namespace Unnamed {
 					break;
 
 					case CVAR_TYPE::INT: {
-						auto* iVar = dynamic_cast<UnnamedConVar<int>*>(var.
+						const auto* iVar = dynamic_cast<ConVar<int>*>(var
+							.
 							second);
 						ofs << var.first << " " << static_cast<int>(*iVar) <<
 							"\n";
@@ -42,7 +44,8 @@ namespace Unnamed {
 					break;
 
 					case CVAR_TYPE::FLOAT: {
-						auto* fVar = dynamic_cast<UnnamedConVar<float>*>(var.
+						const auto* fVar = dynamic_cast<ConVar<float>*>(
+							var.
 							second);
 						ofs << var.first << " " << static_cast<float>(*fVar) <<
 							"\n";
@@ -50,7 +53,8 @@ namespace Unnamed {
 					break;
 
 					case CVAR_TYPE::DOUBLE: {
-						auto* dVar = dynamic_cast<UnnamedConVar<double>*>(var.
+						const auto* dVar = dynamic_cast<ConVar<double>*>(
+							var.
 							second);
 						ofs << var.first << " " << static_cast<double>(*dVar) <<
 							"\n";
@@ -58,7 +62,8 @@ namespace Unnamed {
 					break;
 
 					case CVAR_TYPE::STRING: {
-						auto* sVar = dynamic_cast<UnnamedConVar<std::string>*>(
+						const auto* sVar = dynamic_cast<ConVar<
+							std::string>*>(
 							var.
 							second);
 						ofs << var.first << " " << static_cast<std::string>(*

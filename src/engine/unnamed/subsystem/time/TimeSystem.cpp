@@ -19,7 +19,9 @@ namespace Unnamed {
 	}
 
 	/// @brief フレーム開始処理
-	void TimeSystem::BeginFrame() const { mFrameLimiter->BeginFrame(); }
+	void TimeSystem::BeginFrame() const {
+		mFrameLimiter->BeginFrame();
+	}
 
 	/// @brief フレーム終了処理
 	void TimeSystem::EndFrame() const {
@@ -29,11 +31,15 @@ namespace Unnamed {
 
 	/// @brief 名前を取得します
 	/// @return サブシステムの名前
-	const std::string_view TimeSystem::GetName() const { return "Time"; }
+	const std::string_view TimeSystem::GetName() const {
+		return "Time";
+	}
 
 	/// @brief ゲームタイムを取得します
 	/// @return ゲームタイムのポインタ
-	GameTime* TimeSystem::GetGameTime() const { return mGameTime.get(); }
+	GameTime* TimeSystem::GetGameTime() const {
+		return mGameTime.get();
+	}
 
 	/// @brief フレームリミッターを取得します
 	/// @return フレームリミッターのポインタ

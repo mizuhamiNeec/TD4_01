@@ -1,17 +1,21 @@
-﻿#include <engine/Animation/KeyFrame.h>
+#include <engine/Animation/KeyFrame.h>
 
-#include "engine/OldConsole/Console.h"
+#include "core/math/Quaternion.h"
+
+#include "engine/unnamed/subsystem/console/Log.h"
+
+static constexpr std::string_view kChannel = "KeyFrame";
 
 /// キーフレームから指定された時刻の値を計算する
 /// @param keyframes キーフレームの配列
 /// @param time 時刻 
 /// @return 計算された値 
-Vec3 CalculateValue(const std::vector<KeyframeVec3>& keyframes, float time) {
+Vec3 CalculateValue(
+	const std::vector<KeyframeVec3>& keyframes, const float time
+) {
 	//assert(!keyframes.empty() && "Keyframes must not be empty");
 	if (keyframes.empty()) {
-		Console::Print(
-			"キーがありません。\n"
-		);
+		Error(kChannel, "キーがありません。\n");
 		return {};
 	}
 	if (keyframes.size() == 1 || time <= keyframes[0].time) {
@@ -20,15 +24,16 @@ Vec3 CalculateValue(const std::vector<KeyframeVec3>& keyframes, float time) {
 	}
 
 	for (size_t index = 0; index < keyframes.size() - 1; ++index) {
-		size_t nextIndex = index + 1;
+		const size_t nextIndex = index + 1;
 		// indexとnextIndexの２つのkeyframeを取得して範囲内に時刻があるかを判定
 		if (
 			keyframes[index].time <= time &&
 			time <= keyframes[nextIndex].time
 		) {
-			float t = (time - keyframes[index].time) / (keyframes[nextIndex]
-				          .
-				          time - keyframes[index].time);
+			const float t = (time - keyframes[index].time) / (
+				                keyframes[nextIndex]
+				                .
+				                time - keyframes[index].time);
 			return Math::Lerp(
 				keyframes[index].value,
 				keyframes[nextIndex].value,
@@ -46,13 +51,11 @@ Vec3 CalculateValue(const std::vector<KeyframeVec3>& keyframes, float time) {
 /// @return 計算された値
 Quaternion CalculateValue(
 	const std::vector<KeyframeQuaternion>& keyframes,
-	float                                  time
+	const float                            time
 ) {
 	//assert(!keyframes.empty() && "Keyframes must not be empty");
 	if (keyframes.empty()) {
-		Console::Print(
-			"キーがありません。\n"
-		);
+		Error(kChannel, "キーがありません。\n");
 		return {};
 	}
 	if (keyframes.size() == 1 || time <= keyframes[0].time) {
@@ -61,15 +64,16 @@ Quaternion CalculateValue(
 	}
 
 	for (size_t index = 0; index < keyframes.size() - 1; ++index) {
-		size_t nextIndex = index + 1;
+		const size_t nextIndex = index + 1;
 		// indexとnextIndexの２つのkeyframeを取得して範囲内に時刻があるかを判定
 		if (
 			keyframes[index].time <= time &&
 			time <= keyframes[nextIndex].time
 		) {
-			float t = (time - keyframes[index].time) / (keyframes[nextIndex]
-				          .
-				          time - keyframes[index].time);
+			const float t = (time - keyframes[index].time) / (
+				                keyframes[nextIndex]
+				                .
+				                time - keyframes[index].time);
 			return Quaternion::Slerp(
 				keyframes[index].value,
 				keyframes[nextIndex].value,

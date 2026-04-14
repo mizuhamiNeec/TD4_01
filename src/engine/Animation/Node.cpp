@@ -1,4 +1,4 @@
-﻿#include <engine/Animation/Node.h>
+#include <engine/Animation/Node.h>
 
 #include <assimp/matrix4x4.h>
 #include <assimp/scene.h>
@@ -38,7 +38,9 @@ Node ReadNode(const aiNode* node) {
 		uint32_t childIndex = 0;
 		childIndex < node->mNumChildren;
 		++childIndex
-	) { result.children[childIndex] = ReadNode(node->mChildren[childIndex]); }
+	) {
+		result.children[childIndex] = ReadNode(node->mChildren[childIndex]);
+	}
 
 	return result;
 }

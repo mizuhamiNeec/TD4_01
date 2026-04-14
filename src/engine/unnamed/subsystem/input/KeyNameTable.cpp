@@ -1,17 +1,15 @@
-﻿#include <pch.h>
+#include <pch.h>
 
 #include "KeyNameTable.h"
 
 #include <algorithm>
 #include <iterator>
 
+#include <engine/unnamed/subsystem/input/device/gamepad/GamepadDevice.h>
 #include <engine/unnamed/subsystem/input/device/mouse/MouseDevice.h>
 
 
 namespace Unnamed {
-	/// @brief 文字列からInputKeyを取得します
-	/// @param name キー名の文字列
-	/// @return 対応するInputKey（存在しない場合はstd::nullopt）
 	std::optional<InputKey> KeyNameTable::FromString(
 		const std::string_view name
 	) {
@@ -28,27 +26,21 @@ namespace Unnamed {
 		return it->second;
 	}
 
-	/// @brief InputKeyから文字列を取得します
-	/// @param key 入力キー
 	std::string_view KeyNameTable::ToString(const InputKey& key) {
 		const auto& map = KeyToName();
 		const auto  it  = map.find(key);
 		return it == map.end() ? std::string_view{} : it->second;
 	}
 
-	/// @brief キー名からInputKeyへのマッピングを取得します
-	/// @return キー名からInputKeyへのマッピング
 	const std::unordered_map<std::string, InputKey>& KeyNameTable::NameToKey() {
-		return sNameToKey;
+		return kSNameToKey;
 	}
 
-	/// @brief InputKeyからキー名へのマッピングを取得します
 	const std::unordered_map<InputKey, std::string_view, KeyHash>&
-	KeyNameTable::KeyToName() { return sKeyToName; }
+	KeyNameTable::KeyToName() {
+		return kSKeyToName;
+	}
 
-	/// @brief 文字列を正規化します（小文字化）
-	/// @param str 正規化する文字列
-	/// @return 正規化された文字列
 	std::string KeyNameTable::Normalize(std::string_view str) {
 		std::string ret;
 		ret.reserve(str.size());
@@ -64,10 +56,14 @@ namespace Unnamed {
 
 #define KEY(name, dev, code) { name, { InputDeviceType::dev, static_cast<uint32_t>(code) } }
 
-	const std::unordered_map<std::string, InputKey> KeyNameTable::sNameToKey = {
+	const std::unordered_map<std::string, InputKey> KeyNameTable::kSNameToKey =
+	{
 		//---------------------------------------------------------------------
 		// キーボード
 		//---------------------------------------------------------------------
+
+		KEY("`", KEYBOARD, VK_OEM_3), // ` ← 1の左のキー
+
 		// 数字キー
 		KEY("0", KEYBOARD, 0x30), // 0
 		KEY("1", KEYBOARD, 0x31), // 1
@@ -188,12 +184,48 @@ namespace Unnamed {
 		KEY("mouse3", MOUSE, VK_MBUTTON),        // 中央ボタン
 		KEY("mouse4", MOUSE, VK_XBUTTON1),       // サイドボタン1 手前
 		KEY("mouse5", MOUSE, VK_XBUTTON2),       // サイドボタン2 奥
+
+		//---------------------------------------------------------------------
+		// ゲームパッド
+		//---------------------------------------------------------------------
+		KEY("gp_a", GAMEPAD, VG_A),
+		KEY("gp_b", GAMEPAD, VG_B),
+		KEY("gp_x", GAMEPAD, VG_X),
+		KEY("gp_y", GAMEPAD, VG_Y),
+		KEY("gp_lb", GAMEPAD, VG_LB),
+		KEY("gp_rb", GAMEPAD, VG_RB),
+		KEY("gp_back", GAMEPAD, VG_BACK),
+		KEY("gp_start", GAMEPAD, VG_START),
+		KEY("gp_ls", GAMEPAD, VG_LS),
+		KEY("gp_rs", GAMEPAD, VG_RS),
+		KEY("gp_dpad_up", GAMEPAD, VG_DPAD_UP),
+		KEY("gp_dpad_down", GAMEPAD, VG_DPAD_DOWN),
+		KEY("gp_dpad_left", GAMEPAD, VG_DPAD_LEFT),
+		KEY("gp_dpad_right", GAMEPAD, VG_DPAD_RIGHT),
+
+		KEY("gp_lx", GAMEPAD, VG_LX),
+		KEY("gp_ly", GAMEPAD, VG_LY),
+		KEY("gp_rx", GAMEPAD, VG_RX),
+		KEY("gp_ry", GAMEPAD, VG_RY),
+		KEY("gp_lt", GAMEPAD, VG_LT),
+		KEY("gp_rt", GAMEPAD, VG_RT),
+
+		KEY("gp_lleft", GAMEPAD, VG_LSTICK_LEFT),
+		KEY("gp_lright", GAMEPAD, VG_LSTICK_RIGHT),
+		KEY("gp_lup", GAMEPAD, VG_LSTICK_UP),
+		KEY("gp_ldown", GAMEPAD, VG_LSTICK_DOWN),
+		KEY("gp_rleft", GAMEPAD, VG_RSTICK_LEFT),
+		KEY("gp_rright", GAMEPAD, VG_RSTICK_RIGHT),
+		KEY("gp_rup", GAMEPAD, VG_RSTICK_UP),
+		KEY("gp_rdown", GAMEPAD, VG_RSTICK_DOWN),
 	};
 
 	const std::unordered_map<InputKey, std::string_view, KeyHash>
-	KeyNameTable::sKeyToName = [] {
+	KeyNameTable::kSKeyToName = [] {
 		std::unordered_map<InputKey, std::string_view, KeyHash> rev;
-		for (const auto& [name, key] : sNameToKey) rev.emplace(key, name);
+		for (const auto& [name, key] : kSNameToKey) {
+			rev.emplace(key, name);
+		}
 		return rev;
 	}();
 }

@@ -484,14 +484,14 @@ namespace Unnamed {
 				}
 			};
 
-			Physics::Hit wallHit = {};
-			float distToWall = 0.0f;
-			bool wallFound = false;
-			bool wallDetectedByOverlap = false;
-			Vec3 wallNormal = Vec3::zero;
-			Vec3 wallContactPos = Vec3::zero;
-			bool hasWallContactPos = false;
-			const float wallCheckCastLength = checkDistM + halfWidthM;
+			Physics::Hit wallHit               = {};
+			float        distToWall            = 0.0f;
+			bool         wallFound             = false;
+			bool         wallDetectedByOverlap = false;
+			Vec3         wallNormal            = Vec3::zero;
+			Vec3         wallContactPos        = Vec3::zero;
+			bool         hasWallContactPos     = false;
+			const float  wallCheckCastLength   = checkDistM + halfWidthM;
 			if (physics->BoxCast(
 				forwardProbe,
 				forward,
@@ -508,10 +508,11 @@ namespace Unnamed {
 					);
 				}
 				// Hit は TOI で返るため、壁までの実距離に変換します。
-				distToWall = std::clamp(wallHit.toi, 0.0f, 1.0f) * wallCheckCastLength;
-				wallContactPos = wallHit.pos;
+				distToWall = std::clamp(wallHit.toi, 0.0f, 1.0f) *
+				             wallCheckCastLength;
+				wallContactPos    = wallHit.pos;
 				hasWallContactPos = true;
-				wallFound = true;
+				wallFound         = true;
 			}
 			if (!wallFound) {
 				Physics::Hit overlapHit = {};
@@ -525,7 +526,7 @@ namespace Unnamed {
 							wallNormal.z
 						);
 					}
-					wallFound = true;
+					wallFound             = true;
 					wallDetectedByOverlap = true;
 				}
 			}
@@ -550,7 +551,7 @@ namespace Unnamed {
 			}
 
 			float distToWallAlongTraverseM = distToWall;
-			bool hasTraverseDistance = false;
+			bool  hasTraverseDistance      = false;
 			{
 				// Y 回転した壁では forward 距離をそのまま使うと不足しやすいため、
 				// 壁接触点と法線から「進行方向に対する壁距離」を先に見積もります。
@@ -558,26 +559,30 @@ namespace Unnamed {
 					const float denom = wallNormal.Dot(vaultTraverseDir);
 					if (std::abs(denom) > 1.0e-4f) {
 						const float planeDistance = wallNormal.Dot(
-							wallContactPos - forwardProbe.center
-						) / denom;
+							                            wallContactPos -
+							                            forwardProbe.center
+						                            ) / denom;
 						if (std::isfinite(planeDistance)) {
-							distToWallAlongTraverseM = std::max(0.0f, planeDistance);
-							hasTraverseDistance      = true;
+							distToWallAlongTraverseM = std::max(
+								0.0f, planeDistance
+							);
+							hasTraverseDistance = true;
 						}
 					}
 				}
 
-				Physics::Hit traverseHit = {};
-				const float traverseCheckLengthM = checkDistM + halfWidthM * 2.0f;
+				Physics::Hit traverseHit          = {};
+				const float  traverseCheckLengthM =
+					checkDistM + halfWidthM * 2.0f;
 				if (physics->BoxCast(
-					forwardProbe,
-					vaultTraverseDir,
-					traverseCheckLengthM,
-					&traverseHit
-				) && IsBlockingCastHit(traverseHit)) {
+					    forwardProbe,
+					    vaultTraverseDir,
+					    traverseCheckLengthM,
+					    &traverseHit
+				    ) && IsBlockingCastHit(traverseHit)) {
 					distToWallAlongTraverseM = std::clamp(
-							traverseHit.toi, 0.0f, 1.0f
-						) * traverseCheckLengthM;
+						                           traverseHit.toi, 0.0f, 1.0f
+					                           ) * traverseCheckLengthM;
 					hasTraverseDistance = true;
 				} else if (wallDetectedByOverlap) {
 					distToWallAlongTraverseM = 0.0f;
@@ -592,11 +597,11 @@ namespace Unnamed {
 				}
 			}
 
-			float wallTopHeightM = 0.0f;
-			bool foundTop = false;
-			const float probeStepM = Math::HtoM(8.0f);
-			const float probeSizeM = Math::HtoM(4.0f);
-			const float startCheckM = -Math::HtoM(16.0f);
+			float       wallTopHeightM = 0.0f;
+			bool        foundTop       = false;
+			const float probeStepM     = Math::HtoM(8.0f);
+			const float probeSizeM     = Math::HtoM(4.0f);
+			const float startCheckM    = -Math::HtoM(16.0f);
 			for (
 				float testHeight = startCheckM;
 				testHeight <= maxVaultHeightM + probeStepM;
@@ -618,7 +623,7 @@ namespace Unnamed {
 					&topHit
 				)) {
 					wallTopHeightM = testHeight;
-					foundTop = true;
+					foundTop       = true;
 					break;
 				}
 			}
@@ -634,7 +639,8 @@ namespace Unnamed {
 			float ledgeGroundHeightM = 0.0f;
 			{
 				Vec3 wallAnchorPos = feetPos +
-					vaultTraverseDir * distToWallAlongTraverseM;
+				                     vaultTraverseDir *
+				                     distToWallAlongTraverseM;
 				if (hasWallContactPos) {
 					wallAnchorPos = wallContactPos;
 				}
@@ -673,8 +679,8 @@ namespace Unnamed {
 						probeSizeM
 					}
 				};
-				Physics::Hit thicknessHit = {};
-				const float thicknessCastLength = Math::HtoM(256.0f);
+				Physics::Hit thicknessHit        = {};
+				const float  thicknessCastLength = Math::HtoM(256.0f);
 				if (physics->BoxCast(
 					thicknessProbe,
 					vaultTraverseDir,
@@ -689,7 +695,8 @@ namespace Unnamed {
 			}
 
 			const float overWallOffsetM = std::max(
-				distToWallAlongTraverseM + wallThicknessM + halfWidthM + Math::HtoM(8.0f),
+				distToWallAlongTraverseM + wallThicknessM + halfWidthM +
+				Math::HtoM(8.0f),
 				halfWidthM * 3.0f + Math::HtoM(8.0f)
 			);
 			const Vec3 overWallPos =
@@ -713,7 +720,9 @@ namespace Unnamed {
 			const float routeTopCenterY = ledgeGroundHeightM + halfHeightM +
 			                              std::max(0.0f, routeClearanceM);
 			Vec3 verticalRouteTarget = centerPos;
-			verticalRouteTarget.y = std::max(verticalRouteTarget.y, routeTopCenterY);
+			verticalRouteTarget.y    = std::max(
+				verticalRouteTarget.y, routeTopCenterY
+			);
 			const Box routeHull = {
 				.center   = centerPos,
 				.halfSize = context.halfExtents
@@ -737,7 +746,8 @@ namespace Unnamed {
 			const float routeForwardDistanceM = wallDetectedByOverlap ?
 				                                    std::max(
 					                                    overWallOffsetM,
-					                                    halfWidthM * 2.0f + Math::HtoM(8.0f)
+					                                    halfWidthM * 2.0f +
+					                                    Math::HtoM(8.0f)
 				                                    ) :
 				                                    overWallOffsetM;
 			const Box horizontalRouteHull = {
@@ -769,8 +779,8 @@ namespace Unnamed {
 					halfWidthM
 				}
 			};
-			Physics::Hit landHit = {};
-			const float dropCheckDistM = std::max(
+			Physics::Hit landHit        = {};
+			const float  dropCheckDistM = std::max(
 				maxVaultHeightM + Math::HtoM(32.0f),
 				Math::HtoM(
 					console ?
@@ -800,7 +810,7 @@ namespace Unnamed {
 			}
 
 			const float landingDistanceM = std::clamp(landHit.toi, 0.0f, 1.0f) *
-				dropCheckDistM;
+			                               dropCheckDistM;
 			Vec3 landingFeetPos = overWallPos + Vec3::down * landingDistanceM;
 			if (landingFeetPos.y < feetPos.y) {
 				landingFeetPos.y = feetPos.y;
@@ -859,19 +869,19 @@ namespace Unnamed {
 				feetPos + vaultTraverseDir * apexForwardM +
 				Vec3::up * (wallTopHeightM + Math::HtoM(8.0f));
 
-			outTrajectory.startPos = centerPos;
-			outTrajectory.apexPos = apexFeetPos + Vec3::up * halfHeightM;
-			outTrajectory.endPos = landingFeetPos + Vec3::up * halfHeightM;
+			outTrajectory.startPos    = centerPos;
+			outTrajectory.apexPos     = apexFeetPos + Vec3::up * halfHeightM;
+			outTrajectory.endPos      = landingFeetPos + Vec3::up * halfHeightM;
 			outTrajectory.preVelocity = context.velocity;
 #undef VAULT_FAIL
 			return true;
 		}
 
 		bool TryBuildWallRunCandidate(
-			const MovementContext&                                   context,
-			ConsoleSystem*                                           console,
-			const ParkourMovementComponent::ParkourRuntime&          runtime,
-			WallRunCandidate&                                        outCandidate
+			const MovementContext&                          context,
+			ConsoleSystem*                                  console,
+			const ParkourMovementComponent::ParkourRuntime& runtime,
+			WallRunCandidate&                               outCandidate
 		) {
 			if (!context.transform || !context.resolver) {
 				return false;
@@ -881,10 +891,11 @@ namespace Unnamed {
 				return false;
 			}
 
-			Vec3 velHorz = context.velocity;
-			velHorz.y = 0.0f;
+			Vec3 velHorz          = context.velocity;
+			velHorz.y             = 0.0f;
 			const float minSpeedM = Math::HtoM(
-				console ? console->GetConVarValueOr("park_wallrun_minspeed", 200.0f) :
+				console ?
+					console->GetConVarValueOr("park_wallrun_minspeed", 200.0f) :
 					200.0f
 			);
 			if (velHorz.SqrLength() < minSpeedM * minSpeedM) {
@@ -892,7 +903,9 @@ namespace Unnamed {
 			}
 
 			const float cooldown = console ?
-				                       console->GetConVarValueOr("park_wallrun_cooldown", 0.1f) :
+				                       console->GetConVarValueOr(
+					                       "park_wallrun_cooldown", 0.1f
+				                       ) :
 				                       0.1f;
 			if (runtime.wallRun.timeSinceLast < cooldown) {
 				return false;
@@ -912,17 +925,23 @@ namespace Unnamed {
 			}
 
 			const float sideCheckDistance = context.halfExtents.x + Math::HtoM(
-				console ? console->GetConVarValueOr("park_wallrun_checkdistance", 10.0f) :
-					10.0f
-			);
+				                                console ?
+					                                console->GetConVarValueOr(
+						                                "park_wallrun_checkdistance",
+						                                10.0f
+					                                ) :
+					                                10.0f
+			                                );
 			const std::array<Vec3, 2> checkDirections = {right, -right};
 			for (const Vec3& checkDir : checkDirections) {
 				Physics::Hit hit{};
-				const Box probe = {
-					.center = context.transform->GetPosition(),
+				const Box    probe = {
+					.center   = context.transform->GetPosition(),
 					.halfSize = context.halfExtents
 				};
-				if (!physics->BoxCast(probe, checkDir, sideCheckDistance, &hit)) {
+				if (!physics->BoxCast(
+					probe, checkDir, sideCheckDistance, &hit
+				)) {
 					continue;
 				}
 
@@ -936,7 +955,8 @@ namespace Unnamed {
 					const float dot    = std::abs(velDir.Dot(wallNormal));
 					const float maxDot = console ?
 						                     console->GetConVarValueOr(
-							                     "park_wallrun_maxnormaldot", 0.5f
+							                     "park_wallrun_maxnormaldot",
+							                     0.5f
 						                     ) :
 						                     0.5f;
 					if (dot > maxDot) {
@@ -946,7 +966,8 @@ namespace Unnamed {
 
 				const float sameWallCooldown = console ?
 					                               console->GetConVarValueOr(
-						                               "park_wallrun_samewallcooldown", 1.0f
+						                               "park_wallrun_samewallcooldown",
+						                               1.0f
 					                               ) :
 					                               1.0f;
 				if (
@@ -960,8 +981,8 @@ namespace Unnamed {
 				if (along.Dot(forward) < 0.0f) {
 					along = -along;
 				}
-				outCandidate.normal = wallNormal;
-				outCandidate.direction = along;
+				outCandidate.normal      = wallNormal;
+				outCandidate.direction   = along;
 				outCandidate.isRightWall = checkDir.Dot(right) > 0.0f;
 				return true;
 			}
@@ -985,43 +1006,59 @@ namespace Unnamed {
 
 		class ParkourCrouchAbility final : public IMovementAbility {
 		public:
-			void Init(ConsoleSystem* console) override { mConsole = console; }
+			void Init(ConsoleSystem* console) override {
+				mConsole = console;
+			}
+
 			[[nodiscard]] MOVEMENT_ABILITY_SLOT GetSlot() const override {
 				return MOVEMENT_ABILITY_SLOT::CROUCH;
 			}
+
 			[[nodiscard]] std::string_view GetDebugName() const override {
 				return "parkour_crouch";
 			}
-			[[nodiscard]] bool IsForcedAbility() const override { return false; }
+
+			[[nodiscard]] bool IsForcedAbility() const override {
+				return false;
+			}
+
 			[[nodiscard]] bool CanRunInMode(MOVEMENT_MODE_ID) const override {
 				return true;
 			}
-			[[nodiscard]] bool CanStart(const MovementContext& context) const override {
-				const auto* parkour = dynamic_cast<const ParkourMovementComponent*>(
+
+			[[nodiscard]] bool CanStart(
+				const MovementContext& context
+			) const override {
+				const auto* parkour = dynamic_cast<const
+					ParkourMovementComponent*>(
 					context.movementComponent
 				);
 				return context.input.crouchPressed ||
-					(parkour && !parkour->CanStandAt(context));
+				       (parkour && !parkour->CanStandAt(context));
 			}
+
 			bool Start(MovementContext& context, float) override {
 				if (auto* parkour = AsParkour(context)) {
 					(void)parkour->SetDuckHullEnabled(context, true);
 				}
 				return true;
 			}
+
 			bool Tick(MovementContext& context, float) override {
 				auto* parkour = AsParkour(context);
 				if (!parkour) {
 					return context.input.crouchPressed;
 				}
 				(void)parkour->SetDuckHullEnabled(context, true);
-				if (context.input.crouchPressed || !parkour->CanStandAt(context) ||
+				if (context.input.crouchPressed || !parkour->CanStandAt(context)
+				    ||
 				    context.IsAbilityActive(MOVEMENT_ABILITY_SLOT::SLIDE)) {
 					return true;
 				}
 				// 解除要求があっても立てない場合は crouch を維持します。
 				return !parkour->SetDuckHullEnabled(context, false);
 			}
+
 			void Stop(MovementContext& context) override {
 				if (auto* parkour = AsParkour(context)) {
 					(void)parkour->SetDuckHullEnabled(context, false);
@@ -1031,79 +1068,126 @@ namespace Unnamed {
 
 		class ParkourDoubleJumpAbility final : public IMovementAbility {
 		public:
-			void Init(ConsoleSystem* console) override { mConsole = console; }
+			void Init(ConsoleSystem* console) override {
+				mConsole = console;
+			}
+
 			[[nodiscard]] MOVEMENT_ABILITY_SLOT GetSlot() const override {
 				return MOVEMENT_ABILITY_SLOT::DOUBLE_JUMP;
 			}
+
 			[[nodiscard]] std::string_view GetDebugName() const override {
 				return "parkour_doublejump";
 			}
-			[[nodiscard]] bool IsForcedAbility() const override { return false; }
-			[[nodiscard]] bool CanRunInMode(MOVEMENT_MODE_ID modeId) const override {
+
+			[[nodiscard]] bool IsForcedAbility() const override {
+				return false;
+			}
+
+			[[nodiscard]] bool
+			CanRunInMode(MOVEMENT_MODE_ID modeId) const override {
 				return modeId == MOVEMENT_MODE_ID::AIR;
 			}
-			[[nodiscard]] bool CanStart(const MovementContext& context) const override {
+
+			[[nodiscard]] bool CanStart(
+				const MovementContext& context
+			) const override {
 				return AsParkour(context) != nullptr &&
-					context.modeState.currentMode == MOVEMENT_MODE_ID::AIR &&
-					!context.IsAbilityActive(MOVEMENT_ABILITY_SLOT::WALL_RUN) &&
-					!context.IsAbilityActive(MOVEMENT_ABILITY_SLOT::BLINK) &&
-					!context.IsAbilityActive(MOVEMENT_ABILITY_SLOT::SPEED_VAULT);
+				       context.modeState.currentMode == MOVEMENT_MODE_ID::AIR &&
+				       !context.IsAbilityActive(
+					       MOVEMENT_ABILITY_SLOT::WALL_RUN
+				       ) &&
+				       !context.IsAbilityActive(MOVEMENT_ABILITY_SLOT::BLINK) &&
+				       !context.IsAbilityActive(
+					       MOVEMENT_ABILITY_SLOT::SPEED_VAULT
+				       );
 			}
+
 			bool Start(MovementContext& context, float) override {
 				if (auto* parkour = AsParkour(context)) {
-					parkour->GetParkourRuntime().lastJumpHeld = context.input.jumpPressed;
+					parkour->GetParkourRuntime().lastJumpHeld = context.input.
+						jumpPressed;
 					return true;
 				}
 				return false;
 			}
+
 			bool Tick(MovementContext& context, float) override {
 				auto* parkour = AsParkour(context);
-				if (!parkour || context.modeState.currentMode != MOVEMENT_MODE_ID::AIR) {
+				if (!parkour || context.modeState.currentMode !=
+				    MOVEMENT_MODE_ID::AIR) {
 					return false;
 				}
 				auto& runtime = parkour->GetParkourRuntime();
 				if (context.IsAbilityActive(MOVEMENT_ABILITY_SLOT::WALL_RUN) ||
 				    context.IsAbilityActive(MOVEMENT_ABILITY_SLOT::BLINK) ||
-				    context.IsAbilityActive(MOVEMENT_ABILITY_SLOT::SPEED_VAULT)) {
+				    context.IsAbilityActive(
+					    MOVEMENT_ABILITY_SLOT::SPEED_VAULT
+				    )) {
 					// 特殊移動中も入力エッジ同期だけは維持し、解除直後の誤消費を防ぎます。
 					runtime.lastJumpHeld = context.input.jumpPressed;
 					return true;
 				}
-				const bool jumpEdge = context.input.jumpPressed && !runtime.lastJumpHeld;
+				const bool jumpEdge =
+					context.input.jumpPressed && !runtime.lastJumpHeld;
 				if (jumpEdge && runtime.hasDoubleJump) {
 					context.velocity.y = Math::HtoM(
-						mConsole ? mConsole->GetConVarValueOr("park_doublejump_velocity", 300.0f) : 300.0f
+						mConsole ?
+							mConsole->GetConVarValueOr(
+								"park_doublejump_velocity", 300.0f
+							) :
+							300.0f
 					);
-					runtime.hasDoubleJump = false;
-					runtime.pendingDoubleJumpCue = true;
+					runtime.hasDoubleJump            = false;
+					runtime.pendingDoubleJumpCue     = true;
 					context.jumpSnapDisableRemaining = std::max(
 						context.jumpSnapDisableRemaining,
-						mConsole ? mConsole->GetConVarValueOr("sv_jumpsnapdisabletime", 0.1f) : 0.1f
+						mConsole ?
+							mConsole->GetConVarValueOr(
+								"sv_jumpsnapdisabletime", 0.1f
+							) :
+							0.1f
 					);
 				}
 				runtime.lastJumpHeld = context.input.jumpPressed;
 				return true;
 			}
+
 			void Stop(MovementContext& context) override {
 				if (auto* parkour = AsParkour(context)) {
-					parkour->GetParkourRuntime().lastJumpHeld = context.input.jumpPressed;
+					parkour->GetParkourRuntime().lastJumpHeld = context.input.
+						jumpPressed;
 				}
 			}
 		};
 
 		class ParkourBlinkAbility final : public IMovementAbility {
 		public:
-			void Init(ConsoleSystem* console) override { mConsole = console; }
+			void Init(ConsoleSystem* console) override {
+				mConsole = console;
+			}
+
 			[[nodiscard]] MOVEMENT_ABILITY_SLOT GetSlot() const override {
 				return MOVEMENT_ABILITY_SLOT::BLINK;
 			}
+
 			[[nodiscard]] std::string_view GetDebugName() const override {
 				return "parkour_blink";
 			}
-			[[nodiscard]] bool IsForcedAbility() const override { return true; }
-			[[nodiscard]] bool CanRunInMode(MOVEMENT_MODE_ID) const override { return true; }
-			[[nodiscard]] bool CanStart(const MovementContext& context) const override {
-				const auto* parkour = dynamic_cast<const ParkourMovementComponent*>(
+
+			[[nodiscard]] bool IsForcedAbility() const override {
+				return true;
+			}
+
+			[[nodiscard]] bool CanRunInMode(MOVEMENT_MODE_ID) const override {
+				return true;
+			}
+
+			[[nodiscard]] bool CanStart(
+				const MovementContext& context
+			) const override {
+				const auto* parkour = dynamic_cast<const
+					ParkourMovementComponent*>(
 					context.movementComponent
 				);
 				if (!parkour || !context.transform || !context.resolver) {
@@ -1111,9 +1195,10 @@ namespace Unnamed {
 				}
 				const auto& runtime = parkour->GetParkourRuntime();
 				return context.input.sprintPressed && !runtime.blink.active &&
-					!runtime.vault.active &&
-					runtime.blink.cooldown <= 0.0f;
+				       !runtime.vault.active &&
+				       runtime.blink.cooldown <= 0.0f;
 			}
+
 			bool Start(MovementContext& context, float) override {
 				auto* parkour = AsParkour(context);
 				if (!parkour || !context.transform || !context.resolver) {

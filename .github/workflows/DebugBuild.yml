@@ -12,7 +12,7 @@ on:
 
 env:
   # リポジトリのルートディレクトリを起点としたソリューションファイルのパス
-  SOLUTION_FILE_PATH: Unnamed.sln
+  SOLUTION_FILE_PATH: Unnamed.slnx
   # Visual Studio の構成(DEBUG / Release)
   CONFIGURATION: Debug
 
@@ -37,7 +37,7 @@ jobs:
         run: premake5 vs2026
         
       - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v2
+        uses: microsoft/setup-msbuild@v3
         with:
           msbuild-architecture: x64
       - name: Build

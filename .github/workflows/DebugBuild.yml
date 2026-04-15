@@ -27,7 +27,7 @@ jobs:
       - name: Setup premake
         uses: abel0b/setup-premake@v2.4
         with:
-          version: "5.0.0-beta7"
+          version: "5.0.0-beta8"
           path: ./
 
       - name: Show files in the current directory

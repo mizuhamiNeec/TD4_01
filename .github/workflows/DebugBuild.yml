@@ -39,7 +39,7 @@ jobs:
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v3
         with:
-          vs-version: '18.5'
+          vs-prerelease: true
           msbuild-architecture: x64
       - name: Build
         run: |

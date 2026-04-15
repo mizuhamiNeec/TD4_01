@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "TriggerVolumeComponentBase.h"
 
 namespace Unnamed {
@@ -31,8 +33,14 @@ namespace Unnamed {
 			return mRespawnPosition;
 		}
 
+		/// @brief 所属コースIDを返します。
+		[[nodiscard]] const std::string& GetCourseId() const noexcept {
+			return mCourseId;
+		}
+
 	private:
 		int32_t mIndex           = 0;
 		Vec3    mRespawnPosition = Vec3::zero;
+		std::string mCourseId    = "default";
 	};
 }

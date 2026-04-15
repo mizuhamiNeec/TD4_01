@@ -47,25 +47,28 @@ namespace Unnamed {
 		}
 
 		void ApplyGroundFriction(
-			Vec3&         velocity,
-			const float   amount,
-			const float   deltaTime,
+			Vec3&          velocity,
+			const float    amount,
+			const float    deltaTime,
 			ConsoleSystem* console
 		) {
-			Vec3 velHorz = velocity;
-			velHorz.y = 0.0f;
+			Vec3 velHorz       = velocity;
+			velHorz.y          = 0.0f;
 			const float speedM = velHorz.Length();
-			const float speed = Math::MtoH(speedM);
+			const float speed  = Math::MtoH(speedM);
 			if (speed < 0.1f) {
 				return;
 			}
 
-			const float stop = console ?
-				                   console->GetConVarValueOr("sv_stopspeed", speed) :
-				                   speed;
-			const float ctrl = speed < stop ? stop : speed;
-			const float drop = ctrl * amount * deltaTime;
-			float newSpeed = std::max(0.0f, speed - drop);
+			const float stop =
+				console ?
+					console->GetConVarValueOr(
+						"sv_stopspeed", speed
+					) :
+					speed;
+			const float ctrl     = speed < stop ? stop : speed;
+			const float drop     = ctrl * amount * deltaTime;
+			float       newSpeed = std::max(0.0f, speed - drop);
 			if (newSpeed != speed) {
 				newSpeed /= speed;
 				velocity *= newSpeed;
@@ -73,29 +76,30 @@ namespace Unnamed {
 		}
 
 		void GroundAccelerate(
-			Vec3&         currentVel,
-			const Vec3    wishDir,
-			const float   wishSpeed,
-			const float   accel,
-			const float   deltaTime,
+			Vec3&          currentVel,
+			const Vec3     wishDir,
+			const float    wishSpeed,
+			const float    accel,
+			const float    deltaTime,
 			ConsoleSystem* console
 		) {
 			if (wishDir.IsZero() || wishSpeed <= 0.0f || accel <= 0.0f) {
 				return;
 			}
-			const float maxGroundSpeed = console ?
-				                             console->GetConVarValueOr("sv_maxspeed", 320.0f) :
-				                             320.0f;
-			const float wishSpd = std::min(wishSpeed, maxGroundSpeed);
-			Vec3 currentHorizontal = Math::MtoH(currentVel);
-			currentHorizontal.y = 0.0f;
-			const float cur = currentHorizontal.Dot(wishDir);
-			const float add = wishSpd - cur;
+			const float maxGroundSpeed =
+				console ?
+					console->GetConVarValueOr("sv_maxspeed", 320.0f) :
+					320.0f;
+			const float wishSpd           = std::min(wishSpeed, maxGroundSpeed);
+			Vec3        currentHorizontal = Math::MtoH(currentVel);
+			currentHorizontal.y           = 0.0f;
+			const float cur               = currentHorizontal.Dot(wishDir);
+			const float add               = wishSpd - cur;
 			if (add <= 0.0f) {
 				return;
 			}
 			const float acc = std::min(accel * wishSpd * deltaTime, add);
-			currentVel += Math::HtoM(acc) * wishDir;
+			currentVel      += Math::HtoM(acc) * wishDir;
 		}
 
 		void ExecuteGroundJumpAndSwitchToAir(
@@ -107,21 +111,25 @@ namespace Unnamed {
 				return;
 			}
 
-			const float detachBiasM = Math::HtoM(kJumpDetachBiasHu) +
+			const float detachBiasM =
+				Math::HtoM(kJumpDetachBiasHu) +
 				std::max(0.0f, context.supportStepDelta.y);
+
 			context.transform->SetPosition(
 				context.transform->GetPosition() + Vec3::up * detachBiasM
 			);
 
-			context.velocity += context.supportLinearVelocity;
+			context.velocity   += context.supportLinearVelocity;
 			context.velocity.y += Math::HtoM(
-				console ? console->GetConVarValueOr("sv_jumpvelocity", 420.0f) :
+				console ?
+					console->GetConVarValueOr("sv_jumpvelocity", 420.0f) :
 					420.0f
 			);
 
 			context.jumpSnapDisableRemaining = std::max(
 				context.jumpSnapDisableRemaining,
-				console ? console->GetConVarValueOr("sv_jumpsnapdisabletime", 0.1f) :
+				console ?
+					console->GetConVarValueOr("sv_jumpsnapdisabletime", 0.1f) :
 					0.1f
 			);
 
@@ -131,11 +139,11 @@ namespace Unnamed {
 			context.transform->SetPosition(jumpPos);
 			context.velocity = jumpVel;
 
-			context.isGrounded = false;
-			context.supportEntityGuid = 0;
+			context.isGrounded            = false;
+			context.supportEntityGuid     = 0;
 			context.supportLinearVelocity = Vec3::zero;
-			context.supportStepDelta = Vec3::zero;
-			context.modeTickSuppressed = true;
+			context.supportStepDelta      = Vec3::zero;
+			context.modeTickSuppressed    = true;
 			context.SubmitTransition(
 				MOVEMENT_MODE_ID::AIR,
 				MOVEMENT_TRANSITION_PRIORITY::STANCE,
@@ -145,15 +153,15 @@ namespace Unnamed {
 		}
 
 		struct SpeedVaultTrajectory {
-			Vec3 startPos = Vec3::zero;
-			Vec3 apexPos = Vec3::zero;
-			Vec3 endPos = Vec3::zero;
+			Vec3 startPos    = Vec3::zero;
+			Vec3 apexPos     = Vec3::zero;
+			Vec3 endPos      = Vec3::zero;
 			Vec3 preVelocity = Vec3::zero;
 		};
 
 		struct WallRunCandidate {
-			Vec3 normal = Vec3::zero;
-			Vec3 direction = Vec3::zero;
+			Vec3 normal      = Vec3::zero;
+			Vec3 direction   = Vec3::zero;
 			bool isRightWall = false;
 		};
 
@@ -191,20 +199,20 @@ namespace Unnamed {
 			}
 
 			const float travelLengthM = pathDelta.Length();
-			const float minStepM = Math::HtoM(4.0f);
-			const float maxStepM = std::max(stepLengthM, minStepM);
+			const float minStepM      = Math::HtoM(4.0f);
+			const float maxStepM      = std::max(stepLengthM, minStepM);
 			if (travelLengthM <= 1.0e-6f) {
 				return true;
 			}
 
-			const Vec3 direction = pathDelta / travelLengthM;
-			float remainingM = travelLengthM;
-			Vec3 stepStartCenter = startHull.center;
-			int stepIndex = 0;
+			const Vec3 direction       = pathDelta / travelLengthM;
+			float      remainingM      = travelLengthM;
+			Vec3       stepStartCenter = startHull.center;
+			int        stepIndex       = 0;
 			while (remainingM > 1.0e-6f) {
 				++stepIndex;
-				const float stepM = std::min(remainingM, maxStepM);
-				const Box stepHull = {
+				const float stepM    = std::min(remainingM, maxStepM);
+				const Box   stepHull = {
 					.center   = stepStartCenter,
 					.halfSize = startHull.halfSize
 				};
@@ -233,7 +241,7 @@ namespace Unnamed {
 				}
 
 				// 長距離スイープの取りこぼしを避けるため、各ステップ終点も Overlap で保証します。
-				stepStartCenter += direction * stepM;
+				stepStartCenter       += direction * stepM;
 				const Box stepEndHull = {
 					.center   = stepStartCenter,
 					.halfSize = startHull.halfSize
@@ -293,16 +301,20 @@ namespace Unnamed {
 				return false;
 			}
 
-			const float expectedTopY     = feetPos.y + wallTopHeightM;
-			const float probeVerticalM   = Math::HtoM(8.0f);
-			const float castLengthM      = std::max(Math::HtoM(16.0f), maxVaultHeightM + Math::HtoM(16.0f));
-			const float maxDropFromTopM  = Math::HtoM(24.0f);
-			const float forwardStartM    = std::max(halfWidthM, probeSizeM);
-			const float forwardEndM      = forwardStartM + std::max(halfWidthM * 2.0f, Math::HtoM(24.0f));
-			const float forwardStepM     = std::max(probeSizeM, Math::HtoM(4.0f));
-			const float lateralExtentM   = std::max(probeSizeM, Math::HtoM(8.0f));
-			const float lateralStepM     = std::max(probeSizeM, Math::HtoM(4.0f));
-			const Vec3  lateralDir       = SafeNormalized(Vec3::up.Cross(traverseDir));
+			const float expectedTopY   = feetPos.y + wallTopHeightM;
+			const float probeVerticalM = Math::HtoM(8.0f);
+			const float castLengthM    = std::max(
+				Math::HtoM(16.0f), maxVaultHeightM + Math::HtoM(16.0f)
+			);
+			const float maxDropFromTopM = Math::HtoM(24.0f);
+			const float forwardStartM   = std::max(halfWidthM, probeSizeM);
+			const float forwardEndM     = forwardStartM + std::max(
+				                              halfWidthM * 2.0f,
+				                              Math::HtoM(24.0f)
+			                              );
+			const float forwardStepM = std::max(probeSizeM, Math::HtoM(4.0f));
+			const float lateralExtentM = std::max(probeSizeM, Math::HtoM(8.0f));
+			const float lateralStepM = std::max(probeSizeM, Math::HtoM(4.0f));
 			const Vec3  lateralDir = Vec3::up.Cross(traverseDir).Normalized();
 			const bool  useLateralSearch = !lateralDir.IsZero();
 
@@ -311,14 +323,19 @@ namespace Unnamed {
 			for (float forwardOffsetM = forwardStartM;
 			     forwardOffsetM <= forwardEndM + 1.0e-6f;
 			     forwardOffsetM += forwardStepM) {
-				for (float lateralOffsetM = useLateralSearch ? -lateralExtentM : 0.0f;
-				     lateralOffsetM <= (useLateralSearch ? lateralExtentM + 1.0e-6f : 0.0f);
-				     lateralOffsetM += (useLateralSearch ? lateralStepM : 1.0f)) {
+				for (float lateralOffsetM = useLateralSearch ?
+					                            -lateralExtentM :
+					                            0.0f;
+				     lateralOffsetM <= (useLateralSearch ?
+					                        lateralExtentM + 1.0e-6f :
+					                        0.0f);
+				     lateralOffsetM += (
+					     useLateralSearch ? lateralStepM : 1.0f)) {
 					++castAttempts;
 					Vec3 probeCenter = wallAnchorPos +
-						traverseDir * forwardOffsetM +
-						lateralDir * lateralOffsetM;
-					probeCenter.y = expectedTopY + probeVerticalM;
+					                   traverseDir * forwardOffsetM +
+					                   lateralDir * lateralOffsetM;
+					probeCenter.y          = expectedTopY + probeVerticalM;
 					const Box surfaceProbe = {
 						.center   = probeCenter,
 						.halfSize = {
@@ -343,8 +360,9 @@ namespace Unnamed {
 					++walkableHits;
 
 					const float surfaceDistanceM = std::clamp(
-							surfaceHit.toi, 0.0f, 1.0f
-						) * castLengthM;
+						                               surfaceHit.toi, 0.0f,
+						                               1.0f
+					                               ) * castLengthM;
 					const float groundY = probeCenter.y - surfaceDistanceM -
 					                      surfaceProbe.halfSize.y;
 					if (expectedTopY - groundY > maxDropFromTopM) {
@@ -415,8 +433,8 @@ namespace Unnamed {
 				);
 			}
 
-			Vec3 velocityH = context.velocity;
-			velocityH.y    = 0.0f;
+			Vec3 velocityH         = context.velocity;
+			velocityH.y            = 0.0f;
 			const float minSpeedHu = console ?
 				                         console->GetConVarValueOr(
 					                         "park_vault_minspeed", 150.0f
@@ -430,8 +448,8 @@ namespace Unnamed {
 				);
 			}
 
-			const Vec3 centerPos = context.transform->GetPosition();
-			const float halfWidthM = context.halfExtents.x;
+			const Vec3  centerPos   = context.transform->GetPosition();
+			const float halfWidthM  = context.halfExtents.x;
 			const float halfHeightM = context.halfExtents.y;
 			if (halfWidthM <= 0.0f || halfHeightM <= 0.0f) {
 				VAULT_FAIL(
@@ -442,11 +460,13 @@ namespace Unnamed {
 				);
 			}
 			const float playerHeightM = halfHeightM * 2.0f;
-			const Vec3 feetPos = centerPos - Vec3::up * halfHeightM;
+			const Vec3  feetPos       = centerPos - Vec3::up * halfHeightM;
 
 			const float checkDistM = Math::HtoM(
 				console ?
-					console->GetConVarValueOr("park_vault_forwardcheck", 32.0f) :
+					console->GetConVarValueOr(
+						"park_vault_forwardcheck", 32.0f
+					) :
 					32.0f
 			);
 			const float maxVaultHeightM = Math::HtoM(
@@ -1344,9 +1364,8 @@ namespace Unnamed {
 					parkour->EndWallRun();
 					return false;
 				}
-				runtime.wallRun.normal = SafeNormalized(
-					runtime.wallRun.normal * 0.8f + newNormal * 0.2f
-				);
+				runtime.wallRun.normal = (
+						runtime.wallRun.normal * 0.8f + newNormal * 0.2f).
 					Normalized();
 
 				Vec3 projectedDir = Math::ProjectOnPlane(

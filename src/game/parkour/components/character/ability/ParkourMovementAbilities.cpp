@@ -34,19 +34,11 @@ namespace Unnamed {
 			return value;
 		}
 
-		Vec3 SafeNormalized(Vec3 value) {
-			if (value.IsZero()) {
-				return Vec3::zero;
-			}
-			value.Normalize();
-			return value;
-		}
-
 		Vec3 GetWishDirHoriz(const MovementContext& context) {
-			const Vec3 right = SafeNormalized(context.input.right);
-			const Vec3 forward = SafeNormalized(context.input.forward);
-			Vec3 wishDir = right * context.input.moveAxis.x +
-				forward * context.input.moveAxis.z;
+			const Vec3 right   = context.input.right.Normalized();
+			const Vec3 forward = context.input.forward.Normalized();
+			Vec3       wishDir = right * context.input.moveAxis.x +
+			                     forward * context.input.moveAxis.z;
 			wishDir.y = 0.0f;
 			if (!wishDir.IsZero()) {
 				wishDir.Normalize();
@@ -311,6 +303,7 @@ namespace Unnamed {
 			const float lateralExtentM   = std::max(probeSizeM, Math::HtoM(8.0f));
 			const float lateralStepM     = std::max(probeSizeM, Math::HtoM(4.0f));
 			const Vec3  lateralDir       = SafeNormalized(Vec3::up.Cross(traverseDir));
+			const Vec3  lateralDir = Vec3::up.Cross(traverseDir).Normalized();
 			const bool  useLateralSearch = !lateralDir.IsZero();
 
 			int castAttempts = 0;
@@ -485,7 +478,7 @@ namespace Unnamed {
 				wallCheckCastLength,
 				&wallHit
 			)) {
-				wallNormal = SafeNormalized(wallHit.normal);
+				wallNormal = wallHit.normal.Normalized();
 				if (std::abs(wallNormal.y) > 0.3f) {
 					VAULT_FAIL(
 						"reject: wall cast normal too vertical wallN=({:.3f},{:.3f},{:.3f})",
@@ -503,7 +496,7 @@ namespace Unnamed {
 			if (!wallFound) {
 				Physics::Hit overlapHit = {};
 				if (physics->BoxOverlap(forwardProbe, &overlapHit)) {
-					wallNormal = SafeNormalized(overlapHit.normal);
+					wallNormal = overlapHit.normal.Normalized();
 					if (std::abs(wallNormal.y) > 0.3f) {
 						VAULT_FAIL(
 							"reject: wall overlap normal too vertical wallN=({:.3f},{:.3f},{:.3f})",
@@ -892,7 +885,7 @@ namespace Unnamed {
 
 			Vec3 right = HorizontalNormalized(context.input.right);
 			if (right.IsZero()) {
-				right = SafeNormalized(Vec3::up.Cross(forward));
+				right = Vec3::up.Cross(forward).Normalized();
 				if (right.IsZero()) {
 					return false;
 				}
@@ -913,14 +906,14 @@ namespace Unnamed {
 					continue;
 				}
 
-				const Vec3 wallNormal = SafeNormalized(hit.normal);
+				const Vec3 wallNormal = hit.normal.Normalized();
 				if (wallNormal.IsZero() || std::abs(wallNormal.y) > 0.2f) {
 					continue;
 				}
 
 				if (!velHorz.IsZero()) {
-					const Vec3 velDir = velHorz.Normalized();
-					const float dot = std::abs(velDir.Dot(wallNormal));
+					const Vec3  velDir = velHorz.Normalized();
+					const float dot    = std::abs(velDir.Dot(wallNormal));
 					const float maxDot = console ?
 						                     console->GetConVarValueOr(
 							                     "park_wallrun_maxnormaldot", 0.5f
@@ -943,7 +936,7 @@ namespace Unnamed {
 					continue;
 				}
 
-				Vec3 along = SafeNormalized(Vec3::up.Cross(wallNormal));
+				Vec3 along = Vec3::up.Cross(wallNormal).Normalized();
 				if (along.Dot(forward) < 0.0f) {
 					along = -along;
 				}
@@ -1107,7 +1100,7 @@ namespace Unnamed {
 					return false;
 				}
 
-				Vec3 dir = SafeNormalized(context.input.forward);
+				Vec3 dir = context.input.forward.Normalized();
 				if (dir.IsZero()) {
 					return false;
 				}
@@ -1344,14 +1337,17 @@ namespace Unnamed {
 					return false;
 				}
 
-				const Vec3 newNormal = SafeNormalized(wallHit.normal);
-				if (newNormal.IsZero() || newNormal.Dot(runtime.wallRun.normal) < 0.5f) {
+				const Vec3 newNormal = wallHit.normal.Normalized();
+				if (newNormal.IsZero() || newNormal.Dot(
+					    runtime.wallRun.normal
+				    ) < 0.5f) {
 					parkour->EndWallRun();
 					return false;
 				}
 				runtime.wallRun.normal = SafeNormalized(
 					runtime.wallRun.normal * 0.8f + newNormal * 0.2f
 				);
+					Normalized();
 
 				Vec3 projectedDir = Math::ProjectOnPlane(
 					HorizontalNormalized(context.input.forward),

@@ -45,10 +45,13 @@ namespace Unnamed {
 			Render::ScreenSpriteInput sprite = {};
 			sprite.texture.source            = Render::SPRITE_TEXTURE_SOURCE::ASSET;
 			sprite.texture.textureAssetId    = kInvalidAssetID;
-			sprite.positionPx                = Vec2(image.rect.x, image.rect.y);
+			sprite.positionPx                = Vec2(
+				image.rect.x + image.anchor.x * image.rect.width,
+				image.rect.y + image.anchor.y * image.rect.height
+			);
 			sprite.sizePx                    = Vec2(image.rect.width, image.rect.height);
-			sprite.anchor                    = Vec2(0.0f, 0.0f);
-			sprite.rotationRad               = 0.0f;
+			sprite.anchor                    = image.anchor;
+			sprite.rotationRad               = image.rotationRad;
 			sprite.color                     = ToVec4(image.color);
 			sprite.sortKey                   = sortKey;
 			sprite.uvMin                     = image.uvMin;

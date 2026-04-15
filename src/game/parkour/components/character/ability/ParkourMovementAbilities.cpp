@@ -21,9 +21,9 @@
 
 namespace Unnamed {
 	namespace {
-		constexpr float kJumpDetachBiasHu = 1.0f;
-		constexpr float kPathSweepBlockToiEpsilon = 1.0e-4f;
-		constexpr std::string_view kVaultLogChannel = "Parkour/Vault";
+		constexpr float            kJumpDetachBiasHu         = 1.0f;
+		constexpr float            kPathSweepBlockToiEpsilon = 1.0e-4f;
+		constexpr std::string_view kVaultLogChannel          = "Parkour/Vault";
 
 		Vec3 HorizontalNormalized(Vec3 value) {
 			value.y = 0.0f;

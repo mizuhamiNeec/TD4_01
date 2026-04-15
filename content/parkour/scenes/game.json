@@ -60,86 +60,6 @@
                     "data": {
                         "parentEntityGuid": 0,
                         "position": [
-                            20.0,
-                            0.0,
-                            0.0
-                        ],
-                        "rotation": [
-                            0.0,
-                            0.0,
-                            0.0,
-                            1.0
-                        ],
-                        "scale": [
-                            1.000000238418579,
-                            1.0,
-                            1.000000238418579
-                        ]
-                    },
-                    "guid": 3010,
-                    "type": "engine.Transform"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "materialInstancePath": "",
-                        "meshPath": "./content/core/models/fan.obj"
-                    },
-                    "guid": 3011,
-                    "type": "engine.StaticMeshRenderer"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "dynamic": true,
-                        "enabled": true
-                    },
-                    "guid": 11530977000138538086,
-                    "type": "engine.StaticMeshCollider"
-                },
-                {
-                    "active": true,
-                    "data": {},
-                    "guid": 11964708778926788202,
-                    "type": "engine.KinematicMover"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "enabled": true,
-                        "moveToPointB": true,
-                        "pointA": [
-                            20.0,
-                            0.0,
-                            0.0
-                        ],
-                        "pointB": [
-                            20.0,
-                            200.0,
-                            0.0
-                        ],
-                        "snapOnAttach": true,
-                        "speed": 20.0,
-                        "startFromA": true
-                    },
-                    "guid": 16984558251293262854,
-                    "type": "game.PatrolPoint"
-                }
-            ],
-            "folderPath": "Gameplay/World",
-            "guid": 2010,
-            "isEditorOnly": false,
-            "name": "Fan",
-            "visible": true
-        },
-        {
-            "active": true,
-            "components": [
-                {
-                    "active": true,
-                    "data": {
-                        "parentEntityGuid": 0,
-                        "position": [
                             0.0,
                             6.0,
                             0.0
@@ -163,9 +83,9 @@
                     "active": true,
                     "data": {
                         "boxHalfExtentsHu": [
-                            16.000396728515625,
-                            36.00094985961914,
-                            16.000396728515625
+                            16.000450134277344,
+                            36.00107955932617,
+                            16.000450134277344
                         ],
                         "collisionEnabled": true,
                         "movementCapabilities": {
@@ -191,25 +111,54 @@
                 {
                     "active": true,
                     "data": {
-                        "allowSkip": true,
-                        "countdownDigitDurationSec": 1.0,
-                        "countdownStartDurationSec": 0.8,
-                        "countdownStartTexturePath": "content/parkour/textures/press_space_start.png",
-                        "disableController": true,
-                        "disableMovement": true,
-                        "digitsTexturePath": "content/parkour/textures/digits.png",
-                        "enabled": true,
-                        "fadeOverlayTexturePath": "content/parkour/textures/title_overlay.png",
-                        "playOnAttach": true,
-                        "restoreCameraRigOnFinish": true,
-                        "shotFadeInSec": 0.25,
-                        "shotFadeOutSec": 0.25,
-                        "skipAction": "jump",
-                        "useCountdown": true,
-                        "useShotFade": true
+                        "courseId": "default",
+                        "debugDraw": true,
+                        "fallbackHalfExtentsHu": [
+                            16.0,
+                            36.0,
+                            16.0
+                        ],
+                        "hudEnabled": true,
+                        "reloadRespawnEnabled": true
                     },
-                    "guid": 17059442565900959123,
-                    "type": "parkour.OpeningCameraCutscene"
+                    "guid": 15378210262151497018,
+                    "type": "parkour.CourseProgress"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "billboardDepthMode": "DepthTest",
+                        "pixelSize": [
+                            1920.0,
+                            1080.0
+                        ],
+                        "receiveInput": false,
+                        "sortKey": 300,
+                        "spaceMode": "Screen",
+                        "uiAssetPath": "content/parkour/ui/hud.ui.json",
+                        "worldSize": [
+                            2.0,
+                            1.125
+                        ]
+                    },
+                    "guid": 4295494913300408433,
+                    "type": "engine.UiCanvas"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "arrowSizePx": 34.0,
+                        "arrowTexturePath": "content/parkour/textures/arrow.png",
+                        "arrowWidgetName": "NextCheckpointArrow",
+                        "courseId": "default",
+                        "pinSizePx": 42.0,
+                        "pinTexturePath": "content/parkour/textures/ping.png",
+                        "pinWidgetName": "NextCheckpointPin",
+                        "requireCourseHudEnabled": true,
+                        "screenClampMarginPx": 100.0
+                    },
+                    "guid": 10168664850864293449,
+                    "type": "parkour.CourseProgressHud"
                 },
                 {
                     "active": true,
@@ -364,253 +313,9 @@
                     "data": {
                         "parentEntityGuid": 0,
                         "position": [
-                            -46.0,
-                            0.0,
-                            0.0
-                        ],
-                        "rotation": [
-                            0.0,
-                            0.0,
-                            0.0,
-                            1.0
-                        ],
-                        "scale": [
-                            1.0,
-                            1.0,
-                            1.0
-                        ]
-                    },
-                    "guid": 3200,
-                    "type": "engine.Transform"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "boostVelocityHu": 800.0,
-                        "extentsHu": [
-                            128.0,
-                            64.0,
-                            128.0
-                        ],
-                        "localCenter": [
-                            0.0,
-                            0.0,
-                            0.0
-                        ]
-                    },
-                    "guid": 3201,
-                    "type": "parkour.JumpPad"
-                }
-            ],
-            "folderPath": "Gameplay/Triggers",
-            "guid": 2200,
-            "isEditorOnly": false,
-            "name": "JumpPad",
-            "visible": false
-        },
-        {
-            "active": true,
-            "components": [
-                {
-                    "active": true,
-                    "data": {
-                        "parentEntityGuid": 0,
-                        "position": [
-                            -94.0,
-                            13.0,
-                            0.0
-                        ],
-                        "rotation": [
-                            0.0,
-                            0.0,
-                            0.0,
-                            1.0
-                        ],
-                        "scale": [
-                            1.0,
-                            1.0,
-                            1.0
-                        ]
-                    },
-                    "guid": 3210,
-                    "type": "engine.Transform"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "boostVelocityHu": 800.0,
-                        "extentsHu": [
-                            128.0,
-                            64.0,
-                            128.0
-                        ],
-                        "localCenter": [
-                            0.0,
-                            0.0,
-                            0.0
-                        ]
-                    },
-                    "guid": 3211,
-                    "type": "parkour.JumpPad"
-                }
-            ],
-            "folderPath": "Gameplay/Triggers",
-            "guid": 2201,
-            "isEditorOnly": false,
-            "name": "JumpPad2",
-            "visible": false
-        },
-        {
-            "active": true,
-            "components": [
-                {
-                    "active": true,
-                    "data": {
-                        "parentEntityGuid": 0,
-                        "position": [
-                            -32.0,
-                            0.0,
-                            0.0
-                        ],
-                        "rotation": [
-                            0.0,
-                            0.0,
-                            0.0,
-                            1.0
-                        ],
-                        "scale": [
-                            1.0,
-                            1.0,
-                            1.0
-                        ]
-                    },
-                    "guid": 3220,
-                    "type": "engine.Transform"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "durationSec": 3.0,
-                        "extentsHu": [
-                            192.0,
-                            48.0,
-                            192.0
-                        ],
-                        "localCenter": [
-                            0.0,
-                            0.0,
-                            0.0
-                        ],
-                        "multiplier": 1.5
-                    },
-                    "guid": 3221,
-                    "type": "parkour.SpeedBoostArea"
-                }
-            ],
-            "folderPath": "Gameplay/Triggers",
-            "guid": 2210,
-            "isEditorOnly": false,
-            "name": "SpeedBoostArea",
-            "visible": false
-        },
-        {
-            "active": true,
-            "components": [
-                {
-                    "active": true,
-                    "data": {
-                        "parentEntityGuid": 0,
-                        "position": [
-                            -75.0,
-                            13.0,
-                            0.0
-                        ],
-                        "rotation": [
-                            0.0,
-                            0.0,
-                            0.0,
-                            1.0
-                        ],
-                        "scale": [
-                            1.0,
-                            1.0,
-                            1.0
-                        ]
-                    },
-                    "guid": 3230,
-                    "type": "engine.Transform"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "durationSec": 3.0,
-                        "extentsHu": [
-                            192.0,
-                            48.0,
-                            192.0
-                        ],
-                        "localCenter": [
-                            0.0,
-                            0.0,
-                            0.0
-                        ],
-                        "multiplier": 1.5
-                    },
-                    "guid": 3231,
-                    "type": "parkour.SpeedBoostArea"
-                }
-            ],
-            "folderPath": "Gameplay/Triggers",
-            "guid": 2211,
-            "isEditorOnly": false,
-            "name": "SpeedBoostArea2",
-            "visible": false
-        },
-        {
-            "active": true,
-            "components": [
-                {
-                    "active": true,
-                    "data": {
-                        "parentEntityGuid": 0,
-                        "position": [
-                            19.507200241088867,
-                            -29.260799407958984,
-                            260.09600830078125
-                        ],
-                        "rotation": [
-                            0.0,
-                            0.0,
-                            0.0,
-                            1.0
-                        ],
-                        "scale": [
-                            1.0,
-                            1.0,
-                            1.0
-                        ]
-                    },
-                    "guid": 3240,
-                    "type": "engine.Transform"
-                }
-            ],
-            "folderPath": "Gameplay/Triggers",
-            "guid": 2220,
-            "isEditorOnly": false,
-            "name": "Teleport",
-            "visible": false
-        },
-        {
-            "active": true,
-            "components": [
-                {
-                    "active": true,
-                    "data": {
-                        "parentEntityGuid": 0,
-                        "position": [
-                            26.010000228881836,
-                            1.6260000467300415,
-                            -4.864999771118164
+                            -30.899999618530273,
+                            13.004799842834473,
+                            138.5823974609375
                         ],
                         "rotation": [
                             0.0,
@@ -630,10 +335,11 @@
                 {
                     "active": true,
                     "data": {
+                        "courseId": "default",
                         "extentsHu": [
-                            16.0,
-                            192.0,
-                            128.0
+                            32.0,
+                            1024.0,
+                            192.0
                         ],
                         "index": 1,
                         "localCenter": [
@@ -642,9 +348,9 @@
                             0.0
                         ],
                         "respawnPosition": [
-                            26.010000228881836,
-                            1.6299999952316284,
-                            -4.860000133514404
+                            -27.899999618530273,
+                            1.8287999629974365,
+                            138.58200073242188
                         ]
                     },
                     "guid": 3301,
@@ -665,9 +371,9 @@
                     "data": {
                         "parentEntityGuid": 0,
                         "position": [
-                            149.55499267578125,
-                            8.128000259399414,
-                            40.63999938964844
+                            -113.79199981689453,
+                            1.625599980354309,
+                            95.91100311279297
                         ],
                         "rotation": [
                             0.0,
@@ -687,8 +393,9 @@
                 {
                     "active": true,
                     "data": {
+                        "courseId": "default",
                         "extentsHu": [
-                            16.0,
+                            256.0,
                             128.0,
                             128.0
                         ],
@@ -699,9 +406,9 @@
                             0.0
                         ],
                         "respawnPosition": [
-                            149.55499267578125,
-                            8.128000259399414,
-                            40.63999938964844
+                            -113.79199981689453,
+                            1.8287999629974365,
+                            95.91100311279297
                         ]
                     },
                     "guid": 3311,
@@ -722,9 +429,9 @@
                     "data": {
                         "parentEntityGuid": 0,
                         "position": [
-                            162.55999755859375,
-                            1.6260000467300415,
-                            177.19000244140625
+                            -53.63199996948242,
+                            8.123000144958496,
+                            -46.35100173950195
                         ],
                         "rotation": [
                             0.0,
@@ -744,10 +451,11 @@
                 {
                     "active": true,
                     "data": {
+                        "courseId": "default",
                         "extentsHu": [
-                            1024.0,
-                            1280.0,
-                            16.0
+                            256.0,
+                            128.0,
+                            450.0
                         ],
                         "index": 3,
                         "localCenter": [
@@ -756,9 +464,9 @@
                             0.0
                         ],
                         "respawnPosition": [
-                            162.55999755859375,
-                            4.0,
-                            177.19000244140625
+                            -56.902000427246094,
+                            8.32979965209961,
+                            -46.35100173950195
                         ]
                     },
                     "guid": 3321,
@@ -779,9 +487,9 @@
                     "data": {
                         "parentEntityGuid": 0,
                         "position": [
-                            -216.2050018310547,
-                            -183.6929931640625,
-                            152.80599975585938
+                            -78.02999877929688,
+                            -60.14699935913086,
+                            -217.8300018310547
                         ],
                         "rotation": [
                             0.0,
@@ -801,11 +509,13 @@
                 {
                     "active": true,
                     "data": {
+                        "courseId": "default",
                         "extentsHu": [
-                            64.0,
-                            1920.0,
-                            896.0
+                            1024.0,
+                            640.0,
+                            256.0
                         ],
+                        "index": 0,
                         "localCenter": [
                             0.0,
                             0.0,
@@ -820,86 +530,6 @@
             "guid": 2310,
             "isEditorOnly": false,
             "name": "Goal",
-            "visible": true
-        },
-        {
-            "active": true,
-            "components": [
-                {
-                    "active": true,
-                    "data": {
-                        "parentEntityGuid": 0,
-                        "position": [
-                            45.0,
-                            0.0,
-                            0.0
-                        ],
-                        "rotation": [
-                            0.0,
-                            0.0,
-                            0.0,
-                            1.0
-                        ],
-                        "scale": [
-                            1.0,
-                            32.0,
-                            1.0
-                        ]
-                    },
-                    "guid": 16047653065289439290,
-                    "type": "engine.Transform"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "dynamic": true,
-                        "enabled": true
-                    },
-                    "guid": 13221157956574019953,
-                    "type": "engine.StaticMeshCollider"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "materialInstancePath": "",
-                        "meshPath": "./content/core/models/fan.obj"
-                    },
-                    "guid": 10485443301812691385,
-                    "type": "engine.StaticMeshRenderer"
-                },
-                {
-                    "active": true,
-                    "data": {},
-                    "guid": 13497476310442762281,
-                    "type": "engine.KinematicMover"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "enabled": true,
-                        "moveToPointB": true,
-                        "pointA": [
-                            45.0,
-                            0.0,
-                            0.0
-                        ],
-                        "pointB": [
-                            45.0,
-                            0.0,
-                            20.0
-                        ],
-                        "snapOnAttach": true,
-                        "speed": 10.0,
-                        "startFromA": true
-                    },
-                    "guid": 16971574730157513000,
-                    "type": "game.PatrolPoint"
-                }
-            ],
-            "folderPath": "Gameplay/World",
-            "guid": 2312,
-            "isEditorOnly": false,
-            "name": "Entity",
             "visible": true
         },
         {
@@ -941,28 +571,28 @@
                 {
                     "active": true,
                     "data": {
-                        "clipName": "Jump",
+                        "clipName": "BindPose",
                         "layers": [
                             {
-                                "clipName": "Jump",
+                                "clipName": "BindPose",
                                 "loop": true,
-                                "playOnStart": true,
+                                "playOnStart": false,
                                 "speed": 1.0,
                                 "weight": 1.0
                             }
                         ],
                         "loop": true,
-                        "playOnStart": true,
+                        "playOnStart": false,
                         "speed": 1.0,
                         "stateMap": [
                             {
-                                "blendSec": 0.11999999731779099,
-                                "clipName": "Sprint.001",
+                                "blendSec": 0.125,
+                                "clipName": "Vault",
                                 "layerIndex": 0,
-                                "loop": true,
+                                "loop": false,
                                 "restartOnPlay": true,
                                 "speed": 1.0,
-                                "stateId": "animstate_sprint",
+                                "stateId": "animstate_vaulting",
                                 "weight": 1.0
                             },
                             {
@@ -976,13 +606,13 @@
                                 "weight": 1.0
                             },
                             {
-                                "blendSec": 0.125,
-                                "clipName": "Vault",
+                                "blendSec": 0.11999999731779099,
+                                "clipName": "Sprint.001",
                                 "layerIndex": 0,
-                                "loop": false,
+                                "loop": true,
                                 "restartOnPlay": true,
                                 "speed": 1.0,
-                                "stateId": "animstate_vaulting",
+                                "stateId": "animstate_sprint",
                                 "weight": 1.0
                             },
                             {
@@ -1448,60 +1078,6 @@
                 {
                     "active": true,
                     "data": {
-                        "parentEntityGuid": 2101,
-                        "position": [
-                            0.0,
-                            0.0,
-                            0.0
-                        ],
-                        "rotation": [
-                            0.0,
-                            0.0,
-                            0.0,
-                            1.0
-                        ],
-                        "scale": [
-                            1.0000001192092896,
-                            1.0,
-                            1.0000001192092896
-                        ]
-                    },
-                    "guid": 14718430310981717455,
-                    "type": "engine.Transform"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "billboardDepthMode": "DepthTest",
-                        "pixelSize": [
-                            1920.0,
-                            1080.0
-                        ],
-                        "receiveInput": false,
-                        "sortKey": 0,
-                        "spaceMode": "Screen",
-                        "uiAssetPath": "content/parkour/ui/hud.ui.json",
-                        "worldSize": [
-                            0.1599999964237213,
-                            0.09000000357627869
-                        ]
-                    },
-                    "guid": 9548119086351708763,
-                    "type": "engine.UiCanvas"
-                }
-            ],
-            "folderPath": "UI",
-            "guid": 2319,
-            "isEditorOnly": false,
-            "name": "Hud",
-            "visible": true
-        },
-        {
-            "active": true,
-            "components": [
-                {
-                    "active": true,
-                    "data": {
                         "parentEntityGuid": 0,
                         "position": [
                             0.0,
@@ -1526,31 +1102,24 @@
                 {
                     "active": true,
                     "data": {
-                        "extentsHu": [
-                            32.0,
-                            32.0,
-                            32.0
-                        ],
-                        "index": 0,
-                        "localCenter": [
-                            0.0,
-                            0.0,
-                            0.0
-                        ],
-                        "respawnPosition": [
-                            0.0,
-                            0.0,
-                            0.0
-                        ]
+                        "applyComponentLocks": true,
+                        "autoStopWhenCompleted": true,
+                        "cutsceneCameraEntityGuid": 2103,
+                        "forceCutsceneCamera": true,
+                        "lockTargets": [],
+                        "playOnAttach": true,
+                        "playRate": 1.0,
+                        "restorePreviousCamera": true,
+                        "sequencePath": ""
                     },
                     "guid": 0,
-                    "type": "parkour.Checkpoint"
+                    "type": "game.SequenceCutscene"
                 }
             ],
             "folderPath": "",
-            "guid": 2320,
+            "guid": 2319,
             "isEditorOnly": false,
-            "name": "Checkpoint1",
+            "name": "Entity",
             "visible": true
         }
     ],
@@ -1558,9 +1127,7 @@
         "Gameplay",
         "Gameplay/Player",
         "Gameplay/Progression",
-        "Gameplay/Triggers",
-        "Gameplay/World",
-        "UI"
+        "Gameplay/World"
     ],
     "version": 1
 }

@@ -49,6 +49,24 @@ namespace Unnamed {
 
 	GameMovementComponent::~GameMovementComponent() = default;
 
+	void GameMovementComponent::TeleportAndResetMotion(
+		TransformComponent* transform,
+		const Vec3&         worldPosition
+	) {
+		if (!transform) {
+			return;
+		}
+
+		// リスポーン直後の慣性や支持床キャッシュを引きずらないように初期化します。
+		transform->SetPosition(worldPosition);
+		transform->RequestInterpolationResync();
+		mVelocity                 = Vec3::zero;
+		mGrounded                 = false;
+		mSupportCache             = {};
+		mJumpSnapDisableRemaining = 0.0f;
+		UpdateCollisionHull(transform);
+	}
+
 	void GameMovementComponent::SimulateStep(
 		TransformComponent* transform, const MovementFrameInput& input,
 		const float         stepSeconds

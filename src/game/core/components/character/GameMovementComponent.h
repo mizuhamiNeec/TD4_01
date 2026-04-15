@@ -54,6 +54,14 @@ namespace Unnamed {
 		void Deserialize(const JsonReader& reader) override;
 		void Serialize(JsonWriter& writer) const override;
 
+		/// @brief 指定座標へテレポートし、移動状態を安全にリセットします。
+		/// @param transform 対象Transform
+		/// @param worldPosition テレポート先ワールド座標
+		virtual void TeleportAndResetMotion(
+			TransformComponent* transform,
+			const Vec3&         worldPosition
+		);
+
 		virtual void WriteReplayState(nlohmann::json& outState) const;
 		virtual void ReadReplayState(const nlohmann::json& inState);
 		[[nodiscard]] virtual uint64_t ComputeReplayStateHash() const;

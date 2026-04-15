@@ -80,6 +80,23 @@ namespace Unnamed::Gui {
 		return mUvMax;
 	}
 
+	void UiTextureComponent::SetAnchor(const Vec2& anchor) {
+		mAnchor.x = std::clamp(anchor.x, 0.0f, 1.0f);
+		mAnchor.y = std::clamp(anchor.y, 0.0f, 1.0f);
+	}
+
+	const Vec2& UiTextureComponent::GetAnchor() const {
+		return mAnchor;
+	}
+
+	void UiTextureComponent::SetRotationRad(const float rotationRad) {
+		mRotationRad = rotationRad;
+	}
+
+	float UiTextureComponent::GetRotationRad() const {
+		return mRotationRad;
+	}
+
 	void UiTextureComponent::BuildDrawCommands(
 		const UiWidget& owner,
 		std::vector<UiDrawCommand>& out
@@ -100,6 +117,8 @@ namespace Unnamed::Gui {
 		command.image.color = mColor;
 		command.image.uvMin = mUvMin;
 		command.image.uvMax = mUvMax;
+		command.image.anchor = mAnchor;
+		command.image.rotationRad = mRotationRad;
 		out.emplace_back(std::move(command));
 	}
 
@@ -112,6 +131,10 @@ namespace Unnamed::Gui {
 		WriteVec2(writer, mUvMin);
 		writer.Key("uvMax");
 		WriteVec2(writer, mUvMax);
+		writer.Key("anchor");
+		WriteVec2(writer, mAnchor);
+		writer.Key("rotationRad");
+		writer.Write(mRotationRad);
 	}
 
 	void UiTextureComponent::Deserialize(const JsonReader& reader) {
@@ -126,6 +149,12 @@ namespace Unnamed::Gui {
 		}
 		if (reader.Has("uvMax")) {
 			SetUvMax(ReadVec2(reader["uvMax"], mUvMax));
+		}
+		if (reader.Has("anchor")) {
+			SetAnchor(ReadVec2(reader["anchor"], mAnchor));
+		}
+		if (reader.Has("rotationRad")) {
+			SetRotationRad(reader["rotationRad"].GetFloat(mRotationRad));
 		}
 	}
 }

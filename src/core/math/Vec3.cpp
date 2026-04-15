@@ -36,7 +36,8 @@ Vec3::Vec3(const Vec4 vec4) {
 }
 
 float Vec3::Length() const {
-	if (const float sqrLength = SqrLength(); sqrLength > 0.0f) {
+	if (const float sqrLength = SqrLength();
+		sqrLength > 0.0f) {
 		return std::sqrt(sqrLength);
 	}
 	return 0.0f;
@@ -77,7 +78,11 @@ bool Vec3::IsParallel(const Vec3& other) const {
 }
 
 void Vec3::Normalize() {
-	if (const float len = Length(); len > 0) {
+	if (IsZero()) {
+		return;
+	}
+	if (const float len = Length();
+		len > 0) {
 		x /= len;
 		y /= len;
 		z /= len;
@@ -85,7 +90,12 @@ void Vec3::Normalize() {
 }
 
 Vec3 Vec3::Normalized() const {
-	if (const float len = Length(); len > 0) {
+	if (IsZero()) {
+		return zero;
+	}
+
+	if (const float len = Length();
+		len > 0) {
 		return {x / len, y / len, z / len};
 	}
 	return zero;

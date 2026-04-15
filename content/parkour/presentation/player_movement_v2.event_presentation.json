@@ -58,26 +58,6 @@
                     "toPinId": 40
                 },
                 {
-                    "fromPinId": 39,
-                    "id": 21,
-                    "toPinId": 44
-                },
-                {
-                    "fromPinId": 47,
-                    "id": 22,
-                    "toPinId": 48
-                },
-                {
-                    "fromPinId": 49,
-                    "id": 23,
-                    "toPinId": 46
-                },
-                {
-                    "fromPinId": 45,
-                    "id": 24,
-                    "toPinId": 50
-                },
-                {
                     "fromPinId": 53,
                     "id": 25,
                     "toPinId": 54
@@ -631,6 +611,11 @@
                     "fromPinId": 3,
                     "id": 141,
                     "toPinId": 2
+                },
+                {
+                    "fromPinId": 39,
+                    "id": 142,
+                    "toPinId": 50
                 }
             ],
             "nodes": [
@@ -1119,87 +1104,6 @@
                     "valueSource": "cue.value",
                     "x": 960.0,
                     "y": 320.0
-                },
-                {
-                    "actionId": "animstate_jump",
-                    "actionType": "animation.play_state",
-                    "clampEnabled": false,
-                    "clampMax": 3.4028234663852886e+38,
-                    "clampMin": -3.4028234663852886e+38,
-                    "commentText": "",
-                    "conditionEnabled": false,
-                    "conditionMax": 3.4028234663852886e+38,
-                    "conditionMin": -3.4028234663852886e+38,
-                    "constant": 0.0,
-                    "cooldownSec": 0.0,
-                    "cueId": "",
-                    "debugText": "",
-                    "execInPinId": 44,
-                    "execOutPinId": 45,
-                    "floatInPinId": 46,
-                    "floatOutPinId": 0,
-                    "id": 23,
-                    "kind": "action",
-                    "multiply": 1.0,
-                    "payloadName": "",
-                    "title": "Action",
-                    "valueSource": "cue.value",
-                    "x": 1600.0,
-                    "y": 64.0
-                },
-                {
-                    "actionId": "",
-                    "actionType": "",
-                    "clampEnabled": false,
-                    "clampMax": 3.4028234663852886e+38,
-                    "clampMin": -3.4028234663852886e+38,
-                    "commentText": "",
-                    "conditionEnabled": false,
-                    "conditionMax": 3.4028234663852886e+38,
-                    "conditionMin": -3.4028234663852886e+38,
-                    "constant": 0.0,
-                    "cooldownSec": 0.0,
-                    "cueId": "",
-                    "debugText": "",
-                    "execInPinId": 0,
-                    "execOutPinId": 0,
-                    "floatInPinId": 0,
-                    "floatOutPinId": 47,
-                    "id": 24,
-                    "kind": "value_source",
-                    "multiply": 1.0,
-                    "payloadName": "",
-                    "title": "ValueSource",
-                    "valueSource": "cue.value",
-                    "x": 960.0,
-                    "y": 448.0
-                },
-                {
-                    "actionId": "",
-                    "actionType": "",
-                    "clampEnabled": false,
-                    "clampMax": 3.4028234663852886e+38,
-                    "clampMin": -3.4028234663852886e+38,
-                    "commentText": "",
-                    "conditionEnabled": false,
-                    "conditionMax": 3.4028234663852886e+38,
-                    "conditionMin": -3.4028234663852886e+38,
-                    "constant": 0.0,
-                    "cooldownSec": 0.0,
-                    "cueId": "",
-                    "debugText": "",
-                    "execInPinId": 0,
-                    "execOutPinId": 0,
-                    "floatInPinId": 48,
-                    "floatOutPinId": 49,
-                    "id": 25,
-                    "kind": "value_transform",
-                    "multiply": 1.0,
-                    "payloadName": "",
-                    "title": "ValueTransform",
-                    "valueSource": "cue.value",
-                    "x": 1280.0,
-                    "y": 448.0
                 },
                 {
                     "actionId": "",
@@ -4933,48 +4837,6 @@
                 },
                 {
                     "direction": "input",
-                    "id": 44,
-                    "name": "ExecIn",
-                    "nodeId": 23,
-                    "valueType": "exec"
-                },
-                {
-                    "direction": "output",
-                    "id": 45,
-                    "name": "ExecOut",
-                    "nodeId": 23,
-                    "valueType": "exec"
-                },
-                {
-                    "direction": "input",
-                    "id": 46,
-                    "name": "ValueIn",
-                    "nodeId": 23,
-                    "valueType": "float"
-                },
-                {
-                    "direction": "output",
-                    "id": 47,
-                    "name": "FloatOut",
-                    "nodeId": 24,
-                    "valueType": "float"
-                },
-                {
-                    "direction": "input",
-                    "id": 48,
-                    "name": "FloatIn",
-                    "nodeId": 25,
-                    "valueType": "float"
-                },
-                {
-                    "direction": "output",
-                    "id": 49,
-                    "name": "FloatOut",
-                    "nodeId": 25,
-                    "valueType": "float"
-                },
-                {
-                    "direction": "input",
                     "id": 50,
                     "name": "ExecIn",
                     "nodeId": 26,
@@ -6676,9 +6538,9 @@
                 }
             ],
             "view": {
-                "panX": 77.98082733154297,
-                "panY": -563.4332275390625,
-                "zoom": 0.6499999761581421
+                "panX": -778.12060546875,
+                "panY": 116.84402465820313,
+                "zoom": 0.7500000596046448
             }
         }
     },
@@ -6700,13 +6562,6 @@
                     "value": {
                         "constant": 1.0,
                         "source": "constant"
-                    }
-                },
-                {
-                    "id": "animstate_jump",
-                    "type": "animation.play_state",
-                    "value": {
-                        "source": "cue.value"
                     }
                 },
                 {

@@ -76,6 +76,11 @@ namespace Unnamed {
 		/// @brief 再現性のある入力キューのサイズを取得します。
 		[[nodiscard]] size_t GetDeterministicInputQueueSize() const;
 
+		/// @brief 現在使用中の衝突ハル半径（m）を取得します。
+		[[nodiscard]] Vec3 GetCollisionBoxHalfExtents() const noexcept {
+			return mBoxHalfExtents;
+		}
+
 		/// @brief 1ステップ分の移動シミュレーションを行います。
 		/// @param transform
 		/// @param input 現在のフレームの入力情報

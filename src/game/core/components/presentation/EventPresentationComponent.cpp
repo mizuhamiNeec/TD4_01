@@ -39,12 +39,12 @@
 namespace Unnamed {
 #ifdef _DEBUG
 	struct EventPresentationGraphEditorState final {
-		bool                               windowOpen   = false;
-		bool                               dirty        = false;
-		bool                               needsRebuild = true;
-		std::string                        status;
-		EventPresentationEditorGraph       graph;
-		std::vector<EventPresentationValidationIssue> issues;
+		bool                                            windowOpen   = false;
+		bool                                            dirty        = false;
+		bool                                            needsRebuild = true;
+		std::string                                     status;
+		EventPresentationEditorGraph                    graph;
+		std::vector<EventPresentationValidationIssue>   issues;
 		std::unique_ptr<EventPresentationEditorGraphUi> ui;
 	};
 #endif
@@ -72,7 +72,7 @@ namespace Unnamed {
 
 		/// @brief エンティティが指定 stableName のコンポーネントを持つか判定します。
 		[[nodiscard]] bool HasComponentStableName(
-			const Entity&       entity,
+			const Entity&          entity,
 			const std::string_view stableName
 		) {
 			bool found = false;
@@ -113,7 +113,8 @@ namespace Unnamed {
 	void EventPresentationComponent::OnAttached() {
 #ifdef _DEBUG
 		if (!mGraphEditorState) {
-			mGraphEditorState = std::make_unique<EventPresentationGraphEditorState>();
+			mGraphEditorState = std::make_unique<
+				EventPresentationGraphEditorState>();
 		}
 		mGraphEditorState->needsRebuild = true;
 #endif
@@ -170,70 +171,13 @@ namespace Unnamed {
 	}
 
 #ifdef _DEBUG
-	void EventPresentationComponent::AuditSourceGuidBindings() const {
-		const Entity* owner = GetOwner();
-		if (!owner) {
-			return;
-		}
-
-		const bool hasMovementPublisher =
-			HasComponentStableName(*owner, "parkour.ParkourMovement") ||
-			HasComponentStableName(*owner, "game.GameMovement");
-		const bool hasWeaponPublisher =
-			HasComponentStableName(*owner, "game.WeaponSystem");
-		const bool hasInventoryPublisher =
-			HasComponentStableName(*owner, "game.InventorySystem");
-		const bool hasPublisher = hasMovementPublisher || hasWeaponPublisher ||
-		                          hasInventoryPublisher;
-		if (!hasPublisher) {
-			if (mCueSourceEntityGuid != 0 && mCueSourceEntityGuid != owner->GetGuid()) {
-				DevMsg(
-					kChannel,
-					"[SourceGuidAudit] owner has no known publishers; external cueSource configured: ownerGuid={} configured={} effective={}. Verify publisher owner GUID on runtime.",
-					owner->GetGuid(),
-					mCueSourceEntityGuid,
-					ResolveCueSourceEntityGuid()
-				);
-			}
-			return;
-		}
-
-		const uint64_t ownerGuid          = owner->GetGuid();
-		const uint64_t configuredSource   = mCueSourceEntityGuid;
-		const uint64_t effectiveSource    = ResolveCueSourceEntityGuid();
-		const bool     sourceGuidMismatch = effectiveSource != ownerGuid;
-		if (sourceGuidMismatch) {
-			Warning(
-				kChannel,
-				"[SourceGuidAudit] cueSource mismatch: ownerGuid={} configured={} effective={} movement={} weapon={} inventory={}",
-				ownerGuid,
-				configuredSource,
-				effectiveSource,
-				hasMovementPublisher ? 1 : 0,
-				hasWeaponPublisher ? 1 : 0,
-				hasInventoryPublisher ? 1 : 0
-			);
-		} else if (mVerboseLog) {
-			DevMsg(
-				kChannel,
-				"[SourceGuidAudit] source ok: ownerGuid={} configured={} effective={} movement={} weapon={} inventory={}",
-				ownerGuid,
-				configuredSource,
-				effectiveSource,
-				hasMovementPublisher ? 1 : 0,
-				hasWeaponPublisher ? 1 : 0,
-				hasInventoryPublisher ? 1 : 0
-			);
-		}
-	}
-
 	void EventPresentationComponent::DrawInspectorImGui() {
-		World*       world            = GetWorld();
-		Entity*      owner            = GetOwner();
-		bool         needsReload      = false;
-		bool         needsResubscribe = false;
-		std::string  assetPath        = mAssetPath;
-		const uint64_t ownerGuid      = owner ? owner->GetGuid() : 0;
+		World*         world            = GetWorld();
+		Entity*        owner            = GetOwner();
+		bool           needsReload      = false;
+		bool           needsResubscribe = false;
+		std::string    assetPath        = mAssetPath;
+		const uint64_t ownerGuid        = owner ? owner->GetGuid() : 0;
 
 		ImGui::Text(
 			"Owner GUID: %llu",
@@ -280,10 +224,14 @@ namespace Unnamed {
 		)) {
 			needsResubscribe = true;
 		}
-		if (EditEntityGuidField("Audio Target Entity GUID", mAudioFxEntityGuid)) {
+		if (EditEntityGuidField(
+			"Audio Target Entity GUID", mAudioFxEntityGuid
+		)) {
 			mAudioFx = ResolveAudioFx();
 		}
-		if (EditEntityGuidField("Camera Target Entity GUID", mCameraFxEntityGuid)
+		if (EditEntityGuidField(
+				"Camera Target Entity GUID", mCameraFxEntityGuid
+			)
 		) {
 			mCameraFx = ResolveCameraFx();
 		}
@@ -336,7 +284,8 @@ namespace Unnamed {
 		}
 
 		if (!mGraphEditorState) {
-			mGraphEditorState = std::make_unique<EventPresentationGraphEditorState>();
+			mGraphEditorState = std::make_unique<
+				EventPresentationGraphEditorState>();
 		}
 		ImGui::SeparatorText("Event Graph Editor");
 		if (ImGui::Button("Open Event Graph Editor")) {
@@ -348,12 +297,14 @@ namespace Unnamed {
 			mGraphEditorState->needsRebuild = true;
 		}
 		ImGui::Text(
-			"Graph State: %s | Dirty: %s",
+			"Graph State: %s | きちゃない: %s",
 			mGraphEditorState->windowOpen ? "Open" : "Closed",
 			mGraphEditorState->dirty ? "Yes" : "No"
 		);
 		if (!mGraphEditorState->status.empty()) {
-			ImGui::TextWrapped("Graph Status: %s", mGraphEditorState->status.c_str());
+			ImGui::TextWrapped(
+				"グラフの状態: %s", mGraphEditorState->status.c_str()
+			);
 		}
 
 		if (needsReload) {
@@ -369,15 +320,75 @@ namespace Unnamed {
 		DrawGraphEditorWindow();
 	}
 
+	void EventPresentationComponent::AuditSourceGuidBindings() const {
+		const Entity* owner = GetOwner();
+		if (!owner) {
+			return;
+		}
+
+		const bool hasMovementPublisher =
+			HasComponentStableName(*owner, "parkour.ParkourMovement") ||
+			HasComponentStableName(*owner, "game.GameMovement") ||
+			HasComponentStableName(*owner, "parkour.CourseProgress");
+		const bool hasWeaponPublisher =
+			HasComponentStableName(*owner, "game.WeaponSystem");
+		const bool hasInventoryPublisher =
+			HasComponentStableName(*owner, "game.InventorySystem");
+		const bool hasPublisher = hasMovementPublisher || hasWeaponPublisher ||
+		                          hasInventoryPublisher;
+		if (!hasPublisher) {
+			if (mCueSourceEntityGuid != 0 && mCueSourceEntityGuid != owner->
+			    GetGuid()) {
+				DevMsg(
+					kChannel,
+					"[SourceGuidAudit] owner has no known publishers; external cueSource configured: ownerGuid={} configured={} effective={}. Verify publisher owner GUID on runtime.",
+					owner->GetGuid(),
+					mCueSourceEntityGuid,
+					ResolveCueSourceEntityGuid()
+				);
+			}
+			return;
+		}
+
+		const uint64_t ownerGuid          = owner->GetGuid();
+		const uint64_t configuredSource   = mCueSourceEntityGuid;
+		const uint64_t effectiveSource    = ResolveCueSourceEntityGuid();
+		const bool     sourceGuidMismatch = effectiveSource != ownerGuid;
+		if (sourceGuidMismatch) {
+			Warning(
+				kChannel,
+				"[SourceGuidAudit] cueSource mismatch: ownerGuid={} configured={} effective={} movement={} weapon={} inventory={}",
+				ownerGuid,
+				configuredSource,
+				effectiveSource,
+				hasMovementPublisher ? 1 : 0,
+				hasWeaponPublisher ? 1 : 0,
+				hasInventoryPublisher ? 1 : 0
+			);
+		} else if (mVerboseLog) {
+			DevMsg(
+				kChannel,
+				"[SourceGuidAudit] source ok: ownerGuid={} configured={} effective={} movement={} weapon={} inventory={}",
+				ownerGuid,
+				configuredSource,
+				effectiveSource,
+				hasMovementPublisher ? 1 : 0,
+				hasWeaponPublisher ? 1 : 0,
+				hasInventoryPublisher ? 1 : 0
+			);
+		}
+	}
+
 	void EventPresentationComponent::DrawGraphEditorWindow() {
 		if (!mGraphEditorState || !mGraphEditorState->windowOpen) {
 			return;
 		}
 
-		bool open = mGraphEditorState->windowOpen;
+		bool             open             = mGraphEditorState->windowOpen;
 		ImGuiWindowFlags graphWindowFlags = 0;
 		// グラフ側が入力を保持している間は親ウィンドウ移動を抑止します。
-		if (mGraphEditorState->ui && mGraphEditorState->ui->IsCapturingMouseInput()) {
+		if (mGraphEditorState->ui && mGraphEditorState->ui->
+		    IsCapturingMouseInput()) {
 			graphWindowFlags |= ImGuiWindowFlags_NoMove;
 		}
 		if (
@@ -409,7 +420,7 @@ namespace Unnamed {
 
 			if (mAssetPath.empty()) {
 				state.status =
-					"Graph rebuild skipped: asset path is empty.";
+					"グラフの再構築をスキップしました:アセットパスが空です。";
 			} else if (AssetManager* assetManager = GetAssetManager()) {
 				AssetID assetId = mAssetId;
 				if (assetId == kInvalidAssetID) {
@@ -422,31 +433,31 @@ namespace Unnamed {
 						assetManager->Get<EventPresentationAssetData>(assetId) :
 						nullptr;
 				if (!assetData) {
-					state.status = "Graph rebuild failed: event presentation asset is missing.";
+					state.status = "グラフの再構築に失敗:イベントプレゼンテーションアセットが欠落しています。";
 				} else {
 					std::string error;
 					if (!EventPresentationEditorGraphCodec::BuildGraphFromAsset(
-						    *assetData,
-						    state.graph,
-						    mAssetPath,
-						    &error
-					    )) {
-						state.status = "Graph rebuild failed: " + error;
+						*assetData,
+						state.graph,
+						mAssetPath,
+						&error
+					)) {
+						state.status = "グラフの再構築に失敗: " + error;
 					} else {
 						state.ui->ResetForGraph(state.graph);
 						validateGraph();
 						state.dirty  = false;
-						state.status = "Graph rebuilt from asset.";
+						state.status = "アセットからグラフを再構築しました。";
 					}
 				}
 			} else {
 				state.status =
-					"Graph rebuild failed: AssetManager is not available.";
+					"グラフの再構築に失敗:AssetManagerが利用できません。";
 			}
 			state.needsRebuild = false;
 		}
 
-		if (ImGui::Button("Reload From Asset")) {
+		if (ImGui::Button("アセットから再読み込み")) {
 			state.needsRebuild = true;
 		}
 		ImGui::SameLine();
@@ -459,11 +470,11 @@ namespace Unnamed {
 		if (!canUndo) {
 			ImGui::BeginDisabled();
 		}
-		if (ImGui::Button("Undo")) {
+		if (ImGui::Button("取り消し")) {
 			if (state.ui->Undo(state.graph)) {
-				state.dirty  = true;
+				state.dirty = true;
 				validateGraph();
-				state.status = "Undo applied.";
+				state.status = "元に戻しました。";
 			}
 		}
 		if (!canUndo) {
@@ -474,28 +485,29 @@ namespace Unnamed {
 		if (!canRedo) {
 			ImGui::BeginDisabled();
 		}
-		if (ImGui::Button("Redo")) {
+		if (ImGui::Button("やり直し")) {
 			if (state.ui->Redo(state.graph)) {
-				state.dirty  = true;
+				state.dirty = true;
 				validateGraph();
-				state.status = "Redo applied.";
+				state.status = "やり直しました。";
 			}
 		}
 		if (!canRedo) {
 			ImGui::EndDisabled();
 		}
-		ImGui::SameLine();
 		bool snapEnabled = state.ui->IsGridSnapEnabled();
-		if (ImGui::Checkbox("Grid Snap", &snapEnabled)) {
+		if (ImGui::Checkbox("グリッドスナップ", &snapEnabled)) {
 			state.ui->SetGridSnapEnabled(snapEnabled);
 		}
 		ImGui::SameLine();
 		int snapSize = state.ui->GetGridSnapSize();
-		if (ImGui::BeginCombo("Snap", std::to_string(snapSize).c_str())) {
+		if (ImGui::BeginCombo("スナップ", std::to_string(snapSize).c_str())) {
 			constexpr int kSnapOptions[] = {16, 32, 64};
 			for (const int option : kSnapOptions) {
 				const bool selected = snapSize == option;
-				if (ImGui::Selectable(std::to_string(option).c_str(), selected)) {
+				if (ImGui::Selectable(
+					std::to_string(option).c_str(), selected
+				)) {
 					state.ui->SetGridSnapSize(option);
 					snapSize = option;
 				}
@@ -506,12 +518,12 @@ namespace Unnamed {
 			ImGui::EndCombo();
 		}
 		ImGui::SameLine();
-		ImGui::TextDisabled("Hold Shift/Alt to bypass snap");
+		ImGui::TextDisabled("Shift/Altキーを押し続けてスナップ解除");
 		if (ImGui::IsItemHovered()) {
-			ImGui::SetTooltip("Temporary grid snap override while dragging nodes.");
+			ImGui::SetTooltip("ノードをドラッグ時の一時的なスナップ解除。");
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("Save Graph To Asset")) {
+		if (ImGui::Button("グラフを保存")) {
 			validateGraph();
 			const bool hasError = std::ranges::any_of(
 				state.issues,
@@ -521,25 +533,25 @@ namespace Unnamed {
 				}
 			);
 			if (hasError) {
-				state.status = "Save aborted: graph has validation errors.";
+				state.status = "セーブ中止:グラフにエラーがあります。";
 			} else {
 				EventPresentationAssetData assetData = {};
 				std::string                error;
 				if (!EventPresentationEditorGraphCodec::BuildAssetFromGraph(
-					    state.graph,
-					    assetData,
-					    &error
-				    )) {
-					state.status = "Save failed (graph->asset): " + error;
+					state.graph,
+					assetData,
+					&error
+				)) {
+					state.status = "セーブ失敗(グラフ->アセット): " + error;
 				} else if (!EventPresentationEditorGraphCodec::SaveAssetJson(
-					           assetData,
-					           &state.graph,
-					           mAssetPath,
-					           &error
-				           )) {
-					state.status = "Save failed (write): " + error;
+					assetData,
+					&state.graph,
+					mAssetPath,
+					&error
+				)) {
+					state.status = "セーブ失敗(書き込み): " + error;
 				} else {
-					state.status = "Graph saved to asset JSON.";
+					state.status = "グラフはアセットJSONに保存されます。";
 					state.dirty  = false;
 					(void)LoadAsset();
 					SubscribeAll();
@@ -550,7 +562,7 @@ namespace Unnamed {
 
 		ImGui::Text("Asset Path: %s", mAssetPath.c_str());
 		ImGui::Text(
-			"Selected Node: %llu | Dirty: %s",
+			"Selected Node: %llu | きちゃない: %s",
 			static_cast<unsigned long long>(state.ui->GetSelectedNodeId()),
 			state.dirty ? "Yes" : "No"
 		);
@@ -622,14 +634,15 @@ namespace Unnamed {
 	}
 
 	void EventPresentationComponent::SetAssetPath(const std::string& path) {
-		const std::string normalized = path.empty() ? std::string() :
+		const std::string normalized = path.empty() ?
+			                               std::string() :
 			                               StrUtil::NormalizePath(path);
 		if (mAssetPath == normalized) {
 			return;
 		}
-		mAssetPath           = normalized;
-		mAssetId             = kInvalidAssetID;
-		mLoadedAssetVersion  = 0;
+		mAssetPath          = normalized;
+		mAssetId            = kInvalidAssetID;
+		mLoadedAssetVersion = 0;
 		mLoadedAssetName.clear();
 		mTriggers.clear();
 #ifdef _DEBUG
@@ -664,7 +677,9 @@ namespace Unnamed {
 			mAssetPath, ASSET_TYPE::EVENT_PRESENTATION
 		);
 		if (assetId == kInvalidAssetID) {
-			Warning(kChannel, "Failed to load event presentation '{}'.", mAssetPath);
+			Warning(
+				kChannel, "Failed to load event presentation '{}'.", mAssetPath
+			);
 #ifdef _DEBUG
 			if (mGraphEditorState) {
 				mGraphEditorState->needsRebuild = true;
@@ -702,32 +717,37 @@ namespace Unnamed {
 			if (trigger.cueId.empty()) {
 				continue;
 			}
-			trigger.cooldownSec = std::max(0.0f, triggerData.cooldownSec);
+			trigger.cooldownSec       = std::max(0.0f, triggerData.cooldownSec);
 			trigger.condition.enabled = triggerData.condition.enabled;
-			trigger.condition.source = EventPresentationExecutor::ParseValueSource(
-				triggerData.condition.source,
-				&trigger.condition.payloadName
-			);
+			trigger.condition.source  =
+				EventPresentationExecutor::ParseValueSource(
+					triggerData.condition.source,
+					&trigger.condition.payloadName
+				);
 			trigger.condition.minValue = triggerData.condition.minValue;
 			trigger.condition.maxValue = triggerData.condition.maxValue;
 			if (trigger.condition.maxValue < trigger.condition.minValue) {
-				std::swap(trigger.condition.minValue, trigger.condition.maxValue);
+				std::swap(
+					trigger.condition.minValue, trigger.condition.maxValue
+				);
 			}
 
-			for (const EventPresentationActionAssetData& actionData : triggerData.
+			for (const EventPresentationActionAssetData& actionData :
+			     triggerData.
 			     actions) {
 				EventPresentationAction action = {};
-				action.typeName                = TrimAscii(actionData.type);
+				action.typeName = TrimAscii(actionData.type);
 				action.actionType = EventPresentationExecutor::ParseActionType(
 					action.typeName
 				);
-				action.id        = TrimAscii(actionData.id);
-				action.debugText = actionData.debugText;
-				action.value.source = EventPresentationExecutor::ParseValueSource(
-					actionData.valueInput.source,
-					&action.value.payloadName
-				);
-				action.value.constant = actionData.valueInput.constant;
+				action.id           = TrimAscii(actionData.id);
+				action.debugText    = actionData.debugText;
+				action.value.source =
+					EventPresentationExecutor::ParseValueSource(
+						actionData.valueInput.source,
+						&action.value.payloadName
+					);
+				action.value.constant     = actionData.valueInput.constant;
 				action.value.clampEnabled = actionData.valueInput.clampEnabled;
 				action.value.clampMin     = actionData.valueInput.clampMin;
 				action.value.clampMax     = actionData.valueInput.clampMax;
@@ -781,7 +801,7 @@ namespace Unnamed {
 			needsReload = true;
 		} else {
 			const auto& meta = assetManager->Meta(mAssetId);
-			needsReload      = !meta.loaded || meta.version != mLoadedAssetVersion;
+			needsReload = !meta.loaded || meta.version != mLoadedAssetVersion;
 		}
 
 		if (needsReload) {
@@ -817,9 +837,9 @@ namespace Unnamed {
 
 		mCueHandles.reserve(uniqueCueIds.size());
 		for (const std::string& cueId : uniqueCueIds) {
-			GameplayCueFilter filter = {};
-			filter.cueId             = cueId;
-			filter.sourceEntityGuid  = sourceEntityGuid;
+			GameplayCueFilter filter            = {};
+			filter.cueId                        = cueId;
+			filter.sourceEntityGuid             = sourceEntityGuid;
 			const GameplayCueBus::Handle handle = world->GetGameplayCueBus().
 				Subscribe(
 					filter,
@@ -913,53 +933,61 @@ namespace Unnamed {
 			}
 #endif
 
-			const uint64_t receiverGuid = GetOwner() ? GetOwner()->GetGuid() : 0;
+			const uint64_t receiverGuid =
+				GetOwner() ? GetOwner()->GetGuid() : 0;
 			const EventPresentationExecutor::ExecutionContext context = {
-				.cue                     = cue,
-				.assetName               = mLoadedAssetName.empty() ?
-					                           std::string_view(mAssetPath) :
-					                           std::string_view(mLoadedAssetName),
-				.receiverEntityGuid      = receiverGuid,
-				.verboseLog              = mVerboseLog,
-				.audioFx                 = mAudioFx,
-				.cameraFx                = mCameraFx,
-				.animation               = mAnimation,
-				.audioTargetEntityGuid   = ResolveAudioTargetEntityGuid(),
-				.cameraTargetEntityGuid  = ResolveCameraFxTargetEntityGuid(),
+				.cue       = cue,
+				.assetName = mLoadedAssetName.empty() ?
+					             std::string_view(mAssetPath) :
+					             std::string_view(mLoadedAssetName),
+				.receiverEntityGuid        = receiverGuid,
+				.verboseLog                = mVerboseLog,
+				.audioFx                   = mAudioFx,
+				.cameraFx                  = mCameraFx,
+				.animation                 = mAnimation,
+				.audioTargetEntityGuid     = ResolveAudioTargetEntityGuid(),
+				.cameraTargetEntityGuid    = ResolveCameraFxTargetEntityGuid(),
 				.animationTargetEntityGuid = ResolveAnimationTargetEntityGuid(),
 #ifdef _DEBUG
 				.actionTraceCallback =
-					[this, triggerCueId = std::string(trigger.cueId)](
-						const size_t actionIndex,
-						const EventPresentationExecutor::ActionTraceStatus status
-					) {
-						if (!mGraphEditorState || !mGraphEditorState->ui) {
-							return;
-						}
-						EventPresentationEditorGraphUi::RuntimeTraceState uiState =
-							EventPresentationEditorGraphUi::RuntimeTraceState::Executed;
-						switch (status) {
-							case EventPresentationExecutor::ActionTraceStatus::Executed:
-								uiState = EventPresentationEditorGraphUi::RuntimeTraceState::Executed;
-								break;
-							case EventPresentationExecutor::ActionTraceStatus::Skipped:
-								uiState = EventPresentationEditorGraphUi::RuntimeTraceState::Skipped;
-								break;
-							case EventPresentationExecutor::ActionTraceStatus::Warning:
-								uiState = EventPresentationEditorGraphUi::RuntimeTraceState::Warning;
-								break;
-							case EventPresentationExecutor::ActionTraceStatus::Error:
-								uiState = EventPresentationEditorGraphUi::RuntimeTraceState::Error;
-								break;
-							default: break;
-						}
-						mGraphEditorState->ui->NotifyActionTrace(
-							mGraphEditorState->graph,
-							triggerCueId,
-							actionIndex,
-							uiState
-						);
-					},
+				[this, triggerCueId = std::string(trigger.cueId)](
+				const size_t                                       actionIndex,
+				const EventPresentationExecutor::ActionTraceStatus status
+			) {
+					if (!mGraphEditorState || !mGraphEditorState->ui) {
+						return;
+					}
+					EventPresentationEditorGraphUi::RuntimeTraceState uiState =
+						EventPresentationEditorGraphUi::RuntimeTraceState::Executed;
+					switch (status) {
+						case
+						EventPresentationExecutor::ActionTraceStatus::Executed
+						: uiState =
+						  EventPresentationEditorGraphUi::RuntimeTraceState::Executed;
+							break;
+						case
+						EventPresentationExecutor::ActionTraceStatus::Skipped
+						: uiState =
+						  EventPresentationEditorGraphUi::RuntimeTraceState::Skipped;
+							break;
+						case
+						EventPresentationExecutor::ActionTraceStatus::Warning
+						: uiState =
+						  EventPresentationEditorGraphUi::RuntimeTraceState::Warning;
+							break;
+						case EventPresentationExecutor::ActionTraceStatus::Error
+						: uiState =
+						  EventPresentationEditorGraphUi::RuntimeTraceState::Error;
+							break;
+						default: break;
+					}
+					mGraphEditorState->ui->NotifyActionTrace(
+						mGraphEditorState->graph,
+						triggerCueId,
+						actionIndex,
+						uiState
+					);
+				},
 #endif
 			};
 
@@ -994,7 +1022,8 @@ namespace Unnamed {
 		return owner ? owner->GetGuid() : 0;
 	}
 
-	uint64_t EventPresentationComponent::ResolveCameraFxTargetEntityGuid() const {
+	uint64_t
+	EventPresentationComponent::ResolveCameraFxTargetEntityGuid() const {
 		// 明示 GUID があれば最優先。0 は「Owner を使う」予約値として扱う。
 		if (mCameraFxEntityGuid != 0) {
 			return mCameraFxEntityGuid;
@@ -1003,7 +1032,8 @@ namespace Unnamed {
 		return owner ? owner->GetGuid() : 0;
 	}
 
-	uint64_t EventPresentationComponent::ResolveAnimationTargetEntityGuid() const {
+	uint64_t
+	EventPresentationComponent::ResolveAnimationTargetEntityGuid() const {
 		// 明示 GUID があれば最優先。0 は「Owner を使う」予約値として扱う。
 		if (mAnimationEntityGuid != 0) {
 			return mAnimationEntityGuid;
@@ -1023,7 +1053,9 @@ namespace Unnamed {
 			return nullptr;
 		}
 		Entity* target = scene->FindEntity(targetGuid);
-		return target ? target->GetComponent<AudioFxControllerComponent>() : nullptr;
+		return target ?
+			       target->GetComponent<AudioFxControllerComponent>() :
+			       nullptr;
 	}
 
 	CameraFxControllerComponent* EventPresentationComponent::ResolveCameraFx() {
@@ -1037,8 +1069,9 @@ namespace Unnamed {
 			return nullptr;
 		}
 		Entity* target = scene->FindEntity(targetGuid);
-		return target ? target->GetComponent<CameraFxControllerComponent>() :
-		                nullptr;
+		return target ?
+			       target->GetComponent<CameraFxControllerComponent>() :
+			       nullptr;
 	}
 
 	SkeletalAnimationComponent* EventPresentationComponent::ResolveAnimation() {
@@ -1052,8 +1085,9 @@ namespace Unnamed {
 			return nullptr;
 		}
 		Entity* target = scene->FindEntity(targetGuid);
-		return target ? target->GetComponent<SkeletalAnimationComponent>() :
-		                nullptr;
+		return target ?
+			       target->GetComponent<SkeletalAnimationComponent>() :
+			       nullptr;
 	}
 
 	REGISTER_COMPONENT(EventPresentationComponent);

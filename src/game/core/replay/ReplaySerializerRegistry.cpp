@@ -10,6 +10,7 @@
 #include "game/core/components/CameraRotatorComponent.h"
 #include "game/core/components/character/GameMovementComponent.h"
 #include "game/parkour/components/character/ParkourMovementComponent.h"
+#include "game/parkour/components/course/CourseProgressComponent.h"
 
 namespace Unnamed {
 	void ReplaySerializerRegistry::RegisterComponentSerializer(
@@ -248,6 +249,33 @@ namespace Unnamed {
 				.hashState = [](const BaseComponent& component) -> uint64_t {
 					if (const auto* typed = dynamic_cast<
 							const ParkourMovementComponent*>(&component)) {
+						return typed->ComputeReplayStateHash();
+					}
+					return 0ull;
+				}
+			}
+		);
+
+		registry.RegisterComponentSerializer(
+			{
+				.stableName = "parkour.CourseProgress",
+				.writeState =
+					[](const BaseComponent& component, nlohmann::json& outState) {
+						if (const auto* typed = dynamic_cast<
+								const CourseProgressComponent*>(&component)) {
+							typed->WriteReplayState(outState);
+						}
+					},
+				.readState =
+					[](BaseComponent& component, const nlohmann::json& inState) {
+						if (auto* typed = dynamic_cast<CourseProgressComponent*>(
+								&component)) {
+							typed->ReadReplayState(inState);
+						}
+					},
+				.hashState = [](const BaseComponent& component) -> uint64_t {
+					if (const auto* typed = dynamic_cast<
+							const CourseProgressComponent*>(&component)) {
 						return typed->ComputeReplayStateHash();
 					}
 					return 0ull;

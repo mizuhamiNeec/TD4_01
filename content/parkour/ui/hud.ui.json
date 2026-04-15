@@ -1,0 +1,190 @@
+{
+    "name": "./content/parkour/ui/hud.ui.json",
+    "root": {
+        "children": [
+            {
+                "children": [],
+                "components": [
+                    {
+                        "type": "Transform",
+                        "data": {
+                            "anchors": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "margins": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "pivot": [
+                                0.5,
+                                0.5
+                            ],
+                            "rect": [
+                                0.0,
+                                0.0,
+                                42.0,
+                                42.0
+                            ],
+                            "sizePolicy": [
+                                "Fixed",
+                                "Fixed"
+                            ],
+                            "constraints": {
+                                "minWidth": 0.0,
+                                "minHeight": 0.0,
+                                "maxWidth": 3.4028234663852886e+38,
+                                "maxHeight": 3.4028234663852886e+38
+                            }
+                        }
+                    },
+                    {
+                        "type": "Texture",
+                        "data": {
+                            "texturePath": "content/parkour/textures/ping.png",
+                            "color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "uvMin": [
+                                0.0,
+                                0.0
+                            ],
+                            "uvMax": [
+                                1.0,
+                                1.0
+                            ],
+                            "anchor": [
+                                0.5,
+                                0.5
+                            ],
+                            "rotationRad": 0.0
+                        }
+                    }
+                ],
+                "enabled": true,
+                "name": "NextCheckpointPin",
+                "visible": false
+            },
+            {
+                "children": [],
+                "components": [
+                    {
+                        "type": "Transform",
+                        "data": {
+                            "anchors": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "margins": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "pivot": [
+                                0.5,
+                                0.5
+                            ],
+                            "rect": [
+                                0.0,
+                                0.0,
+                                34.0,
+                                34.0
+                            ],
+                            "sizePolicy": [
+                                "Fixed",
+                                "Fixed"
+                            ],
+                            "constraints": {
+                                "minWidth": 0.0,
+                                "minHeight": 0.0,
+                                "maxWidth": 3.4028234663852886e+38,
+                                "maxHeight": 3.4028234663852886e+38
+                            }
+                        }
+                    },
+                    {
+                        "type": "Texture",
+                        "data": {
+                            "texturePath": "content/parkour/textures/arrow.png",
+                            "color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.95
+                            ],
+                            "uvMin": [
+                                0.0,
+                                0.0
+                            ],
+                            "uvMax": [
+                                1.0,
+                                1.0
+                            ],
+                            "anchor": [
+                                0.5,
+                                0.5
+                            ],
+                            "rotationRad": 0.0
+                        }
+                    }
+                ],
+                "enabled": true,
+                "name": "NextCheckpointArrow",
+                "visible": false
+            }
+        ],
+        "components": [
+            {
+                "type": "Transform",
+                "data": {
+                    "anchors": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "margins": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "pivot": [
+                        0.0,
+                        0.0
+                    ],
+                    "rect": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "sizePolicy": [
+                        "Fixed",
+                        "Fixed"
+                    ],
+                    "constraints": {
+                        "minWidth": 0.0,
+                        "minHeight": 0.0,
+                        "maxWidth": 3.4028234663852886e+38,
+                        "maxHeight": 3.4028234663852886e+38
+                    }
+                }
+            }
+        ],
+        "enabled": true,
+        "name": "RootLayout",
+        "visible": true
+    },
+    "version": 2
+}

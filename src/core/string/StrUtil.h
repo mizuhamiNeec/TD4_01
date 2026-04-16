@@ -33,6 +33,11 @@ namespace Unnamed::StrUtil {
 		const std::vector<std::string>& args, const char* delimiter
 	);
 
+	/// @brief 文字列をstd::string_viewからstd::stringに変換する
+	/// @param str 入力文字列ビュー
+	/// @return std::stringに変換された文字列
+	std::string ViewToString(const std::string_view& str);
+
 	/// @brief 軸のインデックスを説明文字列に変換する
 	/// @param i 軸インデックス
 	/// @return 軸の説明文字列

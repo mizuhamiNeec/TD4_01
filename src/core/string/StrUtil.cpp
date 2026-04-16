@@ -101,6 +101,10 @@ namespace Unnamed::StrUtil {
 		return result;
 	}
 
+	std::string ViewToString(const std::string_view& str) {
+		return {str.data(), str.size()};
+	}
+
 	std::string DescribeAxis(const int& i) {
 		switch (i) {
 			case 0: return "X";

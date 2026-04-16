@@ -423,11 +423,6 @@
                     "toPinId": 213
                 },
                 {
-                    "fromPinId": 212,
-                    "id": 98,
-                    "toPinId": 217
-                },
-                {
                     "fromPinId": 220,
                     "id": 99,
                     "toPinId": 221
@@ -616,6 +611,16 @@
                     "fromPinId": 39,
                     "id": 142,
                     "toPinId": 50
+                },
+                {
+                    "fromPinId": 212,
+                    "id": 144,
+                    "toPinId": 293
+                },
+                {
+                    "fromPinId": 294,
+                    "id": 145,
+                    "toPinId": 217
                 }
             ],
             "nodes": [
@@ -3397,7 +3402,7 @@
                     "payloadName": "",
                     "title": "Action",
                     "valueSource": "cue.value",
-                    "x": 960.0,
+                    "x": 1280.0,
                     "y": 6016.0
                 },
                 {
@@ -3424,7 +3429,7 @@
                     "payloadName": "",
                     "title": "ValueSource",
                     "valueSource": "constant",
-                    "x": 320.0,
+                    "x": 640.0,
                     "y": 6272.0
                 },
                 {
@@ -3451,7 +3456,7 @@
                     "payloadName": "",
                     "title": "ValueTransform",
                     "valueSource": "cue.value",
-                    "x": 640.0,
+                    "x": 960.0,
                     "y": 6272.0
                 },
                 {
@@ -4587,6 +4592,33 @@
                     "valueSource": "cue.value",
                     "x": 320.0,
                     "y": 6720.0
+                },
+                {
+                    "actionId": "animstate_vaulting",
+                    "actionType": "animation.play_state",
+                    "clampEnabled": false,
+                    "clampMax": 3.4028234663852886e+38,
+                    "clampMin": -3.4028234663852886e+38,
+                    "commentText": "",
+                    "conditionEnabled": false,
+                    "conditionMax": 3.4028234663852886e+38,
+                    "conditionMin": -3.4028234663852886e+38,
+                    "constant": 0.0,
+                    "cooldownSec": 0.0,
+                    "cueId": "",
+                    "debugText": "",
+                    "execInPinId": 293,
+                    "execOutPinId": 294,
+                    "floatInPinId": 295,
+                    "floatOutPinId": 0,
+                    "id": 155,
+                    "kind": "action",
+                    "multiply": 1.0,
+                    "payloadName": "",
+                    "title": "Action",
+                    "valueSource": "cue.value",
+                    "x": 960.0,
+                    "y": 6016.0
                 }
             ],
             "pins": [
@@ -6535,12 +6567,33 @@
                     "name": "FloatOut",
                     "nodeId": 147,
                     "valueType": "float"
+                },
+                {
+                    "direction": "input",
+                    "id": 293,
+                    "name": "ExecIn",
+                    "nodeId": 155,
+                    "valueType": "exec"
+                },
+                {
+                    "direction": "output",
+                    "id": 294,
+                    "name": "ExecOut",
+                    "nodeId": 155,
+                    "valueType": "exec"
+                },
+                {
+                    "direction": "input",
+                    "id": 295,
+                    "name": "FloatIn",
+                    "nodeId": 155,
+                    "valueType": "float"
                 }
             ],
             "view": {
-                "panX": -778.12060546875,
-                "panY": 116.84402465820313,
-                "zoom": 0.7500000596046448
+                "panX": 538.2052612304688,
+                "panY": -5658.97412109375,
+                "zoom": 0.6499999761581421
             }
         }
     },
@@ -6854,6 +6907,13 @@
                     "value": {
                         "constant": 1.0,
                         "source": "constant"
+                    }
+                },
+                {
+                    "id": "animstate_vaulting",
+                    "type": "animation.play_state",
+                    "value": {
+                        "source": "cue.value"
                     }
                 },
                 {

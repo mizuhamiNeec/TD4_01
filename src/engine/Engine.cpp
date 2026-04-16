@@ -647,9 +647,9 @@ namespace Unnamed {
 	/// @brief コンソールコマンドと変数の登録
 	void Engine::RegisterConsoleCommandsAndVariables() {
 		auto TryParseFloat = [](const std::string_view text, float& outValue) {
-			const char* begin = text.data();
-			const char* end   = text.data() + text.size();
-			auto [ptr, ec] = std::from_chars(begin, end, outValue);
+			const char* begin     = text.data();
+			const char* end       = text.data() + text.size();
+			auto        [ptr, ec] = std::from_chars(begin, end, outValue);
 			if (ec == std::errc() && ptr == end) {
 				return true;
 			}
@@ -799,6 +799,15 @@ namespace Unnamed {
 #endif
 	}
 
+	World* Engine::ResolveSceneTransitionTargetWorld(World* runtimeWorld) const {
+#ifdef _DEBUG
+		if (auto* editorWorld = dynamic_cast<EditorWorld*>(runtimeWorld)) {
+			return editorWorld->GetRuntimeSceneWorld();
+		}
+#endif
+		return runtimeWorld;
+	}
+
 	void Engine::ToggleFullscreen() const {
 		if (mWindowManager) {
 			if (const Window* window = mWindowManager->FindWindowById(
@@ -807,15 +816,6 @@ namespace Unnamed {
 				window->ToggleFullscreen();
 			}
 		}
-	}
-
-	World* Engine::ResolveSceneTransitionTargetWorld(World* runtimeWorld) const {
-#ifdef _DEBUG
-		if (auto* editorWorld = dynamic_cast<EditorWorld*>(runtimeWorld)) {
-			return editorWorld->GetRuntimeSceneWorld();
-		}
-#endif
-		return runtimeWorld;
 	}
 
 	template <class TWorld, class... Args>
@@ -833,12 +833,12 @@ namespace Unnamed {
 		TWorld* raw = newWorld.get();
 		raw->SetServices(
 			{
-				.console = mConsoleSystem.get(),
-				.inputSystem = mInputSystem.get(),
-				.profiler = mProfiler.get(),
+				.console      = mConsoleSystem.get(),
+				.inputSystem  = mInputSystem.get(),
+				.profiler     = mProfiler.get(),
 				.assetManager = mAssetManager.get(),
-				.demoManager = mDemoManager.get(),
-				.audioSystem = mAudioSystem.get()
+				.demoManager  = mDemoManager.get(),
+				.audioSystem  = mAudioSystem.get()
 			}
 		);
 

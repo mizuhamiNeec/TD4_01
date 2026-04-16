@@ -1,6 +1,7 @@
 #include "ParkourMovementComponent.h"
 
 #include <algorithm>
+#include <cmath>
 #include <imgui.h>
 
 #include "core/ComponentRegistry.h"
@@ -14,6 +15,7 @@
 
 #include "engine/ImGui/Icons.h"
 #include "engine/physics/core/Physics.h"
+#include "engine/scene/Scene.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/primitive/Primitives.h"
@@ -22,6 +24,7 @@
 #include "engine/world/World.h"
 
 #include "game/core/collision/kinematic/base/BaseKinematicCollisionResolver.h"
+#include "game/core/components/CameraRotatorComponent.h"
 #include "game/core/components/character/state/GameMovementStateMachine.h"
 #include "game/core/replay/ReplayHash.h"
 
@@ -36,6 +39,13 @@ namespace Unnamed {
 		constexpr float kDuckSweepMinDistanceHu    = 0.05f;
 		constexpr float kDuckSweepBlockToiEpsilon  = 1.0e-4f;
 		constexpr float kUnduckHeadroomPaddingHu   = 0.5f;
+		constexpr float kDuckViewUnduckHoldSec     = 0.05f;
+
+		float EaseInOutSpline(float value) {
+			value = std::clamp(value, 0.0f, 1.0f);
+			const float valueSquared = value * value;
+			return 3.0f * valueSquared - 2.0f * valueSquared * value;
+		}
 
 		bool TryReadVec3FromObject(
 			const nlohmann::json& object,
@@ -64,8 +74,10 @@ namespace Unnamed {
 		GameMovementComponent::OnAttached();
 		mAutoSprintActive = false;
 		ResetParkourRuntime();
+		ResetDuckViewRuntime();
 		mStandingHalfExtents = mBoxHalfExtents;
 		RebuildDuckHalfExtents();
+		mCameraRootBaseLocalCached = false;
 		ClearDeterministicActionInputQueue();
 		mActionFrameInput = {};
 		auto& [jump, crouch, slide, wallRun, doubleJump, speedVault, blink,
@@ -95,6 +107,7 @@ namespace Unnamed {
 		TickParkourTimers(stepSeconds);
 		ResetDuckStandDebugFrame();
 		GameMovementComponent::SimulateStep(transform, input, stepSeconds);
+		UpdateDuckViewHeight(transform, input, stepSeconds);
 		DrawDuckStandDebug(transform);
 		// 旧State実装と同じ入力エッジ判定に合わせるため、毎tick最後に同期します。
 		mRuntime.lastJumpHeld = input.jumpPressed;
@@ -159,17 +172,64 @@ namespace Unnamed {
 			"Vault: %s (cool %.2f s)", mRuntime.vault.active ? "true" : "false",
 			mRuntime.vault.cooldown
 		);
+		ImGui::SeparatorText("Duck View");
+		ImGui::Text("DuckViewFraction: %.2f", mDuckViewFraction);
+		ImGui::Text(
+			"DuckViewUnduckHoldRemaining: %.3f",
+			mDuckViewUnduckHoldRemainingSec
+		);
+		ImGui::Text("DuckViewSmoothedLocalY: %.4f", mDuckViewSmoothedLocalY);
+		ImGui::Text("CameraRootGuid: %llu", mCameraRootEntityGuid);
 	}
 #endif
 
 	void ParkourMovementComponent::Deserialize(const JsonReader& reader) {
 		GameMovementComponent::Deserialize(reader);
+		if (reader.Has("cameraRootEntityGuid")) {
+			mCameraRootEntityGuid = reader["cameraRootEntityGuid"].GetUint64();
+		}
+		mStandViewHeightHu = reader.Has("standViewHeightHu")
+			                     ? reader["standViewHeightHu"].GetFloat() :
+			                     mStandViewHeightHu;
+		mDuckViewHeightHu = reader.Has("duckViewHeightHu")
+			                    ? reader["duckViewHeightHu"].GetFloat() :
+			                    mDuckViewHeightHu;
+		mDuckViewTimeToDuckSec = reader.Has("duckViewTimeToDuckSec")
+			                         ? reader["duckViewTimeToDuckSec"].GetFloat() :
+			                         mDuckViewTimeToDuckSec;
+		mDuckViewTimeToUnduckSec = reader.Has("duckViewTimeToUnduckSec")
+			                           ? reader["duckViewTimeToUnduckSec"].
+			                             GetFloat() :
+			                           mDuckViewTimeToUnduckSec;
+		mDuckViewClampPaddingHu = reader.Has("duckViewClampPaddingHu")
+			                          ? reader["duckViewClampPaddingHu"].
+			                            GetFloat() :
+			                          mDuckViewClampPaddingHu;
+		mStandViewHeightHu      = std::max(0.0f, mStandViewHeightHu);
+		mDuckViewHeightHu = std::clamp(mDuckViewHeightHu, 0.0f, mStandViewHeightHu);
+		mDuckViewTimeToDuckSec   = std::max(0.0f, mDuckViewTimeToDuckSec);
+		mDuckViewTimeToUnduckSec = std::max(0.0f, mDuckViewTimeToUnduckSec);
+		mDuckViewClampPaddingHu  = std::max(0.0f, mDuckViewClampPaddingHu);
 		mStandingHalfExtents = mBoxHalfExtents;
 		RebuildDuckHalfExtents();
+		mCameraRootBaseLocalCached = false;
+		ResetDuckViewRuntime();
 	}
 
 	void ParkourMovementComponent::Serialize(JsonWriter& writer) const {
 		GameMovementComponent::Serialize(writer);
+		writer.Key("cameraRootEntityGuid");
+		writer.Write(mCameraRootEntityGuid);
+		writer.Key("standViewHeightHu");
+		writer.Write(mStandViewHeightHu);
+		writer.Key("duckViewHeightHu");
+		writer.Write(mDuckViewHeightHu);
+		writer.Key("duckViewTimeToDuckSec");
+		writer.Write(mDuckViewTimeToDuckSec);
+		writer.Key("duckViewTimeToUnduckSec");
+		writer.Write(mDuckViewTimeToUnduckSec);
+		writer.Key("duckViewClampPaddingHu");
+		writer.Write(mDuckViewClampPaddingHu);
 	}
 
 	void ParkourMovementComponent::WriteReplayState(
@@ -188,6 +248,10 @@ namespace Unnamed {
 		outState["duckHalfExtents"] = nlohmann::json::array(
 			{mDuckHalfExtents.x, mDuckHalfExtents.y, mDuckHalfExtents.z}
 		);
+		outState["duckViewFraction"] = mDuckViewFraction;
+		outState["duckViewUnduckHoldRemainingSec"] =
+			mDuckViewUnduckHoldRemainingSec;
+		outState["duckViewSmoothedLocalY"] = mDuckViewSmoothedLocalY;
 
 		nlohmann::json runtime    = nlohmann::json::object();
 		runtime["hasDoubleJump"]  = mRuntime.hasDoubleJump;
@@ -520,6 +584,21 @@ namespace Unnamed {
 				);
 			}
 		}
+		mDuckViewFraction = std::clamp(
+			inState.value("duckViewFraction", mRuntime.duckHullActive ? 1.0f : 0.0f),
+			0.0f,
+			1.0f
+		);
+		mDuckViewUnduckHoldRemainingSec = std::max(
+			0.0f,
+			inState.value("duckViewUnduckHoldRemainingSec", 0.0f)
+		);
+		mDuckViewSmoothedLocalY = inState.value(
+			"duckViewSmoothedLocalY",
+			mDuckViewSmoothedLocalY
+		);
+		mDuckViewFractionInitialized = true;
+		mDuckViewSmoothedLocalYInitialized = true;
 
 		if (mStandingHalfExtents.IsZero()) {
 			mStandingHalfExtents = mBoxHalfExtents;
@@ -534,6 +613,7 @@ namespace Unnamed {
 		if (TransformComponent* transform = GetTransform()) {
 			UpdateCollisionHull(transform);
 		}
+		mCameraRootBaseLocalCached = false;
 	}
 
 	uint64_t ParkourMovementComponent::ComputeReplayStateHash() const {
@@ -547,6 +627,9 @@ namespace Unnamed {
 		ReplayHash::AppendFloating(hash, mDuckHalfExtents.x);
 		ReplayHash::AppendFloating(hash, mDuckHalfExtents.y);
 		ReplayHash::AppendFloating(hash, mDuckHalfExtents.z);
+		ReplayHash::AppendFloating(hash, mDuckViewFraction);
+		ReplayHash::AppendFloating(hash, mDuckViewUnduckHoldRemainingSec);
+		ReplayHash::AppendFloating(hash, mDuckViewSmoothedLocalY);
 
 		ReplayHash::AppendPod(hash, mRuntime.hasDoubleJump);
 		ReplayHash::AppendPod(hash, mRuntime.lastJumpHeld);
@@ -1025,8 +1108,8 @@ namespace Unnamed {
 	void ParkourMovementComponent::RebuildDuckHalfExtents() {
 		const float duckScale = std::clamp(
 			mConsole ?
-				mConsole->GetConVarValueOr("park_duck_heightscale", 0.75f) :
-				0.75f,
+				mConsole->GetConVarValueOr("park_duck_heightscale", 0.5f) :
+				0.5f,
 			0.2f,
 			1.0f
 		);
@@ -1037,6 +1120,160 @@ namespace Unnamed {
 	void ParkourMovementComponent::ResetParkourRuntime() {
 		mRuntime                       = {};
 		mRuntime.wallRun.timeSinceLast = 999.0f;
+	}
+
+	void ParkourMovementComponent::ResetDuckViewRuntime() {
+		mDuckViewFraction            = mRuntime.duckHullActive ? 1.0f : 0.0f;
+		mDuckViewUnduckHoldRemainingSec = 0.0f;
+		mDuckViewSmoothedLocalY         = 0.0f;
+		mDuckViewFractionInitialized = false;
+		mDuckViewSmoothedLocalYInitialized = false;
+	}
+
+	TransformComponent* ParkourMovementComponent::ResolveCameraRootTransform(
+		TransformComponent* actorTransform
+	) {
+		if (!actorTransform) {
+			return nullptr;
+		}
+		Scene* scene = GetScene();
+		if (!scene) {
+			return nullptr;
+		}
+
+		const auto matchesOwner = [actorTransform](const TransformComponent* transform) {
+			return transform && transform->GetParent() == actorTransform;
+		};
+
+		if (mCameraRootEntityGuid != 0) {
+			if (Entity* entity = scene->FindEntity(mCameraRootEntityGuid)) {
+				if (auto* transform = entity->GetComponent<TransformComponent>();
+				    matchesOwner(transform)) {
+					return transform;
+				}
+			}
+		}
+
+		for (const auto& entityPtr : scene->GetEntities()) {
+			if (!entityPtr) {
+				continue;
+			}
+			Entity* entity = entityPtr.get();
+			auto*   transform = entity->GetComponent<TransformComponent>();
+			if (!matchesOwner(transform)) {
+				continue;
+			}
+
+			// プレイヤー直下の CameraRotator を視点ルートとして扱います。
+			if (entity->GetComponent<CameraRotatorComponent>() == nullptr) {
+				continue;
+			}
+			mCameraRootEntityGuid = entity->GetGuid();
+			return transform;
+		}
+
+		return nullptr;
+	}
+
+	void ParkourMovementComponent::UpdateDuckViewHeight(
+		TransformComponent* actorTransform,
+		const MovementFrameInput& input,
+		const float         stepSeconds
+	) {
+		TransformComponent* cameraRoot = ResolveCameraRootTransform(actorTransform);
+		if (!cameraRoot) {
+			mCameraRootBaseLocalCached         = false;
+			mDuckViewSmoothedLocalYInitialized = false;
+			return;
+		}
+		if (!mCameraRootBaseLocalCached) {
+			mCameraRootBaseLocalPosition = cameraRoot->GetPosition();
+			mCameraRootBaseLocalCached   = true;
+		}
+
+		const bool wantsDuckView = input.crouchPressed || mRuntime.duckHullActive ||
+		                           mRuntime.slide.active;
+		if (wantsDuckView) {
+			mDuckViewUnduckHoldRemainingSec = kDuckViewUnduckHoldSec;
+		} else {
+			mDuckViewUnduckHoldRemainingSec = std::max(
+				0.0f,
+				mDuckViewUnduckHoldRemainingSec - std::max(stepSeconds, 0.0f)
+			);
+		}
+		const float targetDuckFraction =
+			(wantsDuckView || mDuckViewUnduckHoldRemainingSec > 0.0f) ? 1.0f :
+			                                                           0.0f;
+		if (!mDuckViewFractionInitialized) {
+			mDuckViewFraction            = targetDuckFraction;
+			mDuckViewFractionInitialized = true;
+		}
+
+		const float deltaToTarget = targetDuckFraction - mDuckViewFraction;
+		if (std::abs(deltaToTarget) <= 1.0e-5f) {
+			mDuckViewFraction = targetDuckFraction;
+		} else {
+			const bool  ducking = deltaToTarget > 0.0f;
+			const float transitionSec = ducking ? mDuckViewTimeToDuckSec :
+				                         mDuckViewTimeToUnduckSec;
+			if (transitionSec <= 1.0e-6f) {
+				mDuckViewFraction = targetDuckFraction;
+			} else {
+				const float maxStep = std::clamp(
+					stepSeconds / transitionSec,
+					0.0f,
+					1.0f
+				);
+				const float signedStep = std::copysign(
+					std::min(std::abs(deltaToTarget), maxStep),
+					deltaToTarget
+				);
+				mDuckViewFraction = std::clamp(
+					mDuckViewFraction + signedStep,
+					0.0f,
+					1.0f
+				);
+			}
+		}
+
+		//const float smoothedFraction = EaseInOutSpline(mDuckViewFraction);
+		const float eyeHeightHu = Math::Lerp(
+			mStandViewHeightHu,
+			mDuckViewHeightHu,
+			10.0f * stepSeconds
+		);
+		const float currentHalfHeightHu = std::max(
+			0.0f,
+			Math::MtoH(mBoxHalfExtents.y)
+		);
+		const float targetLocalY = Math::HtoM(eyeHeightHu - currentHalfHeightHu);
+
+		if (!mDuckViewSmoothedLocalYInitialized) {
+			mDuckViewSmoothedLocalY            = cameraRoot->GetPosition().y;
+			mDuckViewSmoothedLocalYInitialized = true;
+		}
+
+		// 視点ローカルYは毎フレーム Lerp で追従させ、姿勢切り替え直後の1フレーム外れを吸収します。
+		const float localDelta = targetLocalY - mDuckViewSmoothedLocalY;
+		if (std::abs(localDelta) <= 1.0e-6f) {
+			mDuckViewSmoothedLocalY = targetLocalY;
+		} else {
+			const bool  raisingView = localDelta > 0.0f;
+			const float transitionSec = raisingView ? mDuckViewTimeToDuckSec :
+				                         mDuckViewTimeToUnduckSec;
+			const float alpha = transitionSec <= 1.0e-6f ?
+				                    1.0f :
+				                    std::clamp(stepSeconds / transitionSec, 0.0f, 1.0f);
+			mDuckViewSmoothedLocalY = Math::Lerp(
+				mDuckViewSmoothedLocalY,
+				targetLocalY,
+				alpha
+			);
+		}
+
+		Vec3 localPosition = mCameraRootBaseLocalPosition;
+		localPosition.y    = mDuckViewSmoothedLocalY;
+		cameraRoot->SetPosition(localPosition);
 	}
 
 	bool ParkourMovementComponent::IsDuckDebugDrawEnabled() const {

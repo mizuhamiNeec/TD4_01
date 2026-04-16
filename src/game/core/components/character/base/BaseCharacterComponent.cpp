@@ -168,9 +168,14 @@ namespace Unnamed {
 #ifdef _DEBUG
 	void BaseCharacterComponent::DrawInspectorImGui() {
 		if (mStateMachine) {
+			const std::string modeName(
+				mStateMachine->GetCurrentModeName().data(),
+				mStateMachine->GetCurrentModeName().data() + mStateMachine->
+				GetCurrentModeName().size()
+			);
 			ImGui::Text(
 				"CurrentMode: %s",
-				mStateMachine->GetCurrentModeName().data()
+				modeName.c_str()
 			);
 			ImGui::Text(
 				"ActiveAbilityMask: 0x%016llX",
@@ -191,13 +196,17 @@ namespace Unnamed {
 			mVelocity = Math::HtoM(tmp);
 		}
 		ImGui::Checkbox("Collision Enabled", &mCollisionEnabled);
-		ImGui::DragFloat3(
-			"Box Half Extents (m)", &mBoxHalfExtents.x, 0.01f, 0.01f,
-			16.0f
-		);
+		tmp = Math::MtoH(mBoxHalfExtents);
+		if (
+			ImGui::DragFloat3(
+				"Box Half Extents (HU)", &tmp.x, 0.25f, 0.125f,
+				512.0f
+			)
+		) {
+			mBoxHalfExtents = Math::HtoM(tmp);
+		}
 	}
 #endif
 
 	REGISTER_COMPONENT(BaseCharacterComponent);
 }
-

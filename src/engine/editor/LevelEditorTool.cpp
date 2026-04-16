@@ -8,12 +8,14 @@
 #include "EditorNotification.h"
 
 #include "core/io/json/JsonReader.h"
+#include "core/string/StrUtil.h"
 
 #include "engine/platform/Window.h"
 #include "engine/platform/WindowManager.h"
 #include "engine/render/Renderer.h"
 #include "engine/scene/SceneSerializer.h"
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
+#include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/unnamed/subsystem/console/concommand/ConVar.h"
 #include "engine/unnamed/subsystem/input/InputSystem.h"
 #include "engine/world/EditorWorld.h"
@@ -481,11 +483,11 @@ namespace Unnamed {
 		return mEditorWorld.IsPlaying();
 	}
 
-	void LevelEditorTool::StartPlayInEditor() {
+	void LevelEditorTool::StartPlayInEditor() const {
 		mEditorWorld.StartPlayInEditor();
 	}
 
-	void LevelEditorTool::StopPlayInEditor() {
+	void LevelEditorTool::StopPlayInEditor() const {
 		mEditorWorld.StopPlayInEditor();
 	}
 
@@ -658,6 +660,48 @@ namespace Unnamed {
 			return false;
 		}
 		mEditorWorld.SetLoadedScenePath(path);
+		return true;
+	}
+
+	bool LevelEditorTool::LoadSceneFromPath(const std::string& path) {
+		const std::string normalizedPath = StrUtil::NormalizePath(
+			StrUtil::TrimSpaces(path)
+		);
+		if (normalizedPath.empty()) {
+			return false;
+		}
+
+		// 再生中はプレイワールドを停止し、編集ワールドへロード
+		if (mEditorWorld.IsPlaying()) {
+			mEditorWorld.StopPlayInEditor();
+		}
+
+		if (!mEditorWorld.LoadSceneFromFile(normalizedPath.c_str())) {
+			Warning(
+				"LevelEditorTool",
+				"Failed to load scene: {}",
+				normalizedPath
+			);
+			if (mNotification) {
+				mNotification->PushNotification(
+					"Scene Load Failed",
+					normalizedPath,
+					NOTIFY_TYPE::ERR
+				);
+			}
+			return false;
+		}
+
+		mSelectedEntityId = 0;
+		Msg("LevelEditorTool", "Scene loaded: {}", normalizedPath);
+		if (mNotification) {
+			mNotification->PushNotification(
+				"Scene Loaded",
+				normalizedPath,
+				NOTIFY_TYPE::INFO
+			);
+		}
+
 		return true;
 	}
 

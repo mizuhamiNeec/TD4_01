@@ -450,6 +450,44 @@ namespace Unnamed {
 		return SceneSerializer::SaveToFile(*mScene, path);
 	}
 
+	void World::RequestSceneTransition(const std::string_view path) {
+		const std::string normalizedPath = StrUtil::NormalizePath(
+			StrUtil::TrimSpaces(std::string(path))
+		);
+		if (normalizedPath.empty()) {
+			Warning(kChannel, "Scene transition was ignored because path is empty.");
+			return;
+		}
+
+		// 実行中のシーン更新中に即時ロードしないため、次の安全地点まで保留します。
+		mPendingSceneTransitionPath = normalizedPath;
+		Msg(
+			kChannel,
+			"Queued scene transition to: {}",
+			mPendingSceneTransitionPath
+		);
+	}
+
+	void World::ProcessPendingSceneTransition() {
+		if (mPendingSceneTransitionPath.empty()) {
+			return;
+		}
+
+		// 再入時に同じ要求を処理しないよう、先に保留値を取り出します。
+		const std::string requestedPath = std::move(mPendingSceneTransitionPath);
+		mPendingSceneTransitionPath.clear();
+
+		if (LoadSceneFromFile(requestedPath.c_str())) {
+			return;
+		}
+
+		Error(
+			kChannel,
+			"Scene transition failed: {}",
+			requestedPath
+		);
+	}
+
 	void World::UnloadScene() {
 		if (!mScene) {
 			return;

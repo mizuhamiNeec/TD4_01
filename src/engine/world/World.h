@@ -1,13 +1,10 @@
 #pragma once
 #include <memory>
-#include <optional>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 #include <vector>
 
 #include "core/guidgenerator/GuidGenerator.h"
-#include "core/math/Vec4.h"
 
 #include "engine/render/frame/RenderFrameInputs.h"
 #include "engine/world/GameplayCueBus.h"
@@ -102,6 +99,14 @@ namespace Unnamed {
 
 		/// @brief 現在のシーンをアンロードします。
 		virtual void UnloadScene();
+
+		/// @brief シーン遷移を次の安全なタイミングで実行するようリクエストします。
+		/// @param path 遷移先シーンのファイルパス
+		void RequestSceneTransition(std::string_view path);
+
+		/// @brief 保留中のシーン遷移を処理します。
+		/// @details エンジンのフレーム先頭など、安全なタイミングで呼び出してください。
+		void ProcessPendingSceneTransition();
 
 		/// @brief レンダリングフレームの入力を埋めます。
 		virtual void FillRenderFrameInputs(
@@ -248,6 +253,7 @@ namespace Unnamed {
 		GameplayCueBus                   mGameplayCueBus;
 		GuidGenerator                    mGuidGenerator;   // GUIDジェネレーター
 		std::string                      mLoadedScenePath; // ロードされたシーンのファイルパス
+		std::string                      mPendingSceneTransitionPath; // 保留中のシーン遷移先
 		WorldTime                        mTime;            // ワールドの時間情報
 		WorldDebugDraw                   mDebugDraw;
 		std::vector<Render::ScreenSpriteInput> mDebugScreenSprites;

@@ -53,6 +53,13 @@ namespace Unnamed {
 		/// @brief コンソールコマンドとコンソール変数を登録します。
 		void RegisterConsoleCommandsAndVariables();
 
+		/// @brief シーン遷移処理の対象となるワールドを解決します。
+		/// @param runtimeWorld 現在の実行対象ワールド
+		/// @return 実際にシーン遷移を適用するワールド
+		[[nodiscard]] World* ResolveSceneTransitionTargetWorld(
+			World* runtimeWorld
+		) const;
+
 		/// @brief フルスクリーンの切り替えを行います。
 		void ToggleFullscreen() const;
 
@@ -98,6 +105,16 @@ namespace Unnamed {
 		std::unique_ptr<ConCommand> mQuitCommand;
 		std::unique_ptr<ConCommand> mToggleEditorCommand;
 		std::unique_ptr<ConCommand> mToggleFullscreenCommand;
+		std::unique_ptr<ConCommand> mMapCommand;
+		std::unique_ptr<ConCommand> mReloadSceneCommand;
+		std::unique_ptr<ConCommand> mPostFxSetCommand;
+		std::unique_ptr<ConCommand> mPostFxEnableCommand;
+		std::unique_ptr<ConCommand> mPostFxClearParamCommand;
+		std::unique_ptr<ConCommand> mPostFxClearPassCommand;
+		std::unique_ptr<ConCommand> mPostFxResetCommand;
+		std::unique_ptr<ConCommand> mPostFxListCommand;
+		std::unique_ptr<ConCommand> mPostFxChainCommand;
+		std::unique_ptr<ConCommand> mPostFxChainReloadCommand;
 
 
 		std::unique_ptr<Render::RenderFrameContext> mRenderFrameContext;

@@ -73,13 +73,13 @@ namespace Unnamed {
 		[[nodiscard]] bool IsOpen() const override;
 		void SetOpen(bool open) override;
 
-		void TogglePresentMode();
+		void                              TogglePresentMode();
 		[[nodiscard]] EDITOR_PRESENT_MODE GetPresentMode() const;
-		[[nodiscard]] bool IsPlaying() const;
-		void StartPlayInEditor();
-		void StopPlayInEditor();
-		[[nodiscard]] bool IsProfilerWindowOpen() const;
-		void SetProfilerWindowOpen(bool open);
+		[[nodiscard]] bool                IsPlaying() const;
+		void                              StartPlayInEditor() const;
+		void                              StopPlayInEditor() const;
+		[[nodiscard]] bool                IsProfilerWindowOpen() const;
+		void                              SetProfilerWindowOpen(bool open);
 
 		static constexpr std::string_view kViewScenePerspective =
 			"tool.level.scene.perspective";
@@ -131,6 +131,11 @@ namespace Unnamed {
 		[[nodiscard]] Entity* GetSelectedEntity() const;
 		bool SaveSceneAs(const std::string& path);
 
+		/// @brief 指定パスのシーンをエディターワールドへロードします。
+		/// @param path ロードするシーンパス
+		/// @return ロードに成功した場合はtrue
+		bool LoadSceneFromPath(const std::string& path);
+
 		[[nodiscard]] ViewportCameraBinding ResolveViewportBinding(
 			std::string_view viewKey
 		) const;
@@ -155,6 +160,7 @@ namespace Unnamed {
 		Vec2 mViewportPosition = Vec2::zero;
 		Vec2 mViewportSize = Vec2::zero;
 		Vec2 mLastViewportSize = Vec2(kClientWidth, kClientHeight);
+		std::array<char, 512> mOpenScenePathBuffer = {};
 		float mViewportPanelWidth = kClientWidth;
 		float mViewportPanelHeight = kClientHeight;
 		bool mViewportSizeChangedThisFrame = false;

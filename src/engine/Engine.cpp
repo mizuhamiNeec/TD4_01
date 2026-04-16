@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <charconv>
 #include <pch.h>
 
 // ReSharper disable CppUnusedIncludeDirective
@@ -23,6 +24,7 @@
 #include <core/assets/loader/SoundAssetLoader.h>
 #include <core/assets/loader/TextureLoaderDirectXTex.h>
 #include <core/assets/loader/UiDocumentAssetLoader.h>
+#include <core/string/StrUtil.h>
 
 #include <engine/editor/EditorRuntime.h>
 #include <engine/Platform/PlatformEventsImpl.h>
@@ -46,6 +48,7 @@
 #include <engine/unnamed/subsystem/terminal/TerminalSystem.h>
 #include <engine/unnamed/subsystem/time/SystemClock.h>
 #include <engine/unnamed/subsystem/time/TimeSystem.h>
+#include <engine/world/EditorWorld.h>
 #include <engine/world/GameWorld.h>
 #include <engine/world/World.h>
 #include <game/core/replay/DemoManager.h>
@@ -434,6 +437,18 @@ namespace Unnamed {
 
 		// ワールドの固定シミュレーション更新 + 描画フレーム更新
 		if (runtimeWorld) {
+			{
+				// シーン遷移はフレーム先頭でまとめて適用し、更新ループ中の差し替えを避けます。
+				Profiler::ScopeTimer scope(
+					mProfiler.get(), "World.ProcessPendingSceneTransition"
+				);
+				if (World* transitionTarget = ResolveSceneTransitionTargetWorld(
+					runtimeWorld
+				)) {
+					transitionTarget->ProcessPendingSceneTransition();
+				}
+			}
+
 			static constexpr uint32_t kMaxFixedTicksPerFrame = 16u;
 
 			const uint32_t tickRate = mDemoManager ?
@@ -560,6 +575,16 @@ namespace Unnamed {
 	/// @brief シャットダウン
 	void Engine::Shutdown() {
 		mQuitCommand.reset();
+		mMapCommand.reset();
+		mReloadSceneCommand.reset();
+		mPostFxSetCommand.reset();
+		mPostFxEnableCommand.reset();
+		mPostFxClearParamCommand.reset();
+		mPostFxClearPassCommand.reset();
+		mPostFxResetCommand.reset();
+		mPostFxListCommand.reset();
+		mPostFxChainCommand.reset();
+		mPostFxChainReloadCommand.reset();
 #ifdef _DEBUG
 		mToggleEditorCommand.reset();
 		mToggleFullscreenCommand.reset();
@@ -621,6 +646,86 @@ namespace Unnamed {
 
 	/// @brief コンソールコマンドと変数の登録
 	void Engine::RegisterConsoleCommandsAndVariables() {
+		auto TryParseFloat = [](const std::string_view text, float& outValue) {
+			const char* begin = text.data();
+			const char* end   = text.data() + text.size();
+			auto [ptr, ec] = std::from_chars(begin, end, outValue);
+			if (ec == std::errc() && ptr == end) {
+				return true;
+			}
+			try {
+				size_t consumed = 0;
+				outValue        = std::stof(std::string(text), &consumed);
+				return consumed == text.size();
+			} catch (...) {
+				return false;
+			}
+		};
+
+		auto ParseBool = [](const std::string_view text, bool& outValue) {
+			const std::string lower = StrUtil::ToLowerCase(std::string(text));
+			if (
+				lower == "1" ||
+				lower == "true" ||
+				lower == "on" ||
+				lower == "yes"
+			) {
+				outValue = true;
+				return true;
+			}
+			if (
+				lower == "0" ||
+				lower == "false" ||
+				lower == "off" ||
+				lower == "no"
+			) {
+				outValue = false;
+				return true;
+			}
+			return false;
+		};
+
+		auto ParseVec4 = [&](const std::vector<std::string>& args, Vec4& outValue) {
+			if (args.size() != 4) {
+				return false;
+			}
+			float values[4] = {};
+			for (size_t i = 0; i < 4; ++i) {
+				if (!TryParseFloat(args[i], values[i])) {
+					return false;
+				}
+			}
+			outValue = Vec4(values[0], values[1], values[2], values[3]);
+			return true;
+		};
+
+		const auto queueSceneTransition = [this](const std::string& rawPath) {
+			World* runtimeWorld = GetWorld();
+			if (!runtimeWorld) {
+				Warning("Engine", "Scene transition failed: runtime world is null.");
+				return false;
+			}
+
+			World* transitionTarget = ResolveSceneTransitionTargetWorld(
+				runtimeWorld
+			);
+			if (!transitionTarget) {
+				Warning("Engine", "Scene transition failed: transition target world is null.");
+				return false;
+			}
+
+			const std::string normalizedPath = StrUtil::NormalizePath(
+				StrUtil::TrimSpaces(rawPath)
+			);
+			if (normalizedPath.empty()) {
+				Warning("Engine", "Scene transition failed: path is empty.");
+				return false;
+			}
+
+			transitionTarget->RequestSceneTransition(normalizedPath);
+			return true;
+		};
+
 		mQuitCommand = std::make_unique<ConCommand>(
 			"quit",
 			[this](const std::vector<std::string>&) {
@@ -630,6 +735,49 @@ namespace Unnamed {
 			"Quit the engine."
 		);
 
+		mMapCommand = std::make_unique<ConCommand>(
+			"map",
+			[queueSceneTransition](const std::vector<std::string>& args) {
+				if (args.empty()) {
+					Warning("Engine", "Usage: map <scenePath>");
+					return false;
+				}
+
+				// 引数を1つのパスとして扱い、空白を含むケースも吸収します。
+				return queueSceneTransition(StrUtil::Join(args, " "));
+			},
+			"Queue a scene transition. Usage: map <scenePath>"
+		);
+
+		mReloadSceneCommand = std::make_unique<ConCommand>(
+			"reloadscene",
+			[this, queueSceneTransition](const std::vector<std::string>&) {
+				World* runtimeWorld = GetWorld();
+				if (!runtimeWorld) {
+					Warning("Engine", "Reload failed: runtime world is null.");
+					return false;
+				}
+
+				World* transitionTarget = ResolveSceneTransitionTargetWorld(
+					runtimeWorld
+				);
+				if (!transitionTarget) {
+					Warning("Engine", "Reload failed: transition target world is null.");
+					return false;
+				}
+
+				const std::string loadedPath = std::string(
+					transitionTarget->GetLoadedScenePath()
+				);
+				if (loadedPath.empty()) {
+					Warning("Engine", "Reload failed: no loaded scene path.");
+					return false;
+				}
+
+				return queueSceneTransition(loadedPath);
+			},
+			"Reload current scene."
+		);
 #ifdef _DEBUG
 		mToggleEditorCommand = std::make_unique<ConCommand>(
 			"toggleeditor",
@@ -659,6 +807,15 @@ namespace Unnamed {
 				window->ToggleFullscreen();
 			}
 		}
+	}
+
+	World* Engine::ResolveSceneTransitionTargetWorld(World* runtimeWorld) const {
+#ifdef _DEBUG
+		if (auto* editorWorld = dynamic_cast<EditorWorld*>(runtimeWorld)) {
+			return editorWorld->GetRuntimeSceneWorld();
+		}
+#endif
+		return runtimeWorld;
 	}
 
 	template <class TWorld, class... Args>

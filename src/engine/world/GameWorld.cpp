@@ -1,5 +1,7 @@
 #include "GameWorld.h"
 
+#include "core/string/StrUtil.h"
+
 #include "engine/render/frame/RenderFrameInputs.h"
 #include "engine/scene/SceneSerializer.h"
 
@@ -63,6 +65,10 @@ namespace Unnamed {
 
 			World::SetScene(std::move(newScene));
 			const auto afterSetScene = std::chrono::steady_clock::now();
+
+			// Base World と同等に、現在ロード中のシーンパスとフックを更新します。
+			mLoadedScenePath = StrUtil::NormalizePath(path);
+			OnSceneLoaded();
 
 			Msg(
 				"GameWorld",

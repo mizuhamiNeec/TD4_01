@@ -1,10 +1,13 @@
 #ifdef _DEBUG
 #include "LevelEditorTool.h"
 
+#include <algorithm>
 #include <array>
+#include <filesystem>
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <utility>
+#include <vector>
 
 #include "core/string/StrUtil.h"
 
@@ -14,6 +17,80 @@
 #include "engine/world/EditorWorld.h"
 
 namespace Unnamed {
+	namespace {
+		/// @brief 固定長バッファへ文字列を安全にコピーします。
+		/// @param outBuffer コピー先バッファ
+		/// @param value コピー元文字列
+		void SetPathBuffer(
+			std::array<char, 512>& outBuffer,
+			const std::string_view value
+		) {
+			outBuffer.fill('\0');
+			if (outBuffer.size() <= 1) {
+				return;
+			}
+
+			const size_t copyLength = std::min(
+				outBuffer.size() - 1,
+				value.size()
+			);
+			std::copy_n(value.data(), copyLength, outBuffer.data());
+			outBuffer[copyLength] = '\0';
+		}
+
+		/// @brief `./content/**/scenes/*.json` からシーン候補を収集します。
+		/// @return ロード可能なシーンパス一覧
+		[[nodiscard]] std::vector<std::string> CollectSceneCandidates() {
+			namespace fs = std::filesystem;
+
+			std::vector<std::string> scenePaths = {};
+			std::error_code          ec         = {};
+			const fs::path           contentRoot("./content");
+			if (!fs::exists(contentRoot, ec)) {
+				return scenePaths;
+			}
+
+			fs::recursive_directory_iterator it(
+				contentRoot,
+				fs::directory_options::skip_permission_denied,
+				ec
+			);
+			const fs::recursive_directory_iterator endIt;
+			for (; it != endIt; it.increment(ec)) {
+				if (ec) {
+					ec.clear();
+					continue;
+				}
+				if (!it->is_regular_file(ec)) {
+					continue;
+				}
+
+				const std::string normalizedPath = StrUtil::NormalizePath(
+					it->path().generic_string()
+				);
+				if (
+					normalizedPath.find("/scenes/") == std::string::npos ||
+					!StrUtil::HasExtension(normalizedPath, ".json")
+				) {
+					continue;
+				}
+
+				if (it->path().is_relative()) {
+					scenePaths.emplace_back("./" + normalizedPath);
+				} else {
+					scenePaths.emplace_back(normalizedPath);
+				}
+			}
+
+			std::ranges::sort(scenePaths);
+			scenePaths.erase(
+				std::unique(scenePaths.begin(), scenePaths.end()),
+				scenePaths.end()
+			);
+			return scenePaths;
+		}
+	}
+
 	//-------------------------------------------------------------------------
 	// Chromeは某ブラウザではなく、UIの外枠という意味なのじゃ。
 	//-------------------------------------------------------------------------
@@ -33,6 +110,73 @@ namespace Unnamed {
 
 				if (ImGui::MenuItem("Save As (sandbox.json)")) {
 					SaveSceneAs("./content/core/scenes/sandbox.json");
+				}
+
+				ImGui::Separator();
+
+				if (ImGui::BeginMenu("Open Scene")) {
+					static std::vector<std::string> sSceneCandidates = {};
+					if (sSceneCandidates.empty()) {
+						sSceneCandidates = CollectSceneCandidates();
+					}
+
+					if (ImGui::MenuItem("Refresh Scene List")) {
+						sSceneCandidates = CollectSceneCandidates();
+					}
+
+					ImGui::Separator();
+
+					constexpr size_t maxQuickOpenCount = 24;
+					const size_t quickOpenCount = std::min(
+						sSceneCandidates.size(),
+						maxQuickOpenCount
+					);
+					if (quickOpenCount == 0) {
+						ImGui::TextDisabled(
+							"No scenes found in ./content/**/scenes/*.json"
+						);
+					} else {
+						for (size_t i = 0; i < quickOpenCount; ++i) {
+							const std::string& scenePath = sSceneCandidates[i];
+							if (!ImGui::MenuItem(scenePath.c_str())) {
+								continue;
+							}
+							SetPathBuffer(mOpenScenePathBuffer, scenePath);
+							(void)LoadSceneFromPath(scenePath);
+						}
+						if (sSceneCandidates.size() > quickOpenCount) {
+							ImGui::TextDisabled(
+								"... %zu more scenes (use path field below)",
+								sSceneCandidates.size() - quickOpenCount
+							);
+						}
+					}
+
+					ImGui::Separator();
+
+					const std::string defaultPath = currentPath.empty() ?
+						                                "./content/core/scenes/sandbox.json" :
+						                                currentPath;
+					if (mOpenScenePathBuffer[0] == '\0') {
+						SetPathBuffer(mOpenScenePathBuffer, defaultPath);
+					}
+
+					ImGui::SetNextItemWidth(360.0f);
+					ImGui::InputText(
+						"Path",
+						mOpenScenePathBuffer.data(),
+						mOpenScenePathBuffer.size()
+					);
+
+					if (ImGui::Button("Load")) {
+						(void)LoadSceneFromPath(mOpenScenePathBuffer.data());
+					}
+					ImGui::SameLine();
+					if (ImGui::Button("Use Current")) {
+						SetPathBuffer(mOpenScenePathBuffer, defaultPath);
+					}
+
+					ImGui::EndMenu();
 				}
 
 				ImGui::Separator();

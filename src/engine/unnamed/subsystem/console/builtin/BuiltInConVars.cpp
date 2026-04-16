@@ -372,7 +372,7 @@ namespace Unnamed {
 		);
 
 		static ConVar park_duck_heightscale(
-			"park_duck_heightscale", 0.75f,
+			"park_duck_heightscale", 0.5f,
 			FCVAR::NOTIFY | FCVAR::REPLICATED,
 			"Parkour duck collision half-height scale."
 		);

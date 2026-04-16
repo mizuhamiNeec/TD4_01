@@ -81,8 +81,12 @@ namespace Unnamed {
 
 		console->Print(level, channel, body, location);
 
-		// エラー以上のレベルのメッセージはエディタ通知も出す
+		// 警告以上のレベルのメッセージはエディタ通知も出す
 		switch (level) {
+			case LogLevel::Warning: console->ExecuteCommand(
+					"notify warning 2 Warning | " + body,
+					EXEC_FLAG::FROM_CONSOLE | EXEC_FLAG::SILENT
+				);
 			case LogLevel::Error: console->ExecuteCommand(
 					"notify error 2 Error | " + body,
 					EXEC_FLAG::FROM_CONSOLE | EXEC_FLAG::SILENT

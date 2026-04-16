@@ -11,7 +11,7 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 function UnnamedSettings()
 	defines {
 		"ENGINE_NAME=\"" .. ENGINE_NAME .. "\"",
-		"ENGINE_VERSION=\"0.1.0\"",
+		"ENGINE_VERSION=\"3.4.0\"",
 		"_CRTDBG_MAP_ALLOC",
 	}
 end

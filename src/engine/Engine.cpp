@@ -1,8 +1,8 @@
 #include "Engine.h"
 
 #include <algorithm>
-#include <chrono>
 #include <charconv>
+#include <chrono>
 #include <pch.h>
 
 // ReSharper disable CppUnusedIncludeDirective
@@ -326,7 +326,7 @@ namespace Unnamed {
 			);
 			if (World* runtimeWorld = mUEditorRuntime->GetRuntimeWorld()) {
 				runtimeWorld->LoadSceneFromFile(
-					"./content/parkour/scenes/game.json"
+					"./content/parkour/scenes/title.json"
 				);
 			}
 
@@ -336,7 +336,7 @@ namespace Unnamed {
 #endif
 		} else {
 			auto& world = SwitchWorld<GameWorld>();
-			world.LoadSceneFromFile("./content/parkour/scenes/game.json");
+			world.LoadSceneFromFile("./content/parkour/scenes/title.json");
 		}
 
 		// ユーザー名をコンソール変数に設定

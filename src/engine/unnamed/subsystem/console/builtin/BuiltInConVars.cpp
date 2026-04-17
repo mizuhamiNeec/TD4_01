@@ -1,4 +1,4 @@
-﻿#include "BuiltInConVars.h"
+#include "BuiltInConVars.h"
 
 #include <engine/unnamed/subsystem/console/concommand/ConVar.h>
 
@@ -230,6 +230,46 @@ namespace Unnamed {
 			1,
 			true,
 			10000
+		);
+		static ConVar<int> cl_title_mode(
+			"cl_title_mode", 0, FCVAR::ARCHIVE,
+			"Enable title flow mode. 0 = gameplay, 1 = title."
+		);
+		static ConVar<std::string> cl_title_demo_path(
+			"cl_title_demo_path",
+			"./content/parkour/replay/title_demo.udemo",
+			FCVAR::ARCHIVE,
+			"Demo path used by title background playback."
+		);
+		static ConVar<float> cl_title_fade_out_sec(
+			"cl_title_fade_out_sec",
+			0.22f,
+			FCVAR::ARCHIVE,
+			"Fade-out duration when title demo loop restarts.",
+			true,
+			0.01f,
+			true,
+			10.0f
+		);
+		static ConVar<float> cl_title_fade_in_sec(
+			"cl_title_fade_in_sec",
+			0.24f,
+			FCVAR::ARCHIVE,
+			"Fade-in duration after title demo loop restart.",
+			true,
+			0.01f,
+			true,
+			10.0f
+		);
+		static ConVar<float> cl_title_start_transition_sec(
+			"cl_title_start_transition_sec",
+			0.30f,
+			FCVAR::ARCHIVE,
+			"Fade-out duration before transitioning from title to gameplay.",
+			true,
+			0.01f,
+			true,
+			10.0f
 		);
 
 		//---------------------------------------------------------------------

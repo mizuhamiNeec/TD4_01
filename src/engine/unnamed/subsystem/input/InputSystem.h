@@ -197,6 +197,11 @@ namespace Unnamed {
 		void SetMouseCursorLockClientPosition(HWND hwnd, const Vec2& clientPos);
 		void ClearMouseCursorLockAnchor();
 		void SetMouseClientViewportRect(const Vec2& origin, const Vec2& size);
+		void SetMouseClientViewportRect(
+			const Vec2& origin,
+			const Vec2& size,
+			const Vec2& virtualSize
+		);
 		void ClearMouseClientViewportRectOverride();
 
 		[[nodiscard]] Vec2 GetMouseClientPosition() const;
@@ -263,6 +268,7 @@ namespace Unnamed {
 		bool mMouseViewportRectOverride = false;
 		Vec2 mMouseViewportOrigin       = Vec2::zero;
 		Vec2 mMouseViewportSizeOverride = Vec2::zero;
+		Vec2 mMouseViewportVirtualSize  = Vec2::zero;
 		std::array<bool, 5> mMouseButtonDown = {};
 		std::array<bool, 5> mMouseButtonPressed = {};
 		std::array<bool, 5> mMouseButtonReleased = {};

@@ -789,7 +789,19 @@ namespace Unnamed {
 		const Vec2& origin,
 		const Vec2& size
 	) {
+		SetMouseClientViewportRect(origin, size, size);
+	}
+
+	void InputSystem::SetMouseClientViewportRect(
+		const Vec2& origin,
+		const Vec2& size,
+		const Vec2& virtualSize
+	) {
 		if (size.x <= 0.0f || size.y <= 0.0f) {
+			ClearMouseClientViewportRectOverride();
+			return;
+		}
+		if (virtualSize.x <= 0.0f || virtualSize.y <= 0.0f) {
 			ClearMouseClientViewportRectOverride();
 			return;
 		}
@@ -800,12 +812,17 @@ namespace Unnamed {
 			std::max(1.0f, size.x),
 			std::max(1.0f, size.y)
 		);
+		mMouseViewportVirtualSize = Vec2(
+			std::max(1.0f, virtualSize.x),
+			std::max(1.0f, virtualSize.y)
+		);
 	}
 
 	void InputSystem::ClearMouseClientViewportRectOverride() {
 		mMouseViewportRectOverride = false;
 		mMouseViewportOrigin       = Vec2::zero;
 		mMouseViewportSizeOverride = Vec2::zero;
+		mMouseViewportVirtualSize  = Vec2::zero;
 	}
 
 	Vec2 InputSystem::GetMouseClientPosition() const {
@@ -813,19 +830,31 @@ namespace Unnamed {
 			return mMouseClientPosition;
 		}
 
-		return Vec2(
+		Vec2 localPos = Vec2(
 			mMouseClientPosition.x - mMouseViewportOrigin.x,
 			mMouseClientPosition.y - mMouseViewportOrigin.y
 		);
+		if (
+			mMouseViewportSizeOverride.x > 0.0f &&
+			mMouseViewportSizeOverride.y > 0.0f &&
+			mMouseViewportVirtualSize.x > 0.0f &&
+			mMouseViewportVirtualSize.y > 0.0f
+		) {
+			localPos.x *=
+				mMouseViewportVirtualSize.x / mMouseViewportSizeOverride.x;
+			localPos.y *=
+				mMouseViewportVirtualSize.y / mMouseViewportSizeOverride.y;
+		}
+		return localPos;
 	}
 
 	Vec2 InputSystem::GetMouseClientViewportSize() const {
 		if (
 			mMouseViewportRectOverride &&
-			mMouseViewportSizeOverride.x > 0.0f &&
-			mMouseViewportSizeOverride.y > 0.0f
+			mMouseViewportVirtualSize.x > 0.0f &&
+			mMouseViewportVirtualSize.y > 0.0f
 		) {
-			return mMouseViewportSizeOverride;
+			return mMouseViewportVirtualSize;
 		}
 		return mMouseClientViewportSize;
 	}

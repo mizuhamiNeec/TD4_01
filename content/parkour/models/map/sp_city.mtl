@@ -1,4 +1,4 @@
-# Blender 5.1.0 MTL File: 'Test.blend'
+# Blender 5.1.1 MTL File: 'None'
 # www.blender.org
 
 newmtl materials/dev/dev_measuregeneric01c.vmat
@@ -9,17 +9,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 d 1.000000
 illum 2
-map_Kd ../../../core/textures/dev_measuregray.png
-
-newmtl materials/dev/primary_red.vmat
-Ns 50.000011
-Ka 1.000000 1.000000 1.000000
-Ks 1.000000 1.000000 1.000000
-Ke 0.000000 0.000000 0.000000
-Ni 1.500000
-d 1.000000
-illum 2
-map_Kd ../../../core/textures/error.png
+map_Kd ../../../../../../Softwares/Steam/steamapps/common/Counter-Strike Global Offensive/game/bin/win64/materials/dev/dev_measuregeneric01c_color_tga_f0750d01.vtex
 
 newmtl materials/dev/reflectivity_30.vmat
 Ns 50.000011
@@ -29,7 +19,17 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 d 1.000000
 illum 2
-map_Kd ../../../core/textures/dev_measure.png
+map_Kd ../../../../../../Softwares/Steam/steamapps/common/Counter-Strike Global Offensive/game/bin/win64/materials/dev/reflectivity_30_color_tga_72d9c5c1.vtex
+
+newmtl materials/error.vmat
+Ns 50.000011
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
 
 newmtl materials/models/editor/spot.vmat
 Ns 50.000011

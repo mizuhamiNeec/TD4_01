@@ -12,11 +12,16 @@
 #include "engine/unnamed/framework/entity/Entity.h"
 
 namespace Unnamed {
+	Vec3 TriggerVolumeComponentBase::GetLocalCenter() const noexcept {
+		return Math::HtoM(mLocalCenterHu);
+	}
+
 	Vec3 TriggerVolumeComponentBase::GetWorldCenter() const noexcept {
+		const Vec3 localCenterMeters = Math::HtoM(mLocalCenterHu);
 		if (const auto* transform = GetTransform()) {
-			return transform->GetWorldMat().TransformPoint(mLocalCenter);
+			return transform->GetWorldMat().TransformPoint(localCenterMeters);
 		}
-		return mLocalCenter;
+		return localCenterMeters;
 	}
 
 	Vec3
@@ -27,12 +32,21 @@ namespace Unnamed {
 	void TriggerVolumeComponentBase::DeserializeVolume(
 		const JsonReader& reader
 	) {
-		mLocalCenter = reader["localCenter"].GetVec3(mLocalCenter);
-		mExtentsHu   = reader["extentsHu"].GetVec3(mExtentsHu);
+		if (const JsonReader localCenterHu = reader["localCenterHu"];
+			localCenterHu.Valid()) {
+			mLocalCenterHu = localCenterHu.GetVec3(mLocalCenterHu);
+		} else if (const JsonReader legacyLocalCenter = reader["localCenter"];
+		           legacyLocalCenter.Valid()) {
+			// 旧シーン互換: localCenter はメートル値として読み取り、Huへ移行します。
+			mLocalCenterHu = Math::MtoH(
+				legacyLocalCenter.GetVec3(Math::HtoM(mLocalCenterHu))
+			);
+		}
+		mExtentsHu = reader["extentsHu"].GetVec3(mExtentsHu);
 	}
 
 	void TriggerVolumeComponentBase::SerializeVolume(JsonWriter& writer) const {
-		writer.WriteVec3("localCenter", mLocalCenter);
+		writer.WriteVec3("localCenterHu", mLocalCenterHu);
 		writer.WriteVec3("extentsHu", mExtentsHu);
 	}
 
@@ -43,7 +57,7 @@ namespace Unnamed {
 
 #ifdef _DEBUG
 	void TriggerVolumeComponentBase::DrawVolumeInspectorImGui() {
-		ImGui::DragFloat3("Local Center", &mLocalCenter.x, 1.0f);
+		ImGui::DragFloat3("Local Center HU", &mLocalCenterHu.x, 1.0f);
 		ImGui::DragFloat3("Extents HU", &mExtentsHu.x, 1.0f, 0.0f, 100000.0f);
 	}
 #endif

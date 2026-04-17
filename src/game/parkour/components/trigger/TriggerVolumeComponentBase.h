@@ -11,9 +11,13 @@ namespace Unnamed {
 
 	class TriggerVolumeComponentBase : public BaseComponent {
 	public:
-		[[nodiscard]] Vec3 GetLocalCenter() const noexcept {
-			return mLocalCenter;
+		/// @brief ローカル中心座標(Hu)を返します。
+		[[nodiscard]] Vec3 GetLocalCenterHu() const noexcept {
+			return mLocalCenterHu;
 		}
+
+		/// @brief ローカル中心座標(メートル)を返します。
+		[[nodiscard]] Vec3 GetLocalCenter() const noexcept;
 
 		[[nodiscard]] Vec3 GetExtentsHu() const noexcept {
 			return mExtentsHu;
@@ -31,7 +35,7 @@ namespace Unnamed {
 		void DrawVolumeInspectorImGui();
 #endif
 
-		Vec3 mLocalCenter = Vec3::zero;
-		Vec3 mExtentsHu   = Vec3(32.0f, 32.0f, 32.0f);
+		Vec3 mLocalCenterHu = Vec3::zero;
+		Vec3 mExtentsHu     = Vec3(32.0f, 32.0f, 32.0f);
 	};
 }

@@ -122,7 +122,7 @@ namespace Unnamed {
 				mMouseCursorLockOverride     = true;
 				mMouseCursorLockOverrideMode = bNewState;
 			}
-			// ESC トグル時はロック状態に合わせて可視状態も同期する。
+			// ロック状態に合わせて表示も同期する。
 			SetMouseCursorVisible(!bNewState);
 			if (!bNewState) {
 				ClearMouseCursorLockAnchor();

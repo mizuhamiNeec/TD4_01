@@ -359,13 +359,21 @@ namespace Unnamed {
 		}
 
 		// 絶対ピクセル指定で追従させるため、原点アンカー + 中心ピボットに揃えます。
+		// 投影座標は画面全体基準なので、親基準のローカル座標へ変換します。
+		Vec2 localCenterPx = centerPx;
+		if (Gui::UiWidget* parent = widget->GetParent()) {
+			const Gui::Rect& parentRect = parent->GetGlobalRect();
+			localCenterPx.x -= parentRect.x;
+			localCenterPx.y -= parentRect.y;
+		}
+
 		transform->SetAnchors(Gui::Anchors{});
 		transform->SetMargins(Gui::Margins{});
 		transform->SetPivot(Gui::Pivot{.x = 0.5f, .y = 0.5f});
 		transform->SetRect(
 			Gui::Rect{
-				.x = centerPx.x,
-				.y = centerPx.y,
+				.x = localCenterPx.x,
+				.y = localCenterPx.y,
 				.width = sizePx,
 				.height = sizePx
 			}

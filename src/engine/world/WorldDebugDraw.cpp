@@ -333,6 +333,7 @@ namespace Unnamed {
 	void WorldDebugDraw::FlushToRenderFrameInputs(
 		Render::RenderFrameInputs& inputs
 	) {
+#ifdef _DEBUG
 		auto& lines = inputs.debugDraw.lines;
 		lines.clear();
 		lines.reserve(mPendingLines.size());
@@ -345,6 +346,8 @@ namespace Unnamed {
 				}
 			);
 		}
+#endif
+		(void)inputs;
 		mPendingLines.clear();
 	}
 }

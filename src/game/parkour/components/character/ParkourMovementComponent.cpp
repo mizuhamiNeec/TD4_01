@@ -1236,11 +1236,11 @@ namespace Unnamed {
 			}
 		}
 
-		//const float smoothedFraction = EaseInOutSpline(mDuckViewFraction);
-		const float eyeHeightHu = Math::Lerp(
+		const float smoothedFraction = EaseInOutSpline(mDuckViewFraction);
+		const float eyeHeightHu      = Math::Lerp(
 			mStandViewHeightHu,
 			mDuckViewHeightHu,
-			10.0f * stepSeconds
+			smoothedFraction
 		);
 		const float currentHalfHeightHu = std::max(
 			0.0f,
@@ -1259,8 +1259,8 @@ namespace Unnamed {
 			mDuckViewSmoothedLocalY = targetLocalY;
 		} else {
 			const bool  raisingView = localDelta > 0.0f;
-			const float transitionSec = raisingView ? mDuckViewTimeToDuckSec :
-				                         mDuckViewTimeToUnduckSec;
+			const float transitionSec = raisingView ? mDuckViewTimeToUnduckSec :
+				                         mDuckViewTimeToDuckSec;
 			const float alpha = transitionSec <= 1.0e-6f ?
 				                    1.0f :
 				                    std::clamp(stepSeconds / transitionSec, 0.0f, 1.0f);

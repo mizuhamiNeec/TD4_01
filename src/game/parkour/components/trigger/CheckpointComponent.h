@@ -29,9 +29,11 @@ namespace Unnamed {
 			return mIndex;
 		}
 
-		[[nodiscard]] Vec3 GetRespawnPosition() const noexcept {
-			return mRespawnPosition;
-		}
+		/// @brief チェックポイント中心からのリスポーンオフセット(Hu)を返します。
+		[[nodiscard]] Vec3 GetRespawnOffsetHu() const noexcept;
+
+		/// @brief 現在のワールドリスポーン位置を返します。
+		[[nodiscard]] Vec3 GetRespawnPosition() const noexcept;
 
 		/// @brief 所属コースIDを返します。
 		[[nodiscard]] const std::string& GetCourseId() const noexcept {
@@ -40,7 +42,9 @@ namespace Unnamed {
 
 	private:
 		int32_t mIndex           = 0;
-		Vec3    mRespawnPosition = Vec3::zero;
+		Vec3    mRespawnOffsetHu = Vec3::zero;
+		Vec3    mLegacyRespawnPositionWorld = Vec3::zero;
+		bool    mLegacyRespawnPositionValid = false;
 		std::string mCourseId    = "default";
 	};
 }

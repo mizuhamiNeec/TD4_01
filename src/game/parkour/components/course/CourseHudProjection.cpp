@@ -9,6 +9,8 @@ namespace Unnamed {
 		[[nodiscard]] float Clamp01(const float value) {
 			return std::clamp(value, 0.0f, 1.0f);
 		}
+
+		constexpr float kMinGuideAlpha = 0.25f;
 	}
 
 	bool BuildCourseHudProjection(
@@ -97,7 +99,8 @@ namespace Unnamed {
 
 		outResult.screenPositionPx = screenPositionPx;
 		outResult.vectorFromCenter = toCenter;
-		outResult.alpha            = std::lerp(0.025f, 1.0f, distanceT);
+		// 中心付近でも完全には消えないよう、最小アルファを確保します。
+		outResult.alpha            = std::lerp(kMinGuideAlpha, 1.0f, distanceT);
 		outResult.arrowRotationRad = std::atan2(toCenter.x, -toCenter.y);
 		outResult.outOfScreen      = outOfScreen;
 		return true;

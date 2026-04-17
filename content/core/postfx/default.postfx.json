@@ -13,6 +13,17 @@
 			}
 		},
 		{
+			"name": "FXAA",
+			"enabled": true,
+			"shader": "../shaders/programs/postfx_fxaa.shader.json",
+			"scalars": {
+				"EdgeThreshold": 0.166,
+				"EdgeThresholdMin": 0.0625,
+				"SubpixelBlending": 0.75,
+				"MaxSpan": 8.0
+			}
+		},
+		{
 			"name": "Vignette",
 			"enabled": true,
 			"shader": "../shaders/programs/postfx_vignette.shader.json",

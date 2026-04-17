@@ -61,7 +61,7 @@
                         "parentEntityGuid": 0,
                         "position": [
                             0.0,
-                            2.5908000469207764,
+                            6.0,
                             0.0
                         ],
                         "rotation": [
@@ -83,16 +83,16 @@
                     "active": true,
                     "data": {
                         "boxHalfExtentsHu": [
-                            16.000045776367188,
-                            36.00010681152344,
-                            16.000045776367188
+                            16.000022888183594,
+                            36.00005340576172,
+                            16.000022888183594
                         ],
                         "cameraRootEntityGuid": 2101,
                         "collisionEnabled": true,
                         "duckViewClampPaddingHu": 1.0,
                         "duckViewHeightHu": 28.0,
-                        "duckViewTimeToDuckSec": 0.05000000074505806,
-                        "duckViewTimeToUnduckSec": 0.05000000074505806,
+                        "duckViewTimeToDuckSec": 0.20000000298023224,
+                        "duckViewTimeToUnduckSec": 0.20000000298023224,
                         "movementCapabilities": {
                             "blink": true,
                             "crouch": true,
@@ -231,7 +231,7 @@
                         "parentEntityGuid": 2100,
                         "position": [
                             0.0,
-                            0.7111999988555908,
+                            0.7110000252723694,
                             0.0
                         ],
                         "rotation": [
@@ -252,7 +252,7 @@
                 {
                     "active": true,
                     "data": {
-                        "pitchDegrees": -1.1457630395889282,
+                        "pitchDegrees": 0.0,
                         "yawDegrees": 0.0
                     },
                     "guid": 16260210602474765800,
@@ -354,9 +354,9 @@
                             0.0
                         ],
                         "respawnOffsetHu": [
-                            0.0,
-                            -460.0,
-                            0.0
+                            1205.5753173828125,
+                            -439.81121826171875,
+                            -944.01611328125
                         ]
                     },
                     "guid": 3301,
@@ -378,7 +378,7 @@
                         "parentEntityGuid": 0,
                         "position": [
                             -143.05279541015625,
-                            1.625599980354309,
+                            0.0,
                             115.41759490966797
                         ],
                         "rotation": [
@@ -413,7 +413,7 @@
                         ],
                         "respawnOffsetHu": [
                             0.0,
-                            -24.0,
+                            2.0,
                             0.0
                         ]
                     },
@@ -435,9 +435,9 @@
                     "data": {
                         "parentEntityGuid": 0,
                         "position": [
-                            -82.90560150146484,
-                            8.128000259399414,
-                            -26.009599685668945
+                            -53.63199996948242,
+                            8.123000144958496,
+                            -46.35100173950195
                         ],
                         "rotation": [
                             0.0,
@@ -470,8 +470,8 @@
                             0.0
                         ],
                         "respawnOffsetHu": [
-                            -128.0,
-                            -17.0,
+                            -128.740234375,
+                            8.141716957092285,
                             0.0
                         ]
                     },
@@ -493,9 +493,9 @@
                     "data": {
                         "parentEntityGuid": 0,
                         "position": [
-                            -104.03839874267578,
-                            -60.14720153808594,
-                            -186.94400024414063
+                            -78.02999877929688,
+                            -60.14699935913086,
+                            -217.8300018310547
                         ],
                         "rotation": [
                             0.0,
@@ -592,13 +592,13 @@
                         "speed": 1.0,
                         "stateMap": [
                             {
-                                "blendSec": 0.11999999731779099,
-                                "clipName": "Sprint.001",
+                                "blendSec": 0.125,
+                                "clipName": "Vault",
                                 "layerIndex": 0,
-                                "loop": true,
+                                "loop": false,
                                 "restartOnPlay": true,
                                 "speed": 1.0,
-                                "stateId": "animstate_sprint",
+                                "stateId": "animstate_vaulting",
                                 "weight": 1.0
                             },
                             {
@@ -612,13 +612,13 @@
                                 "weight": 1.0
                             },
                             {
-                                "blendSec": 0.125,
-                                "clipName": "Vault",
+                                "blendSec": 0.11999999731779099,
+                                "clipName": "Sprint.001",
                                 "layerIndex": 0,
-                                "loop": false,
+                                "loop": true,
                                 "restartOnPlay": true,
                                 "speed": 1.0,
-                                "stateId": "animstate_vaulting",
+                                "stateId": "animstate_sprint",
                                 "weight": 1.0
                             },
                             {
@@ -1108,162 +1108,18 @@
                 {
                     "active": true,
                     "data": {
-                        "cameraRootEntityGuid": 2101,
-                        "cameraRotatorComponentGuid": 16260210602474765800,
-                        "countAudioSourceGuid": 17000123456789012991,
-                        "countdownDigitSeconds": 1.0,
-                        "countdownDigitWidgetName": "OpeningCountdownDigit",
-                        "countdownStartSeconds": 0.800000011920929,
-                        "countdownStartWidgetName": "OpeningCountdownStart",
-                        "fadeInSeconds": 0.125,
-                        "fadeOutSeconds": 0.125,
-                        "fadeOverlayWidgetName": "OpeningFadeOverlay",
-                        "hudCanvasEntityGuid": 2100,
-                        "lockTargets": [
-                            {
-                                "componentStableName": "parkour.ParkourMovement",
-                                "entityGuid": 2100
-                            },
-                            {
-                                "componentStableName": "game.PlayerCharacterController",
-                                "entityGuid": 2100
-                            },
-                            {
-                                "componentStableName": "game.WeaponSystem",
-                                "entityGuid": 2100
-                            },
-                            {
-                                "componentStableName": "game.InventorySystem",
-                                "entityGuid": 2100
-                            },
-                            {
-                                "componentStableName": "parkour.CourseProgress",
-                                "entityGuid": 2100
-                            }
-                        ],
-                        "shots": [
-                            {
-                                "durationSeconds": 2.8499999046325684,
-                                "endLook": [
-                                    0.0,
-                                    3.0,
-                                    200.0
-                                ],
-                                "endPos": [
-                                    0.0,
-                                    1.0,
-                                    110.0
-                                ],
-                                "startLook": [
-                                    0.0,
-                                    3.0,
-                                    200.0
-                                ],
-                                "startPos": [
-                                    0.0,
-                                    1.0,
-                                    4.0
-                                ]
-                            },
-                            {
-                                "durationSeconds": 2.6700000762939453,
-                                "endLook": [
-                                    400.6000061035156,
-                                    87.80000305175781,
-                                    322.3999938964844
-                                ],
-                                "endPos": [
-                                    -78.9000015258789,
-                                    8.0,
-                                    142.0
-                                ],
-                                "startLook": [
-                                    -400.3999938964844,
-                                    32.0,
-                                    184.60000610351563
-                                ],
-                                "startPos": [
-                                    -78.9000015258789,
-                                    8.0,
-                                    142.0
-                                ]
-                            },
-                            {
-                                "durationSeconds": 2.5,
-                                "endLook": [
-                                    -143.093994140625,
-                                    0.0,
-                                    24.899999618530273
-                                ],
-                                "endPos": [
-                                    -143.093994140625,
-                                    75.0,
-                                    24.899999618530273
-                                ],
-                                "startLook": [
-                                    -143.093994140625,
-                                    0.0,
-                                    113.5999984741211
-                                ],
-                                "startPos": [
-                                    -143.093994140625,
-                                    75.0,
-                                    113.5999984741211
-                                ]
-                            },
-                            {
-                                "durationSeconds": 0.5,
-                                "endLook": [
-                                    0.0,
-                                    0.7110000252723694,
-                                    1.0
-                                ],
-                                "endPos": [
-                                    0.0,
-                                    0.7110000252723694,
-                                    0.0
-                                ],
-                                "startLook": [
-                                    0.0,
-                                    4.0,
-                                    1.0
-                                ],
-                                "startPos": [
-                                    0.0,
-                                    4.0,
-                                    0.0
-                                ]
-                            }
-                        ],
-                        "skipAction": "jump",
-                        "startAudioSourceGuid": 17000123456789012992
+                        "applyComponentLocks": true,
+                        "autoStopWhenCompleted": true,
+                        "cutsceneCameraEntityGuid": 2103,
+                        "forceCutsceneCamera": true,
+                        "lockTargets": [],
+                        "playOnAttach": true,
+                        "playRate": 1.0,
+                        "restorePreviousCamera": true,
+                        "sequencePath": ""
                     },
                     "guid": 11234679776646266342,
-                    "type": "parkour.GameStartCutscene"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "loop": false,
-                        "pitch": 1.0,
-                        "playOnStart": false,
-                        "soundPath": "content/parkour/sounds/se/count.wav",
-                        "volume": 1.0
-                    },
-                    "guid": 17000123456789012991,
-                    "type": "engine.AudioSource"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "loop": false,
-                        "pitch": 1.0,
-                        "playOnStart": false,
-                        "soundPath": "content/parkour/sounds/se/start.wav",
-                        "volume": 1.0
-                    },
-                    "guid": 17000123456789012992,
-                    "type": "engine.AudioSource"
+                    "type": "game.SequenceCutscene"
                 }
             ],
             "folderPath": "",
@@ -1317,13 +1173,80 @@
             "isEditorOnly": false,
             "name": "Script",
             "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 9100000000000000101,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "billboardDepthMode": "DepthTest",
+                        "pixelSize": [
+                            1920.0,
+                            1080.0
+                        ],
+                        "receiveInput": true,
+                        "sortKey": 1000,
+                        "spaceMode": "Screen",
+                        "uiAssetPath": "content/parkour/ui/TitleMenu.ui.json",
+                        "worldSize": [
+                            2.0,
+                            1.125
+                        ]
+                    },
+                    "guid": 9100000000000000102,
+                    "type": "engine.UiCanvas"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "fadeOverlayName": "FadeOverlayImage",
+                        "gameplayScenePath": "./content/parkour/scenes/game.json",
+                        "playButtonName": "PlayButton",
+                        "playPromptName": "PlayPromptImage",
+                        "quitButtonName": "QuitButton"
+                    },
+                    "guid": 9100000000000000103,
+                    "type": "parkour.TitleFlow"
+                }
+            ],
+            "folderPath": "Title",
+            "guid": 9100000000000000100,
+            "isEditorOnly": false,
+            "name": "TitleFlow",
+            "visible": true
         }
     ],
     "folders": [
         "Gameplay",
         "Gameplay/Player",
         "Gameplay/Progression",
-        "Gameplay/World"
+        "Gameplay/World",
+        "Title"
     ],
     "version": 1
 }

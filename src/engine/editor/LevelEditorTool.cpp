@@ -23,6 +23,61 @@
 #include "thirdparty/ImGuizmo/ImGuizmo.h"
 
 namespace Unnamed {
+	namespace {
+		[[nodiscard]] Vec2 ResolveSceneRenderExtentForInput(
+			const Render::SceneViewRenderMode& request
+		) {
+			uint32_t width = std::max(1u, request.viewportPanelWidth);
+			uint32_t height = std::max(1u, request.viewportPanelHeight);
+
+			switch (request.mode) {
+				case Render::SCENE_RENDER_MODE::FIT_VIEWPORT: {
+					break;
+				}
+				case Render::SCENE_RENDER_MODE::FIXED_ASPECT_16X9: {
+					if (width * 9 > height * 16) {
+						width = height * 16 / 9;
+					} else {
+						height = width * 9 / 16;
+					}
+					break;
+				}
+				case Render::SCENE_RENDER_MODE::FIXED_ASPECT_4X3: {
+					if (width * 3 > height * 4) {
+						width = height * 4 / 3;
+					} else {
+						height = width * 3 / 4;
+					}
+					break;
+				}
+				case Render::SCENE_RENDER_MODE::HD_720P: {
+					width  = 1280;
+					height = 720;
+					break;
+				}
+				case Render::SCENE_RENDER_MODE::FHD_1080P: {
+					width  = 1920;
+					height = 1080;
+					break;
+				}
+				default: {
+					break;
+				}
+			}
+
+			width  = std::clamp(width, 2u, 8192u);
+			height = std::clamp(height, 2u, 8192u);
+			if ((width & 1u) != 0u) {
+				--width;
+			}
+			if ((height & 1u) != 0u) {
+				--height;
+			}
+
+			return Vec2(static_cast<float>(width), static_cast<float>(height));
+		}
+	}
+
 	LevelEditorTool::LevelEditorTool(
 		WindowManager& windowManager,
 		ImGuiLayer&    imGuiLayer
@@ -184,6 +239,15 @@ namespace Unnamed {
 				if (const Window* window = mWindowManager.FindWindowById(
 					mWindowManager.GetMainWindowId()
 				)) {
+					Vec2 virtualViewportSize = mViewportSize;
+					if (const auto outputIt = mViewOutputs.find(mActiveViewportViewKey);
+						outputIt != mViewOutputs.end()) {
+						virtualViewportSize = Vec2(
+							std::max(1.0f, outputIt->second.size.x),
+							std::max(1.0f, outputIt->second.size.y)
+						);
+					}
+
 					POINT viewportClientTopLeft = {
 						static_cast<LONG>(mViewportPosition.x),
 						static_cast<LONG>(mViewportPosition.y)
@@ -194,7 +258,8 @@ namespace Unnamed {
 							static_cast<float>(viewportClientTopLeft.x),
 							static_cast<float>(viewportClientTopLeft.y)
 						),
-						mViewportSize
+						mViewportSize,
+						virtualViewportSize
 					);
 
 					if (mViewportLookActive) {
@@ -239,6 +304,9 @@ namespace Unnamed {
 			}
 			const Render::SceneViewRenderMode sceneRequest =
 				BuildSceneViewModeForSize(width, height);
+			const Vec2 runtimeViewportSize = ResolveSceneRenderExtentForInput(
+				sceneRequest
+			);
 
 			const auto input = mInputSystem;
 			mEditorWorld.SetEditorCameraLookEnabled(
@@ -248,22 +316,16 @@ namespace Unnamed {
 				if (const Window* window = mWindowManager.FindWindowById(
 					mWindowManager.GetMainWindowId()
 				)) {
+					// 投影座標と一致させるため、実レンダー解像度を入力ビューポートとして扱います。
 					input->SetMouseClientViewportRect(
 						Vec2::zero,
-						Vec2(
-							width,
-							height
-						)
+						runtimeViewportSize
 					);
 					input->SetMouseCursorLockClientPosition(
 						window->GetHwnd(),
 						{
-							static_cast<float>(sceneRequest.viewportPanelWidth)
-							*
-							0.5f,
-							static_cast<float>(sceneRequest.viewportPanelHeight)
-							*
-							0.5f
+							runtimeViewportSize.x * 0.5f,
+							runtimeViewportSize.y * 0.5f
 						}
 					);
 				} else {
@@ -275,6 +337,10 @@ namespace Unnamed {
 
 		ImGui::SetNextWindowDockID(dockSpaceId, ImGuiCond_FirstUseEver);
 		DrawProfilerWindow();
+
+		if (mPresentMode == EDITOR_PRESENT_MODE::VIEWPORT_PANEL) {
+			DrawStatusBar();
+		}
 
 		mNotification->Update(deltaTime);
 		ImGui::End();

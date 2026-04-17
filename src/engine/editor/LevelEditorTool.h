@@ -50,6 +50,11 @@ namespace Unnamed {
 		QUAD   = 1,
 	};
 
+	enum class EDITOR_GRID_SNAP_UNIT : uint8_t {
+		METER = 0,
+		HU    = 1,
+	};
+
 	class LevelEditorTool final : public IEditorTool {
 	public:
 		LevelEditorTool(WindowManager& windowManager, ImGuiLayer& imGuiLayer);
@@ -170,6 +175,7 @@ namespace Unnamed {
 		std::unique_ptr<EditorNotification> mNotification;
 
 		float mGridSnap = 64.0f;
+		EDITOR_GRID_SNAP_UNIT mGridSnapUnit = EDITOR_GRID_SNAP_UNIT::METER;
 		float mAngleSnapDegree = 15.0f;
 		float mCameraSpeedPopupTimer = 0.0f;
 		bool mShowProfilerWindow = false;

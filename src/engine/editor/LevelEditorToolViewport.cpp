@@ -71,7 +71,8 @@ namespace Unnamed {
 		ImGuizmo::SetDrawlist();
 		ImGuizmo::SetRect(imagePos.x, imagePos.y, drawWidth, drawHeight);
 
-		const bool  useSnap = sOperation != ImGuizmo::SCALE;
+		const bool  useSnap = (sOperation != ImGuizmo::SCALE) &&
+			(ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl));
 		const float snap[3] = {
 			sOperation == ImGuizmo::ROTATE ? mAngleSnapDegree : mGridSnap,
 			sOperation == ImGuizmo::ROTATE ? mAngleSnapDegree : mGridSnap,
@@ -89,15 +90,30 @@ namespace Unnamed {
 				useSnap ? snap : nullptr
 			)
 		) {
-			const Mat4 editedWorld = world;
-			Mat4       localMat    = editedWorld;
+			Mat4 localMat = world;
+			if (const TransformComponent* parent = transform->GetParent()) {
+				// ImGuizmo が編集したワールド行列を、親基準のローカル行列へ戻す
+				localMat = world * parent->GetWorldMat().Inverse();
+			}
 
-			const Vec3 localScale  = localMat.GetScale();
-			const Mat4 rotationMat = localMat;
+			float translation[3] = {};
+			float rotation[3]    = {};
+			float scale[3]       = {};
+			ImGuizmo::DecomposeMatrixToComponents(
+				*localMat.m,
+				translation,
+				rotation,
+				scale
+			);
 
-			transform->SetPosition(localMat.GetTranslate());
-			transform->SetRotation(rotationMat.ToQuaternion());
-			transform->SetScale(localScale);
+			transform->SetPosition(
+				Vec3(translation[0], translation[1], translation[2])
+			);
+			transform->SetRotation(
+				Quaternion::EulerDegrees(Vec3(rotation[0], rotation[1], rotation[2]))
+			);
+			transform->SetScale(Vec3(scale[0], scale[1], scale[2]));
+			transform->RequestInterpolationResync();
 		}
 	}
 
@@ -492,10 +508,8 @@ namespace Unnamed {
 				fitPos.x + fitWidth, fitPos.y + fitHeight
 			);
 
-			ImGui::InvisibleButton(
-				(std::string("##") + std::string(viewKey)).c_str(),
-				ImVec2(drawWidth, drawHeight)
-			);
+			// ImGuizmo のドラッグ入力を奪わないよう、ここはレイアウト確保のみ行う
+			ImGui::Dummy(ImVec2(drawWidth, drawHeight));
 			ImDrawList* drawList = ImGui::GetWindowDrawList();
 			drawList->AddRectFilled(
 				panePos,

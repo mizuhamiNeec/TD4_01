@@ -3,12 +3,14 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <filesystem>
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <utility>
 #include <vector>
 
+#include "core/math/Math.h"
 #include "core/string/StrUtil.h"
 
 #include "engine/ImGui/Icons.h"
@@ -346,27 +348,79 @@ namespace Unnamed {
 
 			// グリッドスナップ
 			{
-				constexpr std::array items = {
+				constexpr std::array kGridSnapValues = {
+					0.125f, 0.25f, 0.5f,
+					1.0f, 2.0f, 4.0f, 8.0f,
+					16.0f, 32.0f, 64.0f, 128.0f,
+					256.0f, 512.0f, 1024.0f
+				};
+				constexpr std::array kGridSnapLabels = {
 					"0.125", "0.25", "0.5",
 					"1", "2", "4", "8",
 					"16", "32", "64", "128",
 					"256", "512", "1024"
 				};
-				static uint32_t itemCurrentIndex = 9u; // デフォルトは64
-				const char*     comboLabel       = items[itemCurrentIndex];
+
+				auto FindNearestGridSnapIndex = [](const float valueInCurrentUnit) {
+					uint32_t nearestIndex = 0u;
+					float    nearestDiff  =
+						std::abs(valueInCurrentUnit - kGridSnapValues[0]);
+					for (uint32_t i = 1u; i < kGridSnapValues.size(); ++i) {
+						const float diff =
+							std::abs(valueInCurrentUnit - kGridSnapValues[i]);
+						if (diff < nearestDiff) {
+							nearestDiff  = diff;
+							nearestIndex = i;
+						}
+					}
+					return nearestIndex;
+				};
+
+				const bool showHu = mGridSnapUnit == EDITOR_GRID_SNAP_UNIT::HU;
+				const float gridSnapInCurrentUnit =
+					showHu ? Math::MtoH(mGridSnap) : mGridSnap;
+				uint32_t itemCurrentIndex = FindNearestGridSnapIndex(
+					gridSnapInCurrentUnit
+				);
+				const auto& labels = kGridSnapLabels;
+				const char* comboLabel = labels[itemCurrentIndex];
 
 				ImGui::Text("Grid: ");
 
 				ImGui::SameLine();
+				ImGui::PushItemWidth(statusBarWidth * 0.1f);
+				if (ImGui::BeginCombo("##gridSnapUnit", showHu ? "Hu" : "m")) {
+					const bool meterSelected =
+						mGridSnapUnit == EDITOR_GRID_SNAP_UNIT::METER;
+					if (ImGui::Selectable("m", meterSelected)) {
+						mGridSnapUnit = EDITOR_GRID_SNAP_UNIT::METER;
+					}
+					if (meterSelected) {
+						ImGui::SetItemDefaultFocus();
+					}
+
+					const bool huSelected =
+						mGridSnapUnit == EDITOR_GRID_SNAP_UNIT::HU;
+					if (ImGui::Selectable("Hu", huSelected)) {
+						mGridSnapUnit = EDITOR_GRID_SNAP_UNIT::HU;
+					}
+					if (huSelected) {
+						ImGui::SetItemDefaultFocus();
+					}
+					ImGui::EndCombo();
+				}
+				ImGui::PopItemWidth();
+
+				ImGui::SameLine();
 
 				// コンボボックスの幅をステータスバーの幅に合わせて調整
-				ImGui::PushItemWidth(statusBarWidth * 0.2f);
+				ImGui::PushItemWidth(statusBarWidth * 0.16f);
 				ImGui::PushID("GridSnapCombo");
 				if (ImGui::BeginCombo("##gridSnap", comboLabel)) {
-					for (int n = 0; n < items.size(); ++n) {
+					for (int n = 0; n < labels.size(); ++n) {
 						const bool isSelected =
 							std::cmp_equal(itemCurrentIndex, n);
-						if (ImGui::Selectable(items[n], isSelected)) {
+						if (ImGui::Selectable(labels[n], isSelected)) {
 							itemCurrentIndex = n;
 						}
 						if (isSelected) {
@@ -375,13 +429,15 @@ namespace Unnamed {
 					}
 					ImGui::EndCombo();
 				}
-				constexpr auto size = static_cast<uint32_t>(items.size());
+				const auto size = static_cast<uint32_t>(labels.size());
 				ImGuiWidgets::HandleHoveredComboMenuMouseWheelScroll(
 					itemCurrentIndex, size
 
 				);
-				// 選択された文字列を浮動小数点数に変換してgridSnapに設定
-				mGridSnap = std::stof(items[itemCurrentIndex]);
+				const float selectedGridSnap = kGridSnapValues[itemCurrentIndex];
+				mGridSnap = showHu ?
+					Math::HtoM(selectedGridSnap) :
+					selectedGridSnap;
 				ImGui::PopID();
 				ImGui::PopItemWidth();
 			}

@@ -176,6 +176,23 @@ namespace Unnamed::Render {
 				outParams.scalar1.w = value;
 				return;
 			}
+			// FXAA向けのパラメータ名を直接受け付ける。
+			if (key == "edgethreshold") {
+				outParams.scalar0.x = value;
+				return;
+			}
+			if (key == "edgethresholdmin") {
+				outParams.scalar0.y = value;
+				return;
+			}
+			if (key == "subpixelblending" || key == "subpix") {
+				outParams.scalar0.z = value;
+				return;
+			}
+			if (key == "maxspan") {
+				outParams.scalar0.w = value;
+				return;
+			}
 
 			if (key.rfind("scalar", 0) == 0 && key.size() >= 8) {
 				const int  vecIndex  = key[6] - '0';

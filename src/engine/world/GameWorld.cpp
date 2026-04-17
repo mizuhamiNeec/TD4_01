@@ -50,6 +50,12 @@ namespace Unnamed {
 				return false;
 			}
 
+			const auto beforeUnload = std::chrono::steady_clock::now();
+			UnloadScene();
+			const auto afterUnload = std::chrono::steady_clock::now();
+
+			// GUIDが同じシーンへ遷移しても物理登録が競合しないよう、
+			// 旧シーン解除後に新シーンをロードします。
 			auto       newScene = std::make_unique<Scene>();
 			newScene->SetWorld(this);
 			const bool loadOk   = SceneSerializer::LoadFromFile(
@@ -58,10 +64,6 @@ namespace Unnamed {
 			if (!loadOk) {
 				return false;
 			}
-
-			const auto beforeUnload = std::chrono::steady_clock::now();
-			UnloadScene();
-			const auto afterUnload = std::chrono::steady_clock::now();
 
 			World::SetScene(std::move(newScene));
 			const auto afterSetScene = std::chrono::steady_clock::now();

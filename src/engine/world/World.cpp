@@ -421,6 +421,10 @@ namespace Unnamed {
 			return false;
 		}
 
+		// GUIDが重複するシーン間遷移でも、旧シーンのDetachが新シーン登録を消さないよう
+		// 先に旧シーンをアンロードしてから新シーンをロードします。
+		UnloadScene();
+
 		auto newScene = std::make_unique<Scene>();
 		newScene->SetWorld(this);
 		const bool ok = SceneSerializer::LoadFromFile(
@@ -430,7 +434,6 @@ namespace Unnamed {
 			return false;
 		}
 
-		UnloadScene();
 		SetScene(std::move(newScene));
 		mLoadedScenePath = StrUtil::NormalizePath(path);
 		OnSceneLoaded();

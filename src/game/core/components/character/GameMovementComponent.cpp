@@ -18,7 +18,6 @@
 
 #include "engine/scene/Scene.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
-#include "engine/unnamed/framework/components/kinematic/KinematicMoverComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
 #include "engine/unnamed/subsystem/console/Log.h"
@@ -39,33 +38,27 @@
 
 namespace Unnamed {
 	namespace {
-		constexpr int kMaxPassiveOverlapHits = 64;
-
-		struct PassiveMoverInfluence {
-			uint64_t guid      = 0;
-			Vec3     stepDelta = Vec3::zero;
-		};
+		[[nodiscard]] const char* ToStringRecoverReason(
+			const BoxKinematicCollisionResolver::RECOVER_REASON reason
+		) {
+			switch (reason) {
+				case BoxKinematicCollisionResolver::RECOVER_REASON::SLIDE_START
+				: return "slide_start";
+				case
+				BoxKinematicCollisionResolver::RECOVER_REASON::HIT_START_SOLID
+				: return "hit_start_solid";
+				case
+				BoxKinematicCollisionResolver::RECOVER_REASON::HIT_ALL_SOLID
+				: return "hit_allsolid";
+				case
+				BoxKinematicCollisionResolver::RECOVER_REASON::END_POSITION_OVERLAP
+				: return "end_position_overlap";
+				default: return "none";
+			}
+		}
 	}
 
 	GameMovementComponent::~GameMovementComponent() = default;
-
-	void GameMovementComponent::TeleportAndResetMotion(
-		TransformComponent* transform,
-		const Vec3&         worldPosition
-	) {
-		if (!transform) {
-			return;
-		}
-
-		// リスポーン直後の慣性や支持床キャッシュを引きずらないように初期化します。
-		transform->SetPosition(worldPosition);
-		transform->RequestInterpolationResync();
-		mVelocity                 = Vec3::zero;
-		mGrounded                 = false;
-		mSupportCache             = {};
-		mJumpSnapDisableRemaining = 0.0f;
-		UpdateCollisionHull(transform);
-	}
 
 	void GameMovementComponent::SimulateStep(
 		TransformComponent* transform, const MovementFrameInput& input,
@@ -74,14 +67,15 @@ namespace Unnamed {
 		if (!transform || !mCollisionResolver || !mStateMachine) {
 			return;
 		}
+		mCollisionDebugLogCooldownSec = std::max(
+			0.0f, mCollisionDebugLogCooldownSec - stepSeconds
+		);
 
 		const bool        wasGrounded            = mSupportCache.grounded;
 		const float       preStepVerticalSpeedHu = Math::MtoH(mVelocity.y);
 		const std::string previousStateName      = StrUtil::ToLowerCase(
 			ResolvePresentationStateName()
 		);
-
-		(void)ApplyPassiveMotionStep(transform, stepSeconds);
 
 		mCurrentModeId = mStateMachine->GetCurrentModeId();
 		mActiveAbilityMask = mStateMachine->GetActiveAbilityMask();
@@ -169,12 +163,8 @@ namespace Unnamed {
 		if (context.isGrounded) {
 			mSupportCache.grounded              = true;
 			mSupportCache.supportEntityGuid     = context.supportEntityGuid;
-			mSupportCache.supportLinearVelocity = ResolveSupportLinearVelocity(
-				context.supportEntityGuid
-			);
-			mSupportCache.supportStepDelta = ResolveSupportStepDelta(
-				context.supportEntityGuid, stepSeconds
-			);
+			mSupportCache.supportLinearVelocity = Vec3::zero;
+			mSupportCache.supportStepDelta      = Vec3::zero;
 		} else {
 			mSupportCache.grounded              = false;
 			mSupportCache.supportEntityGuid     = 0;
@@ -229,19 +219,8 @@ namespace Unnamed {
 				1.0e-6f
 			);
 
-			if (mSupportCache.grounded && mSupportCache.supportEntityGuid !=
-			    0) {
-				mSupportCache.supportLinearVelocity =
-					ResolveSupportLinearVelocity(
-						mSupportCache.supportEntityGuid
-					);
-				mSupportCache.supportStepDelta = ResolveSupportStepDelta(
-					mSupportCache.supportEntityGuid, stepSeconds
-				);
-			} else {
-				mSupportCache.supportLinearVelocity = Vec3::zero;
-				mSupportCache.supportStepDelta      = Vec3::zero;
-			}
+			mSupportCache.supportLinearVelocity = Vec3::zero;
+			mSupportCache.supportStepDelta      = Vec3::zero;
 
 			UpdateCollisionHull(transform);
 			mMoveFrameInput = deterministicPacket.input;
@@ -273,29 +252,8 @@ namespace Unnamed {
 
 		const float stepSec = std::max(deltaTime, 1.0e-6f);
 
-		if (mSupportCache.grounded && mSupportCache.supportEntityGuid != 0) {
-			mSupportCache.supportLinearVelocity = ResolveSupportLinearVelocity(
-				mSupportCache.supportEntityGuid
-			);
-			mSupportCache.supportStepDelta = ResolveSupportStepDelta(
-				mSupportCache.supportEntityGuid, stepSec
-			);
-
-			// 動床コライダーはこの時点で当フレーム最終位置へ更新済みなので、
-			// プレイヤー追従も同フレームで一括適用して時差由来のガタつきを防ぐ。
-			const Vec3 supportFrameDelta = ResolveSupportStepDelta(
-				mSupportCache.supportEntityGuid,
-				std::max(0.0f, deltaTime)
-			);
-			if (!supportFrameDelta.IsZero()) {
-				transform->SetPosition(
-					transform->GetPosition() + supportFrameDelta
-				);
-			}
-		} else {
-			mSupportCache.supportLinearVelocity = Vec3::zero;
-			mSupportCache.supportStepDelta      = Vec3::zero;
-		}
+		mSupportCache.supportLinearVelocity = Vec3::zero;
+		mSupportCache.supportStepDelta      = Vec3::zero;
 
 		UpdateCollisionHull(transform);
 		SimulateStep(transform, mMoveFrameInput, stepSec);
@@ -354,6 +312,109 @@ namespace Unnamed {
 			mBoxHalfExtents * 2.0f,
 			Vec4::cyan
 		);
+
+		const bool drawCollisionDebug = mConsole &&
+		                                mConsole->GetConVarValueOr(
+			                                "sv_move_collision_debugdraw", false
+		                                );
+		const bool logCollisionDebug = mConsole &&
+		                               mConsole->GetConVarValueOr(
+			                               "sv_move_collision_debuglog", false
+		                               );
+		auto* boxResolver = dynamic_cast<BoxKinematicCollisionResolver*>(
+			mCollisionResolver.get()
+		);
+		if (!boxResolver) {
+			return;
+		}
+
+		const BoxKinematicCollisionResolver::CollisionDebugState& debugState =
+			boxResolver->GetCollisionDebugState();
+
+		if (drawCollisionDebug && debugState.hasBlockingHit) {
+			const Vec4 castColor = Vec4::orange;
+			const Vec4 hitColor  = Vec4::red;
+
+			// 衝突スイープの経路とヒット面法線を可視化します。
+			worldDebugDraw.DrawArrow(
+				debugState.blockingCastStart,
+				debugState.blockingCastDir * debugState.blockingCastLength,
+				castColor,
+				Math::HtoM(4.0f)
+			);
+			worldDebugDraw.DrawSphere(
+				debugState.blockingHit.pos,
+				Quaternion::identity,
+				Math::HtoM(2.0f),
+				hitColor,
+				10
+			);
+			worldDebugDraw.DrawArrow(
+				debugState.blockingHit.pos,
+				debugState.blockingHit.normal * Math::HtoM(14.0f),
+				hitColor,
+				Math::HtoM(2.0f)
+			);
+		}
+		if (drawCollisionDebug && debugState.recoverAttempted) {
+			const Vec4 recoverColor = debugState.recoverSucceeded ?
+				                          Vec4(0.2f, 1.0f, 0.4f, 1.0f) :
+				                          Vec4(1.0f, 0.1f, 0.1f, 1.0f);
+
+			worldDebugDraw.DrawArrow(
+				debugState.recoverStart,
+				debugState.recoverEnd - debugState.recoverStart,
+				recoverColor,
+				Math::HtoM(3.0f)
+			);
+			for (int i = 0; i < debugState.recoverOverlapCount; ++i) {
+				const Physics::Hit& overlap = debugState.recoverOverlaps[
+					static_cast<size_t>(i)
+				];
+				const float overlapLen = std::clamp(
+					overlap.depth,
+					Math::HtoM(1.0f),
+					Math::HtoM(16.0f)
+				);
+				worldDebugDraw.DrawArrow(
+					debugState.recoverStart,
+					overlap.normal * overlapLen,
+					Vec4::yellow,
+					Math::HtoM(1.5f)
+				);
+			}
+		}
+
+		if (
+			logCollisionDebug &&
+			debugState.hasBlockingHit &&
+			mCollisionDebugLogCooldownSec <= 0.0f
+		) {
+			const float logInterval = mConsole->GetConVarValueOr(
+				"sv_move_collision_debuglog_interval", 0.15f
+			);
+			const Physics::Hit& hit = debugState.blockingHit;
+			Msg(
+				"GameMovement",
+				"CollisionDebug guid={} tri={} toi={:.4f} depth={:.5f} startSolid={} allSolid={} normal=({:.3f},{:.3f},{:.3f}) hitPos=({:.3f},{:.3f},{:.3f}) recover(reason={} ok={} overlaps={})",
+				static_cast<unsigned long long>(hit.hitEntityGuid),
+				hit.triIndex,
+				hit.toi,
+				hit.depth,
+				hit.startSolid,
+				hit.allsolid,
+				hit.normal.x,
+				hit.normal.y,
+				hit.normal.z,
+				hit.pos.x,
+				hit.pos.y,
+				hit.pos.z,
+				ToStringRecoverReason(debugState.recoverReason),
+				debugState.recoverSucceeded,
+				debugState.recoverOverlapCount
+			);
+			mCollisionDebugLogCooldownSec = std::max(0.0f, logInterval);
+		}
 	}
 
 	void GameMovementComponent::OnEditorTick(float) {
@@ -377,6 +438,24 @@ namespace Unnamed {
 
 	std::string_view GameMovementComponent::GetComponentName() const {
 		return "GameMovement";
+	}
+
+	void GameMovementComponent::TeleportAndResetMotion(
+		TransformComponent* transform,
+		const Vec3&         worldPosition
+	) {
+		if (!transform) {
+			return;
+		}
+
+		// リスポーン直後の慣性や支持床キャッシュを引きずらないように初期化します。
+		transform->SetPosition(worldPosition);
+		transform->RequestInterpolationResync();
+		mVelocity                 = Vec3::zero;
+		mGrounded                 = false;
+		mSupportCache             = {};
+		mJumpSnapDisableRemaining = 0.0f;
+		UpdateCollisionHull(transform);
 	}
 
 	bool GameMovementComponent::UseSprintSpeedAsDefaultGroundSpeed() const {
@@ -473,6 +552,42 @@ namespace Unnamed {
 			mDebugLastPublishedCueValue,
 			mDebugLastPublishedCueValue2
 		);
+
+		auto* boxResolver = dynamic_cast<BoxKinematicCollisionResolver*>(
+			mCollisionResolver.get()
+		);
+		if (boxResolver) {
+			const BoxKinematicCollisionResolver::CollisionDebugState& debugState
+				=
+				boxResolver->GetCollisionDebugState();
+
+			ImGui::SeparatorText("Collision Debug");
+			ImGui::Text(
+				"BlockingHit: %s (count=%u)",
+				debugState.hasBlockingHit ? "true" : "false",
+				debugState.blockingHitCount
+			);
+			ImGui::Text(
+				"Hit guid=%llu tri=%u toi=%.4f depth=%.5f",
+				static_cast<unsigned long long>(debugState.blockingHit.
+					hitEntityGuid),
+				debugState.blockingHit.triIndex,
+				debugState.blockingHit.toi,
+				debugState.blockingHit.depth
+			);
+			ImGui::Text(
+				"Hit flags: startSolid=%s allsolid=%s",
+				debugState.blockingHit.startSolid ? "true" : "false",
+				debugState.blockingHit.allsolid ? "true" : "false"
+			);
+			ImGui::Text(
+				"Recover: attempted=%s succeeded=%s reason=%s overlaps=%d",
+				debugState.recoverAttempted ? "true" : "false",
+				debugState.recoverSucceeded ? "true" : "false",
+				ToStringRecoverReason(debugState.recoverReason),
+				debugState.recoverOverlapCount
+			);
+		}
 	}
 #endif
 
@@ -522,6 +637,15 @@ namespace Unnamed {
 		writer.Key("grapple");
 		writer.Write(mCapabilitySet.grapple);
 		writer.EndObject();
+	}
+
+	Vec3 GameMovementComponent::SampleSupportContactVelocity(
+		const uint64_t supportEntityGuid,
+		const Vec3&    worldPoint
+	) const {
+		(void)supportEntityGuid;
+		(void)worldPoint;
+		return Vec3::zero;
 	}
 
 	void GameMovementComponent::WriteReplayState(
@@ -797,463 +921,54 @@ namespace Unnamed {
 		return owner ? owner->GetComponent<TransformComponent>() : nullptr;
 	}
 
+	Vec3 GameMovementComponent::GetSupportSamplePoint(
+		const TransformComponent* transform
+	) const {
+		if (!transform) {
+			return Vec3::zero;
+		}
+
+		return transform->GetPosition() + Vec3::down * mBoxHalfExtents.y;
+	}
+
 	Vec3 GameMovementComponent::ResolveSupportLinearVelocity(
 		const uint64_t supportEntityGuid
 	) const {
-		const Entity* owner = GetOwner();
-		if (supportEntityGuid == 0 ||
-		    (owner && supportEntityGuid == owner->GetGuid())) {
-			return Vec3::zero;
-		}
+		(void)supportEntityGuid;
+		return Vec3::zero;
+	}
 
-		const World* world = GetWorld();
-		const Scene* scene = world ? world->GetScenePtr() : nullptr;
-		if (!scene) {
-			return Vec3::zero;
-		}
+	Vec3 GameMovementComponent::ResolveSupportAngularVelocity(
+		const uint64_t supportEntityGuid
+	) const {
+		(void)supportEntityGuid;
+		return Vec3::zero;
+	}
 
-		const Entity* supportEntity = scene->FindEntity(supportEntityGuid);
-		if (!supportEntity || !supportEntity->IsActive()) {
-			return Vec3::zero;
-		}
-
-		const auto* mover = supportEntity->GetComponent<
-			KinematicMoverComponent>(
-		);
-		if (!mover || mover->WasTeleported()) {
-			return Vec3::zero;
-		}
-
-		return mover->GetLinearVelocity();
+	Vec3 GameMovementComponent::ResolveSupportContactVelocity(
+		const uint64_t supportEntityGuid,
+		const Vec3&    worldPoint
+	) const {
+		(void)supportEntityGuid;
+		(void)worldPoint;
+		return Vec3::zero;
 	}
 
 	Vec3 GameMovementComponent::ResolveSupportStepDelta(
 		const uint64_t supportEntityGuid, const float stepSeconds
 	) const {
-		const Entity* owner = GetOwner();
-		if (supportEntityGuid == 0 ||
-		    (owner && supportEntityGuid == owner->GetGuid())) {
-			return Vec3::zero;
-		}
-
-		const World* world = GetWorld();
-		const Scene* scene = world ? world->GetScenePtr() : nullptr;
-		if (!scene) {
-			return Vec3::zero;
-		}
-
-		const Entity* supportEntity = scene->FindEntity(supportEntityGuid);
-		if (!supportEntity || !supportEntity->IsActive()) {
-			return Vec3::zero;
-		}
-
-		const auto* mover = supportEntity->GetComponent<
-			KinematicMoverComponent>(
-		);
-		if (!mover || mover->WasTeleported()) {
-			return Vec3::zero;
-		}
-
-		return mover->GetStepDelta(stepSeconds);
+		(void)supportEntityGuid;
+		(void)stepSeconds;
+		return Vec3::zero;
 	}
 
 	bool GameMovementComponent::ApplyPassiveMotionStep(
 		TransformComponent* transform,
 		const float         stepSeconds
 	) {
-		if (!transform || !mCollisionResolver || stepSeconds <= 0.0f) {
-			return false;
-		}
-
-		const Entity*  owner     = GetOwner();
-		const uint64_t ownerGuid = owner ? owner->GetGuid() : 0;
-		const World*   world     = GetWorld();
-		const Scene*   scene     = world ? world->GetScenePtr() : nullptr;
-		if (!scene) {
-			return false;
-		}
-
-		const auto resolveMover = [scene](
-			const uint64_t entityGuid
-		)
-			-> const KinematicMoverComponent* {
-			if (entityGuid == 0) {
-				return nullptr;
-			}
-
-			const Entity* entity = scene->FindEntity(entityGuid);
-			for (int depth = 0; entity && depth < 8; ++depth) {
-				if (!entity->IsActive()) {
-					return nullptr;
-				}
-
-				const auto* mover = entity->GetComponent<
-					KinematicMoverComponent>();
-				if (mover && !mover->WasTeleported()) {
-					return mover;
-				}
-
-				const auto* transform = entity->GetComponent<
-					TransformComponent>();
-				if (!transform || !transform->GetParent()) {
-					break;
-				}
-				entity = transform->GetParent()->GetOwner();
-			}
-			return nullptr;
-		};
-
-		const uint64_t supportGuid =
-			mSupportCache.grounded ? mSupportCache.supportEntityGuid : 0;
-		const float contactSkinHu = mConsole->GetConVarValueOr(
-			"sv_passivepush_contactskin", 4.0f
-		);
-		const float contactSkinM = Math::HtoM(std::max(0.0f, contactSkinHu));
-		const Vec3  overlapHalfExtents =
-			mBoxHalfExtents + Vec3(contactSkinM, contactSkinM, contactSkinM);
-		const float sweepExtra = contactSkinM + Math::HtoM(0.5f);
-
-		Vec3 position = transform->GetPosition();
-		std::array<Physics::Hit, kMaxPassiveOverlapHits> overlapHits{};
-		std::array<PassiveMoverInfluence, kMaxPassiveOverlapHits> influences{};
-		int influenceCount = 0;
-		const auto findInfluenceIndex = [&influences, &influenceCount](
-			const uint64_t guid
-		) -> int {
-			for (int i = 0; i < influenceCount; ++i) {
-				if (influences[i].guid == guid) {
-					return i;
-				}
-			}
-			return -1;
-		};
-		const auto tryAddInfluence =
-			[&influences, &influenceCount, &findInfluenceIndex](
-			const uint64_t guid,
-			const Vec3&    stepDelta
-		) -> void {
-			if (guid == 0 || stepDelta.SqrLength() <= 1.0e-12f) {
-				return;
-			}
-
-			const int existing = findInfluenceIndex(guid);
-			if (existing >= 0) {
-				influences[existing].stepDelta = stepDelta;
-				return;
-			}
-
-			if (influenceCount >= static_cast<int>(influences.size())) {
-				return;
-			}
-			influences[influenceCount++] = PassiveMoverInfluence{
-				.guid      = guid,
-				.stepDelta = stepDelta
-			};
-		};
-
-		const int overlapCount = mCollisionResolver->CollectOverlaps(
-			position,
-			overlapHalfExtents,
-			overlapHits.data(),
-			static_cast<int>(overlapHits.size())
-		);
-		if (overlapCount > 1) {
-			std::sort(
-				overlapHits.begin(),
-				overlapHits.begin() + overlapCount,
-				[](const Physics::Hit& lhs, const Physics::Hit& rhs) {
-					if (lhs.hitEntityGuid != rhs.hitEntityGuid) {
-						return lhs.hitEntityGuid < rhs.hitEntityGuid;
-					}
-					if (lhs.triIndex != rhs.triIndex) {
-						return lhs.triIndex < rhs.triIndex;
-					}
-					if (lhs.depth != rhs.depth) {
-						return lhs.depth > rhs.depth;
-					}
-					if (lhs.normal.x != rhs.normal.x) {
-						return lhs.normal.x < rhs.normal.x;
-					}
-					if (lhs.normal.y != rhs.normal.y) {
-						return lhs.normal.y < rhs.normal.y;
-					}
-					if (lhs.normal.z != rhs.normal.z) {
-						return lhs.normal.z < rhs.normal.z;
-					}
-					return false;
-				}
-			);
-		}
-		for (int i = 0; i < overlapCount; ++i) {
-			const Physics::Hit& hit = overlapHits[i];
-			if (hit.hitEntityGuid == 0 || hit.hitEntityGuid == ownerGuid) {
-				continue;
-			}
-
-			const auto* mover = resolveMover(hit.hitEntityGuid);
-			if (!mover) {
-				continue;
-			}
-
-			const Entity*  moverOwner = mover->GetOwner();
-			const uint64_t moverGuid  =
-				moverOwner ? moverOwner->GetGuid() : hit.hitEntityGuid;
-			if (moverGuid == 0 || moverGuid == supportGuid) {
-				continue;
-			}
-
-			const Vec3 moverStepDelta = mover->GetStepDelta(stepSeconds);
-			if (moverStepDelta.SqrLength() <= 1.0e-12f) {
-				continue;
-			}
-
-			bool pushing = true;
-			if (hit.normal.SqrLength() > 1.0e-12f) {
-				const Vec3 n = hit.normal.Normalized();
-				pushing      = moverStepDelta.Dot(n) > 1.0e-6f;
-			}
-			if (!pushing) {
-				continue;
-			}
-
-			tryAddInfluence(moverGuid, moverStepDelta);
-		}
-
-		Physics::Engine*           physics = mCollisionResolver->GetPhysics();
-		std::vector<const Entity*> orderedEntities = {};
-		orderedEntities.reserve(scene->GetEntities().size());
-		for (const auto& entityPtr : scene->GetEntities()) {
-			if (!entityPtr) {
-				continue;
-			}
-			orderedEntities.emplace_back(entityPtr.get());
-		}
-		if (orderedEntities.size() > 1) {
-			std::ranges::sort(
-				orderedEntities,
-				[](const Entity* lhs, const Entity* rhs) {
-					return lhs->GetGuid() < rhs->GetGuid();
-				}
-			);
-		}
-
-		for (const Entity* moverEntity : orderedEntities) {
-			if (!moverEntity || !moverEntity->IsActive() ||
-			    moverEntity->GetGuid() == ownerGuid) {
-				continue;
-			}
-
-			const auto* mover = moverEntity->GetComponent<
-				KinematicMoverComponent>();
-			if (!mover || mover->WasTeleported()) {
-				continue;
-			}
-
-			const uint64_t moverGuid = moverEntity->GetGuid();
-			if (moverGuid == supportGuid || findInfluenceIndex(moverGuid) >=
-			    0) {
-				continue;
-			}
-
-			const Vec3 moverStepDelta = mover->GetStepDelta(stepSeconds);
-			if (moverStepDelta.SqrLength() <= 1.0e-12f) {
-				continue;
-			}
-
-			if (!physics) {
-				continue;
-			}
-
-			const float moverDeltaLen = moverStepDelta.Length();
-			if (moverDeltaLen <= 1.0e-6f) {
-				continue;
-			}
-
-			const Vec3 castDir = (-moverStepDelta) / moverDeltaLen;
-			const float castLength = moverDeltaLen + sweepExtra;
-			const float yOffset = mBoxHalfExtents.y * 0.5f;
-			const std::array<Vec3, 3> offsets = {
-				Vec3::zero,
-				Vec3::up * yOffset,
-				Vec3::down * yOffset
-			};
-
-			bool moverWouldTouch = false;
-			for (const Vec3& offset : offsets) {
-				Physics::Hit sweepHit{};
-				const Box    sweepBox = {
-					.center   = position + offset,
-					.halfSize = overlapHalfExtents
-				};
-				if (!physics->BoxCast(
-					sweepBox,
-					castDir,
-					castLength,
-					&sweepHit
-				)) {
-					continue;
-				}
-
-				if (resolveMover(sweepHit.hitEntityGuid) == mover) {
-					moverWouldTouch = true;
-					break;
-				}
-			}
-			if (!moverWouldTouch) {
-				continue;
-			}
-
-			tryAddInfluence(moverGuid, moverStepDelta);
-		}
-
-		UpdateCollisionHull(transform);
-		bool positionChanged = false;
-		if (influenceCount > 0) {
-			std::sort(
-				influences.begin(),
-				influences.begin() + influenceCount,
-				[](
-				const PassiveMoverInfluence& lhs,
-				const PassiveMoverInfluence& rhs
-			) {
-					const float lhsLenSq = lhs.stepDelta.SqrLength();
-					const float rhsLenSq = rhs.stepDelta.SqrLength();
-					if (lhsLenSq == rhsLenSq) {
-						return lhs.guid < rhs.guid;
-					}
-					return lhsLenSq > rhsLenSq;
-				}
-			);
-
-			for (int i = 0; i < influenceCount; ++i) {
-				const Vec3 desiredDelta = influences[i].stepDelta;
-				if (desiredDelta.SqrLength() <= 1.0e-12f) {
-					continue;
-				}
-
-				const Vec3 beforePosition = position;
-				Vec3       pseudoVelocity = desiredDelta;
-				mCollisionResolver->SlideMove(position, pseudoVelocity, 1.0f);
-
-				const Vec3 appliedDelta = position - beforePosition;
-				if (!appliedDelta.IsZero(1.0e-6f)) {
-					positionChanged = true;
-				}
-
-				const Vec3 residual = desiredDelta - appliedDelta;
-				if (residual.SqrLength() > 1.0e-10f) {
-					const Vec3 blockNormal = residual.Normalized();
-					if (mVelocity.Dot(blockNormal) < 0.0f) {
-						mVelocity =
-							BaseKinematicCollisionResolver::ClipVelocity(
-								mVelocity,
-								blockNormal,
-								1.0f
-							);
-					}
-				}
-			}
-		}
-
-		int maxDepenetrationIters = mConsole->GetConVarValueOr<int>(
-			"sv_passivepush_maxdepenetrationiters", 2
-		);
-		maxDepenetrationIters = std::clamp(maxDepenetrationIters, 0, 8);
-		for (int iter = 0; iter < maxDepenetrationIters; ++iter) {
-			const int depenHitCount = mCollisionResolver->CollectOverlaps(
-				position,
-				mBoxHalfExtents,
-				overlapHits.data(),
-				static_cast<int>(overlapHits.size())
-			);
-			if (depenHitCount > 1) {
-				std::sort(
-					overlapHits.begin(),
-					overlapHits.begin() + depenHitCount,
-					[](const Physics::Hit& lhs, const Physics::Hit& rhs) {
-						if (lhs.depth != rhs.depth) {
-							return lhs.depth > rhs.depth;
-						}
-						if (lhs.hitEntityGuid != rhs.hitEntityGuid) {
-							return lhs.hitEntityGuid < rhs.hitEntityGuid;
-						}
-						if (lhs.triIndex != rhs.triIndex) {
-							return lhs.triIndex < rhs.triIndex;
-						}
-						return false;
-					}
-				);
-			}
-
-			Vec3  correctionVector = Vec3::zero;
-			Vec3  fallbackNormal   = Vec3::zero;
-			float deepestDepth     = 0.0f;
-			int   validHitCount    = 0;
-			for (int i = 0; i < depenHitCount; ++i) {
-				const Physics::Hit& hit = overlapHits[i];
-				if (hit.hitEntityGuid == 0 || hit.hitEntityGuid == ownerGuid) {
-					continue;
-				}
-
-				if (hit.normal.SqrLength() <= 1.0e-12f) {
-					continue;
-				}
-
-				const Vec3  normal     = hit.normal.Normalized();
-				const float depenDepth = std::max(
-					0.0f,
-					hit.depth - contactSkinM
-				);
-				if (depenDepth <= 1.0e-6f) {
-					continue;
-				}
-
-				correctionVector += normal * depenDepth;
-				++validHitCount;
-				if (depenDepth > deepestDepth) {
-					deepestDepth   = depenDepth;
-					fallbackNormal = normal;
-				}
-			}
-
-			if (validHitCount <= 0 || deepestDepth <= 1.0e-6f ||
-			    fallbackNormal.IsZero()) {
-				break;
-			}
-
-			Vec3 correctionDir =
-				correctionVector.SqrLength() > 1.0e-12f ?
-					correctionVector.Normalized() :
-					fallbackNormal;
-
-			if (correctionDir.IsZero()) {
-				correctionDir = fallbackNormal;
-			}
-			if (correctionDir.IsZero()) {
-				break;
-			}
-
-			const float averageDepth = correctionVector.SqrLength() > 1.0e-12f ?
-				                           correctionVector.Length() /
-				                           static_cast<float>(validHitCount) :
-				                           deepestDepth;
-			
-			const float depenBias  = Math::HtoM(0.05f);
-			
-			const float correction = std::max(
-				                         deepestDepth * 0.5f,
-				                         averageDepth
-			                         ) +
-			                         depenBias;
-			position        += correctionDir * correction;
-			positionChanged = true;
-		}
-
-		if (positionChanged) {
-			transform->SetPosition(position);
-			UpdateCollisionHull(transform);
-		}
-		return positionChanged;
+		(void)transform;
+		(void)stepSeconds;
+		return false;
 	}
 
 	void GameMovementComponent::PublishCue(

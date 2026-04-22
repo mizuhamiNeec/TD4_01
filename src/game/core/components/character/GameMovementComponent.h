@@ -16,7 +16,6 @@ namespace Unnamed {
 	class TransformComponent;
 	class InputSystem;
 	class ConsoleSystem;
-	class KinematicMoverComponent;
 	template <typename T>
 	class ConVar;
 
@@ -62,6 +61,12 @@ namespace Unnamed {
 			const Vec3&         worldPosition
 		);
 
+		/// @brief 動的支持面の任意点速度を取得します。
+		[[nodiscard]] Vec3 SampleSupportContactVelocity(
+			uint64_t    supportEntityGuid,
+			const Vec3& worldPoint
+		) const;
+
 		virtual void WriteReplayState(nlohmann::json& outState) const;
 		virtual void ReadReplayState(const nlohmann::json& inState);
 		[[nodiscard]] virtual uint64_t ComputeReplayStateHash() const;
@@ -93,8 +98,18 @@ namespace Unnamed {
 		[[nodiscard]] const MovementCapabilitySet& GetCapabilitySet() const;
 
 		[[nodiscard]] TransformComponent* GetTransform() const override;
+		[[nodiscard]] Vec3 GetSupportSamplePoint(
+			const TransformComponent* transform
+		) const;
 		[[nodiscard]] Vec3                ResolveSupportLinearVelocity(
 			uint64_t supportEntityGuid
+		) const;
+		[[nodiscard]] Vec3 ResolveSupportAngularVelocity(
+			uint64_t supportEntityGuid
+		) const;
+		[[nodiscard]] Vec3 ResolveSupportContactVelocity(
+			uint64_t    supportEntityGuid,
+			const Vec3& worldPoint
 		) const;
 		[[nodiscard]] Vec3 ResolveSupportStepDelta(
 			uint64_t supportEntityGuid, float stepSeconds
@@ -132,7 +147,7 @@ namespace Unnamed {
 		MovementCapabilitySet     mCapabilitySet = {};
 		MOVEMENT_MODE_ID          mCurrentModeId = MOVEMENT_MODE_ID::AIR;
 		uint64_t                  mActiveAbilityMask = 0;
-		static constexpr uint32_t kMovementRuntimeVersion = 2;
+		static constexpr uint32_t kMovementRuntimeVersion = 3;
 
 #ifdef _DEBUG
 		std::string mDebugLastPublishedCueId;
@@ -140,5 +155,6 @@ namespace Unnamed {
 		float       mDebugLastPublishedCueValue2 = 0.0f;
 		uint64_t    mDebugPublishedCueCount      = 0;
 #endif
+		float mCollisionDebugLogCooldownSec = 0.0f;
 	};
 }

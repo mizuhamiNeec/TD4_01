@@ -17,7 +17,7 @@ namespace Unnamed::Physics {
 	public:
 		void Init();
 		void Update(float deltaTime) const;
-		void EndFrame();
+		void EndFrame() const;
 
 		/// @brief レイキャストを行う関数
 		/// @param ray レイ情報
@@ -75,6 +75,17 @@ namespace Unnamed::Physics {
 			int        maxHits
 		) const;
 
+		/// @brief ボックスとメッシュの重なりを集約なしで収集します。
+		/// @param box ボックス情報
+		/// @param outHits 衝突情報の出力先配列
+		/// @param maxHits 出力先配列の最大ヒット数
+		/// @return ヒットした数を返す
+		int BoxOverlapRaw(
+			const Box& box,
+			Hit*       outHits,
+			int        maxHits
+		) const;
+
 		void ClearStaticMeshes();
 		bool RegisterStaticMesh(
 			uint64_t                    ownerGuid,
@@ -101,41 +112,12 @@ namespace Unnamed::Physics {
 		[[nodiscard]] static AABB ToWorldBounds(
 			const RegisteredBVH& bvh,
 			const AABB&          localBounds
-		) {
-			if (bvh.mobility == ColliderMobility::Dynamic) {
-				const Vec3 corners[8]{
-					{localBounds.min.x, localBounds.min.y, localBounds.min.z},
-					{localBounds.max.x, localBounds.min.y, localBounds.min.z},
-					{localBounds.min.x, localBounds.max.y, localBounds.min.z},
-					{localBounds.max.x, localBounds.max.y, localBounds.min.z},
-					{localBounds.min.x, localBounds.min.y, localBounds.max.z},
-					{localBounds.max.x, localBounds.min.y, localBounds.max.z},
-					{localBounds.min.x, localBounds.max.y, localBounds.max.z},
-					{localBounds.max.x, localBounds.max.y, localBounds.max.z},
-				};
-				AABB worldBounds;
-				for (const Vec3& p : corners) {
-					worldBounds.Expand(bvh.world.TransformPoint(p));
-				}
-				return worldBounds;
-			}
-			return localBounds;
-		}
+		);
 
 		[[nodiscard]] static Triangle ToWorldTriangle(
 			const RegisteredBVH& bvh,
-			uint32_t             triIdx
-		) {
-			const Triangle& tri = bvh.triangles[triIdx];
-			if (bvh.mobility == ColliderMobility::Dynamic) {
-				return {
-					.v0 = bvh.world.TransformPoint(tri.v0),
-					.v1 = bvh.world.TransformPoint(tri.v1),
-					.v2 = bvh.world.TransformPoint(tri.v2),
-				};
-			}
-			return tri;
-		}
+			const uint32_t       triIdx
+		);
 
 		template <class CastType>
 		static bool CastBVH(
@@ -181,15 +163,15 @@ namespace Unnamed::Physics {
 			}
 
 			constexpr float startSolidToiEpsilon = 1e-6f;
-			constexpr float kOverlapDepthEpsilon = 1e-6f;
+			constexpr float overlapDepthEpsilon = 1e-6f;
 
-			float    bestTOI       = 1.0f;
+			float    bestToi       = 1.0f;
 			uint32_t hitTri        = UINT32_MAX;
 			uint64_t hitEntityGuid = 0;
 			Vec3     hitNormal;
 			Triangle hitTriangle{};
-			bool     hasHitTriangle = false;
-			float    bestStartSolidTOI       = 1.0f;
+			bool     hasHitTriangle          = false;
+			float    bestStartSolidToi       = 1.0f;
 			float    bestStartSolidDepth     = -1.0f;
 			uint32_t startSolidHitTri        = UINT32_MAX;
 			uint64_t startSolidHitEntityGuid = 0;
@@ -197,7 +179,7 @@ namespace Unnamed::Physics {
 			Vec3     startSolidOverlapNormal = Vec3::zero;
 			float    startSolidOverlapDepth  = 0.0f;
 			Triangle startSolidHitTriangle{};
-			bool     hasStartSolidHit        = false;
+			bool     hasStartSolidHit = false;
 
 #ifdef _DEBUG
 			struct StackItem {
@@ -210,7 +192,7 @@ namespace Unnamed::Physics {
 			};
 			const RegisteredBVH*   bestPathBVH = nullptr;
 			std::vector<PathEntry> bestPathData;
-			int                    bestPathLeaf = -1;
+			int                    bestPathLeaf          = -1;
 			const RegisteredBVH*   bestStartSolidPathBVH = nullptr;
 			std::vector<PathEntry> bestStartSolidPathData;
 			int                    bestStartSolidPathLeaf = -1;
@@ -249,8 +231,8 @@ namespace Unnamed::Physics {
 					const auto& node = bvh->nodes[index];
 
 					Ray pruneRay               = broadRay;
-					pruneRay.tMax              = bestTOI * length;
-					float      tBox            = bestTOI * length;
+					pruneRay.tMax              = bestToi * length;
+					float      tBox            = bestToi * length;
 					const AABB nodeBoundsWorld = ToWorldBounds(
 						*bvh, node.bounds
 					);
@@ -285,8 +267,8 @@ namespace Unnamed::Physics {
 							)) {
 								continue;
 							}
-							float overlapDepth = 0.0f;
-							Vec3  overlapNormal = Vec3::zero;
+							float      overlapDepth          = 0.0f;
+							Vec3       overlapNormal         = Vec3::zero;
 							const bool isStartSolidCandidate =
 								toi <= startSolidToiEpsilon &&
 								cast.OverlapAtStart(
@@ -294,24 +276,24 @@ namespace Unnamed::Physics {
 									overlapDepth,
 									overlapNormal
 								) &&
-								overlapDepth > kOverlapDepthEpsilon;
+								overlapDepth > overlapDepthEpsilon;
 							if (isStartSolidCandidate) {
 								// 開始重なりヒットは sweep の後続ヒットを隠しやすいので、
 								// 通常ヒットが見つからなかった場合のフォールバックとして保持します。
 								const bool betterStartDepth = overlapDepth >
 									bestStartSolidDepth + 1.0e-6f;
 								const bool equalStartDepth = std::abs(
-									                             overlapDepth -
-									                             bestStartSolidDepth
-								                             ) <= 1.0e-6f;
+										overlapDepth -
+										bestStartSolidDepth
+									) <= 1.0e-6f;
 								const bool betterStartToi = toi <
-								                            bestStartSolidTOI - 1.0e-6f;
+									bestStartSolidToi - 1.0e-6f;
 								if (
 									!hasStartSolidHit ||
 									betterStartDepth ||
 									(equalStartDepth && betterStartToi)
 								) {
-									bestStartSolidTOI       = toi;
+									bestStartSolidToi       = toi;
 									bestStartSolidDepth     = overlapDepth;
 									startSolidHitTri        = triIdx;
 									startSolidHitEntityGuid = bvh->ownerGuid;
@@ -328,8 +310,8 @@ namespace Unnamed::Physics {
 								}
 								continue;
 							}
-							if (toi < bestTOI) {
-								bestTOI        = toi;
+							if (toi < bestToi) {
+								bestToi        = toi;
 								hitTri         = triIdx;
 								hitEntityGuid  = bvh->ownerGuid;
 								hitNormal      = nrm;
@@ -340,7 +322,7 @@ namespace Unnamed::Physics {
 								bestPathData = traversal;
 								bestPathLeaf = currentEntry;
 #endif
-								pruneRay.tMax = bestTOI * length;
+								pruneRay.tMax = bestToi * length;
 							}
 						}
 					}
@@ -353,7 +335,7 @@ namespace Unnamed::Physics {
 					return false;
 				}
 				usingStartSolidFallback = true;
-				bestTOI                 = bestStartSolidTOI;
+				bestToi                 = bestStartSolidToi;
 				hitTri                  = startSolidHitTri;
 				hitEntityGuid           = startSolidHitEntityGuid;
 				hitNormal               = startSolidHitNormal;
@@ -369,20 +351,17 @@ namespace Unnamed::Physics {
 #ifdef _DEBUG
 			if (debugBox != nullptr) {
 				debugBox->clear();
-				if (bestPathBVH&& bestPathLeaf
-
-				
-				>=
-				0
-				)
-				{
+				if (
+					bestPathBVH &&
+					bestPathLeaf >= 0
+				) {
 					std::vector<uint32_t> pathNodes;
 					for (int cursor = bestPathLeaf; cursor >= 0;) {
 						const PathEntry& entry = bestPathData[cursor];
 						pathNodes.emplace_back(entry.nodeIndex);
 						cursor = entry.parentEntry;
 					}
-					std::reverse(pathNodes.begin(), pathNodes.end());
+					std::ranges::reverse(pathNodes);
 
 					for (const uint32_t nodeIndex : pathNodes) {
 						const AABB bounds = ToWorldBounds(
@@ -413,7 +392,7 @@ namespace Unnamed::Physics {
 						hitNormal = overlapNrm;
 					}
 				} else if (
-					bestTOI <= startSolidToiEpsilon ||
+					bestToi <= startSolidToiEpsilon ||
 					hitNormal.SqrLength() <= normalEpsilon
 				) {
 					startSolid = cast.OverlapAtStart(
@@ -421,7 +400,7 @@ namespace Unnamed::Physics {
 						overlapDepth,
 						overlapNrm
 					);
-					if (startSolid && overlapDepth <= kOverlapDepthEpsilon) {
+					if (startSolid && overlapDepth <= overlapDepthEpsilon) {
 						startSolid   = false;
 						overlapDepth = 0.0f;
 					}
@@ -453,20 +432,21 @@ namespace Unnamed::Physics {
 						finalNormal = Vec3::up;
 					}
 				}
-				outHit->toi    = bestTOI;
+				outHit->toi    = bestToi;
 				outHit->depth  = startSolid ? overlapDepth : 0.0f;
 				outHit->normal = finalNormal;
 				outHit->pos    = cast.ComputeImpactPoint(
 					start,
 					dirNormalized,
 					length,
-					bestTOI,
+					bestToi,
 					finalNormal
 				);
 				outHit->triIndex      = hitTri;
 				outHit->hitEntityGuid = hitEntityGuid;
 				outHit->startSolid    = startSolid;
-				outHit->allsolid      = false;
+				outHit->allsolid      = startSolid && usingStartSolidFallback &&
+				                   bestToi <= (startSolidToiEpsilon + 1.0e-6f);
 			}
 			return true;
 		}
@@ -484,6 +464,12 @@ namespace Unnamed::Physics {
 		);
 
 		static int BoxOverlapSet(
+			const Box&                        box,
+			Hit*                              outHits,
+			int                               maxHits,
+			const std::vector<RegisteredBVH>& bvhSet
+		);
+		static int BoxOverlapSetRaw(
 			const Box&                        box,
 			Hit*                              outHits,
 			int                               maxHits,

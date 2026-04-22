@@ -54,7 +54,7 @@ namespace Unnamed::Physics {
 	/// @brief 更新
 	void Engine::Update(float) const {}
 
-	void Engine::EndFrame() {
+	void Engine::EndFrame() const {
 #ifdef _DEBUG
 		mDebugBox.clear();
 #endif
@@ -447,6 +447,73 @@ namespace Unnamed::Physics {
 		return outCount;
 	}
 
+	int Engine::BoxOverlapRaw(
+		const Box& box,
+		Hit*       outHits,
+		const int  maxHits
+	) const {
+		if (maxHits <= 0 || outHits == nullptr) {
+			return 0;
+		}
+
+		// 生ヒットは法線の集合を保持したいため、収集バッファを大きめに確保
+		const int        collectorCap = std::clamp(maxHits * 12, 256, 4096);
+		std::vector<Hit> collected(
+			static_cast<size_t>(collectorCap)
+		);
+
+		int collectedCount = 0;
+		collectedCount     += BoxOverlapSetRaw(
+			box,
+			collected.data() + collectedCount,
+			collectorCap - collectedCount,
+			mStaticBVHs
+		);
+		if (collectedCount < collectorCap) {
+			collectedCount += BoxOverlapSetRaw(
+				box,
+				collected.data() + collectedCount,
+				collectorCap - collectedCount,
+				mDynamicBVHs
+			);
+		}
+
+		if (collectedCount <= 0) {
+			return 0;
+		}
+		if (collectedCount > 1) {
+			std::sort(
+				collected.begin(),
+				collected.begin() + collectedCount,
+				[](const Hit& lhs, const Hit& rhs) {
+					if (lhs.depth != rhs.depth) {
+						return lhs.depth > rhs.depth;
+					}
+					if (lhs.hitEntityGuid != rhs.hitEntityGuid) {
+						return lhs.hitEntityGuid < rhs.hitEntityGuid;
+					}
+					if (lhs.triIndex != rhs.triIndex) {
+						return lhs.triIndex < rhs.triIndex;
+					}
+					if (lhs.normal.x != rhs.normal.x) {
+						return lhs.normal.x < rhs.normal.x;
+					}
+					if (lhs.normal.y != rhs.normal.y) {
+						return lhs.normal.y < rhs.normal.y;
+					}
+					if (lhs.normal.z != rhs.normal.z) {
+						return lhs.normal.z < rhs.normal.z;
+					}
+					return false;
+				}
+			);
+		}
+
+		const int outCount = std::min(maxHits, collectedCount);
+		std::copy_n(collected.data(), outCount, outHits);
+		return outCount;
+	}
+
 	// --- Static/Dynamic mesh registration ---
 	void Engine::ClearStaticMeshes() {
 		mStaticBVHs.clear();
@@ -548,6 +615,43 @@ namespace Unnamed::Physics {
 
 	std::vector<Box> Engine::GetDebugBVHBoxes() const {
 		return mDebugBox;
+	}
+
+	AABB Engine::ToWorldBounds(
+		const RegisteredBVH& bvh, const AABB& localBounds
+	) {
+		if (bvh.mobility == ColliderMobility::Dynamic) {
+			const Vec3 corners[8]{
+				{localBounds.min.x, localBounds.min.y, localBounds.min.z},
+				{localBounds.max.x, localBounds.min.y, localBounds.min.z},
+				{localBounds.min.x, localBounds.max.y, localBounds.min.z},
+				{localBounds.max.x, localBounds.max.y, localBounds.min.z},
+				{localBounds.min.x, localBounds.min.y, localBounds.max.z},
+				{localBounds.max.x, localBounds.min.y, localBounds.max.z},
+				{localBounds.min.x, localBounds.max.y, localBounds.max.z},
+				{localBounds.max.x, localBounds.max.y, localBounds.max.z},
+			};
+			AABB worldBounds;
+			for (const Vec3& p : corners) {
+				worldBounds.Expand(bvh.world.TransformPoint(p));
+			}
+			return worldBounds;
+		}
+		return localBounds;
+	}
+
+	Triangle Engine::ToWorldTriangle(
+		const RegisteredBVH& bvh, const uint32_t triIdx
+	) {
+		const Triangle& tri = bvh.triangles[triIdx];
+		if (bvh.mobility == ColliderMobility::Dynamic) {
+			return {
+				.v0 = bvh.world.TransformPoint(tri.v0),
+				.v1 = bvh.world.TransformPoint(tri.v1),
+				.v2 = bvh.world.TransformPoint(tri.v2),
+			};
+		}
+		return tri;
 	}
 
 	bool Engine::RemoveColliderByOwnerGuid(
@@ -685,9 +789,8 @@ namespace Unnamed::Physics {
 			}
 		}
 		if (filtered.size() > 1) {
-			std::sort(
-				filtered.begin(),
-				filtered.end(),
+			std::ranges::sort(
+				filtered,
 				[](const RegisteredBVH* lhs, const RegisteredBVH* rhs) {
 					return lhs->ownerGuid < rhs->ownerGuid;
 				}
@@ -705,7 +808,7 @@ namespace Unnamed::Physics {
 		// 一度エンティティ単位で集約してから代表ヒットを生成します。
 		std::vector<EntityOverlapAggregate> aggregates = {};
 		aggregates.reserve(filtered.size());
-		const auto findAggregate = [&aggregates](const uint64_t guid) -> int {
+		const auto FindAggregate = [&aggregates](const uint64_t guid) -> int {
 			for (int i = 0; i < static_cast<int>(aggregates.size()); ++i) {
 				if (aggregates[i].guid == guid) {
 					return i;
@@ -767,7 +870,7 @@ namespace Unnamed::Physics {
 						tmpHit.triIndex      = triIdx;
 						tmpHit.hitEntityGuid = bvh->ownerGuid;
 
-						int aggregateIndex = findAggregate(
+						int aggregateIndex = FindAggregate(
 							tmpHit.hitEntityGuid
 						);
 						if (aggregateIndex < 0) {
@@ -817,9 +920,8 @@ namespace Unnamed::Physics {
 			return 0;
 		}
 
-		std::sort(
-			aggregates.begin(),
-			aggregates.end(),
+		std::ranges::sort(
+			aggregates,
 			[](
 			const EntityOverlapAggregate& lhs, const EntityOverlapAggregate& rhs
 		) {
@@ -846,9 +948,8 @@ namespace Unnamed::Physics {
 		}
 
 		if (emittedHits.size() > 1) {
-			std::sort(
-				emittedHits.begin(),
-				emittedHits.end(),
+			std::ranges::sort(
+				emittedHits,
 				[](const Hit& lhs, const Hit& rhs) {
 					if (lhs.hitEntityGuid != rhs.hitEntityGuid) {
 						return lhs.hitEntityGuid < rhs.hitEntityGuid;
@@ -878,6 +979,109 @@ namespace Unnamed::Physics {
 			static_cast<int>(emittedHits.size())
 		);
 		std::copy_n(emittedHits.data(), outCount, outHits);
+		return outCount;
+	}
+
+	int Engine::BoxOverlapSetRaw(
+		const Box&                        box,
+		Hit*                              outHits,
+		const int                         maxHits,
+		const std::vector<RegisteredBVH>& bvhSet
+	) {
+		if (maxHits <= 0 || outHits == nullptr || bvhSet.empty()) {
+			return 0;
+		}
+
+		AABB boxAABB;
+		boxAABB.min = box.center - box.halfSize;
+		boxAABB.max = box.center + box.halfSize;
+
+		std::vector<const RegisteredBVH*> filtered;
+		filtered.reserve(bvhSet.size());
+
+		for (const auto& bvh : bvhSet) {
+			if (bvh.nodes.empty() || bvh.triangles.empty()) {
+				continue;
+			}
+			const AABB rootBounds = ToWorldBounds(bvh, bvh.nodes[0].bounds);
+			if (IsAABBOverlap(boxAABB, rootBounds)) {
+				filtered.emplace_back(&bvh);
+			}
+		}
+		if (filtered.size() > 1) {
+			std::ranges::sort(
+				filtered,
+				[](const RegisteredBVH* lhs, const RegisteredBVH* rhs) {
+					return lhs->ownerGuid < rhs->ownerGuid;
+				}
+			);
+		}
+
+		int      outCount = 0;
+		uint32_t stack[64];
+		for (auto* bvh : filtered) {
+			int sp      = 0;
+			stack[sp++] = 0;
+
+			while (sp) {
+				const uint32_t index = stack[--sp];
+				const auto& [bounds, leftFirst, rightFirst, primCount] = bvh->
+					nodes[index];
+				const AABB nodeBounds = ToWorldBounds(*bvh, bounds);
+
+				if (!IsAABBOverlap(boxAABB, nodeBounds)) {
+					continue;
+				}
+
+				if (primCount == 0) {
+					stack[sp++] = leftFirst;
+					stack[sp++] = rightFirst;
+				} else {
+					const uint32_t first = leftFirst;
+					for (uint32_t i = 0; i < primCount; ++i) {
+						if (outCount >= maxHits) {
+							return outCount;
+						}
+
+						const uint32_t triIdx = bvh->triIndices[first + i];
+						const Triangle tri    = ToWorldTriangle(*bvh, triIdx);
+
+						Vec3  separationAxis;
+						float penetrationDepth;
+						if (!BoxVsTriangleOverlap(
+							box,
+							tri,
+							separationAxis,
+							penetrationDepth
+						)) {
+							continue;
+						}
+
+						if (separationAxis.SqrLength() > 1.0e-12f) {
+							separationAxis.Normalize();
+						}
+
+						Hit& out  = outHits[outCount++];
+						out.toi   = 1.0f;
+						out.depth = penetrationDepth;
+						out.pos   = box.center + separationAxis * (
+							            std::min(
+								            {
+									            box.halfSize.x,
+									            box.halfSize.y,
+									            box.halfSize.z
+								            }
+							            ) - penetrationDepth * 0.5f);
+						out.normal        = separationAxis;
+						out.triIndex      = triIdx;
+						out.hitEntityGuid = bvh->ownerGuid;
+						out.startSolid    = true;
+						out.allsolid      = false;
+					}
+				}
+			}
+		}
+
 		return outCount;
 	}
 }

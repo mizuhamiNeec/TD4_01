@@ -19,11 +19,16 @@ namespace Unnamed {
 		constexpr float    kMinConsumedFrac = 1e-5f;
 		constexpr float    kZeroToiEpsilon = 1e-6f;
 		constexpr float    kZeroToiConsumed = 0.05f;
-		constexpr float    kZeroToiSeparateDot = 1e-3f;
+		constexpr float    kZeroToiNonBlockingDot = 1e-4f;
 		constexpr float    kTouchDepthRatio = 0.01f;
 		constexpr float    kGroundNormalY = 0.7f; // ステップダウン判定の法線の最小Y成分
 		constexpr float    kStepSelectHorizEps = 1e-8f;
 		constexpr float    kStepSelectDownEps = 1e-5f;
+		constexpr uint32_t kMaxDepenetrationIters = 6;
+		constexpr int      kDepenetrationHitBuffer = 64;
+		constexpr float    kDepenetrationDepthEpsilon = 1e-5f;
+		constexpr float    kDepenetrationMaxPushHu = 6.0f;
+		constexpr float    kProbeRadiusScale = 1.0f;
 
 		[[nodiscard]] float HitDistanceM(
 			const Physics::Hit& hit,
@@ -45,6 +50,23 @@ namespace Unnamed {
 	void BoxKinematicCollisionResolver::SlideMove(
 		Vec3& position, Vec3& velocity, const float timeTotal
 	) const {
+		mCollisionDebugState                = {};
+		mCollisionDebugState.startPosition  = position;
+		mCollisionDebugState.inputVelocity  = velocity;
+		const auto FinalizeDebugState = [this, &position, &velocity]() {
+			mCollisionDebugState.endPosition  = position;
+			mCollisionDebugState.outputVelocity = velocity;
+		};
+
+		// 移動開始時の開始重なりを先に解消します。
+		if (!RecoverFromPenetration(
+			position, -velocity, RECOVER_REASON::SLIDE_START
+		)) {
+			velocity = Vec3::zero;
+			FinalizeDebugState();
+			return;
+		}
+
 		int         numPlanes = 0;
 		float       timeLeft  = timeTotal;
 		const float skin      = SkinM();
@@ -76,13 +98,33 @@ namespace Unnamed {
 			if (!mEngine->BoxCast(
 				box, dir, castLength, &hit
 			)) {
-				// 衝突なし — 全距離移動して終了
-				position += move;
+				// sweep で見落とした終点めり込みを防ぐため、終点の重なりを再検査
+				const Vec3 targetPos = position + move;
+				if (IsHullOverlapping(targetPos, nullptr)) {
+					Vec3 recoveredPos = targetPos;
+					if (!RecoverFromPenetration(
+						recoveredPos, -dir, RECOVER_REASON::END_POSITION_OVERLAP
+					)) {
+						velocity = Vec3::zero;
+						break;
+					}
+					position = recoveredPos;
+				} else {
+					position = targetPos;
+				}
 				break;
 			}
 
 			if (hit.allsolid) {
+				RecordBlockingHit(box.center, dir, castLength, hit);
+				if (RecoverFromPenetration(
+					position, -velocity, RECOVER_REASON::HIT_ALL_SOLID
+				)) {
+					numPlanes = 0;
+					continue;
+				}
 				velocity = Vec3::zero;
+				FinalizeDebugState();
 				return;
 			}
 
@@ -110,20 +152,41 @@ namespace Unnamed {
 				(!hit.startSolid || shallowStartSolid) &&
 				hitDistance <= kZeroToiEpsilon &&
 				allowedDist <= kEpsilon;
-			// ゼロTOIかつ明確に離反方向の接触は「その場接触」として扱い、
-			// このbumpでは残り時間だけ消費して再キャストします。
-			// 残移動を丸ごと通すと開始重なりの壁ヒットで床ヒットを飛ばしやすくなるため避けます。
+			const float moveIntoPlane = dir.Dot(normal);
 			if (
 				zeroToiContact &&
-				dir.Dot(normal) > kZeroToiSeparateDot
+				moveIntoPlane > -kZeroToiNonBlockingDot
 			) {
-				timeLeft *= (1.0f - kZeroToiConsumed);
+				// 非侵入のゼロTOI接触（床なめ等）は進行阻害として扱わず、
+				// 少量前進して次のキャストで実ブロッキング面を探します。
+				const float touchAdvance = std::min(moveLen, skin);
+				if (touchAdvance > 1e-7f) {
+					position += dir * touchAdvance;
+				}
+				float consumedFrac = std::clamp(
+					touchAdvance / moveLen, 0.0f, 1.0f
+				);
+				consumedFrac = std::max(consumedFrac, kZeroToiConsumed);
+				timeLeft *= (1.0f - consumedFrac);
 				if (timeLeft < 1e-7f) {
 					break;
 				}
 				continue;
 			}
 
+			RecordBlockingHit(box.center, dir, castLength, hit);
+
+			if (hit.startSolid && !shallowStartSolid) {
+				if (!RecoverFromPenetration(
+					position, -normal, RECOVER_REASON::HIT_START_SOLID
+				)) {
+					velocity = Vec3::zero;
+					FinalizeDebugState();
+					return;
+				}
+				numPlanes = 0;
+				continue;
+			}
 			if (allowedDist > 1e-7f) {
 				position += dir * allowedDist;
 				// 前進に成功したら面リストをリセット（新しい位置で再出発）
@@ -228,6 +291,8 @@ namespace Unnamed {
 				break;
 			}
 		}
+
+		FinalizeDebugState();
 	}
 
 	void BoxKinematicCollisionResolver::StepMove(
@@ -239,15 +304,15 @@ namespace Unnamed {
 			return;
 		}
 
-		auto horizDistSq = [](const Vec3& a, const Vec3& b) -> float {
+		auto HorizDistSq = [](const Vec3& a, const Vec3& b) -> float {
 			float dx = a.x - b.x;
 			float dz = a.z - b.z;
 			return dx * dx + dz * dz;
 		};
 
-		const auto snapDownWalkable = [this](
+		const auto SnapDownWalkable = [this](
 			Vec3& targetPos, const float maxDrop
-		) -> bool {
+		) {
 			if (maxDrop <= 0.0f) {
 				return false;
 			}
@@ -286,11 +351,11 @@ namespace Unnamed {
 		SlideMove(position, velocity, timeTotal);
 		Vec3 downPos = position;
 		Vec3 downVel = velocity;
-		if (snapDownWalkable(downPos, stepHeightM) && downVel.y < 0.0f) {
+		if (SnapDownWalkable(downPos, stepHeightM) && downVel.y < 0.0f) {
 			downVel.y = 0.0f;
 		}
 
-		const float downDistSq = horizDistSq(downPos, savedPos);
+		const float downDistSq = HorizDistSq(downPos, savedPos);
 		// baselineで十分進めているときは、不要なステップアップを試さない。
 		if (downDistSq + kStepSelectHorizEps >= desiredHorizDistSq) {
 			position = downPos;
@@ -331,14 +396,14 @@ namespace Unnamed {
 
 		// 上げた分 + 許容ステップダウン分だけ地面へスナップを試みる。
 		const float maxDrop    = stepRise + stepHeightM;
-		const bool  upGrounded = snapDownWalkable(position, maxDrop);
+		const bool  upGrounded = SnapDownWalkable(position, maxDrop);
 		if (!upGrounded) {
 			position = downPos;
 			velocity = downVel;
 			return;
 		}
 
-		const float upDistSq       = horizDistSq(position, savedPos);
+		const float upDistSq       = HorizDistSq(position, savedPos);
 		const bool  climbedTooHigh = position.y >
 		                            (savedPos.y + stepHeightM +
 		                             kStepSelectDownEps);
@@ -374,6 +439,200 @@ namespace Unnamed {
 		return true;
 	}
 
+	const BoxKinematicCollisionResolver::CollisionDebugState&
+	BoxKinematicCollisionResolver::GetCollisionDebugState() const {
+		return mCollisionDebugState;
+	}
+
+	void BoxKinematicCollisionResolver::RecordBlockingHit(
+		const Vec3&        castStart,
+		const Vec3&        castDir,
+		const float        castLength,
+		const Physics::Hit& hit
+	) const {
+		mCollisionDebugState.hasBlockingHit    = true;
+		++mCollisionDebugState.blockingHitCount;
+		mCollisionDebugState.blockingCastStart = castStart;
+		mCollisionDebugState.blockingCastDir   = castDir;
+		mCollisionDebugState.blockingCastLength = castLength;
+		mCollisionDebugState.blockingHit       = hit;
+	}
+
+	bool BoxKinematicCollisionResolver::IsHullOverlapping(
+		const Vec3&   position,
+		Physics::Hit* outHit
+	) const {
+		if (!mEngine) {
+			return false;
+		}
+
+		Box box    = mHull;
+		box.center = position;
+		return mEngine->BoxOverlap(box, outHit);
+	}
+
+	bool BoxKinematicCollisionResolver::RecoverFromPenetration(
+		Vec3& position,
+		const Vec3& preferredDirection,
+		const RECOVER_REASON reason
+	) const {
+		mCollisionDebugState.recoverAttempted = true;
+		mCollisionDebugState.recoverSucceeded = false;
+		mCollisionDebugState.recoverReason    = reason;
+		mCollisionDebugState.recoverStart     = position;
+		mCollisionDebugState.recoverEnd       = position;
+		mCollisionDebugState.recoverOverlapCount = 0;
+
+		if (!mEngine) {
+			return false;
+		}
+		if (!IsHullOverlapping(position, nullptr)) {
+			mCollisionDebugState.recoverSucceeded = true;
+			mCollisionDebugState.recoverEnd       = position;
+			return true;
+		}
+
+		const float skinM = SkinM();
+		const float maxPushPerIter = Math::HtoM(kDepenetrationMaxPushHu);
+
+		Vec3 preferredDir = preferredDirection;
+		if (preferredDir.SqrLength() > kNormalEpsilon) {
+			preferredDir.Normalize();
+		} else {
+			preferredDir = Vec3::zero;
+		}
+
+		for (uint32_t iter = 0; iter < kMaxDepenetrationIters; ++iter) {
+			std::array<Physics::Hit, kDepenetrationHitBuffer> overlaps{};
+			const int overlapCount = CollectOverlaps(
+				position, mHull.halfSize, overlaps.data(), kDepenetrationHitBuffer
+			);
+			if (overlapCount <= 0) {
+				mCollisionDebugState.recoverSucceeded = true;
+				mCollisionDebugState.recoverEnd       = position;
+				return true;
+			}
+			mCollisionDebugState.recoverOverlapCount = std::min(
+				overlapCount,
+				static_cast<int>(mCollisionDebugState.recoverOverlaps.size())
+			);
+			for (int i = 0; i < mCollisionDebugState.recoverOverlapCount; ++i) {
+				mCollisionDebugState.recoverOverlaps[static_cast<size_t>(i)] =
+					overlaps[static_cast<size_t>(i)];
+			}
+
+			Vec3  pushAccum      = Vec3::zero;
+			Vec3  deepestNormal  = Vec3::zero;
+			float deepestPushLen = 0.0f;
+			for (int i = 0; i < overlapCount; ++i) {
+				Vec3 normal = overlaps[i].normal;
+				if (normal.SqrLength() <= kNormalEpsilon) {
+					continue;
+				}
+				normal.Normalize();
+
+				const float pushLen = overlaps[i].depth + skinM;
+				if (pushLen <= kDepenetrationDepthEpsilon) {
+					continue;
+				}
+
+				pushAccum += normal * pushLen;
+				if (pushLen > deepestPushLen) {
+					deepestPushLen = pushLen;
+					deepestNormal  = normal;
+				}
+			}
+
+			if (deepestPushLen <= kDepenetrationDepthEpsilon) {
+				break;
+			}
+
+			Vec3 pushDir = pushAccum.SqrLength() > kNormalEpsilon ?
+				               pushAccum.Normalized() :
+				               deepestNormal;
+			if (
+				!preferredDir.IsZero() &&
+				pushDir.Dot(preferredDir) < 0.0f
+			) {
+				pushDir += preferredDir * 0.5f;
+				if (pushDir.SqrLength() > kNormalEpsilon) {
+					pushDir.Normalize();
+				}
+			}
+
+			const float pushDist = std::clamp(
+				deepestPushLen, skinM, maxPushPerIter
+			);
+			position += pushDir * pushDist;
+			if (!IsHullOverlapping(position, nullptr)) {
+				mCollisionDebugState.recoverSucceeded = true;
+				mCollisionDebugState.recoverEnd       = position;
+				return true;
+			}
+		}
+
+		const Vec3 searchOrigin = position;
+		const std::array<Vec3, 16> probeDirs = {
+			Vec3::right,
+			Vec3::left,
+			Vec3::forward,
+			Vec3::backward,
+			Vec3::up,
+			Vec3::down,
+			(Vec3::right + Vec3::forward).Normalized(),
+			(Vec3::right + Vec3::backward).Normalized(),
+			(Vec3::left + Vec3::forward).Normalized(),
+			(Vec3::left + Vec3::backward).Normalized(),
+			(Vec3::right + Vec3::up).Normalized(),
+			(Vec3::left + Vec3::up).Normalized(),
+			(Vec3::forward + Vec3::up).Normalized(),
+			(Vec3::backward + Vec3::up).Normalized(),
+			(Vec3::right + Vec3::down).Normalized(),
+			(Vec3::left + Vec3::down).Normalized(),
+		};
+		const std::array<float, 8> probeRadiiHu = {
+			0.25f * kProbeRadiusScale,
+			0.5f * kProbeRadiusScale,
+			1.0f * kProbeRadiusScale,
+			2.0f * kProbeRadiusScale,
+			4.0f * kProbeRadiusScale,
+			8.0f * kProbeRadiusScale,
+			16.0f * kProbeRadiusScale,
+			24.0f * kProbeRadiusScale
+		};
+
+		for (const float radiusHu : probeRadiiHu) {
+			const float radiusM = Math::HtoM(radiusHu);
+
+			if (!preferredDir.IsZero()) {
+				const Vec3 preferredCandidate = searchOrigin + preferredDir *
+					radiusM;
+				if (!IsHullOverlapping(preferredCandidate, nullptr)) {
+					position = preferredCandidate;
+					mCollisionDebugState.recoverSucceeded = true;
+					mCollisionDebugState.recoverEnd       = position;
+					return true;
+				}
+			}
+
+			for (const Vec3& dir : probeDirs) {
+				const Vec3 candidate = searchOrigin + dir * radiusM;
+				if (!IsHullOverlapping(candidate, nullptr)) {
+					position = candidate;
+					mCollisionDebugState.recoverSucceeded = true;
+					mCollisionDebugState.recoverEnd       = position;
+					return true;
+				}
+			}
+		}
+
+		mCollisionDebugState.recoverSucceeded = !IsHullOverlapping(
+			position, nullptr
+		);
+		mCollisionDebugState.recoverEnd = position;
+		return mCollisionDebugState.recoverSucceeded;
+	}
+
 	int BoxKinematicCollisionResolver::CollectOverlaps(
 		const Vec3&   position,
 		const Vec3&   halfExtents,
@@ -388,7 +647,7 @@ namespace Unnamed {
 			.center   = position,
 			.halfSize = halfExtents
 		};
-		return mEngine->BoxOverlap(box, outHits, maxHits);
+		return mEngine->BoxOverlapRaw(box, outHits, maxHits);
 	}
 
 	float BoxKinematicCollisionResolver::CastSkinM() {

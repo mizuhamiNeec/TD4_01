@@ -112,14 +112,12 @@ namespace Unnamed {
 			}
 
 			const float detachBiasM =
-				Math::HtoM(kJumpDetachBiasHu) +
-				std::max(0.0f, context.supportStepDelta.y);
+				Math::HtoM(kJumpDetachBiasHu);
 
 			context.transform->SetPosition(
 				context.transform->GetPosition() + Vec3::up * detachBiasM
 			);
 
-			context.velocity   += context.supportLinearVelocity;
 			context.velocity.y += Math::HtoM(
 				console ?
 					console->GetConVarValueOr("sv_jumpvelocity", 420.0f) :
@@ -142,6 +140,8 @@ namespace Unnamed {
 			context.isGrounded            = false;
 			context.supportEntityGuid     = 0;
 			context.supportLinearVelocity = Vec3::zero;
+			context.supportAngularVelocity = Vec3::zero;
+			context.supportContactVelocity = Vec3::zero;
 			context.supportStepDelta      = Vec3::zero;
 			context.modeTickSuppressed    = true;
 			context.SubmitTransition(
@@ -1248,6 +1248,8 @@ namespace Unnamed {
 				context.isGrounded               = false;
 				context.supportEntityGuid        = 0;
 				context.supportLinearVelocity    = Vec3::zero;
+				context.supportAngularVelocity   = Vec3::zero;
+				context.supportContactVelocity   = Vec3::zero;
 				context.supportStepDelta         = Vec3::zero;
 				context.jumpSnapDisableRemaining = std::max(
 					context.jumpSnapDisableRemaining,
@@ -1298,6 +1300,8 @@ namespace Unnamed {
 				context.isGrounded            = false;
 				context.supportEntityGuid     = 0;
 				context.supportLinearVelocity = Vec3::zero;
+				context.supportAngularVelocity = Vec3::zero;
+				context.supportContactVelocity = Vec3::zero;
 				context.supportStepDelta      = Vec3::zero;
 				if (t >= 1.0f) {
 					runtime.blink.active = false;
@@ -1488,6 +1492,7 @@ namespace Unnamed {
 					parkour->EndWallRun();
 					return false;
 				}
+				const Vec3 wallSurfaceVelocity = Vec3::zero;
 				runtime.wallRun.normal = (
 						runtime.wallRun.normal * 0.8f + newNormal * 0.2f).
 					Normalized();
@@ -1592,6 +1597,8 @@ namespace Unnamed {
 				context.isGrounded            = false;
 				context.supportEntityGuid     = 0;
 				context.supportLinearVelocity = Vec3::zero;
+				context.supportAngularVelocity = Vec3::zero;
+				context.supportContactVelocity = Vec3::zero;
 				context.supportStepDelta      = Vec3::zero;
 
 				const float gravity = mConsole ?
@@ -1867,6 +1874,8 @@ namespace Unnamed {
 					runtime.slide.active          = false;
 					context.supportEntityGuid     = 0;
 					context.supportLinearVelocity = Vec3::zero;
+					context.supportAngularVelocity = Vec3::zero;
+					context.supportContactVelocity = Vec3::zero;
 					context.supportStepDelta      = Vec3::zero;
 					context.SubmitTransition(
 						MOVEMENT_MODE_ID::AIR,
@@ -2015,6 +2024,8 @@ namespace Unnamed {
 				context.isGrounded            = false;
 				context.supportEntityGuid     = 0;
 				context.supportLinearVelocity = Vec3::zero;
+				context.supportAngularVelocity = Vec3::zero;
+				context.supportContactVelocity = Vec3::zero;
 				context.supportStepDelta      = Vec3::zero;
 				context.modeTickSuppressed    = true;
 				context.SubmitTransition(
@@ -2057,6 +2068,8 @@ namespace Unnamed {
 				context.isGrounded            = false;
 				context.supportEntityGuid     = 0;
 				context.supportLinearVelocity = Vec3::zero;
+				context.supportAngularVelocity = Vec3::zero;
+				context.supportContactVelocity = Vec3::zero;
 				context.supportStepDelta      = Vec3::zero;
 				if (t >= 1.0f) {
 					runtime.vault.active   = false;

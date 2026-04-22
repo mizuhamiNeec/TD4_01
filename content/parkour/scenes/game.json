@@ -60,8 +60,8 @@
                     "data": {
                         "parentEntityGuid": 0,
                         "position": [
-                            0.0,
-                            2.5908000469207764,
+                            39.014400482177734,
+                            3.251199960708618,
                             0.0
                         ],
                         "rotation": [
@@ -83,9 +83,9 @@
                     "active": true,
                     "data": {
                         "boxHalfExtentsHu": [
-                            16.000045776367188,
-                            36.00010681152344,
-                            16.000045776367188
+                            16.0,
+                            36.0,
+                            16.0
                         ],
                         "cameraRootEntityGuid": 2101,
                         "collisionEnabled": true,
@@ -297,9 +297,9 @@
                     "data": {
                         "cameraActive": true,
                         "exposureEv": 2.0,
-                        "farZ": 10000.0,
+                        "farZ": 100000000000000.0,
                         "fovYDegrees": 90.0,
-                        "nearZ": 0.009999999776482582
+                        "nearZ": 0.001
                     },
                     "guid": 3131,
                     "type": "game.Camera"
@@ -1104,166 +1104,6 @@
                     },
                     "guid": 12424977457647530235,
                     "type": "engine.Transform"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "cameraRootEntityGuid": 2101,
-                        "cameraRotatorComponentGuid": 16260210602474765800,
-                        "countAudioSourceGuid": 17000123456789012991,
-                        "countdownDigitSeconds": 1.0,
-                        "countdownDigitWidgetName": "OpeningCountdownDigit",
-                        "countdownStartSeconds": 0.800000011920929,
-                        "countdownStartWidgetName": "OpeningCountdownStart",
-                        "fadeInSeconds": 0.125,
-                        "fadeOutSeconds": 0.125,
-                        "fadeOverlayWidgetName": "OpeningFadeOverlay",
-                        "hudCanvasEntityGuid": 2100,
-                        "lockTargets": [
-                            {
-                                "componentStableName": "parkour.ParkourMovement",
-                                "entityGuid": 2100
-                            },
-                            {
-                                "componentStableName": "game.PlayerCharacterController",
-                                "entityGuid": 2100
-                            },
-                            {
-                                "componentStableName": "game.WeaponSystem",
-                                "entityGuid": 2100
-                            },
-                            {
-                                "componentStableName": "game.InventorySystem",
-                                "entityGuid": 2100
-                            },
-                            {
-                                "componentStableName": "parkour.CourseProgress",
-                                "entityGuid": 2100
-                            }
-                        ],
-                        "shots": [
-                            {
-                                "durationSeconds": 2.8499999046325684,
-                                "endLook": [
-                                    0.0,
-                                    3.0,
-                                    200.0
-                                ],
-                                "endPos": [
-                                    0.0,
-                                    1.0,
-                                    110.0
-                                ],
-                                "startLook": [
-                                    0.0,
-                                    3.0,
-                                    200.0
-                                ],
-                                "startPos": [
-                                    0.0,
-                                    1.0,
-                                    4.0
-                                ]
-                            },
-                            {
-                                "durationSeconds": 2.6700000762939453,
-                                "endLook": [
-                                    400.6000061035156,
-                                    87.80000305175781,
-                                    322.3999938964844
-                                ],
-                                "endPos": [
-                                    -78.9000015258789,
-                                    8.0,
-                                    142.0
-                                ],
-                                "startLook": [
-                                    -400.3999938964844,
-                                    32.0,
-                                    184.60000610351563
-                                ],
-                                "startPos": [
-                                    -78.9000015258789,
-                                    8.0,
-                                    142.0
-                                ]
-                            },
-                            {
-                                "durationSeconds": 2.5,
-                                "endLook": [
-                                    -143.093994140625,
-                                    0.0,
-                                    24.899999618530273
-                                ],
-                                "endPos": [
-                                    -143.093994140625,
-                                    75.0,
-                                    24.899999618530273
-                                ],
-                                "startLook": [
-                                    -143.093994140625,
-                                    0.0,
-                                    113.5999984741211
-                                ],
-                                "startPos": [
-                                    -143.093994140625,
-                                    75.0,
-                                    113.5999984741211
-                                ]
-                            },
-                            {
-                                "durationSeconds": 0.5,
-                                "endLook": [
-                                    0.0,
-                                    0.7110000252723694,
-                                    1.0
-                                ],
-                                "endPos": [
-                                    0.0,
-                                    0.7110000252723694,
-                                    0.0
-                                ],
-                                "startLook": [
-                                    0.0,
-                                    4.0,
-                                    1.0
-                                ],
-                                "startPos": [
-                                    0.0,
-                                    4.0,
-                                    0.0
-                                ]
-                            }
-                        ],
-                        "skipAction": "jump",
-                        "startAudioSourceGuid": 17000123456789012992
-                    },
-                    "guid": 11234679776646266342,
-                    "type": "parkour.GameStartCutscene"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "loop": false,
-                        "pitch": 1.0,
-                        "playOnStart": false,
-                        "soundPath": "content/parkour/sounds/se/count.wav",
-                        "volume": 1.0
-                    },
-                    "guid": 17000123456789012991,
-                    "type": "engine.AudioSource"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "loop": false,
-                        "pitch": 1.0,
-                        "playOnStart": false,
-                        "soundPath": "content/parkour/sounds/se/start.wav",
-                        "volume": 1.0
-                    },
-                    "guid": 17000123456789012992,
-                    "type": "engine.AudioSource"
                 }
             ],
             "folderPath": "",
@@ -1316,6 +1156,154 @@
             "guid": 2320,
             "isEditorOnly": false,
             "name": "Script",
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            39.013999938964844,
+                            1.625599980354309,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 14432184254079450260,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "",
+                        "meshPath": "content/core/models/fan.obj"
+                    },
+                    "guid": 11218511112006460158,
+                    "type": "engine.StaticMeshRenderer"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "dynamic": true,
+                        "enabled": true
+                    },
+                    "guid": 11799664914444189922,
+                    "type": "engine.StaticMeshCollider"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "enabled": true,
+                        "moveToPointB": true,
+                        "pointA": [
+                            39.013999938964844,
+                            1.6260000467300415,
+                            0.0
+                        ],
+                        "pointB": [
+                            39.013999938964844,
+                            11.62600040435791,
+                            0.0
+                        ],
+                        "snapOnAttach": true,
+                        "speed": 5.0,
+                        "startFromA": true
+                    },
+                    "guid": 14408135907502723530,
+                    "type": "game.PatrolPoint"
+                }
+            ],
+            "folderPath": "",
+            "guid": 2321,
+            "isEditorOnly": false,
+            "name": "VerticalMovingPlatform",
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            92.65880584716797,
+                            1.6260000467300415,
+                            8.128000259399414
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            4.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "",
+                        "meshPath": "content/core/models/fan.obj"
+                    },
+                    "guid": 0,
+                    "type": "engine.StaticMeshRenderer"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "dynamic": true,
+                        "enabled": true
+                    },
+                    "guid": 0,
+                    "type": "engine.StaticMeshCollider"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "enabled": true,
+                        "moveToPointB": true,
+                        "pointA": [
+                            39.013999938964844,
+                            1.6260000467300415,
+                            8.128000259399414
+                        ],
+                        "pointB": [
+                            92.65899658203125,
+                            1.6260000467300415,
+                            8.128000259399414
+                        ],
+                        "snapOnAttach": true,
+                        "speed": 5.0,
+                        "startFromA": true
+                    },
+                    "guid": 0,
+                    "type": "game.PatrolPoint"
+                }
+            ],
+            "folderPath": "",
+            "guid": 2322,
+            "isEditorOnly": false,
+            "name": "HorizontalMovingPlatform",
             "visible": true
         }
     ],

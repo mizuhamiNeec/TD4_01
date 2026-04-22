@@ -11,8 +11,7 @@
 
 namespace Unnamed {
 	namespace {
-		constexpr float kGroundProbeDistanceHu = 2.0f; // 地面判定のためのプローブ距離（HU）
-		constexpr float kGroundNormalMinY      = 0.7f; // 地面と見なすための法線の最小Y成分
+		constexpr float kGroundNormalMinY = 0.7f; // 地面と見なすための法線の最小Y成分
 
 		// これ以上の上昇速度があるときは、地面に接していてもジャンプスナップを無効化する。
 		constexpr float kNonJumpVelHu = 250.0f; // デフォは140
@@ -106,7 +105,7 @@ namespace Unnamed {
 
 	void AirMovementMode::AirAccelerate(
 		Vec3&       currentVel,
-		Vec3        wishDir,
+		const Vec3  wishDir,
 		const float wishSpeed,
 		const float accel,
 		const float deltaTime
@@ -146,9 +145,17 @@ namespace Unnamed {
 			return false;
 		}
 
+		const float probeDistanceHu = mConsole ?
+			                              mConsole->GetConVarValueOr(
+				                              "sv_groundprobe_distance_hu", 6.0f
+			                              ) :
+			                              6.0f;
+
 		Physics::Hit hit{};
 		if (!resolver->ProbeGround(
-			position, Math::HtoM(kGroundProbeDistanceHu), &hit
+			position,
+			Math::HtoM(std::max(0.0f, probeDistanceHu)),
+			&hit
 		)) {
 			return false;
 		}

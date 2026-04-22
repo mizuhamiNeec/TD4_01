@@ -115,7 +115,7 @@ namespace Unnamed {
 			float drawWidth,
 			float drawHeight
 		);
-		void DrawViewportOverlay(float deltaTime);
+		void DrawViewportOverlay(float deltaTime) const;
 
 		void DrawSceneOutliner();
 		void DrawInspector();

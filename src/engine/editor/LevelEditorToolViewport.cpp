@@ -345,18 +345,6 @@ namespace Unnamed {
 						ViewportCameraBindingKind::EditorPerspective
 					);
 					selectableKind(
-						"EditorOrthoTop",
-						ViewportCameraBindingKind::EditorOrthoTop
-					);
-					selectableKind(
-						"EditorOrthoFront",
-						ViewportCameraBindingKind::EditorOrthoFront
-					);
-					selectableKind(
-						"EditorOrthoRight",
-						ViewportCameraBindingKind::EditorOrthoRight
-					);
-					selectableKind(
 						"ActiveGameCamera",
 						ViewportCameraBindingKind::ActiveGameCamera
 					);

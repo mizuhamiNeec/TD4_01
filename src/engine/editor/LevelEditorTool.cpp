@@ -93,27 +93,6 @@ namespace Unnamed {
 				.cameraEntityGuid = 0
 			}
 		);
-		mCameraManager.SetPaneBinding(
-			kViewSceneTop,
-			{
-				.kind             = ViewportCameraBindingKind::EditorOrthoTop,
-				.cameraEntityGuid = 0
-			}
-		);
-		mCameraManager.SetPaneBinding(
-			kViewSceneFront,
-			{
-				.kind             = ViewportCameraBindingKind::EditorOrthoFront,
-				.cameraEntityGuid = 0
-			}
-		);
-		mCameraManager.SetPaneBinding(
-			kViewSceneRight,
-			{
-				.kind             = ViewportCameraBindingKind::EditorOrthoRight,
-				.cameraEntityGuid = 0
-			}
-		);
 	}
 
 	LevelEditorTool::~LevelEditorTool() = default;
@@ -381,7 +360,7 @@ namespace Unnamed {
 			view.sceneViewMode           = BuildSceneViewModeForSize(
 				width,
 				height,
-				mViewportLayoutMode == EDITOR_VIEW_LAYOUT_MODE::QUAD
+				false
 			);
 			view.output.sizeMode = Render::RENDER_VIEW_SIZE_MODE::FIXED;
 			view.output.width = view.sceneViewMode.viewportPanelWidth;
@@ -417,71 +396,16 @@ namespace Unnamed {
 			composedViews.end(), preservedViews.begin(), preservedViews.end()
 		);
 
-		if (mViewportLayoutMode == EDITOR_VIEW_LAYOUT_MODE::QUAD) {
-			const float paneW = std::max(1.0f, mViewportPanelWidth * 0.5f);
-			const float paneH = std::max(1.0f, mViewportPanelHeight * 0.5f);
-			const bool  fullscreenPresent =
-				mPresentMode == EDITOR_PRESENT_MODE::FULLSCREEN_SWAP_CHAIN;
-			const std::string presentKey = fullscreenPresent ?
-				                               (mActiveViewportViewKey.empty() ?
-					                                std::string(
-						                                kViewScenePerspective
-					                                ) :
-					                                mActiveViewportViewKey) :
-				                               std::string();
-			composedViews.emplace_back(
-				buildSceneView(
-					kViewScenePerspective,
-					paneW,
-					paneH,
-					ResolveViewportBinding(kViewScenePerspective),
-					true,
-					fullscreenPresent &&
-					presentKey == kViewScenePerspective
-				)
-			);
-			composedViews.emplace_back(
-				buildSceneView(
-					kViewSceneTop,
-					paneW,
-					paneH,
-					ResolveViewportBinding(kViewSceneTop),
-					true,
-					fullscreenPresent && presentKey == kViewSceneTop
-				)
-			);
-			composedViews.emplace_back(
-				buildSceneView(
-					kViewSceneFront,
-					paneW,
-					paneH,
-					ResolveViewportBinding(kViewSceneFront),
-					true,
-					fullscreenPresent && presentKey == kViewSceneFront
-				)
-			);
-			composedViews.emplace_back(
-				buildSceneView(
-					kViewSceneRight,
-					paneW,
-					paneH,
-					ResolveViewportBinding(kViewSceneRight),
-					true,
-					fullscreenPresent && presentKey == kViewSceneRight
-				)
-			);
-		} else {
-			composedViews.emplace_back(
-				buildSceneView(
-					kViewScenePerspective,
-					std::max(1.0f, mViewportPanelWidth),
-					std::max(1.0f, mViewportPanelHeight),
-					ResolveViewportBinding(kViewScenePerspective),
-					true,
-					mPresentMode == EDITOR_PRESENT_MODE::FULLSCREEN_SWAP_CHAIN
-				)
-			);
-		}
+		composedViews.emplace_back(
+			buildSceneView(
+				kViewScenePerspective,
+				std::max(1.0f, mViewportPanelWidth),
+				std::max(1.0f, mViewportPanelHeight),
+				ResolveViewportBinding(kViewScenePerspective),
+				true,
+				mPresentMode == EDITOR_PRESENT_MODE::FULLSCREEN_SWAP_CHAIN
+			)
+		);
 
 		inputs.views = std::move(composedViews);
 	}
@@ -490,9 +414,6 @@ namespace Unnamed {
 		std::vector<std::string>& outViewKeys
 	) const {
 		outViewKeys.emplace_back(kViewScenePerspective);
-		outViewKeys.emplace_back(kViewSceneTop);
-		outViewKeys.emplace_back(kViewSceneFront);
-		outViewKeys.emplace_back(kViewSceneRight);
 	}
 
 	void LevelEditorTool::SetViewOutput(

@@ -45,11 +45,6 @@ namespace Unnamed {
 		FHD1080,
 	};
 
-	enum class EDITOR_VIEW_LAYOUT_MODE : uint8_t {
-		SINGLE = 0,
-		QUAD   = 1,
-	};
-
 	enum class EDITOR_GRID_SNAP_UNIT : uint8_t {
 		METER = 0,
 		HU    = 1,
@@ -88,12 +83,6 @@ namespace Unnamed {
 
 		static constexpr std::string_view kViewScenePerspective =
 			"tool.level.scene.perspective";
-		static constexpr std::string_view kViewSceneTop =
-			"tool.level.scene.top";
-		static constexpr std::string_view kViewSceneFront =
-			"tool.level.scene.front";
-		static constexpr std::string_view kViewSceneRight =
-			"tool.level.scene.right";
 
 	private:
 		struct ViewOutputCache {
@@ -160,7 +149,6 @@ namespace Unnamed {
 		EDITOR_PRESENT_MODE mPresentMode = EDITOR_PRESENT_MODE::VIEWPORT_PANEL;
 		EDITOR_VIEWPORT_RENDER_MODE mViewportRenderMode =
 			EDITOR_VIEWPORT_RENDER_MODE::FIT_VIEWPORT;
-		EDITOR_VIEW_LAYOUT_MODE mViewportLayoutMode = EDITOR_VIEW_LAYOUT_MODE::SINGLE;
 		std::string mActiveViewportViewKey = std::string(kViewScenePerspective);
 		Vec2 mViewportPosition = Vec2::zero;
 		Vec2 mViewportSize = Vec2::zero;

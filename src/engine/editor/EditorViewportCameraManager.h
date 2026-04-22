@@ -15,22 +15,14 @@ namespace Unnamed {
 
 	enum class ViewportCameraBindingKind : uint8_t {
 		EditorPerspective = 0,
-		EditorOrthoTop    = 1,
-		EditorOrthoFront  = 2,
-		EditorOrthoRight  = 3,
-		ActiveGameCamera  = 4,
-		CameraEntity      = 5,
+		ActiveGameCamera  = 1,
+		CameraEntity      = 2,
 	};
 
 	struct ViewportCameraBinding {
 		ViewportCameraBindingKind kind = ViewportCameraBindingKind::
 			EditorPerspective;
 		uint64_t cameraEntityGuid = 0;
-	};
-
-	struct ViewportOrthoState {
-		Vec3  center = Vec3::zero;
-		float zoom   = 1024.0f;
 	};
 
 	class EditorViewportCameraManager final {
@@ -45,14 +37,6 @@ namespace Unnamed {
 			const ViewportCameraBinding& binding
 		);
 		[[nodiscard]] ViewportCameraBinding GetPaneBinding(
-			std::string_view viewKey
-		) const;
-
-		void SetOrthoState(
-			std::string_view          viewKey,
-			const ViewportOrthoState& state
-		);
-		[[nodiscard]] ViewportOrthoState GetOrthoState(
 			std::string_view viewKey
 		) const;
 
@@ -72,7 +56,6 @@ namespace Unnamed {
 
 	private:
 		std::unordered_map<std::string, ViewportCameraBinding> mPaneBindings;
-		std::unordered_map<std::string, ViewportOrthoState> mPaneOrthoStates;
 	};
 }
 

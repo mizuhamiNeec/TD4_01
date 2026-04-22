@@ -82,68 +82,6 @@ namespace Unnamed {
 			return camera->BuildCameraInput(outCamera);
 		}
 
-		EditorViewportCameraManager::ResolvedCamera BuildOrthoCamera(
-			const ViewportCameraBindingKind kind,
-			const ViewportOrthoState&       state,
-			const float                     aspect
-		) {
-			EditorViewportCameraManager::ResolvedCamera resolved = {};
-			resolved.isOrthographic = true;
-
-			const float safeAspect = std::max(0.01f, aspect);
-			const float safeZoom   = std::max(1.0f, state.zoom);
-			const float halfHeight = safeZoom * 0.5f;
-			const float halfWidth  = halfHeight * safeAspect;
-
-			Vec3 right   = Vec3::right;
-			Vec3 up      = Vec3::up;
-			Vec3 forward = Vec3::forward;
-			switch (kind) {
-				case ViewportCameraBindingKind::EditorOrthoTop:
-					right   = Vec3::right;
-					up      = Vec3::forward;
-					forward = Vec3::down;
-					break;
-				case ViewportCameraBindingKind::EditorOrthoFront:
-					right   = Vec3::left;
-					up      = Vec3::up;
-					forward = Vec3::backward;
-					break;
-				case ViewportCameraBindingKind::EditorOrthoRight:
-					right   = Vec3::forward;
-					up      = Vec3::up;
-					forward = Vec3::left;
-					break;
-				default: break;
-			}
-
-			const Vec3 cameraPos = state.center - forward * 4096.0f;
-			Mat4       world     = Mat4::identity;
-			world.m[0][0]        = right.x;
-			world.m[0][1]        = right.y;
-			world.m[0][2]        = right.z;
-			world.m[1][0]        = up.x;
-			world.m[1][1]        = up.y;
-			world.m[1][2]        = up.z;
-			world.m[2][0]        = forward.x;
-			world.m[2][1]        = forward.y;
-			world.m[2][2]        = forward.z;
-			world.m[3][0]        = cameraPos.x;
-			world.m[3][1]        = cameraPos.y;
-			world.m[3][2]        = cameraPos.z;
-
-			resolved.input.view = world.Inverse();
-			resolved.input.proj = Mat4::MakeOrthographicMat(
-				-halfWidth, halfHeight, halfWidth, -halfHeight, 0.001f, 20000.0f
-			);
-			resolved.input.viewProj  = resolved.input.view * resolved.input.proj;
-			resolved.input.cameraPos = cameraPos;
-			resolved.input.nearZ     = 0.001f;
-			resolved.input.farZ      = 20000.0f;
-			resolved.input.depthMode = Render::PROJECTION_DEPTH_MODE::ForwardZ;
-			resolved.input.valid     = true;
-			return resolved;
-		}
 	}
 
 	void EditorViewportCameraManager::SetPaneBinding(
@@ -163,23 +101,6 @@ namespace Unnamed {
 		return {};
 	}
 
-	void EditorViewportCameraManager::SetOrthoState(
-		const std::string_view          viewKey,
-		const ViewportOrthoState& state
-	) {
-		mPaneOrthoStates[std::string(viewKey)] = state;
-	}
-
-	ViewportOrthoState EditorViewportCameraManager::GetOrthoState(
-		const std::string_view viewKey
-	) const {
-		if (const auto it = mPaneOrthoStates.find(std::string(viewKey));
-			it != mPaneOrthoStates.end()) {
-			return it->second;
-		}
-		return {};
-	}
-
 	EditorViewportCameraManager::ResolvedCamera
 	EditorViewportCameraManager::ResolveViewCamera(
 		EditorWorld&                         editorWorld,
@@ -188,21 +109,10 @@ namespace Unnamed {
 		const ViewportCameraBinding&         binding,
 		const Render::RenderCameraInput*     fallbackCamera
 	) {
+		(void)viewKey;
 		ResolvedCamera resolved = {};
 		if (fallbackCamera && fallbackCamera->valid) {
 			resolved.input = *fallbackCamera;
-		}
-
-		if (
-			binding.kind == ViewportCameraBindingKind::EditorOrthoTop ||
-			binding.kind == ViewportCameraBindingKind::EditorOrthoFront ||
-			binding.kind == ViewportCameraBindingKind::EditorOrthoRight
-		) {
-			return BuildOrthoCamera(
-				binding.kind,
-				GetOrthoState(viewKey),
-				ResolveAspectRatio(sceneViewMode)
-			);
 		}
 
 		if (binding.kind == ViewportCameraBindingKind::EditorPerspective) {
@@ -277,12 +187,7 @@ namespace Unnamed {
 		const Render::SceneViewRenderMode& sceneViewMode,
 		const ViewportCameraBinding&         binding
 	) {
-		if (
-			binding.kind == ViewportCameraBindingKind::EditorPerspective ||
-			binding.kind == ViewportCameraBindingKind::EditorOrthoTop ||
-			binding.kind == ViewportCameraBindingKind::EditorOrthoFront ||
-			binding.kind == ViewportCameraBindingKind::EditorOrthoRight
-		) {
+		if (binding.kind == ViewportCameraBindingKind::EditorPerspective) {
 			return;
 		}
 

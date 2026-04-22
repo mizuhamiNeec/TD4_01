@@ -12,6 +12,7 @@ namespace Unnamed {
 	class RotatorComponent final : public BaseComponent {
 	public:
 		void OnTick(float deltaTime) override;
+		[[nodiscard]] TICK_GROUP GetTickGroup() const override;
 
 		[[nodiscard]] std::string_view GetStableName() const override {
 			return "game.Rotator";

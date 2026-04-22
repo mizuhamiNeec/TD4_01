@@ -26,6 +26,10 @@ namespace Unnamed {
 		transform->SetRotation(transform->GetRotation() * deltaRotation);
 	}
 
+	BaseComponent::TICK_GROUP RotatorComponent::GetTickGroup() const {
+		return TICK_GROUP::EARLY;
+	}
+
 	void RotatorComponent::Deserialize(const JsonReader& reader) {
 		const JsonReader rotationRate = reader["rotationRate"];
 		if (rotationRate.Valid() && rotationRate.Size() >= 3) {

@@ -45,13 +45,11 @@ namespace Unnamed {
 		MovementContext& context,
 		const float deltaTime
 	) {
-		const float detachBiasM = Math::HtoM(kJumpDetachBiasHu) +
-			std::max(0.0f, context.supportStepDelta.y);
+		const float detachBiasM = Math::HtoM(kJumpDetachBiasHu);
 		context.transform->SetPosition(
 			context.transform->GetPosition() + Vec3::up * detachBiasM
 		);
 
-		context.velocity += context.supportLinearVelocity;
 		context.velocity.y += Math::HtoM(
 			mConsole ? mConsole->GetConVarValueOr("sv_jumpvelocity", 420.0f) : 420.0f
 		);
@@ -71,7 +69,7 @@ namespace Unnamed {
 		context.supportEntityGuid = 0;
 		context.supportLinearVelocity = Vec3::zero;
 		context.supportStepDelta = Vec3::zero;
-		// 旧State遷移と同じく、同tickのMode更新でジャンプ結果が上書きされないよう抑止します。
+		// 同tickのMode更新でジャンプ結果が上書きされないよう抑止します。
 		context.modeTickSuppressed = true;
 		context.SubmitTransition(
 			MOVEMENT_MODE_ID::AIR,

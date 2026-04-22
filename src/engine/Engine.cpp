@@ -326,7 +326,7 @@ namespace Unnamed {
 			);
 			if (World* runtimeWorld = mUEditorRuntime->GetRuntimeWorld()) {
 				runtimeWorld->LoadSceneFromFile(
-					"./content/parkour/scenes/title.json"
+					"./content/parkour/scenes/game.json"
 				);
 			}
 
@@ -336,7 +336,7 @@ namespace Unnamed {
 #endif
 		} else {
 			auto& world = SwitchWorld<GameWorld>();
-			world.LoadSceneFromFile("./content/parkour/scenes/title.json");
+			world.LoadSceneFromFile("./content/parkour/scenes/game.json");
 		}
 
 		// ユーザー名をコンソール変数に設定

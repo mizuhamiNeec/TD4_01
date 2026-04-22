@@ -664,9 +664,11 @@ namespace Unnamed::Physics {
 		}
 
 		// 3) bestAxis 方向へ押し出し
-		outNormal = triN.Dot(box.center - tri.v0) > 0.0f ?
-			            bestAxis :
-			            -bestAxis;
+		// 軸種別（面/辺）に依存しないよう、三角形重心を基準に符号を決めます。
+		const Vec3 triCentroid = (tri.v0 + tri.v1 + tri.v2) * (1.0f / 3.0f);
+		outNormal              = (box.center - triCentroid).Dot(bestAxis) >= 0.0f ?
+			                         bestAxis :
+			                         -bestAxis;
 		outDepth = bestDepth;
 		return true;
 	}

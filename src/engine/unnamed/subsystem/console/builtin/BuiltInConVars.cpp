@@ -213,7 +213,7 @@ namespace Unnamed {
 			"fps_max", 360.0, FCVAR::ARCHIVE,
 			"Frame rate limiter. 0 = unlimited."
 		);
-		
+
 		static ConVar cl_interpolate(
 			"cl_interpolate", true, FCVAR::ARCHIVE,
 			"Enable Source-style render interpolation for fixed-tick simulation."
@@ -230,46 +230,6 @@ namespace Unnamed {
 			1,
 			true,
 			10000
-		);
-		static ConVar<int> cl_title_mode(
-			"cl_title_mode", 0, FCVAR::ARCHIVE,
-			"Enable title flow mode. 0 = gameplay, 1 = title."
-		);
-		static ConVar<std::string> cl_title_demo_path(
-			"cl_title_demo_path",
-			"./content/parkour/replay/title_demo.udemo",
-			FCVAR::ARCHIVE,
-			"Demo path used by title background playback."
-		);
-		static ConVar<float> cl_title_fade_out_sec(
-			"cl_title_fade_out_sec",
-			0.22f,
-			FCVAR::ARCHIVE,
-			"Fade-out duration when title demo loop restarts.",
-			true,
-			0.01f,
-			true,
-			10.0f
-		);
-		static ConVar<float> cl_title_fade_in_sec(
-			"cl_title_fade_in_sec",
-			0.24f,
-			FCVAR::ARCHIVE,
-			"Fade-in duration after title demo loop restart.",
-			true,
-			0.01f,
-			true,
-			10.0f
-		);
-		static ConVar<float> cl_title_start_transition_sec(
-			"cl_title_start_transition_sec",
-			0.30f,
-			FCVAR::ARCHIVE,
-			"Fade-out duration before transitioning from title to gameplay.",
-			true,
-			0.01f,
-			true,
-			10.0f
 		);
 
 		//---------------------------------------------------------------------
@@ -373,20 +333,36 @@ namespace Unnamed {
 			FCVAR::NOTIFY | FCVAR::REPLICATED,
 			"Disable ground snap duration immediately after jump (seconds)."
 		);
-		static ConVar sv_passivepush_contactskin(
-			"sv_passivepush_contactskin", 4.0f,
-			FCVAR::NOTIFY | FCVAR::REPLICATED,
-			"Passive push contact skin width in HU."
-		);
-		static ConVar sv_passivepush_maxdepenetrationiters(
-			"sv_passivepush_maxdepenetrationiters", 4,
-			FCVAR::NOTIFY | FCVAR::REPLICATED,
-			"Maximum depenetration iterations for passive push."
-		);
 
 		static ConVar sv_stepheight(
 			"sv_stepheight", 18.0f, FCVAR::NOTIFY | FCVAR::REPLICATED,
 			"Step height in HU."
+		);
+
+		static ConVar sv_groundprobe_distance_hu(
+			"sv_groundprobe_distance_hu", 6.0f,
+			FCVAR::NOTIFY | FCVAR::REPLICATED,
+			"Ground probe distance in HU."
+		);
+
+		static ConVar sv_move_collision_debugdraw(
+			"sv_move_collision_debugdraw", false,
+			FCVAR::CHEAT | FCVAR::REPLICATED,
+			"Draw GameMovement collision hit/recover debug overlays."
+		);
+		static ConVar sv_move_collision_debuglog(
+			"sv_move_collision_debuglog", false,
+			FCVAR::CHEAT | FCVAR::REPLICATED,
+			"Print GameMovement collision target/debug details to console."
+		);
+		static ConVar sv_move_collision_debuglog_interval(
+			"sv_move_collision_debuglog_interval", 0.15f,
+			FCVAR::CHEAT | FCVAR::REPLICATED,
+			"Minimum interval in seconds between collision debug logs.",
+			true,
+			0.01f,
+			true,
+			5.0f
 		);
 
 		// Noclip

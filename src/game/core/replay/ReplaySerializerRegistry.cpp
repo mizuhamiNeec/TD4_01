@@ -4,7 +4,6 @@
 
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/framework/components/base/BaseComponent.h"
-#include "engine/unnamed/framework/components/kinematic/KinematicMoverComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
 
 #include "game/core/components/CameraRotatorComponent.h"
@@ -171,33 +170,6 @@ namespace Unnamed {
 					ReplayHash::AppendFloating(hash, scale.y);
 					ReplayHash::AppendFloating(hash, scale.z);
 					return hash;
-				}
-			}
-		);
-
-		registry.RegisterComponentSerializer(
-			{
-				.stableName = "engine.KinematicMover",
-				.writeState =
-					[](const BaseComponent& component, nlohmann::json& outState) {
-						if (const auto* typed = dynamic_cast<
-								const KinematicMoverComponent*>(&component)) {
-							typed->WriteReplayState(outState);
-						}
-					},
-				.readState =
-					[](BaseComponent& component, const nlohmann::json& inState) {
-						if (auto* typed = dynamic_cast<KinematicMoverComponent*>(
-								&component)) {
-							typed->ReadReplayState(inState);
-						}
-					},
-				.hashState = [](const BaseComponent& component) -> uint64_t {
-					if (const auto* typed = dynamic_cast<
-							const KinematicMoverComponent*>(&component)) {
-						return typed->ComputeReplayStateHash();
-					}
-					return 0ull;
 				}
 			}
 		);

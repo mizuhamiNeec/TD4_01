@@ -21,17 +21,15 @@ namespace Unnamed {
 		void ApplyFriction(Vec3& velocity, float amount, float deltaTime) const;
 		void Accelerate(
 			Vec3& currentVel,
-			Vec3 wishDir,
+			Vec3  wishDir,
 			float wishSpeed,
 			float accel,
 			float deltaTime
 		) const;
 		[[nodiscard]] bool IsGrounded(
 			const BaseKinematicCollisionResolver* resolver,
-			const Vec3& position,
-			Physics::Hit* outHit = nullptr
+			const Vec3&                           position,
+			Physics::Hit*                         outHit = nullptr
 		) const;
-
-		bool mRebaseVelocityToSupportOnFirstTick = false;
 	};
 }

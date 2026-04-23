@@ -147,9 +147,9 @@ namespace Unnamed {
 
 		const float probeDistanceHu = mConsole ?
 			                              mConsole->GetConVarValueOr(
-				                              "sv_groundprobe_distance_hu", 6.0f
+				                              "sv_groundprobe_distance_hu", 1.0f
 			                              ) :
-			                              6.0f;
+			                              1.0f;
 
 		Physics::Hit hit{};
 		if (!resolver->ProbeGround(

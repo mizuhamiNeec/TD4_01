@@ -340,7 +340,7 @@ namespace Unnamed {
 		);
 
 		static ConVar sv_groundprobe_distance_hu(
-			"sv_groundprobe_distance_hu", 6.0f,
+			"sv_groundprobe_distance_hu", 1.0f,
 			FCVAR::NOTIFY | FCVAR::REPLICATED,
 			"Ground probe distance in HU."
 		);

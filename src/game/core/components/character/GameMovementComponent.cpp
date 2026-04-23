@@ -651,206 +651,217 @@ namespace Unnamed {
 	void GameMovementComponent::WriteReplayState(
 		nlohmann::json& outState
 	) const {
-		outState["velocity"] = nlohmann::json::array(
-			{mVelocity.x, mVelocity.y, mVelocity.z}
-		);
-		outState["grounded"]                 = mGrounded;
-		outState["collisionEnabled"]         = mCollisionEnabled;
-		outState["jumpSnapDisableRemaining"] = mJumpSnapDisableRemaining;
-		outState["support"]                  = nlohmann::json::object(
-			{
-				{"grounded", mSupportCache.grounded},
-				{"supportEntityGuid", mSupportCache.supportEntityGuid},
-				{
-					"supportLinearVelocity",
-					nlohmann::json::array(
-						{
-							mSupportCache.supportLinearVelocity.x,
-							mSupportCache.supportLinearVelocity.y,
-							mSupportCache.supportLinearVelocity.z
-						}
-					)
-				},
-				{
-					"supportStepDelta",
-					nlohmann::json::array(
-						{
-							mSupportCache.supportStepDelta.x,
-							mSupportCache.supportStepDelta.y,
-							mSupportCache.supportStepDelta.z
-						}
-					)
-				}
-			}
-		);
-		outState["boxHalfExtents"] = nlohmann::json::array(
-			{mBoxHalfExtents.x, mBoxHalfExtents.y, mBoxHalfExtents.z}
-		);
-		outState["movementRuntimeVersion"] = kMovementRuntimeVersion;
-		outState["modeId"] = static_cast<uint32_t>(mCurrentModeId);
-		outState["activeAbilityMask"] = mActiveAbilityMask;
-		outState["capabilities"] = nlohmann::json::object(
-			{
-				{"jump", mCapabilitySet.jump},
-				{"crouch", mCapabilitySet.crouch},
-				{"slide", mCapabilitySet.slide},
-				{"wallRun", mCapabilitySet.wallRun},
-				{"doubleJump", mCapabilitySet.doubleJump},
-				{"speedVault", mCapabilitySet.speedVault},
-				{"blink", mCapabilitySet.blink},
-				{"grapple", mCapabilitySet.grapple}
-			}
-		);
+		JsonWriter writer("");
+		writer.BeginObject();
 
+		// 速度の書き込み
+		writer.Key("velocity");
+		writer.BeginArray();
+		writer.Write(mVelocity.x);
+		writer.Write(mVelocity.y);
+		writer.Write(mVelocity.z);
+		writer.EndArray();
+
+		writer.Key("grounded");
+		writer.Write(mGrounded);
+
+		writer.Key("collisionEnabled");
+		writer.Write(mCollisionEnabled);
+
+		writer.Key("jumpSnapDisableRemaining");
+		writer.Write(mJumpSnapDisableRemaining);
+
+		// サポート情報の書き込み
+		writer.Key("support");
+		writer.BeginObject();
+		writer.Key("grounded");
+		writer.Write(mSupportCache.grounded);
+		writer.Key("supportEntityGuid");
+		writer.Write(mSupportCache.supportEntityGuid);
+		writer.Key("supportLinearVelocity");
+		writer.BeginArray();
+		writer.Write(mSupportCache.supportLinearVelocity.x);
+		writer.Write(mSupportCache.supportLinearVelocity.y);
+		writer.Write(mSupportCache.supportLinearVelocity.z);
+		writer.EndArray();
+		writer.Key("supportStepDelta");
+		writer.BeginArray();
+		writer.Write(mSupportCache.supportStepDelta.x);
+		writer.Write(mSupportCache.supportStepDelta.y);
+		writer.Write(mSupportCache.supportStepDelta.z);
+		writer.EndArray();
+		writer.EndObject();
+
+		// ボックスの半経
+		writer.Key("boxHalfExtents");
+		writer.BeginArray();
+		writer.Write(mBoxHalfExtents.x);
+		writer.Write(mBoxHalfExtents.y);
+		writer.Write(mBoxHalfExtents.z);
+		writer.EndArray();
+
+		writer.Key("movementRuntimeVersion");
+		writer.Write(kMovementRuntimeVersion);
+
+		writer.Key("modeId");
+		writer.Write(static_cast<uint32_t>(mCurrentModeId));
+
+		writer.Key("activeAbilityMask");
+		writer.Write(mActiveAbilityMask);
+
+		// 能力セットの書き込み
+		writer.Key("capabilities");
+		writer.BeginObject();
+		writer.Key("jump");
+		writer.Write(mCapabilitySet.jump);
+		writer.Key("crouch");
+		writer.Write(mCapabilitySet.crouch);
+		writer.Key("slide");
+		writer.Write(mCapabilitySet.slide);
+		writer.Key("wallRun");
+		writer.Write(mCapabilitySet.wallRun);
+		writer.Key("doubleJump");
+		writer.Write(mCapabilitySet.doubleJump);
+		writer.Key("speedVault");
+		writer.Write(mCapabilitySet.speedVault);
+		writer.Key("blink");
+		writer.Write(mCapabilitySet.blink);
+		writer.Key("grapple");
+		writer.Write(mCapabilitySet.grapple);
+		writer.EndObject();
+
+		// トランスフォームデータの書き込み
 		if (TransformComponent* transform = GetTransform()) {
 			const Vec3       position = transform->GetPosition();
 			const Quaternion rotation = transform->GetRotation();
-			outState["position"]      = nlohmann::json::array(
-				{position.x, position.y, position.z}
-			);
-			outState["rotation"] = nlohmann::json::array(
-				{rotation.x, rotation.y, rotation.z, rotation.w}
-			);
+
+			writer.Key("position");
+			writer.BeginArray();
+			writer.Write(position.x);
+			writer.Write(position.y);
+			writer.Write(position.z);
+			writer.EndArray();
+
+			writer.Key("rotation");
+			writer.BeginArray();
+			writer.Write(rotation.x);
+			writer.Write(rotation.y);
+			writer.Write(rotation.z);
+			writer.Write(rotation.w);
+			writer.EndArray();
 		}
+
+		writer.EndObject();
+
+		// JsonWriter から構築された JSON を outState に代入
+		outState = writer.GetRoot();
 	}
 
 	void GameMovementComponent::ReadReplayState(const nlohmann::json& inState) {
-		if (!inState.is_object()) {
+		JsonReader reader(inState);
+		if (!reader.Valid() || !reader.IsObject()) {
 			return;
 		}
 
-		if (const auto it = inState.find("velocity");
-			it != inState.end() && it->is_array() && it->size() == 3) {
-			mVelocity = Vec3(
-				(*it)[0].get<float>(),
-				(*it)[1].get<float>(),
-				(*it)[2].get<float>()
-			);
-		}
+		// 速度の読み込み
+		mVelocity = reader["velocity"].GetVec3(mVelocity);
 
-		mGrounded         = inState.value("grounded", mGrounded);
-		mCollisionEnabled = inState.value(
-			"collisionEnabled", mCollisionEnabled
-		);
-		mJumpSnapDisableRemaining = inState.value(
-			"jumpSnapDisableRemaining",
-			mJumpSnapDisableRemaining
-		);
+		// スカラー値の読み込み
+		mGrounded         = reader["grounded"].GetBool(mGrounded);
+		mCollisionEnabled = reader["collisionEnabled"].GetBool(mCollisionEnabled);
+		mJumpSnapDisableRemaining =
+			reader["jumpSnapDisableRemaining"].GetFloat(mJumpSnapDisableRemaining);
 
-		if (const auto it = inState.find("boxHalfExtents");
-			it != inState.end() && it->is_array() && it->size() == 3) {
-			mBoxHalfExtents = Vec3(
-				(*it)[0].get<float>(),
-				(*it)[1].get<float>(),
-				(*it)[2].get<float>()
-			);
-		}
+		// ボックスハーフエクステントの読み込み
+		mBoxHalfExtents = reader["boxHalfExtents"].GetVec3(mBoxHalfExtents);
 
-		if (const auto it = inState.find("support");
-			it != inState.end() && it->is_object()) {
-			mSupportCache.grounded = it->value(
-				"grounded", mSupportCache.grounded
+		// サポート情報の読み込み
+		JsonReader supportReader = reader["support"];
+		if (supportReader.Valid() && supportReader.IsObject()) {
+			mSupportCache.grounded =
+				supportReader["grounded"].GetBool(mSupportCache.grounded);
+			mSupportCache.supportEntityGuid = static_cast<uint64_t>(
+				supportReader["supportEntityGuid"].GetInt(
+					static_cast<int>(mSupportCache.supportEntityGuid)
+				)
 			);
-			mSupportCache.supportEntityGuid = it->value(
-				"supportEntityGuid",
-				mSupportCache.supportEntityGuid
-			);
-			if (const auto itVel = it->find("supportLinearVelocity");
-				itVel != it->end() && itVel->is_array() && itVel->size() == 3) {
-				mSupportCache.supportLinearVelocity = Vec3(
-					(*itVel)[0].get<float>(),
-					(*itVel)[1].get<float>(),
-					(*itVel)[2].get<float>()
+			mSupportCache.supportLinearVelocity =
+				supportReader["supportLinearVelocity"].GetVec3(
+					mSupportCache.supportLinearVelocity
 				);
-			}
-			if (const auto itDelta = it->find("supportStepDelta");
-				itDelta != it->end() && itDelta->is_array() && itDelta->size()
-				==
-				3) {
-				mSupportCache.supportStepDelta = Vec3(
-					(*itDelta)[0].get<float>(),
-					(*itDelta)[1].get<float>(),
-					(*itDelta)[2].get<float>()
+			mSupportCache.supportStepDelta =
+				supportReader["supportStepDelta"].GetVec3(
+					mSupportCache.supportStepDelta
 				);
-			}
 		}
 
+		// トランスフォーム情報の読み込み
 		if (TransformComponent* transform = GetTransform()) {
-			if (const auto itPos = inState.find("position");
-				itPos != inState.end() && itPos->is_array() && itPos->size() ==
-				3) {
-				transform->SetPosition(
-					Vec3(
-						(*itPos)[0].get<float>(),
-						(*itPos)[1].get<float>(),
-						(*itPos)[2].get<float>()
-					)
-				);
+			JsonReader posReader = reader["position"];
+			if (posReader.Valid() && posReader.IsArray()) {
+				transform->SetPosition(posReader.GetVec3());
 			}
 
-			if (const auto itRot = inState.find("rotation");
-				itRot != inState.end() && itRot->is_array() && itRot->size() ==
-				4) {
-				transform->SetRotation(
-					Quaternion(
-						(*itRot)[0].get<float>(),
-						(*itRot)[1].get<float>(),
-						(*itRot)[2].get<float>(),
-						(*itRot)[3].get<float>()
-					)
-				);
+			JsonReader rotReader = reader["rotation"];
+			if (rotReader.Valid() && rotReader.IsArray() &&
+				rotReader.Size() == 4) {
+				transform->SetRotation(Quaternion(
+					rotReader[0].GetFloat(),
+					rotReader[1].GetFloat(),
+					rotReader[2].GetFloat(),
+					rotReader[3].GetFloat()
+				));
 			}
 		}
 
-		const bool hasRuntimeVersion =
-			inState.contains("movementRuntimeVersion");
+		// ランタイムバージョンの確認
+		const bool hasRuntimeVersion = reader["movementRuntimeVersion"].Valid();
 		if (hasRuntimeVersion) {
-			if (const auto it = inState.find("modeId");
-				it != inState.end() && it->is_number_unsigned()) {
-				const uint32_t rawMode = it->get<uint32_t>();
-				if (rawMode < static_cast<uint32_t>(MOVEMENT_MODE_ID::COUNT)) {
-					mCurrentModeId = static_cast<MOVEMENT_MODE_ID>(rawMode);
-				}
+			// modeId の読み込み
+			const uint32_t rawMode =
+				static_cast<uint32_t>(reader["modeId"].GetInt(
+					static_cast<int>(mCurrentModeId)
+				));
+			if (rawMode < static_cast<uint32_t>(MOVEMENT_MODE_ID::COUNT)) {
+				mCurrentModeId = static_cast<MOVEMENT_MODE_ID>(rawMode);
 			}
-			mActiveAbilityMask = inState.value(
-				"activeAbilityMask",
-				mActiveAbilityMask
+
+			// アクティブアビリティマスクの読み込み
+			mActiveAbilityMask = static_cast<uint32_t>(
+				reader["activeAbilityMask"].GetInt(
+					static_cast<int>(mActiveAbilityMask)
+				)
 			);
-			if (const auto it = inState.find("capabilities");
-				it != inState.end() && it->is_object()) {
-				mCapabilitySet.jump   = it->value("jump", mCapabilitySet.jump);
-				mCapabilitySet.crouch = it->value(
-					"crouch",
-					mCapabilitySet.crouch
-				);
-				mCapabilitySet.slide = it->value("slide", mCapabilitySet.slide);
-				mCapabilitySet.wallRun = it->value(
-					"wallRun",
-					mCapabilitySet.wallRun
-				);
-				mCapabilitySet.doubleJump = it->value(
-					"doubleJump",
-					mCapabilitySet.doubleJump
-				);
-				mCapabilitySet.speedVault = it->value(
-					"speedVault",
-					mCapabilitySet.speedVault
-				);
-				mCapabilitySet.blink = it->value("blink", mCapabilitySet.blink);
-				mCapabilitySet.grapple = it->value(
-					"grapple",
-					mCapabilitySet.grapple
-				);
+
+			// 能力セットの読み込み
+			JsonReader capabilitiesReader = reader["capabilities"];
+			if (capabilitiesReader.Valid() && capabilitiesReader.IsObject()) {
+				mCapabilitySet.jump =
+					capabilitiesReader["jump"].GetBool(mCapabilitySet.jump);
+				mCapabilitySet.crouch =
+					capabilitiesReader["crouch"].GetBool(mCapabilitySet.crouch);
+				mCapabilitySet.slide =
+					capabilitiesReader["slide"].GetBool(mCapabilitySet.slide);
+				mCapabilitySet.wallRun =
+					capabilitiesReader["wallRun"].GetBool(mCapabilitySet.wallRun);
+				mCapabilitySet.doubleJump = capabilitiesReader["doubleJump"]
+					.GetBool(mCapabilitySet.doubleJump);
+				mCapabilitySet.speedVault = capabilitiesReader["speedVault"]
+					.GetBool(mCapabilitySet.speedVault);
+				mCapabilitySet.blink =
+					capabilitiesReader["blink"].GetBool(mCapabilitySet.blink);
+				mCapabilitySet.grapple =
+					capabilitiesReader["grapple"].GetBool(mCapabilitySet.grapple);
 			}
-		} else if (const auto it = inState.find("stateName");
-			it != inState.end() && it->is_string()) {
+		} else if (reader["stateName"].Valid() &&
+				   reader["stateName"].IsString()) {
+			// レガシースキーマのサポート
 			Warning(
 				GetComponentName(),
 				"Legacy movement replay schema detected. Deterministic compatibility is best-effort."
 			);
-			const std::string stateName = StrUtil::ToLowerCase(
-				it->get<std::string>()
-			);
+			const std::string stateName =
+				StrUtil::ToLowerCase(reader["stateName"].GetString());
 			if (stateName.find("noclip") != std::string::npos) {
 				mCurrentModeId = MOVEMENT_MODE_ID::NOCLIP;
 			} else if (stateName.find("ground") != std::string::npos) {

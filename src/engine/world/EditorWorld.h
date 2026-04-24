@@ -4,7 +4,6 @@
 #include "engine/physics/core/Physics.h"
 #include "engine/render/frame/RenderFrameInputs.h"
 #include "engine/unnamed/framework/entity/Entity.h"
-#include "engine/world/GameWorld.h"
 
 namespace Unnamed {
 	namespace Render {
@@ -12,6 +11,7 @@ namespace Unnamed {
 	}
 
 	class EditorCameraComponent;
+	class IGameWorldFactory;
 
 	class EditorWorld final : public World {
 	public:
@@ -24,6 +24,9 @@ namespace Unnamed {
 
 		void StartPlayInEditor();
 		void StopPlayInEditor();
+		/// @brief PIE 用ワールド生成ファクトリを設定します。
+		/// @param factory 設定するワールド生成ファクトリ
+		void SetPlayWorldFactory(IGameWorldFactory* factory) noexcept;
 
 		[[nodiscard]] bool IsPlaying() const {
 			return mPlayWorld != nullptr;
@@ -66,8 +69,9 @@ namespace Unnamed {
 			const Render::SceneViewRenderMode& request
 		);
 
-		std::unique_ptr<Entity>    mEditorEntity;
-		std::unique_ptr<GameWorld> mPlayWorld;
+		std::unique_ptr<Entity> mEditorEntity;
+		std::unique_ptr<World>  mPlayWorld;
+		IGameWorldFactory*      mPlayWorldFactory = nullptr;
 		Render::SCENE_RENDER_MODE  mLastAspectMode =
 			Render::SCENE_RENDER_MODE::FIT_VIEWPORT;
 		uint32_t mLastAspectViewportWidth  = 0;

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <chrono>
 
+#include "engine/game/IGameWorldFactory.h"
 #include "engine/render/frame/RenderFrameInputs.h"
 #include "engine/scene/Scene.h"
 #include "engine/scene/SceneSerializer.h"
@@ -11,7 +12,6 @@
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/unnamed/subsystem/input/InputSystem.h"
-#include "engine/world/GameWorld.h"
 
 namespace Unnamed {
 	static constexpr std::string_view kChannel = "EditorWorld";
@@ -102,9 +102,18 @@ namespace Unnamed {
 		if (mPlayWorld || !mScene) {
 			return;
 		}
+		if (!mPlayWorldFactory) {
+			Warning(kChannel, "PIE world factory is null.");
+			return;
+		}
 
-		const auto totalStart     = std::chrono::steady_clock::now();
-		auto       playWorld      = std::make_unique<GameWorld>();
+		const auto totalStart = std::chrono::steady_clock::now();
+		auto playWorld = mPlayWorldFactory->CreatePlayWorld(GetServices());
+		if (!playWorld) {
+			Warning(kChannel, "Failed to create PIE world from factory.");
+			return;
+		}
+		// 念のため、WorldServices は常に最新値を上書きします。
 		playWorld->SetServices(GetServices());
 		const auto worldInitStart = std::chrono::steady_clock::now();
 		playWorld->Initialize();
@@ -153,6 +162,12 @@ namespace Unnamed {
 			input->SetMouseCursorVisible(true);
 			input->ClearMouseCursorLockAnchor();
 		}
+	}
+
+	void EditorWorld::SetPlayWorldFactory(
+		IGameWorldFactory* const factory
+	) noexcept {
+		mPlayWorldFactory = factory;
 	}
 
 	void EditorWorld::FillRenderFrameInputs(

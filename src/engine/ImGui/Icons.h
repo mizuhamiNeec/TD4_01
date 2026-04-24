@@ -45,11 +45,14 @@ constexpr uint32_t kIconCheckBoxOn  = 0xE834; // チェックボックスオン
 constexpr uint32_t kIconCheckBoxOff = 0xE835; // チェックボックスオフ
 
 // ---- Playback / Time -------------------------------------------------------
-constexpr uint32_t kIconPlay  = 0xE037; // プレイ
-constexpr uint32_t kIconPause = 0xE034; // ポーズ
-constexpr uint32_t kIconStop  = 0xE047; // ストップ
-constexpr uint32_t kIconTimer = 0xE425; // タイマー
-constexpr uint32_t kIconSpeed = 0xE9E4; // スピード
+constexpr uint32_t kIconArrowBack2   = 0xF43A; // arrow_back_2
+constexpr uint32_t kIconPlay         = 0xE037; // プレイ
+constexpr uint32_t kIconPause        = 0xE034; // ポーズ
+constexpr uint32_t kIconStop         = 0xE047; // ストップ
+constexpr uint32_t kIconSkipPrevious = 0xE045; // skip_previous
+constexpr uint32_t kIconSkipNext     = 0xE044; // skip_next
+constexpr uint32_t kIconTimer        = 0xE425; // タイマー
+constexpr uint32_t kIconSpeed        = 0xE9E4; // スピード
 
 // ---- Content Browser -------------------------------------------------------
 constexpr uint32_t kIconFolder      = 0xE2C7; // フォルダ

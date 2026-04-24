@@ -20,6 +20,7 @@
 #include "engine/rhi/Constants.h"
 #include "engine/scene/Scene.h"
 #include "engine/scene/SceneSerializer.h"
+#include "engine/sequence/SequenceRuntime.h"
 #include "engine/unnamed/framework/components/SkyboxComponent.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/framework/components/editor/EditorCameraComponent.h"
@@ -188,12 +189,21 @@ namespace Unnamed {
 			}
 			entity->SetScene(mScene.get());
 		}
+
+		if (!mSequenceRuntime) {
+			mSequenceRuntime = std::make_unique<SequenceRuntime>(this);
+		} else {
+			mSequenceRuntime->SetWorld(this);
+		}
 	}
 
 	void World::Shutdown() {
 		UnloadScene();
 		mCameraManager.ClearCurrentCamera();
 		mGameplayCueBus.Clear();
+		if (mSequenceRuntime) {
+			mSequenceRuntime->Clear();
+		}
 		if (mPhysicsEngine) {
 			mPhysicsEngine->ClearStaticMeshes();
 			mPhysicsEngine.reset();
@@ -219,6 +229,10 @@ namespace Unnamed {
 
 		if (!mScene) {
 			return;
+		}
+
+		if (mSequenceRuntime) {
+			mSequenceRuntime->AdvanceAndApplyPreSimulation(fixedDeltaTime);
 		}
 
 		std::vector<Entity*> activeEntities = CollectActiveEntities(
@@ -283,6 +297,10 @@ namespace Unnamed {
 		}
 		for (const TickGroup group : kTickGroupOrder) {
 			RunPhaseGroup(TICK_PHASE::POST_PHYSICS, group);
+		}
+
+		if (mSequenceRuntime) {
+			mSequenceRuntime->ApplyPostSimulation();
 		}
 	}
 
@@ -408,6 +426,10 @@ namespace Unnamed {
 
 		mTime.renderUnscaledDeltaTime = unscaledDeltaTime;
 
+		if (mSequenceRuntime) {
+			mSequenceRuntime->EditorTick(unscaledDeltaTime);
+		}
+
 		for (const auto& entity : mScene->GetEntities()) {
 			if (!entity || !entity->IsActive()) {
 				continue;
@@ -498,6 +520,9 @@ namespace Unnamed {
 
 		OnSceneUnloaded();
 		mCameraManager.ClearCurrentCamera();
+		if (mSequenceRuntime) {
+			mSequenceRuntime->Clear();
+		}
 		mScene.reset();
 		mLoadedScenePath.clear();
 	}
@@ -608,11 +633,38 @@ namespace Unnamed {
 					assetManager
 				);
 				if (meshAssetId != kInvalidAssetID) {
+					meshRenderer->ResolveMaterialInstanceAssets(assetManager);
+
+					const auto* meshAsset = assetManager.Get<MeshAssetData>(
+						meshAssetId
+					);
+					const uint32_t materialIndex =
+						(meshAsset && !meshAsset->submeshes.empty()) ?
+							meshAsset->submeshes.front().materialIndex :
+							0u;
 					Render::VisibleRenderObject object = {};
 					object.meshAssetId                 = meshAssetId;
+					const auto& materialSlots = meshRenderer->GetMaterialSlots();
+					uint32_t maxSlotIndex = 0;
+					for (const auto& slot : materialSlots) {
+						maxSlotIndex = std::max(maxSlotIndex, slot.slotIndex);
+					}
+					if (!materialSlots.empty()) {
+						object.materialInstanceIdsBySlot.resize(
+							maxSlotIndex + 1,
+							kInvalidAssetID
+						);
+						for (const auto& slot : materialSlots) {
+							object.materialInstanceIdsBySlot[slot.slotIndex] =
+								meshRenderer->GetMaterialInstanceAssetIdForSlot(
+									slot.slotIndex
+								);
+						}
+					}
 					object.materialInstanceId          = meshRenderer->
-						ResolveMaterialInstanceAsset(
-							assetManager
+						ResolveMaterialInstanceAssetForMaterialIndex(
+							assetManager,
+							materialIndex
 						);
 					object.ownerEntityGuid = entity->GetGuid();
 					object.world           = transform->RenderWorldMat();
@@ -629,20 +681,46 @@ namespace Unnamed {
 					continue;
 				}
 
+				skelRenderer->ResolveMaterialInstanceAssets(assetManager);
+
 				Render::VisibleRenderObject object = {};
 				object.meshAssetId                 = meshAssetId;
-				object.materialInstanceId          = skelRenderer->
-					ResolveMaterialInstanceAsset(
-						assetManager
+
+				const auto& materialSlots = skelRenderer->GetMaterialSlots();
+				uint32_t maxSlotIndex = 0;
+				for (const auto& slot : materialSlots) {
+					maxSlotIndex = std::max(maxSlotIndex, slot.slotIndex);
+				}
+				if (!materialSlots.empty()) {
+					object.materialInstanceIdsBySlot.resize(
+						maxSlotIndex + 1,
+						kInvalidAssetID
+					);
+					for (const auto& slot : materialSlots) {
+						object.materialInstanceIdsBySlot[slot.slotIndex] =
+							skelRenderer->GetMaterialInstanceAssetIdForSlot(
+								slot.slotIndex
+							);
+					}
+				}
+
+				const auto* meshAsset = assetManager.Get<MeshAssetData>(
+					meshAssetId
+				);
+				const uint32_t materialIndex =
+					(meshAsset && !meshAsset->submeshes.empty()) ?
+						meshAsset->submeshes.front().materialIndex :
+						0u;
+				object.materialInstanceId = skelRenderer->
+					ResolveMaterialInstanceAssetForMaterialIndex(
+						assetManager,
+						materialIndex
 					);
 				object.ownerEntityGuid   = entity->GetGuid();
 				object.world             = transform->RenderWorldMat();
 				object.isSkinned         = false;
 				object.skeletonPaletteId = 0;
 
-				const auto* meshAsset = assetManager.Get<MeshAssetData>(
-					meshAssetId
-				);
 				const bool hasSkinning =
 					meshAsset && meshAsset->hasSkinning && !meshAsset->skeleton.
 					empty();
@@ -980,6 +1058,17 @@ namespace Unnamed {
 		return mGameplayCueBus;
 	}
 
+	SequenceRuntime& World::GetSequenceRuntime() noexcept {
+		if (!mSequenceRuntime) {
+			mSequenceRuntime = std::make_unique<SequenceRuntime>(this);
+		}
+		return *mSequenceRuntime;
+	}
+
+	const SequenceRuntime& World::GetSequenceRuntime() const noexcept {
+		return const_cast<World*>(this)->GetSequenceRuntime();
+	}
+
 	void World::SetScene(std::unique_ptr<Scene> scene) {
 		mCameraManager.SetWorld(this);
 		if (scene) {
@@ -993,6 +1082,9 @@ namespace Unnamed {
 		}
 		mScene = std::move(scene);
 		mCameraManager.ClearCurrentCamera();
+		if (mSequenceRuntime) {
+			mSequenceRuntime->Clear();
+		}
 	}
 
 	Physics::Engine& World::GetPhysicsEngine() {

@@ -7,6 +7,7 @@
 #include "core/guidgenerator/GuidGenerator.h"
 
 #include "engine/render/frame/RenderFrameInputs.h"
+#include "engine/sequence/SequenceRuntime.h"
 #include "engine/world/GameplayCueBus.h"
 #include "engine/world/WorldCameraManager.h"
 #include "engine/world/WorldDebugDraw.h"
@@ -139,6 +140,12 @@ namespace Unnamed {
 		[[nodiscard]] GameplayCueBus& GetGameplayCueBus() noexcept;
 		[[nodiscard]] const GameplayCueBus& GetGameplayCueBus() const noexcept;
 
+		/// @brief ワールドのシーケンスランタイムを取得します。
+		[[nodiscard]] SequenceRuntime& GetSequenceRuntime() noexcept;
+
+		/// @brief ワールドのシーケンスランタイムを取得します（const版）。
+		[[nodiscard]] const SequenceRuntime& GetSequenceRuntime() const noexcept;
+
 		/// @brief シーンを設定します。既にシーンが存在する場合はアンロードされます。
 		/// @param scene 設定するシーンのユニークポインタ
 		virtual void SetScene(std::unique_ptr<Scene> scene);
@@ -251,6 +258,7 @@ namespace Unnamed {
 		std::unique_ptr<Physics::Engine> mPhysicsEngine;   // 物理エンジン
 		WorldCameraManager               mCameraManager;   // ワールドの現在カメラ管理
 		GameplayCueBus                   mGameplayCueBus;
+		std::unique_ptr<SequenceRuntime> mSequenceRuntime;
 		GuidGenerator                    mGuidGenerator;   // GUIDジェネレーター
 		std::string                      mLoadedScenePath; // ロードされたシーンのファイルパス
 		std::string                      mPendingSceneTransitionPath; // 保留中のシーン遷移先

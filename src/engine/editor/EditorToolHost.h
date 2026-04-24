@@ -12,7 +12,8 @@ namespace Unnamed {
 	class ConsoleSystem;
 	class InputSystem;
 	class AssetManager;
-	class DemoManager;
+	class IDemoService;
+	class IGameModule;
 	class Profiler;
 	class WindowManager;
 	class ImGuiLayer;
@@ -31,7 +32,8 @@ namespace Unnamed {
 			ConsoleSystem*        console,
 			InputSystem*          inputSystem,
 			AssetManager*         assetManager,
-			DemoManager*          demoManager,
+			IDemoService*         demoService,
+			IGameModule&          gameModule,
 			Profiler*             profiler,
 			WindowManager&        windowManager,
 			Render::RenderModule& renderModule,
@@ -62,7 +64,8 @@ namespace Unnamed {
 		ConsoleSystem* mConsole = nullptr;
 		InputSystem*   mInputSystem = nullptr;
 		AssetManager*  mAssetManager = nullptr;
-		DemoManager*   mDemoManager = nullptr;
+		IDemoService*  mDemoService = nullptr;
+		IGameModule&   mGameModule;
 		Profiler*      mProfiler = nullptr;
 
 		std::vector<std::unique_ptr<IEditorTool>> mOwnedTools;

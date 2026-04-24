@@ -8,6 +8,7 @@
 
 #include "core/string/StrUtil.h"
 
+#include "engine/game/IGameModule.h"
 #include "engine/ImGui/Icons.h"
 #include "engine/ImGui/ImGuiWidgets.h"
 #include "engine/render/RenderModule.h"
@@ -20,7 +21,8 @@ namespace Unnamed {
 		ConsoleSystem*        console,
 		InputSystem*          inputSystem,
 		AssetManager*         assetManager,
-		DemoManager*          demoManager,
+		IDemoService*         demoService,
+		IGameModule&          gameModule,
 		Profiler*             profiler,
 		WindowManager&        windowManager,
 		Render::RenderModule& renderModule,
@@ -31,7 +33,8 @@ namespace Unnamed {
 	    mConsole(console),
 	    mInputSystem(inputSystem),
 	    mAssetManager(assetManager),
-	    mDemoManager(demoManager),
+	    mDemoService(demoService),
+	    mGameModule(gameModule),
 	    mProfiler(profiler) {
 		if (!mConsole) {
 			Error(
@@ -57,7 +60,8 @@ namespace Unnamed {
 			.console       = mConsole,
 			.inputSystem   = mInputSystem,
 			.assetManager  = mAssetManager,
-			.demoManager   = mDemoManager,
+			.demoService   = mDemoService,
+			.gameWorldFactory = &mGameModule,
 			.profiler      = mProfiler,
 		};
 		for (auto& tool : mOwnedTools) {

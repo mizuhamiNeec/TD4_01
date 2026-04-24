@@ -595,24 +595,6 @@ namespace Unnamed::Render {
 								0.0f
 							);
 
-							Rhi::MaterialConstants material        = {};
-							uint32_t               textureId       = 0;
-							const MaterialBinding* materialBinding =
-								fallbackMaterial;
-							if (const auto matIt = mMaterialBindings.find(
-								objectInput.materialInstanceId
-							); matIt != mMaterialBindings.end()) {
-								materialBinding = &matIt->second;
-							}
-							if (materialBinding) {
-								material  = materialBinding->constants;
-								textureId = materialBinding->albedoTextureId;
-							}
-							if (textureId == 0) {
-								EnsureSpriteFallbackTexture(renderDevice);
-								textureId = mSpriteFallbackTextureId;
-							}
-
 							Rhi::SkinningPaletteConstants skinPalette =
 								identityPalette;
 							if (
@@ -638,10 +620,6 @@ namespace Unnamed::Render {
 								allocator.AllocateConstantBuffer(
 									&object, sizeof(object)
 								);
-							const D3D12_GPU_VIRTUAL_ADDRESS materialCb =
-								allocator.AllocateConstantBuffer(
-									&material, sizeof(material)
-								);
 							const D3D12_GPU_VIRTUAL_ADDRESS skinningCb =
 								objectInput.isSkinned ?
 									allocator.AllocateConstantBuffer(
@@ -655,16 +633,98 @@ namespace Unnamed::Render {
 								ToRootIndex(GEOM_ROOT_SLOT::OBJECT), objectCb
 							);
 							pass.BindGraphicsCbv(
-								ToRootIndex(GEOM_ROOT_SLOT::MATERIAL), materialCb
-							);
-							pass.BindGraphicsCbv(
 								ToRootIndex(GEOM_ROOT_SLOT::SKINNING), skinningCb
 							);
-							pass.BindGraphicsSrvTable(
-								ToRootIndex(GEOM_ROOT_SLOT::BASE_COLOR_TEXTURE),
-								textureId
-							);
-							pass.DrawIndexedTest(mesh.indexCount);
+
+							if (mesh.submeshes.empty()) {
+								Rhi::MaterialConstants material  = {};
+								uint32_t               textureId = 0;
+								const MaterialBinding* materialBinding =
+									fallbackMaterial;
+								if (const auto matIt = mMaterialBindings.find(
+									objectInput.materialInstanceId
+								); matIt != mMaterialBindings.end()) {
+									materialBinding = &matIt->second;
+								}
+								if (materialBinding) {
+									material  = materialBinding->constants;
+									textureId = materialBinding->albedoTextureId;
+								}
+								if (textureId == 0) {
+									EnsureSpriteFallbackTexture(renderDevice);
+									textureId = mSpriteFallbackTextureId;
+								}
+
+								const D3D12_GPU_VIRTUAL_ADDRESS materialCbFallback =
+									allocator.AllocateConstantBuffer(
+										&material, sizeof(material)
+									);
+								pass.BindGraphicsCbv(
+									ToRootIndex(GEOM_ROOT_SLOT::MATERIAL),
+									materialCbFallback
+								);
+								pass.BindGraphicsSrvTable(
+									ToRootIndex(GEOM_ROOT_SLOT::BASE_COLOR_TEXTURE),
+									textureId
+								);
+								pass.DrawIndexedTest(mesh.indexCount);
+								continue;
+							}
+
+							for (const auto& submesh : mesh.submeshes) {
+								if (submesh.indexCount == 0) {
+									continue;
+								}
+
+								AssetID submeshMaterialId = objectInput.
+									materialInstanceId;
+								if (submesh.materialIndex < objectInput.
+									materialInstanceIdsBySlot.size()) {
+									const AssetID slotMaterialId = objectInput.
+										materialInstanceIdsBySlot[
+											submesh.materialIndex
+										];
+									if (slotMaterialId != kInvalidAssetID) {
+										submeshMaterialId = slotMaterialId;
+									}
+								}
+
+								Rhi::MaterialConstants material  = {};
+								uint32_t               textureId = 0;
+								const MaterialBinding* materialBinding =
+									fallbackMaterial;
+								if (const auto matIt = mMaterialBindings.find(
+									submeshMaterialId
+								); matIt != mMaterialBindings.end()) {
+									materialBinding = &matIt->second;
+								}
+								if (materialBinding) {
+									material  = materialBinding->constants;
+									textureId = materialBinding->albedoTextureId;
+								}
+								if (textureId == 0) {
+									EnsureSpriteFallbackTexture(renderDevice);
+									textureId = mSpriteFallbackTextureId;
+								}
+
+								const D3D12_GPU_VIRTUAL_ADDRESS materialCbSubmesh =
+									allocator.AllocateConstantBuffer(
+										&material, sizeof(material)
+									);
+								pass.BindGraphicsCbv(
+									ToRootIndex(GEOM_ROOT_SLOT::MATERIAL),
+									materialCbSubmesh
+								);
+								pass.BindGraphicsSrvTable(
+									ToRootIndex(GEOM_ROOT_SLOT::BASE_COLOR_TEXTURE),
+									textureId
+								);
+								pass.DrawIndexedTest(
+									submesh.indexCount,
+									submesh.indexStart,
+									0
+								);
+							}
 						}
 					}
 				);

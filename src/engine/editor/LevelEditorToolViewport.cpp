@@ -17,6 +17,8 @@
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/world/EditorWorld.h"
 
+#include "sequence/SequenceEditorController.h"
+
 #include "thirdparty/ImGuizmo/ImGuizmo.h"
 
 namespace Unnamed {
@@ -50,8 +52,8 @@ namespace Unnamed {
 			const auto   outputIt   = mViewOutputs.find(std::string(viewKey));
 			const bool   hasOutput  = outputIt != mViewOutputs.end();
 			const Vec2   outputSize = hasOutput ?
-				                          outputIt->second.size :
-				                          Vec2(drawWidth, drawHeight);
+				                        outputIt->second.size :
+				                        Vec2(drawWidth, drawHeight);
 
 			const float safeOutputWidth  = std::max(1.0f, outputSize.x);
 			const float safeOutputHeight = std::max(1.0f, outputSize.y);
@@ -63,11 +65,11 @@ namespace Unnamed {
 				fitHeight = drawHeight;
 				fitWidth  = fitHeight * outputAspect;
 			}
-			fitWidth                = std::max(1.0f, fitWidth);
-			fitHeight               = std::max(1.0f, fitHeight);
-			const float  fitOffsetX = (drawWidth - fitWidth) * 0.5f;
-			const float  fitOffsetY = (drawHeight - fitHeight) * 0.5f;
-			const auto fitPos     = ImVec2(
+			fitWidth               = std::max(1.0f, fitWidth);
+			fitHeight              = std::max(1.0f, fitHeight);
+			const float fitOffsetX = (drawWidth - fitWidth) * 0.5f;
+			const float fitOffsetY = (drawHeight - fitHeight) * 0.5f;
+			const auto  fitPos     = ImVec2(
 				panePos.x + fitOffsetX, panePos.y + fitOffsetY
 			);
 			const auto fitMax = ImVec2(
@@ -116,19 +118,21 @@ namespace Unnamed {
 				);
 			}
 
-			const ImVec2 mousePos = ImGui::GetMousePos();
-			const bool hoveredFit = mousePos.x >= fitPos.x && mousePos.x <= fitMax.x &&
-			                        mousePos.y >= fitPos.y && mousePos.y <= fitMax.y &&
-			                        ImGui::IsWindowHovered(
-				                        ImGuiHoveredFlags_AllowWhenBlockedByPopup
-			                        );
+			const ImVec2 mousePos   = ImGui::GetMousePos();
+			const bool   hoveredFit =
+				mousePos.x >= fitPos.x && mousePos.x <= fitMax.x &&
+				mousePos.y >= fitPos.y && mousePos.y <= fitMax.y &&
+				ImGui::IsWindowHovered(
+					ImGuiHoveredFlags_AllowWhenBlockedByPopup
+				);
 			if (hoveredFit && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
 				mActiveViewportViewKey = std::string(viewKey);
 				mViewportLookActive    = true;
 			}
 			if (
 				hoveredFit ||
-				(!mActiveViewportViewKey.empty() && mActiveViewportViewKey == viewKey)
+				(!mActiveViewportViewKey.empty() && mActiveViewportViewKey ==
+				 viewKey)
 			) {
 				mViewportPosition = Vec2(fitPos.x, fitPos.y);
 				mViewportSize     = Vec2(fitWidth, fitHeight);
@@ -251,20 +255,20 @@ namespace Unnamed {
 		{
 			const char* viewportModeLabel = "Fit";
 			switch (mViewportRenderMode) {
-				case EDITOR_VIEWPORT_RENDER_MODE::FIT_VIEWPORT:
-					viewportModeLabel = "Fit";
+				case EDITOR_VIEWPORT_RENDER_MODE::FIT_VIEWPORT
+				: viewportModeLabel = "Fit";
 					break;
-				case EDITOR_VIEWPORT_RENDER_MODE::FIXED_ASPECT_16_9:
-					viewportModeLabel = "16:9";
+				case EDITOR_VIEWPORT_RENDER_MODE::FIXED_ASPECT_16_9
+				: viewportModeLabel = "16:9";
 					break;
-				case EDITOR_VIEWPORT_RENDER_MODE::FIXED_ASPECT_4_3:
-					viewportModeLabel = "4:3";
+				case EDITOR_VIEWPORT_RENDER_MODE::FIXED_ASPECT_4_3
+				: viewportModeLabel = "4:3";
 					break;
-				case EDITOR_VIEWPORT_RENDER_MODE::HD720:
-					viewportModeLabel = "HD";
+				case EDITOR_VIEWPORT_RENDER_MODE::HD720
+				: viewportModeLabel = "HD";
 					break;
-				case EDITOR_VIEWPORT_RENDER_MODE::FHD1080:
-					viewportModeLabel = "FHD";
+				case EDITOR_VIEWPORT_RENDER_MODE::FHD1080
+				: viewportModeLabel = "FHD";
 					break;
 				default: break;
 			}
@@ -319,14 +323,14 @@ namespace Unnamed {
 				);
 				auto currentKindLabel = "EditorPerspective";
 				switch (binding.kind) {
-					case ViewportCameraBindingKind::EditorPerspective:
-						currentKindLabel = "EditorPerspective";
+					case ViewportCameraBindingKind::EditorPerspective
+					: currentKindLabel = "EditorPerspective";
 						break;
-					case ViewportCameraBindingKind::ActiveGameCamera:
-						currentKindLabel = "ActiveGameCamera";
+					case ViewportCameraBindingKind::ActiveGameCamera
+					: currentKindLabel = "ActiveGameCamera";
 						break;
-					case ViewportCameraBindingKind::CameraEntity:
-						currentKindLabel = "CameraEntity";
+					case ViewportCameraBindingKind::CameraEntity
+					: currentKindLabel = "CameraEntity";
 						break;
 					default: break;
 				}
@@ -340,10 +344,13 @@ namespace Unnamed {
 						if (ImGui::Selectable(label, binding.kind == kind)) {
 							ViewportCameraBinding next = binding;
 							next.kind                  = kind;
-							if (kind != ViewportCameraBindingKind::CameraEntity) {
+							if (kind !=
+							    ViewportCameraBindingKind::CameraEntity) {
 								next.cameraEntityGuid = 0;
 							}
-							mCameraManager.SetPaneBinding(kViewScenePerspective, next);
+							mCameraManager.SetPaneBinding(
+								kViewScenePerspective, next
+							);
 							binding = next;
 						}
 					};
@@ -367,7 +374,8 @@ namespace Unnamed {
 					std::string cameraLabel = "<none>";
 					if (scene && binding.cameraEntityGuid != 0) {
 						for (const auto& entity : scene->GetEntities()) {
-							if (!entity || entity->GetGuid() != binding.cameraEntityGuid) {
+							if (!entity || entity->GetGuid() != binding.
+							    cameraEntityGuid) {
 								continue;
 							}
 							cameraLabel = std::string(entity->GetName());
@@ -376,11 +384,17 @@ namespace Unnamed {
 					}
 
 					ImGui::SetNextItemWidth(180.0f);
-					if (ImGui::BeginCombo("CameraEntity", cameraLabel.c_str())) {
-						if (ImGui::Selectable("<none>", binding.cameraEntityGuid == 0)) {
+					if (ImGui::BeginCombo(
+						"CameraEntity", cameraLabel.c_str()
+					)) {
+						if (ImGui::Selectable(
+							"<none>", binding.cameraEntityGuid == 0
+						)) {
 							ViewportCameraBinding next = binding;
 							next.cameraEntityGuid      = 0;
-							mCameraManager.SetPaneBinding(kViewScenePerspective, next);
+							mCameraManager.SetPaneBinding(
+								kViewScenePerspective, next
+							);
 							binding = next;
 						}
 						if (scene) {
@@ -388,7 +402,8 @@ namespace Unnamed {
 								if (!entity || !entity->IsActive()) {
 									continue;
 								}
-								const auto* camera = entity->GetComponent<CameraComponent>();
+								const auto* camera = entity->GetComponent<
+									CameraComponent>();
 								if (
 									!camera ||
 									!camera->IsActive() ||
@@ -397,16 +412,21 @@ namespace Unnamed {
 									continue;
 								}
 								const bool selected =
-									entity->GetGuid() == binding.cameraEntityGuid;
+									entity->GetGuid() == binding.
+									cameraEntityGuid;
 								const std::string label = std::format(
 									"{}##{}",
 									entity->GetName(),
 									entity->GetGuid()
 								);
-								if (ImGui::Selectable(label.c_str(), selected)) {
+								if (ImGui::Selectable(
+									label.c_str(), selected
+								)) {
 									ViewportCameraBinding next = binding;
 									next.cameraEntityGuid = entity->GetGuid();
-									mCameraManager.SetPaneBinding(kViewScenePerspective, next);
+									mCameraManager.SetPaneBinding(
+										kViewScenePerspective, next
+									);
 									binding = next;
 								}
 							}
@@ -416,7 +436,6 @@ namespace Unnamed {
 				}
 			};
 			DrawViewBindingSelector();
-
 		}
 
 		ImGui::SetCursorScreenPos(
@@ -445,7 +464,8 @@ namespace Unnamed {
 		}
 		Mat4 world = transform->GetWorldMat();
 
-		const EditorViewportCameraManager::ResolvedCamera camera = mCameraManager.
+		const EditorViewportCameraManager::ResolvedCamera camera =
+			mCameraManager.
 			ResolveViewCamera(
 				mEditorWorld,
 				viewKey,
@@ -478,8 +498,9 @@ namespace Unnamed {
 		ImGuizmo::SetDrawlist();
 		ImGuizmo::SetRect(imagePos.x, imagePos.y, drawWidth, drawHeight);
 
-		const bool  useSnap = (sOperation != ImGuizmo::SCALE) &&
-		                      (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl));
+		const bool useSnap = (sOperation != ImGuizmo::SCALE) &&
+		                     (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) ||
+		                      ImGui::IsKeyDown(ImGuiKey_RightCtrl));
 		const float snap[3] = {
 			sOperation == ImGuizmo::ROTATE ? mAngleSnapDegree : mGridSnap,
 			sOperation == ImGuizmo::ROTATE ? mAngleSnapDegree : mGridSnap,
@@ -517,10 +538,20 @@ namespace Unnamed {
 				Vec3(translation[0], translation[1], translation[2])
 			);
 			transform->SetRotation(
-				Quaternion::EulerDegrees(Vec3(rotation[0], rotation[1], rotation[2]))
+				Quaternion::EulerDegrees(
+					Vec3(rotation[0], rotation[1], rotation[2])
+				)
 			);
 			transform->SetScale(Vec3(scale[0], scale[1], scale[2]));
 			transform->RequestInterpolationResync();
+			if (mSequenceEditorController) {
+				mSequenceEditorController->OnGizmoTransformChanged(
+					entity->GetGuid(),
+					transform->GetPosition(),
+					transform->GetRotation(),
+					transform->GetScale()
+				);
+			}
 		}
 	}
 
@@ -631,4 +662,3 @@ namespace Unnamed {
 }
 
 #endif
-

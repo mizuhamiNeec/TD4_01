@@ -1,5 +1,7 @@
 #include <pch.h>
+
 #include <engine/Engine.h>
+
 #include <game/parkour/runtime/ParkourGameModule.h>
 
 int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {

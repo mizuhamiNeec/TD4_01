@@ -17,6 +17,7 @@ namespace Unnamed {
 		POST_FX_CHAIN      = 1 << 9,  // ポストFXチェーン
 		UI_DOCUMENT        = 1 << 10, // UIドキュメント
 		EVENT_PRESENTATION = 1 << 11, // EventPresentation v2 プロファイル
+		SEQUENCE           = 1 << 12, // Sequence / Timeline
 	};
 
 	std::string ToString(ASSET_TYPE e);

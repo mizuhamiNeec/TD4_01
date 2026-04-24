@@ -1,0 +1,51 @@
+#include "SequenceAssetLoader.h"
+
+#include <filesystem>
+
+#include "SequenceFileIO.h"
+#include "core/string/StrUtil.h"
+
+namespace Unnamed {
+	namespace {
+		[[nodiscard]] bool IsSequencePath(const std::string_view path) {
+			return StrUtil::ToLowerCase(std::string(path)).ends_with(
+				".sequence.json"
+			);
+		}
+	}
+
+	bool SequenceAssetLoader::CanLoad(
+		const std::string_view path,
+		ASSET_TYPE* outType
+	) const {
+		const bool canLoad = IsSequencePath(path);
+		if (outType) {
+			*outType = canLoad ? ASSET_TYPE::SEQUENCE : ASSET_TYPE::UNKNOWN;
+		}
+		return canLoad;
+	}
+
+	LoadResult SequenceAssetLoader::Load(const std::string& path) {
+		LoadResult result = {};
+
+		SequenceFileLoadResult ioResult = {};
+		if (!SequenceFileIO::LoadFromFile(path, ioResult)) {
+			return result;
+		}
+
+		const std::filesystem::path filePath(path);
+		result.payload     = std::move(ioResult.runtime);
+		result.resolveName = filePath.stem().stem().string();
+
+		std::error_code ec;
+		if (std::filesystem::exists(path, ec)) {
+			result.stamp.sizeInBytes = std::filesystem::file_size(path, ec);
+		}
+		if (const auto lastWrite = std::filesystem::last_write_time(path, ec);
+			!ec) {
+			result.stamp.lastWriteTicks = lastWrite.time_since_epoch().count();
+		}
+
+		return result;
+	}
+}

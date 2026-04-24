@@ -13,9 +13,9 @@
 #include "engine/unnamed/subsystem/input/InputSystem.h"
 #include "engine/unnamed/subsystem/input/device/gamepad/GamepadDevice.h"
 #include "engine/world/World.h"
+#include "engine/game/IDemoService.h"
 
 #include "game/core/input/CharacterActionFrameInput.h"
-#include "game/core/replay/DemoManager.h"
 #include "game/core/replay/ReplayHash.h"
 
 namespace Unnamed {
@@ -125,12 +125,12 @@ namespace Unnamed {
 			return;
 		}
 
-		DemoManager* demoManager      = GetDemoManager();
+		IDemoService* demoManager      = GetDemoService();
 		const float  fixedTickSeconds =
 			demoManager ?
 				demoManager->GetSimulationStepSeconds() :
-				DemoManager::TickStepSecondsFromRate(
-					DemoManager::ResolveConfiguredTickRate()
+				IDemoService::TickStepSecondsFromRate(
+					IDemoService::ResolveConfiguredTickRate()
 				);
 
 		const uint64_t subjectEntityGuid = GetOwner() ?
@@ -291,7 +291,7 @@ namespace Unnamed {
 			return;
 		}
 
-		if (auto* demoManager = GetDemoManager();
+		if (auto* demoManager = GetDemoService();
 			demoManager && demoManager->IsPlayback()) {
 			return;
 		}

@@ -7,13 +7,14 @@
 #include <unordered_set>
 #include <vector>
 
+#include "engine/game/IDemoService.h"
 #include "DemoTypes.h"
 #include "ReplaySerializerRegistry.h"
 
 namespace Unnamed {
 	class Entity;
 
-	class DemoManager {
+	class DemoManager final : public IDemoService {
 	public:
 		/// @brief デモのモード
 		enum class MODE : uint8_t {
@@ -32,16 +33,16 @@ namespace Unnamed {
 		/// @brief デモの録画を開始する
 		/// @param path 録画ファイルの保存先パス
 		/// @return 録画開始に成功したか
-		bool StartRecording(std::string path);
+		bool StartRecording(std::string path) override;
 
 		/// @brief デモの再生を開始する
 		/// @param path 再生するデモファイルのパス
 		/// @return 再生開始に成功したか
-		bool StartPlayback(std::string path);
+		bool StartPlayback(std::string path) override;
 
 		/// @brief 録画または再生を停止する
 		/// @return 停止に成功したか
-		bool Stop();
+		bool Stop() override;
 
 		/// @brief 現在のモードを取得する
 		/// @return 現在のモード
@@ -49,39 +50,39 @@ namespace Unnamed {
 
 		/// @brief 録画中かどうか
 		/// @return 録画中であればtrue、そうでなければfalse
-		[[nodiscard]] bool IsRecording() const;
+		[[nodiscard]] bool IsRecording() const override;
 
 		/// @brief 再生中かどうか
 		/// @return 再生中であればtrue、そうでなければfalse
-		[[nodiscard]] bool IsPlayback() const;
+		[[nodiscard]] bool IsPlayback() const override;
 
 		/// @brief 再生が終了しているかどうか
 		/// @return 再生が終了していればtrue、そうでなければfalse
-		[[nodiscard]] bool IsPlaybackFinished() const;
+		[[nodiscard]] bool IsPlaybackFinished() const override;
 
 		/// @brief 再生開始からの経過ティック数を取得する
 		/// @return 再生開始からの経過ティック数
-		[[nodiscard]] uint64_t GetPlaybackStartTick() const;
+		[[nodiscard]] uint64_t GetPlaybackStartTick() const override;
 
 		/// @brief 再生開始からの経過時間（秒）を取得する
 		/// @return 再生開始からの経過時間（秒）
-		[[nodiscard]] std::string_view GetCurrentPath() const;
+		[[nodiscard]] std::string_view GetCurrentPath() const override;
 
 		/// @brief 現在の再生セッション番号を取得します。
 		/// @return StartPlayback が成功するたびに更新される番号
-		[[nodiscard]] uint64_t GetPlaybackSessionSerial() const;
+		[[nodiscard]] uint64_t GetPlaybackSessionSerial() const override;
 
 		/// @brief 現在の録画セッション番号を取得します。
 		/// @return StartRecording が成功するたびに更新される番号
-		[[nodiscard]] uint64_t GetRecordingSessionSerial() const;
+		[[nodiscard]] uint64_t GetRecordingSessionSerial() const override;
 
 		/// @brief シミュレーションのティックレートを取得する
 		/// @return シミュレーションのティックレート
-		[[nodiscard]] uint32_t GetSimulationTickRate() const;
+		[[nodiscard]] uint32_t GetSimulationTickRate() const override;
 
 		/// @brief シミュレーションのティックステップ時間（秒）を取得する
 		/// @return シミュレーションのティックステップ時間（秒）
-		[[nodiscard]] float GetSimulationStepSeconds() const;
+		[[nodiscard]] float GetSimulationStepSeconds() const override;
 
 		/// @brief 録画のティックレートを取得する
 		/// @return 録画のティックレート
@@ -94,7 +95,7 @@ namespace Unnamed {
 
 		/// @brief ライブコマンドを録画に追加する（録画中のみ有効）
 		/// @param command 追加するコマンド
-		void SubmitLiveCommand(const DemoTickCommand& command);
+		void SubmitLiveCommand(const DemoTickCommand& command) override;
 
 		/// @brief 再生コマンドを消費する（再生中のみ有効）
 		/// @param tick コマンドのティック
@@ -105,28 +106,33 @@ namespace Unnamed {
 			uint64_t         tick,
 			uint64_t         subjectEntityGuid,
 			DemoTickCommand& outCommand
-		);
+		) override;
 
 		/// @brief 再生中のエンティティに対して、必要に応じて初期スナップショットをキャプチャする
 		/// @param subjectEntity 対象のエンティティ
-		void CaptureInitialSnapshotIfNeeded(const Entity& subjectEntity);
+		void CaptureInitialSnapshotIfNeeded(const Entity& subjectEntity) override;
 
 		/// @brief 再生中のエンティティに対して、必要に応じて初期スナップショットを適用する
 		/// @param subjectEntity 対象のエンティティ
 		/// @return 初期スナップショットが適用された場合はtrue、そうでなければfalse
-		[[nodiscard]] bool ApplyInitialSnapshotIfNeeded(Entity& subjectEntity);
+		[[nodiscard]] bool ApplyInitialSnapshotIfNeeded(
+			Entity& subjectEntity
+		) override;
 
 		/// @brief 再生中のエンティティに対して、スナップショットの記録または検証を行う
 		/// @param tick 現在のティック
 		/// @param subjectEntity 対象のエンティティ
-		void RecordOrVerifySnapshot(uint64_t tick, Entity& subjectEntity);
+		void RecordOrVerifySnapshot(
+			uint64_t tick,
+			Entity& subjectEntity
+		) override;
 
 		/// @brief 録画または再生をリセットして待機状態に戻す
 		void Reset();
 
 		/// @brief 現在の状態を表す文字列を構築する
 		/// @return 現在の状態を表す文字列
-		[[nodiscard]] std::string BuildStatusString() const;
+		[[nodiscard]] std::string BuildStatusString() const override;
 
 	private:
 		/// @brief スナップショットのズレが発生した際のポリシーを解決する

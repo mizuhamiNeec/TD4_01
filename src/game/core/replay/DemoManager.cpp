@@ -175,20 +175,11 @@ namespace Unnamed {
 	}
 
 	uint32_t DemoManager::ResolveConfiguredTickRate() {
-		ConsoleSystem* console = ServiceLocator::Get<ConsoleSystem>();
-		if (!console) {
-			return kDefaultDemoTickRate;
-		}
-		const auto tickrate = console->GetConVarValueOr(
-			"sv_tickrate",
-			static_cast<int>(kDefaultDemoTickRate)
-		);
-		return SanitizeTickRate(tickrate);
+		return IDemoService::ResolveConfiguredTickRate();
 	}
 
 	float DemoManager::TickStepSecondsFromRate(const uint32_t tickRate) {
-		const uint32_t rate = SanitizeTickRate(tickRate);
-		return 1.0f / static_cast<float>(rate);
+		return IDemoService::TickStepSecondsFromRate(tickRate);
 	}
 
 	void DemoManager::SubmitLiveCommand(const DemoTickCommand& command) {

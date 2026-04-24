@@ -71,6 +71,26 @@ namespace Ui {
 			return 1;
 		}
 
+		class ScopedRowContextIsolation {
+		public:
+			ScopedRowContextIsolation() {
+				mSavedDepth = sRowDepth;
+				sRowDepth   = 0;
+			}
+
+			~ScopedRowContextIsolation() {
+				sRowDepth = mSavedDepth;
+			}
+
+			ScopedRowContextIsolation(const ScopedRowContextIsolation&) = delete;
+			ScopedRowContextIsolation& operator=(
+				const ScopedRowContextIsolation&
+			) = delete;
+
+		private:
+			uint32_t mSavedDepth = 0;
+		};
+
 		[[nodiscard]] ImDrawFlags ToDrawFlags(const UiCornerMode cornerMode) {
 			switch (cornerMode) {
 				case UiCornerMode::TopOnly:
@@ -364,6 +384,8 @@ namespace Ui {
 	}
 
 	void Row(const std::function<void()>& drawContent, const float spacing) {
+		// Row自体をレイアウト要素として扱い、親Row内でも横並びを維持します。
+		BeforeLayoutItem();
 		ImGui::BeginGroup();
 		BeginRow(spacing);
 		drawContent();
@@ -410,11 +432,32 @@ namespace Ui {
 	}
 
 	void CenteredY(
-		const std::function<void()>& drawContent, const float contentHeight
+		const std::function<void()>& drawContent,
+		const float                  containerHeight,
+		const float                  contentHeight
 	) {
 		BeforeLayoutItem();
-		AlignCenterY(0.0f, contentHeight);
+		ImGui::BeginGroup();
+		const ScopedRowContextIsolation isolateRowContext;
+
+		if (containerHeight <= 0.0f) {
+			AlignCenterY(0.0f, contentHeight);
+			drawContent();
+			ImGui::EndGroup();
+			return;
+		}
+
+		// 親Row内でも各要素の高さをそろえるため、固定高さのグループとして扱います。
+		const float slotStartY = ImGui::GetCursorPosY();
+		AlignCenterY(containerHeight, contentHeight);
 		drawContent();
+		const float slotEndY = slotStartY + containerHeight;
+		const float remainingHeight = slotEndY - ImGui::GetCursorPosY();
+		if (remainingHeight > 0.0f) {
+			// SetCursorPosだけで境界を拡張せず、Dummyで安全にスロット終端まで進めます。
+			ImGui::Dummy(ImVec2(0.0f, remainingHeight));
+		}
+		ImGui::EndGroup();
 	}
 
 	void Section(

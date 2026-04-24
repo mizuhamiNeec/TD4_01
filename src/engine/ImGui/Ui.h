@@ -212,9 +212,12 @@ namespace Ui {
 
 	/// @brief 指定高さ領域内でコンテンツを上下中央寄せで描画します。
 	/// @param drawContent 描画処理
+	/// @param containerHeight 中央揃え先のコンテナ高さ。0なら残り利用可能高さを使います。
 	/// @param contentHeight 描画対象の高さ。0ならフレーム高さを使います。
 	void CenteredY(
-		const std::function<void()>& drawContent, float contentHeight = 0.0f
+		const std::function<void()>& drawContent,
+		float                        containerHeight = 0.0f,
+		float                        contentHeight   = 0.0f
 	);
 
 	/// @brief セクション見出し+本文の簡易ブロックを描画します。

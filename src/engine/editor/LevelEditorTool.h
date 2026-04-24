@@ -27,6 +27,9 @@ namespace Unnamed {
 	class ImGuiLayer;
 	class ConsoleSystem;
 	class InputSystem;
+	class SequenceEditorController;
+	class SequenceTimelinePanel;
+	class SequenceCurvePanel;
 
 	namespace Render {
 		struct SceneOutputView;
@@ -120,6 +123,7 @@ namespace Unnamed {
 		void DrawSceneOutliner();
 		void DrawInspector();
 		void DrawContentBrowser();
+		void DrawSequenceEditors();
 		void DrawProfilerWindow();
 
 		[[nodiscard]] Entity* GetSelectedEntity() const;
@@ -170,6 +174,9 @@ namespace Unnamed {
 		bool mViewportLookActive = false;
 
 		EditorContentBrowser::BrowserViewState mContentBrowserState = {};
+		std::unique_ptr<SequenceEditorController> mSequenceEditorController;
+		std::unique_ptr<SequenceTimelinePanel>    mSequenceTimelinePanel;
+		std::unique_ptr<SequenceCurvePanel>       mSequenceCurvePanel;
 	};
 }
 

@@ -6,10 +6,15 @@
 #include <imgui_internal.h>
 
 #include "EditorNotification.h"
+#include "sequence/SequenceCurvePanel.h"
+#include "sequence/SequenceEditorController.h"
+#include "sequence/SequenceTimelinePanel.h"
 
 #include "core/io/json/JsonReader.h"
 #include "core/string/StrUtil.h"
 
+#include "engine/ImGui/Icons.h"
+#include "engine/ImGui/Ui.h"
 #include "engine/platform/Window.h"
 #include "engine/platform/WindowManager.h"
 #include "engine/render/Renderer.h"
@@ -27,7 +32,7 @@ namespace Unnamed {
 		[[nodiscard]] Vec2 ResolveSceneRenderExtentForInput(
 			const Render::SceneViewRenderMode& request
 		) {
-			uint32_t width = std::max(1u, request.viewportPanelWidth);
+			uint32_t width  = std::max(1u, request.viewportPanelWidth);
 			uint32_t height = std::max(1u, request.viewportPanelHeight);
 
 			switch (request.mode) {
@@ -103,16 +108,24 @@ namespace Unnamed {
 		}
 		mEditorWorld.SetServices(
 			{
-				.console = services.console,
-				.inputSystem = services.inputSystem,
-				.profiler = services.profiler,
+				.console      = services.console,
+				.inputSystem  = services.inputSystem,
+				.profiler     = services.profiler,
 				.assetManager = services.assetManager,
-				.demoManager = services.demoManager
+				.demoManager  = services.demoManager
 			}
 		);
 		mConsoleSystem = services.console;
 		mInputSystem   = services.inputSystem;
 		mEditorWorld.Initialize();
+		mSequenceEditorController = std::make_unique<
+			SequenceEditorController>();
+		mSequenceTimelinePanel = std::make_unique<SequenceTimelinePanel>();
+		mSequenceCurvePanel    = std::make_unique<SequenceCurvePanel>();
+		mSequenceEditorController->Initialize(
+			mEditorWorld.GetRuntimeSceneWorld(),
+			services.assetManager
+		);
 		LoadImGuizmoSettings(mConsoleSystem);
 		mInitialized = true;
 	}
@@ -121,6 +134,12 @@ namespace Unnamed {
 		if (!mInitialized) {
 			return;
 		}
+		if (mSequenceEditorController) {
+			mSequenceEditorController->Shutdown();
+		}
+		mSequenceCurvePanel.reset();
+		mSequenceTimelinePanel.reset();
+		mSequenceEditorController.reset();
 		mEditorWorld.Shutdown();
 		mConsoleSystem = nullptr;
 		mInputSystem   = nullptr;
@@ -136,7 +155,15 @@ namespace Unnamed {
 		ImGuizmo::BeginFrame();
 	}
 
-	void LevelEditorTool::Tick(const EditorToolFrameContext&) {}
+	void LevelEditorTool::Tick(const EditorToolFrameContext& frameContext) {
+		if (!mSequenceEditorController) {
+			return;
+		}
+		mSequenceEditorController->SetWorld(
+			mEditorWorld.GetRuntimeSceneWorld()
+		);
+		mSequenceEditorController->Tick(frameContext.unscaledDeltaTime);
+	}
 
 	void LevelEditorTool::BuildUi(const EditorToolFrameContext& frameContext) {
 		if (!mOpen) {
@@ -201,6 +228,8 @@ namespace Unnamed {
 				ImGui::DockBuilderDockWindow("Inspector", dockRight);
 				ImGui::DockBuilderDockWindow("Profiler", dockBottom);
 				ImGui::DockBuilderDockWindow("Content Browser", dockBottom);
+				ImGui::DockBuilderDockWindow("Sequence Timeline", dockBottom);
+				ImGui::DockBuilderDockWindow("Sequence Curves", dockBottom);
 				ImGui::DockBuilderFinish(dockSpaceId);
 				mDockInitialized = true;
 			}
@@ -219,8 +248,9 @@ namespace Unnamed {
 					mWindowManager.GetMainWindowId()
 				)) {
 					Vec2 virtualViewportSize = mViewportSize;
-					if (const auto outputIt = mViewOutputs.find(mActiveViewportViewKey);
-						outputIt != mViewOutputs.end()) {
+					if (const auto outputIt = mViewOutputs.find(
+						mActiveViewportViewKey
+					); outputIt != mViewOutputs.end()) {
 						virtualViewportSize = Vec2(
 							std::max(1.0f, outputIt->second.size.x),
 							std::max(1.0f, outputIt->second.size.y)
@@ -271,6 +301,8 @@ namespace Unnamed {
 			DrawInspector();
 			ImGui::SetNextWindowDockID(dockSpaceId, ImGuiCond_FirstUseEver);
 			DrawContentBrowser();
+			ImGui::SetNextWindowDockID(dockSpaceId, ImGuiCond_FirstUseEver);
+			DrawSequenceEditors();
 		} else {
 			float width  = mViewportPanelWidth;
 			float height = mViewportPanelHeight;
@@ -314,6 +346,89 @@ namespace Unnamed {
 			mViewportLookActive = false;
 		}
 
+		// シーケンサーのモックアップ
+		{
+			ImGui::Begin("SequencerMock");
+
+			// シーケンサーの上のバー
+			{
+				float barHeight = 48.0f;
+
+				ImGui::BeginChild(
+					"SequencerMock_TopBar",
+					ImVec2(0.0f, barHeight),
+					false,
+					ImGuiWindowFlags_NoScrollbar
+				);
+
+				ImGui::SetCursorPos(ImVec2(16.0f, 0.0f));
+
+				const float topBarContentHeight =
+					ImGui::GetContentRegionAvail().y;
+
+				Ui::Row(
+					[&]() {
+						Ui::CenteredY(
+							[&]() {
+								Ui::Row(
+									[&]() {
+										Ui::Text("00:01:23.45");
+										Ui::Text("0/3000");
+									},
+									32.0f
+								);
+							},
+							topBarContentHeight,
+							ImGui::GetTextLineHeight()
+						);
+
+						const auto buttonSize = ImVec2(32.0f, 32.0f);
+						auto       DrawCenteredIconButton =
+							[&](const uint32_t icon, const bool emphasize) {
+							Ui::CenteredY(
+								[&]() {
+									if (emphasize) {
+										Ui::ScopedStyleColor scopedColor(
+											ImGuiCol_Button,
+											ImVec4(0.2f, 0.4f, 0.2f, 1.0f)
+										);
+										Ui::IconButton(
+											icon,
+											nullptr,
+											buttonSize
+										);
+										return;
+									}
+									Ui::IconButton(
+										icon,
+										nullptr,
+										buttonSize
+									);
+								},
+								topBarContentHeight,
+								buttonSize.y
+							);
+						};
+						Ui::Row(
+							[&]() {
+								DrawCenteredIconButton(
+									kIconSkipPrevious, false
+								);
+								DrawCenteredIconButton(kIconArrowBack2, false);
+								DrawCenteredIconButton(kIconPlay, true);
+								DrawCenteredIconButton(kIconSkipNext, false);
+							},
+							8.0f
+						);
+					}
+				);
+
+				ImGui::EndChild();
+			}
+
+			ImGui::End();
+		}
+
 		ImGui::SetNextWindowDockID(dockSpaceId, ImGuiCond_FirstUseEver);
 		DrawProfilerWindow();
 
@@ -325,7 +440,9 @@ namespace Unnamed {
 		ImGui::End();
 	}
 
-	void LevelEditorTool::CollectRenderViews(Render::RenderFrameInputs& inputs) {
+	void LevelEditorTool::CollectRenderViews(
+		Render::RenderFrameInputs& inputs
+	) {
 		Render::RenderViewInput              sourceScene = {};
 		bool                                 hasScene    = false;
 		std::vector<Render::RenderViewInput> preservedViews;
@@ -372,9 +489,10 @@ namespace Unnamed {
 			mCameraManager.SyncGameplayCameraAspect(
 				mEditorWorld, view.sceneViewMode, binding
 			);
-			const Render::RenderCameraInput* fallback = sourceScene.camera.valid ?
-				&sourceScene.camera :
-				nullptr;
+			const Render::RenderCameraInput* fallback = sourceScene.camera.
+				valid ?
+					&sourceScene.camera :
+					nullptr;
 			const EditorViewportCameraManager::ResolvedCamera resolved =
 				mCameraManager.ResolveViewCamera(
 					mEditorWorld,
@@ -579,7 +697,8 @@ namespace Unnamed {
 		));
 
 		const EDITOR_VIEWPORT_RENDER_MODE renderMode =
-			forceFit ? EDITOR_VIEWPORT_RENDER_MODE::FIT_VIEWPORT :
+			forceFit ?
+				EDITOR_VIEWPORT_RENDER_MODE::FIT_VIEWPORT :
 				mViewportRenderMode;
 		switch (renderMode) {
 			case EDITOR_VIEWPORT_RENDER_MODE::FIT_VIEWPORT

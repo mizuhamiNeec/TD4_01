@@ -53,10 +53,18 @@ namespace Unnamed {
 		std::vector<SkeletonBoneTrackAssetData> boneTracks;
 	};
 
+	/// @brief メッシュのサブメッシュデータ構造体
+	struct SubMeshAssetData {
+		uint32_t indexStart     = 0;  // インデックスバッファ内の開始インデックス
+		uint32_t indexCount     = 0;  // このサブメッシュのインデックス数
+		uint32_t materialIndex  = 0;  // Assimp のマテリアルインデックス
+	};
+
 	/// @brief メッシュアセットのデータ構造体
 	struct MeshAssetData {
 		std::vector<MeshVertex>            vertices;
 		std::vector<uint32_t>              indices;
+		std::vector<SubMeshAssetData>      submeshes;  // サブメッシュ情報
 		std::vector<SkeletonBoneAssetData> skeleton;
 		std::vector<AnimationClipAssetData> animationClips;
 		bool                               hasSkinning = false;

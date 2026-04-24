@@ -199,14 +199,14 @@ namespace Unnamed {
 			}
 
 			if (mLevelTool) {
-				constexpr ImVec4 playColor = ImVec4(
+				constexpr auto playColor = ImVec4(
 					0.34f, 0.59f, 0.36f, 1.0f
 				);
-				constexpr ImVec4 stopColor = ImVec4(
+				constexpr auto stopColor = ImVec4(
 					0.79f, 0.31f, 0.31f, 1.0f
 				);
 				ImVec2 available     = ImGui::GetContentRegionAvail();
-				ImVec2 windowPadding = ImGui::GetStyle().WindowPadding;
+				const ImVec2 windowPadding = ImGui::GetStyle().WindowPadding;
 				ImGui::SameLine();
 
 				ImGui::SetCursorPosY(

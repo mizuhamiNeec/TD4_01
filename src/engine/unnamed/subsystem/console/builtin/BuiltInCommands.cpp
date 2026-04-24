@@ -3,10 +3,10 @@
 #include <engine/unnamed/subsystem/console/ConsoleSystem.h>
 #include <engine/unnamed/subsystem/console/concommand/ConCommand.h>
 #include <engine/unnamed/subsystem/console/concommand/ConVar.h>
+#include <engine/game/IDemoService.h>
 #include <engine/unnamed/subsystem/interface/ServiceLocator.h>
 
 #include "engine/unnamed/subsystem/console/ConsoleScriptParser.h"
-#include "game/core/replay/DemoManager.h"
 
 namespace Unnamed {
 	void RegisterBuiltInCommands() {
@@ -146,13 +146,13 @@ namespace Unnamed {
 		static ConCommand demoRecord(
 			"demo_record",
 			[](std::vector<std::string> args) {
-				auto* demoManager = ServiceLocator::Get<DemoManager>();
-				if (!demoManager) {
-					Error(kChannelNone, "DemoManager is not available.");
+				auto* demoService = ServiceLocator::Get<IDemoService>();
+				if (!demoService) {
+					Error(kChannelNone, "DemoService is not available.");
 					return false;
 				}
 				const std::string path = args.empty() ? std::string() : args[0];
-				return demoManager->StartRecording(path);
+				return demoService->StartRecording(path);
 			},
 			"Start demo recording. Usage: demo_record [path]"
 		);
@@ -160,16 +160,16 @@ namespace Unnamed {
 		static ConCommand demoPlay(
 			"demo_play",
 			[](std::vector<std::string> args) {
-				auto* demoManager = ServiceLocator::Get<DemoManager>();
-				if (!demoManager) {
-					Error(kChannelNone, "DemoManager is not available.");
+				auto* demoService = ServiceLocator::Get<IDemoService>();
+				if (!demoService) {
+					Error(kChannelNone, "DemoService is not available.");
 					return false;
 				}
 				if (args.empty()) {
 					Error(kChannelNone, "Usage: demo_play <path>");
 					return false;
 				}
-				return demoManager->StartPlayback(args[0]);
+				return demoService->StartPlayback(args[0]);
 			},
 			"Start demo playback. Usage: demo_play <path>"
 		);
@@ -177,12 +177,12 @@ namespace Unnamed {
 		static ConCommand demoStop(
 			"demo_stop",
 			[](std::vector<std::string>) {
-				auto* demoManager = ServiceLocator::Get<DemoManager>();
-				if (!demoManager) {
-					Error(kChannelNone, "DemoManager is not available.");
+				auto* demoService = ServiceLocator::Get<IDemoService>();
+				if (!demoService) {
+					Error(kChannelNone, "DemoService is not available.");
 					return false;
 				}
-				return demoManager->Stop();
+				return demoService->Stop();
 			},
 			"Stop demo recording/playback."
 		);
@@ -190,12 +190,12 @@ namespace Unnamed {
 		static ConCommand demoStatus(
 			"demo_status",
 			[](std::vector<std::string>) {
-				auto* demoManager = ServiceLocator::Get<DemoManager>();
-				if (!demoManager) {
-					Error(kChannelNone, "DemoManager is not available.");
+				auto* demoService = ServiceLocator::Get<IDemoService>();
+				if (!demoService) {
+					Error(kChannelNone, "DemoService is not available.");
 					return false;
 				}
-				Msg(kChannelNone, "{}", demoManager->BuildStatusString());
+				Msg(kChannelNone, "{}", demoService->BuildStatusString());
 				return true;
 			},
 			"Show demo manager status."

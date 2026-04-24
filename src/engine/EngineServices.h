@@ -1,14 +1,20 @@
 #pragma once
 
-#include <engine/unnamed/subsystem/interface/ServiceLocator.h>
-
 namespace Unnamed {
-	class Engine;
+	class ConsoleSystem;
+	class InputSystem;
+	class AssetManager;
+	class Profiler;
+	class WindowManager;
+	class IDemoService;
 
-	class EngineServices {
-	public:
-		static Engine* Get() {
-			return ServiceLocator::Get<Engine>();
-		}
+	/// @brief ゲームモジュール初期化時に渡す Engine サービス群です。
+	struct EngineServices {
+		ConsoleSystem* console = nullptr;
+		InputSystem*   inputSystem = nullptr;
+		AssetManager*  assetManager = nullptr;
+		Profiler*      profiler = nullptr;
+		WindowManager* windowManager = nullptr;
+		IDemoService*  demoService = nullptr;
 	};
 }

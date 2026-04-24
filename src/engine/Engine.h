@@ -115,6 +115,7 @@ namespace Unnamed {
 		std::unique_ptr<ConCommand> mPostFxListCommand;
 		std::unique_ptr<ConCommand> mPostFxChainCommand;
 		std::unique_ptr<ConCommand> mPostFxChainReloadCommand;
+		std::unique_ptr<ConCommand> mSequenceRegressionRunCommand;
 
 
 		std::unique_ptr<Render::RenderFrameContext> mRenderFrameContext;

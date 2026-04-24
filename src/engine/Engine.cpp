@@ -19,6 +19,7 @@
 #include <core/assets/loader/MaterialInstanceAssetLoader.h>
 #include <core/assets/loader/MeshAssetLoader.h>
 #include <core/assets/loader/PostFxChainLoader.h>
+#include <core/assets/loader/SequenceAssetLoader.h>
 #include <core/assets/loader/ShaderProgramLoader.h>
 #include <core/assets/loader/ShaderSourceLoader.h>
 #include <core/assets/loader/SoundAssetLoader.h>
@@ -38,6 +39,7 @@
 #include <engine/rhi/d3d12/D3D12Device.h>
 #include <engine/rhi/d3d12/D3D12Util.h>
 #include <engine/rhi/interface/IRhiDevice.h>
+#include <engine/sequence/SequenceRegressionRunner.h>
 #include <engine/ui/ImGuiLayer.h>
 #include <engine/unnamed/framework/entity/Entity.h>
 #include <engine/unnamed/subsystem/console/concommand/ConCommand.h>
@@ -217,6 +219,9 @@ namespace Unnamed {
 		mAssetManager->RegisterLoader(
 			std::move(std::make_unique<EventPresentationLoader>())
 		);
+		mAssetManager->RegisterLoader(
+			std::move(std::make_unique<SequenceAssetLoader>())
+		);
 
 		mAudioSystem = std::make_unique<AudioSystem>();
 		if (!mAudioSystem->Init()) {
@@ -326,7 +331,7 @@ namespace Unnamed {
 			);
 			if (World* runtimeWorld = mUEditorRuntime->GetRuntimeWorld()) {
 				runtimeWorld->LoadSceneFromFile(
-					"./content/parkour/scenes/game.json"
+					"./content/parkour/scenes/title.json"
 				);
 			}
 
@@ -336,7 +341,7 @@ namespace Unnamed {
 #endif
 		} else {
 			auto& world = SwitchWorld<GameWorld>();
-			world.LoadSceneFromFile("./content/parkour/scenes/game.json");
+			world.LoadSceneFromFile("./content/parkour/scenes/title.json");
 		}
 
 		// ユーザー名をコンソール変数に設定
@@ -585,6 +590,7 @@ namespace Unnamed {
 		mPostFxListCommand.reset();
 		mPostFxChainCommand.reset();
 		mPostFxChainReloadCommand.reset();
+		mSequenceRegressionRunCommand.reset();
 #ifdef _DEBUG
 		mToggleEditorCommand.reset();
 		mToggleFullscreenCommand.reset();
@@ -777,6 +783,35 @@ namespace Unnamed {
 				return queueSceneTransition(loadedPath);
 			},
 			"Reload current scene."
+		);
+
+		mSequenceRegressionRunCommand = std::make_unique<ConCommand>(
+			"seq_regression_run",
+			[this](const std::vector<std::string>&) {
+				if (!mAssetManager) {
+					Warning("SeqRegression", "AssetManager is null.");
+					return false;
+				}
+				World* world = GetWorld();
+				if (!world) {
+					Warning("SeqRegression", "World is null.");
+					return false;
+				}
+
+				std::string report = {};
+				const bool passed = SequenceRegressionRunner::RunAll(
+					*world,
+					*mAssetManager,
+					&report
+				);
+				if (passed) {
+					Msg("SeqRegression", "\n{}", report);
+				} else {
+					Warning("SeqRegression", "\n{}", report);
+				}
+				return passed;
+			},
+			"Run fixed-tick regression tests for sequence runtime."
 		);
 #ifdef _DEBUG
 		mToggleEditorCommand = std::make_unique<ConCommand>(

@@ -153,11 +153,11 @@ namespace Unnamed {
 			owner->SetVisible(true);
 		}
 		if (ConsoleSystem* console = GetConsoleSystem()) {
-			// タイトル再生中はミスマッチ停止ループを防ぐため、継続ポリシーを強制します。
+			// タイトル用demoは演出目的なので、通常プレイ用の厳密な検証ログを抑止します。
 			mSavedMismatchPolicy =
 				console->GetConVarValueString(kDemoMismatchPolicyCvar);
 			mHasSavedMismatchPolicy = !mSavedMismatchPolicy.empty();
-			console->ExecuteCommand("demo_mismatch_policy continue");
+			console->ExecuteCommand("demo_mismatch_policy ignore");
 		}
 
 		ResolveUiBindings();
@@ -208,8 +208,10 @@ namespace Unnamed {
 			return false;
 		}
 
-		// 同じdemoが既に再生中なら再起動せず、そのまま維持します。
-		if (demo->IsPlayback() && demo->GetCurrentPath() == demoPath) {
+		// 同じdemoが再生中かつ未完了なら再起動せず、そのまま維持します。
+		if (demo->IsPlayback() &&
+		    !demo->IsPlaybackFinished() &&
+		    demo->GetCurrentPath() == demoPath) {
 			return true;
 		}
 

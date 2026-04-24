@@ -112,9 +112,10 @@ namespace Unnamed {
 				.inputSystem  = services.inputSystem,
 				.profiler     = services.profiler,
 				.assetManager = services.assetManager,
-				.demoManager  = services.demoManager
+				.demoService  = services.demoService
 			}
 		);
+		mEditorWorld.SetPlayWorldFactory(services.gameWorldFactory);
 		mConsoleSystem = services.console;
 		mInputSystem   = services.inputSystem;
 		mEditorWorld.Initialize();

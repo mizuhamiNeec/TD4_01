@@ -142,7 +142,216 @@
                 "name": "NextCheckpointArrow",
                 "visible": false
             },
-            
+            {
+                "children": [],
+                "components": [
+                    {
+                        "type": "Transform",
+                        "data": {
+                            "anchors": [
+                                0.5,
+                                0.5,
+                                0.5,
+                                0.5
+                            ],
+                            "margins": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "pivot": [
+                                0.5,
+                                0.5
+                            ],
+                            "rect": [
+                                0.0,
+                                0.0,
+                                64.0,
+                                64.0
+                            ],
+                            "sizePolicy": [
+                                "Fixed",
+                                "Fixed"
+                            ],
+                            "constraints": {
+                                "minWidth": 0.0,
+                                "minHeight": 0.0,
+                                "maxWidth": 3.4028234663852886e+38,
+                                "maxHeight": 3.4028234663852886e+38
+                            }
+                        }
+                    },
+                    {
+                        "type": "Texture",
+                        "data": {
+                            "texturePath": "content/parkour/textures/digits.png",
+                            "color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "uvMin": [
+                                0.0,
+                                0.0
+                            ],
+                            "uvMax": [
+                                0.1,
+                                1.0
+                            ],
+                            "anchor": [
+                                0.5,
+                                0.5
+                            ],
+                            "rotationRad": 0.0
+                        }
+                    }
+                ],
+                "enabled": true,
+                "name": "OpeningCountdownDigit",
+                "visible": false
+            },
+            {
+                "children": [],
+                "components": [
+                    {
+                        "type": "Transform",
+                        "data": {
+                            "anchors": [
+                                0.5,
+                                0.5,
+                                0.5,
+                                0.5
+                            ],
+                            "margins": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "pivot": [
+                                0.5,
+                                0.5
+                            ],
+                            "rect": [
+                                0.0,
+                                0.0,
+                                512.0,
+                                128.0
+                            ],
+                            "sizePolicy": [
+                                "Fixed",
+                                "Fixed"
+                            ],
+                            "constraints": {
+                                "minWidth": 0.0,
+                                "minHeight": 0.0,
+                                "maxWidth": 3.4028234663852886e+38,
+                                "maxHeight": 3.4028234663852886e+38
+                            }
+                        }
+                    },
+                    {
+                        "type": "Texture",
+                        "data": {
+                            "texturePath": "content/parkour/textures/start.png",
+                            "color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "uvMin": [
+                                0.0,
+                                0.0
+                            ],
+                            "uvMax": [
+                                1.0,
+                                1.0
+                            ],
+                            "anchor": [
+                                0.5,
+                                0.5
+                            ],
+                            "rotationRad": 0.0
+                        }
+                    }
+                ],
+                "enabled": true,
+                "name": "OpeningCountdownStart",
+                "visible": false
+            },
+            {
+                "children": [],
+                "components": [
+                    {
+                        "type": "Transform",
+                        "data": {
+                            "anchors": [
+                                0.0,
+                                0.0,
+                                1.0,
+                                1.0
+                            ],
+                            "margins": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "pivot": [
+                                0.0,
+                                0.0
+                            ],
+                            "rect": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "sizePolicy": [
+                                "Fixed",
+                                "Fixed"
+                            ],
+                            "constraints": {
+                                "minWidth": 0.0,
+                                "minHeight": 0.0,
+                                "maxWidth": 3.4028234663852886e+38,
+                                "maxHeight": 3.4028234663852886e+38
+                            }
+                        }
+                    },
+                    {
+                        "type": "Texture",
+                        "data": {
+                            "texturePath": "content/parkour/textures/title_overlay.png",
+                            "color": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "uvMin": [
+                                0.0,
+                                0.0
+                            ],
+                            "uvMax": [
+                                1.0,
+                                1.0
+                            ],
+                            "anchor": [
+                                0.0,
+                                0.0
+                            ],
+                            "rotationRad": 0.0
+                        }
+                    }
+                ],
+                "enabled": true,
+                "name": "OpeningFadeOverlay",
+                "visible": false
+            }
         ],
         "components": [
             {

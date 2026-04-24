@@ -92,6 +92,7 @@ namespace Unnamed::Render {
 	struct VisibleRenderObject {
 		AssetID  meshAssetId        = kInvalidAssetID;
 		AssetID  materialInstanceId = kInvalidAssetID;
+		std::vector<AssetID> materialInstanceIdsBySlot = {};
 		uint64_t ownerEntityGuid    = 0;
 
 		Mat4 world       = Mat4::identity;

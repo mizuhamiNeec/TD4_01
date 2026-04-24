@@ -25,10 +25,10 @@
 #include "engine/unnamed/subsystem/input/InputSystem.h"
 #include "engine/world/GameplayCueBus.h"
 #include "engine/world/World.h"
+#include "engine/game/IDemoService.h"
 
 #include "game/core/collision/kinematic/BoxKinematicCollisionResolver.h"
 #include "game/core/components/character/state/GameMovementStateMachine.h"
-#include "game/core/replay/DemoManager.h"
 #include "game/core/replay/ReplayHash.h"
 
 #include "state/ability/CoreMovementAbilities.h"
@@ -227,8 +227,8 @@ namespace Unnamed {
 			SimulateStep(transform, deterministicPacket.input, stepSeconds);
 
 			if (Entity* owner = GetOwner()) {
-				if (auto* demoManager = GetDemoManager()) {
-					demoManager->RecordOrVerifySnapshot(
+				if (auto* demoService = GetDemoService()) {
+					demoService->RecordOrVerifySnapshot(
 						deterministicPacket.tick,
 						*owner
 					);

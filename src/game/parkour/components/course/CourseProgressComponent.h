@@ -51,6 +51,8 @@ namespace Unnamed {
 		bool                           allCheckpointsPassed = false;
 		bool                           courseCleared = false;
 		bool                           hasNextTarget = false;
+		float                          elapsedSeconds = 0.0f;
+		float                          clearedElapsedSeconds = 0.0f;
 		uint64_t                       revision = 0;
 	};
 
@@ -108,7 +110,11 @@ namespace Unnamed {
 
 		void ResetProgress();
 		void EnsureSpawnInitialized(const TransformComponent* transform);
-		void TickCourseProgress(TransformComponent* transform, bool drawDebug);
+		void TickCourseProgress(
+			TransformComponent* transform,
+			float               deltaTime,
+			bool                drawDebug
+		);
 		void DrawCourseDebug(TransformComponent* transform) const;
 		void UpdateTouchedSnapshot();
 		void RespawnToLatest(TransformComponent* transform);

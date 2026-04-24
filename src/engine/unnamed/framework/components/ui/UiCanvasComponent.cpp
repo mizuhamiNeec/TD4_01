@@ -15,6 +15,7 @@
 
 #include "engine/gui/UiDocument.h"
 #include "engine/gui/UiRoot.h"
+#include "engine/game/IGameModule.h"
 #include "engine/ImGui/Icons.h"
 #include "engine/ImGui/ImGuiWidgets.h"
 #include "engine/unnamed/subsystem/console/Log.h"
@@ -64,9 +65,20 @@ namespace Unnamed {
 			}
 			return UI_CANVAS_BILLBOARD_DEPTH_MODE::DEPTH_TEST;
 		}
+
+		std::string ResolveDefaultUiAssetPath() {
+			const auto* gameModule = ServiceLocator::Get<IGameModule>();
+			if (!gameModule) {
+				return {};
+			}
+
+			const std::string uiPath = gameModule->GetDefaultUiDocumentPath();
+			return uiPath.empty() ? std::string() : StrUtil::NormalizePath(uiPath);
+		}
 	}
 
-	UiCanvasComponent::UiCanvasComponent()  = default;
+	UiCanvasComponent::UiCanvasComponent() :
+		mUiAssetPath(ResolveDefaultUiAssetPath()) {}
 	UiCanvasComponent::~UiCanvasComponent() = default;
 
 	void UiCanvasComponent::Deserialize(const JsonReader& reader) {

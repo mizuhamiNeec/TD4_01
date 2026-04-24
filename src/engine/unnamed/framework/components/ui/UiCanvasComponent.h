@@ -78,7 +78,7 @@ namespace Unnamed {
 	private:
 		void InvalidateRuntime();
 
-		std::string mUiAssetPath = "./content/parkour/ui/MainMenu.ui.json";
+		std::string mUiAssetPath;
 		UI_CANVAS_SPACE_MODE mSpaceMode = UI_CANVAS_SPACE_MODE::SCREEN;
 		UI_CANVAS_BILLBOARD_DEPTH_MODE mBillboardDepthMode =
 			UI_CANVAS_BILLBOARD_DEPTH_MODE::DEPTH_TEST;

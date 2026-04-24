@@ -86,6 +86,12 @@ namespace Unnamed {
 		void WriteVec3(const char* key, const Vec3& value);
 		void WriteVec4(const char* key, const Vec4& value);
 
+		/// @brief 構築されたJSONオブジェクトを取得する
+		/// @return JSONオブジェクトへの定数参照
+		[[nodiscard]] const nlohmann::json& GetRoot() const {
+			return mRoot;
+		}
+
 		/// @brief ファイルに保存する
 		/// @return 成功した場合true
 		bool Save() const;

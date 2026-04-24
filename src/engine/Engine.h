@@ -4,6 +4,7 @@
 #include <core/assets/AssetID.h>
 
 #include <engine/EngineConfig.h>
+#include <engine/EngineServices.h>
 
 class IPostProcess;
 class SrvManager;
@@ -14,8 +15,10 @@ namespace Unnamed {
 	class ImGuiLayer;
 	class ConsoleSystem;
 	class ConCommand;
-	class DemoManager;
+	class IDemoService;
+	class IGameModule;
 	class World;
+	struct WorldServices;
 
 	namespace Render {
 		class RenderModule;
@@ -30,7 +33,9 @@ namespace Unnamed {
 	class Engine {
 	public:
 		/// @brief コンストラクタ
-		Engine();
+		/// @param gameModule ゲーム側機能を注入するモジュール
+		/// @param runMode 実行モード
+		Engine(IGameModule& gameModule, RUN_MODE runMode);
 
 		/// @brief デストラクタ
 		~Engine();
@@ -63,18 +68,20 @@ namespace Unnamed {
 		/// @brief フルスクリーンの切り替えを行います。
 		void ToggleFullscreen() const;
 
-		/// @brief ワールドを切り替えます。
-		/// @tparam TWorld 切り替えるワールドの型
-		/// @tparam Args コンストラクタに渡す引数の型
-		/// @param args コンストラクタに渡す引数
-		/// @return 切り替えたワールドの参照
-		template <class TWorld, class... Args>
-		TWorld& SwitchWorld(Args&&... args);
+		/// @brief ワールドを切り替えて初期化します。
+		/// @param newWorld 切り替え先ワールド
+		/// @return 切り替えたワールド参照
+		World& ActivateWorld(std::unique_ptr<World> newWorld);
+
+		/// @brief 現在状態から WorldServices を組み立てます。
+		[[nodiscard]] WorldServices BuildWorldServices() const noexcept;
 
 		/// @brief 現在のワールドを取得します。
 		/// @return 現在のワールドの参照
 		[[nodiscard]] World* GetWorld() const;
 
+		IGameModule& mGameModule;
+		RUN_MODE     mRequestedRunMode = RUN_MODE::STANDALONE;
 		EngineConfig mConfig;
 
 		// 基本システム
@@ -85,7 +92,7 @@ namespace Unnamed {
 		// 基幹システム
 		std::unique_ptr<ConsoleSystem>        mConsoleSystem;
 		std::unique_ptr<class TerminalSystem> mTerminalSystem;
-		std::unique_ptr<DemoManager>          mDemoManager;
+		std::unique_ptr<IDemoService>         mDemoService;
 
 		std::unique_ptr<class TimeSystem>  mTimeSystem;
 		std::unique_ptr<class InputSystem> mInputSystem;
@@ -96,7 +103,7 @@ namespace Unnamed {
 
 		std::unique_ptr<World> mWorld;
 
-#ifdef _DEBUG
+#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
 		std::unique_ptr<ImGuiLayer>    mUImGuiLayer;
 		std::unique_ptr<EditorRuntime> mUEditorRuntime;
 #endif

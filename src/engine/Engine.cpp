@@ -27,7 +27,9 @@
 #include <core/assets/loader/UiDocumentAssetLoader.h>
 #include <core/string/StrUtil.h>
 
-#include <engine/editor/EditorRuntime.h>
+#include <core/ComponentRegistry.h>
+#include <engine/game/IDemoService.h>
+#include <engine/game/IGameModule.h>
 #include <engine/Platform/PlatformEventsImpl.h>
 #include <engine/Platform/WindowManager.h>
 #include <engine/profiler/Profiler.h>
@@ -50,10 +52,12 @@
 #include <engine/unnamed/subsystem/terminal/TerminalSystem.h>
 #include <engine/unnamed/subsystem/time/SystemClock.h>
 #include <engine/unnamed/subsystem/time/TimeSystem.h>
-#include <engine/world/EditorWorld.h>
-#include <engine/world/GameWorld.h>
 #include <engine/world/World.h>
-#include <game/core/replay/DemoManager.h>
+
+#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
+#include <engine/editor/EditorRuntime.h>
+#include <engine/world/EditorWorld.h>
+#endif
 
 namespace Unnamed {
 	namespace Rhi {
@@ -61,7 +65,9 @@ namespace Unnamed {
 		class D3D12Device;
 	}
 
-	Engine::Engine()  = default;
+	Engine::Engine(IGameModule& gameModule, const RUN_MODE runMode)
+		: mGameModule(gameModule),
+		  mRequestedRunMode(runMode) {}
 	Engine::~Engine() = default;
 
 	int Engine::Run() {
@@ -119,7 +125,7 @@ namespace Unnamed {
 	}
 
 	void Engine::ToggleEditorScreenMode() const {
-#ifdef _DEBUG
+#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
 		if (mUEditorRuntime && mIsEditorMode) {
 			mUEditorRuntime->TogglePresentMode();
 		}
@@ -132,13 +138,22 @@ namespace Unnamed {
 		SystemClock::Init();
 
 		ServiceLocator::Register<Engine>(this);
+		ServiceLocator::Register<IGameModule>(&mGameModule);
+
+		RUN_MODE resolvedRunMode = mRequestedRunMode;
+#if !(defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR))
+		if (resolvedRunMode == RUN_MODE::EDITOR) {
+			Warning(
+				"Engine",
+				"Editor mode is not available in this build. Falling back to standalone mode."
+			);
+			resolvedRunMode = RUN_MODE::STANDALONE;
+		}
+#endif
+		mIsEditorMode = resolvedRunMode == RUN_MODE::EDITOR;
 
 		mConfig = {
-#ifdef _DEBUG
-			.mode = RUN_MODE::EDITOR,
-#else
-			.mode = RUN_MODE::STANDALONE,
-#endif
+			.mode = resolvedRunMode,
 			.window = {
 				.title     = "Unnamed Engine",
 				.width     = 1280,
@@ -174,8 +189,8 @@ namespace Unnamed {
 			return false;
 		}
 
-		mDemoManager = std::make_unique<DemoManager>();
-		ServiceLocator::Register<DemoManager>(mDemoManager.get());
+		mDemoService = mGameModule.CreateDemoService();
+		ServiceLocator::Register<IDemoService>(mDemoService.get());
 
 		mAssetManager = std::make_unique<AssetManager>();
 		ServiceLocator::Register<AssetManager>(mAssetManager.get());
@@ -292,7 +307,19 @@ namespace Unnamed {
 		mRenderModule->Init(mConsoleSystem.get());
 		mRenderFrameContext = std::make_unique<Render::RenderFrameContext>();
 
-#ifdef _DEBUG
+		// ゲームモジュールに Engine 側サービスを公開し、初期化を委譲します。
+		EngineServices engineServices = {
+			.console = mConsoleSystem.get(),
+			.inputSystem = mInputSystem.get(),
+			.assetManager = mAssetManager.get(),
+			.profiler = mProfiler.get(),
+			.windowManager = mWindowManager.get(),
+			.demoService = mDemoService.get()
+		};
+		mGameModule.Initialize(engineServices);
+		mGameModule.RegisterGameComponents(ComponentRegistry::Get());
+
+#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
 		auto& dx     = dynamic_cast<Rhi::D3D12Device&>(*mRhiDevice);
 		mUImGuiLayer = std::make_unique<ImGuiLayer>(
 			hwnd,
@@ -318,21 +345,22 @@ namespace Unnamed {
 		RegisterConsoleCommandsAndVariables();
 
 		if (mConfig.mode == RUN_MODE::EDITOR) {
-#ifdef _DEBUG
+#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
 			mUEditorRuntime = std::make_unique<EditorRuntime>(
 				mConsoleSystem.get(),
 				mInputSystem.get(),
 				mAssetManager.get(),
-				mDemoManager.get(),
+				mDemoService.get(),
+				mGameModule,
 				mProfiler.get(),
 				*mWindowManager,
 				*mRenderModule,
 				*mUImGuiLayer
 			);
 			if (World* runtimeWorld = mUEditorRuntime->GetRuntimeWorld()) {
-				runtimeWorld->LoadSceneFromFile(
-					"./content/parkour/scenes/title.json"
-				);
+				const std::string startupScenePath =
+					mGameModule.GetDefaultStartupScenePath();
+				runtimeWorld->LoadSceneFromFile(startupScenePath.c_str());
 			}
 
 			mConsoleSystem->ExecuteCommand(
@@ -340,8 +368,17 @@ namespace Unnamed {
 			);
 #endif
 		} else {
-			auto& world = SwitchWorld<GameWorld>();
-			world.LoadSceneFromFile("./content/parkour/scenes/title.json");
+			std::unique_ptr<World> runtimeWorld = mGameModule.CreateRuntimeWorld(
+				BuildWorldServices()
+			);
+			if (!runtimeWorld) {
+				Error("Engine", "GameModule returned null runtime world.");
+				return false;
+			}
+			World& world = ActivateWorld(std::move(runtimeWorld));
+			const std::string startupScenePath =
+				mGameModule.GetDefaultStartupScenePath();
+			world.LoadSceneFromFile(startupScenePath.c_str());
 		}
 
 		// ユーザー名をコンソール変数に設定
@@ -404,7 +441,7 @@ namespace Unnamed {
 			);
 		}
 
-#ifdef _DEBUG
+#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
 		// Update内でImGuiを使えるように更新前にフレーム開始
 		if (mUImGuiLayer) {
 			Profiler::ScopeTimer scope(mProfiler.get(), "ImGui.BeginFrame");
@@ -434,7 +471,7 @@ namespace Unnamed {
 		}
 
 		World* runtimeWorld = mWorld.get();
-#ifdef _DEBUG
+#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
 		if (mUEditorRuntime && mIsEditorMode) {
 			runtimeWorld = mUEditorRuntime->GetRuntimeWorld();
 		}
@@ -456,18 +493,18 @@ namespace Unnamed {
 
 			static constexpr uint32_t kMaxFixedTicksPerFrame = 16u;
 
-			const uint32_t tickRate = mDemoManager ?
-				                          mDemoManager->
+			const uint32_t tickRate = mDemoService ?
+				                          mDemoService->
 				                          GetSimulationTickRate() :
-				                          DemoManager::ResolveConfiguredTickRate();
-			const float fixedStepSeconds = DemoManager::TickStepSecondsFromRate(
+				                          IDemoService::ResolveConfiguredTickRate();
+			const float fixedStepSeconds = IDemoService::TickStepSecondsFromRate(
 				tickRate
 			);
 
-			if (mDemoManager &&
-			    (mDemoManager->IsPlayback() || mDemoManager->IsRecording())) {
+			if (mDemoService &&
+			    (mDemoService->IsPlayback() || mDemoService->IsRecording())) {
 				const uint32_t configuredTickRate =
-					DemoManager::ResolveConfiguredTickRate();
+					IDemoService::ResolveConfiguredTickRate();
 				if (configuredTickRate != tickRate &&
 				    configuredTickRate !=
 				    mLastLoggedTickrateMismatchConfigured) {
@@ -537,7 +574,7 @@ namespace Unnamed {
 			);
 		}
 
-#ifdef _DEBUG
+#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
 		if (mUImGuiLayer) {
 			if (mUEditorRuntime && mIsEditorMode) {
 				mUEditorRuntime->SyncViewOutputs();
@@ -591,7 +628,7 @@ namespace Unnamed {
 		mPostFxChainCommand.reset();
 		mPostFxChainReloadCommand.reset();
 		mSequenceRegressionRunCommand.reset();
-#ifdef _DEBUG
+#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
 		mToggleEditorCommand.reset();
 		mToggleFullscreenCommand.reset();
 #endif
@@ -600,10 +637,10 @@ namespace Unnamed {
 			mWorld->Shutdown();
 			mWorld.reset();
 		}
-		ServiceLocator::Register<DemoManager>(nullptr);
-		mDemoManager.reset();
+		ServiceLocator::Register<IDemoService>(nullptr);
+		mDemoService.reset();
 
-#ifdef _DEBUG
+#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
 		if (mRenderModule) {
 			mRenderModule->SetUiCallbacks({}, {});
 		}
@@ -648,6 +685,8 @@ namespace Unnamed {
 		if (mWindowManager) {
 			mWindowManager->Shutdown();
 		}
+
+		ServiceLocator::Register<IGameModule>(nullptr);
 	}
 
 	/// @brief コンソールコマンドと変数の登録
@@ -813,7 +852,7 @@ namespace Unnamed {
 			},
 			"Run fixed-tick regression tests for sequence runtime."
 		);
-#ifdef _DEBUG
+#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
 		mToggleEditorCommand = std::make_unique<ConCommand>(
 			"toggleeditor",
 			[this](const std::vector<std::string>&) {
@@ -835,7 +874,7 @@ namespace Unnamed {
 	}
 
 	World* Engine::ResolveSceneTransitionTargetWorld(World* runtimeWorld) const {
-#ifdef _DEBUG
+#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
 		if (auto* editorWorld = dynamic_cast<EditorWorld*>(runtimeWorld)) {
 			return editorWorld->GetRuntimeSceneWorld();
 		}
@@ -853,40 +892,38 @@ namespace Unnamed {
 		}
 	}
 
-	template <class TWorld, class... Args>
-	TWorld& Engine::SwitchWorld(Args&&... args) {
-		static_assert(std::is_base_of_v<World, TWorld>);
-
+	World& Engine::ActivateWorld(std::unique_ptr<World> newWorld) {
+		if (!newWorld) {
+			Fatal("Engine", "Attempted to activate null world.");
+		}
 		if (mWorld) {
 			mWorld->Shutdown();
 			mWorld.reset();
 		}
 
-		auto newWorld = std::make_unique<TWorld>(
-			std::forward<Args>(args)...
-		);
-		TWorld* raw = newWorld.get();
-		raw->SetServices(
-			{
-				.console      = mConsoleSystem.get(),
-				.inputSystem  = mInputSystem.get(),
-				.profiler     = mProfiler.get(),
-				.assetManager = mAssetManager.get(),
-				.demoManager  = mDemoManager.get(),
-				.audioSystem  = mAudioSystem.get()
-			}
-		);
+		newWorld->SetServices(BuildWorldServices());
 
 		mWorld = std::move(newWorld);
 
 		mSimulationAccumulator = 0.0f;
 
 		mWorld->Initialize();
-		return *raw;
+		return *mWorld;
+	}
+
+	WorldServices Engine::BuildWorldServices() const noexcept {
+		WorldServices services = {};
+		services.console       = mConsoleSystem.get();
+		services.inputSystem   = mInputSystem.get();
+		services.profiler      = mProfiler.get();
+		services.assetManager  = mAssetManager.get();
+		services.demoService   = mDemoService.get();
+		services.audioSystem   = mAudioSystem.get();
+		return services;
 	}
 
 	World* Engine::GetWorld() const {
-#ifdef _DEBUG
+#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
 		if (mUEditorRuntime && mIsEditorMode) {
 			return mUEditorRuntime->GetRuntimeWorld();
 		}

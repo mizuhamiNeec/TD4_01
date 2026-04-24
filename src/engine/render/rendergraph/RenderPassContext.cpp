@@ -389,8 +389,18 @@ namespace Unnamed::Render {
 		mCommandList->DrawInstanced(vertexCount, instanceCount, 0, 0);
 	}
 
-	void RenderPassContext::DrawIndexedTest(const uint32_t indexCount) const {
-		mCommandList->DrawIndexedInstanced(indexCount, 1, 0, 0, 0);
+	void RenderPassContext::DrawIndexedTest(
+		const uint32_t indexCount,
+		const uint32_t startIndexLocation,
+		const int32_t  baseVertexLocation
+	) const {
+		mCommandList->DrawIndexedInstanced(
+			indexCount,
+			1,
+			startIndexLocation,
+			baseVertexLocation,
+			0
+		);
 	}
 
 	void RenderPassContext::DispatchForBackBuffer(

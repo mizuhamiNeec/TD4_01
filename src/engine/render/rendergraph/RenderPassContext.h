@@ -84,7 +84,11 @@ namespace Unnamed::Render {
 		void DrawInstanced(
 			uint32_t vertexCount, uint32_t instanceCount
 		) const;
-		void DrawIndexedTest(uint32_t indexCount) const;
+		void DrawIndexedTest(
+			uint32_t indexCount,
+			uint32_t startIndexLocation = 0,
+			int32_t  baseVertexLocation = 0
+		) const;
 
 		void DispatchForBackBuffer(
 			uint32_t threadGroupSizeX, uint32_t threadGroupSizeY

@@ -25,7 +25,7 @@ namespace Unnamed {
 	namespace {
 		constexpr std::string_view kChannel          = "MeshAssetLdr";
 		constexpr uint32_t         kMeshCacheMagic   = 0x48534D55; // UMSH
-		constexpr uint32_t         kMeshCacheVersion = 3;
+			constexpr uint32_t         kMeshCacheVersion = 4;
 
 		constexpr std::array kSupportedExtensions = {
 			".obj",
@@ -43,6 +43,7 @@ namespace Unnamed {
 			uint64_t importerConfigHash   = 0;
 			uint32_t vertexCount          = 0;
 			uint32_t indexCount           = 0;
+			uint32_t submeshCount         = 0;
 			uint32_t skeletonBoneCount    = 0;
 			uint32_t animationClipCount   = 0;
 			uint32_t flags                = 0;
@@ -484,6 +485,8 @@ namespace Unnamed {
 
 			const uint32_t baseVertex = static_cast<uint32_t>(out.vertices.
 				size());
+			const uint32_t submeshIndexStart = static_cast<uint32_t>(out.indices.
+				size());
 			out.vertices.reserve(
 				out.vertices.size() + static_cast<size_t>(mesh->mNumVertices)
 			);
@@ -584,6 +587,17 @@ namespace Unnamed {
 					out.indices.emplace_back(baseVertex + face.mIndices[i + 1]);
 				}
 			}
+
+			const uint32_t submeshIndexCount = static_cast<uint32_t>(
+				out.indices.size() - submeshIndexStart
+			);
+			if (submeshIndexCount > 0) {
+				SubMeshAssetData submesh = {};
+				submesh.indexStart = submeshIndexStart;
+				submesh.indexCount = submeshIndexCount;
+				submesh.materialIndex = mesh->mMaterialIndex;
+				out.submeshes.emplace_back(submesh);
+			}
 		}
 
 		if (!out.skeleton.empty()) {
@@ -660,10 +674,12 @@ namespace Unnamed {
 		mesh.hasSkinning   = hasSkinning;
 		mesh.vertices.resize(header.vertexCount);
 		mesh.indices.resize(header.indexCount);
+		mesh.submeshes.resize(header.submeshCount);
 		mesh.skeleton.resize(header.skeletonBoneCount);
 
 		if (!reader.ReadArray(mesh.vertices.data(), mesh.vertices.size()) ||
-		    !reader.ReadArray(mesh.indices.data(), mesh.indices.size())) {
+		    !reader.ReadArray(mesh.indices.data(), mesh.indices.size()) ||
+		    !reader.ReadArray(mesh.submeshes.data(), mesh.submeshes.size())) {
 			return false;
 		}
 
@@ -783,6 +799,7 @@ namespace Unnamed {
 		header.importerConfigHash = BuildImporterConfigHash(mesh->hasSkinning);
 		header.vertexCount = static_cast<uint32_t>(mesh->vertices.size());
 		header.indexCount = static_cast<uint32_t>(mesh->indices.size());
+		header.submeshCount = static_cast<uint32_t>(mesh->submeshes.size());
 		header.skeletonBoneCount = static_cast<uint32_t>(mesh->skeleton.size());
 		header.animationClipCount = static_cast<uint32_t>(
 			mesh->animationClips.size()
@@ -793,7 +810,8 @@ namespace Unnamed {
 			return false;
 		}
 		if (!writer.WriteArray(mesh->vertices.data(), mesh->vertices.size()) ||
-		    !writer.WriteArray(mesh->indices.data(), mesh->indices.size())) {
+		    !writer.WriteArray(mesh->indices.data(), mesh->indices.size()) ||
+		    !writer.WriteArray(mesh->submeshes.data(), mesh->submeshes.size())) {
 			return false;
 		}
 

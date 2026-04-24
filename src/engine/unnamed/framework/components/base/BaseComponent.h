@@ -11,7 +11,7 @@ namespace Unnamed {
 	class ConsoleSystem;
 	class InputSystem;
 	class AssetManager;
-	class DemoManager;
+	class IDemoService;
 	class AudioSystem;
 	class JsonWriter;
 	class JsonReader;
@@ -118,9 +118,9 @@ namespace Unnamed {
 		/// @return AssetManager へのポインタ。未設定時は nullptr
 		[[nodiscard]] AssetManager* GetAssetManager() const noexcept;
 
-		/// @brief このコンポーネントに紐づく DemoManager を取得します。
-		/// @return DemoManager へのポインタ。未設定時は nullptr
-		[[nodiscard]] DemoManager* GetDemoManager() const noexcept;
+		/// @brief このコンポーネントに紐づく DemoService を取得します。
+		/// @return DemoService へのポインタ。未設定時は nullptr
+		[[nodiscard]] IDemoService* GetDemoService() const noexcept;
 
 		/// @brief このコンポーネントに紐づく AudioSystem を取得します。
 		/// @return AudioSystem へのポインタ。未設定時は nullptr

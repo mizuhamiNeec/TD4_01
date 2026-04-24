@@ -61,9 +61,9 @@ namespace Unnamed {
 		return world ? world->GetAssetManager() : nullptr;
 	}
 
-	DemoManager* BaseComponent::GetDemoManager() const noexcept {
+	IDemoService* BaseComponent::GetDemoService() const noexcept {
 		World* world = GetWorld();
-		return world ? world->GetDemoManager() : nullptr;
+		return world ? world->GetDemoService() : nullptr;
 	}
 
 	AudioSystem* BaseComponent::GetAudioSystem() const noexcept {

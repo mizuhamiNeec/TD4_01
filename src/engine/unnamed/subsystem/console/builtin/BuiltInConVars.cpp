@@ -221,7 +221,7 @@ namespace Unnamed {
 
 		static ConVar<std::string> demo_mismatch_policy(
 			"demo_mismatch_policy", "continue", FCVAR::ARCHIVE,
-			"Demo mismatch handling policy: continue | stop."
+			"Demo mismatch handling policy: continue | stop | ignore."
 		);
 		static ConVar<int> demo_mismatch_log_interval(
 			"demo_mismatch_log_interval", 120, FCVAR::ARCHIVE,

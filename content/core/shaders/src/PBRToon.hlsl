@@ -84,25 +84,28 @@ float4 PsMain(VsOut i) : SV_Target {
 	}
 
 	// ラフネスからハイライト幅を決め、トゥーン帯に量子化する。
-	float specPow       = lerp(96.0f, 8.0f, saturate(gRoughness));
-	float spec          = pow(saturate(dot(N, H)), specPow);
-	float specBand      = step(0.5f, spec);
-	float3 specColor    = lerp(float3(0.04f, 0.04f, 0.04f), albedo, saturate(gMetallic));
+	float  specPow   = lerp(96.0f, 8.0f, saturate(gRoughness));
+	float  spec      = pow(saturate(dot(N, H)), specPow);
+	float  specBand  = spec;
+	float3 specColor = lerp(
+		float3(0.04f, 0.04f, 0.04f), albedo, saturate(gMetallic)
+	);
 	float3 specularToon = specColor * specBand * 0.25f;
 
 	// 輪郭側を軽く持ち上げて読みやすさを確保する。
-	float rimDot       = 1.0f - saturate(dot(N, V));
-	float rimIntensity = pow(rimDot, 3.0f);
-	float3 rimColor    = float3(0.025f, 0.025f, 0.025f) * rimIntensity;
+	float  rimDot       = 1.0f - saturate(dot(N, V));
+	float  rimIntensity = pow(rimDot, 3.0f);
+	float3 rimColor     = float3(0.025f, 0.025f, 0.025f) * rimIntensity;
 
 	float3 ambient = float3(0.025f, 0.025f, 0.125f) * albedo;
-	float3 lit     = albedo * diffuseFactor + specularToon + rimColor + ambient + gEmissiveColor.rgb;
+	float3 lit = albedo * diffuseFactor + specularToon + rimColor + ambient +
+	             gEmissiveColor.rgb;
 
 	// 側面にわずかな寒色を加えて法線向きを視認しやすくする。
 	if (N.y < 0.7f) {
 		const float3 synthwaveBlueTint = float3(0.10f, 0.65f, 1.00f);
 		float        t                 = saturate(1.0f - N.y / 0.7f);
-		lit += synthwaveBlueTint * t * 0.01f;
+		lit                            += synthwaveBlueTint * t * 0.01f;
 	}
 
 	// 既存トーンに合わせた簡易フォグ。
@@ -111,7 +114,7 @@ float4 PsMain(VsOut i) : SV_Target {
 	float  fogEnd     = 416.1536f;
 	float3 fogColor   = float3(0.78f, 0.22f, 0.92f);
 	float  fogFactor  = saturate((distanceWS - fogStart) / (fogEnd - fogStart));
-	lit              = lerp(lit, fogColor, fogFactor * 0.5f);
+	lit               = lerp(lit, fogColor, fogFactor * 0.5f);
 
 	return float4(lit, saturate(gOpacity * baseColor.a));
 }

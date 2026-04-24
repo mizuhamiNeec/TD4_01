@@ -3,7 +3,9 @@
 #include <limits>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 #include "DemoTypes.h"
 #include "ReplaySerializerRegistry.h"
@@ -24,6 +26,7 @@ namespace Unnamed {
 		enum class MISMATCH_POLICY : uint8_t {
 			CONTINUE = 0, // ズレようがお構いなしに続行する
 			STOP     = 1, // ズレた時点で再生を停止する
+			SILENT   = 2, // ズレを検出してもログ出力せず続行する
 		};
 
 		/// @brief デモの録画を開始する
@@ -63,6 +66,14 @@ namespace Unnamed {
 		/// @brief 再生開始からの経過時間（秒）を取得する
 		/// @return 再生開始からの経過時間（秒）
 		[[nodiscard]] std::string_view GetCurrentPath() const;
+
+		/// @brief 現在の再生セッション番号を取得します。
+		/// @return StartPlayback が成功するたびに更新される番号
+		[[nodiscard]] uint64_t GetPlaybackSessionSerial() const;
+
+		/// @brief 現在の録画セッション番号を取得します。
+		/// @return StartRecording が成功するたびに更新される番号
+		[[nodiscard]] uint64_t GetRecordingSessionSerial() const;
 
 		/// @brief シミュレーションのティックレートを取得する
 		/// @return シミュレーションのティックレート
@@ -147,6 +158,48 @@ namespace Unnamed {
 		/// @return 読み込みに成功した場合はtrue、そうでなければfalse
 		[[nodiscard]] bool LoadPlaybackFile(const std::string& path);
 
+		/// @brief 対象エンティティのワールドから初期スナップショット集合を構築します。
+		/// @param subjectEntity 対象のエンティティ
+		/// @param outRecords 構築先
+		void CaptureInitialSnapshotSet(
+			const Entity& subjectEntity,
+			std::vector<EntitySnapshotRecord>& outRecords
+		) const;
+
+		/// @brief 現在の再生で使用する初期スナップショット集合を取得します。
+		/// @param subjectEntity フォールバック構築の基準となるエンティティ
+		/// @return 使用する初期スナップショット集合
+		[[nodiscard]] const std::vector<EntitySnapshotRecord>&
+		ResolvePlaybackInitialSnapshotSet(const Entity& subjectEntity);
+
+		/// @brief 実行時エンティティGUIDに対応する録画時GUIDを取得します。
+		/// @param runtimeEntityGuid 実行時エンティティGUID
+		/// @return 対応する録画時GUID。未登録なら runtimeEntityGuid
+		[[nodiscard]] uint64_t ResolvePlaybackRecordedEntityGuid(
+			uint64_t runtimeEntityGuid
+		) const;
+
+		/// @brief 録画時GUIDに対応する初期スナップショットを検索します。
+		/// @param entityGuid 録画時エンティティGUID
+		/// @return 初期スナップショット。存在しない場合は nullptr
+		[[nodiscard]] const EntitySnapshotRecord* FindInitialSnapshotByGuid(
+			const std::vector<EntitySnapshotRecord>& records,
+			uint64_t                                entityGuid
+		) const;
+
+		/// @brief 再生対象に適用する初期スナップショットを検索します。
+		/// @param subjectEntity 再生対象の実行時エンティティ
+		/// @return 適用すべき初期スナップショット。存在しない場合は nullptr
+		[[nodiscard]] const EntitySnapshotRecord*
+		FindInitialSnapshotForRuntimeEntity(
+			const std::vector<EntitySnapshotRecord>& records,
+			const Entity&                            subjectEntity
+		) const;
+
+		/// @brief 録画ファイル内のプレイヤー主体GUIDを推定します。
+		/// @return 推定された録画時GUID。推定できない場合は0
+		[[nodiscard]] uint64_t ResolveRecordedSubjectEntityGuid() const;
+
 		MODE                     mMode               = MODE::IDLE;
 		std::string              mCurrentPath        = {};
 		DemoFileV2               mFile               = {};
@@ -157,7 +210,12 @@ namespace Unnamed {
 		uint64_t mSnapshotMismatchCount = 0;
 		uint64_t mFirstMismatchTick = std::numeric_limits<uint64_t>::max();
 		std::unordered_set<uint64_t> mPlaybackInitialAppliedEntities = {};
+		std::unordered_map<uint64_t, uint64_t> mPlaybackEntityGuidRemap = {};
+		std::unordered_map<std::string, std::vector<EntitySnapshotRecord>>
+			mPlaybackSyntheticInitialEntities = {};
 		bool mPlaybackInitialSetApplied = false;
 		uint32_t mActiveTickRate = kDefaultDemoTickRate;
+		uint64_t mPlaybackSessionSerial = 0;
+		uint64_t mRecordingSessionSerial = 0;
 	};
 }

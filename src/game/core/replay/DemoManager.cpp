@@ -70,6 +70,7 @@ namespace Unnamed {
 
 		mMode                = MODE::RECORDING;
 		mCurrentPath         = std::move(path);
+		++mRecordingSessionSerial;
 		mFile                = {};
 		mFile.version        = kDemoFileVersion;
 		mActiveTickRate      = ResolveConfiguredTickRate();
@@ -100,7 +101,9 @@ namespace Unnamed {
 		mMode           = MODE::PLAYBACK;
 		mCurrentPath    = std::move(path);
 		mActiveTickRate = mFile.tickRate;
+		++mPlaybackSessionSerial;
 		mPlaybackInitialAppliedEntities.clear();
+		mPlaybackEntityGuidRemap.clear();
 		mPlaybackInitialSetApplied = false;
 		Msg(
 			kChannel,
@@ -150,6 +153,14 @@ namespace Unnamed {
 
 	std::string_view DemoManager::GetCurrentPath() const {
 		return mCurrentPath;
+	}
+
+	uint64_t DemoManager::GetPlaybackSessionSerial() const {
+		return mPlaybackSessionSerial;
+	}
+
+	uint64_t DemoManager::GetRecordingSessionSerial() const {
+		return mRecordingSessionSerial;
 	}
 
 	uint32_t DemoManager::GetSimulationTickRate() const {
@@ -213,8 +224,11 @@ namespace Unnamed {
 			return false;
 		}
 
+		const uint64_t recordedSubjectEntityGuid =
+			ResolvePlaybackRecordedEntityGuid(subjectEntityGuid);
 		if (subjectEntityGuid != 0 && command.subjectEntityGuid != 0 &&
-		    command.subjectEntityGuid != subjectEntityGuid) {
+		    command.subjectEntityGuid != subjectEntityGuid &&
+		    command.subjectEntityGuid != recordedSubjectEntityGuid) {
 			return false;
 		}
 
@@ -230,59 +244,13 @@ namespace Unnamed {
 			return;
 		}
 
-		const auto captureEntity = [this](const Entity& entity) {
-			if (!entity.IsActive()) {
-				return;
+		if (mFile.mapPath.empty()) {
+			if (const World* world = subjectEntity.GetWorld()) {
+				mFile.mapPath = std::string(world->GetLoadedScenePath());
 			}
-			const uint64_t entityGuid = entity.GetGuid();
-			for (const EntitySnapshotRecord& initial : mFile.initialEntities) {
-				if (initial.entityGuid == entityGuid) {
-					return;
-				}
-			}
-
-			nlohmann::json state = nlohmann::json::object();
-			uint64_t       hash  = 0;
-			if (!mSerializerRegistry.SerializeEntity(entity, state, hash)) {
-				return;
-			}
-
-			EntitySnapshotRecord initialRecord = {};
-			initialRecord.entityGuid           = entityGuid;
-			initialRecord.entityType           = "entity.generic.v1";
-			initialRecord.entityTypeId         = 0;
-			initialRecord.state                = std::move(state);
-			initialRecord.hash                 = hash;
-			mFile.initialEntities.emplace_back(std::move(initialRecord));
-		};
-
-		const World* world = subjectEntity.GetWorld();
-		const Scene* scene = world ? world->GetScenePtr() : nullptr;
-		if (!scene) {
-			captureEntity(subjectEntity);
-			return;
 		}
 
-		std::vector<const Entity*> orderedEntities = {};
-		orderedEntities.reserve(scene->GetEntities().size());
-		for (const auto& entityPtr : scene->GetEntities()) {
-			if (!entityPtr) {
-				continue;
-			}
-			orderedEntities.emplace_back(entityPtr.get());
-		}
-		std::ranges::sort(
-			orderedEntities,
-			[](const Entity* lhs, const Entity* rhs) {
-				return lhs->GetGuid() < rhs->GetGuid();
-			}
-		);
-		for (const Entity* entity : orderedEntities) {
-			if (!entity) {
-				continue;
-			}
-			captureEntity(*entity);
-		}
+		CaptureInitialSnapshotSet(subjectEntity, mFile.initialEntities);
 	}
 
 	bool DemoManager::ApplyInitialSnapshotIfNeeded(Entity& subjectEntity) {
@@ -313,13 +281,15 @@ namespace Unnamed {
 		}
 
 		const uint64_t entityGuid = subjectEntity.GetGuid();
-		if (!mPlaybackInitialSetApplied && !mFile.initialEntities.empty()) {
+		const auto& initialEntities =
+			ResolvePlaybackInitialSnapshotSet(subjectEntity);
+		if (!mPlaybackInitialSetApplied && !initialEntities.empty()) {
 			Scene* scene = nullptr;
 			if (World* world = subjectEntity.GetWorld()) {
 				scene = world->GetScenePtr();
 			}
 
-			for (const EntitySnapshotRecord& initial : mFile.initialEntities) {
+			for (const EntitySnapshotRecord& initial : initialEntities) {
 				Entity* targetEntity = scene ?
 					                       scene->FindEntity(
 						                       initial.entityGuid
@@ -332,6 +302,8 @@ namespace Unnamed {
 					*targetEntity, initial.state
 				);
 				mPlaybackInitialAppliedEntities.insert(initial.entityGuid);
+				mPlaybackEntityGuidRemap[initial.entityGuid] =
+					initial.entityGuid;
 			}
 			mPlaybackInitialSetApplied = true;
 		}
@@ -340,19 +312,16 @@ namespace Unnamed {
 			return true;
 		}
 
-		const EntitySnapshotRecord* record = nullptr;
-		for (const EntitySnapshotRecord& initial : mFile.initialEntities) {
-			if (initial.entityGuid == entityGuid) {
-				record = &initial;
-				break;
-			}
-		}
+		const EntitySnapshotRecord* record =
+			FindInitialSnapshotForRuntimeEntity(
+				initialEntities,
+				subjectEntity
+			);
 
-		if (!record && mFile.initialEntities.size() == 1) {
-			record = &mFile.initialEntities.front();
+		if (record && record->entityGuid != entityGuid) {
 			Warning(
 				kChannel,
-				"Initial snapshot for entity {} not found. Using only available initial entity {}.",
+				"Initial snapshot for entity {} not found. Remapping recorded entity {} to the runtime entity.",
 				entityGuid,
 				record->entityGuid
 			);
@@ -370,6 +339,7 @@ namespace Unnamed {
 
 		mSerializerRegistry.DeserializeEntity(subjectEntity, record->state);
 		mPlaybackInitialAppliedEntities.insert(entityGuid);
+		mPlaybackEntityGuidRemap[entityGuid] = record->entityGuid;
 		return true;
 	}
 
@@ -427,9 +397,12 @@ namespace Unnamed {
 		}
 		const EntitySnapshotRecord& currentRecord  = snapshot.entities.front();
 		const EntitySnapshotRecord* expectedRecord = nullptr;
+		const uint64_t recordedEntityGuid =
+			ResolvePlaybackRecordedEntityGuid(currentRecord.entityGuid);
 		for (const EntitySnapshotRecord& expectedEntityRecord : expected.
 		     entities) {
-			if (expectedEntityRecord.entityGuid == currentRecord.entityGuid) {
+			if (expectedEntityRecord.entityGuid == currentRecord.entityGuid ||
+			    expectedEntityRecord.entityGuid == recordedEntityGuid) {
 				expectedRecord = &expectedEntityRecord;
 				break;
 			}
@@ -445,6 +418,10 @@ namespace Unnamed {
 			}
 
 			const MISMATCH_POLICY policy = ResolveMismatchPolicy();
+			if (policy == MISMATCH_POLICY::SILENT) {
+				return;
+			}
+
 			const uint64_t logInterval = ResolveMismatchLogInterval();
 			const bool shouldLogMismatch = mSnapshotMismatchCount <= 16ull ||
 			                               (mSnapshotMismatchCount %
@@ -465,10 +442,175 @@ namespace Unnamed {
 			switch (policy) {
 				case MISMATCH_POLICY::STOP: (void)Stop();
 					break;
+				case MISMATCH_POLICY::SILENT:
 				case MISMATCH_POLICY::CONTINUE:
 				default: break;
 			}
 		}
+	}
+
+	void DemoManager::CaptureInitialSnapshotSet(
+		const Entity& subjectEntity,
+		std::vector<EntitySnapshotRecord>& outRecords
+	) const {
+		const auto captureEntity = [this, &outRecords](const Entity& entity) {
+			if (!entity.IsActive()) {
+				return;
+			}
+			const uint64_t entityGuid = entity.GetGuid();
+			for (const EntitySnapshotRecord& initial : outRecords) {
+				if (initial.entityGuid == entityGuid) {
+					return;
+				}
+			}
+
+			nlohmann::json state = nlohmann::json::object();
+			uint64_t       hash  = 0;
+			if (!mSerializerRegistry.SerializeEntity(entity, state, hash)) {
+				return;
+			}
+
+			EntitySnapshotRecord initialRecord = {};
+			initialRecord.entityGuid           = entityGuid;
+			initialRecord.entityType           = "entity.generic.v1";
+			initialRecord.entityTypeId         = 0;
+			initialRecord.state                = std::move(state);
+			initialRecord.hash                 = hash;
+			outRecords.emplace_back(std::move(initialRecord));
+		};
+
+		const World* world = subjectEntity.GetWorld();
+		const Scene* scene = world ? world->GetScenePtr() : nullptr;
+		if (!scene) {
+			captureEntity(subjectEntity);
+			return;
+		}
+
+		std::vector<const Entity*> orderedEntities = {};
+		orderedEntities.reserve(scene->GetEntities().size());
+		for (const auto& entityPtr : scene->GetEntities()) {
+			if (!entityPtr) {
+				continue;
+			}
+			orderedEntities.emplace_back(entityPtr.get());
+		}
+		std::ranges::sort(
+			orderedEntities,
+			[](const Entity* lhs, const Entity* rhs) {
+				return lhs->GetGuid() < rhs->GetGuid();
+			}
+		);
+		for (const Entity* entity : orderedEntities) {
+			if (!entity) {
+				continue;
+			}
+			captureEntity(*entity);
+		}
+	}
+
+	const std::vector<EntitySnapshotRecord>&
+	DemoManager::ResolvePlaybackInitialSnapshotSet(
+		const Entity& subjectEntity
+	) {
+		if (!mFile.initialEntities.empty()) {
+			return mFile.initialEntities;
+		}
+
+		std::vector<EntitySnapshotRecord>& syntheticInitial =
+			mPlaybackSyntheticInitialEntities[mCurrentPath];
+		if (syntheticInitial.empty()) {
+			CaptureInitialSnapshotSet(subjectEntity, syntheticInitial);
+			Warning(
+				kChannel,
+				"Demo initial snapshot set is empty. Captured runtime state as a synthetic loop start. path='{}'",
+				mCurrentPath
+			);
+		}
+		return syntheticInitial;
+	}
+
+	uint64_t DemoManager::ResolvePlaybackRecordedEntityGuid(
+		const uint64_t runtimeEntityGuid
+	) const {
+		if (runtimeEntityGuid == 0) {
+			return 0;
+		}
+
+		const auto it = mPlaybackEntityGuidRemap.find(runtimeEntityGuid);
+		return it != mPlaybackEntityGuidRemap.end() ?
+			       it->second :
+			       runtimeEntityGuid;
+	}
+
+	const EntitySnapshotRecord* DemoManager::FindInitialSnapshotByGuid(
+		const std::vector<EntitySnapshotRecord>& records,
+		const uint64_t entityGuid
+	) const {
+		if (entityGuid == 0) {
+			return nullptr;
+		}
+
+		for (const EntitySnapshotRecord& initial : records) {
+			if (initial.entityGuid == entityGuid) {
+				return &initial;
+			}
+		}
+		return nullptr;
+	}
+
+	const EntitySnapshotRecord*
+	DemoManager::FindInitialSnapshotForRuntimeEntity(
+		const std::vector<EntitySnapshotRecord>& records,
+		const Entity& subjectEntity
+	) const {
+		const uint64_t runtimeEntityGuid = subjectEntity.GetGuid();
+
+		// まずGUID一致を優先し、同じシーンをそのまま再生する場合の挙動を維持します。
+		if (const EntitySnapshotRecord* exact =
+			    FindInitialSnapshotByGuid(records, runtimeEntityGuid)) {
+			return exact;
+		}
+
+		const uint64_t remappedEntityGuid =
+			ResolvePlaybackRecordedEntityGuid(runtimeEntityGuid);
+		if (remappedEntityGuid != runtimeEntityGuid) {
+			if (const EntitySnapshotRecord* remapped =
+				    FindInitialSnapshotByGuid(records, remappedEntityGuid)) {
+				return remapped;
+			}
+		}
+
+		// コマンド/検証スナップショットに残っている主体GUIDを現在のプレイヤーへ対応付けます。
+		if (const uint64_t recordedSubjectEntityGuid =
+			    ResolveRecordedSubjectEntityGuid();
+			recordedSubjectEntityGuid != 0) {
+			if (const EntitySnapshotRecord* recordedSubject =
+				    FindInitialSnapshotByGuid(records, recordedSubjectEntityGuid)) {
+				return recordedSubject;
+			}
+		}
+
+		if (records.size() == 1) {
+			return &records.front();
+		}
+		return nullptr;
+	}
+
+	uint64_t DemoManager::ResolveRecordedSubjectEntityGuid() const {
+		for (const DemoTickCommand& command : mFile.commands) {
+			if (command.subjectEntityGuid != 0) {
+				return command.subjectEntityGuid;
+			}
+		}
+
+		for (const FrameSnapshot& snapshot : mFile.snapshots) {
+			for (const EntitySnapshotRecord& record : snapshot.entities) {
+				if (record.entityGuid != 0) {
+					return record.entityGuid;
+				}
+			}
+		}
+		return 0;
 	}
 
 	void DemoManager::Reset() {
@@ -480,6 +622,7 @@ namespace Unnamed {
 		mSnapshotMismatchCount  = 0;
 		mFirstMismatchTick      = std::numeric_limits<uint64_t>::max();
 		mPlaybackInitialAppliedEntities.clear();
+		mPlaybackEntityGuidRemap.clear();
 		mPlaybackInitialSetApplied = false;
 		mActiveTickRate            = ResolveConfiguredTickRate();
 	}
@@ -501,6 +644,7 @@ namespace Unnamed {
 			<< ", playbackSnapshotCursor=" << mPlaybackSnapshotCursor
 			<< ", mismatch=" << mSnapshotMismatchCount
 			<< ", tickRate=" << GetSimulationTickRate()
+			<< ", playbackSession=" << mPlaybackSessionSerial
 			<< ", firstMismatchTick="
 			<< (mFirstMismatchTick != std::numeric_limits<uint64_t>::max() ?
 				    std::to_string(mFirstMismatchTick) :
@@ -522,6 +666,9 @@ namespace Unnamed {
 		);
 		if (raw == "stop") {
 			return MISMATCH_POLICY::STOP;
+		}
+		if (raw == "ignore" || raw == "off" || raw == "none") {
+			return MISMATCH_POLICY::SILENT;
 		}
 		if (raw == "resync") {
 			static bool sWarnedResyncFallback = false;
@@ -564,6 +711,7 @@ namespace Unnamed {
 	) {
 		switch (policy) {
 			case MISMATCH_POLICY::STOP: return "stop";
+			case MISMATCH_POLICY::SILENT: return "ignore";
 			case MISMATCH_POLICY::CONTINUE:
 			default: return "continue";
 		}

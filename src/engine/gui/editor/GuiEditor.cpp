@@ -12,6 +12,7 @@
 #include "engine/gui/UiRoot.h"
 #include "engine/gui/UiScreenStack.h"
 #include "engine/gui/UiWidget.h"
+#include "engine/game/IGameModule.h"
 #include "engine/gui/components/UiButtonBehaviorComponent.h"
 #include "engine/gui/components/UiDigitStripComponent.h"
 #include "engine/gui/components/UiLayoutComponents.h"
@@ -22,12 +23,11 @@
 #include "engine/render/Renderer.h"
 #include "engine/ui/ImGuiLayer.h"
 #include "engine/unnamed/subsystem/console/Log.h"
+#include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 
 #ifdef _DEBUG
 namespace Unnamed::Gui {
 	namespace {
-		constexpr std::string_view kDefaultUiPath =
-			"./content/parkour/ui/MainMenu.ui.json";
 		constexpr const char* kRenamePopupId = "Rename Widget";
 
 		struct PaletteTemplate {
@@ -69,12 +69,18 @@ namespace Unnamed::Gui {
 
 		void EnsureContextDefaults(GuiEditorContext& context) {
 			if (context.pathBuffer[0] == '\0') {
-				std::snprintf(
-					context.pathBuffer.data(),
-					context.pathBuffer.size(),
-					"%s",
-					kDefaultUiPath.data()
-				);
+				if (const auto* gameModule = ServiceLocator::Get<IGameModule>()) {
+					const std::string defaultUiPath =
+						gameModule->GetDefaultUiDocumentPath();
+					if (!defaultUiPath.empty()) {
+						std::snprintf(
+							context.pathBuffer.data(),
+							context.pathBuffer.size(),
+							"%s",
+							defaultUiPath.c_str()
+						);
+					}
+				}
 			}
 			context.previewZoom = std::clamp(context.previewZoom, 0.25f, 4.0f);
 		}

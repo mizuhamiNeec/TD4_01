@@ -6,7 +6,6 @@
                 "children": [],
                 "components": [
                     {
-                        "type": "Transform",
                         "data": {
                             "anchors": [
                                 0.0,
@@ -14,6 +13,12 @@
                                 0.0,
                                 0.0
                             ],
+                            "constraints": {
+                                "maxHeight": 3.4028234663852886e+38,
+                                "maxWidth": 3.4028234663852886e+38,
+                                "minHeight": 0.0,
+                                "minWidth": 0.0
+                            },
                             "margins": [
                                 0.0,
                                 0.0,
@@ -33,39 +38,34 @@
                             "sizePolicy": [
                                 "Fixed",
                                 "Fixed"
-                            ],
-                            "constraints": {
-                                "minWidth": 0.0,
-                                "minHeight": 0.0,
-                                "maxWidth": 3.4028234663852886e+38,
-                                "maxHeight": 3.4028234663852886e+38
-                            }
-                        }
+                            ]
+                        },
+                        "type": "Transform"
                     },
                     {
-                        "type": "Texture",
                         "data": {
-                            "texturePath": "content/parkour/textures/ping.png",
+                            "anchor": [
+                                0.5,
+                                0.5
+                            ],
                             "color": [
                                 1.0,
                                 1.0,
                                 1.0,
                                 1.0
                             ],
-                            "uvMin": [
-                                0.0,
-                                0.0
-                            ],
+                            "rotationRad": 0.0,
+                            "texturePath": "content/parkour/textures/ping.png",
                             "uvMax": [
                                 1.0,
                                 1.0
                             ],
-                            "anchor": [
-                                0.5,
-                                0.5
-                            ],
-                            "rotationRad": 0.0
-                        }
+                            "uvMin": [
+                                0.0,
+                                0.0
+                            ]
+                        },
+                        "type": "Texture"
                     }
                 ],
                 "enabled": true,
@@ -76,7 +76,6 @@
                 "children": [],
                 "components": [
                     {
-                        "type": "Transform",
                         "data": {
                             "anchors": [
                                 0.0,
@@ -84,6 +83,12 @@
                                 0.0,
                                 0.0
                             ],
+                            "constraints": {
+                                "maxHeight": 3.4028234663852886e+38,
+                                "maxWidth": 3.4028234663852886e+38,
+                                "minHeight": 0.0,
+                                "minWidth": 0.0
+                            },
                             "margins": [
                                 0.0,
                                 0.0,
@@ -97,45 +102,40 @@
                             "rect": [
                                 0.0,
                                 0.0,
-                                34.0,
-                                34.0
+                                128.0,
+                                128.0
                             ],
                             "sizePolicy": [
                                 "Fixed",
                                 "Fixed"
-                            ],
-                            "constraints": {
-                                "minWidth": 0.0,
-                                "minHeight": 0.0,
-                                "maxWidth": 3.4028234663852886e+38,
-                                "maxHeight": 3.4028234663852886e+38
-                            }
-                        }
+                            ]
+                        },
+                        "type": "Transform"
                     },
                     {
-                        "type": "Texture",
                         "data": {
-                            "texturePath": "content/parkour/textures/arrow.png",
-                            "color": [
-                                1.0,
-                                1.0,
-                                1.0,
-                                0.95
-                            ],
-                            "uvMin": [
-                                0.0,
-                                0.0
-                            ],
-                            "uvMax": [
-                                1.0,
-                                1.0
-                            ],
                             "anchor": [
                                 0.5,
                                 0.5
                             ],
-                            "rotationRad": 0.0
-                        }
+                            "color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.949999988079071
+                            ],
+                            "rotationRad": 0.0,
+                            "texturePath": "content/parkour/textures/arrow.png",
+                            "uvMax": [
+                                1.0,
+                                1.0
+                            ],
+                            "uvMin": [
+                                0.0,
+                                0.0
+                            ]
+                        },
+                        "type": "Texture"
                     }
                 ],
                 "enabled": true,
@@ -146,7 +146,6 @@
                 "children": [],
                 "components": [
                     {
-                        "type": "Transform",
                         "data": {
                             "anchors": [
                                 0.5,
@@ -154,6 +153,12 @@
                                 0.5,
                                 0.5
                             ],
+                            "constraints": {
+                                "maxHeight": 3.4028234663852886e+38,
+                                "maxWidth": 3.4028234663852886e+38,
+                                "minHeight": 0.0,
+                                "minWidth": 0.0
+                            },
                             "margins": [
                                 0.0,
                                 0.0,
@@ -173,39 +178,34 @@
                             "sizePolicy": [
                                 "Fixed",
                                 "Fixed"
-                            ],
-                            "constraints": {
-                                "minWidth": 0.0,
-                                "minHeight": 0.0,
-                                "maxWidth": 3.4028234663852886e+38,
-                                "maxHeight": 3.4028234663852886e+38
-                            }
-                        }
+                            ]
+                        },
+                        "type": "Transform"
                     },
                     {
-                        "type": "Texture",
                         "data": {
-                            "texturePath": "content/parkour/textures/digits.png",
+                            "anchor": [
+                                0.5,
+                                0.5
+                            ],
                             "color": [
                                 1.0,
                                 1.0,
                                 1.0,
                                 0.0
                             ],
+                            "rotationRad": 0.0,
+                            "texturePath": "content/parkour/textures/digits.png",
+                            "uvMax": [
+                                0.10000000149011612,
+                                1.0
+                            ],
                             "uvMin": [
                                 0.0,
                                 0.0
-                            ],
-                            "uvMax": [
-                                0.1,
-                                1.0
-                            ],
-                            "anchor": [
-                                0.5,
-                                0.5
-                            ],
-                            "rotationRad": 0.0
-                        }
+                            ]
+                        },
+                        "type": "Texture"
                     }
                 ],
                 "enabled": true,
@@ -216,7 +216,6 @@
                 "children": [],
                 "components": [
                     {
-                        "type": "Transform",
                         "data": {
                             "anchors": [
                                 0.5,
@@ -224,6 +223,12 @@
                                 0.5,
                                 0.5
                             ],
+                            "constraints": {
+                                "maxHeight": 3.4028234663852886e+38,
+                                "maxWidth": 3.4028234663852886e+38,
+                                "minHeight": 0.0,
+                                "minWidth": 0.0
+                            },
                             "margins": [
                                 0.0,
                                 0.0,
@@ -238,44 +243,39 @@
                                 0.0,
                                 0.0,
                                 512.0,
-                                128.0
+                                180.0
                             ],
                             "sizePolicy": [
                                 "Fixed",
                                 "Fixed"
-                            ],
-                            "constraints": {
-                                "minWidth": 0.0,
-                                "minHeight": 0.0,
-                                "maxWidth": 3.4028234663852886e+38,
-                                "maxHeight": 3.4028234663852886e+38
-                            }
-                        }
+                            ]
+                        },
+                        "type": "Transform"
                     },
                     {
-                        "type": "Texture",
                         "data": {
-                            "texturePath": "content/parkour/textures/start.png",
+                            "anchor": [
+                                0.5,
+                                0.5
+                            ],
                             "color": [
                                 1.0,
                                 1.0,
                                 1.0,
                                 0.0
                             ],
-                            "uvMin": [
-                                0.0,
-                                0.0
-                            ],
+                            "rotationRad": 0.0,
+                            "texturePath": "content/parkour/textures/start.png",
                             "uvMax": [
                                 1.0,
                                 1.0
                             ],
-                            "anchor": [
-                                0.5,
-                                0.5
-                            ],
-                            "rotationRad": 0.0
-                        }
+                            "uvMin": [
+                                0.0,
+                                0.0
+                            ]
+                        },
+                        "type": "Texture"
                     }
                 ],
                 "enabled": true,
@@ -283,10 +283,185 @@
                 "visible": false
             },
             {
+                "children": [
+                    {
+                        "children": [],
+                        "components": [
+                            {
+                                "data": {
+                                    "anchors": [
+                                        0.5,
+                                        0.5,
+                                        0.5,
+                                        0.5
+                                    ],
+                                    "constraints": {
+                                        "maxHeight": 3.4028234663852886e+38,
+                                        "maxWidth": 3.4028234663852886e+38,
+                                        "minHeight": 0.0,
+                                        "minWidth": 0.0
+                                    },
+                                    "margins": [
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "pivot": [
+                                        0.5,
+                                        0.5
+                                    ],
+                                    "rect": [
+                                        0.0,
+                                        -56.0,
+                                        512.0,
+                                        128.0
+                                    ],
+                                    "sizePolicy": [
+                                        "Fixed",
+                                        "Fixed"
+                                    ]
+                                },
+                                "type": "Transform"
+                            },
+                            {
+                                "data": {
+                                    "anchor": [
+                                        0.5,
+                                        0.5
+                                    ],
+                                    "color": [
+                                        1.0,
+                                        1.0,
+                                        1.0,
+                                        0.0
+                                    ],
+                                    "rotationRad": 0.0,
+                                    "texturePath": "content/parkour/textures/clear.png",
+                                    "uvMax": [
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "uvMin": [
+                                        0.0,
+                                        0.0
+                                    ]
+                                },
+                                "type": "Texture"
+                            }
+                        ],
+                        "enabled": true,
+                        "name": "CourseResultClearImage",
+                        "visible": true
+                    },
+                    {
+                        "children": [],
+                        "components": [
+                            {
+                                "data": {
+                                    "anchors": [
+                                        0.5,
+                                        0.5,
+                                        0.5,
+                                        0.5
+                                    ],
+                                    "constraints": {
+                                        "maxHeight": 3.4028234663852886e+38,
+                                        "maxWidth": 3.4028234663852886e+38,
+                                        "minHeight": 0.0,
+                                        "minWidth": 0.0
+                                    },
+                                    "margins": [
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "pivot": [
+                                        0.5,
+                                        0.5
+                                    ],
+                                    "rect": [
+                                        0.0,
+                                        72.0,
+                                        360.0,
+                                        56.0
+                                    ],
+                                    "sizePolicy": [
+                                        "Fixed",
+                                        "Fixed"
+                                    ]
+                                },
+                                "type": "Transform"
+                            },
+                            {
+                                "data": {
+                                    "color": [
+                                        1.0,
+                                        1.0,
+                                        1.0,
+                                        0.0
+                                    ],
+                                    "digitSpacing": 4.0,
+                                    "minDigits": 6,
+                                    "stripTexturePath": "content/parkour/textures/digits.png",
+                                    "value": 0
+                                },
+                                "type": "DigitStrip"
+                            }
+                        ],
+                        "enabled": true,
+                        "name": "CourseResultElapsedDigits",
+                        "visible": true
+                    }
+                ],
+                "components": [
+                    {
+                        "data": {
+                            "anchors": [
+                                0.5,
+                                0.5,
+                                0.5,
+                                0.5
+                            ],
+                            "constraints": {
+                                "maxHeight": 3.4028234663852886e+38,
+                                "maxWidth": 3.4028234663852886e+38,
+                                "minHeight": 0.0,
+                                "minWidth": 0.0
+                            },
+                            "margins": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "pivot": [
+                                0.5,
+                                0.5
+                            ],
+                            "rect": [
+                                0.0,
+                                0.0,
+                                720.0,
+                                260.0
+                            ],
+                            "sizePolicy": [
+                                "Fixed",
+                                "Fixed"
+                            ]
+                        },
+                        "type": "Transform"
+                    }
+                ],
+                "enabled": true,
+                "name": "CourseResultRoot",
+                "visible": false
+            },
+            {
                 "children": [],
                 "components": [
                     {
-                        "type": "Transform",
                         "data": {
                             "anchors": [
                                 0.0,
@@ -294,6 +469,12 @@
                                 1.0,
                                 1.0
                             ],
+                            "constraints": {
+                                "maxHeight": 3.4028234663852886e+38,
+                                "maxWidth": 3.4028234663852886e+38,
+                                "minHeight": 0.0,
+                                "minWidth": 0.0
+                            },
                             "margins": [
                                 0.0,
                                 0.0,
@@ -313,39 +494,34 @@
                             "sizePolicy": [
                                 "Fixed",
                                 "Fixed"
-                            ],
-                            "constraints": {
-                                "minWidth": 0.0,
-                                "minHeight": 0.0,
-                                "maxWidth": 3.4028234663852886e+38,
-                                "maxHeight": 3.4028234663852886e+38
-                            }
-                        }
+                            ]
+                        },
+                        "type": "Transform"
                     },
                     {
-                        "type": "Texture",
                         "data": {
-                            "texturePath": "content/parkour/textures/title_overlay.png",
+                            "anchor": [
+                                0.0,
+                                0.0
+                            ],
                             "color": [
                                 0.0,
                                 0.0,
                                 0.0,
                                 0.0
                             ],
-                            "uvMin": [
-                                0.0,
-                                0.0
-                            ],
+                            "rotationRad": 0.0,
+                            "texturePath": "content/parkour/textures/title_overlay.png",
                             "uvMax": [
                                 1.0,
                                 1.0
                             ],
-                            "anchor": [
+                            "uvMin": [
                                 0.0,
                                 0.0
-                            ],
-                            "rotationRad": 0.0
-                        }
+                            ]
+                        },
+                        "type": "Texture"
                     }
                 ],
                 "enabled": true,
@@ -355,7 +531,6 @@
         ],
         "components": [
             {
-                "type": "Transform",
                 "data": {
                     "anchors": [
                         0.0,
@@ -363,6 +538,12 @@
                         1.0,
                         1.0
                     ],
+                    "constraints": {
+                        "maxHeight": 3.4028234663852886e+38,
+                        "maxWidth": 3.4028234663852886e+38,
+                        "minHeight": 0.0,
+                        "minWidth": 0.0
+                    },
                     "margins": [
                         0.0,
                         0.0,
@@ -382,14 +563,9 @@
                     "sizePolicy": [
                         "Fixed",
                         "Fixed"
-                    ],
-                    "constraints": {
-                        "minWidth": 0.0,
-                        "minHeight": 0.0,
-                        "maxWidth": 3.4028234663852886e+38,
-                        "maxHeight": 3.4028234663852886e+38
-                    }
-                }
+                    ]
+                },
+                "type": "Transform"
             }
         ],
         "enabled": true,

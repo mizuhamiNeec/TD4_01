@@ -19,6 +19,7 @@
 #include "types/MaterialInstanceAssetData.h"
 #include "types/MeshAssetData.h"
 #include "types/PostFxChainAssetData.h"
+#include "types/SequenceAssetData.h"
 #include "types/ShaderProgramAssetData.h"
 #include "types/ShaderSourceAssetData.h"
 #include "types/SoundAssetData.h"
@@ -199,9 +200,14 @@ namespace Unnamed {
 		std::string,
 		TextureAssetData&&,
 		const std::vector<AssetID>&
+	);
 
-
-	
+	template
+	AssetID AssetManager::CreateRuntimeAsset<SequenceAssetData>(
+		ASSET_TYPE,
+		std::string,
+		SequenceAssetData&&,
+		const std::vector<AssetID>&
 	);
 
 	void AssetManager::AddRef(const AssetID id) {
@@ -276,6 +282,7 @@ namespace Unnamed {
 	template const MaterialAssetData*          AssetManager::Get(AssetID) const;
 	template const MaterialInstanceAssetData*  AssetManager::Get(AssetID) const;
 	template const PostFxChainAssetData*       AssetManager::Get(AssetID) const;
+	template const SequenceAssetData*          AssetManager::Get(AssetID) const;
 	template const SoundAssetData*             AssetManager::Get(AssetID) const;
 	template const UiDocumentAssetData*        AssetManager::Get(AssetID) const;
 	template const EventPresentationAssetData* AssetManager::Get(AssetID) const;

@@ -208,7 +208,7 @@ namespace Unnamed {
 		}
 
 		const CourseProgressSnapshot& snapshot = mCourseProgress->GetSnapshot();
-		if (!snapshot.hasNextTarget) {
+		if (snapshot.courseCleared || !snapshot.hasNextTarget) {
 			hideBoth();
 			return;
 		}

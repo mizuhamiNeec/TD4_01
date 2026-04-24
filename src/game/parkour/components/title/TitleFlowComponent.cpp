@@ -19,7 +19,7 @@
 #include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/unnamed/subsystem/input/InputSystem.h"
 #include "engine/world/World.h"
-#include "game/core/replay/DemoManager.h"
+#include "engine/game/IDemoService.h"
 #include "game/parkour/runtime/ParkourFlowRuntimeState.h"
 
 namespace Unnamed {
@@ -175,7 +175,7 @@ namespace Unnamed {
 		mPromptBlinkSeconds  = 0.0f;
 		mActiveDemoPath.clear();
 
-		if (DemoManager* demo = GetDemoManager()) {
+		if (IDemoService* demo = GetDemoService()) {
 			if (demo->IsPlayback() || demo->IsRecording()) {
 				(void)demo->Stop();
 			}
@@ -196,7 +196,7 @@ namespace Unnamed {
 	}
 
 	bool TitleFlowComponent::RequestDemoPlayback() {
-		DemoManager* demo = GetDemoManager();
+		IDemoService* demo = GetDemoService();
 		if (!demo) {
 			return false;
 		}
@@ -232,7 +232,7 @@ namespace Unnamed {
 	}
 
 	void TitleFlowComponent::UpdatePhase(const float deltaTime) {
-		DemoManager* demo = GetDemoManager();
+		IDemoService* demo = GetDemoService();
 
 		// 再生開始に失敗した場合は短い間隔で再試行します。
 		mDemoRetrySeconds = std::max(0.0f, mDemoRetrySeconds - deltaTime);
@@ -310,7 +310,7 @@ namespace Unnamed {
 	}
 
 	void TitleFlowComponent::CommitStartTransition() {
-		DemoManager* demo  = GetDemoManager();
+		IDemoService* demo  = GetDemoService();
 		World*       world = GetWorld();
 		if (!world) {
 			return;

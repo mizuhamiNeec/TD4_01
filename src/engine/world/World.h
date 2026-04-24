@@ -23,7 +23,7 @@ namespace Unnamed {
 	class InputSystem;
 	class Profiler;
 	class AudioSystem;
-	class DemoManager;
+	class IDemoService;
 	class JsonReader;
 
 	namespace Render {
@@ -48,7 +48,7 @@ namespace Unnamed {
 		InputSystem*   inputSystem = nullptr;
 		Profiler*      profiler = nullptr;
 		AssetManager*  assetManager = nullptr;
-		DemoManager*   demoManager = nullptr;
+		IDemoService*  demoService = nullptr;
 		AudioSystem*   audioSystem = nullptr;
 	};
 
@@ -228,8 +228,8 @@ namespace Unnamed {
 		/// @brief AssetManager 参照を取得します。
 		[[nodiscard]] AssetManager* GetAssetManager() const noexcept;
 
-		/// @brief DemoManager 参照を取得します。
-		[[nodiscard]] DemoManager* GetDemoManager() const noexcept;
+		/// @brief DemoService 参照を取得します。
+		[[nodiscard]] IDemoService* GetDemoService() const noexcept;
 
 		/// @brief AudioSystem 参照を取得します。
 		[[nodiscard]] AudioSystem* GetAudioSystem() const noexcept;

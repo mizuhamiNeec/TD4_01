@@ -13,6 +13,7 @@
 #include "engine/gui/UiCanvasRuntime.h"
 #include "engine/gui/UiDrawCommand.h"
 #include "engine/gui/UiRoot.h"
+#include "engine/game/IDemoService.h"
 #include "engine/physics/core/Physics.h"
 #include "engine/profiler/Profiler.h"
 #include "engine/render/frame/RenderFrameContext.h"
@@ -1237,8 +1238,8 @@ namespace Unnamed {
 		return mServices.assetManager;
 	}
 
-	DemoManager* World::GetDemoManager() const noexcept {
-		return mServices.demoManager;
+	IDemoService* World::GetDemoService() const noexcept {
+		return mServices.demoService;
 	}
 
 	AudioSystem* World::GetAudioSystem() const noexcept {

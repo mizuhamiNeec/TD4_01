@@ -91,7 +91,16 @@ namespace Unnamed::Render {
 			}
 		}
 		if (materialsDirty) {
-			LoadMaterialResources(renderDevice, dx);
+			// Hot reload 時は既存マテリアルバインディングを破棄して再構築します。
+			auto& registry = renderDevice.GetRegistry();
+			for (const auto& [materialInstanceId, binding] : mMaterialBindings) {
+				(void)materialInstanceId;
+				if (binding.albedoTextureId != 0) {
+					registry.ReleaseTexture(binding.albedoTextureId);
+				}
+			}
+			mMaterialBindings.clear();
+			mDefaultMaterialInstance = kInvalidAssetID;
 		}
 		if (postFxDirty) {
 			RebuildPipelineCatalog(renderDevice, dx);
@@ -319,6 +328,8 @@ namespace Unnamed::Render {
 			EnsureSpriteFallbackTexture(renderDevice);
 		}
 
+		// 今フレームで参照されるマテリアルを遅延登録します。
+		LoadMaterialResources(renderDevice, dx);
 		ResolveRegisteredPipelines(renderDevice);
 
 		rhi.BeginFrame();

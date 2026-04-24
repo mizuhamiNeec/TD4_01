@@ -1,0 +1,57 @@
+{
+    "version": 2,
+    "name": "seek_policy",
+    "displayRate": 30,
+    "tickResolution": 30,
+    "lengthFrames": 30,
+    "bindings": [
+        {
+            "bindingId": 1,
+            "entityGuid": 990000001,
+            "componentStableName": "engine.Transform",
+            "propertyPath": ""
+        }
+    ],
+    "tracks": [
+        {
+            "trackId": 10,
+            "name": "SeekEvents",
+            "trackType": "event",
+            "blendMode": "absolute",
+            "priority": 0,
+            "bindingId": 1,
+            "sections": [
+                {
+                    "sectionId": 20,
+                    "startFrame": 0,
+                    "endFrame": 30,
+                    "priority": 0,
+                    "eventKeys": [
+                        {
+                            "keyId": 1001,
+                            "frame": 10,
+                            "cueId": "seq.regression.seek",
+                            "sourceEntityGuid": 990000001,
+                            "cueValue": 1.0,
+                            "cueValue2": 0.0,
+                            "consoleCommand": ""
+                        },
+                        {
+                            "keyId": 1002,
+                            "frame": 20,
+                            "cueId": "seq.regression.seek",
+                            "sourceEntityGuid": 990000001,
+                            "cueValue": 1.0,
+                            "cueValue2": 0.0,
+                            "consoleCommand": ""
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "editor": {
+        "scrubFireEvents": false,
+        "autoKeyEnabled": false
+    }
+}

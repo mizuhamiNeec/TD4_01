@@ -1,0 +1,58 @@
+{
+    "version": 2,
+    "name": "restore_keep",
+    "displayRate": 30,
+    "tickResolution": 10,
+    "lengthFrames": 10,
+    "bindings": [
+        {
+            "bindingId": 1,
+            "entityGuid": 990000001,
+            "componentStableName": "engine.Transform",
+            "propertyPath": "position.x"
+        }
+    ],
+    "tracks": [
+        {
+            "trackId": 12,
+            "name": "RestoreKeepTrack",
+            "trackType": "propertyFloat",
+            "blendMode": "absolute",
+            "priority": 0,
+            "bindingId": 1,
+            "sections": [
+                {
+                    "sectionId": 22,
+                    "startFrame": 0,
+                    "endFrame": 10,
+                    "priority": 0,
+                    "floatCurve": {
+                        "channelId": 1201,
+                        "keys": [
+                            {
+                                "keyId": 1202,
+                                "frame": 0,
+                                "value": 5.0,
+                                "arriveTangent": 0.0,
+                                "leaveTangent": 0.0,
+                                "interpolation": "linear"
+                            },
+                            {
+                                "keyId": 1203,
+                                "frame": 10,
+                                "value": 15.0,
+                                "arriveTangent": 0.0,
+                                "leaveTangent": 0.0,
+                                "interpolation": "linear"
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    ],
+    "editor": {
+        "scrubFireEvents": false,
+        "autoKeyEnabled": false
+    }
+}

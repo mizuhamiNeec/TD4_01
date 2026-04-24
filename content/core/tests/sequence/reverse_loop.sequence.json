@@ -1,0 +1,57 @@
+{
+    "version": 2,
+    "name": "reverse_loop",
+    "displayRate": 30,
+    "tickResolution": 30,
+    "lengthFrames": 30,
+    "bindings": [
+        {
+            "bindingId": 1,
+            "entityGuid": 990000001,
+            "componentStableName": "engine.Transform",
+            "propertyPath": ""
+        }
+    ],
+    "tracks": [
+        {
+            "trackId": 11,
+            "name": "ReverseLoopEvents",
+            "trackType": "event",
+            "blendMode": "absolute",
+            "priority": 0,
+            "bindingId": 1,
+            "sections": [
+                {
+                    "sectionId": 21,
+                    "startFrame": 0,
+                    "endFrame": 30,
+                    "priority": 0,
+                    "eventKeys": [
+                        {
+                            "keyId": 1101,
+                            "frame": 5,
+                            "cueId": "seq.regression.reverse_loop",
+                            "sourceEntityGuid": 990000001,
+                            "cueValue": 1.0,
+                            "cueValue2": 0.0,
+                            "consoleCommand": ""
+                        },
+                        {
+                            "keyId": 1102,
+                            "frame": 25,
+                            "cueId": "seq.regression.reverse_loop",
+                            "sourceEntityGuid": 990000001,
+                            "cueValue": 1.0,
+                            "cueValue2": 0.0,
+                            "consoleCommand": ""
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "editor": {
+        "scrubFireEvents": false,
+        "autoKeyEnabled": false
+    }
+}

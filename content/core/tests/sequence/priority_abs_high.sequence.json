@@ -1,0 +1,50 @@
+{
+    "version": 2,
+    "name": "priority_abs_high",
+    "displayRate": 30,
+    "tickResolution": 30,
+    "lengthFrames": 1,
+    "bindings": [
+        {
+            "bindingId": 1,
+            "entityGuid": 990000001,
+            "componentStableName": "engine.Transform",
+            "propertyPath": "position.x"
+        }
+    ],
+    "tracks": [
+        {
+            "trackId": 14,
+            "name": "AbsoluteHigh",
+            "trackType": "propertyFloat",
+            "blendMode": "absolute",
+            "priority": 20,
+            "bindingId": 1,
+            "sections": [
+                {
+                    "sectionId": 24,
+                    "startFrame": 0,
+                    "endFrame": 1,
+                    "priority": 0,
+                    "floatCurve": {
+                        "channelId": 1401,
+                        "keys": [
+                            {
+                                "keyId": 1402,
+                                "frame": 0,
+                                "value": 5.0,
+                                "arriveTangent": 0.0,
+                                "leaveTangent": 0.0,
+                                "interpolation": "step"
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    ],
+    "editor": {
+        "scrubFireEvents": false,
+        "autoKeyEnabled": false
+    }
+}

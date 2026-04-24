@@ -1,0 +1,58 @@
+{
+    "version": 2,
+    "name": "hot_reload",
+    "displayRate": 30,
+    "tickResolution": 30,
+    "lengthFrames": 120,
+    "bindings": [
+        {
+            "bindingId": 1,
+            "entityGuid": 990000001,
+            "componentStableName": "engine.Transform",
+            "propertyPath": "position.x"
+        }
+    ],
+    "tracks": [
+        {
+            "trackId": 16,
+            "name": "HotReloadTrack",
+            "trackType": "propertyFloat",
+            "blendMode": "absolute",
+            "priority": 0,
+            "bindingId": 1,
+            "sections": [
+                {
+                    "sectionId": 26,
+                    "startFrame": 0,
+                    "endFrame": 120,
+                    "priority": 0,
+                    "floatCurve": {
+                        "channelId": 1601,
+                        "keys": [
+                            {
+                                "keyId": 1602,
+                                "frame": 0,
+                                "value": 0.0,
+                                "arriveTangent": 0.0,
+                                "leaveTangent": 0.0,
+                                "interpolation": "linear"
+                            },
+                            {
+                                "keyId": 1603,
+                                "frame": 120,
+                                "value": 120.0,
+                                "arriveTangent": 0.0,
+                                "leaveTangent": 0.0,
+                                "interpolation": "linear"
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    ],
+    "editor": {
+        "scrubFireEvents": false,
+        "autoKeyEnabled": false
+    }
+}

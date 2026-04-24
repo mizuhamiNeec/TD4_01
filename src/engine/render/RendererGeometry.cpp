@@ -411,6 +411,25 @@ namespace Unnamed::Render {
 		meshBuffer.ibv.BufferLocation = meshBuffer.ib->GetGPUVirtualAddress();
 		meshBuffer.indexCount = static_cast<uint32_t>(meshAsset->indices.
 			size());
+		if (!meshAsset->submeshes.empty()) {
+			meshBuffer.submeshes.reserve(meshAsset->submeshes.size());
+			for (const auto& submesh : meshAsset->submeshes) {
+				if (submesh.indexCount == 0) {
+					continue;
+				}
+
+				MeshSubMeshRange range = {};
+				range.indexStart = submesh.indexStart;
+				range.indexCount = submesh.indexCount;
+				range.materialIndex = submesh.materialIndex;
+				meshBuffer.submeshes.emplace_back(range);
+			}
+		}
+		if (meshBuffer.submeshes.empty() && meshBuffer.indexCount > 0) {
+			meshBuffer.submeshes.emplace_back(
+				MeshSubMeshRange{0, meshBuffer.indexCount, 0}
+			);
+		}
 		meshBuffer.localAABB.min = meshAsset->localBoundsMin;
 		meshBuffer.localAABB.max = meshAsset->localBoundsMax;
 
@@ -448,120 +467,169 @@ namespace Unnamed::Render {
 	) {
 		auto& assetManager = renderDevice.GetAssetManager();
 		auto& registry     = renderDevice.GetRegistry();
+		std::vector<AssetID> requestedMaterialInstances = {};
 
 		constexpr std::string_view kDefaultMaterialInstance =
 			"./content/core/materials/instances/dev_default.matinst.json";
 		const AssetID materialInstanceId = assetManager.LoadFromFile(
 			std::string(kDefaultMaterialInstance), ASSET_TYPE::MATERIAL_INSTANCE
 		);
-		if (materialInstanceId == kInvalidAssetID) {
-			return;
+		if (materialInstanceId != kInvalidAssetID) {
+			requestedMaterialInstances.emplace_back(materialInstanceId);
+			mDefaultMaterialInstance = materialInstanceId;
 		}
 
-		const auto* matInst = assetManager.Get<MaterialInstanceAssetData>(
-			materialInstanceId
+		// 可視オブジェクトが参照する全マテリアルインスタンスを収集します。
+		for (const RenderViewInput& view : mFrameViews) {
+			if (view.type != RENDER_VIEW_TYPE::SCENE) {
+				continue;
+			}
+
+			for (const VisibleRenderObject& object : view.visibleObjects) {
+				if (object.materialInstanceId != kInvalidAssetID) {
+					requestedMaterialInstances.emplace_back(
+						object.materialInstanceId
+					);
+				}
+				for (const AssetID slotMaterialId : object.materialInstanceIdsBySlot
+				) {
+					if (slotMaterialId != kInvalidAssetID) {
+						requestedMaterialInstances.emplace_back(slotMaterialId);
+					}
+				}
+			}
+		}
+
+		if (requestedMaterialInstances.empty()) {
+			return;
+		}
+		std::sort(
+			requestedMaterialInstances.begin(),
+			requestedMaterialInstances.end()
 		);
-		if (!matInst || matInst->materialId == kInvalidAssetID) {
-			return;
-		}
-
-		const auto* mat = assetManager.Get<MaterialAssetData>(
-			matInst->materialId
+		requestedMaterialInstances.erase(
+			std::unique(
+				requestedMaterialInstances.begin(),
+				requestedMaterialInstances.end()
+			),
+			requestedMaterialInstances.end()
 		);
-		if (!mat) {
-			return;
-		}
 
-		MaterialBinding binding    = {};
-		binding.materialInstanceId = materialInstanceId;
+		for (const AssetID requestedMaterialInstanceId : requestedMaterialInstances
+		) {
+			if (requestedMaterialInstanceId == kInvalidAssetID) {
+				continue;
+			}
+			if (mMaterialBindings.contains(requestedMaterialInstanceId)) {
+				continue;
+			}
 
-		if (const auto it = mat->vectorParams.find("BaseColor");
-			it != mat->vectorParams.end()) {
-			binding.constants.baseColor = it->second;
-		}
-		if (const auto it = mat->vectorParams.find("EmissiveColor");
-			it != mat->vectorParams.end()) {
-			binding.constants.emissiveColor = it->second;
-		}
-		if (const auto it = mat->scalarParams.find("Metallic");
-			it != mat->scalarParams.end()) {
-			binding.constants.metallic = it->second;
-		}
-		if (const auto it = mat->scalarParams.find("Roughness");
-			it != mat->scalarParams.end()) {
-			binding.constants.roughness = it->second;
-		}
-		if (const auto it = mat->scalarParams.find("Opacity");
-			it != mat->scalarParams.end()) {
-			binding.constants.opacity = it->second;
-		}
-		binding.constants.domainMode = mat->domain == MATERIAL_DOMAIN::UNLIT ?
-			                               0.0f :
-			                               1.0f;
+			const auto* matInst = assetManager.Get<MaterialInstanceAssetData>(
+				requestedMaterialInstanceId
+			);
+			if (!matInst || matInst->materialId == kInvalidAssetID) {
+				continue;
+			}
 
-		if (const auto it = matInst->vectorOverrides.find("BaseColor");
-			it != matInst->vectorOverrides.end()) {
-			binding.constants.baseColor = it->second;
-		}
-		if (const auto it = matInst->vectorOverrides.find("EmissiveColor");
-			it != matInst->vectorOverrides.end()) {
-			binding.constants.emissiveColor = it->second;
-		}
-		if (const auto it = matInst->scalarOverrides.find("Metallic");
-			it != matInst->scalarOverrides.end()) {
-			binding.constants.metallic = it->second;
-		}
-		if (const auto it = matInst->scalarOverrides.find("Roughness");
-			it != matInst->scalarOverrides.end()) {
-			binding.constants.roughness = it->second;
-		}
-		if (const auto it = matInst->scalarOverrides.find("Opacity");
-			it != matInst->scalarOverrides.end()) {
-			binding.constants.opacity = it->second;
-		}
+			const auto* mat = assetManager.Get<MaterialAssetData>(
+				matInst->materialId
+			);
+			if (!mat) {
+				continue;
+			}
 
-		std::string baseColorPath;
-		if (const auto it = matInst->textureOverrides.find("BaseColor");
-			it != matInst->textureOverrides.end()) {
-			baseColorPath = it->second;
-		}
-		if (baseColorPath.empty()) {
-			if (const auto it = matInst->textureOverrides.find("MainTex");
+			MaterialBinding binding    = {};
+			binding.materialInstanceId = requestedMaterialInstanceId;
+
+			if (const auto it = mat->vectorParams.find("BaseColor");
+				it != mat->vectorParams.end()) {
+				binding.constants.baseColor = it->second;
+			}
+			if (const auto it = mat->vectorParams.find("EmissiveColor");
+				it != mat->vectorParams.end()) {
+				binding.constants.emissiveColor = it->second;
+			}
+			if (const auto it = mat->scalarParams.find("Metallic");
+				it != mat->scalarParams.end()) {
+				binding.constants.metallic = it->second;
+			}
+			if (const auto it = mat->scalarParams.find("Roughness");
+				it != mat->scalarParams.end()) {
+				binding.constants.roughness = it->second;
+			}
+			if (const auto it = mat->scalarParams.find("Opacity");
+				it != mat->scalarParams.end()) {
+				binding.constants.opacity = it->second;
+			}
+			binding.constants.domainMode = mat->domain == MATERIAL_DOMAIN::UNLIT ?
+				                               0.0f :
+				                               1.0f;
+
+			if (const auto it = matInst->vectorOverrides.find("BaseColor");
+				it != matInst->vectorOverrides.end()) {
+				binding.constants.baseColor = it->second;
+			}
+			if (const auto it = matInst->vectorOverrides.find("EmissiveColor");
+				it != matInst->vectorOverrides.end()) {
+				binding.constants.emissiveColor = it->second;
+			}
+			if (const auto it = matInst->scalarOverrides.find("Metallic");
+				it != matInst->scalarOverrides.end()) {
+				binding.constants.metallic = it->second;
+			}
+			if (const auto it = matInst->scalarOverrides.find("Roughness");
+				it != matInst->scalarOverrides.end()) {
+				binding.constants.roughness = it->second;
+			}
+			if (const auto it = matInst->scalarOverrides.find("Opacity");
+				it != matInst->scalarOverrides.end()) {
+				binding.constants.opacity = it->second;
+			}
+
+			std::string baseColorPath;
+			if (const auto it = matInst->textureOverrides.find("BaseColor");
 				it != matInst->textureOverrides.end()) {
 				baseColorPath = it->second;
 			}
-		}
+			if (baseColorPath.empty()) {
+				if (const auto it = matInst->textureOverrides.find("MainTex");
+					it != matInst->textureOverrides.end()) {
+					baseColorPath = it->second;
+				}
+			}
 
-		if (!baseColorPath.empty()) {
-			const AssetID texId = assetManager.LoadFromFile(
-				baseColorPath, ASSET_TYPE::TEXTURE
-			);
-			const auto* tex = assetManager.Get<TextureAssetData>(texId);
-			if (tex) {
+			if (!baseColorPath.empty()) {
+				const AssetID texId = assetManager.LoadFromFile(
+					baseColorPath, ASSET_TYPE::TEXTURE
+				);
+				const auto* tex = assetManager.Get<TextureAssetData>(texId);
+				if (tex) {
+					binding.albedoTextureId = registry.CreateTexture2DFromAsset(
+						*tex, "MatBaseColor"
+					);
+				}
+			}
+			if (binding.albedoTextureId == 0) {
+				TextureAssetData white = {};
+				white.width            = 1;
+				white.height           = 1;
+				white.isSRGB           = true;
+				TextureMip mip         = {};
+				mip.width              = 1;
+				mip.height             = 1;
+				mip.rowPitch           = 4;
+				mip.bytes              = {255, 255, 255, 255};
+				white.mips.emplace_back(std::move(mip));
 				binding.albedoTextureId = registry.CreateTexture2DFromAsset(
-					*tex, "MatBaseColor"
+					white, "MatFallbackWhite"
 				);
 			}
-		}
-		if (binding.albedoTextureId == 0) {
-			TextureAssetData white = {};
-			white.width            = 1;
-			white.height           = 1;
-			white.isSRGB           = true;
-			TextureMip mip         = {};
-			mip.width              = 1;
-			mip.height             = 1;
-			mip.rowPitch           = 4;
-			mip.bytes              = {255, 255, 255, 255};
-			white.mips.emplace_back(std::move(mip));
-			binding.albedoTextureId = registry.CreateTexture2DFromAsset(
-				white, "MatFallbackWhite"
+
+			mMaterialBindings.emplace(
+				requestedMaterialInstanceId,
+				std::move(binding)
 			);
 		}
-
-		mMaterialBindings.clear();
-		mMaterialBindings.emplace(materialInstanceId, std::move(binding));
-		mDefaultMaterialInstance = materialInstanceId;
 	}
 
 	void Renderer::LoadPostFxChain(RenderDevice& renderDevice) {

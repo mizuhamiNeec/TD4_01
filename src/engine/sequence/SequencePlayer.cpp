@@ -3,45 +3,50 @@
 #include <algorithm>
 #include <cmath>
 
-#include "engine/tween/TweenEase.h"
-
 namespace Unnamed {
-	void SequencePlayer::SetAsset(std::shared_ptr<SequenceAsset> asset) {
-		mAsset = std::move(asset);
-		mCurrentTime = 0.0f;
-		mLoopDirection = 1;
+	uint64_t SequencePlayer::sNextPlayerId = 1;
+
+	SequencePlayer::SequencePlayer() {
+		mPlayerId = sNextPlayerId++;
+	}
+
+	uint64_t SequencePlayer::GetPlayerId() const {
+		return mPlayerId;
+	}
+
+	void SequencePlayer::SetAssetId(const AssetID assetId) {
+		mAssetId        = assetId;
+		mCurrentFrame   = 0.0f;
+		mPreviousFrame  = 0.0f;
+		mLastFrameRange = {};
+		mLastTraversalRange = {};
+		mHasPendingSeek = false;
+		mCompiled.reset();
+		mCompiledVersion = 0;
 		mState = SEQUENCE_PLAYER_STATE::STOPPED;
 	}
 
-	const std::shared_ptr<SequenceAsset>& SequencePlayer::GetAsset() const {
-		return mAsset;
-	}
-
-	void SequencePlayer::AddBinder(ISequenceBinder* binder) {
-		if (!binder) {
-			return;
-		}
-		if (std::find(mBinders.begin(), mBinders.end(), binder) != mBinders.end()) {
-			return;
-		}
-		mBinders.emplace_back(binder);
-	}
-
-	void SequencePlayer::ClearBinders() {
-		mBinders.clear();
+	AssetID SequencePlayer::GetAssetId() const {
+		return mAssetId;
 	}
 
 	void SequencePlayer::Play() {
-		if (!mAsset) {
+		if (mAssetId == kInvalidAssetID) {
 			return;
 		}
-		if (
-			mState == SEQUENCE_PLAYER_STATE::COMPLETED &&
-			mCurrentTime >= mAsset->GetLengthSeconds()
-		) {
-			mCurrentTime = 0.0f;
-			mLoopDirection = 1;
-			ApplyAtCurrentTime();
+
+		if (mState == SEQUENCE_PLAYER_STATE::COMPLETED) {
+			if (
+				mPlaybackDirection == SEQUENCE_PLAYBACK_DIRECTION::BACKWARD &&
+				mCompiled
+			) {
+				mCurrentFrame = static_cast<float>(std::max<int64_t>(
+					0,
+					mCompiled->GetLengthFrames()
+				));
+			} else {
+				mCurrentFrame = 0.0f;
+			}
 		}
 		mState = SEQUENCE_PLAYER_STATE::PLAYING;
 	}
@@ -53,20 +58,21 @@ namespace Unnamed {
 	}
 
 	void SequencePlayer::Stop() {
-		mCurrentTime = 0.0f;
-		mLoopDirection = 1;
-		mState = SEQUENCE_PLAYER_STATE::STOPPED;
-		ApplyAtCurrentTime();
+		mCurrentFrame   = 0.0f;
+		mPreviousFrame  = 0.0f;
+		mLastFrameRange = {};
+		mLastTraversalRange = {};
+		mHasPendingSeek = false;
+		mState          = SEQUENCE_PLAYER_STATE::STOPPED;
 	}
 
-	void SequencePlayer::Seek(const float seconds) {
-		if (!mAsset) {
-			mCurrentTime = 0.0f;
-			return;
-		}
-		const float duration = std::max(0.0f, mAsset->GetLengthSeconds());
-		mCurrentTime = std::clamp(seconds, 0.0f, duration);
-		ApplyAtCurrentTime();
+	void SequencePlayer::SeekFrames(const float frame) {
+		const float clampedFrame = std::max(0.0f, frame);
+		mPreviousFrame = mCurrentFrame;
+		mCurrentFrame = clampedFrame;
+		mLastFrameRange = {};
+		mLastTraversalRange = {};
+		mHasPendingSeek = true;
 	}
 
 	void SequencePlayer::SetPlayRate(const float playRate) {
@@ -77,159 +83,227 @@ namespace Unnamed {
 		return mPlayRate;
 	}
 
-	void SequencePlayer::SetLoopOverride(
-		const bool enabled,
-		const LOOP_TYPE loopType
+	void SequencePlayer::SetPlaybackDirection(
+		const SEQUENCE_PLAYBACK_DIRECTION direction
 	) {
-		mLoopOverridden = true;
-		mLoopEnabled    = enabled;
-		mLoopType       = loopType;
+		mPlaybackDirection = direction;
 	}
 
-	void SequencePlayer::ClearLoopOverride() {
-		mLoopOverridden = false;
+	SEQUENCE_PLAYBACK_DIRECTION SequencePlayer::GetPlaybackDirection() const {
+		return mPlaybackDirection;
 	}
 
-	float SequencePlayer::GetCurrentTime() const {
-		return mCurrentTime;
+	void SequencePlayer::SetSeekEventPolicy(const SEQUENCE_SEEK_EVENT_POLICY policy) {
+		mSeekEventPolicy = policy;
+	}
+
+	SEQUENCE_SEEK_EVENT_POLICY SequencePlayer::GetSeekEventPolicy() const {
+		return mSeekEventPolicy;
+	}
+
+	void SequencePlayer::SetLoop(const bool loopEnabled) {
+		mLoopEnabled = loopEnabled;
+	}
+
+	bool SequencePlayer::GetLoop() const {
+		return mLoopEnabled;
+	}
+
+	void SequencePlayer::SetWeight(const float weight) {
+		mWeight = std::clamp(weight, 0.0f, 1.0f);
+	}
+
+	float SequencePlayer::GetWeight() const {
+		return mWeight;
+	}
+
+	void SequencePlayer::SetCompletionMode(const SEQUENCE_COMPLETION_MODE mode) {
+		mCompletionMode = mode;
+	}
+
+	SEQUENCE_COMPLETION_MODE SequencePlayer::GetCompletionMode() const {
+		return mCompletionMode;
+	}
+
+	float SequencePlayer::GetCurrentFrame() const {
+		return mCurrentFrame;
+	}
+
+	float SequencePlayer::GetPreviousFrame() const {
+		return mPreviousFrame;
 	}
 
 	SEQUENCE_PLAYER_STATE SequencePlayer::GetState() const {
 		return mState;
 	}
 
+	SequenceFrameRange SequencePlayer::GetLastFrameRange() const {
+		return mLastFrameRange;
+	}
+
+	SequenceTraversalRange SequencePlayer::GetLastTraversalRange() const {
+		return mLastTraversalRange;
+	}
+
 	bool SequencePlayer::IsPlaying() const {
 		return mState == SEQUENCE_PLAYER_STATE::PLAYING;
 	}
 
-	void SequencePlayer::Tick(const float deltaTime) {
-		if (mState != SEQUENCE_PLAYER_STATE::PLAYING || !mAsset) {
-			return;
+	bool SequencePlayer::IsEvaluating() const {
+		if (
+			mState == SEQUENCE_PLAYER_STATE::PLAYING ||
+			mState == SEQUENCE_PLAYER_STATE::PAUSED
+		) {
+			return true;
 		}
 
-		const float duration = std::max(0.0f, mAsset->GetLengthSeconds());
-		if (duration <= 1e-6f) {
-			mCurrentTime = 0.0f;
-			ApplyAtCurrentTime();
-			if (!ResolveLoopEnabled()) {
-				mState = SEQUENCE_PLAYER_STATE::COMPLETED;
+		return
+			mState == SEQUENCE_PLAYER_STATE::COMPLETED &&
+			mCompletionMode == SEQUENCE_COMPLETION_MODE::KEEP_STATE;
+	}
+
+	bool SequencePlayer::ShouldSuppressEventsThisTick() const {
+		if (!mLastTraversalRange.valid) {
+			return true;
+		}
+		return
+			mLastTraversalRange.causedBySeek &&
+			mSeekEventPolicy == SEQUENCE_SEEK_EVENT_POLICY::SUPPRESS;
+	}
+
+	void SequencePlayer::AdvanceFrame(
+		const float                   deltaSeconds,
+		const CompiledSequence& compiled
+	) {
+		mLastFrameRange = {};
+		mLastTraversalRange = {};
+		const float frameBeforeTick = mCurrentFrame;
+		mPreviousFrame = frameBeforeTick;
+
+		// シーク要求がある場合はまずシーク区間を確定し、次フレーム評価へ引き渡します。
+		if (mHasPendingSeek) {
+			mLastTraversalRange.startFrame   = mPreviousFrame;
+			mLastTraversalRange.endFrame     = mCurrentFrame;
+			mLastTraversalRange.direction    = mCurrentFrame < mPreviousFrame ?
+				                                   SEQUENCE_PLAYBACK_DIRECTION::BACKWARD :
+				                                   SEQUENCE_PLAYBACK_DIRECTION::FORWARD;
+			mLastTraversalRange.causedBySeek = true;
+			mLastTraversalRange.valid        = mCurrentFrame != mPreviousFrame;
+			mLastTraversalRange.traversalSerial = ++mTraversalSerialCounter;
+			mHasPendingSeek = false;
+
+			if (mLastTraversalRange.valid) {
+				mLastFrameRange = SequenceFrameRange{
+					.startFrame = mLastTraversalRange.startFrame,
+					.endFrame   = mLastTraversalRange.endFrame,
+					.valid      = true,
+				};
 			}
 			return;
 		}
 
-		float nextTime = mCurrentTime +
-			deltaTime * mPlayRate * static_cast<float>(mLoopDirection);
+		// 再生中でない場合も現在値評価は行うため、区間だけ無効にします。
+		if (mState != SEQUENCE_PLAYER_STATE::PLAYING) {
+			return;
+		}
 
-		const bool loopEnabled = ResolveLoopEnabled();
-		const LOOP_TYPE loopType = ResolveLoopType();
+		const int64_t lengthFrames = std::max<int64_t>(0, compiled.GetLengthFrames());
+		if (lengthFrames <= 0) {
+			mCurrentFrame = 0.0f;
+			mState = SEQUENCE_PLAYER_STATE::COMPLETED;
+			return;
+		}
 
-		if (!loopEnabled) {
-			if (nextTime >= duration) {
-				nextTime = duration;
-				mState   = SEQUENCE_PLAYER_STATE::COMPLETED;
-			}
-			if (nextTime <= 0.0f) {
-				nextTime = 0.0f;
-				mState   = SEQUENCE_PLAYER_STATE::COMPLETED;
+		const float frameDelta = deltaSeconds * static_cast<float>(
+			compiled.GetAsset()->tickResolution
+		) * std::max(0.0f, mPlayRate);
+		if (frameDelta <= 0.0f) {
+			return;
+		}
+
+		const float length = static_cast<float>(lengthFrames);
+		float       nextFrame = mCurrentFrame;
+		bool        wrapped   = false;
+		int32_t     loopCount = 0;
+		if (mPlaybackDirection == SEQUENCE_PLAYBACK_DIRECTION::FORWARD) {
+			nextFrame += frameDelta;
+			if (!mLoopEnabled) {
+				if (nextFrame >= length) {
+					nextFrame = length;
+					mState    = SEQUENCE_PLAYER_STATE::COMPLETED;
+				}
+			} else {
+				while (nextFrame > length) {
+					nextFrame -= length;
+					wrapped = true;
+					++loopCount;
+				}
 			}
 		} else {
-			for (int i = 0; i < 64; ++i) {
-				if (nextTime >= 0.0f && nextTime <= duration) {
-					break;
+			nextFrame -= frameDelta;
+			if (!mLoopEnabled) {
+				if (nextFrame <= 0.0f) {
+					nextFrame = 0.0f;
+					mState    = SEQUENCE_PLAYER_STATE::COMPLETED;
 				}
-
-				if (loopType == LOOP_TYPE::RESTART) {
-					if (nextTime > duration) {
-						nextTime -= duration;
-					} else {
-						nextTime += duration;
-					}
-				} else {
-					if (nextTime > duration) {
-						nextTime = duration - (nextTime - duration);
-						mLoopDirection = -mLoopDirection;
-					} else {
-						nextTime = -nextTime;
-						mLoopDirection = -mLoopDirection;
-					}
+			} else {
+				while (nextFrame < 0.0f) {
+					nextFrame += length;
+					wrapped = true;
+					++loopCount;
 				}
 			}
-			nextTime = std::clamp(nextTime, 0.0f, duration);
 		}
 
-		mCurrentTime = nextTime;
-		ApplyAtCurrentTime();
-	}
-
-	bool SequencePlayer::EvaluateTrackValue(
-		const SequenceTrack& track,
-		const float          timeSeconds,
-		float&               outValue
-	) const {
-		if (track.keyframes.empty()) {
-			return false;
-		}
-
-		const auto& keys = track.keyframes;
-		if (keys.size() == 1 || timeSeconds <= keys.front().time) {
-			outValue = keys.front().value;
-			return true;
-		}
-		if (timeSeconds >= keys.back().time) {
-			outValue = keys.back().value;
-			return true;
-		}
-
-		for (size_t i = 0; i + 1 < keys.size(); ++i) {
-			const SequenceKeyframe& lhs = keys[i];
-			const SequenceKeyframe& rhs = keys[i + 1];
-			if (timeSeconds < lhs.time || timeSeconds > rhs.time) {
-				continue;
-			}
-
-			const float duration = rhs.time - lhs.time;
-			const float t        = duration > 1e-6f ?
-				                       (timeSeconds - lhs.time) / duration :
-				                       0.0f;
-			const float eased    = TweenEase::Evaluate(lhs.ease, t);
-			outValue             = lhs.value + (rhs.value - lhs.value) * eased;
-			return true;
-		}
-
-		outValue = keys.back().value;
-		return true;
-	}
-
-	void SequencePlayer::ApplyAtCurrentTime() const {
-		if (!mAsset || mBinders.empty()) {
+		nextFrame = std::clamp(nextFrame, 0.0f, length);
+		mCurrentFrame = nextFrame;
+		if (mCurrentFrame == mPreviousFrame) {
 			return;
 		}
 
-		for (const SequenceTrack& track : mAsset->GetTracks()) {
-			float value = 0.0f;
-			if (!EvaluateTrackValue(track, mCurrentTime, value)) {
-				continue;
-			}
-
-			for (ISequenceBinder* binder : mBinders) {
-				if (!binder || !binder->SupportsTarget(track.binding.target)) {
-					continue;
-				}
-				if (binder->ApplyValue(track.binding, value)) {
-					break;
-				}
-			}
-		}
+		mLastTraversalRange = SequenceTraversalRange{
+			.startFrame      = mPreviousFrame,
+			.endFrame        = mCurrentFrame,
+			.direction       = mPlaybackDirection,
+			.wrapped         = wrapped,
+			.loopCount       = loopCount,
+			.causedBySeek    = false,
+			.traversalSerial = ++mTraversalSerialCounter,
+			.valid           = true,
+		};
+		mLastFrameRange = SequenceFrameRange{
+			.startFrame = mLastTraversalRange.startFrame,
+			.endFrame   = mLastTraversalRange.endFrame,
+			.valid      = true,
+		};
 	}
 
-	bool SequencePlayer::ResolveLoopEnabled() const {
-		return mLoopOverridden ? mLoopEnabled : (mAsset && mAsset->IsLoop());
+	void SequencePlayer::ClearEventSuppression() {
+		// シーク方針で制御するため、v2では明示クリア不要です。
 	}
 
-	LOOP_TYPE SequencePlayer::ResolveLoopType() const {
-		if (mLoopOverridden) {
-			return mLoopType;
-		}
-		return mAsset ? mAsset->GetLoopType() : LOOP_TYPE::RESTART;
+	void SequencePlayer::ClampCurrentFrame(const float maxFrame) {
+		const float clamped = std::clamp(mCurrentFrame, 0.0f, std::max(0.0f, maxFrame));
+		mCurrentFrame = clamped;
+		mPreviousFrame = clamped;
+		mLastFrameRange = {};
+		mLastTraversalRange = {};
+		mHasPendingSeek = false;
+	}
+
+	void SequencePlayer::SetCompiled(
+		std::shared_ptr<const SequenceAssetData> asset,
+		const uint64_t                           version
+	) {
+		mCompiled = std::make_unique<CompiledSequence>(std::move(asset));
+		mCompiledVersion = version;
+	}
+
+	const CompiledSequence* SequencePlayer::GetCompiled() const {
+		return mCompiled.get();
+	}
+
+	uint64_t SequencePlayer::GetCompiledVersion() const {
+		return mCompiledVersion;
 	}
 }

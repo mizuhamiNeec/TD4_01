@@ -92,6 +92,8 @@ namespace Unnamed {
 		mRecordingInitialSnapshotCaptured = false;
 		mWasRecordingMode                 = false;
 		mWasPlaybackMode                  = false;
+		mObservedPlaybackSessionSerial    = 0;
+		mObservedRecordingSessionSerial   = 0;
 	}
 
 	void PlayerCharacterController::OnDetached() {
@@ -111,6 +113,8 @@ namespace Unnamed {
 		mRecordingInitialSnapshotCaptured = false;
 		mWasRecordingMode                 = false;
 		mWasPlaybackMode                  = false;
+		mObservedPlaybackSessionSerial    = 0;
+		mObservedRecordingSessionSerial   = 0;
 
 		BaseCharacterController::OnDetached();
 	}
@@ -134,14 +138,28 @@ namespace Unnamed {
 			                                   0;
 		bool playbackMode  = demoManager && demoManager->IsPlayback();
 		bool recordingMode = demoManager && demoManager->IsRecording();
+		const uint64_t playbackSessionSerial = playbackMode ?
+			                                       demoManager->
+			                                       GetPlaybackSessionSerial() :
+			                                       0;
+		const uint64_t recordingSessionSerial = recordingMode ?
+			                                        demoManager->
+			                                        GetRecordingSessionSerial() :
+			                                        0;
 
-		if (recordingMode && !mWasRecordingMode) {
+		if (recordingMode &&
+		    (!mWasRecordingMode ||
+		     recordingSessionSerial != mObservedRecordingSessionSerial)) {
 			mRecordingInitialSnapshotCaptured = false;
 		} else if (!recordingMode) {
 			mRecordingInitialSnapshotCaptured = false;
 		}
 
-		if (playbackMode && !mWasPlaybackMode) {
+		const bool playbackSessionStarted =
+			playbackMode &&
+			(!mWasPlaybackMode ||
+			 playbackSessionSerial != mObservedPlaybackSessionSerial);
+		if (playbackSessionStarted) {
 			mFixedTickCounter             = demoManager->GetPlaybackStartTick();
 			mQueuedSprintPressCount       = 0;
 			mQueuedPrimaryPressedCount    = 0;
@@ -163,12 +181,19 @@ namespace Unnamed {
 					(void)demoManager->Stop();
 					playbackMode     = false;
 					mWasPlaybackMode = false;
+					mObservedPlaybackSessionSerial = 0;
 					return;
 				}
 			}
 		}
-		mWasPlaybackMode  = playbackMode;
+		mWasPlaybackMode = playbackMode;
 		mWasRecordingMode = recordingMode;
+		mObservedPlaybackSessionSerial = playbackMode ?
+			                                 playbackSessionSerial :
+			                                 0;
+		mObservedRecordingSessionSerial = recordingMode ?
+			                                  recordingSessionSerial :
+			                                  0;
 
 		DemoTickCommand command             = {};
 		bool            usedPlaybackCommand = false;
@@ -199,6 +224,7 @@ namespace Unnamed {
 				(void)demoManager->Stop();
 				playbackMode                  = false;
 				mWasPlaybackMode              = false;
+				mObservedPlaybackSessionSerial = 0;
 				mQueuedSprintPressCount       = 0;
 				mQueuedPrimaryPressedCount    = 0;
 				mQueuedPrimaryReleasedCount   = 0;

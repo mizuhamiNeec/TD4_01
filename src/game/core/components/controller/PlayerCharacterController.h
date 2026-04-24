@@ -65,5 +65,7 @@ namespace Unnamed {
 		bool                      mRecordingInitialSnapshotCaptured = false;
 		bool                      mWasRecordingMode                 = false;
 		bool                      mWasPlaybackMode                  = false;
+		uint64_t                  mObservedPlaybackSessionSerial    = 0;
+		uint64_t                  mObservedRecordingSessionSerial   = 0;
 	};
 }

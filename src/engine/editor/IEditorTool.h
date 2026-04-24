@@ -11,7 +11,8 @@ namespace Unnamed {
 	class ConsoleSystem;
 	class InputSystem;
 	class AssetManager;
-	class DemoManager;
+	class IDemoService;
+	class IGameWorldFactory;
 	class Profiler;
 	class ImGuiLayer;
 	class WindowManager;
@@ -30,7 +31,8 @@ namespace Unnamed {
 		ConsoleSystem*       console       = nullptr;
 		InputSystem*         inputSystem   = nullptr;
 		AssetManager*        assetManager  = nullptr;
-		DemoManager*         demoManager   = nullptr;
+		IDemoService*        demoService   = nullptr;
+		IGameWorldFactory*   gameWorldFactory = nullptr;
 		Profiler*            profiler      = nullptr;
 	};
 

@@ -336,7 +336,8 @@ namespace Unnamed::EditorContentBrowser {
 			BrowserViewState&   state,
 			const AssetTypeMask acceptedMask,
 			const bool          emitDragPayload,
-			std::string*        outCommittedPath
+			std::string*        outCommittedPath,
+			const AssetOpenCallback* onAssetOpen
 		) {
 			const fs::path rootPath = fs::path(state.rootPath).
 				lexically_normal();
@@ -415,11 +416,14 @@ namespace Unnamed::EditorContentBrowser {
 								!entry.isDirectory &&
 								ImGui::IsMouseDoubleClicked(
 									ImGuiMouseButton_Left
-								) &&
-								outCommittedPath
+								)
 							) {
-								*outCommittedPath = normalizedPath;
-								committed         = true;
+								if (outCommittedPath) {
+									*outCommittedPath = normalizedPath;
+									committed         = true;
+								} else if (onAssetOpen && *onAssetOpen) {
+									(*onAssetOpen)(normalizedPath, entry.type);
+								}
 							}
 						}
 						if (emitDragPayload) {
@@ -467,10 +471,14 @@ namespace Unnamed::EditorContentBrowser {
 							if (entry.isDirectory && doubleClicked) {
 								currentPath = entry.path.lexically_normal();
 							} else if (
-								!entry.isDirectory && doubleClicked &&
-								outCommittedPath) {
-								*outCommittedPath = normalizedPath;
-								committed         = true;
+								!entry.isDirectory && doubleClicked
+							) {
+								if (outCommittedPath) {
+									*outCommittedPath = normalizedPath;
+									committed         = true;
+								} else if (onAssetOpen && *onAssetOpen) {
+									(*onAssetOpen)(normalizedPath, entry.type);
+								}
 							}
 						}
 						if (emitDragPayload) {
@@ -666,7 +674,8 @@ namespace Unnamed::EditorContentBrowser {
 				pickerState,
 				acceptedMask,
 				false,
-				&committedPath
+				&committedPath,
+				nullptr
 			);
 			if (committedByDoubleClick && TryCommitAssetPath(
 				    path, committedPath, acceptedMask
@@ -698,6 +707,14 @@ namespace Unnamed::EditorContentBrowser {
 	}
 
 	void DrawWindow(BrowserViewState& state, const char* windowName) {
+		DrawWindow(state, windowName, {});
+	}
+
+	void DrawWindow(
+		BrowserViewState&        state,
+		const char*              windowName,
+		const AssetOpenCallback& onAssetOpen
+	) {
 		if (!ImGui::Begin(
 			windowName, nullptr,
 			ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse
@@ -715,7 +732,13 @@ namespace Unnamed::EditorContentBrowser {
 		}
 
 		(void)DrawTopBar(state);
-		(void)DrawContentView(state, kAssetTypeMaskAny, true, nullptr);
+		(void)DrawContentView(
+			state,
+			kAssetTypeMaskAny,
+			true,
+			nullptr,
+			&onAssetOpen
+		);
 		ImGui::End();
 	}
 }

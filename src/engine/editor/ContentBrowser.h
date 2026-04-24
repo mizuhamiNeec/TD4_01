@@ -2,6 +2,7 @@
 #ifdef _DEBUG
 
 #include <cstdint>
+#include <functional>
 #include <string>
 
 #include "core/assets/AssetType.h"
@@ -25,6 +26,11 @@ namespace Unnamed::EditorContentBrowser {
 		float       iconSize = 96.0f;
 	};
 
+	using AssetOpenCallback = std::function<void(
+		const std::string& path,
+		ASSET_TYPE         type
+	)>;
+
 	[[nodiscard]] AssetTypeMask AssetTypeToMask(ASSET_TYPE type);
 	[[nodiscard]] bool IsAssetTypeAccepted(
 		ASSET_TYPE type,
@@ -39,6 +45,12 @@ namespace Unnamed::EditorContentBrowser {
 	);
 
 	void DrawWindow(BrowserViewState& state, const char* windowName);
+
+	void DrawWindow(
+		BrowserViewState&        state,
+		const char*              windowName,
+		const AssetOpenCallback& onAssetOpen
+	);
 }
 
 #endif

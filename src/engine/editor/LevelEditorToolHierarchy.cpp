@@ -17,8 +17,12 @@
 #include "engine/ImGui/Icons.h"
 #include "engine/ImGui/ImGuiUtil.h"
 #include "engine/ImGui/ImGuiWidgets.h"
+#include "engine/editor/sequence/SequenceEditorController.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
+
+#include "sequence/SequenceCurvePanel.h"
+#include "sequence/SequenceTimelinePanel.h"
 
 namespace Unnamed {
 	namespace {
@@ -1027,8 +1031,31 @@ namespace Unnamed {
 
 	void LevelEditorTool::DrawContentBrowser() {
 		EditorContentBrowser::DrawWindow(
-			mContentBrowserState, "Content Browser"
+			mContentBrowserState,
+			"Content Browser",
+			[this](const std::string& path, const ASSET_TYPE type) {
+				if (
+					type != ASSET_TYPE::SEQUENCE ||
+					!mSequenceEditorController
+				) {
+					return;
+				}
+				(void)mSequenceEditorController->OpenDocument(path);
+			}
 		);
+	}
+
+	void LevelEditorTool::DrawSequenceEditors() {
+		if (
+			!mSequenceEditorController ||
+			!mSequenceTimelinePanel ||
+			!mSequenceCurvePanel
+		) {
+			return;
+		}
+
+		mSequenceTimelinePanel->Draw(*mSequenceEditorController);
+		mSequenceCurvePanel->Draw(*mSequenceEditorController);
 	}
 }
 

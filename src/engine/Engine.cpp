@@ -43,6 +43,7 @@
 #include <engine/rhi/interface/IRhiDevice.h>
 #include <engine/sequence/SequenceRegressionRunner.h>
 #include <engine/ui/ImGuiLayer.h>
+#include <engine/unnamed/framework/components/collider/StaticMeshColliderComponent.h>
 #include <engine/unnamed/framework/entity/Entity.h>
 #include <engine/unnamed/subsystem/console/concommand/ConCommand.h>
 #include <engine/unnamed/subsystem/input/device/gamepad/GamepadDevice.h>
@@ -633,11 +634,15 @@ namespace Unnamed {
 		mToggleFullscreenCommand.reset();
 #endif
 
+		if (mDemoService && (mDemoService->IsPlayback() || mDemoService->IsRecording())) {
+			(void)mDemoService->Stop();
+		}
+		ServiceLocator::Register<IDemoService>(nullptr);
+
 		if (mWorld) {
 			mWorld->Shutdown();
 			mWorld.reset();
 		}
-		ServiceLocator::Register<IDemoService>(nullptr);
 		mDemoService.reset();
 
 #if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)

@@ -35,6 +35,7 @@
 #include "engine/unnamed/subsystem/console/Log.h"
 // ReSharper disable once CppUnusedIncludeDirective
 #include "engine/unnamed/subsystem/console/concommand/ConVar.h"
+#include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 #include "engine/unnamed/subsystem/input/InputSystem.h"
 #include "engine/unnamed/subsystem/input/device/mouse/MouseDevice.h"
 
@@ -1239,7 +1240,7 @@ namespace Unnamed {
 	}
 
 	IDemoService* World::GetDemoService() const noexcept {
-		return mServices.demoService;
+		return ServiceLocator::Get<IDemoService>();
 	}
 
 	AudioSystem* World::GetAudioSystem() const noexcept {

@@ -6,7 +6,7 @@
             "type": "shell",
             "command": "msbuild",
             "args": [
-                "Unnamed.sln",
+                "Unnamed.slnx",
                 "/p:Configuration=Debug",
                 "/p:Platform=x64"
             ],
@@ -21,7 +21,7 @@
             "type": "shell",
             "command": "msbuild",
             "args": [
-                "Unnamed.sln",
+                "Unnamed.slnx",
                 "/p:Configuration=Release",
                 "/p:Platform=x64"
             ],

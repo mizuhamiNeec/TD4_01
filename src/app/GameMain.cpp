@@ -44,6 +44,26 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
 	if (!gameModule) {
 		return EXIT_FAILURE;
 	}
+
+#ifdef _DEBUG
+	constexpr bool failOnUnknown = true;
+#else
+	constexpr bool failOnUnknown = false;
+#endif
+	const bool validated = Unnamed::ValidateGameModuleStartupProfile(
+		*gameModule,
+		{
+			.failOnUnknownComponentTypes = failOnUnknown,
+			.emitDetailedLogs = true,
+		}
+	);
+	if (!validated) {
+		return EXIT_FAILURE;
+	}
+	if (launchOptions.validateStartupOnly) {
+		return EXIT_SUCCESS;
+	}
+
 	Unnamed::Engine engine(*gameModule, Unnamed::RUN_MODE::STANDALONE);
 	return engine.Run();
 }

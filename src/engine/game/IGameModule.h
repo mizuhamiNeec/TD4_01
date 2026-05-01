@@ -12,6 +12,22 @@ namespace Unnamed {
 	struct EngineServices;
 	struct WorldServices;
 
+	/// @brief ゲームのルート情報と既定起動情報をまとめた構造体です。
+	struct GameModulePaths {
+		/// @brief ゲーム識別名です。
+		std::string gameName;
+		/// @brief ゲームルートディレクトリです。
+		std::string gameRoot;
+		/// @brief コンテンツルートディレクトリです。
+		std::string contentRoot;
+		/// @brief 設定ファイルルートディレクトリです。
+		std::string configRoot;
+		/// @brief 既定の起動シーン（contentRoot 相対）です。
+		std::string defaultStartupScene;
+		/// @brief 解決に成功した game_profile.json の実パスです。
+		std::string resolvedManifestPath;
+	};
+
 	/// @brief ゲーム側から Engine へ機能注入するためのモジュール抽象です。
 	class IGameModule : public IGameWorldFactory {
 	public:
@@ -27,8 +43,12 @@ namespace Unnamed {
 		[[nodiscard]] virtual std::unique_ptr<IDemoService> CreateDemoService() = 0;
 		/// @brief ゲーム固有コンポーネントを登録します。
 		virtual void RegisterGameComponents(ComponentRegistry& componentRegistry) = 0;
+		/// @brief ゲーム名・ルート・既定シーン情報を返します。
+		[[nodiscard]] virtual GameModulePaths GetGameModulePaths() const = 0;
 		/// @brief 起動時のデフォルトシーンパスを返します。
-		[[nodiscard]] virtual std::string GetDefaultStartupScenePath() const = 0;
+		[[nodiscard]] virtual std::string GetDefaultStartupScenePath() const {
+			return GetGameModulePaths().defaultStartupScene;
+		}
 		/// @brief UI ドキュメントのデフォルトパスを返します。
 		/// @details Engine 側はこの値を利用し、ゲーム固有パスを直書きしません。
 		[[nodiscard]] virtual std::string GetDefaultUiDocumentPath() const {

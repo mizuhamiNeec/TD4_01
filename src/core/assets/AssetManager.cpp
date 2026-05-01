@@ -8,6 +8,8 @@
 #include <core/UnnamedMacro.h>
 #include <core/string/StrUtil.h>
 
+#include <engine/game/GamePathResolver.h>
+#include <engine/game/IGameModule.h>
 #include <engine/profiler/Profiler.h>
 #include <engine/unnamed/subsystem/console/Log.h>
 #include <engine/unnamed/subsystem/interface/ServiceLocator.h>
@@ -28,6 +30,53 @@ namespace Unnamed {
 	constexpr std::string_view kChannel = "AstMgr";
 
 	namespace {
+		[[nodiscard]] bool IsCurrentDirectoryRelativePath(
+			const std::string_view path
+		) {
+			return path.rfind("./", 0) == 0 || path.rfind("../", 0) == 0;
+		}
+
+		[[nodiscard]] bool IsEngineRootRelativePath(const std::string_view path) {
+			return path.rfind("content/", 0) == 0 ||
+			       path.rfind("projects/", 0) == 0;
+		}
+
+		[[nodiscard]] std::string ResolveAssetLoadPath(
+			const std::string_view path
+		) {
+			const std::string normalizedInput = StrUtil::NormalizePath(
+				std::string(path)
+			);
+			if (normalizedInput.empty()) {
+				return {};
+			}
+
+			const std::filesystem::path fsPath(normalizedInput);
+			if (
+				fsPath.is_absolute() ||
+				IsCurrentDirectoryRelativePath(normalizedInput)
+			) {
+				return normalizedInput;
+			}
+
+			// 既存データの "content/..." や "projects/..." はプロジェクトルート基準で扱います。
+			if (IsEngineRootRelativePath(normalizedInput)) {
+				return "./" + normalizedInput;
+			}
+
+			const IGameModule* gameModule = ServiceLocator::Get<IGameModule>();
+			if (!gameModule) {
+				return normalizedInput;
+			}
+
+			// contentRoot 相対として解決します。
+			const std::string resolvedPath = ResolveGameContentPath(
+				gameModule->GetGameModulePaths(),
+				normalizedInput
+			);
+			return resolvedPath.empty() ? normalizedInput : resolvedPath;
+		}
+
 		FileStamp ReadCurrentFileStamp(const std::string& path) {
 			FileStamp       stamp = {};
 			std::error_code ec;
@@ -83,9 +132,16 @@ namespace Unnamed {
 		const std::optional<ASSET_TYPE> typeOpt,
 		const AssetLoadPolicy           policy
 	) {
-		Profiler*         profiler = ServiceLocator::Get<Profiler>();
-		std::scoped_lock  lock(mMutex);
-		const std::string normalizedPath = StrUtil::NormalizePath(path);
+		const std::string normalizedPath = StrUtil::NormalizePath(
+			ResolveAssetLoadPath(path)
+		);
+		if (normalizedPath.empty()) {
+			Warning(kChannel, "Asset path is empty.");
+			return kInvalidAssetID;
+		}
+
+		Profiler*        profiler = ServiceLocator::Get<Profiler>();
+		std::scoped_lock lock(mMutex);
 
 		if (policy == AssetLoadPolicy::UseCachedIfLoaded) {
 			const auto cachedIt = mPathToID.find(normalizedPath);
@@ -142,7 +198,7 @@ namespace Unnamed {
 
 		for (const auto& l : mLoaders) {
 			auto t = ASSET_TYPE::UNKNOWN;
-			if (!l->CanLoad(path, &t)) {
+			if (!l->CanLoad(normalizedPath, &t)) {
 				continue;
 			}
 			if (typeOpt.has_value() && t != deduced) {

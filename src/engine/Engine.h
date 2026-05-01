@@ -11,6 +11,7 @@ class SrvManager;
 
 namespace Unnamed {
 	class AudioSystem;
+	class ComponentRegistry;
 	class EditorRuntime;
 	class ImGuiLayer;
 	class ConsoleSystem;
@@ -57,6 +58,10 @@ namespace Unnamed {
 
 		/// @brief コンソールコマンドとコンソール変数を登録します。
 		void RegisterConsoleCommandsAndVariables();
+
+		/// @brief エンジン標準コンポーネントの登録を保証します。
+		/// @param componentRegistry 登録先のコンポーネントレジストリ
+		void RegisterEngineComponents(ComponentRegistry& componentRegistry);
 
 		/// @brief シーン遷移処理の対象となるワールドを解決します。
 		/// @param runtimeWorld 現在の実行対象ワールド

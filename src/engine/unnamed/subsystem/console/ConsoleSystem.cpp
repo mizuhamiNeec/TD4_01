@@ -8,6 +8,8 @@
 #include <engine/unnamed/subsystem/console/ConsoleUI.h>
 #include <engine/unnamed/subsystem/console/ConVarWriter.h>
 #include <engine/unnamed/subsystem/console/Log.h>
+#include <engine/game/GamePathResolver.h>
+#include <engine/game/IGameModule.h>
 #include <engine/unnamed/subsystem/console/builtin/BuiltInCommands.h>
 #include <engine/unnamed/subsystem/console/builtin/BuiltInConVars.h>
 #include <engine/unnamed/subsystem/console/concommand/ConCommand.h>
@@ -21,9 +23,43 @@ namespace Unnamed {
 	static constexpr std::string_view kChannelConsole = "Console";
 	static constexpr std::string_view kConsoleLogPath = "./consolesystem.log";
 
-	// ユーザー設定ファイルのパス
-	static constexpr std::string_view kUserCfgPath =
+	// 互換性維持用の既存 user.cfg です。
+	static constexpr std::string_view kLegacyUserCfgPath =
 		"./content/core/cfg/user.cfg";
+
+	[[nodiscard]] std::string ResolvePersistUserCfgPath() {
+		const IGameModule* gameModule = ServiceLocator::Get<IGameModule>();
+		if (!gameModule) {
+			return std::string(kLegacyUserCfgPath);
+		}
+
+		const std::string resolvedPath = ResolveGameConfigPath(
+			gameModule->GetGameModulePaths(),
+			"user.cfg"
+		);
+		if (resolvedPath.empty()) {
+			return std::string(kLegacyUserCfgPath);
+		}
+
+		const std::filesystem::path configPath(resolvedPath);
+		const std::filesystem::path configDir = configPath.parent_path();
+		if (!configDir.empty()) {
+			std::error_code ec;
+			std::filesystem::create_directories(configDir, ec);
+			if (ec) {
+				DevMsg(
+					kChannelConsole,
+					"Failed to create config directory '{}': {}. Falling back to '{}'.",
+					configDir.generic_string(),
+					ec.message(),
+					std::string(kLegacyUserCfgPath)
+				);
+				return std::string(kLegacyUserCfgPath);
+			}
+		}
+
+		return configPath.generic_string();
+	}
 
 	EXEC_FLAG operator|=(EXEC_FLAG& lhs, const EXEC_FLAG& rhs) {
 		lhs = static_cast<EXEC_FLAG>(static_cast<int>(lhs) | static_cast<int>(
@@ -88,7 +124,26 @@ namespace Unnamed {
 		mClearCommand.reset();
 
 		// ユーザー設定ファイルに変数を書き込む
-		[[maybe_unused]] ConVarWriter writer(kUserCfgPath);
+		try {
+			const std::string userCfgPath = ResolvePersistUserCfgPath();
+			DevMsg(
+				kChannelConsole,
+				"Persisting archived convars to '{}'.",
+				userCfgPath
+			);
+			[[maybe_unused]] ConVarWriter writer(userCfgPath);
+		} catch (const std::exception& e) {
+			Error(
+				kChannelConsole,
+				"Failed to persist archived convars: {}",
+				e.what()
+			);
+		} catch (...) {
+			Error(
+				kChannelConsole,
+				"Failed to persist archived convars due to unknown exception."
+			);
+		}
 
 		// ファイルログ停止して残りを書き出し
 		mFileLogSink.Stop();

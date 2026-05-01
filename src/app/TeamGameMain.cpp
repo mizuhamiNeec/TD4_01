@@ -4,18 +4,18 @@
 
 #include "AppLaunchOptions.h"
 #include "GameModuleFactory.h"
-#include "game/parkour/runtime/ParkourGameModule.h"
+#include "game/team/runtime/TeamGameModule.h"
 
 namespace {
-	[[nodiscard]] bool RegisterParkourRuntimeModule() {
-		// App がリンク済みの Parkour モジュールを Factory へ注入する。
+	[[nodiscard]] bool RegisterTeamGameRuntimeModule() {
+		// App がリンク済みの TeamGame モジュールを Factory へ注入する。
 		if (!Unnamed::RegisterGameModule(
-			"Parkour",
-			&Unnamed::CreateParkourGameModule
+			"TeamGame",
+			&Unnamed::CreateTeamGameModule
 		)) {
 			return false;
 		}
-		(void)Unnamed::RegisterGameModuleAlias("ParkourGame", "Parkour");
+		(void)Unnamed::RegisterGameModuleAlias("Team", "TeamGame");
 		return true;
 	}
 }
@@ -24,10 +24,10 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
 	const Unnamed::AppLaunchOptions launchOptions =
 		Unnamed::ParseAppLaunchOptionsFromCommandLine();
 	if (launchOptions.showHelp) {
-		Unnamed::PrintLaunchHelp("ParkourGameApp.exe");
+		Unnamed::PrintLaunchHelp("TeamGameApp.exe");
 		return EXIT_SUCCESS;
 	}
-	Unnamed::EmitLaunchOptionDiagnostics("ParkourGameApp", launchOptions);
+	Unnamed::EmitLaunchOptionDiagnostics("TeamGameApp", launchOptions);
 
 	if (launchOptions.repoRootOverride.has_value()) {
 		Unnamed::SetGameModuleManifestRepoRootOverride(
@@ -35,12 +35,12 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
 		);
 	}
 
-	if (!RegisterParkourRuntimeModule()) {
-		Error("ParkourGameApp", "Failed to register Parkour game module profile.");
+	if (!RegisterTeamGameRuntimeModule()) {
+		Error("TeamGameApp", "Failed to register TeamGame game module profile.");
 		return EXIT_FAILURE;
 	}
 	std::unique_ptr<Unnamed::IGameModule> gameModule =
-		Unnamed::CreateGameModule("Parkour");
+		Unnamed::CreateGameModule("TeamGame");
 	if (!gameModule) {
 		return EXIT_FAILURE;
 	}

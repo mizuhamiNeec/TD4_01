@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <charconv>
 #include <chrono>
+#include <filesystem>
 #include <pch.h>
 
 // ReSharper disable CppUnusedIncludeDirective
@@ -30,6 +31,7 @@
 #include <core/ComponentRegistry.h>
 #include <engine/game/IDemoService.h>
 #include <engine/game/IGameModule.h>
+#include <engine/game/GamePathResolver.h>
 #include <engine/Platform/PlatformEventsImpl.h>
 #include <engine/Platform/WindowManager.h>
 #include <engine/profiler/Profiler.h>
@@ -43,7 +45,16 @@
 #include <engine/rhi/interface/IRhiDevice.h>
 #include <engine/sequence/SequenceRegressionRunner.h>
 #include <engine/ui/ImGuiLayer.h>
+#include <engine/unnamed/framework/components/CameraComponent.h>
+#include <engine/unnamed/framework/components/SkyboxComponent.h>
+#include <engine/unnamed/framework/components/TransformComponent.h>
+#include <engine/unnamed/framework/components/audio/AudioSourceComponent.h>
 #include <engine/unnamed/framework/components/collider/StaticMeshColliderComponent.h>
+#include <engine/unnamed/framework/components/mesh/SkeletalAnimationComponent.h>
+#include <engine/unnamed/framework/components/mesh/SkeletalMeshRendererComponent.h>
+#include <engine/unnamed/framework/components/mesh/StaticMeshRendererComponent.h>
+#include <engine/unnamed/framework/components/sequence/SequenceDirectorComponent.h>
+#include <engine/unnamed/framework/components/ui/UiCanvasComponent.h>
 #include <engine/unnamed/framework/entity/Entity.h>
 #include <engine/unnamed/subsystem/console/concommand/ConCommand.h>
 #include <engine/unnamed/subsystem/input/device/gamepad/GamepadDevice.h>
@@ -66,6 +77,53 @@ namespace Unnamed {
 		class D3D12Device;
 	}
 
+	namespace {
+		[[nodiscard]] bool ExecuteCfgIfExists(
+			ConsoleSystem*          console,
+			const std::string_view  cfgPath,
+			const std::string_view  channel,
+			const std::string_view  orderLabel
+		) {
+			if (!console || cfgPath.empty()) {
+				return false;
+			}
+
+			if (!std::filesystem::exists(std::filesystem::path(cfgPath))) {
+				DevMsg(
+					channel,
+					"[CFG:{}] skipped missing {}",
+					orderLabel,
+					std::string(cfgPath)
+				);
+				return false;
+			}
+
+			DevMsg(
+				channel,
+				"[CFG:{}] exec {}",
+				orderLabel,
+				std::string(cfgPath)
+			);
+			console->ExecuteCommand("exec " + std::string(cfgPath));
+			return true;
+		}
+
+		[[nodiscard]] bool ExecuteGameCfgIfExists(
+			ConsoleSystem*          console,
+			const GameModulePaths&  gamePaths,
+			const std::string_view  relativeCfgPath,
+			const std::string_view  channel,
+			const std::string_view  orderLabel
+		) {
+			return ExecuteCfgIfExists(
+				console,
+				ResolveGameConfigPath(gamePaths, relativeCfgPath),
+				channel,
+				orderLabel
+			);
+		}
+	}
+
 	Engine::Engine(IGameModule& gameModule, const RUN_MODE runMode)
 		: mGameModule(gameModule),
 		  mRequestedRunMode(runMode) {}
@@ -73,9 +131,17 @@ namespace Unnamed {
 
 	int Engine::Run() {
 		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF); // リークチェック
-		[[maybe_unused]] HRESULT hr = CoInitializeEx(
+		const HRESULT hr = CoInitializeEx(
 			nullptr, COINIT_MULTITHREADED
 		);
+		const bool coInitialized = SUCCEEDED(hr);
+		if (!coInitialized && hr != RPC_E_CHANGED_MODE) {
+			Warning(
+				"Engine",
+				"CoInitializeEx failed. hr=0x{:08X}",
+				static_cast<uint32_t>(hr)
+			);
+		}
 		timeBeginPeriod(1); // システムタイマーの分解能を上げる
 
 		// 初期化
@@ -121,7 +187,9 @@ namespace Unnamed {
 		// シャットダウン
 		Shutdown();
 		timeEndPeriod(1);
-		CoUninitialize();
+		if (coInitialized) {
+			CoUninitialize();
+		}
 		return EXIT_SUCCESS;
 	}
 
@@ -269,11 +337,11 @@ namespace Unnamed {
 		mInputSystem->RegisterDevice(gamepadDevice);
 
 		// コンソールコマンドと変数の登録
-		mConsoleSystem->ExecuteCommand(
-			"exec ./content/core/cfg/config_default.cfg"
-		);
-		mConsoleSystem->ExecuteCommand(
-			"exec ./content/core/cfg/user.cfg"
+		(void)ExecuteCfgIfExists(
+			mConsoleSystem.get(),
+			"./content/core/cfg/config_default.cfg",
+			"Engine",
+			"00-core:config_default"
 		);
 
 		// プラットフォームイベントの作成
@@ -318,7 +386,50 @@ namespace Unnamed {
 			.demoService = mDemoService.get()
 		};
 		mGameModule.Initialize(engineServices);
+		RegisterEngineComponents(ComponentRegistry::Get());
 		mGameModule.RegisterGameComponents(ComponentRegistry::Get());
+		const GameModulePaths gamePaths = mGameModule.GetGameModulePaths();
+		DevMsg(
+			"Engine",
+			"Game profile: game='{}' manifest='{}' root='{}' content='{}' config='{}' startupScene='{}'",
+			gamePaths.gameName,
+			gamePaths.resolvedManifestPath,
+			gamePaths.gameRoot,
+			gamePaths.contentRoot,
+			gamePaths.configRoot,
+			gamePaths.defaultStartupScene
+		);
+
+		(void)ExecuteGameCfgIfExists(
+			mConsoleSystem.get(),
+			gamePaths,
+			"bootstrap.cfg",
+			"Engine",
+			"10-game:bootstrap"
+		);
+
+		(void)ExecuteGameCfgIfExists(
+			mConsoleSystem.get(),
+			gamePaths,
+			"game.cfg",
+			"Engine",
+			"20-game:game"
+		);
+		if (!ExecuteGameCfgIfExists(
+			mConsoleSystem.get(),
+			gamePaths,
+			"user.cfg",
+			"Engine",
+			"30-game:user"
+		)) {
+			// 既存運用との互換性のため、game 側 user.cfg が無い場合のみ core を読みます。
+			(void)ExecuteCfgIfExists(
+				mConsoleSystem.get(),
+				"./content/core/cfg/user.cfg",
+				"Engine",
+				"31-core:user-fallback"
+			);
+		}
 
 #if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
 		auto& dx     = dynamic_cast<Rhi::D3D12Device&>(*mRhiDevice);
@@ -360,13 +471,24 @@ namespace Unnamed {
 			);
 			if (World* runtimeWorld = mUEditorRuntime->GetRuntimeWorld()) {
 				const std::string startupScenePath =
-					mGameModule.GetDefaultStartupScenePath();
+					ResolveStartupScenePath(mGameModule);
 				runtimeWorld->LoadSceneFromFile(startupScenePath.c_str());
 			}
 
-			mConsoleSystem->ExecuteCommand(
-				"exec ./content/core/cfg/editor.cfg"
-			);
+			if (!ExecuteGameCfgIfExists(
+				mConsoleSystem.get(),
+				gamePaths,
+				"editor.cfg",
+				"Engine",
+				"40-game:editor"
+			)) {
+				(void)ExecuteCfgIfExists(
+					mConsoleSystem.get(),
+					"./content/core/cfg/editor.cfg",
+					"Engine",
+					"41-core:editor-fallback"
+				);
+			}
 #endif
 		} else {
 			std::unique_ptr<World> runtimeWorld = mGameModule.CreateRuntimeWorld(
@@ -378,7 +500,7 @@ namespace Unnamed {
 			}
 			World& world = ActivateWorld(std::move(runtimeWorld));
 			const std::string startupScenePath =
-				mGameModule.GetDefaultStartupScenePath();
+				ResolveStartupScenePath(mGameModule);
 			world.LoadSceneFromFile(startupScenePath.c_str());
 		}
 
@@ -474,6 +596,7 @@ namespace Unnamed {
 		World* runtimeWorld = mWorld.get();
 #if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
 		if (mUEditorRuntime && mIsEditorMode) {
+			mUEditorRuntime->SyncPresentationState();
 			runtimeWorld = mUEditorRuntime->GetRuntimeWorld();
 		}
 #endif
@@ -656,6 +779,7 @@ namespace Unnamed {
 		mRenderFrameContext.reset();
 		mRenderModule.reset();
 		mRhiDevice.reset();
+		ServiceLocator::Register<Profiler>(nullptr);
 		mProfiler.reset();
 		if (mAudioSystem) {
 			mAudioSystem->Shutdown();
@@ -670,9 +794,12 @@ namespace Unnamed {
 
 		if (mInputSystem) {
 			mInputSystem->Shutdown();
+			ServiceLocator::Register<InputSystem>(nullptr);
+			mInputSystem.reset();
 		}
 		if (mTerminalSystem) {
 			mTerminalSystem->Shutdown();
+			mTerminalSystem.reset();
 		}
 
 		SpecialMsg(
@@ -683,14 +810,23 @@ namespace Unnamed {
 
 		if (mConsoleSystem) {
 			mConsoleSystem->Shutdown();
+			mConsoleSystem.reset();
 		}
 		if (mTimeSystem) {
 			mTimeSystem->Shutdown();
+			ServiceLocator::Register<TimeSystem>(nullptr);
+			mTimeSystem.reset();
 		}
 		if (mWindowManager) {
 			mWindowManager->Shutdown();
+			mWindowManager.reset();
 		}
+		mPlatformEvents.reset();
 
+		ServiceLocator::Register<AssetManager>(nullptr);
+		mAssetManager.reset();
+
+		ServiceLocator::Register<Engine>(nullptr);
 		ServiceLocator::Register<IGameModule>(nullptr);
 	}
 
@@ -857,6 +993,7 @@ namespace Unnamed {
 			},
 			"Run fixed-tick regression tests for sequence runtime."
 		);
+
 #if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
 		mToggleEditorCommand = std::make_unique<ConCommand>(
 			"toggleeditor",
@@ -876,6 +1013,45 @@ namespace Unnamed {
 			"Toggle editor viewport/swapchain presentation mode."
 		);
 #endif
+	}
+
+	void Engine::RegisterEngineComponents(
+		ComponentRegistry& componentRegistry
+	) {
+		const auto registerIfMissing = [&](auto typeTag) {
+			using T = decltype(typeTag);
+			const T probe{};
+			const std::string_view stableName = probe.GetStableName();
+			if (componentRegistry.IsRegistered(stableName)) {
+				return;
+			}
+
+			const bool registered = componentRegistry.Register(
+				stableName,
+				[]() -> std::unique_ptr<BaseComponent> {
+					return std::make_unique<T>();
+				},
+				probe.GetComponentName()
+			);
+			if (!registered) {
+				Warning(
+					"Engine",
+					"Failed to register engine component '{}'.",
+					stableName
+				);
+			}
+		};
+
+		registerIfMissing(TransformComponent{});
+		registerIfMissing(CameraComponent{});
+		registerIfMissing(SkyboxComponent{});
+		registerIfMissing(StaticMeshRendererComponent{});
+		registerIfMissing(StaticMeshColliderComponent{});
+		registerIfMissing(SkeletalMeshRendererComponent{});
+		registerIfMissing(SkeletalAnimationComponent{});
+		registerIfMissing(UiCanvasComponent{});
+		registerIfMissing(AudioSourceComponent{});
+		registerIfMissing(SequenceDirectorComponent{});
 	}
 
 	World* Engine::ResolveSceneTransitionTargetWorld(World* runtimeWorld) const {

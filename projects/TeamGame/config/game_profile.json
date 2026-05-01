@@ -1,0 +1,11 @@
+{
+	"schemaVersion": 1,
+	"gameName": "TeamGame",
+	"aliases": [
+		"Team"
+	],
+	"gameRoot": "./projects/TeamGame",
+	"contentRoot": "./projects/TeamGame/content",
+	"configRoot": "./projects/TeamGame/config",
+	"defaultStartupScene": "scenes/bootstrap.json"
+}

@@ -50,7 +50,10 @@ namespace Unnamed {
 			const std::string_view path
 		) {
 			if (path.empty()) {
-				return {};
+				if (root.empty()) {
+					return {};
+				}
+				return NormalizePath(root);
 			}
 
 			const std::filesystem::path fsPath(path);

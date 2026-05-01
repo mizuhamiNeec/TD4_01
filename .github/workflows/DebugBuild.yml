@@ -13,9 +13,11 @@ on:
 env:
   # リポジトリのルートディレクトリを起点としたソリューションファイルのパス
   SOLUTION_FILE_PATH: Unnamed.slnx
-  # Visual Studio の構成(DEBUG / Release)
+  # Visual Studio の構成(Debug / Develop / Release)
   CONFIGURATION: Debug
   PLATFORM: x64
+  # premake5.lua で定義されたアプリプロジェクトをビルド
+  BUILD_TARGETS: UnnamedEditorApp;ParkourGameApp;TeamGameApp
 
 jobs:
   build:
@@ -49,5 +51,6 @@ jobs:
         run: |
           msbuild $env:SOLUTION_FILE_PATH `
             /m `
+            /t:$env:BUILD_TARGETS `
             /p:Configuration=$env:CONFIGURATION `
             /p:Platform=$env:PLATFORM

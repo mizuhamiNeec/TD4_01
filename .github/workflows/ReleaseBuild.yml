@@ -13,9 +13,11 @@ on:
 env:
   # リポジトリのルートディレクトリを起点としたソリューションファイルのパス
   SOLUTION_FILE_PATH: Unnamed.slnx
-  # Visual Studio の構成(DEBUG / Release)
+  # Visual Studio の構成(Debug / Develop / Release)
   CONFIGURATION: Release
   PLATFORM: x64
+  # premake5.lua で定義されたゲームアプリのみをビルド（Editor は含めない）
+  BUILD_TARGETS: ParkourGameApp;TeamGameApp
 
 jobs:
   build:
@@ -32,7 +34,8 @@ jobs:
           path: ./
 
       - name: Show files in the current directory
-        run: ls ./
+        shell: pwsh
+        run: Get-ChildItem ./
 
       - name: Generate Visual Studio 2026 project files
         shell: pwsh
@@ -48,5 +51,6 @@ jobs:
         run: |
           msbuild $env:SOLUTION_FILE_PATH `
             /m `
+            /t:$env:BUILD_TARGETS `
             /p:Configuration=$env:CONFIGURATION `
             /p:Platform=$env:PLATFORM

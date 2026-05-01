@@ -1,5 +1,6 @@
 #include "D3D12Device.h"
 
+#include <chrono>
 #include <dxgidebug.h>
 
 #include "D3D12SwapChain.h"
@@ -175,10 +176,28 @@ namespace Unnamed::Rhi {
 			return;
 		}
 
+		const auto resizeStart = std::chrono::steady_clock::now();
+		DevMsg(kChannel, "OnResize request: {}x{}", width, height);
+
 		// GPUの完了待ち
+		const auto waitStart = std::chrono::steady_clock::now();
 		WaitForGpuIdle();
+		const double waitMs = std::chrono::duration<double, std::milli>(
+			std::chrono::steady_clock::now() - waitStart
+		).count();
 
 		mSwapChain->Resize(width, height);
+		const double totalMs = std::chrono::duration<double, std::milli>(
+			std::chrono::steady_clock::now() - resizeStart
+		).count();
+		DevMsg(
+			kChannel,
+			"OnResize complete: {}x{} (waitForGpuIdleMs={:.3f}, totalMs={:.3f})",
+			width,
+			height,
+			waitMs,
+			totalMs
+		);
 	}
 
 	BACKEND_TYPE D3D12Device::GetBackendType() const {

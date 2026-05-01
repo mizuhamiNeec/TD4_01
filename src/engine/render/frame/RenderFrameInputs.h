@@ -41,6 +41,8 @@ namespace Unnamed::Render {
 		SCENE_RENDER_MODE mode = SCENE_RENDER_MODE::FIT_VIEWPORT;
 		uint32_t          viewportPanelWidth = 0;
 		uint32_t          viewportPanelHeight = 0;
+		uint32_t          allocationHintWidth = 0;
+		uint32_t          allocationHintHeight = 0;
 		bool              preferRealtimeResize = true;
 	};
 

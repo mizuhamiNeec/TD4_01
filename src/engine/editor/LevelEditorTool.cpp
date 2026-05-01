@@ -29,6 +29,64 @@
 
 namespace Unnamed {
 	namespace {
+		[[nodiscard]] Vec2 ResolveMainWindowMonitorExtent(
+			WindowManager& windowManager
+		) {
+			const WindowId mainWindowId = windowManager.GetMainWindowId();
+			Window* const  mainWindow = windowManager.FindWindowById(mainWindowId);
+			if (!mainWindow || !mainWindow->GetHwnd()) {
+				return Vec2::zero;
+			}
+
+			MONITORINFO monitorInfo = {};
+			monitorInfo.cbSize      = sizeof(monitorInfo);
+			const HMONITOR monitor = MonitorFromWindow(
+				mainWindow->GetHwnd(), MONITOR_DEFAULTTONEAREST
+			);
+			if (!monitor || !GetMonitorInfoW(monitor, &monitorInfo)) {
+				return Vec2::zero;
+			}
+
+			const int32_t monitorWidth = monitorInfo.rcMonitor.right -
+			                             monitorInfo.rcMonitor.left;
+			const int32_t monitorHeight = monitorInfo.rcMonitor.bottom -
+			                              monitorInfo.rcMonitor.top;
+			if (monitorWidth <= 0 || monitorHeight <= 0) {
+				return Vec2::zero;
+			}
+
+			return Vec2(
+				static_cast<float>(monitorWidth),
+				static_cast<float>(monitorHeight)
+			);
+		}
+
+		[[nodiscard]] Vec2 ResolveMainWindowClientExtent(
+			WindowManager& windowManager
+		) {
+			const WindowId mainWindowId = windowManager.GetMainWindowId();
+			Window* const  mainWindow = windowManager.FindWindowById(mainWindowId);
+			if (!mainWindow || !mainWindow->GetHwnd()) {
+				return Vec2::zero;
+			}
+
+			RECT clientRect = {};
+			if (!GetClientRect(mainWindow->GetHwnd(), &clientRect)) {
+				return Vec2::zero;
+			}
+
+			const int32_t clientWidth = clientRect.right - clientRect.left;
+			const int32_t clientHeight = clientRect.bottom - clientRect.top;
+			if (clientWidth <= 0 || clientHeight <= 0) {
+				return Vec2::zero;
+			}
+
+			return Vec2(
+				static_cast<float>(clientWidth),
+				static_cast<float>(clientHeight)
+			);
+		}
+
 		[[nodiscard]] Vec2 ResolveSceneRenderExtentForInput(
 			const Render::SceneViewRenderMode& request
 		) {
@@ -305,46 +363,7 @@ namespace Unnamed {
 			ImGui::SetNextWindowDockID(dockSpaceId, ImGuiCond_FirstUseEver);
 			DrawSequenceEditors();
 		} else {
-			float width  = mViewportPanelWidth;
-			float height = mViewportPanelHeight;
-			if (const Window* window = mWindowManager.FindWindowById(
-				mWindowManager.GetMainWindowId()
-			)) {
-				const WindowDesc desc = window->GetDesc();
-				width = static_cast<float>(std::max(1, desc.width));
-				height = static_cast<float>(std::max(1, desc.height));
-			}
-			const Render::SceneViewRenderMode sceneRequest =
-				BuildSceneViewModeForSize(width, height);
-			const Vec2 runtimeViewportSize = ResolveSceneRenderExtentForInput(
-				sceneRequest
-			);
-
-			const auto input = mInputSystem;
-			mEditorWorld.SetEditorCameraLookEnabled(
-				input && input->IsHeld("ed_look")
-			);
-			if (input) {
-				if (const Window* window = mWindowManager.FindWindowById(
-					mWindowManager.GetMainWindowId()
-				)) {
-					// 投影座標と一致させるため、実レンダー解像度を入力ビューポートとして扱います。
-					input->SetMouseClientViewportRect(
-						Vec2::zero,
-						runtimeViewportSize
-					);
-					input->SetMouseCursorLockClientPosition(
-						window->GetHwnd(),
-						{
-							runtimeViewportSize.x * 0.5f,
-							runtimeViewportSize.y * 0.5f
-						}
-					);
-				} else {
-					input->ClearMouseClientViewportRectOverride();
-				}
-			}
-			mViewportLookActive = false;
+			SyncPresentationState();
 		}
 
 		// シーケンサーのモックアップ
@@ -441,9 +460,61 @@ namespace Unnamed {
 		ImGui::End();
 	}
 
+	void LevelEditorTool::SyncPresentationState() {
+		if (mPresentMode != EDITOR_PRESENT_MODE::FULLSCREEN_SWAP_CHAIN) {
+			return;
+		}
+
+		const auto input = mInputSystem;
+		if (!input) {
+			return;
+		}
+
+		Vec2 clientExtent = ResolveMainWindowClientExtent(mWindowManager);
+		if (clientExtent.x <= 0.0f || clientExtent.y <= 0.0f) {
+			clientExtent = Vec2(
+				std::max(1.0f, mViewportPanelWidth),
+				std::max(1.0f, mViewportPanelHeight)
+			);
+		}
+
+		const Render::SceneViewRenderMode sceneRequest = BuildSceneViewModeForSize(
+			clientExtent.x,
+			clientExtent.y,
+			true
+		);
+		const Vec2 runtimeViewportSize = ResolveSceneRenderExtentForInput(
+			sceneRequest
+		);
+
+		mViewportPanelWidth  = runtimeViewportSize.x;
+		mViewportPanelHeight = runtimeViewportSize.y;
+		mLastViewportSize    = runtimeViewportSize;
+
+		mEditorWorld.SetEditorCameraLookEnabled(input->IsHeld("ed_look"));
+		input->SetMouseClientViewportRect(Vec2::zero, runtimeViewportSize);
+
+		if (const Window* window = mWindowManager.FindWindowById(
+			mWindowManager.GetMainWindowId()
+		)) {
+			input->SetMouseCursorLockClientPosition(
+				window->GetHwnd(),
+				{
+					runtimeViewportSize.x * 0.5f,
+					runtimeViewportSize.y * 0.5f
+				}
+			);
+		} else {
+			input->ClearMouseCursorLockAnchor();
+		}
+		mViewportLookActive = false;
+	}
+
 	void LevelEditorTool::CollectRenderViews(
 		Render::RenderFrameInputs& inputs
 	) {
+		SyncPresentationState();
+
 		Render::RenderViewInput              sourceScene = {};
 		bool                                 hasScene    = false;
 		std::vector<Render::RenderViewInput> preservedViews;
@@ -478,7 +549,7 @@ namespace Unnamed {
 			view.sceneViewMode           = BuildSceneViewModeForSize(
 				width,
 				height,
-				false
+				presentToSwapChain
 			);
 			view.output.sizeMode = Render::RENDER_VIEW_SIZE_MODE::FIXED;
 			view.output.width = view.sceneViewMode.viewportPanelWidth;
@@ -515,11 +586,24 @@ namespace Unnamed {
 			composedViews.end(), preservedViews.begin(), preservedViews.end()
 		);
 
+		Vec2 sceneTargetSize = Vec2(
+			std::max(1.0f, mViewportPanelWidth),
+			std::max(1.0f, mViewportPanelHeight)
+		);
+		if (mPresentMode == EDITOR_PRESENT_MODE::FULLSCREEN_SWAP_CHAIN) {
+			const Vec2 clientExtent = ResolveMainWindowClientExtent(
+				mWindowManager
+			);
+			if (clientExtent.x > 0.0f && clientExtent.y > 0.0f) {
+				sceneTargetSize = clientExtent;
+			}
+		}
+
 		composedViews.emplace_back(
 			buildSceneView(
 				kViewScenePerspective,
-				std::max(1.0f, mViewportPanelWidth),
-				std::max(1.0f, mViewportPanelHeight),
+				sceneTargetSize.x,
+				sceneTargetSize.y,
 				ResolveViewportBinding(kViewScenePerspective),
 				true,
 				mPresentMode == EDITOR_PRESENT_MODE::FULLSCREEN_SWAP_CHAIN
@@ -545,6 +629,8 @@ namespace Unnamed {
 		cache.srvCpu                       = output.srvCpu;
 		cache.srvRevision                  = output.srvRevision;
 		cache.size                         = size;
+		cache.uvMin                        = output.uvMin;
+		cache.uvMax                        = output.uvMax;
 		mViewOutputs[std::string(viewKey)] = cache;
 	}
 
@@ -726,7 +812,23 @@ namespace Unnamed {
 		                         Render::SCENE_RENDER_MODE::FIXED_ASPECT_16X9 ||
 		                         sceneRequest.mode ==
 		                         Render::SCENE_RENDER_MODE::FIXED_ASPECT_4X3;
-		if (dynamicMode) {
+		if (sceneRequest.mode == Render::SCENE_RENDER_MODE::FIT_VIEWPORT) {
+			const Vec2 monitorExtent = ResolveMainWindowMonitorExtent(
+				mWindowManager
+			);
+			if (monitorExtent.x > 0.0f && monitorExtent.y > 0.0f) {
+				sceneRequest.allocationHintWidth = static_cast<uint32_t>(
+					std::max(1.0f, monitorExtent.x)
+				);
+				sceneRequest.allocationHintHeight = static_cast<uint32_t>(
+					std::max(1.0f, monitorExtent.y)
+				);
+			}
+		}
+		if (
+			dynamicMode &&
+			mPresentMode != EDITOR_PRESENT_MODE::FULLSCREEN_SWAP_CHAIN
+		) {
 			sceneRequest.viewportPanelWidth = std::max(
 				8u, sceneRequest.viewportPanelWidth / 8u * 8u
 			);

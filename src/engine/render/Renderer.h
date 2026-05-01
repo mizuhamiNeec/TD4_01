@@ -33,6 +33,8 @@ namespace Unnamed::Render {
 		uint32_t                    textureId   = 0;
 		D3D12_CPU_DESCRIPTOR_HANDLE srvCpu      = {};
 		uint64_t                    srvRevision = 0;
+		Vec2                        uvMin       = Vec2(0.0f, 0.0f);
+		Vec2                        uvMax       = Vec2(1.0f, 1.0f);
 	};
 
 	class Renderer {
@@ -181,13 +183,10 @@ namespace Unnamed::Render {
 		struct ViewRuntimeState {
 			RENDER_VIEW_TYPE      type = RENDER_VIEW_TYPE::SCENE;
 			RenderViewOutputDesc  output = {};
-			uint32_t              width = 1;
-			uint32_t              height = 1;
-			uint32_t              requestedWidth = 1;
-			uint32_t              requestedHeight = 1;
-			uint32_t              pendingShrinkWidth = 0;
-			uint32_t              pendingShrinkHeight = 0;
-			uint32_t              pendingShrinkStableFrames = 0;
+			uint32_t              logicalWidth = 1;
+			uint32_t              logicalHeight = 1;
+			uint32_t              allocatedWidth = 1;
+			uint32_t              allocatedHeight = 1;
 			uint32_t              colorTextureId = 0;
 			uint32_t              depthTextureId = 0;
 			uint32_t              postFxTextureAId = 0;

@@ -351,6 +351,13 @@ namespace Unnamed {
 		}
 	}
 
+	void EditorToolHost::SyncPresentationState() const {
+		if (!mLevelTool) {
+			return;
+		}
+		mLevelTool->SyncPresentationState();
+	}
+
 	World* EditorToolHost::GetRuntimeWorld() const {
 		return mLevelTool ? mLevelTool->GetRuntimeWorld() : nullptr;
 	}

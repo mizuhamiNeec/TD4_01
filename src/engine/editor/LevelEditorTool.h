@@ -78,6 +78,8 @@ namespace Unnamed {
 
 		void                              TogglePresentMode();
 		[[nodiscard]] EDITOR_PRESENT_MODE GetPresentMode() const;
+		/// @brief PresentModeに応じた入力ビューポート状態を同期します。
+		void SyncPresentationState();
 		[[nodiscard]] bool                IsPlaying() const;
 		void                              StartPlayInEditor() const;
 		void                              StopPlayInEditor() const;
@@ -93,6 +95,8 @@ namespace Unnamed {
 			uint64_t srvRevision = 0;
 			uint32_t textureId = 0;
 			Vec2 size = Vec2::zero;
+			Vec2 uvMin = Vec2(0.0f, 0.0f);
+			Vec2 uvMax = Vec2(1.0f, 1.0f);
 		};
 
 		static void LoadImGuizmoSettings(ConsoleSystem* console);

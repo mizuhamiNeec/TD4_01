@@ -1,5 +1,6 @@
 #include "D3D12SwapChain.h"
 
+#include <chrono>
 #include <string_view>
 
 #include "D3D12Util.h"
@@ -93,6 +94,18 @@ namespace Unnamed::Rhi {
 			return;
 		}
 
+		const auto resizeStart = std::chrono::steady_clock::now();
+		const uint32_t oldWidth  = mWidth;
+		const uint32_t oldHeight = mHeight;
+		DevMsg(
+			kChannel,
+			"Resize start: {}x{} -> {}x{}",
+			oldWidth,
+			oldHeight,
+			width,
+			height
+		);
+
 		for (uint32_t i = 0; i < mBufferCount; i++) {
 			mBackBuffers[i].Reset();
 		}
@@ -109,9 +122,17 @@ namespace Unnamed::Rhi {
 			)
 		);
 
-		Msg(kChannel, "SwapChain resized: {}x{}", mWidth, mHeight);
-
 		CreateBackBuffersAndRtv();
+		const double elapsedMs = std::chrono::duration<double, std::milli>(
+			std::chrono::steady_clock::now() - resizeStart
+		).count();
+		Msg(
+			kChannel,
+			"Resize done: {}x{} (elapsedMs={:.3f})",
+			mWidth,
+			mHeight,
+			elapsedMs
+		);
 	}
 
 	void D3D12SwapChain::Present(const bool vSync) {

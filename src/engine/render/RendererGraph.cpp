@@ -66,6 +66,40 @@ namespace Unnamed::Render {
 			Vec4 color1  = Vec4::zero;
 		};
 
+		struct FitRect {
+			float x      = 0.0f;
+			float y      = 0.0f;
+			float width  = 1.0f;
+			float height = 1.0f;
+		};
+
+		[[nodiscard]] FitRect ComputeAspectFitRect(
+			const uint32_t dstWidth,
+			const uint32_t dstHeight,
+			const uint32_t srcWidth,
+			const uint32_t srcHeight
+		) {
+			const float safeDstWidth = static_cast<float>(std::max(1u, dstWidth));
+			const float safeDstHeight = static_cast<float>(std::max(1u, dstHeight));
+			const float safeSrcWidth = static_cast<float>(std::max(1u, srcWidth));
+			const float safeSrcHeight = static_cast<float>(std::max(1u, srcHeight));
+			const float srcAspect = safeSrcWidth / safeSrcHeight;
+
+			float fitWidth  = safeDstWidth;
+			float fitHeight = fitWidth / srcAspect;
+			if (fitHeight > safeDstHeight) {
+				fitHeight = safeDstHeight;
+				fitWidth  = fitHeight * srcAspect;
+			}
+
+			FitRect rect = {};
+			rect.width = std::max(1.0f, fitWidth);
+			rect.height = std::max(1.0f, fitHeight);
+			rect.x = (safeDstWidth - rect.width) * 0.5f;
+			rect.y = (safeDstHeight - rect.height) * 0.5f;
+			return rect;
+		}
+
 		std::string CompactLowerKey(const std::string_view key) {
 			std::string result;
 			result.reserve(key.size());
@@ -249,8 +283,8 @@ namespace Unnamed::Render {
 				if (state.colorTextureId == 0) {
 					state.colorTextureId = mGraph.CreateTexture(
 						{
-							.width          = state.width,
-							.height         = state.height,
+							.width          = state.allocatedWidth,
+							.height         = state.allocatedHeight,
 							.resourceFormat = kSceneHdrColorFormat,
 							.allowUav       = false,
 							.allowRtv       = true,
@@ -262,8 +296,8 @@ namespace Unnamed::Render {
 				if (state.postFxTextureAId == 0) {
 					state.postFxTextureAId = mGraph.CreateTexture(
 						{
-							.width          = state.width,
-							.height         = state.height,
+							.width          = state.allocatedWidth,
+							.height         = state.allocatedHeight,
 							.resourceFormat = kSceneHdrColorFormat,
 							.allowRtv       = true,
 							.debugName      = "ViewPostFxA_" + view.viewKey,
@@ -274,8 +308,8 @@ namespace Unnamed::Render {
 				if (state.postFxTextureBId == 0) {
 					state.postFxTextureBId = mGraph.CreateTexture(
 						{
-							.width          = state.width,
-							.height         = state.height,
+							.width          = state.allocatedWidth,
+							.height         = state.allocatedHeight,
 							.resourceFormat = kSceneHdrColorFormat,
 							.allowRtv       = true,
 							.debugName      = "ViewPostFxB_" + view.viewKey,
@@ -286,8 +320,8 @@ namespace Unnamed::Render {
 				if (state.outputTextureId == 0) {
 					state.outputTextureId = mGraph.CreateTexture(
 						{
-							.width          = state.width,
-							.height         = state.height,
+							.width          = state.allocatedWidth,
+							.height         = state.allocatedHeight,
 							.resourceFormat = kSceneLdrColorFormat,
 							.allowRtv       = true,
 							.debugName      = "ViewOutputLdr_" + view.viewKey,
@@ -309,10 +343,12 @@ namespace Unnamed::Render {
 						continue;
 					}
 					const uint32_t bloomWidth = std::max(
-						1u, state.width >> static_cast<uint32_t>(i + 1)
+						1u,
+						state.allocatedWidth >> static_cast<uint32_t>(i + 1)
 					);
 					const uint32_t bloomHeight = std::max(
-						1u, state.height >> static_cast<uint32_t>(i + 1)
+						1u,
+						state.allocatedHeight >> static_cast<uint32_t>(i + 1)
 					);
 					state.bloomMipTextureIds[i] = mGraph.CreateTexture(
 						{
@@ -330,8 +366,8 @@ namespace Unnamed::Render {
 				if (state.depthTextureId == 0) {
 					state.depthTextureId = mGraph.CreateTexture(
 						{
-							.width = state.width,
-							.height = state.height,
+							.width = state.allocatedWidth,
+							.height = state.allocatedHeight,
 							.resourceFormat = DXGI_FORMAT_R32G8X24_TYPELESS,
 							.allowDsv = true,
 							.srvFormat = DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS,
@@ -346,8 +382,8 @@ namespace Unnamed::Render {
 			} else if (state.outputTextureId == 0) {
 				state.outputTextureId = mGraph.CreateTexture(
 					{
-						.width          = state.width,
-						.height         = state.height,
+						.width          = state.allocatedWidth,
+						.height         = state.allocatedHeight,
 						.resourceFormat = kSceneLdrColorFormat,
 						.allowRtv       = true,
 						.debugName      = "SpriteOnly_" + view.viewKey,
@@ -443,7 +479,7 @@ namespace Unnamed::Render {
 							renderDevice.GetRhiDevice()
 						).GetFrameUploadAllocator();
 						Rhi::FrameConstants frame = BuildSceneFrameConstants(
-							view.camera, state.width, state.height, 0.0f
+							view.camera, state.logicalWidth, state.logicalHeight, 0.0f
 						);
 						Rhi::ObjectConstants object = {};
 						object.world                = Mat4::identity;
@@ -480,8 +516,8 @@ namespace Unnamed::Render {
 						pass.SetViewportAndScissor(
 							0.0f,
 							0.0f,
-							static_cast<float>(state.width),
-							static_cast<float>(state.height)
+							static_cast<float>(state.logicalWidth),
+							static_cast<float>(state.logicalHeight)
 						);
 						pass.SetSrvUavHeap();
 						pass.SetRenderTargetAndDepth(
@@ -532,7 +568,7 @@ namespace Unnamed::Render {
 							renderDevice.GetRhiDevice()
 						).GetFrameUploadAllocator();
 						Rhi::FrameConstants frame = BuildSceneFrameConstants(
-							view.camera, state.width, state.height, 0.0f
+							view.camera, state.logicalWidth, state.logicalHeight, 0.0f
 						);
 						const D3D12_GPU_VIRTUAL_ADDRESS frameCb =
 							allocator.AllocateConstantBuffer(
@@ -551,8 +587,8 @@ namespace Unnamed::Render {
 						pass.SetViewportAndScissor(
 							0.0f,
 							0.0f,
-							static_cast<float>(state.width),
-							static_cast<float>(state.height)
+							static_cast<float>(state.logicalWidth),
+							static_cast<float>(state.logicalHeight)
 						);
 						pass.SetSrvUavHeap();
 						pass.SetRenderTargetAndDepth(
@@ -762,7 +798,7 @@ namespace Unnamed::Render {
 							renderDevice.GetRhiDevice()
 						).GetFrameUploadAllocator();
 						Rhi::FrameConstants frame = BuildSceneFrameConstants(
-							view.camera, state.width, state.height, 0.0f
+							view.camera, state.logicalWidth, state.logicalHeight, 0.0f
 						);
 						const D3D12_GPU_VIRTUAL_ADDRESS frameCb =
 							allocator.AllocateConstantBuffer(
@@ -779,8 +815,8 @@ namespace Unnamed::Render {
 						pass.SetViewportAndScissor(
 							0.0f,
 							0.0f,
-							static_cast<float>(state.width),
-							static_cast<float>(state.height)
+							static_cast<float>(state.logicalWidth),
+							static_cast<float>(state.logicalHeight)
 						);
 						pass.SetSrvUavHeap();
 						pass.SetRenderTargetAndDepth(
@@ -900,7 +936,7 @@ namespace Unnamed::Render {
 							renderDevice.GetRhiDevice()
 						).GetFrameUploadAllocator();
 						Rhi::FrameConstants frame = BuildSceneFrameConstants(
-							view.camera, state.width, state.height, 0.0f
+							view.camera, state.logicalWidth, state.logicalHeight, 0.0f
 						);
 						const D3D12_GPU_VIRTUAL_ADDRESS frameCb =
 							allocator.AllocateConstantBuffer(
@@ -910,8 +946,8 @@ namespace Unnamed::Render {
 						pass.SetViewportAndScissor(
 							0.0f,
 							0.0f,
-							static_cast<float>(state.width),
-							static_cast<float>(state.height)
+							static_cast<float>(state.logicalWidth),
+							static_cast<float>(state.logicalHeight)
 						);
 						pass.SetSrvUavHeap();
 						pass.SetRenderTargetAndDepth(
@@ -1037,7 +1073,7 @@ namespace Unnamed::Render {
 							renderDevice.GetRhiDevice()
 						).GetFrameUploadAllocator();
 						Rhi::FrameConstants frame = BuildSceneFrameConstants(
-							view.camera, state.width, state.height, 0.0f
+							view.camera, state.logicalWidth, state.logicalHeight, 0.0f
 						);
 						const D3D12_GPU_VIRTUAL_ADDRESS frameCb =
 							allocator.AllocateConstantBuffer(
@@ -1047,8 +1083,8 @@ namespace Unnamed::Render {
 						pass.SetViewportAndScissor(
 							0.0f,
 							0.0f,
-							static_cast<float>(state.width),
-							static_cast<float>(state.height)
+							static_cast<float>(state.logicalWidth),
+							static_cast<float>(state.logicalHeight)
 						);
 						pass.SetRenderTargetAndDepth(
 							std::span<const uint32_t>(&state.colorTextureId, 1),
@@ -1096,7 +1132,7 @@ namespace Unnamed::Render {
 							renderDevice.GetRhiDevice()
 						).GetFrameUploadAllocator();
 						Rhi::FrameConstants frame = BuildSceneFrameConstants(
-							view.camera, state.width, state.height, 0.0f
+							view.camera, state.logicalWidth, state.logicalHeight, 0.0f
 						);
 						const D3D12_GPU_VIRTUAL_ADDRESS frameCb =
 							allocator.AllocateConstantBuffer(&frame, sizeof(frame));
@@ -1109,8 +1145,8 @@ namespace Unnamed::Render {
 						pass.SetViewportAndScissor(
 							0.0f,
 							0.0f,
-							static_cast<float>(state.width),
-							static_cast<float>(state.height)
+							static_cast<float>(state.logicalWidth),
+							static_cast<float>(state.logicalHeight)
 						);
 						pass.SetSrvUavHeap();
 						pass.SetRenderTarget(state.colorTextureId);
@@ -1269,17 +1305,17 @@ namespace Unnamed::Render {
 							const uint32_t dstId = state.bloomMipTextureIds[
 								level];
 							const uint32_t srcWidth = std::max(
-								1u, state.width >> level
+								1u, state.logicalWidth >> level
 							);
 							const uint32_t srcHeight = std::max(
-								1u, state.height >> level
+								1u, state.logicalHeight >> level
 							);
 							const uint32_t dstWidth = std::max(
-								1u, state.width >> static_cast<uint32_t>(
+								1u, state.logicalWidth >> static_cast<uint32_t>(
 									    level + 1)
 							);
 							const uint32_t dstHeight = std::max(
-								1u, state.height >> static_cast<uint32_t>(
+								1u, state.logicalHeight >> static_cast<uint32_t>(
 									    level + 1)
 							);
 
@@ -1359,18 +1395,18 @@ namespace Unnamed::Render {
 							const uint32_t dstHighId = state.bloomMipTextureIds[
 								level - 1];
 							const uint32_t srcWidth = std::max(
-								1u, state.width >> static_cast<uint32_t>(
+								1u, state.logicalWidth >> static_cast<uint32_t>(
 									    level + 1)
 							);
 							const uint32_t srcHeight = std::max(
-								1u, state.height >> static_cast<uint32_t>(
+								1u, state.logicalHeight >> static_cast<uint32_t>(
 									    level + 1)
 							);
 							const uint32_t dstWidth = std::max(
-								1u, state.width >> level
+								1u, state.logicalWidth >> level
 							);
 							const uint32_t dstHeight = std::max(
-								1u, state.height >> level
+								1u, state.logicalHeight >> level
 							);
 
 							BloomPyramidConstants bloomCbData = {};
@@ -1455,8 +1491,8 @@ namespace Unnamed::Render {
 								pass.SetViewportAndScissor(
 									0.0f,
 									0.0f,
-									static_cast<float>(state.width),
-									static_cast<float>(state.height)
+									static_cast<float>(state.logicalWidth),
+									static_cast<float>(state.logicalHeight)
 								);
 								pass.SetSrvUavHeap();
 								pass.SetRenderTarget(bloomCombinedOutId);
@@ -1471,14 +1507,26 @@ namespace Unnamed::Render {
 									ToRootIndex(FS_ROOT_SLOT::SOURCE_TEXTURE),
 									baseCopyInId
 								);
-								PostFxParamsConstants defaultParams = {};
+								PostFxParamsConstants copyParams = {};
+								copyParams.scalar0.x = std::clamp(
+									static_cast<float>(std::max(1u, state.logicalWidth)) /
+										static_cast<float>(std::max(1u, state.allocatedWidth)),
+									0.0f,
+									1.0f
+								);
+								copyParams.scalar0.y = std::clamp(
+									static_cast<float>(std::max(1u, state.logicalHeight)) /
+										static_cast<float>(std::max(1u, state.allocatedHeight)),
+									0.0f,
+									1.0f
+								);
 								auto& allocator = static_cast<Rhi::D3D12Device&>
 								(
 									renderDevice.GetRhiDevice()
 								).GetFrameUploadAllocator();
 								const D3D12_GPU_VIRTUAL_ADDRESS copyCb =
 									allocator.AllocateConstantBuffer(
-										&defaultParams, sizeof(defaultParams)
+										&copyParams, sizeof(copyParams)
 									);
 								pass.BindGraphicsCbv(
 									ToRootIndex(FS_ROOT_SLOT::POST_FX_PARAMS),
@@ -1489,6 +1537,18 @@ namespace Unnamed::Render {
 						);
 
 						BloomPyramidConstants bloomCompositeCbData = {};
+						const uint32_t bloomBaseLogicalWidth = std::max(
+							1u, state.logicalWidth >> 1u
+						);
+						const uint32_t bloomBaseLogicalHeight = std::max(
+							1u, state.logicalHeight >> 1u
+						);
+						bloomCompositeCbData.params0               = Vec4(
+							1.0f / static_cast<float>(bloomBaseLogicalWidth),
+							1.0f / static_cast<float>(bloomBaseLogicalHeight),
+							0.0f,
+							0.0f
+						);
 						bloomCompositeCbData.params1               = Vec4(
 							bloomRadius, bloomIntensity, 0.0f, 0.0f
 						);
@@ -1516,8 +1576,8 @@ namespace Unnamed::Render {
 								pass.SetViewportAndScissor(
 									0.0f,
 									0.0f,
-									static_cast<float>(state.width),
-									static_cast<float>(state.height)
+									static_cast<float>(state.logicalWidth),
+									static_cast<float>(state.logicalHeight)
 								);
 								pass.SetSrvUavHeap();
 								pass.SetRenderTarget(bloomCombinedOutId);
@@ -1575,8 +1635,8 @@ namespace Unnamed::Render {
 							pass.SetViewportAndScissor(
 								0.0f,
 								0.0f,
-								static_cast<float>(state.width),
-								static_cast<float>(state.height)
+								static_cast<float>(state.logicalWidth),
+								static_cast<float>(state.logicalHeight)
 							);
 							pass.SetSrvUavHeap();
 							if (!passRes.pass.resolved || !passRes.pass.resolved->pso) {
@@ -1627,8 +1687,8 @@ namespace Unnamed::Render {
 						pass.SetViewportAndScissor(
 							0.0f,
 							0.0f,
-							static_cast<float>(state.width),
-							static_cast<float>(state.height)
+							static_cast<float>(state.logicalWidth),
+							static_cast<float>(state.logicalHeight)
 						);
 						pass.SetSrvUavHeap();
 						pass.SetRenderTarget(toneMapOutputId);
@@ -1686,7 +1746,7 @@ namespace Unnamed::Render {
 					Rhi::FrameConstants frame = {};
 					frame.view                = Mat4::identity;
 					frame.proj                = BuildOrthographic(
-						state.width, state.height
+						state.logicalWidth, state.logicalHeight
 					);
 					frame.viewProj = frame.view * frame.proj;
 					const D3D12_GPU_VIRTUAL_ADDRESS frameCb =
@@ -1695,8 +1755,8 @@ namespace Unnamed::Render {
 					pass.SetViewportAndScissor(
 						0.0f,
 						0.0f,
-						static_cast<float>(state.width),
-						static_cast<float>(state.height)
+						static_cast<float>(state.logicalWidth),
+						static_cast<float>(state.logicalHeight)
 					);
 					pass.SetSrvUavHeap();
 					pass.SetRenderTarget(outputId);
@@ -1808,21 +1868,50 @@ namespace Unnamed::Render {
 				presentIt != mViewStates.end() &&
 				presentIt->second.outputTextureId != 0
 			) {
-				const uint32_t presentTexture = presentIt->second.
-					outputTextureId;
+				const uint32_t presentTexture = presentIt->second.outputTextureId;
+				const uint32_t presentLogicalWidth = std::max(
+					1u, presentIt->second.logicalWidth
+				);
+				const uint32_t presentLogicalHeight = std::max(
+					1u, presentIt->second.logicalHeight
+				);
+				const uint32_t presentAllocatedWidth = std::max(
+					1u, presentIt->second.allocatedWidth
+				);
+				const uint32_t presentAllocatedHeight = std::max(
+					1u, presentIt->second.allocatedHeight
+				);
 				mGraph.AddPass(
 					"FullscreenSampleSrv",
 					[presentTexture](RenderGraphBuilder& b) {
 						b.ReadSrvPs(presentTexture);
 						b.WriteBackBufferRt();
 					},
-					[this, presentTexture, &renderDevice](
+					[this,
+						presentTexture,
+						presentLogicalWidth,
+						presentLogicalHeight,
+						presentAllocatedWidth,
+						presentAllocatedHeight,
+						&renderDevice](
 					RenderPassContext& pass
 				) {
-						pass.SetViewportToBackBuffer();
+						pass.ClearBackBuffer(0.0f, 0.0f, 0.0f, 1.0f);
 						pass.SetSrvUavHeap();
 
 						PostFxParamsConstants params = {};
+						params.scalar0.x = std::clamp(
+							static_cast<float>(presentLogicalWidth) /
+								static_cast<float>(presentAllocatedWidth),
+							0.0f,
+							1.0f
+						);
+						params.scalar0.y = std::clamp(
+							static_cast<float>(presentLogicalHeight) /
+								static_cast<float>(presentAllocatedHeight),
+							0.0f,
+							1.0f
+						);
 						auto& allocator = static_cast<Rhi::D3D12Device&>(
 							renderDevice.GetRhiDevice()
 						).GetFrameUploadAllocator();
@@ -1830,6 +1919,18 @@ namespace Unnamed::Render {
 							allocator.AllocateConstantBuffer(
 								&params, sizeof(params)
 							);
+						const FitRect fitRect = ComputeAspectFitRect(
+							pass.GetBackBufferWidth(),
+							pass.GetBackBufferHeight(),
+							presentLogicalWidth,
+							presentLogicalHeight
+						);
+						pass.SetViewportAndScissor(
+							fitRect.x,
+							fitRect.y,
+							fitRect.width,
+							fitRect.height
+						);
 
 						if (!mFullscreenPass.resolved || !mFullscreenPass.resolved->pso) {
 							return;

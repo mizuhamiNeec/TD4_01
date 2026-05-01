@@ -28,6 +28,10 @@ float4 PsMain(VsOut i) : SV_Target {
 		float(max(width, 1u)),
 		float(max(height, 1u))
 	);
+	const float2 sampleUv = ComputeSampleUvFromScreenPos(
+		i.pos,
+		float2(float(max(width, 1u)), float(max(height, 1u)))
+	);
 
 	const float edgeThreshold = ResolvePositiveOrDefault(gPostFxScalar0.x, 0.166f);
 	const float edgeThresholdMin = ResolvePositiveOrDefault(
@@ -38,7 +42,7 @@ float4 PsMain(VsOut i) : SV_Target {
 	);
 	const float maxSpan = ResolvePositiveOrDefault(gPostFxScalar0.w, 8.0f);
 
-	const float2 uv = i.uv;
+	const float2 uv = sampleUv;
 	const float3 rgbM = gTex.Sample(gSampler, uv).rgb;
 	const float3 rgbNW = gTex.Sample(gSampler, uv + float2(-1.0f, -1.0f) * invResolution).rgb;
 	const float3 rgbNE = gTex.Sample(gSampler, uv + float2(1.0f, -1.0f) * invResolution).rgb;

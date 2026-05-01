@@ -7,7 +7,7 @@
 			"shader": "../shaders/programs/postfx_bloom.shader.json",
 			"scalars": {
 				"Intensity": 3.0,
-				"Threshold": 1.0,
+				"Threshold": 1.1,
 				"Radius": 1.0,
 				"Knee": 0.5
 			}
@@ -28,7 +28,7 @@
 			"enabled": true,
 			"shader": "../shaders/programs/postfx_vignette.shader.json",
 			"scalars": {
-				"Intensity": 1.5
+				"Intensity": 2
 			},
 			"colors": {
 				"Tint": [1.0, 1.0, 1.0, 1.0]

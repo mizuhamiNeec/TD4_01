@@ -60,6 +60,10 @@ namespace Unnamed {
 		mToolHost.SyncViewOutputs();
 	}
 
+	void EditorRuntime::SyncPresentationState() {
+		mToolHost.SyncPresentationState();
+	}
+
 	World* EditorRuntime::GetRuntimeWorld() const {
 		return mToolHost.GetRuntimeWorld();
 	}

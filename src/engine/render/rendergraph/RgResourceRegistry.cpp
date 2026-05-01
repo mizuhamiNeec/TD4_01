@@ -1,6 +1,7 @@
 #include "RgResourceRegistry.h"
 
 #include <algorithm>
+#include <chrono>
 
 #include "d3dx12.h"
 
@@ -533,12 +534,16 @@ namespace Unnamed::Render {
 	void RgResourceRegistry::OnResize(
 		const uint32_t width, const uint32_t height, const uint32_t frameIndex
 	) {
+		const auto resizeStart = std::chrono::steady_clock::now();
+		const RgRegistryDebugStats statsBefore = GetDebugStats();
+
 		mBackBufferWidth  = width;
 		mBackBufferHeight = height;
 
 		// フレームリセット
 		ResetFrame(frameIndex);
 
+		uint32_t recreatedCount = 0;
 		for (auto& e : mEntries) {
 			if (!e.resource) {
 				continue;
@@ -557,7 +562,37 @@ namespace Unnamed::Render {
 
 			CreateD3D12Texture(e);
 			CreateDescriptors(e);
+			++recreatedCount;
 		}
+
+		const RgRegistryDebugStats statsAfter = GetDebugStats();
+		const double resizeMs = std::chrono::duration<double, std::milli>(
+			std::chrono::steady_clock::now() - resizeStart
+		).count();
+		DevMsg(
+			kChannel,
+			"OnResize {}x{}: recreatedMatchBackBuffer={}, elapsedMs={:.3f}, activeTex={} -> {}, retired={} -> {}, retiredMiB={:.2f} -> {:.2f}, srvUavSlots={} -> {}, rtvSlots={} -> {}, dsvSlots={} -> {}, cpuSrvUavSlots={} -> {}",
+			width,
+			height,
+			recreatedCount,
+			resizeMs,
+			statsBefore.activeTextureCount,
+			statsAfter.activeTextureCount,
+			statsBefore.retiredResourceCount,
+			statsAfter.retiredResourceCount,
+			static_cast<double>(statsBefore.retiredResourceBytes) /
+				(1024.0 * 1024.0),
+			static_cast<double>(statsAfter.retiredResourceBytes) /
+				(1024.0 * 1024.0),
+			statsBefore.srvUavActiveSlots,
+			statsAfter.srvUavActiveSlots,
+			statsBefore.rtvActiveSlots,
+			statsAfter.rtvActiveSlots,
+			statsBefore.dsvActiveSlots,
+			statsAfter.dsvActiveSlots,
+			statsBefore.cpuSrvUavActiveSlots,
+			statsAfter.cpuSrvUavActiveSlots
+		);
 	}
 
 	void RgResourceRegistry::CollectGarbage(
@@ -1005,5 +1040,42 @@ namespace Unnamed::Render {
 		}
 
 		e.srvRevision = ++mGlobalSrvRevision;
+	}
+
+	RgRegistryDebugStats RgResourceRegistry::GetDebugStats() const {
+		RgRegistryDebugStats stats = {};
+		for (const auto& entry : mEntries) {
+			if (!entry.resource) {
+				continue;
+			}
+			++stats.activeTextureCount;
+			stats.activeTextureBytes += EstimateTextureBytes(entry.resource.Get());
+		}
+		for (const auto& retired : mRetiredResources) {
+			++stats.retiredResourceCount;
+			stats.retiredResourceBytes += retired.approxBytes;
+		}
+
+		stats.srvUavActiveSlots = mNextSrvUavLocalGlobal >
+			                          mFreeSrvUavLocals.size() ?
+			                          mNextSrvUavLocalGlobal -
+			                          static_cast<uint32_t>(mFreeSrvUavLocals.size()) :
+			                          0;
+		stats.rtvActiveSlots = mNextRtvLocalGlobal > mFreeRtvLocals.size() ?
+			                       mNextRtvLocalGlobal -
+			                       static_cast<uint32_t>(mFreeRtvLocals.size()) :
+			                       0;
+		stats.dsvActiveSlots = mNextDsvLocalGlobal > mFreeDsvLocals.size() ?
+			                       mNextDsvLocalGlobal -
+			                       static_cast<uint32_t>(mFreeDsvLocals.size()) :
+			                       0;
+		stats.cpuSrvUavActiveSlots = mCpuNextSlot > mFreeCpuLocals.size() ?
+			                             mCpuNextSlot -
+			                             static_cast<uint32_t>(mFreeCpuLocals.size()) :
+			                             0;
+		stats.reusableTextureIdCount = static_cast<uint32_t>(
+			mFreeTextureIds.size()
+		);
+		return stats;
 	}
 }

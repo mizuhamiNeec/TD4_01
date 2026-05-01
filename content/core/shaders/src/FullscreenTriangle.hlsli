@@ -29,4 +29,8 @@ VsOut VsMain(uint vid : SV_VertexID) {
 	return o;
 }
 
+float2 ComputeSampleUvFromScreenPos(float4 svPos, float2 sourceSize) {
+	return svPos.xy / max(sourceSize, 1.0.xx);
+}
+
 #endif

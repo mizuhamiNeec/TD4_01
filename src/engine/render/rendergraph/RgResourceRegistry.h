@@ -49,6 +49,18 @@ namespace Unnamed::Render {
 		RG_EXTENT_MODE extentMode = RG_EXTENT_MODE::FIXED;
 	};
 
+	struct RgRegistryDebugStats {
+		uint32_t activeTextureCount     = 0;
+		uint64_t activeTextureBytes     = 0;
+		uint32_t retiredResourceCount   = 0;
+		uint64_t retiredResourceBytes   = 0;
+		uint32_t srvUavActiveSlots      = 0;
+		uint32_t rtvActiveSlots         = 0;
+		uint32_t dsvActiveSlots         = 0;
+		uint32_t cpuSrvUavActiveSlots   = 0;
+		uint32_t reusableTextureIdCount = 0;
+	};
+
 	class RgResourceRegistry {
 	public:
 		explicit RgResourceRegistry(Rhi::D3D12Device& dx);
@@ -88,6 +100,7 @@ namespace Unnamed::Render {
 
 		void OnResize(uint32_t width, uint32_t height, uint32_t frameIndex);
 		void CollectGarbage(uint64_t completedFenceValue);
+		[[nodiscard]] RgRegistryDebugStats GetDebugStats() const;
 
 	private:
 		uint32_t AllocSrvUavSlot();

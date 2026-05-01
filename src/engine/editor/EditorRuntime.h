@@ -41,6 +41,7 @@ namespace Unnamed {
 
 		void FillEditorRenderViews(Render::RenderFrameInputs& inputs);
 		void SyncViewOutputs();
+		void SyncPresentationState();
 
 		[[nodiscard]] World* GetRuntimeWorld() const;
 

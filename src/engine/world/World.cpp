@@ -4,6 +4,7 @@
 #include <array>
 #include <cfloat>
 #include <chrono>
+#include <cstdint>
 
 #include "core/assets/AssetManager.h"
 #include "core/assets/AssetType.h"
@@ -759,7 +760,6 @@ namespace Unnamed {
 			}
 		}
 
-		uint32_t uiCanvasViewCounter = 0;
 		for (UiCanvasRuntimeEntry& entry : uiCanvasEntries) {
 			if (!entry.entity || !entry.transform || !entry.canvas) {
 				continue;
@@ -909,7 +909,7 @@ namespace Unnamed {
 			if (worldSpaceCanvas) {
 				canvasViewKey = std::string("ui.canvas.") +
 				                std::to_string(entry.entity->GetGuid()) + "." +
-				                std::to_string(uiCanvasViewCounter++);
+				                std::to_string(entry.canvas->GetGuid());
 				canvasSpriteView.viewKey = canvasViewKey;
 				canvasSpriteView.type = Render::RENDER_VIEW_TYPE::SPRITE_ONLY;
 				canvasSpriteView.output.sizeMode =

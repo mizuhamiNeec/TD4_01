@@ -1,10 +1,18 @@
 #include "RenderDevice.h"
 
+#include <chrono>
+#include <string_view>
+
 #include "core/assets/AssetManager.h"
 
 #include "engine/rhi/d3d12/D3D12Device.h"
+#include "engine/unnamed/subsystem/console/Log.h"
 
 namespace Unnamed::Render {
+	namespace {
+		constexpr std::string_view kChannel = "RenderDevice";
+	}
+
 	RenderDevice::RenderDevice(
 		Rhi::IRhiDevice& rhiDevice, AssetManager& assetManager
 	) : mRhiDevice(rhiDevice),
@@ -86,9 +94,36 @@ namespace Unnamed::Render {
 	}
 
 	void RenderDevice::OnResize(const uint32_t width, const uint32_t height) {
-		mRhiDevice.OnResize(width, height);
+		const auto resizeStart = std::chrono::steady_clock::now();
+		const RgRegistryDebugStats statsBefore = mRegistry.GetDebugStats();
 
-		mPipelineCache.InvalidateAll();
+		mRhiDevice.OnResize(width, height);
+		auto& dx = dynamic_cast<Rhi::D3D12Device&>(mRhiDevice);
+		mRegistry.OnResize(
+			dx.GetSwapChain().GetWidth(),
+			dx.GetSwapChain().GetHeight(),
+			dx.GetCurrentFrameIndex()
+		);
+
+		const RgRegistryDebugStats statsAfter = mRegistry.GetDebugStats();
+		const double totalMs = std::chrono::duration<double, std::milli>(
+			std::chrono::steady_clock::now() - resizeStart
+		).count();
+		DevMsg(
+			kChannel,
+			"OnResize done: {}x{} (elapsedMs={:.3f}, activeTex={} -> {}, activeMiB={:.2f} -> {:.2f}, retired={} -> {})",
+			width,
+			height,
+			totalMs,
+			statsBefore.activeTextureCount,
+			statsAfter.activeTextureCount,
+			static_cast<double>(statsBefore.activeTextureBytes) /
+				(1024.0 * 1024.0),
+			static_cast<double>(statsAfter.activeTextureBytes) /
+				(1024.0 * 1024.0),
+			statsBefore.retiredResourceCount,
+			statsAfter.retiredResourceCount
+		);
 	}
 
 	RgResourceRegistry& RenderDevice::GetRegistry() {

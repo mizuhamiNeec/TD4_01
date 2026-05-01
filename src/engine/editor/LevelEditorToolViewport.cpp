@@ -22,6 +22,45 @@
 #include "thirdparty/ImGuizmo/ImGuizmo.h"
 
 namespace Unnamed {
+	namespace {
+		struct ViewportFitResult {
+			Vec2  drawPos     = Vec2::zero;
+			Vec2  drawSize    = Vec2::one;
+			float aspectRatio = 1.0f;
+		};
+
+		[[nodiscard]] ViewportFitResult ComputeViewportFitResult(
+			const Vec2& panelScreenPos,
+			const Vec2& panelSize,
+			const Vec2& contentLogicalSize
+		) {
+			const float safePanelWidth = std::max(1.0f, panelSize.x);
+			const float safePanelHeight = std::max(1.0f, panelSize.y);
+			const float safeContentWidth = std::max(1.0f, contentLogicalSize.x);
+			const float safeContentHeight = std::max(1.0f, contentLogicalSize.y);
+
+			ViewportFitResult result = {};
+			result.aspectRatio = safeContentWidth / safeContentHeight;
+
+			float fitWidth  = safePanelWidth;
+			float fitHeight = fitWidth / result.aspectRatio;
+			if (fitHeight > safePanelHeight) {
+				fitHeight = safePanelHeight;
+				fitWidth  = fitHeight * result.aspectRatio;
+			}
+
+			fitWidth  = std::max(1.0f, fitWidth);
+			fitHeight = std::max(1.0f, fitHeight);
+			const float fitOffsetX = (safePanelWidth - fitWidth) * 0.5f;
+			const float fitOffsetY = (safePanelHeight - fitHeight) * 0.5f;
+			result.drawPos = Vec2(
+				panelScreenPos.x + fitOffsetX, panelScreenPos.y + fitOffsetY
+			);
+			result.drawSize = Vec2(fitWidth, fitHeight);
+			return result;
+		}
+	}
+
 	void LevelEditorTool::DrawViewport(const float deltaTime) {
 		if (!ImGui::Begin("Viewport")) {
 			ImGui::End();
@@ -54,26 +93,14 @@ namespace Unnamed {
 			const Vec2   outputSize = hasOutput ?
 				                        outputIt->second.size :
 				                        Vec2(drawWidth, drawHeight);
-
-			const float safeOutputWidth  = std::max(1.0f, outputSize.x);
-			const float safeOutputHeight = std::max(1.0f, outputSize.y);
-			const float outputAspect     = safeOutputWidth / safeOutputHeight;
-
-			float fitWidth  = drawWidth;
-			float fitHeight = fitWidth / outputAspect;
-			if (fitHeight > drawHeight) {
-				fitHeight = drawHeight;
-				fitWidth  = fitHeight * outputAspect;
-			}
-			fitWidth               = std::max(1.0f, fitWidth);
-			fitHeight              = std::max(1.0f, fitHeight);
-			const float fitOffsetX = (drawWidth - fitWidth) * 0.5f;
-			const float fitOffsetY = (drawHeight - fitHeight) * 0.5f;
-			const auto  fitPos     = ImVec2(
-				panePos.x + fitOffsetX, panePos.y + fitOffsetY
+			const ViewportFitResult fit = ComputeViewportFitResult(
+				Vec2(panePos.x, panePos.y),
+				Vec2(drawWidth, drawHeight),
+				outputSize
 			);
-			const auto fitMax = ImVec2(
-				fitPos.x + fitWidth, fitPos.y + fitHeight
+			const ImVec2 fitPos(fit.drawPos.x, fit.drawPos.y);
+			const ImVec2 fitMax(
+				fit.drawPos.x + fit.drawSize.x, fit.drawPos.y + fit.drawSize.y
 			);
 
 			// ImGuizmo のドラッグ入力を奪わないよう、ここはレイアウト確保のみ行う
@@ -102,12 +129,12 @@ namespace Unnamed {
 					outputIt->second.srvRevision,
 					outputIt->second.srvCpu
 				);
-				drawList->AddImage(
+				ImGui::SetCursorScreenPos(fitPos);
+				ImGui::Image(
 					tex,
-					fitPos,
-					fitMax,
-					ImVec2(0.0f, 0.0f),
-					ImVec2(1.0f, 1.0f)
+					ImVec2(fit.drawSize.x, fit.drawSize.y),
+					ImVec2(outputIt->second.uvMin.x, outputIt->second.uvMin.y),
+					ImVec2(outputIt->second.uvMax.x, outputIt->second.uvMax.y)
 				);
 			} else {
 				drawList->AddRect(
@@ -135,7 +162,7 @@ namespace Unnamed {
 				 viewKey)
 			) {
 				mViewportPosition = Vec2(fitPos.x, fitPos.y);
-				mViewportSize     = Vec2(fitWidth, fitHeight);
+				mViewportSize     = fit.drawSize;
 			}
 
 			(void)hoveredFit;
@@ -149,7 +176,7 @@ namespace Unnamed {
 			return std::tuple<bool, Vec2, Vec2>(
 				hoveredFit,
 				Vec2(fitPos.x, fitPos.y),
-				Vec2(fitWidth, fitHeight)
+				fit.drawSize
 			);
 		};
 

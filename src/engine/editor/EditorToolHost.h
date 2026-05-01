@@ -48,6 +48,7 @@ namespace Unnamed {
 		void BuildUi(const EditorToolFrameContext& frameContext);
 		void CollectRenderViews(Render::RenderFrameInputs& inputs) const;
 		void SyncViewOutputs() const;
+		void SyncPresentationState() const;
 
 		[[nodiscard]] World* GetRuntimeWorld() const;
 

@@ -14,57 +14,7 @@
 
 namespace Unnamed::Render {
 	namespace {
-		constexpr std::string_view kRenderChannel      = "Renderer";
-		constexpr uint32_t         kShrinkSettleFrames = 12;
-		constexpr uint32_t         kMinShrinkPixels    = 64;
-		constexpr float            kMinShrinkRatio     = 0.9f;
-
-		void ResetPendingShrink(auto& state) {
-			state.pendingShrinkWidth        = 0;
-			state.pendingShrinkHeight       = 0;
-			state.pendingShrinkStableFrames = 0;
-		}
-
-		bool ApplyViewSizeImmediately(
-			auto& state, const uint32_t width, const uint32_t height
-		) {
-			const bool changed = state.width != width || state.height != height;
-			state.width        = width;
-			state.height       = height;
-			ResetPendingShrink(state);
-			return changed;
-		}
-
-		bool IsSignificantShrink(
-			const uint32_t appliedWidth, const uint32_t   appliedHeight,
-			const uint32_t requestedWidth, const uint32_t requestedHeight
-		) {
-			const uint32_t shrinkWidth = appliedWidth > requestedWidth ?
-				                             appliedWidth - requestedWidth :
-				                             0u;
-			const uint32_t shrinkHeight = appliedHeight > requestedHeight ?
-				                              appliedHeight - requestedHeight :
-				                              0u;
-			if (shrinkWidth == 0 && shrinkHeight == 0) {
-				return false;
-			}
-
-			float ratioWidth = 1.0f;
-			if (requestedWidth < appliedWidth && appliedWidth > 0) {
-				ratioWidth = static_cast<float>(requestedWidth) /
-				             static_cast<float>(appliedWidth);
-			}
-			float ratioHeight = 1.0f;
-			if (requestedHeight < appliedHeight && appliedHeight > 0) {
-				ratioHeight = static_cast<float>(requestedHeight) /
-				              static_cast<float>(appliedHeight);
-			}
-
-			return shrinkWidth >= kMinShrinkPixels ||
-			       shrinkHeight >= kMinShrinkPixels ||
-			       ratioWidth <= kMinShrinkRatio ||
-			       ratioHeight <= kMinShrinkRatio;
-		}
+		constexpr std::string_view kRenderChannel = "Renderer";
 	}
 
 	void Renderer::RenderFrame(
@@ -179,72 +129,67 @@ namespace Unnamed::Render {
 
 			auto&          state           = mViewStates[view.viewKey];
 			const bool     typeChanged     = state.type != view.type;
-			const uint32_t requestedWidth  = view.output.width;
-			const uint32_t requestedHeight = view.output.height;
+			const uint32_t logicalWidth    = std::max(1u, view.output.width);
+			const uint32_t logicalHeight   = std::max(1u, view.output.height);
+			const bool allowGrowOnlyReuse  =
+				view.type == RENDER_VIEW_TYPE::SCENE &&
+				view.output.exposeToUi &&
+				!view.output.presentToSwapChain &&
+				view.sceneViewMode.preferRealtimeResize &&
+				view.sceneViewMode.mode == SCENE_RENDER_MODE::FIT_VIEWPORT;
+			const uint32_t allocationHintWidth = allowGrowOnlyReuse ?
+				                                     std::max(
+					                                     logicalWidth,
+					                                     std::max(
+						                                     1u,
+						                                     view.sceneViewMode.
+						                                     allocationHintWidth
+					                                     )
+				                                     ) :
+				                                     logicalWidth;
+			const uint32_t allocationHintHeight = allowGrowOnlyReuse ?
+				                                      std::max(
+					                                      logicalHeight,
+					                                      std::max(
+						                                      1u,
+						                                      view.sceneViewMode.
+						                                      allocationHintHeight
+					                                      )
+				                                      ) :
+				                                      logicalHeight;
 
-			state.type            = view.type;
-			state.output          = view.output;
-			state.requestedWidth  = requestedWidth;
-			state.requestedHeight = requestedHeight;
+			state.type         = view.type;
+			state.output       = view.output;
+			state.logicalWidth = logicalWidth;
+			state.logicalHeight = logicalHeight;
 
-			bool sizeChanged = false;
-			if (typeChanged) {
-				sizeChanged = ApplyViewSizeImmediately(
-					state, requestedWidth, requestedHeight
-				);
-			} else {
-				const bool growWidth  = requestedWidth > state.width;
-				const bool growHeight = requestedHeight > state.height;
-				if (growWidth || growHeight) {
-					sizeChanged = ApplyViewSizeImmediately(
-						state,
-						std::max(state.width, requestedWidth),
-						std::max(state.height, requestedHeight)
-					);
-				} else {
-					const bool shrinkWidth  = requestedWidth < state.width;
-					const bool shrinkHeight = requestedHeight < state.height;
-					if (shrinkWidth || shrinkHeight) {
-						if (!view.sceneViewMode.preferRealtimeResize) {
-							sizeChanged = ApplyViewSizeImmediately(
-								state, requestedWidth, requestedHeight
-							);
-						} else if (
-							IsSignificantShrink(
-								state.width,
-								state.height,
-								requestedWidth,
-								requestedHeight
-							)
-						) {
-							if (
-								state.pendingShrinkWidth == requestedWidth &&
-								state.pendingShrinkHeight == requestedHeight
-							) {
-								state.pendingShrinkStableFrames = std::min(
-									state.pendingShrinkStableFrames + 1u,
-									kShrinkSettleFrames
-								);
-							} else {
-								state.pendingShrinkWidth = requestedWidth;
-								state.pendingShrinkHeight = requestedHeight;
-								state.pendingShrinkStableFrames = 1;
-							}
-
-							if (state.pendingShrinkStableFrames >=
-							    kShrinkSettleFrames) {
-								sizeChanged = ApplyViewSizeImmediately(
-									state, requestedWidth, requestedHeight
-								);
-							}
-						} else {
-							ResetPendingShrink(state);
-						}
-					} else {
-						ResetPendingShrink(state);
-					}
-				}
+			uint32_t desiredAllocatedWidth  = logicalWidth;
+			uint32_t desiredAllocatedHeight = logicalHeight;
+			if (allowGrowOnlyReuse) {
+				const bool firstAllocation =
+					typeChanged ||
+					state.allocatedWidth <= 1 ||
+					state.allocatedHeight <= 1;
+				desiredAllocatedWidth = firstAllocation ?
+					                        allocationHintWidth :
+					                        std::max(
+						                        state.allocatedWidth,
+						                        logicalWidth
+					                        );
+				desiredAllocatedHeight = firstAllocation ?
+					                         allocationHintHeight :
+					                         std::max(
+						                         state.allocatedHeight,
+						                         logicalHeight
+					                         );
 			}
+
+			const bool sizeChanged =
+				typeChanged ||
+				state.allocatedWidth != desiredAllocatedWidth ||
+				state.allocatedHeight != desiredAllocatedHeight;
+			state.allocatedWidth  = desiredAllocatedWidth;
+			state.allocatedHeight = desiredAllocatedHeight;
 
 			if (sizeChanged || typeChanged) {
 				ReleaseViewRuntimeTextures(renderDevice, state);
@@ -355,6 +300,12 @@ namespace Unnamed::Render {
 
 	void Renderer::OnResize(const uint32_t width, const uint32_t height) {
 		mAdvancedFoundation.OnResize(width, height);
+		DevMsg(
+			kRenderChannel,
+			"OnResize: {}x{}",
+			width,
+			height
+		);
 	}
 
 	void Renderer::SetUiCallbacks(
@@ -383,6 +334,27 @@ namespace Unnamed::Render {
 			const_cast<RenderDevice&>(renderDevice).GetRegistry();
 		view.srvCpu      = registry.GetSrvCpu(view.textureId);
 		view.srvRevision = registry.GetSrvRevision(view.textureId);
+		view.uvMin = Vec2(0.0f, 0.0f);
+		const float safeAllocatedWidth = static_cast<float>(std::max(
+			1u, it->second.allocatedWidth
+		));
+		const float safeAllocatedHeight = static_cast<float>(std::max(
+			1u, it->second.allocatedHeight
+		));
+		view.uvMax = Vec2(
+			std::clamp(
+				static_cast<float>(std::max(1u, it->second.logicalWidth)) /
+					safeAllocatedWidth,
+				0.0f,
+				1.0f
+			),
+			std::clamp(
+				static_cast<float>(std::max(1u, it->second.logicalHeight)) /
+					safeAllocatedHeight,
+				0.0f,
+				1.0f
+			)
+		);
 		return view;
 	}
 
@@ -392,8 +364,8 @@ namespace Unnamed::Render {
 			return Vec2::zero;
 		}
 		return Vec2(
-			static_cast<float>(it->second.width),
-			static_cast<float>(it->second.height)
+			static_cast<float>(std::max(1u, it->second.logicalWidth)),
+			static_cast<float>(std::max(1u, it->second.logicalHeight))
 		);
 	}
 

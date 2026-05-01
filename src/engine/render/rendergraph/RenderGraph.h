@@ -85,6 +85,7 @@ namespace Unnamed::Render {
 			Rhi::D3D12CommandContext&  context,
 			ID3D12GraphicsCommandList* commandList,
 			RenderPassContext&         passContext,
+			const char*                passName,
 			const CompiledPass&        cp
 		);
 

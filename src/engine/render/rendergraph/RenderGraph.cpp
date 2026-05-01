@@ -324,7 +324,14 @@ namespace Unnamed::Render {
 			const auto& pass = mPasses[cp.passIndex];
 			BeginGpuEvent(commandList, pass.name.c_str());
 
-			BeginPass(device, context, commandList, passContext, cp);
+			BeginPass(
+				device,
+				context,
+				commandList,
+				passContext,
+				pass.name.c_str(),
+				cp
+			);
 			pass.execute(passContext);
 			EndPass(passContext, cp);
 
@@ -362,6 +369,7 @@ namespace Unnamed::Render {
 	void RenderGraph::BeginPass(
 		Rhi::IRhiDevice&           device, Rhi::D3D12CommandContext& context,
 		ID3D12GraphicsCommandList* commandList, RenderPassContext& passContext,
+		const char*                passName,
 		const CompiledPass&        cp
 	) {
 		// 遷移
@@ -373,11 +381,26 @@ namespace Unnamed::Render {
 				continue;
 			}
 
-			auto& cur = mGlobalStates[tr.textureId];
-			if (cur != tr.after) {
-				context.TransitionResource(res, cur, tr.after);
-				cur = tr.after;
+			const auto curIt = mGlobalStates.find(tr.textureId);
+			const D3D12_RESOURCE_STATES trackedBefore = curIt != mGlobalStates.end()
+				                                            ? curIt->second
+				                                            : DefaultInitState(
+					                                              tr.textureId
+				                                              );
+			if (trackedBefore != tr.before) {
+				DevMsg(
+					"RDG",
+					"State drift detected in pass='{}' for textureId={}: trackedBefore=0x{:X}, compiledBefore=0x{:X}, after=0x{:X}",
+					passName ? passName : "<null>",
+					tr.textureId,
+					static_cast<uint32_t>(trackedBefore),
+					static_cast<uint32_t>(tr.before),
+					static_cast<uint32_t>(tr.after)
+				);
 			}
+
+			context.TransitionResource(res, tr.before, tr.after);
+			mGlobalStates[tr.textureId] = tr.after;
 		}
 
 		// UAVのバリア

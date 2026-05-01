@@ -51,4 +51,24 @@ namespace Unnamed {
 	[[nodiscard]] GameModulePaths ResolveGameModulePaths(
 		std::string_view gameName
 	);
+
+	/// @brief 起動導線向け検証の挙動オプションです。
+	struct StartupValidationOptions {
+		/// @brief 未登録コンポーネントを検出した場合に失敗扱いとするかどうかです。
+		bool failOnUnknownComponentTypes = true;
+		/// @brief 詳細ログを出力するかどうかです。
+		bool emitDetailedLogs = true;
+	};
+
+	/// @brief GameModule の manifest と startup scene とコンポーネント登録を検証します。
+	[[nodiscard]] bool ValidateGameModuleStartupProfile(
+		IGameModule&                      gameModule,
+		const StartupValidationOptions& options = {}
+	);
+
+	/// @brief ゲーム名を解決して startup 検証を実行します。
+	[[nodiscard]] bool ValidateGameModuleStartupProfile(
+		std::string_view                  gameName,
+		const StartupValidationOptions& options = {}
+	);
 }

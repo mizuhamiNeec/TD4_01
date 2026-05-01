@@ -16,8 +16,6 @@ env:
   # Visual Studio の構成(Debug / Develop / Release)
   CONFIGURATION: Release
   PLATFORM: x64
-  # premake5.lua で定義されたゲームアプリのみをビルド（Editor は含めない）
-  BUILD_TARGETS: ParkourGameApp;TeamGameApp
 
 jobs:
   build:
@@ -49,11 +47,21 @@ jobs:
       - name: Build
         shell: pwsh
         run: |
-          msbuild $env:SOLUTION_FILE_PATH `
-            /m `
-            /t:$env:BUILD_TARGETS `
-            /p:Configuration=$env:CONFIGURATION `
-            /p:Platform=$env:PLATFORM
+          $projects = @(
+            ".\build\projects\ParkourGameApp\ParkourGameApp.vcxproj",
+            ".\build\projects\TeamGameApp\TeamGameApp.vcxproj"
+          )
+
+          foreach ($project in $projects) {
+            Write-Host "Building $project ($env:CONFIGURATION|$env:PLATFORM)"
+            msbuild $project `
+              /m `
+              /p:Configuration=$env:CONFIGURATION `
+              /p:Platform=$env:PLATFORM
+            if ($LASTEXITCODE -ne 0) {
+              throw "Build failed: $project (exit=$LASTEXITCODE)"
+            }
+          }
 
       - name: Startup smoke validation
         shell: pwsh

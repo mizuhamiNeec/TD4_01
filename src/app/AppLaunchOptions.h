@@ -21,6 +21,8 @@ namespace Unnamed {
 		std::optional<std::filesystem::path> repoRootOverride = std::nullopt;
 		/// @brief `--help` / `-h` が指定されたかどうかです。
 		bool showHelp = false;
+		/// @brief 起動前検証のみ実行して終了するかどうかです。
+		bool validateStartupOnly = false;
 		/// @brief 起動引数診断（警告/エラー）です。
 		std::vector<std::string> diagnostics = {};
 	};
@@ -99,6 +101,7 @@ namespace Unnamed {
 		helpText += "  --game <name>            Select game profile by name or alias.\n";
 		helpText += "  --repo-root=<path>       Explicit repository root for manifest search.\n";
 		helpText += "  --repo-root <path>       Explicit repository root for manifest search.\n\n";
+		helpText += "  --validate-startup-only  Validate manifest/startup scene and exit.\n\n";
 		helpText += "Environment:\n";
 		helpText += "  UNNAMED_REPO_ROOT=<path> Explicit repository root for manifest search.\n\n";
 		helpText += "Manifest search priority:\n";
@@ -220,6 +223,10 @@ namespace Unnamed {
 			}
 
 			if (arg.rfind(L"--", 0) == 0) {
+				if (arg == L"--validate-startup-only") {
+					options.validateStartupOnly = true;
+					continue;
+				}
 				appendDiagnostic(
 					"unknown option '" + ConvertWideToUtf8(arg) + "'; option ignored"
 				);

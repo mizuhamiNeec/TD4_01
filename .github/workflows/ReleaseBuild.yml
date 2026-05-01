@@ -54,3 +54,21 @@ jobs:
             /t:$env:BUILD_TARGETS `
             /p:Configuration=$env:CONFIGURATION `
             /p:Platform=$env:PLATFORM
+
+      - name: Startup smoke validation
+        shell: pwsh
+        run: |
+          $repoRoot = (Resolve-Path ".").Path
+
+          $checks = @(
+            @{ Exe = ".\bin\Release-windows-x86_64\ParkourGameApp\ParkourGameApp.exe"; Args = @("--repo-root=$repoRoot", "--validate-startup-only") },
+            @{ Exe = ".\bin\Release-windows-x86_64\TeamGameApp\TeamGameApp.exe"; Args = @("--repo-root=$repoRoot", "--validate-startup-only") }
+          )
+
+          foreach ($entry in $checks) {
+            Write-Host "Running startup smoke: $($entry.Exe) $($entry.Args -join ' ')"
+            & $entry.Exe @($entry.Args)
+            if ($LASTEXITCODE -ne 0) {
+              throw "Startup smoke failed: $($entry.Exe) (exit=$LASTEXITCODE)"
+            }
+          }

@@ -78,8 +78,18 @@ jobs:
 
           foreach ($entry in $checks) {
             Write-Host "Running startup smoke: $($entry.Exe) $($entry.Args -join ' ')"
-            & $entry.Exe @($entry.Args)
-            if ($LASTEXITCODE -ne 0) {
-              throw "Startup smoke failed: $($entry.Exe) (exit=$LASTEXITCODE)"
+            $exePath = (Resolve-Path $entry.Exe).Path
+            $process = Start-Process `
+              -FilePath $exePath `
+              -ArgumentList $entry.Args `
+              -Wait `
+              -PassThru `
+              -WindowStyle Hidden
+            $exitCode = $process.ExitCode
+            if ($null -eq $exitCode) {
+              $exitCode = 1
+            }
+            if ($exitCode -ne 0) {
+              throw "Startup smoke failed: $($entry.Exe) (exit=$exitCode)"
             }
           }

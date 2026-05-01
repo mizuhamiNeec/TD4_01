@@ -29,6 +29,7 @@
 #include <core/string/StrUtil.h>
 
 #include <core/ComponentRegistry.h>
+#include <engine/EngineComponentRegistration.h>
 #include <engine/game/IDemoService.h>
 #include <engine/game/IGameModule.h>
 #include <engine/game/GamePathResolver.h>
@@ -45,16 +46,6 @@
 #include <engine/rhi/interface/IRhiDevice.h>
 #include <engine/sequence/SequenceRegressionRunner.h>
 #include <engine/ui/ImGuiLayer.h>
-#include <engine/unnamed/framework/components/CameraComponent.h>
-#include <engine/unnamed/framework/components/SkyboxComponent.h>
-#include <engine/unnamed/framework/components/TransformComponent.h>
-#include <engine/unnamed/framework/components/audio/AudioSourceComponent.h>
-#include <engine/unnamed/framework/components/collider/StaticMeshColliderComponent.h>
-#include <engine/unnamed/framework/components/mesh/SkeletalAnimationComponent.h>
-#include <engine/unnamed/framework/components/mesh/SkeletalMeshRendererComponent.h>
-#include <engine/unnamed/framework/components/mesh/StaticMeshRendererComponent.h>
-#include <engine/unnamed/framework/components/sequence/SequenceDirectorComponent.h>
-#include <engine/unnamed/framework/components/ui/UiCanvasComponent.h>
 #include <engine/unnamed/framework/entity/Entity.h>
 #include <engine/unnamed/subsystem/console/concommand/ConCommand.h>
 #include <engine/unnamed/subsystem/input/device/gamepad/GamepadDevice.h>
@@ -1018,40 +1009,7 @@ namespace Unnamed {
 	void Engine::RegisterEngineComponents(
 		ComponentRegistry& componentRegistry
 	) {
-		const auto registerIfMissing = [&](auto typeTag) {
-			using T = decltype(typeTag);
-			const T probe{};
-			const std::string_view stableName = probe.GetStableName();
-			if (componentRegistry.IsRegistered(stableName)) {
-				return;
-			}
-
-			const bool registered = componentRegistry.Register(
-				stableName,
-				[]() -> std::unique_ptr<BaseComponent> {
-					return std::make_unique<T>();
-				},
-				probe.GetComponentName()
-			);
-			if (!registered) {
-				Warning(
-					"Engine",
-					"Failed to register engine component '{}'.",
-					stableName
-				);
-			}
-		};
-
-		registerIfMissing(TransformComponent{});
-		registerIfMissing(CameraComponent{});
-		registerIfMissing(SkyboxComponent{});
-		registerIfMissing(StaticMeshRendererComponent{});
-		registerIfMissing(StaticMeshColliderComponent{});
-		registerIfMissing(SkeletalMeshRendererComponent{});
-		registerIfMissing(SkeletalAnimationComponent{});
-		registerIfMissing(UiCanvasComponent{});
-		registerIfMissing(AudioSourceComponent{});
-		registerIfMissing(SequenceDirectorComponent{});
+		RegisterDefaultEngineComponents(componentRegistry);
 	}
 
 	World* Engine::ResolveSceneTransitionTargetWorld(World* runtimeWorld) const {

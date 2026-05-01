@@ -15,6 +15,9 @@
 
 #include "engine/ImGui/Icons.h"
 #include "engine/ImGui/ImGuiWidgets.h"
+#include "engine/game/GamePathResolver.h"
+#include "engine/game/IGameModule.h"
+#include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 #include "engine/world/EditorWorld.h"
 
@@ -40,20 +43,66 @@ namespace Unnamed {
 			outBuffer[copyLength] = '\0';
 		}
 
-		/// @brief `./content/**/scenes/*.json` からシーン候補を収集します。
+		[[nodiscard]] std::string ResolveEditorSceneRootPath() {
+			constexpr std::string_view kChannel = "LevelEditorTool";
+			constexpr std::string_view kFallbackSceneRoot =
+				"./content/core/scenes";
+			static bool                sWarnedMissingModule = false;
+			static bool                sWarnedUnavailableSceneRoot = false;
+
+			const IGameModule* gameModule = ServiceLocator::Get<IGameModule>();
+			if (!gameModule) {
+				if (!sWarnedMissingModule) {
+					Warning(
+						kChannel,
+						"IGameModule service was not available. Fallback scene root '{}'.",
+						std::string(kFallbackSceneRoot)
+					);
+					sWarnedMissingModule = true;
+				}
+				return std::string(kFallbackSceneRoot);
+			}
+
+			const std::string sceneRoot = ResolveGameContentPath(
+				gameModule->GetGameModulePaths(),
+				"scenes"
+			);
+			std::error_code ec;
+			if (!sceneRoot.empty() &&
+			    std::filesystem::exists(sceneRoot, ec) &&
+			    !ec) {
+				sWarnedUnavailableSceneRoot = false;
+				return StrUtil::NormalizePath(sceneRoot);
+			}
+
+			if (!sWarnedUnavailableSceneRoot) {
+				Warning(
+					kChannel,
+					"Game scene root '{}' is unavailable. Fallback scene root '{}'.",
+					sceneRoot,
+					std::string(kFallbackSceneRoot)
+				);
+				sWarnedUnavailableSceneRoot = true;
+			}
+			return std::string(kFallbackSceneRoot);
+		}
+
+		/// @brief `<game content>/scenes/*.json` からシーン候補を収集します。
 		/// @return ロード可能なシーンパス一覧
-		[[nodiscard]] std::vector<std::string> CollectSceneCandidates() {
+		[[nodiscard]] std::vector<std::string> CollectSceneCandidates(
+			const std::string_view scenesRoot
+		) {
 			namespace fs = std::filesystem;
 
 			std::vector<std::string> scenePaths = {};
 			std::error_code          ec         = {};
-			const fs::path           contentRoot("./content");
-			if (!fs::exists(contentRoot, ec)) {
+			const fs::path           rootPath{std::string(scenesRoot)};
+			if (!fs::exists(rootPath, ec)) {
 				return scenePaths;
 			}
 
 			fs::recursive_directory_iterator it(
-				contentRoot,
+				rootPath,
 				fs::directory_options::skip_permission_denied,
 				ec
 			);
@@ -102,28 +151,37 @@ namespace Unnamed {
 			if (ImGui::BeginMenu("File")) {
 				const auto currentPath =
 					std::string(mEditorWorld.GetLoadedScenePath());
+				const std::string sceneRoot = ResolveEditorSceneRootPath();
+				const std::string defaultScenePath = StrUtil::NormalizePath(
+					sceneRoot + "/sandbox.json"
+				);
 
 				if (ImGui::MenuItem("Save")) {
 					const std::string savePath = currentPath.empty() ?
-						                             "./content/core/scenes/sandbox.json" :
+						                             defaultScenePath :
 						                             currentPath;
 					SaveSceneAs(savePath);
 				}
 
 				if (ImGui::MenuItem("Save As (sandbox.json)")) {
-					SaveSceneAs("./content/core/scenes/sandbox.json");
+					SaveSceneAs(defaultScenePath);
 				}
 
 				ImGui::Separator();
 
 				if (ImGui::BeginMenu("Open Scene")) {
 					static std::vector<std::string> sSceneCandidates = {};
+					static std::string              sSceneRoot = {};
+					if (sSceneRoot != sceneRoot) {
+						sSceneRoot = sceneRoot;
+						sSceneCandidates = CollectSceneCandidates(sceneRoot);
+					}
 					if (sSceneCandidates.empty()) {
-						sSceneCandidates = CollectSceneCandidates();
+						sSceneCandidates = CollectSceneCandidates(sceneRoot);
 					}
 
 					if (ImGui::MenuItem("Refresh Scene List")) {
-						sSceneCandidates = CollectSceneCandidates();
+						sSceneCandidates = CollectSceneCandidates(sceneRoot);
 					}
 
 					ImGui::Separator();
@@ -135,7 +193,8 @@ namespace Unnamed {
 					);
 					if (quickOpenCount == 0) {
 						ImGui::TextDisabled(
-							"No scenes found in ./content/**/scenes/*.json"
+							"No scenes found in %s/**/*.json",
+							sceneRoot.c_str()
 						);
 					} else {
 						for (size_t i = 0; i < quickOpenCount; ++i) {
@@ -157,7 +216,7 @@ namespace Unnamed {
 					ImGui::Separator();
 
 					const std::string defaultPath = currentPath.empty() ?
-						                                "./content/core/scenes/sandbox.json" :
+						                                defaultScenePath :
 						                                currentPath;
 					if (mOpenScenePathBuffer[0] == '\0') {
 						SetPathBuffer(mOpenScenePathBuffer, defaultPath);

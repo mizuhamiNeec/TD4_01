@@ -1,12 +1,14 @@
 #include "GameModuleFactory.h"
 
 #include <algorithm>
-#include <array>
 #include <cctype>
 #include <exception>
 #include <filesystem>
 #include <fstream>
+#include <map>
+#include <numeric>
 #include <optional>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -16,6 +18,9 @@
 #include <json.hpp>
 #include <Windows.h>
 
+#include "core/ComponentRegistry.h"
+#include "engine/EngineComponentRegistration.h"
+#include "engine/game/GamePathResolver.h"
 #include "engine/game/IDemoService.h"
 #include "engine/physics/core/Physics.h"
 #include "engine/scene/Scene.h"
@@ -34,11 +39,6 @@ namespace Unnamed {
 		struct LoadedGameProfile {
 			GameModulePaths            paths;
 			std::vector<std::string> aliases;
-		};
-
-		struct ManifestCandidatePath {
-			std::filesystem::path path;
-			std::string           reason;
 		};
 
 		struct ManifestLoadResult {
@@ -176,45 +176,46 @@ namespace Unnamed {
 			return TryFindRepositoryRoot(canonicalPath);
 		}
 
-		[[nodiscard]] std::vector<ManifestCandidatePath> BuildManifestCandidates(
-			const std::string_view          relativeManifestPath,
+		struct RepositoryRootCandidate {
+			std::filesystem::path root;
+			std::string           reason;
+		};
+
+		[[nodiscard]] std::vector<RepositoryRootCandidate> BuildRepositoryRootCandidates(
 			const ManifestSearchConfiguration& config
 		) {
-			std::vector<ManifestCandidatePath> candidates;
-			std::unordered_set<std::string>    dedupe;
-			const std::filesystem::path relativePath{
-				std::string(relativeManifestPath)
-			};
+			std::vector<RepositoryRootCandidate> candidates;
+			std::unordered_set<std::string>      dedupe;
+			const auto addCandidate = [&](const std::filesystem::path& root, const std::string_view reason) {
+				if (root.empty()) {
+					return;
+				}
 
-			const auto addCandidate = [&](const std::filesystem::path& base, const std::string_view reason) {
 				std::error_code ec;
 				const std::filesystem::path normalized =
-					std::filesystem::weakly_canonical(base / relativePath, ec);
-				const std::filesystem::path candidatePath =
-					ec ? (base / relativePath).lexically_normal() : normalized;
-				const std::string key = candidatePath.generic_string();
+					std::filesystem::weakly_canonical(root, ec);
+				const std::filesystem::path candidateRoot = ec ?
+					std::filesystem::path(root).lexically_normal() :
+					normalized;
+				const std::string key = candidateRoot.generic_string();
 				if (dedupe.insert(key).second) {
-					candidates.push_back(ManifestCandidatePath{
-						.path = candidatePath,
+					candidates.push_back(RepositoryRootCandidate{
+						.root = candidateRoot,
 						.reason = std::string(reason),
 					});
 				}
 			};
 
 			if (config.explicitRepoRootOverride.has_value()) {
-				const std::filesystem::path& explicitPath =
-					*config.explicitRepoRootOverride;
 				if (const auto resolved = TryResolveRepositoryRootFromExplicitPath(
-						explicitPath
-					);
-					resolved.has_value()) {
+						*config.explicitRepoRootOverride
+					); resolved.has_value()) {
 					addCandidate(*resolved, "cli-repo-root");
 				} else {
 					DevMsg(
 						kChannel,
-						"ignored invalid --repo-root '{}' while searching '{}'",
-						explicitPath.generic_string(),
-						relativeManifestPath
+						"ignored invalid --repo-root '{}'",
+						config.explicitRepoRootOverride->generic_string()
 					);
 				}
 			}
@@ -223,60 +224,69 @@ namespace Unnamed {
 				envRepoRoot.has_value()) {
 				if (const auto resolved = TryResolveRepositoryRootFromExplicitPath(
 						*envRepoRoot
-					);
-					resolved.has_value()) {
+					); resolved.has_value()) {
 					addCandidate(*resolved, "env:UNNAMED_REPO_ROOT");
 				} else {
 					DevMsg(
 						kChannel,
-						"ignored invalid UNNAMED_REPO_ROOT '{}' while searching '{}'",
-						envRepoRoot->generic_string(),
-						relativeManifestPath
+						"ignored invalid UNNAMED_REPO_ROOT '{}'",
+						envRepoRoot->generic_string()
 					);
 				}
 			}
 
 			const std::filesystem::path currentPath = std::filesystem::current_path();
-			if (const auto repoRoot = TryFindRepositoryRoot(currentPath); repoRoot.has_value()) {
-				addCandidate(*repoRoot, "cwd-upward");
-			} else {
-				DevMsg(
-					kChannel,
-					"repository root not found from cwd '{}' while searching '{}'",
-					currentPath.generic_string(),
-					relativeManifestPath
-				);
+			if (const auto resolved = TryFindRepositoryRoot(currentPath);
+				resolved.has_value()) {
+				addCandidate(*resolved, "cwd-upward");
 			}
 
 			if (const auto exeDirectory = TryGetExecutableDirectory();
 				exeDirectory.has_value()) {
-				for (std::filesystem::path cursor = *exeDirectory;; cursor = cursor.parent_path()) {
-					addCandidate(cursor, "exe-parent-upward");
-					if (!cursor.has_parent_path() || cursor == cursor.parent_path()) {
-						break;
-					}
+				if (const auto resolved = TryFindRepositoryRoot(*exeDirectory);
+					resolved.has_value()) {
+					addCandidate(*resolved, "exe-upward");
 				}
-			} else {
-				DevMsg(
-					kChannel,
-					"failed to resolve executable directory while searching '{}'",
-					relativeManifestPath
-				);
 			}
 
 			return candidates;
 		}
 
-		void RegisterProfile(GameModuleRegistryState& state, GameModulePaths paths) {
+		[[nodiscard]] std::optional<RepositoryRootCandidate> ResolveRepositoryRootForManifestSearch(
+			const ManifestSearchConfiguration& config
+		) {
+			const std::vector<RepositoryRootCandidate> candidates =
+				BuildRepositoryRootCandidates(config);
+			if (candidates.empty()) {
+				return std::nullopt;
+			}
+			return candidates.front();
+		}
+
+		[[nodiscard]] bool RegisterProfile(
+			GameModuleRegistryState& state,
+			GameModulePaths          paths
+		) {
 			const std::string canonicalName = NormalizeGameName(paths.gameName);
 			if (canonicalName.empty()) {
-				return;
+				return false;
+			}
+
+			if (state.modulesByName.contains(canonicalName)) {
+				Error(
+					kChannel,
+					"duplicate gameName '{}' detected in manifest '{}'; keeping first registration.",
+					paths.gameName,
+					paths.resolvedManifestPath
+				);
+				return false;
 			}
 
 			// Game 固有情報はプロファイルとして保持し、生成関数は後から差し込めるようにする。
 			RegisteredGameModule& entry = state.modulesByName[canonicalName];
 			entry.paths = std::move(paths);
-			state.aliasToCanonical[canonicalName] = canonicalName;
+			state.aliasToCanonical.emplace(canonicalName, canonicalName);
+			return true;
 		}
 
 		[[nodiscard]] bool TryReadRequiredStringField(
@@ -439,74 +449,6 @@ namespace Unnamed {
 			return result;
 		}
 
-		[[nodiscard]] std::optional<LoadedGameProfile> LoadGameProfileManifestFromCandidates(
-			const std::string_view          relativeManifestPath,
-			const ManifestSearchConfiguration& config
-		) {
-			const std::vector<ManifestCandidatePath> candidates =
-				BuildManifestCandidates(relativeManifestPath, config);
-			const bool hasExplicitRepoRoot =
-				config.explicitRepoRootOverride.has_value();
-
-			DevMsg(
-				kChannel,
-				"manifest search start: target='{}' repoRootOverride={} envRepoRoot={}",
-				relativeManifestPath,
-				hasExplicitRepoRoot ? "set" : "unset",
-				TryGetEnvironmentRepoRoot().has_value() ? "set" : "unset"
-			);
-			for (const ManifestCandidatePath& candidate : candidates) {
-				const std::string manifestPath = candidate.path.generic_string();
-				DevMsg(
-					kChannel,
-					"trying manifest candidate '{}' ({})",
-					manifestPath,
-					candidate.reason
-				);
-				ManifestLoadResult loadResult =
-					LoadGameProfileManifest(manifestPath);
-				if (loadResult.profile.has_value()) {
-					loadResult.profile->paths.resolvedManifestPath = manifestPath;
-					DevMsg(
-						kChannel,
-						"manifest resolved '{}' from '{}'",
-						relativeManifestPath,
-						manifestPath
-					);
-					Msg(
-						kChannel,
-						"manifest profile loaded: game='{}' manifest='{}' gameRoot='{}' contentRoot='{}' configRoot='{}' defaultStartupScene='{}'",
-						loadResult.profile->paths.gameName,
-						manifestPath,
-						loadResult.profile->paths.gameRoot,
-						loadResult.profile->paths.contentRoot,
-						loadResult.profile->paths.configRoot,
-						loadResult.profile->paths.defaultStartupScene
-					);
-					return loadResult.profile;
-				}
-
-				DevMsg(
-					kChannel,
-					"manifest candidate rejected '{}' ({}): {}",
-					manifestPath,
-					candidate.reason,
-					loadResult.failureReason.empty() ? "unknown reason" :
-					                                  loadResult.failureReason
-				);
-			}
-
-			DevMsg(
-				kChannel,
-				"manifest search failed: target='{}' candidatesTried={} repoRootOverride={} envRepoRoot={}",
-				relativeManifestPath,
-				candidates.size(),
-				hasExplicitRepoRoot ? "set" : "unset",
-				TryGetEnvironmentRepoRoot().has_value() ? "set" : "unset"
-			);
-			return std::nullopt;
-		}
-
 		[[nodiscard]] bool RegisterAliasInternal(
 			GameModuleRegistryState& state,
 			std::string_view aliasName,
@@ -522,6 +464,11 @@ namespace Unnamed {
 				return false;
 			}
 
+			if (const auto aliasIt = state.aliasToCanonical.find(alias);
+				aliasIt != state.aliasToCanonical.end()) {
+				return aliasIt->second == target;
+			}
+
 			state.aliasToCanonical[alias] = target;
 			return true;
 		}
@@ -533,9 +480,9 @@ namespace Unnamed {
 		) {
 			for (const std::string& alias : aliases) {
 				if (!RegisterAliasInternal(state, alias, canonicalName)) {
-					DevMsg(
+					Error(
 						kChannel,
-						"failed to register alias '{}' for game '{}'",
+						"alias conflict '{}' for game '{}'; keeping first registration.",
 						alias,
 						canonicalName
 					);
@@ -550,24 +497,94 @@ namespace Unnamed {
 			}
 
 			state.defaultsRegistered = true;
-			constexpr std::array<std::string_view, 2> kRelativeManifestPaths = {
-				"projects/ParkourGame/config/game_profile.json",
-				"projects/TeamGame/config/game_profile.json",
-			};
+			const std::optional<RepositoryRootCandidate> resolvedRepoRoot =
+				ResolveRepositoryRootForManifestSearch(state.manifestSearch);
+			if (!resolvedRepoRoot.has_value()) {
+				Error(
+					kChannel,
+					"manifest discovery failed: repository root was not resolved."
+				);
+				return;
+			}
 
-			for (const std::string_view manifestPath : kRelativeManifestPaths) {
-				const std::optional<LoadedGameProfile> profile =
-					LoadGameProfileManifestFromCandidates(
+			const std::filesystem::path projectsRoot =
+				resolvedRepoRoot->root / "projects";
+			std::error_code ec;
+			if (!std::filesystem::exists(projectsRoot, ec) || ec) {
+				Error(
+					kChannel,
+					"manifest discovery failed: projects root does not exist '{}'.",
+					projectsRoot.generic_string()
+				);
+				return;
+			}
+
+			std::set<std::string> manifestPaths;
+			for (std::filesystem::directory_iterator it(
+				     projectsRoot,
+				     std::filesystem::directory_options::skip_permission_denied,
+				     ec
+			     );
+			     it != std::filesystem::directory_iterator();
+			     it.increment(ec)) {
+				if (ec) {
+					ec.clear();
+					continue;
+				}
+				if (!it->is_directory(ec) || ec) {
+					ec.clear();
+					continue;
+				}
+
+				const std::filesystem::path manifestPath =
+					it->path() / "config" / "game_profile.json";
+				if (!std::filesystem::exists(manifestPath, ec) || ec) {
+					ec.clear();
+					continue;
+				}
+				manifestPaths.emplace(manifestPath.lexically_normal().generic_string());
+			}
+
+			DevMsg(
+				kChannel,
+				"manifest discovery root: '{}' ({}) found={} manifests",
+				resolvedRepoRoot->root.generic_string(),
+				resolvedRepoRoot->reason,
+				manifestPaths.size()
+			);
+			for (const std::string& manifestPath : manifestPaths) {
+				ManifestLoadResult loadResult = LoadGameProfileManifest(manifestPath);
+				if (loadResult.profile.has_value()) {
+					loadResult.profile->paths.resolvedManifestPath = manifestPath;
+					Msg(
+						kChannel,
+						"manifest profile loaded: game='{}' manifest='{}' gameRoot='{}' contentRoot='{}' configRoot='{}' defaultStartupScene='{}'",
+						loadResult.profile->paths.gameName,
 						manifestPath,
-						state.manifestSearch
+						loadResult.profile->paths.gameRoot,
+						loadResult.profile->paths.contentRoot,
+						loadResult.profile->paths.configRoot,
+						loadResult.profile->paths.defaultStartupScene
 					);
+				}
+
+				const std::optional<LoadedGameProfile> profile =
+					loadResult.profile;
 				if (!profile.has_value()) {
+					Warning(
+						kChannel,
+						"manifest load failed '{}' : {}",
+						manifestPath,
+						loadResult.failureReason
+					);
 					continue;
 				}
 
 				const std::string canonicalName =
 					NormalizeGameName(profile->paths.gameName);
-				RegisterProfile(state, profile->paths);
+				if (!RegisterProfile(state, profile->paths)) {
+					continue;
+				}
 				RegisterAliases(state, profile->aliases, canonicalName);
 			}
 		}
@@ -603,6 +620,68 @@ namespace Unnamed {
 				return nullptr;
 			}
 			return &entryIt->second;
+		}
+
+		void CollectComponentTypesFromSceneJson(
+			const nlohmann::json& root,
+			std::set<std::string>& outTypes
+		) {
+			if (!root.is_object()) {
+				return;
+			}
+
+			const auto entitiesIt = root.find("entities");
+			if (entitiesIt == root.end() || !entitiesIt->is_array()) {
+				return;
+			}
+
+			for (const nlohmann::json& entityNode : *entitiesIt) {
+				if (!entityNode.is_object()) {
+					continue;
+				}
+
+				const auto compsIt = entityNode.find("components");
+				if (compsIt == entityNode.end() || !compsIt->is_array()) {
+					continue;
+				}
+
+				for (const nlohmann::json& compNode : *compsIt) {
+					if (!compNode.is_object()) {
+						continue;
+					}
+
+					const auto typeIt = compNode.find("type");
+					if (typeIt == compNode.end() || !typeIt->is_string()) {
+						continue;
+					}
+
+					const std::string type = typeIt->get<std::string>();
+					if (!type.empty()) {
+						outTypes.emplace(type);
+					}
+				}
+			}
+		}
+
+		[[nodiscard]] bool TryLoadJsonFile(
+			const std::string_view path,
+			nlohmann::json&        outJson,
+			std::string&           outError
+		) {
+			std::ifstream input(std::string(path), std::ios::binary);
+			if (!input.is_open()) {
+				outError = "file not found";
+				return false;
+			}
+
+			try {
+				input >> outJson;
+			} catch (const std::exception& ex) {
+				outError = std::format("parse error: {}", ex.what());
+				return false;
+			}
+
+			return true;
 		}
 
 		class DefaultGameModule final : public IGameModule {
@@ -830,5 +909,150 @@ namespace Unnamed {
 			gameName
 		);
 		return nullptr;
+	}
+
+	bool ValidateGameModuleStartupProfile(
+		IGameModule&                      gameModule,
+		const StartupValidationOptions& options
+	) {
+		const GameModulePaths paths = gameModule.GetGameModulePaths();
+		const std::string startupScenePath = ResolveStartupScenePath(gameModule);
+		const std::string contentRoot = ResolveGameContentPath(paths, "");
+		const std::string configRoot = ResolveGameConfigPath(paths, "");
+
+		bool validationFailed = false;
+		const auto reportIssue = [&](const bool isError, const std::string& text) {
+			if (isError) {
+				Error(kChannel, "startup validation: {}", text);
+				validationFailed = true;
+				return;
+			}
+			Warning(kChannel, "startup validation: {}", text);
+		};
+
+		std::error_code ec;
+		if (paths.resolvedManifestPath.empty()) {
+			reportIssue(true, "resolved manifest path is empty.");
+		} else if (
+			!std::filesystem::exists(paths.resolvedManifestPath, ec) || ec
+		) {
+			reportIssue(
+				true,
+				std::format(
+					"manifest does not exist '{}'.",
+					paths.resolvedManifestPath
+				)
+			);
+		}
+
+		ec.clear();
+		if (contentRoot.empty()) {
+			reportIssue(true, "content root is empty.");
+		} else if (!std::filesystem::exists(contentRoot, ec) || ec) {
+			reportIssue(
+				true,
+				std::format("content root does not exist '{}'.", contentRoot)
+			);
+		}
+
+		ec.clear();
+		if (configRoot.empty()) {
+			reportIssue(true, "config root is empty.");
+		} else if (!std::filesystem::exists(configRoot, ec) || ec) {
+			reportIssue(
+				true,
+				std::format("config root does not exist '{}'.", configRoot)
+			);
+		}
+
+		ec.clear();
+		if (startupScenePath.empty()) {
+			reportIssue(true, "startup scene path is empty.");
+		} else if (!std::filesystem::exists(startupScenePath, ec) || ec) {
+			reportIssue(
+				true,
+				std::format("startup scene does not exist '{}'.", startupScenePath)
+			);
+		}
+
+		if (validationFailed) {
+			return false;
+		}
+
+		ComponentRegistry& componentRegistry = ComponentRegistry::Get();
+		RegisterDefaultEngineComponents(componentRegistry);
+		gameModule.RegisterGameComponents(componentRegistry);
+
+		nlohmann::json sceneJson = nlohmann::json::object();
+		std::string sceneLoadError;
+		if (!TryLoadJsonFile(startupScenePath, sceneJson, sceneLoadError)) {
+			reportIssue(
+				true,
+				std::format(
+					"startup scene parse failed '{}' ({})",
+					startupScenePath,
+					sceneLoadError
+				)
+			);
+			return false;
+		}
+
+		std::set<std::string> sceneComponentTypes;
+		CollectComponentTypesFromSceneJson(sceneJson, sceneComponentTypes);
+
+		std::vector<std::string> unknownComponentTypes;
+		for (const std::string& type : sceneComponentTypes) {
+			if (!componentRegistry.IsRegistered(type)) {
+				unknownComponentTypes.push_back(type);
+			}
+		}
+
+		if (!unknownComponentTypes.empty()) {
+			const std::string joined = std::accumulate(
+				std::next(unknownComponentTypes.begin()),
+				unknownComponentTypes.end(),
+				unknownComponentTypes.front(),
+				[](const std::string& lhs, const std::string& rhs) {
+					return lhs + ", " + rhs;
+				}
+			);
+			const bool failUnknown = options.failOnUnknownComponentTypes;
+			reportIssue(
+				failUnknown,
+				std::format(
+					"startup scene has unknown component types [{}].",
+					joined
+				)
+			);
+		}
+
+		if (options.emitDetailedLogs) {
+			Msg(
+				kChannel,
+				"startup validation completed: game='{}' manifest='{}' startupScene='{}' status={}",
+				paths.gameName,
+				paths.resolvedManifestPath,
+				startupScenePath,
+				validationFailed ? "failed" : "passed"
+			);
+		}
+
+		return !validationFailed;
+	}
+
+	bool ValidateGameModuleStartupProfile(
+		const std::string_view           gameName,
+		const StartupValidationOptions& options
+	) {
+		std::unique_ptr<IGameModule> gameModule = CreateGameModule(gameName);
+		if (!gameModule) {
+			Error(
+				kChannel,
+				"startup validation: failed to create game module '{}'.",
+				gameName
+			);
+			return false;
+		}
+		return ValidateGameModuleStartupProfile(*gameModule, options);
 	}
 }

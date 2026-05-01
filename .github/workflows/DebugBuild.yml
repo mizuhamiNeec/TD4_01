@@ -56,7 +56,7 @@ jobs:
           foreach ($project in $projects) {
             Write-Host "Building $project ($env:CONFIGURATION|$env:PLATFORM)"
             msbuild $project `
-              /m `
+              /m:1 `
               /p:Configuration=$env:CONFIGURATION `
               /p:Platform=$env:PLATFORM
             if ($LASTEXITCODE -ne 0) {

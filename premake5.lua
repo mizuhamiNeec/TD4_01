@@ -206,6 +206,7 @@ project "UnnamedEditorRuntime"
 
 	filter { "files:src/thirdparty/ImGui/**.cpp or files:src/thirdparty/ImGuizmo/**.cpp" }
 		warnings "Extra"
+		disablewarnings { "4189" }
 	filter {}
 
 	filter "configurations:Debug"

@@ -1,10 +1,17 @@
-# 最初のドキュメントページ
+## Unnamed Engine
 
-```C++ 
-#include <iostream>
+[![DebugBuild](https://github.com/mizuhamiNeec/UnnamedEngine/actions/workflows/DebugBuild.yml/badge.svg)](https://github.com/mizuhamiNeec/UnnamedEngine/actions/workflows/DebugBuild.yml)
+[![ReleaseBuild](https://github.com/mizuhamiNeec/UnnamedEngine/actions/workflows/ReleaseBuild.yml/badge.svg)](https://github.com/mizuhamiNeec/UnnamedEngine/actions/workflows/ReleaseBuild.yml)
 
-int main() {
-    std::cout << "Hello, World!" << std::endl;
-    return 0;
-}
-```
+![Graph](assets/graph.png)
+
+Unnamed Engine は C++ / DirectX 12 を使用したゲームエンジンです。
+
+略しちゃダメです。E◯ic Gamesに怒られます。
+
+## ドキュメント
+
+- [はじめに](gettingstarted.md)
+- [新規ゲーム作成ガイド](create-new-game.md)
+- [エンジン内蔵コンポーネント](engine-components.md)
+- [コンポーネントドキュメントテンプレート](component-template.md)

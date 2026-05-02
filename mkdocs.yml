@@ -1,0 +1,87 @@
+site_name: Unnamed Engine Documentation
+site_description: Unnamed Engineのドキュメント
+site_url: https://mizuhamineec.github.io/UnnamedEngine/
+
+theme:
+  # テーマの指定
+  name: material
+
+  # 色の設定
+  palette:
+    # Palette toggle for automatic mode
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default 
+      primary: black
+      accent: orange
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: orange
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+
+  # フォントの設定
+  font:
+    text: "Noto Sans JP"
+    code: "JetBrains Mono"
+
+  # アイコンの設定
+  logo: assets/logo.svg
+
+  # ファビコンの設定
+  favicon: assets/logo.svg
+
+  language: ja
+  features:
+    - toc.integrate
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.expand
+    - navigation.path
+    - navigation.top
+    - search.suggest
+    - search.highlight
+
+nav:
+  - ホーム: index.md
+  - はじめに:
+      - はじめに: gettingstarted.md
+      - システム要件:
+        - システム要件: system-requirements.md
+      - 初回セットアップ:
+        - 初回セットアップ: setup.md
+      - 起動方法:
+        - 起動方法: how-to-launch.md
+  - ステータス:
+    - ステータス: status.md
+  - 基本概念:
+    - エンティティ: entity.md
+    - コンポーネント: 
+      - コンポーネント: component.md
+      - TransformComponent: transformcomponent.md
+  - 新規ゲーム作成: create-new-game.md
+  - エンジン内蔵コンポーネント: engine-components.md
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.details
+  - pymdownx.superfences:
+      

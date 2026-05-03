@@ -239,58 +239,32 @@ namespace Unnamed {
 		}
 
 		DrawMainMenu();
-		const ImGuiID dockSpaceId = ImGui::GetID("LevelEditorDockSpace");
-		ImGui::DockSpace(
-			dockSpaceId,
-			ImVec2(0.0f, 0.0f),
-			ImGuiDockNodeFlags_None
-		);
-		if (!mDockInitialized) {
-			const ImVec2 dockNodeSize = ImGui::GetContentRegionAvail();
-			if (dockNodeSize.x > 1.0f && dockNodeSize.y > 1.0f) {
-				ImGui::DockBuilderRemoveNode(dockSpaceId);
-				ImGui::DockBuilderAddNode(
-					dockSpaceId,
-					ImGuiDockNodeFlags_DockSpace
-				);
-				ImGui::DockBuilderSetNodeSize(
-					dockSpaceId,
-					ImVec2(
-						std::max(1.0f, dockNodeSize.x),
-						std::max(1.0f, dockNodeSize.y)
-					)
-				);
-				ImGuiID dockMain = dockSpaceId;
-				ImGuiID dockLeft = ImGui::DockBuilderSplitNode(
-					dockMain,
-					ImGuiDir_Left,
-					0.22f,
-					nullptr,
-					&dockMain
-				);
-				ImGuiID dockRight = ImGui::DockBuilderSplitNode(
-					dockMain,
-					ImGuiDir_Right,
-					0.28f,
-					nullptr,
-					&dockMain
-				);
-				ImGuiID dockBottom = ImGui::DockBuilderSplitNode(
-					dockMain,
-					ImGuiDir_Down,
-					0.30f,
-					nullptr,
-					&dockMain
-				);
-				ImGui::DockBuilderDockWindow("Viewport", dockMain);
-				ImGui::DockBuilderDockWindow("Outliner", dockLeft);
-				ImGui::DockBuilderDockWindow("Inspector", dockRight);
-				ImGui::DockBuilderDockWindow("Profiler", dockBottom);
-				ImGui::DockBuilderDockWindow("Content Browser", dockBottom);
-				ImGui::DockBuilderFinish(dockSpaceId);
-				mDockInitialized = true;
-			}
+		ImGuiID dockSpaceId = ImGui::GetID("EditorDockSpace");
+
+		if (!mDockInitialized)
+		{
+			ImGui::DockBuilderRemoveNode(dockSpaceId);
+			ImGui::DockBuilderAddNode(dockSpaceId, ImGuiDockNodeFlags_DockSpace);
+			ImGui::DockBuilderSetNodeSize(dockSpaceId, ImGui::GetMainViewport()->WorkSize);
+
+			ImGuiID dockMain = dockSpaceId;
+
+			ImGuiID dockLeft = ImGui::DockBuilderSplitNode(dockMain, ImGuiDir_Left, 0.22f, nullptr, &dockMain);
+			ImGuiID dockRight = ImGui::DockBuilderSplitNode(dockMain, ImGuiDir_Right, 0.28f, nullptr, &dockMain);
+			ImGuiID dockBottom = ImGui::DockBuilderSplitNode(dockMain, ImGuiDir_Down, 0.30f, nullptr, &dockMain);
+
+			ImGui::DockBuilderDockWindow("Viewport", dockMain);
+			ImGui::DockBuilderDockWindow("Outliner", dockLeft);
+			ImGui::DockBuilderDockWindow("Inspector", dockRight);
+			ImGui::DockBuilderDockWindow("Profiler", dockBottom);
+			ImGui::DockBuilderDockWindow("Content Browser", dockBottom);
+
+			ImGui::DockBuilderFinish(dockSpaceId);
+
+			mDockInitialized = true;
 		}
+
+		ImGui::DockSpace(dockSpaceId, ImVec2(0.0f, 0.0f));
 
 		const float deltaTime         = frameContext.unscaledDeltaTime;
 		mViewportSizeChangedThisFrame = false;

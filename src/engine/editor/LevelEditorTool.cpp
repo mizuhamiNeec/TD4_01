@@ -6,9 +6,6 @@
 #include <imgui_internal.h>
 
 #include "EditorNotification.h"
-#include "sequence/SequenceCurvePanel.h"
-#include "sequence/SequenceEditorController.h"
-#include "sequence/SequenceTimelinePanel.h"
 
 #include "core/io/json/JsonReader.h"
 #include "core/string/StrUtil.h"
@@ -22,6 +19,8 @@
 #include "engine/unnamed/subsystem/console/concommand/ConVar.h"
 #include "engine/unnamed/subsystem/input/InputSystem.h"
 #include "engine/world/EditorWorld.h"
+
+#include "sequence/SequenceEditorController.h"
 
 #include "thirdparty/ImGuizmo/ImGuizmo.h"
 
@@ -150,7 +149,6 @@ namespace Unnamed {
 	    mEditorWorld(*mOwnedEditorWorld),
 	    mWindowManager(windowManager),
 	    mImGuiLayer(imGuiLayer) {
-		mNotification = std::make_unique<EditorNotification>();
 		mCameraManager.SetPaneBinding(
 			kViewScenePerspective,
 			{
@@ -179,10 +177,8 @@ namespace Unnamed {
 		mConsoleSystem = services.console;
 		mInputSystem   = services.inputSystem;
 		mEditorWorld.Initialize();
-		mSequenceEditorController = std::make_unique<
-			SequenceEditorController>();
-		mSequenceTimelinePanel = std::make_unique<SequenceTimelinePanel>();
-		mSequenceCurvePanel    = std::make_unique<SequenceCurvePanel>();
+		mSequenceEditorController =
+			std::make_unique<SequenceEditorController>();
 		mSequenceEditorController->Initialize(
 			mEditorWorld.GetRuntimeSceneWorld(),
 			services.assetManager
@@ -198,8 +194,6 @@ namespace Unnamed {
 		if (mSequenceEditorController) {
 			mSequenceEditorController->Shutdown();
 		}
-		mSequenceCurvePanel.reset();
-		mSequenceTimelinePanel.reset();
 		mSequenceEditorController.reset();
 		mEditorWorld.Shutdown();
 		mConsoleSystem = nullptr;
@@ -344,7 +338,6 @@ namespace Unnamed {
 			ImGui::SetNextWindowDockID(dockSpaceId, ImGuiCond_FirstUseEver);
 			DrawContentBrowser();
 			ImGui::SetNextWindowDockID(dockSpaceId, ImGuiCond_FirstUseEver);
-			DrawSequenceEditors();
 		} else {
 			SyncPresentationState();
 		}
@@ -356,7 +349,6 @@ namespace Unnamed {
 			DrawStatusBar();
 		}
 
-		mNotification->Update(deltaTime);
 		ImGui::End();
 	}
 
@@ -792,25 +784,15 @@ namespace Unnamed {
 				"Failed to load scene: {}",
 				normalizedPath
 			);
-			if (mNotification) {
-				mNotification->PushNotification(
-					"Scene Load Failed",
-					normalizedPath,
-					NOTIFY_TYPE::ERR
-				);
-			}
 			return false;
 		}
 
 		mSelectedEntityId = 0;
 		Msg("LevelEditorTool", "Scene loaded: {}", normalizedPath);
-		if (mNotification) {
-			mNotification->PushNotification(
-				"Scene Loaded",
-				normalizedPath,
-				NOTIFY_TYPE::INFO
-			);
-		}
+
+		mConsoleSystem->ExecuteCommand(
+			"notify info 2 LevelEditor | SceneLoaded: " + normalizedPath
+		);
 
 		return true;
 	}

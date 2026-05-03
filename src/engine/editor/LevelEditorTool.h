@@ -10,7 +10,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "EditorNotification.h"
 #include "EditorViewportCameraManager.h"
 #include "IEditorTool.h"
 #include "ContentBrowser.h"
@@ -127,9 +126,8 @@ namespace Unnamed {
 		void DrawViewportOverlay(float deltaTime) const;
 
 		void DrawSceneOutliner();
-		void DrawInspector();
+		void DrawInspector() const;
 		void DrawContentBrowser();
-		void DrawSequenceEditors();
 		void DrawProfilerWindow();
 
 		[[nodiscard]] Entity* GetSelectedEntity() const;
@@ -170,8 +168,6 @@ namespace Unnamed {
 		EditorViewportCameraManager mCameraManager = {};
 		std::unordered_map<std::string, ViewOutputCache> mViewOutputs;
 
-		std::unique_ptr<EditorNotification> mNotification;
-
 		float                 mGridSnap = 64.0f;
 		EDITOR_GRID_SNAP_UNIT mGridSnapUnit = EDITOR_GRID_SNAP_UNIT::METER;
 		float                 mAngleSnapDegree = 15.0f;
@@ -181,8 +177,6 @@ namespace Unnamed {
 
 		EditorContentBrowser::BrowserViewState    mContentBrowserState = {};
 		std::unique_ptr<SequenceEditorController> mSequenceEditorController;
-		std::unique_ptr<SequenceTimelinePanel>    mSequenceTimelinePanel;
-		std::unique_ptr<SequenceCurvePanel>       mSequenceCurvePanel;
 	};
 }
 

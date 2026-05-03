@@ -5,5 +5,4 @@
 
 ![graph.png](./docs/assets/graph.png)
 
-## ドキュメント
-- [ホーム](https://unnamedworks.github.io/UnnamedEngine/)
+## [ドキュメント](https://unnamedworks.github.io/UnnamedEngine/)

@@ -222,7 +222,7 @@ namespace Unnamed {
 
 			SpecialMsg(
 				LogLevel::Success, kChannel,
-				"Loaded asset from file: {} (ID: {})", normalizedPath, id
+				"アセットを読み込みました: {} (ID: {})", normalizedPath, id
 			);
 
 			return id;

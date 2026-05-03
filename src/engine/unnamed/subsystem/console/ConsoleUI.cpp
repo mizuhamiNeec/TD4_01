@@ -149,6 +149,10 @@ namespace Unnamed {
 			return;
 		}
 
+		ImGui::SetNextWindowSizeConstraints(
+			ImVec2(320, 320), ImVec2(FLT_MAX, FLT_MAX)
+		);
+
 		const bool windowOpen = ImGui::Begin(
 			"Console##ConsoleUI",
 			&mShowConsole,

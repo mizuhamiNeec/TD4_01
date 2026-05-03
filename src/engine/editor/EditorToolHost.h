@@ -72,6 +72,8 @@ namespace Unnamed {
 		std::vector<std::unique_ptr<IEditorTool>> mOwnedTools;
 		LevelEditorTool*                          mLevelTool = nullptr;
 		bool                                      mMainDockInitialized = false;
+		
+		bool mShowAbout = false;
 	};
 }
 

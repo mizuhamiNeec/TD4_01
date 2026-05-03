@@ -169,7 +169,10 @@ namespace Unnamed {
 			DrawInputTextAndSubmitButton();
 
 			if (mShowAbout) {
-				ShowAbout();
+				ImGuiWidgets::ShowAboutWindow(
+				"Unnamed Console", std::string(ENGINE_VERSION), kIconTerminal,
+				 mShowAbout
+					);
 			}
 		}
 

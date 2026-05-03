@@ -138,7 +138,7 @@ namespace Unnamed {
 							"About Unnamed", kIconInfo
 						)
 					) {
-						// TODO: Aboutウィンドウを表示
+						mShowAbout = true;
 					}
 					ImGui::EndMenu();
 				} else {
@@ -319,6 +319,15 @@ namespace Unnamed {
 			tool->BuildUi(frameContext);
 		}
 
+		if (mShowAbout) {
+			ImGuiWidgets::ShowAboutWindow(
+			"Unnamed Engine",
+			std::string(ENGINE_VERSION), 
+			kIconArrowBack,
+			mShowAbout
+			);
+		}
+		
 		ImGui::ShowDemoWindow();
 	}
 

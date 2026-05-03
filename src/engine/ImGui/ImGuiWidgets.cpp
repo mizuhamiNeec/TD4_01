@@ -54,9 +54,7 @@ namespace ImGuiWidgets {
 		const float        vSpeed,
 		const char*        format
 	) {
-		if (ImGui::GetCurrentWindow()->SkipItems) {
-			return false;
-		}
+		if (ImGui::GetCurrentWindow()->SkipItems) { return false; }
 
 		bool valueChanged = false;
 
@@ -284,9 +282,7 @@ namespace ImGuiWidgets {
 			}
 		}
 		// マウスボタンリリースでドラッグ終了
-		if (!io.MouseDown[0]) {
-			bIsDraggingCp1 = bIsDraggingCp2 = false;
-		}
+		if (!io.MouseDown[0]) { bIsDraggingCp1 = bIsDraggingCp2 = false; }
 
 		// ドラッグ中なら、マウス位置に応じてコントロールポイントを更新（キャンバス座標を[0,1]に変換）
 		auto clamp = [
@@ -497,9 +493,7 @@ namespace ImGuiWidgets {
 		const ImU32 textColor = ImGui::GetColorU32(ImGuiCol_Text);
 		dl->PushClipRect(itemMin, itemMax, true);
 		dl->AddText(font, iconFontSize, iconPos, textColor, iconUtf8.c_str());
-		if (!iconOnly) {
-			dl->AddText(labelPos, textColor, label);
-		}
+		if (!iconOnly) { dl->AddText(labelPos, textColor, label); }
 		dl->PopClipRect();
 
 		return pressed;
@@ -559,9 +553,7 @@ namespace ImGuiWidgets {
 			}
 
 			const float wheel = ImGui::GetIO().MouseWheel;
-			if (wheel == 0.0f) {
-				return;
-			}
+			if (wheel == 0.0f) { return; }
 
 			const int delta = static_cast<int>(wheel);
 
@@ -578,9 +570,7 @@ namespace ImGuiWidgets {
 		const ImVec2& sizeArg, const float rounding
 	) {
 		ImGuiWindow* window = ImGui::GetCurrentWindow();
-		if (window->SkipItems) {
-			return false;
-		}
+		if (window->SkipItems) { return false; }
 
 		ImGuiContext&     g     = *GImGui;
 		const ImGuiStyle& style = g.Style;
@@ -638,31 +628,22 @@ namespace ImGuiWidgets {
 			is_visible = ImGui::ItemAdd(bb, id, NULL, extra_item_flags);
 			window->ClipRect.Min.x = backup_clip_rect_min_x;
 			window->ClipRect.Max.x = backup_clip_rect_max_x;
-		} else {
-			is_visible = ImGui::ItemAdd(bb, id, NULL, extra_item_flags);
-		}
+		} else { is_visible = ImGui::ItemAdd(bb, id, NULL, extra_item_flags); }
 
 		const bool is_multi_select =
 			(g.LastItemData.ItemFlags & ImGuiItemFlags_IsMultiSelect) != 0;
 		if (!is_visible) {
 			if (!is_multi_select || !g.BoxSelectState.UnclipMode || !g.
-			    BoxSelectState.UnclipRect.Overlaps(bb)) {
-				return false;
-			}
+			    BoxSelectState.UnclipRect.Overlaps(bb)) { return false; }
 		}
 
 		const bool disabled_global =
 			(g.CurrentItemFlags & ImGuiItemFlags_Disabled) != 0;
-		if (disabled_item && !disabled_global) {
-			ImGui::BeginDisabled();
-		}
+		if (disabled_item && !disabled_global) { ImGui::BeginDisabled(); }
 
 		if (span_all_columns) {
-			if (g.CurrentTable) {
-				ImGui::TablePushBackgroundChannel();
-			} else if (window->DC.CurrentColumns) {
-				ImGui::PushColumnsBackground();
-			}
+			if (g.CurrentTable) { ImGui::TablePushBackgroundChannel(); } else if
+			(window->DC.CurrentColumns) { ImGui::PushColumnsBackground(); }
 			g.LastItemData.StatusFlags |= ImGuiItemStatusFlags_HasClipRect;
 			g.LastItemData.ClipRect    = window->ClipRect;
 		}
@@ -725,9 +706,7 @@ namespace ImGuiWidgets {
 				}
 			}
 		}
-		if (pressed) {
-			ImGui::MarkItemEdited(id);
-		}
+		if (pressed) { ImGui::MarkItemEdited(id); }
 
 		if (selected !=
 		    was_selected) {
@@ -761,11 +740,8 @@ namespace ImGuiWidgets {
 		}
 
 		if (span_all_columns) {
-			if (g.CurrentTable) {
-				ImGui::TablePopBackgroundChannel();
-			} else if (window->DC.CurrentColumns) {
-				ImGui::PopColumnsBackground();
-			}
+			if (g.CurrentTable) { ImGui::TablePopBackgroundChannel(); } else if
+			(window->DC.CurrentColumns) { ImGui::PopColumnsBackground(); }
 		}
 
 		if (is_visible) {
@@ -784,9 +760,7 @@ namespace ImGuiWidgets {
 			ImGui::CloseCurrentPopup();
 		}
 
-		if (disabled_item && !disabled_global) {
-			ImGui::EndDisabled();
-		}
+		if (disabled_item && !disabled_global) { ImGui::EndDisabled(); }
 
 		IMGUI_TEST_ENGINE_ITEM_INFO(id, label, g.LastItemData.StatusFlags);
 		return pressed; //-V1020
@@ -798,9 +772,7 @@ namespace ImGuiWidgets {
 		ImGuiContext& g      = *GImGui;
 		ImGuiWindow*  window = g.CurrentWindow;
 		if (g.OpenPopupStack.Size <= g.BeginPopupStack.Size || window->Flags &
-		    ImGuiWindowFlags_ChildMenu) {
-			return false;
-		}
+		    ImGuiWindowFlags_ChildMenu) { return false; }
 
 		const ImGuiPopupData* upperPopup =
 			&g.OpenPopupStack[g.BeginPopupStack.Size];
@@ -820,9 +792,7 @@ namespace ImGuiWidgets {
 		const char* label, const char* icon, bool enabled, float rounding
 	) {
 		ImGuiWindow* window = ImGui::GetCurrentWindow();
-		if (window->SkipItems) {
-			return false;
-		}
+		if (window->SkipItems) { return false; }
 
 		ImGuiContext& g = *GImGui;
 		const ImGuiStyle& style = g.Style;
@@ -842,9 +812,7 @@ namespace ImGuiWidgets {
 			if (menu_is_open) {
 				menu_is_open =
 					ImGui::BeginPopupMenuEx(id, label, window_flags);
-			} else {
-				g.NextWindowData.ClearFlags();
-			}
+			} else { g.NextWindowData.ClearFlags(); }
 			return menu_is_open;
 		}
 
@@ -862,9 +830,7 @@ namespace ImGuiWidgets {
 		ImVec2 popup_pos;
 		ImVec2 pos = window->DC.CursorPos;
 		ImGui::PushID(label);
-		if (!enabled) {
-			ImGui::BeginDisabled();
-		}
+		if (!enabled) { ImGui::BeginDisabled(); }
 		const ImGuiMenuColumns* offsets = &window->DC.MenuColumns;
 		bool                    pressed;
 
@@ -935,15 +901,11 @@ namespace ImGuiWidgets {
 			);
 			popup_pos = ImVec2(pos.x, text_pos.y - style.WindowPadding.y);
 		}
-		if (!enabled) {
-			ImGui::EndDisabled();
-		}
+		if (!enabled) { ImGui::EndDisabled(); }
 
 		const bool hovered = (g.HoveredId == id) && enabled && !g.
 		                     NavHighlightItemUnderNav;
-		if (menuset_is_open) {
-			ImGui::PopItemFlag();
-		}
+		if (menuset_is_open) { ImGui::PopItemFlag(); }
 
 		bool want_open          = false;
 		bool want_open_nav_init = false;
@@ -991,20 +953,14 @@ namespace ImGuiWidgets {
 
 			if (menu_is_open && !hovered && g.HoveredWindow == window && !
 			    moving_toward_child_menu && !g.NavHighlightItemUnderNav && g.
-			    ActiveId == 0) {
-				want_close = true;
-			}
+			    ActiveId == 0) { want_close = true; }
 
-			if (!menu_is_open && pressed) {
-				want_open = true;
-			} else if (!menu_is_open && hovered && !
-			           moving_toward_child_menu) {
-				want_open = true;
-			} else if (!menu_is_open && hovered && g.HoveredIdTimer >= 0.30f &&
-			           g.
-			           MouseStationaryTimer >= 0.30f) {
-				want_open = true;
-			}
+			if (!menu_is_open && pressed) { want_open = true; } else if (
+				!menu_is_open && hovered && !
+				moving_toward_child_menu) { want_open = true; } else if (
+				!menu_is_open && hovered && g.HoveredIdTimer >= 0.30f &&
+				g.
+				MouseStationaryTimer >= 0.30f) { want_open = true; }
 			if (g.NavId == id && g.NavMoveDir == ImGuiDir_Right) {
 				want_open = want_open_nav_init = true;
 				ImGui::NavMoveRequestCancel();
@@ -1023,9 +979,7 @@ namespace ImGuiWidgets {
 			}
 		}
 
-		if (!enabled) {
-			want_close = true;
-		}
+		if (!enabled) { want_close = true; }
 		if (want_close &&
 		    ImGui::IsPopupOpen(id, ImGuiPopupFlags_None)) {
 			ImGui::ClosePopupToLevel(
@@ -1041,9 +995,8 @@ namespace ImGuiWidgets {
 		ImGui::PopID();
 
 		if (want_open && !menu_is_open && g.OpenPopupStack.Size > g.
-		    BeginPopupStack.Size) {
-			ImGui::OpenPopup(label);
-		} else if (want_open) {
+		    BeginPopupStack.Size) { ImGui::OpenPopup(label); } else if (
+			want_open) {
 			menu_is_open = true;
 			ImGui::OpenPopup(label, ImGuiPopupFlags_NoReopen);
 		}
@@ -1071,9 +1024,7 @@ namespace ImGuiWidgets {
 						ImGuiItemStatusFlags_HoveredWindow;
 				}
 			}
-		} else {
-			g.NextWindowData.ClearFlags();
-		}
+		} else { g.NextWindowData.ClearFlags(); }
 
 		return menu_is_open;
 	}
@@ -1091,9 +1042,7 @@ namespace ImGuiWidgets {
 		const bool  selected, const bool enabled, const float rounding
 	) {
 		ImGuiWindow* window = ImGui::GetCurrentWindow();
-		if (window->SkipItems) {
-			return false;
-		}
+		if (window->SkipItems) { return false; }
 
 		const ImGuiContext& g = *GImGui;
 		const ImGuiStyle& style = g.Style;
@@ -1107,9 +1056,7 @@ namespace ImGuiWidgets {
 
 		bool pressed;
 		ImGui::PushID(label);
-		if (!enabled) {
-			ImGui::BeginDisabled();
-		}
+		if (!enabled) { ImGui::BeginDisabled(); }
 
 		constexpr ImGuiSelectableFlags selectableFlags =
 			ImGuiSelectableFlags_SelectOnRelease |
@@ -1200,13 +1147,9 @@ namespace ImGuiWidgets {
 			g.LastItemData.StatusFlags | ImGuiItemStatusFlags_Checkable | (
 				selected ? ImGuiItemStatusFlags_Checked : 0)
 		);
-		if (!enabled) {
-			ImGui::EndDisabled();
-		}
+		if (!enabled) { ImGui::EndDisabled(); }
 		ImGui::PopID();
-		if (menuSetIsOpen) {
-			ImGui::PopItemFlag();
-		}
+		if (menuSetIsOpen) { ImGui::PopItemFlag(); }
 
 		return pressed;
 	}
@@ -1229,6 +1172,105 @@ namespace ImGuiWidgets {
 			flags
 		);
 		ImGui::Dummy(size);
+	}
+
+	void ShowAboutWindow(
+		std::string systemName, std::string version, uint32_t logo, bool& bShow
+	) {
+		const std::string text = "About " + systemName;
+
+		ImGui::OpenPopup(text.c_str());
+
+		const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+		ImGui::SetNextWindowPos(
+			center, 1, ImVec2(0.5f, 0.5f)
+		);
+
+		constexpr ImVec2 windowSize = {280.0f, 230.0f};
+		ImGui::SetNextWindowSize(windowSize, ImGuiCond_FirstUseEver);
+
+		constexpr ImGuiWindowFlags flags =
+			ImGuiWindowFlags_NoResize |
+			ImGuiWindowFlags_NoMove |
+			ImGuiWindowFlags_NoCollapse |
+			ImGuiWindowFlags_NoSavedSettings;
+
+		const bool bOpen = ImGui::BeginPopupModal(
+			text.c_str(), &bShow, flags
+		);
+
+		if (bOpen) {
+			ImDrawList* dl   = ImGui::GetWindowDrawList();
+			ImFont*     font = ImGui::GetFont();
+
+			constexpr float iconSize  = 70.0f;
+			constexpr float titleSize = 24.0f;
+			constexpr float margin    = 8.0f;
+
+			// アイコンを描画
+			dl->AddText(
+				font, iconSize, ImGui::GetCursorScreenPos(),
+				ImGui::GetColorU32(ImGuiCol_Text),
+				Unnamed::StrUtil::ConvertToUtf8(logo).c_str()
+			);
+
+			// アイコン分だけ右にカーソルを移動
+			ImGui::SetCursorPosX(iconSize + margin);
+
+			// タイトルを描画
+			dl->AddText(
+				font, titleSize, ImGui::GetCursorScreenPos(),
+				ImGui::GetColorU32(ImGuiCol_Text),
+				systemName.c_str()
+			);
+
+			ImGui::Dummy({iconSize + margin, titleSize});
+
+			auto doublespacing = [&] {
+				for (int i = 0; i < 2; ++i) { ImGui::Spacing(); }
+				ImGui::SetCursorPosX(iconSize + margin);
+			};
+
+			doublespacing();
+
+			ImGui::Text("Version: %s", version.c_str());
+
+			doublespacing();
+
+			ImGui::Text(
+				"Build: %s %s", std::string(__DATE__).c_str(),
+				std::string(__TIME__).c_str()
+			);
+
+			doublespacing();
+
+			ImGui::Text("ImGui Version: %s", ImGui::GetVersion());
+
+			doublespacing();
+
+			// ボタンサイズとウィンドウサイズを取得
+			constexpr auto buttonSize     = ImVec2(74.0f, 24.0f);
+			const ImVec2   clientSize     = ImGui::GetWindowSize(); // サイズ
+			const ImVec2   cursorStartPos = ImGui::GetCursorPos();  // 現在のカーソル位置
+
+			// ボタンを中央に配置
+			const float buttonPosX = (clientSize.x - buttonSize.x) * 0.5f;
+			// 中央揃えのX座標
+
+			const float buttonPosY =
+				cursorStartPos.y +
+				ImGui::GetContentRegionAvail().y -
+				buttonSize.y; // 下端からの位置調整
+
+			ImGui::SetCursorPos(ImVec2(buttonPosX, buttonPosY));
+
+			if (ImGui::Button("Close", buttonSize)) {
+				bShow = false;
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::EndPopup();
+		}
 	}
 
 	bool AssetPathPicker(

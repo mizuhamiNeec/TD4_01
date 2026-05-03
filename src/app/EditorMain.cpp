@@ -30,7 +30,9 @@ namespace {
 		if (
 			!launchOptions.gameName.has_value() ||
 			launchOptions.gameName->empty()
-		) { return "TeamGame"; }
+		) {
+			return "TeamGame";
+		}
 		return *launchOptions.gameName;
 	}
 }
@@ -54,7 +56,9 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR commandLine, int) {
 
 	// Editor は複数ゲーム Runtime をリンクし、選択ゲームの実体モジュールを生成する。
 	Unnamed::RegisterDefaultGameModuleProfiles();
-	if (!RegisterEditorRuntimeModules()) { return EXIT_FAILURE; }
+	if (!RegisterEditorRuntimeModules()) {
+		return EXIT_FAILURE;
+	}
 
 	const std::string gameName = ResolveEditorGameName(launchOptions);
 	const std::unique_ptr<Unnamed::IGameModule> gameModule =
@@ -77,8 +81,12 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR commandLine, int) {
 			.emitDetailedLogs            = true,
 		}
 	);
-	if (!validated) { return EXIT_FAILURE; }
-	if (launchOptions.validateStartupOnly) { return EXIT_SUCCESS; }
+	if (!validated) {
+		return EXIT_FAILURE;
+	}
+	if (launchOptions.validateStartupOnly) {
+		return EXIT_SUCCESS;
+	}
 
 	Unnamed::Engine engine(*gameModule, Unnamed::RUN_MODE::EDITOR);
 	return engine.Run();

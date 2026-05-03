@@ -57,7 +57,8 @@ theme:
     - search.highlight
 
 nav:
-  - ホーム: index.md
+  - ホーム: 
+      -index.md
     - はじめに:
       - gettingstarted.md
       - system-requirements.md

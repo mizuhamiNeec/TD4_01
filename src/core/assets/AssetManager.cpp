@@ -36,7 +36,9 @@ namespace Unnamed {
 			return path.rfind("./", 0) == 0 || path.rfind("../", 0) == 0;
 		}
 
-		[[nodiscard]] bool IsEngineRootRelativePath(const std::string_view path) {
+		[[nodiscard]] bool IsEngineRootRelativePath(
+			const std::string_view path
+		) {
 			return path.rfind("content/", 0) == 0 ||
 			       path.rfind("projects/", 0) == 0;
 		}
@@ -256,6 +258,7 @@ namespace Unnamed {
 		std::string,
 		TextureAssetData&&,
 		const std::vector<AssetID>&
+	
 	);
 
 	template
@@ -264,6 +267,7 @@ namespace Unnamed {
 		std::string,
 		SequenceAssetData&&,
 		const std::vector<AssetID>&
+	
 	);
 
 	void AssetManager::AddRef(const AssetID id) {

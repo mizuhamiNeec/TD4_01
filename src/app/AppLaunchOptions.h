@@ -31,7 +31,9 @@ namespace Unnamed {
 	[[nodiscard]] inline std::string ConvertWideToUtf8(
 		const std::wstring_view text
 	) {
-		if (text.empty()) { return {}; }
+		if (text.empty()) {
+			return {};
+		}
 
 		const int requiredSize = ::WideCharToMultiByte(
 			CP_UTF8,
@@ -43,7 +45,9 @@ namespace Unnamed {
 			nullptr,
 			nullptr
 		);
-		if (requiredSize <= 0) { return {}; }
+		if (requiredSize <= 0) {
+			return {};
+		}
 
 		std::string output(static_cast<size_t>(requiredSize), '\0');
 		const int   writtenSize = ::WideCharToMultiByte(
@@ -56,7 +60,9 @@ namespace Unnamed {
 			nullptr,
 			nullptr
 		);
-		if (writtenSize != requiredSize) { return {}; }
+		if (writtenSize != requiredSize) {
+			return {};
+		}
 		return output;
 	}
 
@@ -134,7 +140,9 @@ namespace Unnamed {
 		};
 		const auto isEmptyOrWhitespace = [](const std::wstring_view text) {
 			for (wchar_t ch : text) {
-				if (!iswspace(static_cast<unsigned>(ch))) { return false; }
+				if (!iswspace(static_cast<unsigned>(ch))) {
+					return false;
+				}
 			}
 			return true;
 		};
@@ -166,7 +174,9 @@ namespace Unnamed {
 				}
 
 				const std::string gameName = ConvertWideToUtf8(gameText);
-				if (!gameName.empty()) { options.gameName = gameName; } else {
+				if (!gameName.empty()) {
+					options.gameName = gameName;
+				} else {
 					appendDiagnostic(
 						"--game の値を UTF-8 に変換できませんでした; オプションが無視されました"
 					);
@@ -182,7 +192,9 @@ namespace Unnamed {
 					continue;
 				}
 				const std::string gameName = ConvertWideToUtf8(argv[i + 1]);
-				if (!gameName.empty()) { options.gameName = gameName; } else {
+				if (!gameName.empty()) {
+					options.gameName = gameName;
+				} else {
 					appendDiagnostic(
 						"--game の値を UTF-8 に変換できませんでした; オプションが無視されました"
 					);

@@ -62,3 +62,7 @@ imgui.ini
 # --- Repo-specific ---
 /ClassDiagram.cd
 .github/copilot-instructions.md
+
+# アセットの.objは除外しない。
+!/content/**/*.obj
+!/projects/**/*.obj

@@ -4,10 +4,10 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
-#include "GuiEditorTool.h"
+#include <core/string/StrUtil.h>
 
-#include "core/string/StrUtil.h"
-
+#include "engine/editor/EditorNotification.h"
+#include "engine/editor/GuiEditorTool.h"
 #include "engine/game/IGameModule.h"
 #include "engine/ImGui/Icons.h"
 #include "engine/ImGui/ImGuiWidgets.h"
@@ -52,17 +52,17 @@ namespace Unnamed {
 		Shutdown();
 	}
 
-	void EditorToolHost::Initialize() const {
+	void EditorToolHost::Initialize() {
 		const EditorToolServices services = {
-			.windowManager = &mWindowManager,
-			.renderModule  = &mRenderModule,
-			.imGuiLayer    = &mImGuiLayer,
-			.console       = mConsole,
-			.inputSystem   = mInputSystem,
-			.assetManager  = mAssetManager,
-			.demoService   = mDemoService,
+			.windowManager    = &mWindowManager,
+			.renderModule     = &mRenderModule,
+			.imGuiLayer       = &mImGuiLayer,
+			.console          = mConsole,
+			.inputSystem      = mInputSystem,
+			.assetManager     = mAssetManager,
+			.demoService      = mDemoService,
 			.gameWorldFactory = &mGameModule,
-			.profiler      = mProfiler,
+			.profiler         = mProfiler,
 		};
 		for (auto& tool : mOwnedTools) {
 			if (!tool) {
@@ -70,6 +70,8 @@ namespace Unnamed {
 			}
 			tool->Initialize(services);
 		}
+
+		mNotification = std::make_unique<EditorNotification>();
 	}
 
 	void EditorToolHost::Shutdown() {
@@ -103,12 +105,12 @@ namespace Unnamed {
 	}
 
 	void EditorToolHost::BuildUi(const EditorToolFrameContext& frameContext) {
-		constexpr float  kFramePadding = 12.0f; // メニューバーを高くする
-		constexpr ImVec4 kLogoColor    = ImVec4(0.13f, 0.5f, 1.0f, 1.0f);
+		constexpr float framePadding = 12.0f; // メニューバーを高くする
+		constexpr auto  logoColor    = ImVec4(0.13f, 0.5f, 1.0f, 1.0f);
 
 		// FramePadding
 		ImGui::PushStyleVar(
-			ImGuiStyleVar_FramePadding, ImVec2(kFramePadding, kFramePadding)
+			ImGuiStyleVar_FramePadding, ImVec2(framePadding, framePadding)
 		);
 
 		if (ImGui::BeginMainMenuBar()) {
@@ -124,7 +126,7 @@ namespace Unnamed {
 			{
 				// Text
 				ImGui::PushStyleColor(
-					ImGuiCol_Text, kLogoColor
+					ImGuiCol_Text, logoColor
 				);
 
 				// 前後にスペースを入れてアイコンをテキストとして表示
@@ -138,7 +140,7 @@ namespace Unnamed {
 							"About Unnamed", kIconInfo
 						)
 					) {
-						// TODO: Aboutウィンドウを表示
+						mShowAbout = true;
 					}
 					ImGui::EndMenu();
 				} else {
@@ -209,7 +211,7 @@ namespace Unnamed {
 				constexpr auto stopColor = ImVec4(
 					0.79f, 0.31f, 0.31f, 1.0f
 				);
-				ImVec2 available     = ImGui::GetContentRegionAvail();
+				ImVec2       available     = ImGui::GetContentRegionAvail();
 				const ImVec2 windowPadding = ImGui::GetStyle().WindowPadding;
 				ImGui::SameLine();
 
@@ -277,7 +279,7 @@ namespace Unnamed {
 
 			ImGui::PopStyleVar(3); // WinRound, WinBorder, WinPadding
 
-			const ImGuiID dockSpaceId = ImGui::GetID("MainEditorDockSpace");
+			const ImGuiID dockSpaceId  = ImGui::GetID("MainEditorDockSpace");
 			const ImVec2  dockNodeSize = ImGui::GetContentRegionAvail();
 			ImGui::DockSpace(
 				dockSpaceId,
@@ -319,7 +321,18 @@ namespace Unnamed {
 			tool->BuildUi(frameContext);
 		}
 
+		if (mShowAbout) {
+			ImGuiWidgets::ShowAboutWindow(
+				"Unnamed Engine",
+				std::string(ENGINE_VERSION),
+				kIconArrowBack,
+				mShowAbout
+			);
+		}
+
 		ImGui::ShowDemoWindow();
+
+		mNotification->Update(frameContext.deltaTime);
 	}
 
 	void EditorToolHost::CollectRenderViews(

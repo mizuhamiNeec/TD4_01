@@ -17,10 +17,10 @@ namespace ImGuiWidgets {
 	inline constexpr const char* kAssetDragDropPayloadId =
 		Unnamed::EditorContentBrowser::kAssetDragDropPayloadId;
 	using AssetDragDropPayload = Unnamed::EditorContentBrowser::
-		AssetDragDropPayload;
+	AssetDragDropPayload;
 
 	[[nodiscard]] AssetTypeMask AssetTypeToMask(Unnamed::ASSET_TYPE type);
-	[[nodiscard]] bool IsAssetTypeAccepted(
+	[[nodiscard]] bool          IsAssetTypeAccepted(
 		Unnamed::ASSET_TYPE type,
 		AssetTypeMask       acceptedMask
 	);
@@ -158,6 +158,15 @@ namespace ImGuiWidgets {
 		float       rounding, ImDrawFlags flags = ImDrawFlags_RoundCornersAll,
 		ImVec2      uv0 = ImVec2(0, 0), ImVec2 uv1 = ImVec2(1, 1),
 		ImVec4      tintColor = ImVec4(1, 1, 1, 1)
+	);
+
+	/// @brief 「このソフトウェアについて」ウィンドウを表示します。
+	/// @param systemName システム名
+	/// @param version バージョン文字列
+	/// @param logo ロゴのコードポイント(フォントアイコン)
+	/// @param bShow ウィンドウの表示状態への参照。ウィンドウが閉じられた場合にfalseになります。
+	void ShowAboutWindow(
+		std::string systemName, std::string version, uint32_t logo, bool& bShow
 	);
 
 	/// @brief アセットパスの入力 + D&D受け入れ + ピッカー起動を行うウィジェット

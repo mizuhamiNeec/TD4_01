@@ -287,7 +287,6 @@ namespace Unnamed {
 				ImGui::DockBuilderDockWindow("Inspector", dockRight);
 				ImGui::DockBuilderDockWindow("Profiler", dockBottom);
 				ImGui::DockBuilderDockWindow("Content Browser", dockBottom);
-				ImGui::DockBuilderDockWindow("Sequence Timeline", dockBottom);
 				ImGui::DockBuilderFinish(dockSpaceId);
 				mDockInitialized = true;
 			}

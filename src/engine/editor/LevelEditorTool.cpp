@@ -13,8 +13,6 @@
 #include "core/io/json/JsonReader.h"
 #include "core/string/StrUtil.h"
 
-#include "engine/ImGui/Icons.h"
-#include "engine/ImGui/Ui.h"
 #include "engine/platform/Window.h"
 #include "engine/platform/WindowManager.h"
 #include "engine/render/Renderer.h"
@@ -33,14 +31,16 @@ namespace Unnamed {
 			WindowManager& windowManager
 		) {
 			const WindowId mainWindowId = windowManager.GetMainWindowId();
-			Window* const  mainWindow = windowManager.FindWindowById(mainWindowId);
+			Window* const  mainWindow   = windowManager.FindWindowById(
+				mainWindowId
+			);
 			if (!mainWindow || !mainWindow->GetHwnd()) {
 				return Vec2::zero;
 			}
 
 			MONITORINFO monitorInfo = {};
 			monitorInfo.cbSize      = sizeof(monitorInfo);
-			const HMONITOR monitor = MonitorFromWindow(
+			const HMONITOR monitor  = MonitorFromWindow(
 				mainWindow->GetHwnd(), MONITOR_DEFAULTTONEAREST
 			);
 			if (!monitor || !GetMonitorInfoW(monitor, &monitorInfo)) {
@@ -55,17 +55,19 @@ namespace Unnamed {
 				return Vec2::zero;
 			}
 
-			return Vec2(
+			return {
 				static_cast<float>(monitorWidth),
 				static_cast<float>(monitorHeight)
-			);
+			};
 		}
 
 		[[nodiscard]] Vec2 ResolveMainWindowClientExtent(
 			WindowManager& windowManager
 		) {
 			const WindowId mainWindowId = windowManager.GetMainWindowId();
-			Window* const  mainWindow = windowManager.FindWindowById(mainWindowId);
+			Window* const  mainWindow   = windowManager.FindWindowById(
+				mainWindowId
+			);
 			if (!mainWindow || !mainWindow->GetHwnd()) {
 				return Vec2::zero;
 			}
@@ -75,16 +77,16 @@ namespace Unnamed {
 				return Vec2::zero;
 			}
 
-			const int32_t clientWidth = clientRect.right - clientRect.left;
+			const int32_t clientWidth  = clientRect.right - clientRect.left;
 			const int32_t clientHeight = clientRect.bottom - clientRect.top;
 			if (clientWidth <= 0 || clientHeight <= 0) {
 				return Vec2::zero;
 			}
 
-			return Vec2(
+			return {
 				static_cast<float>(clientWidth),
 				static_cast<float>(clientHeight)
-			);
+			};
 		}
 
 		[[nodiscard]] Vec2 ResolveSceneRenderExtentForInput(
@@ -137,7 +139,7 @@ namespace Unnamed {
 				--height;
 			}
 
-			return Vec2(static_cast<float>(width), static_cast<float>(height));
+			return {static_cast<float>(width), static_cast<float>(height)};
 		}
 	}
 
@@ -241,17 +243,26 @@ namespace Unnamed {
 		DrawMainMenu();
 		ImGuiID dockSpaceId = ImGui::GetID("EditorDockSpace");
 
-		if (!mDockInitialized)
-		{
+		if (!mDockInitialized) {
 			ImGui::DockBuilderRemoveNode(dockSpaceId);
-			ImGui::DockBuilderAddNode(dockSpaceId, ImGuiDockNodeFlags_DockSpace);
-			ImGui::DockBuilderSetNodeSize(dockSpaceId, ImGui::GetMainViewport()->WorkSize);
+			ImGui::DockBuilderAddNode(
+				dockSpaceId, ImGuiDockNodeFlags_DockSpace
+			);
+			ImGui::DockBuilderSetNodeSize(
+				dockSpaceId, ImGui::GetMainViewport()->WorkSize
+			);
 
 			ImGuiID dockMain = dockSpaceId;
 
-			ImGuiID dockLeft = ImGui::DockBuilderSplitNode(dockMain, ImGuiDir_Left, 0.22f, nullptr, &dockMain);
-			ImGuiID dockRight = ImGui::DockBuilderSplitNode(dockMain, ImGuiDir_Right, 0.28f, nullptr, &dockMain);
-			ImGuiID dockBottom = ImGui::DockBuilderSplitNode(dockMain, ImGuiDir_Down, 0.30f, nullptr, &dockMain);
+			ImGuiID dockLeft = ImGui::DockBuilderSplitNode(
+				dockMain, ImGuiDir_Left, 0.22f, nullptr, &dockMain
+			);
+			ImGuiID dockRight = ImGui::DockBuilderSplitNode(
+				dockMain, ImGuiDir_Right, 0.28f, nullptr, &dockMain
+			);
+			ImGuiID dockBottom = ImGui::DockBuilderSplitNode(
+				dockMain, ImGuiDir_Down, 0.30f, nullptr, &dockMain
+			);
 
 			ImGui::DockBuilderDockWindow("Viewport", dockMain);
 			ImGui::DockBuilderDockWindow("Outliner", dockLeft);
@@ -289,8 +300,8 @@ namespace Unnamed {
 					}
 
 					POINT viewportClientTopLeft = {
-						static_cast<LONG>(mViewportPosition.x),
-						static_cast<LONG>(mViewportPosition.y)
+						.x = static_cast<LONG>(mViewportPosition.x),
+						.y = static_cast<LONG>(mViewportPosition.y)
 					};
 					ScreenToClient(window->GetHwnd(), &viewportClientTopLeft);
 					input->SetMouseClientViewportRect(
@@ -304,9 +315,9 @@ namespace Unnamed {
 
 					if (mViewportLookActive) {
 						POINT clientPoint = {
-							static_cast<LONG>(
+							.x = static_cast<LONG>(
 								mViewportPosition.x + mViewportSize.x * 0.5f),
-							static_cast<LONG>(
+							.y = static_cast<LONG>(
 								mViewportPosition.y + mViewportSize.y * 0.5f)
 						};
 						ScreenToClient(window->GetHwnd(), &clientPoint);
@@ -349,56 +360,6 @@ namespace Unnamed {
 		ImGui::End();
 	}
 
-	void LevelEditorTool::SyncPresentationState() {
-		if (mPresentMode != EDITOR_PRESENT_MODE::FULLSCREEN_SWAP_CHAIN) {
-			return;
-		}
-
-		const auto input = mInputSystem;
-		if (!input) {
-			return;
-		}
-
-		Vec2 clientExtent = ResolveMainWindowClientExtent(mWindowManager);
-		if (clientExtent.x <= 0.0f || clientExtent.y <= 0.0f) {
-			clientExtent = Vec2(
-				std::max(1.0f, mViewportPanelWidth),
-				std::max(1.0f, mViewportPanelHeight)
-			);
-		}
-
-		const Render::SceneViewRenderMode sceneRequest = BuildSceneViewModeForSize(
-			clientExtent.x,
-			clientExtent.y,
-			true
-		);
-		const Vec2 runtimeViewportSize = ResolveSceneRenderExtentForInput(
-			sceneRequest
-		);
-
-		mViewportPanelWidth  = runtimeViewportSize.x;
-		mViewportPanelHeight = runtimeViewportSize.y;
-		mLastViewportSize    = runtimeViewportSize;
-
-		mEditorWorld.SetEditorCameraLookEnabled(input->IsHeld("ed_look"));
-		input->SetMouseClientViewportRect(Vec2::zero, runtimeViewportSize);
-
-		if (const Window* window = mWindowManager.FindWindowById(
-			mWindowManager.GetMainWindowId()
-		)) {
-			input->SetMouseCursorLockClientPosition(
-				window->GetHwnd(),
-				{
-					runtimeViewportSize.x * 0.5f,
-					runtimeViewportSize.y * 0.5f
-				}
-			);
-		} else {
-			input->ClearMouseCursorLockAnchor();
-		}
-		mViewportLookActive = false;
-	}
-
 	void LevelEditorTool::CollectRenderViews(
 		Render::RenderFrameInputs& inputs
 	) {
@@ -424,7 +385,7 @@ namespace Unnamed {
 				Render::RENDER_VIEW_SIZE_MODE::MATCH_BACK_BUFFER;
 		}
 
-		auto buildSceneView = [this, &sourceScene](
+		auto BuildSceneView = [this, &sourceScene](
 			const std::string_view      key,
 			const float                 width,
 			const float                 height,
@@ -475,7 +436,7 @@ namespace Unnamed {
 			composedViews.end(), preservedViews.begin(), preservedViews.end()
 		);
 
-		Vec2 sceneTargetSize = Vec2(
+		auto sceneTargetSize = Vec2(
 			std::max(1.0f, mViewportPanelWidth),
 			std::max(1.0f, mViewportPanelHeight)
 		);
@@ -489,7 +450,7 @@ namespace Unnamed {
 		}
 
 		composedViews.emplace_back(
-			buildSceneView(
+			BuildSceneView(
 				kViewScenePerspective,
 				sceneTargetSize.x,
 				sceneTargetSize.y,
@@ -558,6 +519,57 @@ namespace Unnamed {
 
 	EDITOR_PRESENT_MODE LevelEditorTool::GetPresentMode() const {
 		return mPresentMode;
+	}
+
+	void LevelEditorTool::SyncPresentationState() {
+		if (mPresentMode != EDITOR_PRESENT_MODE::FULLSCREEN_SWAP_CHAIN) {
+			return;
+		}
+
+		const auto input = mInputSystem;
+		if (!input) {
+			return;
+		}
+
+		Vec2 clientExtent = ResolveMainWindowClientExtent(mWindowManager);
+		if (clientExtent.x <= 0.0f || clientExtent.y <= 0.0f) {
+			clientExtent = Vec2(
+				std::max(1.0f, mViewportPanelWidth),
+				std::max(1.0f, mViewportPanelHeight)
+			);
+		}
+
+		const Render::SceneViewRenderMode sceneRequest =
+			BuildSceneViewModeForSize(
+				clientExtent.x,
+				clientExtent.y,
+				true
+			);
+		const Vec2 runtimeViewportSize = ResolveSceneRenderExtentForInput(
+			sceneRequest
+		);
+
+		mViewportPanelWidth  = runtimeViewportSize.x;
+		mViewportPanelHeight = runtimeViewportSize.y;
+		mLastViewportSize    = runtimeViewportSize;
+
+		mEditorWorld.SetEditorCameraLookEnabled(input->IsHeld("ed_look"));
+		input->SetMouseClientViewportRect(Vec2::zero, runtimeViewportSize);
+
+		if (const Window* window = mWindowManager.FindWindowById(
+			mWindowManager.GetMainWindowId()
+		)) {
+			input->SetMouseCursorLockClientPosition(
+				window->GetHwnd(),
+				{
+					runtimeViewportSize.x * 0.5f,
+					runtimeViewportSize.y * 0.5f
+				}
+			);
+		} else {
+			input->ClearMouseCursorLockAnchor();
+		}
+		mViewportLookActive = false;
 	}
 
 	bool LevelEditorTool::IsPlaying() const {
@@ -749,7 +761,7 @@ namespace Unnamed {
 		return const_cast<Scene*>(scene)->FindEntity(mSelectedEntityId);
 	}
 
-	bool LevelEditorTool::SaveSceneAs(const std::string& path) {
+	bool LevelEditorTool::SaveSceneAs(const std::string& path) const {
 		const Scene* scene = mEditorWorld.GetEditableScene();
 		if (!scene) {
 			return false;

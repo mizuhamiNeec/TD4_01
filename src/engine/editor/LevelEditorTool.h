@@ -64,39 +64,41 @@ namespace Unnamed {
 		void Tick(const EditorToolFrameContext& frameContext) override;
 		void BuildUi(const EditorToolFrameContext& frameContext) override;
 		void CollectRenderViews(Render::RenderFrameInputs& inputs) override;
-		void EnumerateViewKeys(std::vector<std::string>& outViewKeys) const override;
+		void EnumerateViewKeys(
+			std::vector<std::string>& outViewKeys
+		) const override;
 		void SetViewOutput(
-			std::string_view viewKey,
+			std::string_view               viewKey,
 			const Render::SceneOutputView& output,
-			Vec2 size
+			Vec2                           size
 		) override;
 		[[nodiscard]] std::string_view GetToolId() const override;
 		[[nodiscard]] std::string_view GetDisplayName() const override;
-		[[nodiscard]] World* GetRuntimeWorld() override;
-		[[nodiscard]] bool IsOpen() const override;
-		void SetOpen(bool open) override;
+		[[nodiscard]] World*           GetRuntimeWorld() override;
+		[[nodiscard]] bool             IsOpen() const override;
+		void                           SetOpen(bool open) override;
 
 		void                              TogglePresentMode();
 		[[nodiscard]] EDITOR_PRESENT_MODE GetPresentMode() const;
 		/// @brief PresentModeに応じた入力ビューポート状態を同期します。
-		void SyncPresentationState();
-		[[nodiscard]] bool                IsPlaying() const;
-		void                              StartPlayInEditor() const;
-		void                              StopPlayInEditor() const;
-		[[nodiscard]] bool                IsProfilerWindowOpen() const;
-		void                              SetProfilerWindowOpen(bool open);
+		void               SyncPresentationState();
+		[[nodiscard]] bool IsPlaying() const;
+		void               StartPlayInEditor() const;
+		void               StopPlayInEditor() const;
+		[[nodiscard]] bool IsProfilerWindowOpen() const;
+		void               SetProfilerWindowOpen(bool open);
 
 		static constexpr std::string_view kViewScenePerspective =
 			"tool.level.scene.perspective";
 
 	private:
 		struct ViewOutputCache {
-			D3D12_CPU_DESCRIPTOR_HANDLE srvCpu = {};
-			uint64_t srvRevision = 0;
-			uint32_t textureId = 0;
-			Vec2 size = Vec2::zero;
-			Vec2 uvMin = Vec2(0.0f, 0.0f);
-			Vec2 uvMax = Vec2(1.0f, 1.0f);
+			D3D12_CPU_DESCRIPTOR_HANDLE srvCpu      = {};
+			uint64_t                    srvRevision = 0;
+			uint32_t                    textureId   = 0;
+			Vec2                        size        = Vec2::zero;
+			Vec2                        uvMin       = Vec2(0.0f, 0.0f);
+			Vec2                        uvMax       = Vec2(1.0f, 1.0f);
 		};
 
 		static void LoadImGuizmoSettings(ConsoleSystem* console);
@@ -104,9 +106,9 @@ namespace Unnamed {
 		[[nodiscard]] Render::SceneViewRenderMode BuildSceneViewModeForSize(
 			float width,
 			float height,
-			bool forceFit = false
+			bool  forceFit = false
 		) const;
-		[[nodiscard]] Scene* GetOutlinerScene();
+		[[nodiscard]] Scene*       GetOutlinerScene();
 		[[nodiscard]] const Scene* GetOutlinerScene() const;
 
 		void DrawMainMenu();
@@ -116,11 +118,11 @@ namespace Unnamed {
 		void DrawViewport(float deltaTime);
 		void DrawViewportTopBar();
 		void DrawViewportGizmo(
-			std::string_view viewKey,
+			std::string_view                   viewKey,
 			const Render::SceneViewRenderMode& sceneViewMode,
-			const Vec2& imagePos,
-			float drawWidth,
-			float drawHeight
+			const Vec2&                        imagePos,
+			float                              drawWidth,
+			float                              drawHeight
 		);
 		void DrawViewportOverlay(float deltaTime) const;
 
@@ -131,7 +133,7 @@ namespace Unnamed {
 		void DrawProfilerWindow();
 
 		[[nodiscard]] Entity* GetSelectedEntity() const;
-		bool SaveSceneAs(const std::string& path);
+		bool                  SaveSceneAs(const std::string& path) const;
 
 		/// @brief 指定パスのシーンをエディターワールドへロードします。
 		/// @param path ロードするシーンパス
@@ -143,16 +145,16 @@ namespace Unnamed {
 		) const;
 
 		std::unique_ptr<EditorWorld> mOwnedEditorWorld;
-		EditorWorld& mEditorWorld;
-		WindowManager& mWindowManager;
-		ImGuiLayer& mImGuiLayer;
-		ConsoleSystem* mConsoleSystem = nullptr;
-		InputSystem*   mInputSystem = nullptr;
+		EditorWorld&                 mEditorWorld;
+		WindowManager&               mWindowManager;
+		ImGuiLayer&                  mImGuiLayer;
+		ConsoleSystem*               mConsoleSystem = nullptr;
+		InputSystem*                 mInputSystem   = nullptr;
 
 		EntityId mSelectedEntityId = 0;
-		bool mOpen = true;
-		bool mInitialized = false;
-		bool mDockInitialized = false;
+		bool     mOpen             = true;
+		bool     mInitialized      = false;
+		bool     mDockInitialized  = false;
 
 		EDITOR_PRESENT_MODE mPresentMode = EDITOR_PRESENT_MODE::VIEWPORT_PANEL;
 		EDITOR_VIEWPORT_RENDER_MODE mViewportRenderMode =
@@ -170,14 +172,14 @@ namespace Unnamed {
 
 		std::unique_ptr<EditorNotification> mNotification;
 
-		float mGridSnap = 64.0f;
+		float                 mGridSnap = 64.0f;
 		EDITOR_GRID_SNAP_UNIT mGridSnapUnit = EDITOR_GRID_SNAP_UNIT::METER;
-		float mAngleSnapDegree = 15.0f;
-		float mCameraSpeedPopupTimer = 0.0f;
-		bool mShowProfilerWindow = false;
-		bool mViewportLookActive = false;
+		float                 mAngleSnapDegree = 15.0f;
+		float                 mCameraSpeedPopupTimer = 0.0f;
+		bool                  mShowProfilerWindow = false;
+		bool                  mViewportLookActive = false;
 
-		EditorContentBrowser::BrowserViewState mContentBrowserState = {};
+		EditorContentBrowser::BrowserViewState    mContentBrowserState = {};
 		std::unique_ptr<SequenceEditorController> mSequenceEditorController;
 		std::unique_ptr<SequenceTimelinePanel>    mSequenceTimelinePanel;
 		std::unique_ptr<SequenceCurvePanel>       mSequenceCurvePanel;

@@ -58,8 +58,8 @@ theme:
 
 nav:
   - ホーム: 
-      -index.md
-    - はじめに:
+      - index.md
+  - はじめに:
       - gettingstarted.md
       - system-requirements.md
       - setup.md

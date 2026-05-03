@@ -174,9 +174,10 @@ namespace Unnamed {
 
 			if (mShowAbout) {
 				ImGuiWidgets::ShowAboutWindow(
-				"Unnamed Console", std::string(ENGINE_VERSION), kIconTerminal,
-				 mShowAbout
-					);
+					"Unnamed Console", std::string(ENGINE_VERSION),
+					kIconTerminal,
+					mShowAbout
+				);
 			}
 		}
 

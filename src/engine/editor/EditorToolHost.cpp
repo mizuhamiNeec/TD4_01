@@ -4,17 +4,17 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
+#include <core/string/StrUtil.h>
 #include "EditorGuiScriptPanel.h"
 #include "GuiEditorTool.h"
 
-#include "core/string/StrUtil.h"
-
+#include "engine/editor/EditorNotification.h"
 #include "engine/game/IGameModule.h"
 #include "engine/ImGui/Icons.h"
 #include "engine/ImGui/ImGuiWidgets.h"
 #include "engine/render/RenderModule.h"
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
-#include "engine/unnamed/subsystem/EditorLuaSystem/EditorLuaSystem.h"
+#include "engine/unnamed/subsystem/editorluasystem/EditorLuaSystem.h"
 
 namespace Unnamed {
 	static constexpr std::string_view kChannel = "EdTlHost";
@@ -50,11 +50,9 @@ namespace Unnamed {
 		RegisterTool(std::make_unique<GuiEditorTool>(mImGuiLayer));
 	}
 
-	EditorToolHost::~EditorToolHost() {
-		Shutdown();
-	}
+	EditorToolHost::~EditorToolHost() { Shutdown(); }
 
-	void EditorToolHost::Initialize() const {
+	void EditorToolHost::Initialize() {
 		const EditorToolServices services = {
 			.windowManager    = &mWindowManager,
 			.renderModule     = &mRenderModule,
@@ -67,9 +65,7 @@ namespace Unnamed {
 			.profiler         = mProfiler,
 		};
 		for (auto& tool : mOwnedTools) {
-			if (!tool) {
-				continue;
-			}
+			if (!tool) { continue; }
 			tool->Initialize(services);
 		}
 
@@ -84,13 +80,13 @@ namespace Unnamed {
 				"./content/core/editorgui/test.edgui.lua"
 			);
 		}
+
+		mNotification = std::make_unique<EditorNotification>();
 	}
 
 	void EditorToolHost::Shutdown() {
 		for (auto& tool : mOwnedTools) {
-			if (!tool) {
-				continue;
-			}
+			if (!tool) { continue; }
 			tool->Shutdown();
 		}
 		mMainDockInitialized = false;
@@ -98,9 +94,7 @@ namespace Unnamed {
 
 	void EditorToolHost::BeginUI() const {
 		for (auto& tool : mOwnedTools) {
-			if (!tool || !tool->IsOpen()) {
-				continue;
-			}
+			if (!tool || !tool->IsOpen()) { continue; }
 			tool->BeginUI();
 		}
 	}
@@ -109,20 +103,18 @@ namespace Unnamed {
 		const EditorToolFrameContext& frameContext
 	) const {
 		for (auto& tool : mOwnedTools) {
-			if (!tool || !tool->IsOpen()) {
-				continue;
-			}
+			if (!tool || !tool->IsOpen()) { continue; }
 			tool->Tick(frameContext);
 		}
 	}
 
 	void EditorToolHost::BuildUi(const EditorToolFrameContext& frameContext) {
-		constexpr float  kFramePadding = 12.0f; // メニューバーを高くする
-		constexpr ImVec4 kLogoColor    = ImVec4(0.13f, 0.5f, 1.0f, 1.0f);
+		constexpr float framePadding = 12.0f; // メニューバーを高くする
+		constexpr auto  logoColor    = ImVec4(0.13f, 0.5f, 1.0f, 1.0f);
 
 		// FramePadding
 		ImGui::PushStyleVar(
-			ImGuiStyleVar_FramePadding, ImVec2(kFramePadding, kFramePadding)
+			ImGuiStyleVar_FramePadding, ImVec2(framePadding, framePadding)
 		);
 
 		if (ImGui::BeginMainMenuBar()) {
@@ -138,7 +130,7 @@ namespace Unnamed {
 			{
 				// Text
 				ImGui::PushStyleColor(
-					ImGuiCol_Text, kLogoColor
+					ImGuiCol_Text, logoColor
 				);
 
 				// 前後にスペースを入れてアイコンをテキストとして表示
@@ -151,21 +143,15 @@ namespace Unnamed {
 						ImGuiWidgets::MenuItemWithIcon(
 							"About Unnamed", kIconInfo
 						)
-					) {
-						// TODO: Aboutウィンドウを表示
-					}
+					) { mShowAbout = true; }
 					ImGui::EndMenu();
-				} else {
-					ImGui::PopStyleColor();
-				}
+				} else { ImGui::PopStyleColor(); }
 			}
 
 			// File メニュー
 			if (ImGuiWidgets::BeginMainMenu("File")) {
 				if (ImGuiWidgets::MenuItemWithIcon("Exit", kIconPower)) {
-					if (mConsole) {
-						mConsole->ExecuteCommand("quit");
-					}
+					if (mConsole) { mConsole->ExecuteCommand("quit"); }
 				}
 				ImGui::EndMenu();
 			}
@@ -184,9 +170,7 @@ namespace Unnamed {
 			{
 				if (ImGuiWidgets::BeginMainMenu("Window")) {
 					for (const auto& tool : mOwnedTools) {
-						if (!tool) {
-							continue;
-						}
+						if (!tool) { continue; }
 						const bool open = tool->IsOpen();
 						if (
 							ImGui::MenuItem(
@@ -194,9 +178,7 @@ namespace Unnamed {
 								nullptr,
 								open
 							)
-						) {
-							tool->SetOpen(!open);
-						}
+						) { tool->SetOpen(!open); }
 					}
 
 					if (mLevelTool) {
@@ -207,9 +189,7 @@ namespace Unnamed {
 							kIconAvgTime,
 							nullptr,
 							profilerOpen
-						)) {
-							mLevelTool->SetProfilerWindowOpen(!profilerOpen);
-						}
+						)) { mLevelTool->SetProfilerWindowOpen(!profilerOpen); }
 					}
 
 					ImGui::EndMenu();
@@ -238,9 +218,7 @@ namespace Unnamed {
 						nullptr,
 						{available.y, available.y},
 						3.0f
-					)) {
-						mLevelTool->StartPlayInEditor();
-					}
+					)) { mLevelTool->StartPlayInEditor(); }
 					ImGui::PopStyleColor();
 				} else {
 					ImGui::PushStyleColor(ImGuiCol_Text, stopColor);
@@ -249,9 +227,7 @@ namespace Unnamed {
 						nullptr,
 						{available.y, available.y},
 						3.0f
-					)) {
-						mLevelTool->StopPlayInEditor();
-					}
+					)) { mLevelTool->StopPlayInEditor(); }
 					ImGui::PopStyleColor();
 				}
 			}
@@ -327,13 +303,22 @@ namespace Unnamed {
 		}
 
 		for (auto& tool : mOwnedTools) {
-			if (!tool || !tool->IsOpen()) {
-				continue;
-			}
+			if (!tool || !tool->IsOpen()) { continue; }
 			tool->BuildUi(frameContext);
 		}
 
+		if (mShowAbout) {
+			ImGuiWidgets::ShowAboutWindow(
+				"Unnamed Engine",
+				std::string(ENGINE_VERSION),
+				kIconArrowBack,
+				mShowAbout
+			);
+		}
+
 		mEditorGuiScriptPanel->Draw();
+
+		mNotification->Update(frameContext.deltaTime);
 
 		ImGui::ShowDemoWindow();
 	}
@@ -342,18 +327,14 @@ namespace Unnamed {
 		Render::RenderFrameInputs& inputs
 	) const {
 		for (auto& tool : mOwnedTools) {
-			if (!tool || !tool->IsOpen()) {
-				continue;
-			}
+			if (!tool || !tool->IsOpen()) { continue; }
 			tool->CollectRenderViews(inputs);
 		}
 	}
 
 	void EditorToolHost::SyncViewOutputs() const {
 		for (auto& tool : mOwnedTools) {
-			if (!tool || !tool->IsOpen()) {
-				continue;
-			}
+			if (!tool || !tool->IsOpen()) { continue; }
 
 			std::vector<std::string> viewKeys;
 			tool->EnumerateViewKeys(viewKeys);
@@ -368,9 +349,7 @@ namespace Unnamed {
 	}
 
 	void EditorToolHost::SyncPresentationState() const {
-		if (!mLevelTool) {
-			return;
-		}
+		if (!mLevelTool) { return; }
 		mLevelTool->SyncPresentationState();
 	}
 
@@ -379,23 +358,17 @@ namespace Unnamed {
 	}
 
 	void EditorToolHost::TogglePresentMode() const {
-		if (!mLevelTool) {
-			return;
-		}
+		if (!mLevelTool) { return; }
 		mLevelTool->TogglePresentMode();
 	}
 
 	EDITOR_PRESENT_MODE EditorToolHost::GetPresentMode() const {
-		if (!mLevelTool) {
-			return EDITOR_PRESENT_MODE::VIEWPORT_PANEL;
-		}
+		if (!mLevelTool) { return EDITOR_PRESENT_MODE::VIEWPORT_PANEL; }
 		return mLevelTool->GetPresentMode();
 	}
 
 	void EditorToolHost::RegisterTool(std::unique_ptr<IEditorTool> tool) {
-		if (!tool) {
-			return;
-		}
+		if (!tool) { return; }
 
 		if (auto* levelTool = dynamic_cast<LevelEditorTool*>(tool.get())) {
 			mLevelTool = levelTool;

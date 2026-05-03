@@ -258,8 +258,6 @@ namespace Unnamed {
 		std::string,
 		TextureAssetData&&,
 		const std::vector<AssetID>&
-
-	
 	);
 
 	template
@@ -268,8 +266,6 @@ namespace Unnamed {
 		std::string,
 		SequenceAssetData&&,
 		const std::vector<AssetID>&
-
-	
 	);
 
 	void AssetManager::AddRef(const AssetID id) {

@@ -6,6 +6,8 @@
 #include <format>
 #include <imgui.h>
 
+#include <engine/unnamed/subsystem/console/ConsoleSystem.h>
+
 #include "core/string/StrUtil.h"
 
 #include "engine/ImGui/Icons.h"
@@ -37,10 +39,12 @@ namespace Unnamed {
 			const float safePanelWidth = std::max(1.0f, panelSize.x);
 			const float safePanelHeight = std::max(1.0f, panelSize.y);
 			const float safeContentWidth = std::max(1.0f, contentLogicalSize.x);
-			const float safeContentHeight = std::max(1.0f, contentLogicalSize.y);
+			const float safeContentHeight = std::max(
+				1.0f, contentLogicalSize.y
+			);
 
-			ViewportFitResult result = {};
-			result.aspectRatio = safeContentWidth / safeContentHeight;
+			ViewportFitResult result;
+			result.aspectRatio       = safeContentWidth / safeContentHeight;
 
 			float fitWidth  = safePanelWidth;
 			float fitHeight = fitWidth / result.aspectRatio;
@@ -49,11 +53,11 @@ namespace Unnamed {
 				fitWidth  = fitHeight * result.aspectRatio;
 			}
 
-			fitWidth  = std::max(1.0f, fitWidth);
-			fitHeight = std::max(1.0f, fitHeight);
+			fitWidth               = std::max(1.0f, fitWidth);
+			fitHeight              = std::max(1.0f, fitHeight);
 			const float fitOffsetX = (safePanelWidth - fitWidth) * 0.5f;
 			const float fitOffsetY = (safePanelHeight - fitHeight) * 0.5f;
-			result.drawPos = Vec2(
+			result.drawPos         = Vec2(
 				panelScreenPos.x + fitOffsetX, panelScreenPos.y + fitOffsetY
 			);
 			result.drawSize = Vec2(fitWidth, fitHeight);
@@ -91,8 +95,8 @@ namespace Unnamed {
 			const auto   outputIt   = mViewOutputs.find(std::string(viewKey));
 			const bool   hasOutput  = outputIt != mViewOutputs.end();
 			const Vec2   outputSize = hasOutput ?
-				                        outputIt->second.size :
-				                        Vec2(drawWidth, drawHeight);
+				                          outputIt->second.size :
+				                          Vec2(drawWidth, drawHeight);
 			const ViewportFitResult fit = ComputeViewportFitResult(
 				Vec2(panePos.x, panePos.y),
 				Vec2(drawWidth, drawHeight),
@@ -237,9 +241,9 @@ namespace Unnamed {
 				toolbarHeight * 2.75f,
 				toolbarHeight
 			);
-			
+
 			constexpr float iconScale = 1.0f;
-			
+
 			if (
 				ImGuiWidgets::IconButton(
 					kIconVertex,
@@ -249,11 +253,8 @@ namespace Unnamed {
 					ImGuiDir_Right
 				)
 			) {
-				mNotification->PushNotification(
-					"未実装",
-					"頂点選択はまだ実装されていません。",
-					NOTIFY_TYPE::WARNING,
-					10.0f
+				mConsoleSystem->ExecuteCommand(
+					"notify warn 10 未実装 | 頂点選択はまだ実装されていません。"
 				);
 			}
 			ImGui::SameLine();
@@ -270,7 +271,8 @@ namespace Unnamed {
 			);
 			ImGui::SameLine();
 			ImGuiWidgets::IconButton(
-				kIconObject, "Object", toolbarIconSize, iconScale, ImGuiDir_Right
+				kIconObject, "Object", toolbarIconSize, iconScale,
+				ImGuiDir_Right
 			);
 			ImGui::SameLine();
 			ImGuiWidgets::IconButton(
@@ -280,7 +282,7 @@ namespace Unnamed {
 
 		ImGui::SameLine();
 		{
-			const char* viewportModeLabel = "Fit";
+			auto viewportModeLabel = "Fit";
 			switch (mViewportRenderMode) {
 				case EDITOR_VIEWPORT_RENDER_MODE::FIT_VIEWPORT
 				: viewportModeLabel = "Fit";
@@ -364,7 +366,7 @@ namespace Unnamed {
 
 				ImGui::SetNextItemWidth(180.0f);
 				if (ImGui::BeginCombo("Binding", currentKindLabel)) {
-					const auto selectableKind = [&](
+					const auto SelectableKind = [&](
 						const char*                     label,
 						const ViewportCameraBindingKind kind
 					) {
@@ -382,15 +384,15 @@ namespace Unnamed {
 						}
 					};
 
-					selectableKind(
+					SelectableKind(
 						"EditorPerspective",
 						ViewportCameraBindingKind::EditorPerspective
 					);
-					selectableKind(
+					SelectableKind(
 						"ActiveGameCamera",
 						ViewportCameraBindingKind::ActiveGameCamera
 					);
-					selectableKind(
+					SelectableKind(
 						"CameraEntity",
 						ViewportCameraBindingKind::CameraEntity
 					);

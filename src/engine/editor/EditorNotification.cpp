@@ -69,7 +69,7 @@ namespace Unnamed {
 			ImVec2 childSize               = ImVec2(0.0f, 0.0f);
 		};
 
-		float CalcLineHeight(ImFont* font, float size) {
+		float CalcLineHeight(ImFont* font, const float size) {
 			if (!font) {
 				return size;
 			}
@@ -85,13 +85,13 @@ namespace Unnamed {
 			handle = TweenHandle();
 		}
 
-		ImU32 ApplyAlpha(ImU32 color, const float alpha) {
+		ImU32 ApplyAlpha(const ImU32 color, const float alpha) {
 			ImVec4 colorVec = ImGui::ColorConvertU32ToFloat4(color);
 			colorVec.w      *= std::clamp(alpha, 0.0f, 0.9f);
 			return ImGui::ColorConvertFloat4ToU32(colorVec);
 		}
 
-		uint32_t GetNotificationIcon(NOTIFY_TYPE type) {
+		uint32_t GetNotificationIcon(const NOTIFY_TYPE type) {
 			switch (type) {
 				case NOTIFY_TYPE::INFO: return kIconInfo;
 				case NOTIFY_TYPE::WARNING: return kIconWarning;
@@ -101,7 +101,7 @@ namespace Unnamed {
 			return kIconQuestionMark;
 		}
 
-		ImU32 GetNotificationIconColor(NOTIFY_TYPE type) {
+		ImU32 GetNotificationIconColor(const NOTIFY_TYPE type) {
 			switch (type) {
 				case NOTIFY_TYPE::INFO: return ImGui::ColorConvertFloat4ToU32(
 						ImVec4(0.21f, 0.45f, 0.94f, 1.0f)
@@ -120,7 +120,7 @@ namespace Unnamed {
 			return ImGui::GetColorU32(ImGuiCol_Text);
 		}
 
-		std::optional<NOTIFY_TYPE> TryParseNotifyType(std::string_view value) {
+		std::optional<NOTIFY_TYPE> TryParseNotifyType(const std::string_view value) {
 			const std::string lower = StrUtil::ToLowerCase(std::string(value));
 			if (lower == "info" || lower == "i") {
 				return NOTIFY_TYPE::INFO;
@@ -138,8 +138,8 @@ namespace Unnamed {
 		}
 
 		std::string JoinArgs(
-			const std::vector<std::string>& args, size_t beginIndex,
-			size_t                          endIndex
+			const std::vector<std::string>& args, const size_t beginIndex,
+			const size_t                          endIndex
 		) {
 			if (beginIndex >= endIndex || beginIndex >= args.size()) {
 				return {};

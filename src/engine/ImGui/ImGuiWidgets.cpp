@@ -70,13 +70,13 @@ namespace ImGuiWidgets {
 		const float rounding   = ImGui::GetStyle().FrameRounding;
 		const float dragWidth  = setWidth - rectWidth; // 各 DragFloat の幅
 
-		static constexpr std::array rectColors = {
+		static constexpr std::array kRectColors = {
 			IM_COL32(50, 43, 43, 255),
 			IM_COL32(43, 45, 39, 255),
 			IM_COL32(45, 48, 51, 255)
 		};
 
-		static constexpr std::array textColors = {
+		static constexpr std::array kTextColors = {
 			IM_COL32(226, 110, 110, 255),
 			IM_COL32(168, 204, 96, 255),
 			IM_COL32(132, 181, 230, 255)
@@ -114,7 +114,7 @@ namespace ImGuiWidgets {
 				ImGui::GetWindowDrawList()->AddRectFilled(
 					rectPos,
 					rectMax,
-					rectColors[i],
+					kRectColors[i],
 					rounding,
 					ImDrawFlags_RoundCornersLeft
 				);
@@ -143,7 +143,7 @@ namespace ImGuiWidgets {
 						rectPos.y + (rectHeight - iconSize.y) * 0.5f
 					);
 					ImGui::GetWindowDrawList()->AddText(
-						iconPos, textColors[i], iconResetStr.c_str()
+						iconPos, kTextColors[i], iconResetStr.c_str()
 					);
 				} else {
 					// 通常時は軸ラベルを表示
@@ -153,7 +153,7 @@ namespace ImGuiWidgets {
 						rectPos.y + (rectHeight - labelSize.y) * 0.5f
 					);
 					ImGui::GetWindowDrawList()->AddText(
-						labelPos, textColors[i], axisLabels[i]
+						labelPos, kTextColors[i], axisLabels[i]
 					);
 				}
 
@@ -269,7 +269,7 @@ namespace ImGuiWidgets {
 		const ImGuiIO& io       = ImGui::GetIO();
 		const ImVec2   mousePos = io.MousePos;
 
-		auto distance = [](const ImVec2& a, const ImVec2& b) -> float {
+		auto Distance = [](const ImVec2& a, const ImVec2& b) -> float {
 			const float dx = a.x - b.x;
 			const float dy = a.y - b.y;
 			return sqrtf(dx * dx + dy * dy);
@@ -277,9 +277,9 @@ namespace ImGuiWidgets {
 
 		// マウスクリック判定：クリック時、各コントロールポイントの円領域内ならドラッグ開始
 		if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(0)) {
-			if (distance(mousePos, cp1) <= handleRadius * 1.5f) {
+			if (Distance(mousePos, cp1) <= handleRadius * 1.5f) {
 				bIsDraggingCp1 = true;
-			} else if (distance(mousePos, cp2) <= handleRadius * 1.5f) {
+			} else if (Distance(mousePos, cp2) <= handleRadius * 1.5f) {
 				bIsDraggingCp2 = true;
 			}
 		}
@@ -289,16 +289,17 @@ namespace ImGuiWidgets {
 		}
 
 		// ドラッグ中なら、マウス位置に応じてコントロールポイントを更新（キャンバス座標を[0,1]に変換）
-		auto clamp = [
-			](const float v, const float lo, const float hi) -> float {
+		auto Clamp = [](
+			const float v, const float lo, const float hi
+		) -> float {
 			return v < lo ? lo : v > hi ? hi : v;
 		};
 		if (bIsDraggingCp1) {
-			const float nx = clamp(
+			const float nx = Clamp(
 				(mousePos.x - canvasPos.x) / canvasSize.x,
 				0.0f, 1.0f
 			);
-			const float ny = clamp(
+			const float ny = Clamp(
 				(mousePos.y - canvasPos.y) / canvasSize.y,
 				0.0f, 1.0f
 			);
@@ -307,22 +308,17 @@ namespace ImGuiWidgets {
 			controlPoints[1] = 1.0f - ny;
 		}
 		if (bIsDraggingCp2) {
-			const float nx = clamp(
+			const float nx = Clamp(
 				(mousePos.x - canvasPos.x) / canvasSize.x,
 				0.0f, 1.0f
 			);
-			const float ny = clamp(
+			const float ny = Clamp(
 				(mousePos.y - canvasPos.y) / canvasSize.y,
 				0.0f, 1.0f
 			);
 			controlPoints[2] = nx;
 			controlPoints[3] = 1.0f - ny;
 		}
-
-		p0 = controlPoints[0];
-		p1 = controlPoints[1];
-		p2 = controlPoints[2];
-		p3 = controlPoints[3];
 
 		return bIsDraggingCp1 || bIsDraggingCp2;
 	}
@@ -586,128 +582,129 @@ namespace ImGuiWidgets {
 		const ImGuiStyle& style = g.Style;
 
 		// Submit label or explicit size to ItemSize(), whereas ItemAdd() will submit a larger/spanning rectangle.
-		const ImGuiID id         = window->GetID(label);
-		const ImVec2  label_size = ImGui::CalcTextSize(label, NULL, true);
+		const ImGuiID id        = window->GetID(label);
+		const ImVec2  labelSize = ImGui::CalcTextSize(label, NULL, true);
 		ImVec2        size(
-			sizeArg.x != 0.0f ? sizeArg.x : label_size.x,
-			sizeArg.y != 0.0f ? sizeArg.y : label_size.y
+			sizeArg.x != 0.0f ? sizeArg.x : labelSize.x,
+			sizeArg.y != 0.0f ? sizeArg.y : labelSize.y
 		);
 		ImVec2 pos = window->DC.CursorPos;
 		pos.y      += window->DC.CurrLineTextBaseOffset;
 		ImGui::ItemSize(size, 0.0f);
 
-		const bool span_all_columns =
+		const bool spanAllColumns =
 			(flags & ImGuiSelectableFlags_SpanAllColumns) != 0;
-		const float min_x = span_all_columns ?
-			                    window->ParentWorkRect.Min.x :
-			                    pos.x;
-		const float max_x = span_all_columns ?
-			                    window->ParentWorkRect.Max.x :
-			                    window->WorkRect.Max.x;
+		const float minX = spanAllColumns ?
+			                   window->ParentWorkRect.Min.x :
+			                   pos.x;
+		const float maxX = spanAllColumns ?
+			                   window->ParentWorkRect.Max.x :
+			                   window->WorkRect.Max.x;
 		if (sizeArg.x == 0.0f || flags & ImGuiSelectableFlags_SpanAvailWidth) {
 			size.x = ImMax(
-				label_size.x, max_x - min_x
+				labelSize.x, maxX - minX
 			);
 		}
 
-		ImRect bb(min_x, pos.y, min_x + size.x, pos.y + size.y);
+		ImRect bb(minX, pos.y, minX + size.x, pos.y + size.y);
 		if ((flags & ImGuiSelectableFlags_NoPadWithHalfSpacing) == 0) {
-			const float spacing_x = span_all_columns ?
-				                        0.0f :
-				                        style.ItemSpacing.x;
-			const float spacing_y = style.ItemSpacing.y;
-			const float spacing_L = IM_TRUNC(spacing_x * 0.50f);
-			const float spacing_U = IM_TRUNC(spacing_y * 0.50f);
-			bb.Min.x              -= spacing_L;
-			bb.Min.y              -= spacing_U;
-			bb.Max.x              += spacing_x - spacing_L;
-			bb.Max.y              += spacing_y - spacing_U;
+			const float spacingX = spanAllColumns ?
+				                       0.0f :
+				                       style.ItemSpacing.x;
+			const float spacingY = style.ItemSpacing.y;
+			const float spacingL = IM_TRUNC(spacingX * 0.50f);
+			const float spacingU = IM_TRUNC(spacingY * 0.50f);
+			bb.Min.x             -= spacingL;
+			bb.Min.y             -= spacingU;
+			bb.Max.x             += spacingX - spacingL;
+			bb.Max.y             += spacingY - spacingU;
 		}
 
-		const bool disabled_item = (flags & ImGuiSelectableFlags_Disabled) != 0;
-		const ImGuiItemFlags extra_item_flags = disabled_item ?
-			                                        static_cast<ImGuiItemFlags>(
-				                                        ImGuiItemFlags_Disabled) :
-			                                        ImGuiItemFlags_None;
-		bool is_visible;
-		if (span_all_columns) {
-			const float backup_clip_rect_min_x = window->ClipRect.Min.x;
-			const float backup_clip_rect_max_x = window->ClipRect.Max.x;
+		const bool disabledItem = (flags & ImGuiSelectableFlags_Disabled) != 0;
+		const ImGuiItemFlags extraItemFlags = disabledItem ?
+			                                      static_cast<ImGuiItemFlags>(
+				                                      ImGuiItemFlags_Disabled) :
+			                                      ImGuiItemFlags_None;
+		bool isVisible;
+		if (spanAllColumns) {
+			const float backupClipRectMinX = window->ClipRect.Min.x;
+			const float backupClipRectMaxX = window->ClipRect.Max.x;
 			window->ClipRect.Min.x = window->ParentWorkRect.Min.x;
 			window->ClipRect.Max.x = window->ParentWorkRect.Max.x;
-			is_visible = ImGui::ItemAdd(bb, id, NULL, extra_item_flags);
-			window->ClipRect.Min.x = backup_clip_rect_min_x;
-			window->ClipRect.Max.x = backup_clip_rect_max_x;
+			isVisible = ImGui::ItemAdd(bb, id, NULL, extraItemFlags);
+			window->ClipRect.Min.x = backupClipRectMinX;
+			window->ClipRect.Max.x = backupClipRectMaxX;
 		} else {
-			is_visible = ImGui::ItemAdd(bb, id, NULL, extra_item_flags);
+			isVisible = ImGui::ItemAdd(bb, id, NULL, extraItemFlags);
 		}
 
-		const bool is_multi_select =
+		const bool isMultiSelect =
 			(g.LastItemData.ItemFlags & ImGuiItemFlags_IsMultiSelect) != 0;
-		if (!is_visible) {
-			if (!is_multi_select || !g.BoxSelectState.UnclipMode || !g.
+		if (!isVisible) {
+			if (!isMultiSelect || !g.BoxSelectState.UnclipMode || !g.
 			    BoxSelectState.UnclipRect.Overlaps(bb)) {
 				return false;
 			}
 		}
 
-		const bool disabled_global =
+		const bool disabledGlobal =
 			(g.CurrentItemFlags & ImGuiItemFlags_Disabled) != 0;
-		if (disabled_item && !disabled_global) {
+		if (disabledItem && !disabledGlobal) {
 			ImGui::BeginDisabled();
 		}
 
-		if (span_all_columns) {
+		if (spanAllColumns) {
 			if (g.CurrentTable) {
 				ImGui::TablePushBackgroundChannel();
-			} else if (window->DC.CurrentColumns) {
+			} else if
+			(window->DC.CurrentColumns) {
 				ImGui::PushColumnsBackground();
 			}
 			g.LastItemData.StatusFlags |= ImGuiItemStatusFlags_HasClipRect;
 			g.LastItemData.ClipRect    = window->ClipRect;
 		}
 
-		ImGuiButtonFlags button_flags = 0;
+		ImGuiButtonFlags buttonFlags = 0;
 		if (flags & ImGuiSelectableFlags_NoHoldingActiveID) {
-			button_flags |= ImGuiButtonFlags_NoHoldingActiveId;
+			buttonFlags |= ImGuiButtonFlags_NoHoldingActiveId;
 		}
 		if (flags & ImGuiSelectableFlags_NoSetKeyOwner) {
-			button_flags |= ImGuiButtonFlags_NoSetKeyOwner;
+			buttonFlags |= ImGuiButtonFlags_NoSetKeyOwner;
 		}
 		if (flags & ImGuiSelectableFlags_SelectOnClick) {
-			button_flags |= ImGuiButtonFlags_PressedOnClick;
+			buttonFlags |= ImGuiButtonFlags_PressedOnClick;
 		}
 		if (flags & ImGuiSelectableFlags_SelectOnRelease) {
-			button_flags |= ImGuiButtonFlags_PressedOnRelease;
+			buttonFlags |= ImGuiButtonFlags_PressedOnRelease;
 		}
 		if (flags & ImGuiSelectableFlags_AllowDoubleClick) {
-			button_flags |= ImGuiButtonFlags_PressedOnClickRelease |
+			buttonFlags |= ImGuiButtonFlags_PressedOnClickRelease |
 				ImGuiButtonFlags_PressedOnDoubleClick;
 		}
 		if (flags & ImGuiSelectableFlags_AllowOverlap || g.LastItemData.
 		    ItemFlags & ImGuiItemFlags_AllowOverlap) {
-			button_flags |= ImGuiButtonFlags_AllowOverlap;
+			buttonFlags |= ImGuiButtonFlags_AllowOverlap;
 		}
 
-		const bool was_selected = selected;
-		if (is_multi_select) {
-			ImGui::MultiSelectItemHeader(id, &selected, &button_flags);
+		const bool wasSelected = selected;
+		if (isMultiSelect) {
+			ImGui::MultiSelectItemHeader(id, &selected, &buttonFlags);
 		}
 
 		bool hovered, held;
 		bool pressed = ImGui::ButtonBehavior(
-			bb, id, &hovered, &held, button_flags
+			bb, id, &hovered, &held, buttonFlags
 		);
-		bool auto_selected = false;
+		bool autoSelected = false;
 
-		if (is_multi_select) {
+		if (isMultiSelect) {
 			ImGui::MultiSelectItemFooter(id, &selected, &pressed);
 		} else {
 			if (flags & ImGuiSelectableFlags_SelectOnNav && g.NavJustMovedToId
 			    != 0 && g.NavJustMovedToFocusScopeId == g.CurrentFocusScopeId) {
 				if (g.NavJustMovedToId == id && (
 					    g.NavJustMovedToKeyMods & ImGuiMod_Ctrl) == 0) {
-					selected = pressed = auto_selected = true;
+					selected = pressed = autoSelected = true;
 				}
 			}
 		}
@@ -730,12 +727,12 @@ namespace ImGuiWidgets {
 		}
 
 		if (selected !=
-		    was_selected) {
+		    wasSelected) {
 			g.LastItemData.StatusFlags |=
 				ImGuiItemStatusFlags_ToggledSelection;
 		}
 
-		if (is_visible) {
+		if (isVisible) {
 			const bool highlighted =
 				hovered || flags & ImGuiSelectableFlags_Highlight;
 			if (highlighted || selected) {
@@ -749,42 +746,43 @@ namespace ImGuiWidgets {
 				ImGui::RenderFrame(bb.Min, bb.Max, col, false, rounding);
 			}
 			if (g.NavId == id) {
-				ImGuiNavRenderCursorFlags nav_render_cursor_flags =
+				ImGuiNavRenderCursorFlags navRenderCursorFlags =
 					ImGuiNavRenderCursorFlags_Compact |
 					ImGuiNavRenderCursorFlags_NoRounding;
-				if (is_multi_select) {
-					nav_render_cursor_flags |=
+				if (isMultiSelect) {
+					navRenderCursorFlags |=
 						ImGuiNavRenderCursorFlags_AlwaysDraw;
 				}
-				ImGui::RenderNavCursor(bb, id, nav_render_cursor_flags);
+				ImGui::RenderNavCursor(bb, id, navRenderCursorFlags);
 			}
 		}
 
-		if (span_all_columns) {
+		if (spanAllColumns) {
 			if (g.CurrentTable) {
 				ImGui::TablePopBackgroundChannel();
-			} else if (window->DC.CurrentColumns) {
+			} else if
+			(window->DC.CurrentColumns) {
 				ImGui::PopColumnsBackground();
 			}
 		}
 
-		if (is_visible) {
+		if (isVisible) {
 			ImGui::RenderTextClipped(
 				pos, ImVec2(
 					ImMin(pos.x + size.x, window->WorkRect.Max.x),
 					pos.y + size.y
-				), label, NULL, &label_size, style.SelectableTextAlign, &bb
+				), label, NULL, &labelSize, style.SelectableTextAlign, &bb
 			);
 		}
 
-		if (pressed && !auto_selected && window->Flags & ImGuiWindowFlags_Popup
+		if (pressed && !autoSelected && window->Flags & ImGuiWindowFlags_Popup
 		    && !(
 			    flags & ImGuiSelectableFlags_NoAutoClosePopups) && g.
 		    LastItemData.ItemFlags & ImGuiItemFlags_AutoClosePopups) {
 			ImGui::CloseCurrentPopup();
 		}
 
-		if (disabled_item && !disabled_global) {
+		if (disabledItem && !disabledGlobal) {
 			ImGui::EndDisabled();
 		}
 
@@ -827,39 +825,39 @@ namespace ImGuiWidgets {
 		ImGuiContext& g = *GImGui;
 		const ImGuiStyle& style = g.Style;
 		const ImGuiID id = window->GetID(label);
-		bool menu_is_open = ImGui::IsPopupOpen(id, ImGuiPopupFlags_None);
+		bool menuIsOpen = ImGui::IsPopupOpen(id, ImGuiPopupFlags_None);
 
-		ImGuiWindowFlags window_flags =
+		ImGuiWindowFlags windowFlags =
 			ImGuiWindowFlags_ChildMenu | ImGuiWindowFlags_AlwaysAutoResize |
 			ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar |
 			ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoNavFocus;
 		if (window->Flags &
 		    ImGuiWindowFlags_ChildMenu) {
-			window_flags |= ImGuiWindowFlags_ChildWindow;
+			windowFlags |= ImGuiWindowFlags_ChildWindow;
 		}
 
 		if (g.MenusIdSubmittedThisFrame.contains(id)) {
-			if (menu_is_open) {
-				menu_is_open =
-					ImGui::BeginPopupMenuEx(id, label, window_flags);
+			if (menuIsOpen) {
+				menuIsOpen =
+					ImGui::BeginPopupMenuEx(id, label, windowFlags);
 			} else {
 				g.NextWindowData.ClearFlags();
 			}
-			return menu_is_open;
+			return menuIsOpen;
 		}
 
 		g.MenusIdSubmittedThisFrame.push_back(id);
 
-		ImVec2 label_size = ImGui::CalcTextSize(label, NULL, true);
+		ImVec2 labelSize = ImGui::CalcTextSize(label, NULL, true);
 
-		const bool menuset_is_open = IsRootOfOpenMenuSet();
-		if (menuset_is_open) {
+		const bool menusetIsOpen = IsRootOfOpenMenuSet();
+		if (menusetIsOpen) {
 			ImGui::PushItemFlag(
 				ImGuiItemFlags_NoWindowHoverableCheck, true
 			);
 		}
 
-		ImVec2 popup_pos;
+		ImVec2 popupPos;
 		ImVec2 pos = window->DC.CursorPos;
 		ImGui::PushID(label);
 		if (!enabled) {
@@ -868,7 +866,7 @@ namespace ImGuiWidgets {
 		const ImGuiMenuColumns* offsets = &window->DC.MenuColumns;
 		bool                    pressed;
 
-		const ImGuiSelectableFlags selectable_flags =
+		constexpr ImGuiSelectableFlags selectableFlags =
 			ImGuiSelectableFlags_NoHoldingActiveID |
 			ImGuiSelectableFlags_NoSetKeyOwner |
 			ImGuiSelectableFlags_SelectOnClick |
@@ -878,62 +876,62 @@ namespace ImGuiWidgets {
 			ImGui::PushStyleVarX(
 				ImGuiStyleVar_ItemSpacing, style.ItemSpacing.x * 2.0f
 			);
-			float  w = label_size.x;
-			ImVec2 text_pos(
+			float  w = labelSize.x;
+			ImVec2 textPos(
 				window->DC.CursorPos.x + offsets->OffsetLabel,
 				pos.y + window->DC.CurrLineTextBaseOffset
 			);
 			pressed = SelectableWithRounding(
-				"", menu_is_open, selectable_flags, ImVec2(w, label_size.y),
+				"", menuIsOpen, selectableFlags, ImVec2(w, labelSize.y),
 				rounding
 			);
 			ImGui::LogSetNextTextDecoration("[", "]");
-			ImGui::RenderText(text_pos, label);
+			ImGui::RenderText(textPos, label);
 			ImGui::PopStyleVar();
 			window->DC.CursorPos.x +=
 				IM_TRUNC(style.ItemSpacing.x * (-1.0f + 0.5f));
-			popup_pos = ImVec2(
+			popupPos = ImVec2(
 				pos.x - 1.0f - IM_TRUNC(style.ItemSpacing.x * 0.5f),
-				text_pos.y - style.FramePadding.y + window->MenuBarHeight
+				textPos.y - style.FramePadding.y + window->MenuBarHeight
 			);
 		} else {
-			float icon_w = (icon && icon[0]) ?
-				               ImGui::CalcTextSize(icon, NULL).x :
-				               0.0f;
-			float checkmark_w = IM_TRUNC(g.FontSize * 1.20f);
-			float min_w       = window->DC.MenuColumns.DeclColumns(
-				icon_w, label_size.x, 0.0f, checkmark_w
+			float iconW = (icon && icon[0]) ?
+				              ImGui::CalcTextSize(icon, NULL).x :
+				              0.0f;
+			float checkmarkW = IM_TRUNC(g.FontSize * 1.20f);
+			float minW       = window->DC.MenuColumns.DeclColumns(
+				iconW, labelSize.x, 0.0f, checkmarkW
 			);
-			float extra_w = ImMax(
-				0.0f, ImGui::GetContentRegionAvail().x - min_w
+			float extraW = ImMax(
+				0.0f, ImGui::GetContentRegionAvail().x - minW
 			);
-			ImVec2 text_pos(
+			ImVec2 textPos(
 				window->DC.CursorPos.x,
 				pos.y + window->DC.CurrLineTextBaseOffset
 			);
 			pressed = SelectableWithRounding(
-				"", menu_is_open,
-				selectable_flags | ImGuiSelectableFlags_SpanAvailWidth,
-				ImVec2(min_w, label_size.y),
+				"", menuIsOpen,
+				selectableFlags | ImGuiSelectableFlags_SpanAvailWidth,
+				ImVec2(minW, labelSize.y),
 				rounding
 			);
 			ImGui::LogSetNextTextDecoration("", ">");
 			ImGui::RenderText(
-				ImVec2(text_pos.x + offsets->OffsetLabel, text_pos.y), label
+				ImVec2(offsets->OffsetLabel + textPos.x, textPos.y), label
 			);
-			if (icon_w > 0.0f) {
+			if (iconW > 0.0f) {
 				ImGui::RenderText(
-					ImVec2(text_pos.x + offsets->OffsetIcon, text_pos.y), icon
+					ImVec2(offsets->OffsetIcon + textPos.x, textPos.y), icon
 				);
 			}
 			ImGui::RenderArrow(
 				window->DrawList,
 				ImVec2(
-					text_pos.x + offsets->OffsetMark + extra_w + g.FontSize *
-					0.30f, text_pos.y
+					offsets->OffsetMark + textPos.x + extraW + g.FontSize *
+					0.30f, textPos.y
 				), ImGui::GetColorU32(ImGuiCol_Text), ImGuiDir_Right
 			);
-			popup_pos = ImVec2(pos.x, text_pos.y - style.WindowPadding.y);
+			popupPos = ImVec2(pos.x, textPos.y - style.WindowPadding.y);
 		}
 		if (!enabled) {
 			ImGui::EndDisabled();
@@ -941,92 +939,94 @@ namespace ImGuiWidgets {
 
 		const bool hovered = (g.HoveredId == id) && enabled && !g.
 		                     NavHighlightItemUnderNav;
-		if (menuset_is_open) {
+		if (menusetIsOpen) {
 			ImGui::PopItemFlag();
 		}
 
-		bool want_open          = false;
-		bool want_open_nav_init = false;
-		bool want_close         = false;
+		bool wantOpen        = false;
+		bool wantOpenNavInit = false;
+		bool wantClose       = false;
 		if (window->DC.LayoutType == ImGuiLayoutType_Vertical) {
-			bool            moving_toward_child_menu = false;
-			ImGuiPopupData* child_popup              =
+			bool            movingTowardChildMenu = false;
+			ImGuiPopupData* childPopup            =
 				(g.BeginPopupStack.Size < g.OpenPopupStack.Size) ?
 					&g.OpenPopupStack[g.BeginPopupStack.Size] :
 					NULL; // Popup candidate (testing below)
-			ImGuiWindow* child_menu_window =
-			(child_popup && child_popup->Window && child_popup->Window->
+			ImGuiWindow* childMenuWindow =
+			(childPopup && childPopup->Window && childPopup->Window->
 			 ParentWindow == window) ?
-				child_popup->Window :
+				childPopup->Window :
 				NULL;
-			if (g.HoveredWindow == window && child_menu_window != NULL) {
-				const float ref_unit  = g.FontSize; // FIXME-DPI
-				const float child_dir =
-					(window->Pos.x < child_menu_window->Pos.x) ? 1.0f : -1.0f;
-				const ImRect next_window_rect = child_menu_window->Rect();
-				ImVec2       ta = (g.IO.MousePos - g.IO.MouseDelta);
-				ImVec2       tb = (child_dir > 0.0f) ?
-					                  next_window_rect.GetTL() :
-					                  next_window_rect.GetTR();
-				ImVec2 tc = (child_dir > 0.0f) ?
-					            next_window_rect.GetBL() :
-					            next_window_rect.GetBR();
-				const float pad_farmost_h = ImClamp(
-					ImFabs(ta.x - tb.x) * 0.30f, ref_unit * 0.5f,
-					ref_unit * 2.5f
+			if (g.HoveredWindow == window && childMenuWindow != NULL) {
+				const float refUnit  = g.FontSize; // FIXME-DPI
+				const float childDir =
+					(window->Pos.x < childMenuWindow->Pos.x) ? 1.0f : -1.0f;
+				const ImRect nextWindowRect = childMenuWindow->Rect();
+				ImVec2       ta             = (g.IO.MousePos - g.IO.MouseDelta);
+				ImVec2       tb             = (childDir > 0.0f) ?
+					                              nextWindowRect.GetTL() :
+					                              nextWindowRect.GetTR();
+				ImVec2 tc = (childDir > 0.0f) ?
+					            nextWindowRect.GetBL() :
+					            nextWindowRect.GetBR();
+				const float padFarmostH = ImClamp(
+					ImFabs(ta.x - tb.x) * 0.30f, refUnit * 0.5f,
+					refUnit * 2.5f
 				);
-				ta.x += child_dir * -0.5f;
-				tb.x += child_dir * ref_unit;
-				tc.x += child_dir * ref_unit;
+				ta.x += childDir * -0.5f;
+				tb.x += childDir * refUnit;
+				tc.x += childDir * refUnit;
 				tb.y = ta.y + ImMax(
-					       (tb.y - pad_farmost_h) - ta.y, -ref_unit * 8.0f
+					       (tb.y - padFarmostH) - ta.y, -refUnit * 8.0f
 				       );
 				tc.y = ta.y + ImMin(
-					       (tc.y + pad_farmost_h) - ta.y, +ref_unit * 8.0f
+					       (tc.y + padFarmostH) - ta.y, +refUnit * 8.0f
 				       );
-				moving_toward_child_menu = ImTriangleContainsPoint(
+				movingTowardChildMenu = ImTriangleContainsPoint(
 					ta, tb, tc, g.IO.MousePos
 				);
 			}
 
-			if (menu_is_open && !hovered && g.HoveredWindow == window && !
-			    moving_toward_child_menu && !g.NavHighlightItemUnderNav && g.
+			if (menuIsOpen && !hovered && g.HoveredWindow == window && !
+			    movingTowardChildMenu && !g.NavHighlightItemUnderNav && g.
 			    ActiveId == 0) {
-				want_close = true;
+				wantClose = true;
 			}
 
-			if (!menu_is_open && pressed) {
-				want_open = true;
-			} else if (!menu_is_open && hovered && !
-			           moving_toward_child_menu) {
-				want_open = true;
-			} else if (!menu_is_open && hovered && g.HoveredIdTimer >= 0.30f &&
-			           g.
-			           MouseStationaryTimer >= 0.30f) {
-				want_open = true;
+			if (!menuIsOpen && pressed) {
+				wantOpen = true;
+			} else if (
+				!menuIsOpen && hovered && !
+				movingTowardChildMenu) {
+				wantOpen = true;
+			} else if (
+				!menuIsOpen && hovered && g.HoveredIdTimer >= 0.30f &&
+				g.
+				MouseStationaryTimer >= 0.30f) {
+				wantOpen = true;
 			}
 			if (g.NavId == id && g.NavMoveDir == ImGuiDir_Right) {
-				want_open = want_open_nav_init = true;
+				wantOpen = wantOpenNavInit = true;
 				ImGui::NavMoveRequestCancel();
 				ImGui::SetNavCursorVisibleAfterMove();
 			}
 		} else {
-			if (menu_is_open && pressed && menuset_is_open) {
-				want_close = true;
-				want_open  = menu_is_open = false;
+			if (menuIsOpen && pressed && menusetIsOpen) {
+				wantClose = true;
+				wantOpen  = menuIsOpen = false;
 			} else if (pressed || (
-				           hovered && menuset_is_open && !menu_is_open)) {
-				want_open = true;
+				           hovered && menusetIsOpen && !menuIsOpen)) {
+				wantOpen = true;
 			} else if (g.NavId == id && g.NavMoveDir == ImGuiDir_Down) {
-				want_open = true;
+				wantOpen = true;
 				ImGui::NavMoveRequestCancel();
 			}
 		}
 
 		if (!enabled) {
-			want_close = true;
+			wantClose = true;
 		}
-		if (want_close &&
+		if (wantClose &&
 		    ImGui::IsPopupOpen(id, ImGuiPopupFlags_None)) {
 			ImGui::ClosePopupToLevel(
 				g.BeginPopupStack.Size, true
@@ -1040,31 +1040,32 @@ namespace ImGuiWidgets {
 		);
 		ImGui::PopID();
 
-		if (want_open && !menu_is_open && g.OpenPopupStack.Size > g.
+		if (wantOpen && !menuIsOpen && g.OpenPopupStack.Size > g.
 		    BeginPopupStack.Size) {
 			ImGui::OpenPopup(label);
-		} else if (want_open) {
-			menu_is_open = true;
+		} else if (
+			wantOpen) {
+			menuIsOpen = true;
 			ImGui::OpenPopup(label, ImGuiPopupFlags_NoReopen);
 		}
 
-		if (menu_is_open) {
-			ImGuiLastItemData last_item_in_parent = g.LastItemData;
-			ImGui::SetNextWindowPos(popup_pos, ImGuiCond_Always);
+		if (menuIsOpen) {
+			ImGuiLastItemData lastItemInParent = g.LastItemData;
+			ImGui::SetNextWindowPos(popupPos, ImGuiCond_Always);
 			ImGui::PushStyleVar(
 				ImGuiStyleVar_ChildRounding, style.PopupRounding
 			);
-			menu_is_open = ImGui::BeginPopupMenuEx(id, label, window_flags);
+			menuIsOpen = ImGui::BeginPopupMenuEx(id, label, windowFlags);
 			ImGui::PopStyleVar();
-			if (menu_is_open) {
-				if (want_open && want_open_nav_init && !g.NavInitRequest) {
+			if (menuIsOpen) {
+				if (wantOpen && wantOpenNavInit && !g.NavInitRequest) {
 					ImGui::FocusWindow(
 						g.CurrentWindow, ImGuiFocusRequestFlags_UnlessBelowModal
 					);
 					ImGui::NavInitWindow(g.CurrentWindow, false);
 				}
 
-				g.LastItemData = last_item_in_parent;
+				g.LastItemData = lastItemInParent;
 				if (g.HoveredWindow ==
 				    window) {
 					g.LastItemData.StatusFlags |=
@@ -1075,7 +1076,7 @@ namespace ImGuiWidgets {
 			g.NextWindowData.ClearFlags();
 		}
 
-		return menu_is_open;
+		return menuIsOpen;
 	}
 
 	/// @brief ImVec2同士の加算演算子
@@ -1119,8 +1120,8 @@ namespace ImGuiWidgets {
 		if (window->DC.LayoutType == ImGuiLayoutType_Horizontal) {
 			const float w          = labelSize.x;
 			window->DC.CursorPos.x += IM_TRUNC(style.ItemSpacing.x * 0.5f);
-			const ImVec2 text_pos(
-				offsets->OffsetLabel + window->DC.CursorPos.x,
+			const ImVec2 textPos(
+				window->DC.CursorPos.x + offsets->OffsetLabel,
 				window->DC.CursorPos.y + window->DC.CurrLineTextBaseOffset
 			);
 			ImGui::PushStyleVarX(
@@ -1133,7 +1134,7 @@ namespace ImGuiWidgets {
 			ImGui::PopStyleVar();
 			if (g.LastItemData.StatusFlags &
 			    ImGuiItemStatusFlags_Visible) {
-				ImGui::RenderText(text_pos, label);
+				ImGui::RenderText(textPos, label);
 			}
 			window->DC.CursorPos.x +=
 				IM_TRUNC(style.ItemSpacing.x * (-1.0f + 0.5f));
@@ -1177,7 +1178,7 @@ namespace ImGuiWidgets {
 					ImGui::LogSetNextTextDecoration("(", ")");
 					ImGui::RenderText(
 						textPos + ImVec2(
-							stretchW + offsets->OffsetShortcut, 0.0f
+							offsets->OffsetShortcut + stretchW, 0.0f
 						), shortcut, NULL, false
 					);
 					ImGui::PopStyleColor();
@@ -1186,7 +1187,7 @@ namespace ImGuiWidgets {
 					ImGui::RenderCheckMark(
 						window->DrawList,
 						textPos + ImVec2(
-							stretchW + offsets->OffsetMark + g.FontSize *
+							offsets->OffsetMark + stretchW + g.FontSize *
 							0.40f,
 							g.FontSize * 0.134f * 0.5f
 						), ImGui::GetColorU32(ImGuiCol_Text),
@@ -1231,11 +1232,112 @@ namespace ImGuiWidgets {
 		ImGui::Dummy(size);
 	}
 
+	void ShowAboutWindow(
+		std::string systemName, std::string version, uint32_t logo, bool& bShow
+	) {
+		const std::string text = "About " + systemName;
+
+		ImGui::OpenPopup(text.c_str());
+
+		const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+		ImGui::SetNextWindowPos(
+			center, 1, ImVec2(0.5f, 0.5f)
+		);
+
+		constexpr ImVec2 windowSize = {280.0f, 230.0f};
+		ImGui::SetNextWindowSize(windowSize, ImGuiCond_FirstUseEver);
+
+		constexpr ImGuiWindowFlags flags =
+			ImGuiWindowFlags_NoResize |
+			ImGuiWindowFlags_NoMove |
+			ImGuiWindowFlags_NoCollapse |
+			ImGuiWindowFlags_NoSavedSettings;
+
+		const bool bOpen = ImGui::BeginPopupModal(
+			text.c_str(), &bShow, flags
+		);
+
+		if (bOpen) {
+			ImDrawList* dl   = ImGui::GetWindowDrawList();
+			ImFont*     font = ImGui::GetFont();
+
+			constexpr float iconSize  = 70.0f;
+			constexpr float titleSize = 24.0f;
+			constexpr float margin    = 8.0f;
+
+			// アイコンを描画
+			dl->AddText(
+				font, iconSize, ImGui::GetCursorScreenPos(),
+				ImGui::GetColorU32(ImGuiCol_Text),
+				Unnamed::StrUtil::ConvertToUtf8(logo).c_str()
+			);
+
+			// アイコン分だけ右にカーソルを移動
+			ImGui::SetCursorPosX(iconSize + margin);
+
+			// タイトルを描画
+			dl->AddText(
+				font, titleSize, ImGui::GetCursorScreenPos(),
+				ImGui::GetColorU32(ImGuiCol_Text),
+				systemName.c_str()
+			);
+
+			ImGui::Dummy({iconSize + margin, titleSize});
+
+			auto Doublespacing = [&] {
+				for (int i = 0; i < 2; ++i) {
+					ImGui::Spacing();
+				}
+				ImGui::SetCursorPosX(iconSize + margin);
+			};
+
+			Doublespacing();
+
+			ImGui::Text("Version: %s", version.c_str());
+
+			Doublespacing();
+
+			ImGui::Text(
+				"Build: %s %s", std::string(__DATE__).c_str(),
+				std::string(__TIME__).c_str()
+			);
+
+			Doublespacing();
+
+			ImGui::Text("ImGui Version: %s", ImGui::GetVersion());
+
+			Doublespacing();
+
+			// ボタンサイズとウィンドウサイズを取得
+			constexpr auto buttonSize     = ImVec2(74.0f, 24.0f);
+			const ImVec2   clientSize     = ImGui::GetWindowSize(); // サイズ
+			const ImVec2   cursorStartPos = ImGui::GetCursorPos();  // 現在のカーソル位置
+
+			// ボタンを中央に配置
+			const float buttonPosX = (clientSize.x - buttonSize.x) * 0.5f;
+			// 中央揃えのX座標
+
+			const float buttonPosY =
+				cursorStartPos.y +
+				ImGui::GetContentRegionAvail().y -
+				buttonSize.y; // 下端からの位置調整
+
+			ImGui::SetCursorPos(ImVec2(buttonPosX, buttonPosY));
+
+			if (ImGui::Button("Close", buttonSize)) {
+				bShow = false;
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::EndPopup();
+		}
+	}
+
 	bool AssetPathPicker(
-		const char*   label,
-		std::string&  path,
-		AssetTypeMask acceptedMask,
-		const char*   helpText
+		const char*         label,
+		std::string&        path,
+		const AssetTypeMask acceptedMask,
+		const char*         helpText
 	) {
 		return Unnamed::EditorContentBrowser::DrawAssetPathPicker(
 			label,

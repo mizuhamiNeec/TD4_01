@@ -41,7 +41,7 @@ namespace Unnamed {
 		);
 		~EditorToolHost();
 
-		void Initialize() const;
+		void Initialize();
 		void Shutdown();
 		void BeginUI() const;
 		void Tick(const EditorToolFrameContext& frameContext) const;
@@ -73,8 +73,11 @@ namespace Unnamed {
 		LevelEditorTool*                          mLevelTool = nullptr;
 		bool                                      mMainDockInitialized = false;
 
+		std::unique_ptr<class EditorNotification>   mNotification;
 		std::unique_ptr<class EditorLuaSystem>      mEditorLuaSystem;
 		std::unique_ptr<class EditorGuiScriptPanel> mEditorGuiScriptPanel;
+
+		bool mShowAbout = false;
 	};
 }
 

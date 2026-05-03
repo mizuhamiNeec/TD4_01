@@ -245,9 +245,12 @@ namespace Unnamed {
 					ImGui::TextUnformatted("ヘルプを表示します。");
 					ImGui::EndTooltip();
 				}
-				if (ImGuiWidgets::MenuItemWithIcon(
-					"About", kIconInfo, nullptr, mShowAbout
-				)) {
+
+				if (
+					ImGuiWidgets::MenuItemWithIcon(
+						"About", kIconInfo, nullptr, mShowAbout
+					)
+				) {
 					mShowAbout = true;
 				}
 

@@ -245,6 +245,7 @@ namespace Unnamed {
 				)) {
 					mShowAbout = true;
 				}
+
 				if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) {
 					ImGui::BeginTooltip();
 					ImGui::TextUnformatted("コンソールUIについて。");
@@ -371,7 +372,7 @@ namespace Unnamed {
 			constexpr float iconSize  = 70.0f;
 			constexpr float titleSize = 24.0f;
 			constexpr float margin    = 8.0f;
-			
+
 			// アイコンを描画
 			dl->AddText(
 				font, iconSize, ImGui::GetCursorScreenPos(),

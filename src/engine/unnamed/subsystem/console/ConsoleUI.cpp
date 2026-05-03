@@ -1,22 +1,22 @@
 #ifdef _DEBUG
+#include <algorithm>
+#include <cctype>
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <pch.h>
-#include <algorithm>
-#include <cctype>
 #include <string>
 #include <unordered_set>
+#include <utility>
 
 #include <core/math/Vec4.h>
+#include <core/string/StrUtil.h>
 
+#include <engine/Properties.h>
 #include <engine/ImGui/Icons.h>
 #include <engine/ImGui/ImGuiWidgets.h>
 #include <engine/unnamed/subsystem/console/ConsoleUI.h>
 #include <engine/unnamed/subsystem/console/ConVarHelper.h>
 #include <engine/unnamed/subsystem/console/concommand/ConCommand.h>
-
-#include "core/string/StrUtil.h"
-#include "engine/Properties.h"
 
 namespace Unnamed {
 	static constexpr uint32_t kHistoryBufferSize = 64;
@@ -79,11 +79,10 @@ namespace Unnamed {
 	static constexpr int kMaxSuggestionDisplayCount = 8;
 
 	namespace {
-		std::string ToLowerAscii(std::string_view text) {
+		std::string ToLowerAscii(const std::string_view text) {
 			std::string lowered(text);
-			std::transform(
-				lowered.begin(),
-				lowered.end(),
+			std::ranges::transform(
+				lowered,
 				lowered.begin(),
 				[](const unsigned char c) {
 					return static_cast<char>(std::tolower(c));
@@ -93,7 +92,7 @@ namespace Unnamed {
 		}
 
 		size_t FindFirstCaseInsensitive(
-			std::string_view text, std::string_view query
+			const std::string_view text, const std::string_view query
 		) {
 			if (query.empty() || text.empty()) {
 				return std::string::npos;
@@ -103,7 +102,7 @@ namespace Unnamed {
 			return loweredText.find(loweredQuery);
 		}
 
-		int CountDisplayLines(std::string_view text) {
+		int CountDisplayLines(const std::string_view text) {
 			int count = 1;
 			for (const char c : text) {
 				if (c == '\n') {
@@ -323,8 +322,8 @@ namespace Unnamed {
 			inputActive &&
 			!suggestionState.items.empty() &&
 			suggestionState.selectedIndex >= 0 &&
-			suggestionState.selectedIndex < static_cast<int>(
-				suggestionState.items.size()
+			std::cmp_less(
+				suggestionState.selectedIndex, suggestionState.items.size()
 			);
 
 		if (enterPressed) {
@@ -348,95 +347,6 @@ namespace Unnamed {
 
 		if (ImGui::Button(kSubmitButtonText)) {
 			Submit();
-		}
-	}
-
-	void ConsoleUI::ShowAbout() {
-		const std::string text =
-			"About " + std::string(ENGINE_NAME) + " Console";
-		ImGui::OpenPopup(text.c_str());
-
-		const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-		ImGui::SetNextWindowPos(
-			center, 1, ImVec2(0.5f, 0.5f)
-		);
-
-		constexpr ImVec2 windowSize = {280.0f, 230.0f};
-		ImGui::SetNextWindowSize(windowSize, ImGuiCond_FirstUseEver);
-
-		constexpr ImGuiWindowFlags flags =
-			ImGuiWindowFlags_NoResize |
-			ImGuiWindowFlags_NoMove |
-			ImGuiWindowFlags_NoCollapse |
-			ImGuiWindowFlags_NoSavedSettings;
-
-		const bool bOpen = ImGui::BeginPopupModal(
-			text.c_str(), &mShowAbout, flags
-		);
-
-		if (bOpen) {
-			ImDrawList*     dl        = ImGui::GetWindowDrawList();
-			ImFont*         font      = ImGui::GetFont();
-			constexpr float iconSize  = 70.0f;
-			constexpr float titleSize = 24.0f;
-			constexpr float margin    = 8.0f;
-
-			// アイコンを描画
-			dl->AddText(
-				font, iconSize, ImGui::GetCursorScreenPos(),
-				ImGui::GetColorU32(ImGuiCol_Text),
-				StrUtil::ConvertToUtf8(kIconTerminal).c_str()
-			);
-
-			// アイコン分だけ右にカーソルを移動
-			ImGui::SetCursorPosX(iconSize + margin);
-
-			// タイトルを描画
-			dl->AddText(
-				font, titleSize, ImGui::GetCursorScreenPos(),
-				ImGui::GetColorU32(ImGuiCol_Text),
-				"Unnamed Console"
-			);
-
-			ImGui::Dummy({iconSize + margin, titleSize});
-
-			// ただ2回スペース空けてカーソルを移動する関数
-			auto doublespacing = [&] {
-				for (int i = 0; i < 2; ++i) {
-					ImGui::Spacing();
-				}
-				ImGui::SetCursorPosX(iconSize + margin);
-			};
-
-			doublespacing();
-			ImGui::Text("Version: %s", std::string(ENGINE_VERSION).c_str());
-			doublespacing();
-			ImGui::Text(
-				"Build: %s %s", std::string(__DATE__).c_str(),
-				std::string(__TIME__).c_str()
-			);
-			doublespacing();
-			ImGui::Text("ImGui Version: %s", ImGui::GetVersion());
-			doublespacing();
-			// ボタンサイズとウィンドウサイズを取得
-			constexpr auto buttonSize     = ImVec2(74.0f, 24.0f);
-			const ImVec2   clientSize     = ImGui::GetWindowSize(); // サイズ
-			const ImVec2   cursorStartPos = ImGui::GetCursorPos();  // 現在のカーソル位置
-			// ボタンを中央に配置
-			const float buttonPosX =
-				(clientSize.x - buttonSize.x) * 0.5f; // 中央揃えのX座標
-			const float buttonPosY =
-				cursorStartPos.y +
-				ImGui::GetContentRegionAvail().y -
-				buttonSize.y; // 下端からの位置調整
-			ImGui::SetCursorPos(ImVec2(buttonPosX, buttonPosY));
-
-			if (ImGui::Button("Close", buttonSize)) {
-				mShowAbout = false;
-				ImGui::CloseCurrentPopup();
-			}
-
-			ImGui::EndPopup();
 		}
 	}
 
@@ -464,7 +374,7 @@ namespace Unnamed {
 				ImGui::TextDisabled(
 					"File: %s", buffer.location.file_name()
 				);
-				ImGui::TextDisabled("Line: %d", buffer.location.line());
+				ImGui::TextDisabled("Line: %u", buffer.location.line());
 
 				if (ImGuiWidgets::MenuItemWithIcon(
 					"Open Source File",
@@ -472,8 +382,8 @@ namespace Unnamed {
 				)) {
 					OpenSourceFile(
 						buffer.location.file_name(),
-						buffer.location.line(),
-						buffer.location.column()
+						static_cast<int>(buffer.location.line()),
+						static_cast<int>(buffer.location.column())
 					);
 				}
 				ImGui::Separator();
@@ -607,7 +517,7 @@ namespace Unnamed {
 
 	void ConsoleUI::OpenSourceFile(
 		const std::string& file, int line, int column
-	) const {
+	) {
 		const std::string command = std::format(
 			"--line {} --column {} {}",
 			line,
@@ -624,12 +534,12 @@ namespace Unnamed {
 		);
 	}
 
-	void ConsoleUI::UpdateSuggestions(const std::string_view input) {
+	void ConsoleUI::UpdateSuggestions(const std::string_view input) const {
 		auto&       state = gConsoleUIData.suggestion;
 		std::string prevSelectedName;
 		if (
 			state.selectedIndex >= 0 &&
-			state.selectedIndex < static_cast<int>(state.items.size())
+			std::cmp_less(state.selectedIndex, state.items.size())
 		) {
 			prevSelectedName = state.items[static_cast<size_t>(state.
 					selectedIndex)].
@@ -650,7 +560,7 @@ namespace Unnamed {
 		}
 		if (!ctx.token.empty()) {
 			const std::string lowerToken             = ToLowerAscii(ctx.token);
-			auto              isCaseInsensitiveExact = [&](
+			auto              IsCaseInsensitiveExact = [&](
 				const std::vector<std::string>& names
 			) {
 				return std::ranges::any_of(
@@ -661,13 +571,11 @@ namespace Unnamed {
 				);
 			};
 
-			constexpr size_t exactCheckCount = static_cast<size_t>(
-				kMaxSuggestionDisplayCount * 2
-			);
-			const bool hasExactVar = isCaseInsensitiveExact(
+			constexpr size_t exactCheckCount = kMaxSuggestionDisplayCount * 2;
+			const bool       hasExactVar     = IsCaseInsensitiveExact(
 				mConsoleSystem->FindSimilarConVars(ctx.token, exactCheckCount)
 			);
-			const bool hasExactCmd = isCaseInsensitiveExact(
+			const bool hasExactCmd = IsCaseInsensitiveExact(
 				mConsoleSystem->FindSimilarConCommands(
 					ctx.token, exactCheckCount
 				)
@@ -732,13 +640,14 @@ namespace Unnamed {
 			return;
 		}
 
-		const float  rowHeight = ImGui::GetFrameHeight();
-		const float  popupH    = rowHeight * itemCount + kPopupPadding * 2.0f;
-		const ImVec2 popupPos  = ImVec2(
+		const float rowHeight = ImGui::GetFrameHeight();
+		const float popupH    =
+			rowHeight * static_cast<float>(itemCount) + kPopupPadding * 2.0f;
+		const auto popupPos = ImVec2(
 			inputLeftTop.x,
 			inputLeftTop.y - popupH - kPopupPadding
 		);
-		const ImVec2 popupSize = ImVec2(std::max(inputWidth, 200.0f), popupH);
+		const auto popupSize = ImVec2(std::max(inputWidth, 200.0f), popupH);
 
 		ImGui::SetNextWindowPos(popupPos);
 		ImGui::SetNextWindowSize(popupSize);
@@ -853,7 +762,7 @@ namespace Unnamed {
 					const ImVec2 secondarySize = ImGui::CalcTextSize(
 						item.secondaryText.c_str()
 					);
-					const ImVec2 secondaryPos = ImVec2(
+					const auto secondaryPos = ImVec2(
 						rowMax.x - ImGui::GetStyle().FramePadding.x -
 						secondarySize.x,
 						textY
@@ -1026,7 +935,7 @@ namespace Unnamed {
 			kMaxSuggestionDisplayCount * 2
 		);
 
-		auto appendUnique = [&](
+		auto AppendUnique = [&](
 			const std::string& name,
 			const bool         isConVar
 		) {
@@ -1062,49 +971,49 @@ namespace Unnamed {
 		const auto commandCandidates =
 			mConsoleSystem->FindSimilarConCommands(token, fetchCount);
 
-		auto isExactMatch = [&](const std::string& name) {
+		auto IsExactMatch = [&](const std::string& name) {
 			return !tokenText.empty() && ToLowerAscii(name) == lowerToken;
 		};
-		auto isPrefixMatch = [&](const std::string& name) {
+		auto IsPrefixMatch = [&](const std::string& name) {
 			return !tokenText.empty() &&
 			       ToLowerAscii(name).starts_with(lowerToken);
 		};
 
 		const bool hasExactVar = std::ranges::any_of(
-			varCandidates, isExactMatch
+			varCandidates, IsExactMatch
 		);
 		const bool hasExactCmd = std::ranges::any_of(
-			commandCandidates, isExactMatch
+			commandCandidates, IsExactMatch
 		);
 		const bool hasExact = hasExactVar || hasExactCmd;
 
 		const bool hasPrefixVar = std::ranges::any_of(
 			varCandidates,
-			isPrefixMatch
+			IsPrefixMatch
 		);
 		const bool hasPrefixCmd = std::ranges::any_of(
 			commandCandidates,
-			isPrefixMatch
+			IsPrefixMatch
 		);
 		const bool hasPrefix = hasPrefixVar || hasPrefixCmd;
 
-		auto appendFiltered = [&](
+		auto AppendFiltered = [&](
 			const std::vector<std::string>& names,
 			const bool                      isConVar
 		) {
 			for (const auto& name : names) {
-				if (hasExact && !isExactMatch(name)) {
+				if (hasExact && !IsExactMatch(name)) {
 					continue;
 				}
-				if (!hasExact && hasPrefix && !isPrefixMatch(name)) {
+				if (!hasExact && hasPrefix && !IsPrefixMatch(name)) {
 					continue;
 				}
-				appendUnique(name, isConVar);
+				AppendUnique(name, isConVar);
 			}
 		};
 
-		appendFiltered(varCandidates, true);
-		appendFiltered(commandCandidates, false);
+		AppendFiltered(varCandidates, true);
+		AppendFiltered(commandCandidates, false);
 
 		if (results.size() > static_cast<size_t>(kMaxSuggestionDisplayCount)) {
 			results.resize(static_cast<size_t>(kMaxSuggestionDisplayCount));
@@ -1120,7 +1029,7 @@ namespace Unnamed {
 			return 0;
 		}
 
-		auto ensureSuggestions = [&] {
+		auto EnsureSuggestions = [&] {
 			if (!gConsoleUIData.suggestion.items.empty()) {
 				return true;
 			}
@@ -1136,7 +1045,7 @@ namespace Unnamed {
 
 		switch (data->EventFlag) {
 			case ImGuiInputTextFlags_CallbackCompletion: {
-				if (!ensureSuggestions()) {
+				if (!EnsureSuggestions()) {
 					break;
 				}
 
@@ -1145,15 +1054,16 @@ namespace Unnamed {
 					break;
 				}
 
-				if (suggestionState.selectedIndex < 0) {
-					suggestionState.selectedIndex = 0;
-				}
+				suggestionState.selectedIndex = std::max(
+					suggestionState.selectedIndex, 0
+				);
 
 				const bool reverse = ImGui::GetIO().KeyShift;
-				self->MoveSuggestionSelection(reverse ? -1 : 1);
+				MoveSuggestionSelection(reverse ? -1 : 1);
 				if (
 					suggestionState.selectedIndex >= 0 &&
-					suggestionState.selectedIndex < static_cast<int>(
+					std::cmp_less(
+						suggestionState.selectedIndex,
 						suggestionState.items.size()
 					)
 				) {
@@ -1168,9 +1078,9 @@ namespace Unnamed {
 			break;
 
 			case ImGuiInputTextFlags_CallbackHistory: {
-				if (ensureSuggestions()) {
+				if (EnsureSuggestions()) {
 					if (data->EventKey == ImGuiKey_UpArrow) {
-						self->MoveSuggestionSelection(1);
+						MoveSuggestionSelection(1);
 						const auto& selected =
 							c.suggestion.items[static_cast<size_t>(
 								c.suggestion.selectedIndex
@@ -1182,7 +1092,7 @@ namespace Unnamed {
 						break;
 					}
 					if (data->EventKey == ImGuiKey_DownArrow) {
-						self->MoveSuggestionSelection(-1);
+						MoveSuggestionSelection(-1);
 						const auto& selected =
 							c.suggestion.items[static_cast<size_t>(
 								c.suggestion.selectedIndex
@@ -1322,7 +1232,7 @@ namespace Unnamed {
 
 	void ConsoleUI::DrawLogRows(
 		int& visibleIndex, bool& requestOpenContextMenu
-	) {
+	) const {
 		// 複数行ログで可変行高になるため全行を順に描画する
 		for (size_t row = 0; row < gConsoleUIData.filteredToActual.size(); ++
 		     row) {
@@ -1341,7 +1251,7 @@ namespace Unnamed {
 		const size_t actualIndex,
 		const int    visibleIndex,
 		bool&        requestOpenContextMenu
-	) {
+	) const {
 		const auto& buffer = mConsoleSystem->GetLogBuffer()[actualIndex];
 		const int   lineCount = CountDisplayLines(buffer.message);
 		const float lineHeight = ImGui::GetTextLineHeight();
@@ -1378,7 +1288,7 @@ namespace Unnamed {
 			PushTextColor(buffer);
 			const auto textColor = ImGui::GetColorU32(ImGuiCol_Text);
 			ImGui::PopStyleColor();
-			const ImVec2 textMin = ImVec2(
+			const auto textMin = ImVec2(
 				ImGui::GetItemRectMin().x + ImGui::GetStyle().FramePadding.x,
 				ImGui::GetItemRectMin().y + ImGui::GetStyle().FramePadding.y
 			);
@@ -1456,7 +1366,7 @@ namespace Unnamed {
 
 	void ConsoleUI::CopySelectedToClipboard() const {
 		std::string      copiedText;
-		constexpr size_t kMaxCopyLength = static_cast<size_t>(1024) * 1024;
+		constexpr size_t maxCopyLength = static_cast<size_t>(1024) * 1024;
 		// 1MB
 
 		for (size_t i = 0; i < mConsoleSystem->GetLogBuffer().Size(); ++i) {
@@ -1468,7 +1378,7 @@ namespace Unnamed {
 			const size_t requiredSize =
 				copiedText.size() + buffer.message.size() + 1;
 
-			if (requiredSize > kMaxCopyLength) {
+			if (requiredSize > maxCopyLength) {
 				if (!copiedText.empty() && copiedText.back() != '\n') {
 					copiedText += '\n';
 				}

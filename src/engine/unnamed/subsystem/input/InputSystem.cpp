@@ -1,9 +1,10 @@
-#include <pch.h>
-
 #include <algorithm>
-#include <ranges>
-#include <Dbt.h>
 
+#include <pch.h>
+#include <ranges>
+
+#include <engine/unnamed/subsystem/console/ConsoleSystem.h>
+#include <engine/unnamed/subsystem/console/concommand/ConCommand.h>
 #include <engine/unnamed/subsystem/input/InputSystem.h>
 #include <engine/unnamed/subsystem/input/KeyNameTable.h>
 #include <engine/unnamed/subsystem/input/device/gamepad/GamepadDevice.h>
@@ -11,8 +12,7 @@
 #include <engine/unnamed/subsystem/input/device/mouse/MouseDevice.h>
 #include <engine/unnamed/subsystem/interface/ServiceLocator.h>
 
-#include "engine/unnamed/subsystem/console/ConsoleSystem.h"
-#include "engine/unnamed/subsystem/console/concommand/ConCommand.h"
+#include <Dbt.h>
 
 namespace Unnamed {
 	static constexpr std::string_view kChannel = "Input";
@@ -114,7 +114,7 @@ namespace Unnamed {
 			"Unbind all keys."
 		);
 
-		auto toggleCursorLockHandler = [&](const std::vector<std::string>&) {
+		auto ToggleCursorLockHandler = [&](const std::vector<std::string>&) {
 			const bool bNewState = !IsMouseCursorLocked();
 			if (bNewState == mMouseCursorLockRequested) {
 				mMouseCursorLockOverride = false;
@@ -137,13 +137,13 @@ namespace Unnamed {
 
 		mToggleLockCursorCommand = std::make_unique<ConCommand>(
 			"togglelockcursor",
-			toggleCursorLockHandler,
+			ToggleCursorLockHandler,
 			"Toggle the cursor lock state."
 		);
 
 		mToggleCursorLockCommand = std::make_unique<ConCommand>(
 			"togglecursorlock",
-			toggleCursorLockHandler,
+			ToggleCursorLockHandler,
 			"Toggle the cursor lock state."
 		);
 
@@ -165,16 +165,19 @@ namespace Unnamed {
 				continue;
 			}
 
-			const auto mouseDevice = std::static_pointer_cast<MouseDevice>(device);
-			primaryMouseWindow     = mouseDevice->GetWindowHandle();
+			const auto mouseDevice = std::static_pointer_cast<MouseDevice>(
+				device
+			);
+			primaryMouseWindow = mouseDevice->GetWindowHandle();
 
-			const std::array<uint32_t, 5> mouseButtons = {
+			constexpr std::array<uint32_t, 5> mouseButtons = {
 				VM_1,
 				VM_2,
 				VM_3,
 				VM_4,
 				VM_5,
 			};
+
 			for (const uint32_t vk : mouseButtons) {
 				const int index = MouseButtonIndexFromVirtualKey(vk);
 				if (index < 0) {
@@ -415,7 +418,8 @@ namespace Unnamed {
 					wParam == DBT_DEVNODES_CHANGED
 				) {
 					for (const auto& device : mDevices) {
-						if (device->GetDeviceType() != InputDeviceType::GAMEPAD) {
+						if (device->GetDeviceType() !=
+						    InputDeviceType::GAMEPAD) {
 							continue;
 						}
 
@@ -446,10 +450,10 @@ namespace Unnamed {
 		// カーソルは必ず「表示」に寄せる。
 		if (!bActive && !bCursorVisible) {
 			// const 関数のため、表示状態そのものは変えずに OS 側だけ可視へ収束させる
-			sLastCursorVisible           = true;
-			constexpr int kMaxIterations = 32;
-			int           it             = 0;
-			while (cursorCount < 0 && it++ < kMaxIterations) {
+			sLastCursorVisible          = true;
+			constexpr int maxIterations = 32;
+			int           it            = 0;
+			while (cursorCount < 0 && it++ < maxIterations) {
 				cursorCount = ShowCursor(TRUE);
 			}
 		}
@@ -496,20 +500,20 @@ namespace Unnamed {
 			sLastCursorVisible = bCursorVisible;
 
 			// ShowCursor の戻り値: 0 以上なら表示、0 未満なら非表示
-			constexpr int kMaxIterations = 32;
-			int           it             = 0;
+			constexpr int maxIterations = 32;
+			int           it            = 0;
 
 			if (bCursorVisible) {
-				while (cursorCount < 0 && it++ < kMaxIterations) {
+				while (cursorCount < 0 && it++ < maxIterations) {
 					cursorCount = ShowCursor(TRUE);
 				}
 			} else {
-				while (cursorCount >= 0 && it++ < kMaxIterations) {
+				while (cursorCount >= 0 && it++ < maxIterations) {
 					cursorCount = ShowCursor(FALSE);
 				}
 			}
 
-			if (it >= kMaxIterations) {
+			if (it >= maxIterations) {
 				Warning(
 					kChannel,
 					"ShowCursor のカウントが収束しませんでした (targetVisible={}, lastCount={}).",
@@ -532,7 +536,7 @@ namespace Unnamed {
 		const float low,
 		const float high,
 		const float durationSec
-	) {
+	) const {
 		for (const auto& device : mDevices) {
 			if (device->GetDeviceType() != InputDeviceType::GAMEPAD) {
 				continue;
@@ -545,7 +549,7 @@ namespace Unnamed {
 		}
 	}
 
-	void InputSystem::StopGamepadRumble() {
+	void InputSystem::StopGamepadRumble() const {
 		for (const auto& device : mDevices) {
 			if (device->GetDeviceType() != InputDeviceType::GAMEPAD) {
 				continue;
@@ -826,7 +830,7 @@ namespace Unnamed {
 			return mMouseClientPosition;
 		}
 
-		Vec2 localPos = Vec2(
+		auto localPos = Vec2(
 			mMouseClientPosition.x - mMouseViewportOrigin.x,
 			mMouseClientPosition.y - mMouseViewportOrigin.y
 		);

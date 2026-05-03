@@ -75,9 +75,6 @@ namespace Unnamed {
 		/// @brief 入力欄と送信ボタンを描画します
 		void DrawInputTextAndSubmitButton();
 
-		/// @brief 「About」ウィンドウを表示します
-		void ShowAbout();
-
 		/// @brief コンソールのコンテキストメニューを表示します
 		void ShowContextMenu() const;
 
@@ -95,16 +92,16 @@ namespace Unnamed {
 		/// @param file ファイルパス
 		/// @param line 行番号
 		/// @param column 列番号
-		void OpenSourceFile(
+		static void OpenSourceFile(
 			const std::string& file, int line, int column
-		) const;
+		);
 
-		void UpdateSuggestions(std::string_view input);
+		void UpdateSuggestions(std::string_view input) const;
 		void DrawSuggestionsPopup(
 			const ImVec2& inputLeftTop, float inputWidth, bool inputActive
 		);
-		void MoveSuggestionSelection(int delta);
-		void ApplySuggestionToInputBuffer(
+		static void MoveSuggestionSelection(int delta);
+		void        ApplySuggestionToInputBuffer(
 			const std::string& suggestion, bool appendSpace = false
 		);
 		static void ApplySuggestionToCallbackBuffer(
@@ -123,17 +120,17 @@ namespace Unnamed {
 
 		static int InputTextCallback(ImGuiInputTextCallbackData* data);
 
-		size_t FilteredToActualIndex(int filteredIndex);
+		static size_t FilteredToActualIndex(int filteredIndex);
 
 		// 表示
 		/// @brief ログテーブル（ヘッダ+行）を描画します
 		void DrawLogTable(const ImVec2& childSize);
 		/// @brief ログ行を描画します（フィルタ/選択/右クリックも含む）
-		void DrawLogRows(int& visibleIndex, bool& requestOpenContextMenu);
+		void DrawLogRows(int& visibleIndex, bool& requestOpenContextMenu) const;
 		/// @brief 1行分の描画と入力処理を行います。描画した場合は true
 		bool DrawLogRow(
 			size_t actualIndex, int visibleIndex, bool& requestOpenContextMenu
-		);
+		) const;
 		/// @brief 選択中ログをクリップボードへコピーします（1要素=1行）
 		void CopySelectedToClipboard() const;
 		/// @brief Ctrl+C のコピー処理
@@ -144,7 +141,7 @@ namespace Unnamed {
 		ConsoleSystem* mConsoleSystem; // コンソールシステムへのポインタ
 
 		std::unique_ptr<ConVarHelper> mConVarHelper; // ConVarヘルパー
-		std::unique_ptr<ConCommand> mToggleConsoleCommand;
+		std::unique_ptr<ConCommand>   mToggleConsoleCommand;
 
 		bool mShowConsole      = true;  // コンソール表示フラグ
 		bool mShowAbout        = false; // Aboutウィンドウ表示フラグ

@@ -90,10 +90,10 @@ namespace Unnamed {
 		/// @param low 低周波モータ強度 [0..1]
 		/// @param high 高周波モータ強度 [0..1]
 		/// @param durationSec 再生時間（秒）
-		void PlayGamepadRumble(float low, float high, float durationSec);
+		void PlayGamepadRumble(float low, float high, float durationSec) const;
 
 		/// @brief すべてのゲームパッドランブルを停止します
-		void StopGamepadRumble();
+		void StopGamepadRumble() const;
 
 		/// @brief コマンドをキーにバインドします
 		/// @param key バインドするキー
@@ -207,8 +207,12 @@ namespace Unnamed {
 		[[nodiscard]] Vec2 GetMouseClientPosition() const;
 		[[nodiscard]] Vec2 GetMouseClientViewportSize() const;
 		[[nodiscard]] bool IsMouseButtonDown(uint32_t mouseVirtualKey) const;
-		[[nodiscard]] bool WasMouseButtonPressed(uint32_t mouseVirtualKey) const;
-		[[nodiscard]] bool WasMouseButtonReleased(uint32_t mouseVirtualKey) const;
+		[[nodiscard]] bool WasMouseButtonPressed(
+			uint32_t mouseVirtualKey
+		) const;
+		[[nodiscard]] bool WasMouseButtonReleased(
+			uint32_t mouseVirtualKey
+		) const;
 
 	private:
 		[[nodiscard]] bool ResolveMouseCursorLockState() const;
@@ -263,15 +267,15 @@ namespace Unnamed {
 		bool            mMouseCursorLockOverrideMode = false;
 		bool            mMouseCursorVisible          = false;
 
-		Vec2 mMouseClientPosition     = Vec2::zero;
-		Vec2 mMouseClientViewportSize = Vec2::zero;
-		bool mMouseViewportRectOverride = false;
-		Vec2 mMouseViewportOrigin       = Vec2::zero;
-		Vec2 mMouseViewportSizeOverride = Vec2::zero;
-		Vec2 mMouseViewportVirtualSize  = Vec2::zero;
-		std::array<bool, 5> mMouseButtonDown = {};
-		std::array<bool, 5> mMouseButtonPressed = {};
-		std::array<bool, 5> mMouseButtonReleased = {};
+		Vec2                mMouseClientPosition       = Vec2::zero;
+		Vec2                mMouseClientViewportSize   = Vec2::zero;
+		bool                mMouseViewportRectOverride = false;
+		Vec2                mMouseViewportOrigin       = Vec2::zero;
+		Vec2                mMouseViewportSizeOverride = Vec2::zero;
+		Vec2                mMouseViewportVirtualSize  = Vec2::zero;
+		std::array<bool, 5> mMouseButtonDown           = {};
+		std::array<bool, 5> mMouseButtonPressed        = {};
+		std::array<bool, 5> mMouseButtonReleased       = {};
 
 		std::unique_ptr<ConCommand> mBindCommand;
 		std::unique_ptr<ConCommand> mUnbindCommand;

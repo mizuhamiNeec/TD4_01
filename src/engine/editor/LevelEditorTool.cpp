@@ -6,15 +6,10 @@
 #include <imgui_internal.h>
 
 #include "EditorNotification.h"
-#include "sequence/SequenceCurvePanel.h"
-#include "sequence/SequenceEditorController.h"
-#include "sequence/SequenceTimelinePanel.h"
 
 #include "core/io/json/JsonReader.h"
 #include "core/string/StrUtil.h"
 
-#include "engine/ImGui/Icons.h"
-#include "engine/ImGui/Ui.h"
 #include "engine/platform/Window.h"
 #include "engine/platform/WindowManager.h"
 #include "engine/render/Renderer.h"
@@ -25,6 +20,8 @@
 #include "engine/unnamed/subsystem/input/InputSystem.h"
 #include "engine/world/EditorWorld.h"
 
+#include "sequence/SequenceEditorController.h"
+
 #include "thirdparty/ImGuizmo/ImGuizmo.h"
 
 namespace Unnamed {
@@ -33,14 +30,16 @@ namespace Unnamed {
 			WindowManager& windowManager
 		) {
 			const WindowId mainWindowId = windowManager.GetMainWindowId();
-			Window* const  mainWindow = windowManager.FindWindowById(mainWindowId);
+			Window* const  mainWindow   = windowManager.FindWindowById(
+				mainWindowId
+			);
 			if (!mainWindow || !mainWindow->GetHwnd()) {
 				return Vec2::zero;
 			}
 
 			MONITORINFO monitorInfo = {};
 			monitorInfo.cbSize      = sizeof(monitorInfo);
-			const HMONITOR monitor = MonitorFromWindow(
+			const HMONITOR monitor  = MonitorFromWindow(
 				mainWindow->GetHwnd(), MONITOR_DEFAULTTONEAREST
 			);
 			if (!monitor || !GetMonitorInfoW(monitor, &monitorInfo)) {
@@ -55,17 +54,19 @@ namespace Unnamed {
 				return Vec2::zero;
 			}
 
-			return Vec2(
+			return {
 				static_cast<float>(monitorWidth),
 				static_cast<float>(monitorHeight)
-			);
+			};
 		}
 
 		[[nodiscard]] Vec2 ResolveMainWindowClientExtent(
 			WindowManager& windowManager
 		) {
 			const WindowId mainWindowId = windowManager.GetMainWindowId();
-			Window* const  mainWindow = windowManager.FindWindowById(mainWindowId);
+			Window* const  mainWindow   = windowManager.FindWindowById(
+				mainWindowId
+			);
 			if (!mainWindow || !mainWindow->GetHwnd()) {
 				return Vec2::zero;
 			}
@@ -75,16 +76,16 @@ namespace Unnamed {
 				return Vec2::zero;
 			}
 
-			const int32_t clientWidth = clientRect.right - clientRect.left;
+			const int32_t clientWidth  = clientRect.right - clientRect.left;
 			const int32_t clientHeight = clientRect.bottom - clientRect.top;
 			if (clientWidth <= 0 || clientHeight <= 0) {
 				return Vec2::zero;
 			}
 
-			return Vec2(
+			return {
 				static_cast<float>(clientWidth),
 				static_cast<float>(clientHeight)
-			);
+			};
 		}
 
 		[[nodiscard]] Vec2 ResolveSceneRenderExtentForInput(
@@ -137,7 +138,7 @@ namespace Unnamed {
 				--height;
 			}
 
-			return Vec2(static_cast<float>(width), static_cast<float>(height));
+			return {static_cast<float>(width), static_cast<float>(height)};
 		}
 	}
 
@@ -148,7 +149,6 @@ namespace Unnamed {
 	    mEditorWorld(*mOwnedEditorWorld),
 	    mWindowManager(windowManager),
 	    mImGuiLayer(imGuiLayer) {
-		mNotification = std::make_unique<EditorNotification>();
 		mCameraManager.SetPaneBinding(
 			kViewScenePerspective,
 			{
@@ -177,10 +177,8 @@ namespace Unnamed {
 		mConsoleSystem = services.console;
 		mInputSystem   = services.inputSystem;
 		mEditorWorld.Initialize();
-		mSequenceEditorController = std::make_unique<
-			SequenceEditorController>();
-		mSequenceTimelinePanel = std::make_unique<SequenceTimelinePanel>();
-		mSequenceCurvePanel    = std::make_unique<SequenceCurvePanel>();
+		mSequenceEditorController =
+			std::make_unique<SequenceEditorController>();
 		mSequenceEditorController->Initialize(
 			mEditorWorld.GetRuntimeSceneWorld(),
 			services.assetManager
@@ -196,8 +194,6 @@ namespace Unnamed {
 		if (mSequenceEditorController) {
 			mSequenceEditorController->Shutdown();
 		}
-		mSequenceCurvePanel.reset();
-		mSequenceTimelinePanel.reset();
 		mSequenceEditorController.reset();
 		mEditorWorld.Shutdown();
 		mConsoleSystem = nullptr;
@@ -239,60 +235,41 @@ namespace Unnamed {
 		}
 
 		DrawMainMenu();
-		const ImGuiID dockSpaceId = ImGui::GetID("LevelEditorDockSpace");
-		ImGui::DockSpace(
-			dockSpaceId,
-			ImVec2(0.0f, 0.0f),
-			ImGuiDockNodeFlags_None
-		);
+		ImGuiID dockSpaceId = ImGui::GetID("EditorDockSpace");
+
 		if (!mDockInitialized) {
-			const ImVec2 dockNodeSize = ImGui::GetContentRegionAvail();
-			if (dockNodeSize.x > 1.0f && dockNodeSize.y > 1.0f) {
-				ImGui::DockBuilderRemoveNode(dockSpaceId);
-				ImGui::DockBuilderAddNode(
-					dockSpaceId,
-					ImGuiDockNodeFlags_DockSpace
-				);
-				ImGui::DockBuilderSetNodeSize(
-					dockSpaceId,
-					ImVec2(
-						std::max(1.0f, dockNodeSize.x),
-						std::max(1.0f, dockNodeSize.y)
-					)
-				);
-				ImGuiID dockMain = dockSpaceId;
-				ImGuiID dockLeft = ImGui::DockBuilderSplitNode(
-					dockMain,
-					ImGuiDir_Left,
-					0.22f,
-					nullptr,
-					&dockMain
-				);
-				ImGuiID dockRight = ImGui::DockBuilderSplitNode(
-					dockMain,
-					ImGuiDir_Right,
-					0.28f,
-					nullptr,
-					&dockMain
-				);
-				ImGuiID dockBottom = ImGui::DockBuilderSplitNode(
-					dockMain,
-					ImGuiDir_Down,
-					0.30f,
-					nullptr,
-					&dockMain
-				);
-				ImGui::DockBuilderDockWindow("Viewport", dockMain);
-				ImGui::DockBuilderDockWindow("Outliner", dockLeft);
-				ImGui::DockBuilderDockWindow("Inspector", dockRight);
-				ImGui::DockBuilderDockWindow("Profiler", dockBottom);
-				ImGui::DockBuilderDockWindow("Content Browser", dockBottom);
-				ImGui::DockBuilderDockWindow("Sequence Timeline", dockBottom);
-				ImGui::DockBuilderDockWindow("Sequence Curves", dockBottom);
-				ImGui::DockBuilderFinish(dockSpaceId);
-				mDockInitialized = true;
-			}
+			ImGui::DockBuilderRemoveNode(dockSpaceId);
+			ImGui::DockBuilderAddNode(
+				dockSpaceId, ImGuiDockNodeFlags_DockSpace
+			);
+			ImGui::DockBuilderSetNodeSize(
+				dockSpaceId, ImGui::GetMainViewport()->WorkSize
+			);
+
+			ImGuiID dockMain = dockSpaceId;
+
+			ImGuiID dockLeft = ImGui::DockBuilderSplitNode(
+				dockMain, ImGuiDir_Left, 0.22f, nullptr, &dockMain
+			);
+			ImGuiID dockRight = ImGui::DockBuilderSplitNode(
+				dockMain, ImGuiDir_Right, 0.28f, nullptr, &dockMain
+			);
+			ImGuiID dockBottom = ImGui::DockBuilderSplitNode(
+				dockMain, ImGuiDir_Down, 0.30f, nullptr, &dockMain
+			);
+
+			ImGui::DockBuilderDockWindow("Viewport", dockMain);
+			ImGui::DockBuilderDockWindow("Outliner", dockLeft);
+			ImGui::DockBuilderDockWindow("Inspector", dockRight);
+			ImGui::DockBuilderDockWindow("Profiler", dockBottom);
+			ImGui::DockBuilderDockWindow("Content Browser", dockBottom);
+
+			ImGui::DockBuilderFinish(dockSpaceId);
+
+			mDockInitialized = true;
 		}
+
+		ImGui::DockSpace(dockSpaceId, ImVec2(0.0f, 0.0f));
 
 		const float deltaTime         = frameContext.unscaledDeltaTime;
 		mViewportSizeChangedThisFrame = false;
@@ -317,8 +294,8 @@ namespace Unnamed {
 					}
 
 					POINT viewportClientTopLeft = {
-						static_cast<LONG>(mViewportPosition.x),
-						static_cast<LONG>(mViewportPosition.y)
+						.x = static_cast<LONG>(mViewportPosition.x),
+						.y = static_cast<LONG>(mViewportPosition.y)
 					};
 					ScreenToClient(window->GetHwnd(), &viewportClientTopLeft);
 					input->SetMouseClientViewportRect(
@@ -332,9 +309,9 @@ namespace Unnamed {
 
 					if (mViewportLookActive) {
 						POINT clientPoint = {
-							static_cast<LONG>(
+							.x = static_cast<LONG>(
 								mViewportPosition.x + mViewportSize.x * 0.5f),
-							static_cast<LONG>(
+							.y = static_cast<LONG>(
 								mViewportPosition.y + mViewportSize.y * 0.5f)
 						};
 						ScreenToClient(window->GetHwnd(), &clientPoint);
@@ -361,92 +338,8 @@ namespace Unnamed {
 			ImGui::SetNextWindowDockID(dockSpaceId, ImGuiCond_FirstUseEver);
 			DrawContentBrowser();
 			ImGui::SetNextWindowDockID(dockSpaceId, ImGuiCond_FirstUseEver);
-			DrawSequenceEditors();
 		} else {
 			SyncPresentationState();
-		}
-
-		// シーケンサーのモックアップ
-		{
-			ImGui::Begin("SequencerMock");
-
-			// シーケンサーの上のバー
-			{
-				float barHeight = 48.0f;
-
-				ImGui::BeginChild(
-					"SequencerMock_TopBar",
-					ImVec2(0.0f, barHeight),
-					false,
-					ImGuiWindowFlags_NoScrollbar
-				);
-
-				ImGui::SetCursorPos(ImVec2(16.0f, 0.0f));
-
-				const float topBarContentHeight =
-					ImGui::GetContentRegionAvail().y;
-
-				Ui::Row(
-					[&]() {
-						Ui::CenteredY(
-							[&]() {
-								Ui::Row(
-									[&]() {
-										Ui::Text("00:01:23.45");
-										Ui::Text("0/3000");
-									},
-									32.0f
-								);
-							},
-							topBarContentHeight,
-							ImGui::GetTextLineHeight()
-						);
-
-						const auto buttonSize = ImVec2(32.0f, 32.0f);
-						auto       DrawCenteredIconButton =
-							[&](const uint32_t icon, const bool emphasize) {
-							Ui::CenteredY(
-								[&]() {
-									if (emphasize) {
-										Ui::ScopedStyleColor scopedColor(
-											ImGuiCol_Button,
-											ImVec4(0.2f, 0.4f, 0.2f, 1.0f)
-										);
-										Ui::IconButton(
-											icon,
-											nullptr,
-											buttonSize
-										);
-										return;
-									}
-									Ui::IconButton(
-										icon,
-										nullptr,
-										buttonSize
-									);
-								},
-								topBarContentHeight,
-								buttonSize.y
-							);
-						};
-						Ui::Row(
-							[&]() {
-								DrawCenteredIconButton(
-									kIconSkipPrevious, false
-								);
-								DrawCenteredIconButton(kIconArrowBack2, false);
-								DrawCenteredIconButton(kIconPlay, true);
-								DrawCenteredIconButton(kIconSkipNext, false);
-							},
-							8.0f
-						);
-					}
-				);
-
-				ImGui::EndChild();
-			}
-
-			ImGui::End();
 		}
 
 		ImGui::SetNextWindowDockID(dockSpaceId, ImGuiCond_FirstUseEver);
@@ -456,58 +349,7 @@ namespace Unnamed {
 			DrawStatusBar();
 		}
 
-		mNotification->Update(deltaTime);
 		ImGui::End();
-	}
-
-	void LevelEditorTool::SyncPresentationState() {
-		if (mPresentMode != EDITOR_PRESENT_MODE::FULLSCREEN_SWAP_CHAIN) {
-			return;
-		}
-
-		const auto input = mInputSystem;
-		if (!input) {
-			return;
-		}
-
-		Vec2 clientExtent = ResolveMainWindowClientExtent(mWindowManager);
-		if (clientExtent.x <= 0.0f || clientExtent.y <= 0.0f) {
-			clientExtent = Vec2(
-				std::max(1.0f, mViewportPanelWidth),
-				std::max(1.0f, mViewportPanelHeight)
-			);
-		}
-
-		const Render::SceneViewRenderMode sceneRequest = BuildSceneViewModeForSize(
-			clientExtent.x,
-			clientExtent.y,
-			true
-		);
-		const Vec2 runtimeViewportSize = ResolveSceneRenderExtentForInput(
-			sceneRequest
-		);
-
-		mViewportPanelWidth  = runtimeViewportSize.x;
-		mViewportPanelHeight = runtimeViewportSize.y;
-		mLastViewportSize    = runtimeViewportSize;
-
-		mEditorWorld.SetEditorCameraLookEnabled(input->IsHeld("ed_look"));
-		input->SetMouseClientViewportRect(Vec2::zero, runtimeViewportSize);
-
-		if (const Window* window = mWindowManager.FindWindowById(
-			mWindowManager.GetMainWindowId()
-		)) {
-			input->SetMouseCursorLockClientPosition(
-				window->GetHwnd(),
-				{
-					runtimeViewportSize.x * 0.5f,
-					runtimeViewportSize.y * 0.5f
-				}
-			);
-		} else {
-			input->ClearMouseCursorLockAnchor();
-		}
-		mViewportLookActive = false;
 	}
 
 	void LevelEditorTool::CollectRenderViews(
@@ -535,7 +377,7 @@ namespace Unnamed {
 				Render::RENDER_VIEW_SIZE_MODE::MATCH_BACK_BUFFER;
 		}
 
-		auto buildSceneView = [this, &sourceScene](
+		auto BuildSceneView = [this, &sourceScene](
 			const std::string_view      key,
 			const float                 width,
 			const float                 height,
@@ -586,7 +428,7 @@ namespace Unnamed {
 			composedViews.end(), preservedViews.begin(), preservedViews.end()
 		);
 
-		Vec2 sceneTargetSize = Vec2(
+		auto sceneTargetSize = Vec2(
 			std::max(1.0f, mViewportPanelWidth),
 			std::max(1.0f, mViewportPanelHeight)
 		);
@@ -600,7 +442,7 @@ namespace Unnamed {
 		}
 
 		composedViews.emplace_back(
-			buildSceneView(
+			BuildSceneView(
 				kViewScenePerspective,
 				sceneTargetSize.x,
 				sceneTargetSize.y,
@@ -669,6 +511,57 @@ namespace Unnamed {
 
 	EDITOR_PRESENT_MODE LevelEditorTool::GetPresentMode() const {
 		return mPresentMode;
+	}
+
+	void LevelEditorTool::SyncPresentationState() {
+		if (mPresentMode != EDITOR_PRESENT_MODE::FULLSCREEN_SWAP_CHAIN) {
+			return;
+		}
+
+		const auto input = mInputSystem;
+		if (!input) {
+			return;
+		}
+
+		Vec2 clientExtent = ResolveMainWindowClientExtent(mWindowManager);
+		if (clientExtent.x <= 0.0f || clientExtent.y <= 0.0f) {
+			clientExtent = Vec2(
+				std::max(1.0f, mViewportPanelWidth),
+				std::max(1.0f, mViewportPanelHeight)
+			);
+		}
+
+		const Render::SceneViewRenderMode sceneRequest =
+			BuildSceneViewModeForSize(
+				clientExtent.x,
+				clientExtent.y,
+				true
+			);
+		const Vec2 runtimeViewportSize = ResolveSceneRenderExtentForInput(
+			sceneRequest
+		);
+
+		mViewportPanelWidth  = runtimeViewportSize.x;
+		mViewportPanelHeight = runtimeViewportSize.y;
+		mLastViewportSize    = runtimeViewportSize;
+
+		mEditorWorld.SetEditorCameraLookEnabled(input->IsHeld("ed_look"));
+		input->SetMouseClientViewportRect(Vec2::zero, runtimeViewportSize);
+
+		if (const Window* window = mWindowManager.FindWindowById(
+			mWindowManager.GetMainWindowId()
+		)) {
+			input->SetMouseCursorLockClientPosition(
+				window->GetHwnd(),
+				{
+					runtimeViewportSize.x * 0.5f,
+					runtimeViewportSize.y * 0.5f
+				}
+			);
+		} else {
+			input->ClearMouseCursorLockAnchor();
+		}
+		mViewportLookActive = false;
 	}
 
 	bool LevelEditorTool::IsPlaying() const {
@@ -860,7 +753,7 @@ namespace Unnamed {
 		return const_cast<Scene*>(scene)->FindEntity(mSelectedEntityId);
 	}
 
-	bool LevelEditorTool::SaveSceneAs(const std::string& path) {
+	bool LevelEditorTool::SaveSceneAs(const std::string& path) const {
 		const Scene* scene = mEditorWorld.GetEditableScene();
 		if (!scene) {
 			return false;
@@ -891,25 +784,15 @@ namespace Unnamed {
 				"Failed to load scene: {}",
 				normalizedPath
 			);
-			if (mNotification) {
-				mNotification->PushNotification(
-					"Scene Load Failed",
-					normalizedPath,
-					NOTIFY_TYPE::ERR
-				);
-			}
 			return false;
 		}
 
 		mSelectedEntityId = 0;
 		Msg("LevelEditorTool", "Scene loaded: {}", normalizedPath);
-		if (mNotification) {
-			mNotification->PushNotification(
-				"Scene Loaded",
-				normalizedPath,
-				NOTIFY_TYPE::INFO
-			);
-		}
+
+		mConsoleSystem->ExecuteCommand(
+			"notify info 2 LevelEditor | SceneLoaded: " + normalizedPath
+		);
 
 		return true;
 	}

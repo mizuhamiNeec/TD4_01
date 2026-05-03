@@ -9,6 +9,7 @@
 #include "LevelEditorTool.h"
 
 namespace Unnamed {
+	class EditorNotification;
 	class ConsoleSystem;
 	class InputSystem;
 	class AssetManager;
@@ -41,7 +42,7 @@ namespace Unnamed {
 		);
 		~EditorToolHost();
 
-		void Initialize() const;
+		void Initialize();
 		void Shutdown();
 		void BeginUI() const;
 		void Tick(const EditorToolFrameContext& frameContext) const;
@@ -72,6 +73,10 @@ namespace Unnamed {
 		std::vector<std::unique_ptr<IEditorTool>> mOwnedTools;
 		LevelEditorTool*                          mLevelTool = nullptr;
 		bool                                      mMainDockInitialized = false;
+
+		std::unique_ptr<EditorNotification> mNotification;
+		
+		bool mShowAbout = false;
 	};
 }
 

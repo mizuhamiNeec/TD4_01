@@ -14,15 +14,12 @@
 #include "core/ComponentRegistry.h"
 #include "core/string/StrUtil.h"
 
+#include "engine/editor/sequence/SequenceEditorController.h"
 #include "engine/ImGui/Icons.h"
 #include "engine/ImGui/ImGuiUtil.h"
 #include "engine/ImGui/ImGuiWidgets.h"
-#include "engine/editor/sequence/SequenceEditorController.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
-
-#include "sequence/SequenceCurvePanel.h"
-#include "sequence/SequenceTimelinePanel.h"
 
 namespace Unnamed {
 	namespace {
@@ -36,7 +33,9 @@ namespace Unnamed {
 			std::vector<ComponentRegistry::RegisteredComponentInfo> components;
 		};
 
-		bool IsValidComponentStableNameForMenu(std::string_view stableName) {
+		bool IsValidComponentStableNameForMenu(
+			const std::string_view stableName
+		) {
 			if (stableName.empty()) {
 				return false;
 			}
@@ -208,7 +207,7 @@ namespace Unnamed {
 		}
 
 		std::string JoinFolderPath(
-			std::string_view parent, std::string_view child
+			const std::string_view parent, const std::string_view child
 		) {
 			if (parent.empty()) {
 				return std::string(child);
@@ -219,7 +218,7 @@ namespace Unnamed {
 			return std::string(parent) + "/" + std::string(child);
 		}
 
-		std::string GetFolderLeafName(std::string_view folderPath) {
+		std::string GetFolderLeafName(const std::string_view folderPath) {
 			const size_t slashPos = folderPath.find_last_of('/');
 			return slashPos == std::string_view::npos ?
 				       std::string(folderPath) :
@@ -243,7 +242,7 @@ namespace Unnamed {
 		}
 
 		OutlinerFolderNode* EnsureFolderNode(
-			OutlinerFolderNode& root, std::string_view folderPath
+			OutlinerFolderNode& root, const std::string_view folderPath
 		) {
 			OutlinerFolderNode* node = &root;
 			for (const auto& part : SplitFolderPath(folderPath)) {
@@ -271,7 +270,7 @@ namespace Unnamed {
 		}
 
 		std::string MakeUniqueFolderPath(
-			const Scene& scene, std::string_view parentFolderPath
+			const Scene& scene, const std::string_view parentFolderPath
 		) {
 			const std::string parent = NormalizeFolderPath(parentFolderPath);
 			int               suffix = 0;
@@ -337,7 +336,7 @@ namespace Unnamed {
 			openRenamePopupRequested = true;
 		};
 
-		auto openRenameFolder = [&](std::string_view folderPath) {
+		auto openRenameFolder = [&](const std::string_view folderPath) {
 			renameEntityId   = 0;
 			renameFolderPath = std::string(folderPath);
 			std::ranges::fill(renameBuffer, '\0');
@@ -357,7 +356,7 @@ namespace Unnamed {
 			ImGuiTableFlags_RowBg |
 			ImGuiTableFlags_NoBordersInBodyUntilResize;
 
-		auto createEntity = [&](std::string_view folderPath) {
+		auto createEntity = [&](const std::string_view folderPath) {
 			Entity& entity = scene->CreateEntity(
 				"Entity", scene->AllocateEntityId(), false
 			);
@@ -368,7 +367,7 @@ namespace Unnamed {
 				entity.AddComponent<TransformComponent>();
 			mSelectedEntityId = entity.GetGuid();
 		};
-		auto createFolder = [&](std::string_view folderPath) {
+		auto createFolder = [&](const std::string_view folderPath) {
 			scene->AddFolder(MakeUniqueFolderPath(*scene, folderPath));
 		};
 
@@ -530,7 +529,7 @@ namespace Unnamed {
 						ImGui::AcceptDragDropPayload(
 							"OUTLINER_FOLDER"
 						)) {
-						const char* sourcePath = static_cast<const char*>(
+						auto sourcePath = static_cast<const char*>(
 							payload->Data
 						);
 						if (sourcePath) {
@@ -647,7 +646,7 @@ namespace Unnamed {
 								ImGui::AcceptDragDropPayload(
 									"OUTLINER_FOLDER"
 								)) {
-								const char* sourcePath = static_cast<const char
+								auto sourcePath = static_cast<const char
 									*>(
 									payload->Data
 								);
@@ -734,7 +733,7 @@ namespace Unnamed {
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(
 					"OUTLINER_FOLDER"
 				)) {
-					const char* sourcePath = static_cast<const char*>(payload->
+					auto sourcePath = static_cast<const char*>(payload->
 						Data);
 					if (sourcePath) {
 						pendingMoveFolderSourcePath = sourcePath;
@@ -860,7 +859,7 @@ namespace Unnamed {
 		ImGui::End();
 	}
 
-	void LevelEditorTool::DrawInspector() {
+	void LevelEditorTool::DrawInspector() const {
 		if (!ImGui::Begin("Inspector")) {
 			ImGui::End();
 			return;
@@ -958,7 +957,7 @@ namespace Unnamed {
 			}
 		);
 
-		ImGuiUtil::HeaderMenuAction pendingAction =
+		auto pendingAction =
 			ImGuiUtil::HeaderMenuAction::None;
 		BaseComponent* pendingTarget = nullptr;
 
@@ -979,8 +978,8 @@ namespace Unnamed {
 				!isTransform && (index + 1) < orderedComponents.size();
 			const bool canRemove = !isTransform;
 
-			bool                        componentActive = component->IsActive();
-			ImGuiUtil::HeaderMenuAction action          =
+			bool componentActive = component->IsActive();
+			auto action          =
 				ImGuiUtil::HeaderMenuAction::None;
 			const bool open = ImGuiUtil::CollapsingHeaderWithCheckbox(
 				component->GetIcon(),
@@ -1043,19 +1042,6 @@ namespace Unnamed {
 				(void)mSequenceEditorController->OpenDocument(path);
 			}
 		);
-	}
-
-	void LevelEditorTool::DrawSequenceEditors() {
-		if (
-			!mSequenceEditorController ||
-			!mSequenceTimelinePanel ||
-			!mSequenceCurvePanel
-		) {
-			return;
-		}
-
-		mSequenceTimelinePanel->Draw(*mSequenceEditorController);
-		mSequenceCurvePanel->Draw(*mSequenceEditorController);
 	}
 }
 

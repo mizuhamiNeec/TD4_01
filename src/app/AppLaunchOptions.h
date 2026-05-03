@@ -31,9 +31,7 @@ namespace Unnamed {
 	[[nodiscard]] inline std::string ConvertWideToUtf8(
 		const std::wstring_view text
 	) {
-		if (text.empty()) {
-			return {};
-		}
+		if (text.empty()) { return {}; }
 
 		const int requiredSize = ::WideCharToMultiByte(
 			CP_UTF8,
@@ -45,12 +43,10 @@ namespace Unnamed {
 			nullptr,
 			nullptr
 		);
-		if (requiredSize <= 0) {
-			return {};
-		}
+		if (requiredSize <= 0) { return {}; }
 
 		std::string output(static_cast<size_t>(requiredSize), '\0');
-		const int writtenSize = ::WideCharToMultiByte(
+		const int   writtenSize = ::WideCharToMultiByte(
 			CP_UTF8,
 			0,
 			text.data(),
@@ -60,9 +56,7 @@ namespace Unnamed {
 			nullptr,
 			nullptr
 		);
-		if (writtenSize != requiredSize) {
-			return {};
-		}
+		if (writtenSize != requiredSize) { return {}; }
 		return output;
 	}
 
@@ -96,21 +90,22 @@ namespace Unnamed {
 		helpText += executableName;
 		helpText += " [options]\n\n";
 		helpText += "Options:\n";
-		helpText += "  --help, -h               Show this help and exit.\n";
-		helpText += "  --game=<name>            Select game profile by name or alias.\n";
-		helpText += "  --game <name>            Select game profile by name or alias.\n";
-		helpText += "  --repo-root=<path>       Explicit repository root for manifest search.\n";
-		helpText += "  --repo-root <path>       Explicit repository root for manifest search.\n\n";
-		helpText += "  --validate-startup-only  Validate manifest/startup scene and exit.\n\n";
+		helpText += "  --help, -h               ヘルプを表示して終了。\n";
+		helpText += "  --game=<name>            ゲームプロファイルを名前またはエイリアスで選択。\n";
+		helpText += "  --game <name>            ゲームプロファイルを名前またはエイリアスで選択。\n";
+		helpText += "  --repo-root=<path>       明示的にリポジトリルートを指定してマニフェスト検索。\n";
+		helpText += "  --repo-root <path>       明示的にリポジトリルートを指定してマニフェスト検索。\n";
+		helpText += "  --validate-startup-only  起動前検証のみ実行して終了。\n\n";
 		helpText += "Environment:\n";
-		helpText += "  UNNAMED_REPO_ROOT=<path> Explicit repository root for manifest search.\n\n";
-		helpText += "Manifest search priority:\n";
+		helpText += "  UNNAMED_REPO_ROOT=<path> リポジトリルートを指定してマニフェスト検索。\n\n";
+		helpText += "マニフェスト検索の優先順位:\n";
 		helpText += "  1) --repo-root\n";
 		helpText += "  2) UNNAMED_REPO_ROOT\n";
 		helpText += "  3) Upward search from current working directory\n";
 		helpText += "  4) Upward search from executable directory\n\n";
 		helpText += "Example:\n";
-		helpText += "  UnnamedEditorApp.exe --game=TeamGame --repo-root=S:/Repositories/UnnamedEngine\n";
+		helpText +=
+			"  UnnamedEditorApp.exe --game=TeamGame --repo-root=S:/Repositories/UnnamedEngine\n";
 
 		std::fputs(helpText.c_str(), stdout);
 		::OutputDebugStringA(helpText.c_str());
@@ -128,9 +123,10 @@ namespace Unnamed {
 
 	/// @brief 現在プロセスのコマンドラインを共通ルールで解析します。
 	/// @details `--game[= ]` と `--repo-root[= ]` と `--help/-h` に対応します。
-	[[nodiscard]] inline AppLaunchOptions ParseAppLaunchOptionsFromCommandLine() {
-		AppLaunchOptions options = {};
-		const auto appendDiagnostic = [&](const std::string_view text) {
+	[[nodiscard]] inline AppLaunchOptions
+	ParseAppLaunchOptionsFromCommandLine() {
+		AppLaunchOptions options          = {};
+		const auto       appendDiagnostic = [&](const std::string_view text) {
 			options.diagnostics.emplace_back(text);
 		};
 		const auto isOptionToken = [](const std::wstring_view token) {
@@ -138,18 +134,16 @@ namespace Unnamed {
 		};
 		const auto isEmptyOrWhitespace = [](const std::wstring_view text) {
 			for (wchar_t ch : text) {
-				if (!iswspace(static_cast<unsigned>(ch))) {
-					return false;
-				}
+				if (!iswspace(static_cast<unsigned>(ch))) { return false; }
 			}
 			return true;
 		};
 
-		int argc = 0;
+		int     argc = 0;
 		LPWSTR* argv = ::CommandLineToArgvW(::GetCommandLineW(), &argc);
 		if (argv == nullptr) {
 			appendDiagnostic(
-				"failed to parse command line arguments (CommandLineToArgvW returned null)"
+				"コマンドライン引数の解析に失敗しました (CommandLineToArgvW が null を返しました)"
 			);
 			return options;
 		}
@@ -165,16 +159,16 @@ namespace Unnamed {
 			if (arg.rfind(L"--game=", 0) == 0) {
 				const std::wstring_view gameText = arg.substr(7);
 				if (gameText.empty() || isEmptyOrWhitespace(gameText)) {
-					appendDiagnostic("empty value for --game=...; option ignored");
+					appendDiagnostic(
+						"empty value for --game=...; オプションが無視されました"
+					);
 					continue;
 				}
 
 				const std::string gameName = ConvertWideToUtf8(gameText);
-				if (!gameName.empty()) {
-					options.gameName = gameName;
-				} else {
+				if (!gameName.empty()) { options.gameName = gameName; } else {
 					appendDiagnostic(
-						"failed to decode --game value to UTF-8; option ignored"
+						"--game の値を UTF-8 に変換できませんでした; オプションが無視されました"
 					);
 				}
 				continue;
@@ -183,16 +177,14 @@ namespace Unnamed {
 			if (arg == L"--game") {
 				if (i + 1 >= argc || isOptionToken(argv[i + 1])) {
 					appendDiagnostic(
-						"missing value after --game; expected --game <name>"
+						"--game の後に値がありませんでした; 期待される形式: --game <name>"
 					);
 					continue;
 				}
 				const std::string gameName = ConvertWideToUtf8(argv[i + 1]);
-				if (!gameName.empty()) {
-					options.gameName = gameName;
-				} else {
+				if (!gameName.empty()) { options.gameName = gameName; } else {
 					appendDiagnostic(
-						"failed to decode --game value to UTF-8; option ignored"
+						"--game の値を UTF-8 に変換できませんでした; オプションが無視されました"
 					);
 				}
 				++i;
@@ -202,18 +194,22 @@ namespace Unnamed {
 			if (arg.rfind(L"--repo-root=", 0) == 0) {
 				const std::wstring_view pathText = arg.substr(12);
 				if (pathText.empty() || isEmptyOrWhitespace(pathText)) {
-					appendDiagnostic("empty value for --repo-root=...; option ignored");
+					appendDiagnostic(
+						"--repo-root の値が空か空白のみでした; オプションが無視されました"
+					);
 					continue;
 				}
 
-				options.repoRootOverride = std::filesystem::path(std::wstring(pathText));
+				options.repoRootOverride = std::filesystem::path(
+					std::wstring(pathText)
+				);
 				continue;
 			}
 
 			if (arg == L"--repo-root") {
 				if (i + 1 >= argc || isOptionToken(argv[i + 1])) {
 					appendDiagnostic(
-						"missing value after --repo-root; expected --repo-root <path>"
+						"--repo-root の後に値がありませんでした; 期待される形式: --repo-root <path>"
 					);
 					continue;
 				}
@@ -228,7 +224,8 @@ namespace Unnamed {
 					continue;
 				}
 				appendDiagnostic(
-					"unknown option '" + ConvertWideToUtf8(arg) + "'; option ignored"
+					"無効なオプション '" + ConvertWideToUtf8(arg) +
+					"'; オプションが無視されました"
 				);
 			}
 		}
@@ -239,7 +236,7 @@ namespace Unnamed {
 			const bool exists = std::filesystem::exists(repoRoot, ec);
 			if (ec || !exists) {
 				appendDiagnostic(
-					"--repo-root path does not exist or is inaccessible: '" +
+					"--repo-root パスは存在しないかアクセス不能です:" +
 					repoRoot.generic_string() +
 					"' (manifest search will continue with fallback candidates)"
 				);

@@ -563,12 +563,6 @@ namespace Unnamed {
 		if (!std::ranges::contains(commands, command)) {
 			commands.emplace_back(command);
 		}
-		DevMsg(
-			kChannel,
-			"コマンドをバインドしました: key = {}, command = '{}'",
-			KeyNameTable::ToString(key),
-			command
-		);
 	}
 
 	void InputSystem::UnbindCommand(const InputKey& key) {

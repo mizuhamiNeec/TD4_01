@@ -6,7 +6,7 @@ function Draw()
 		Ui_Text("ボタンが押されたよ！")
 	end
 
-	for i = 1, 512 do
+	for i = 1, 4 do
 		Ui_Text("ループの中のテキスト: " .. i)
 	end
 end

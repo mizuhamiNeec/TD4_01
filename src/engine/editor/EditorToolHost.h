@@ -62,16 +62,19 @@ namespace Unnamed {
 		Render::RenderModule& mRenderModule;
 		ImGuiLayer&           mImGuiLayer;
 
-		ConsoleSystem* mConsole = nullptr;
-		InputSystem*   mInputSystem = nullptr;
+		ConsoleSystem* mConsole      = nullptr;
+		InputSystem*   mInputSystem  = nullptr;
 		AssetManager*  mAssetManager = nullptr;
-		IDemoService*  mDemoService = nullptr;
+		IDemoService*  mDemoService  = nullptr;
 		IGameModule&   mGameModule;
 		Profiler*      mProfiler = nullptr;
 
 		std::vector<std::unique_ptr<IEditorTool>> mOwnedTools;
 		LevelEditorTool*                          mLevelTool = nullptr;
 		bool                                      mMainDockInitialized = false;
+
+		std::unique_ptr<class EditorLuaSystem>      mEditorLuaSystem;
+		std::unique_ptr<class EditorGuiScriptPanel> mEditorGuiScriptPanel;
 	};
 }
 

@@ -4,6 +4,7 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
+#include "EditorGuiScriptPanel.h"
 #include "GuiEditorTool.h"
 
 #include "core/string/StrUtil.h"
@@ -13,6 +14,7 @@
 #include "engine/ImGui/ImGuiWidgets.h"
 #include "engine/render/RenderModule.h"
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
+#include "engine/unnamed/subsystem/EditorLuaSystem/EditorLuaSystem.h"
 
 namespace Unnamed {
 	static constexpr std::string_view kChannel = "EdTlHost";
@@ -54,21 +56,33 @@ namespace Unnamed {
 
 	void EditorToolHost::Initialize() const {
 		const EditorToolServices services = {
-			.windowManager = &mWindowManager,
-			.renderModule  = &mRenderModule,
-			.imGuiLayer    = &mImGuiLayer,
-			.console       = mConsole,
-			.inputSystem   = mInputSystem,
-			.assetManager  = mAssetManager,
-			.demoService   = mDemoService,
+			.windowManager    = &mWindowManager,
+			.renderModule     = &mRenderModule,
+			.imGuiLayer       = &mImGuiLayer,
+			.console          = mConsole,
+			.inputSystem      = mInputSystem,
+			.assetManager     = mAssetManager,
+			.demoService      = mDemoService,
 			.gameWorldFactory = &mGameModule,
-			.profiler      = mProfiler,
+			.profiler         = mProfiler,
 		};
 		for (auto& tool : mOwnedTools) {
 			if (!tool) {
 				continue;
 			}
 			tool->Initialize(services);
+		}
+
+		mEditorLuaSystem      = std::make_unique<EditorLuaSystem>();
+		mEditorGuiScriptPanel = std::make_unique<EditorGuiScriptPanel>();
+		if (mEditorGuiScriptPanel) {
+			mEditorGuiScriptPanel->Initialize(
+				mAssetManager, mEditorLuaSystem.get()
+			);
+
+			mEditorGuiScriptPanel->SetScriptPath(
+				"./content/core/editorgui/test.edgui.lua"
+			);
 		}
 	}
 
@@ -209,7 +223,7 @@ namespace Unnamed {
 				constexpr auto stopColor = ImVec4(
 					0.79f, 0.31f, 0.31f, 1.0f
 				);
-				ImVec2 available     = ImGui::GetContentRegionAvail();
+				ImVec2       available     = ImGui::GetContentRegionAvail();
 				const ImVec2 windowPadding = ImGui::GetStyle().WindowPadding;
 				ImGui::SameLine();
 
@@ -277,7 +291,7 @@ namespace Unnamed {
 
 			ImGui::PopStyleVar(3); // WinRound, WinBorder, WinPadding
 
-			const ImGuiID dockSpaceId = ImGui::GetID("MainEditorDockSpace");
+			const ImGuiID dockSpaceId  = ImGui::GetID("MainEditorDockSpace");
 			const ImVec2  dockNodeSize = ImGui::GetContentRegionAvail();
 			ImGui::DockSpace(
 				dockSpaceId,
@@ -318,6 +332,8 @@ namespace Unnamed {
 			}
 			tool->BuildUi(frameContext);
 		}
+
+		mEditorGuiScriptPanel->Draw();
 
 		ImGui::ShowDemoWindow();
 	}

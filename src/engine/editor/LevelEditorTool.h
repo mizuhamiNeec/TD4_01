@@ -100,8 +100,6 @@ namespace Unnamed {
 			Vec2                        uvMax       = Vec2(1.0f, 1.0f);
 		};
 
-		static void LoadImGuizmoSettings(ConsoleSystem* console);
-
 		[[nodiscard]] Render::SceneViewRenderMode BuildSceneViewModeForSize(
 			float width,
 			float height,
@@ -131,7 +129,7 @@ namespace Unnamed {
 		void DrawProfilerWindow();
 
 		[[nodiscard]] Entity* GetSelectedEntity() const;
-		bool                  SaveSceneAs(const std::string& path) const;
+		[[nodiscard]] bool    SaveSceneAs(const std::string& path) const;
 
 		/// @brief 指定パスのシーンをエディターワールドへロードします。
 		/// @param path ロードするシーンパス

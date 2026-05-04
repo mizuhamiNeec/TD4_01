@@ -52,10 +52,10 @@ public:
 #endif
 
 	/// @brief コンポーネントの値を読み込む際に使用されます。
-	virtual void Deserialize(const JsonReader& reader) override;
+	void Deserialize(const JsonReader& reader) override;
 
 	/// @brief コンポーネントの値を書き込む際に使用されます。
-	virtual void Serialize(JsonWriter& writer) const override;
+	void Serialize(JsonWriter& writer) const override;
 };
 }
 ```

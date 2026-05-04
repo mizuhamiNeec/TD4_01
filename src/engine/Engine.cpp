@@ -1,7 +1,6 @@
 #include "Engine.h"
 
 #include <algorithm>
-#include <charconv>
 #include <chrono>
 #include <filesystem>
 #include <pch.h>
@@ -14,7 +13,9 @@
 
 #include <utility>
 
+#include <core/ComponentRegistry.h>
 #include <core/assets/AssetManager.h>
+#include <core/assets/loader/EditorGuiLoader.h>
 #include <core/assets/loader/EventPresentationLoader.h>
 #include <core/assets/loader/MaterialAssetLoader.h>
 #include <core/assets/loader/MaterialInstanceAssetLoader.h>
@@ -28,11 +29,10 @@
 #include <core/assets/loader/UiDocumentAssetLoader.h>
 #include <core/string/StrUtil.h>
 
-#include <core/ComponentRegistry.h>
 #include <engine/EngineComponentRegistration.h>
+#include <engine/game/GamePathResolver.h>
 #include <engine/game/IDemoService.h>
 #include <engine/game/IGameModule.h>
-#include <engine/game/GamePathResolver.h>
 #include <engine/Platform/PlatformEventsImpl.h>
 #include <engine/Platform/WindowManager.h>
 #include <engine/profiler/Profiler.h>
@@ -48,6 +48,7 @@
 #include <engine/ui/ImGuiLayer.h>
 #include <engine/unnamed/framework/entity/Entity.h>
 #include <engine/unnamed/subsystem/console/concommand/ConCommand.h>
+#include <engine/unnamed/subsystem/EditorLuaSystem/EditorLuaSystem.h>
 #include <engine/unnamed/subsystem/input/device/gamepad/GamepadDevice.h>
 #include <engine/unnamed/subsystem/input/device/keyboard/KeyboardDevice.h>
 #include <engine/unnamed/subsystem/input/device/mouse/MouseDevice.h>
@@ -70,10 +71,10 @@ namespace Unnamed {
 
 	namespace {
 		[[nodiscard]] bool ExecuteCfgIfExists(
-			ConsoleSystem*          console,
-			const std::string_view  cfgPath,
-			const std::string_view  channel,
-			const std::string_view  orderLabel
+			ConsoleSystem*         console,
+			const std::string_view cfgPath,
+			const std::string_view channel,
+			const std::string_view orderLabel
 		) {
 			if (!console || cfgPath.empty()) {
 				return false;
@@ -100,11 +101,11 @@ namespace Unnamed {
 		}
 
 		[[nodiscard]] bool ExecuteGameCfgIfExists(
-			ConsoleSystem*          console,
-			const GameModulePaths&  gamePaths,
-			const std::string_view  relativeCfgPath,
-			const std::string_view  channel,
-			const std::string_view  orderLabel
+			ConsoleSystem*         console,
+			const GameModulePaths& gamePaths,
+			const std::string_view relativeCfgPath,
+			const std::string_view channel,
+			const std::string_view orderLabel
 		) {
 			return ExecuteCfgIfExists(
 				console,
@@ -117,7 +118,9 @@ namespace Unnamed {
 
 	Engine::Engine(IGameModule& gameModule, const RUN_MODE runMode)
 		: mGameModule(gameModule),
-		  mRequestedRunMode(runMode) {}
+		  mRequestedRunMode(runMode), mConfig() {
+	}
+
 	Engine::~Engine() = default;
 
 	int Engine::Run() {
@@ -213,7 +216,7 @@ namespace Unnamed {
 		mIsEditorMode = resolvedRunMode == RUN_MODE::EDITOR;
 
 		mConfig = {
-			.mode = resolvedRunMode,
+			.mode   = resolvedRunMode,
 			.window = {
 				.title     = "Unnamed Engine",
 				.width     = 1280,
@@ -297,6 +300,9 @@ namespace Unnamed {
 		mAssetManager->RegisterLoader(
 			std::move(std::make_unique<SequenceAssetLoader>())
 		);
+		mAssetManager->RegisterLoader(
+			std::move(std::make_unique<EditorGuiLoader>())
+		);
 
 		mAudioSystem = std::make_unique<AudioSystem>();
 		if (!mAudioSystem->Init()) {
@@ -369,12 +375,12 @@ namespace Unnamed {
 
 		// ゲームモジュールに Engine 側サービスを公開し、初期化を委譲します。
 		EngineServices engineServices = {
-			.console = mConsoleSystem.get(),
-			.inputSystem = mInputSystem.get(),
-			.assetManager = mAssetManager.get(),
-			.profiler = mProfiler.get(),
+			.console       = mConsoleSystem.get(),
+			.inputSystem   = mInputSystem.get(),
+			.assetManager  = mAssetManager.get(),
+			.profiler      = mProfiler.get(),
 			.windowManager = mWindowManager.get(),
-			.demoService = mDemoService.get()
+			.demoService   = mDemoService.get()
 		};
 		mGameModule.Initialize(engineServices);
 		RegisterEngineComponents(ComponentRegistry::Get());
@@ -482,14 +488,15 @@ namespace Unnamed {
 			}
 #endif
 		} else {
-			std::unique_ptr<World> runtimeWorld = mGameModule.CreateRuntimeWorld(
-				BuildWorldServices()
-			);
+			std::unique_ptr<World> runtimeWorld = mGameModule.
+				CreateRuntimeWorld(
+					BuildWorldServices()
+				);
 			if (!runtimeWorld) {
 				Error("Engine", "GameModule returned null runtime world.");
 				return false;
 			}
-			World& world = ActivateWorld(std::move(runtimeWorld));
+			World&            world = ActivateWorld(std::move(runtimeWorld));
 			const std::string startupScenePath =
 				ResolveStartupScenePath(mGameModule);
 			world.LoadSceneFromFile(startupScenePath.c_str());
@@ -590,6 +597,7 @@ namespace Unnamed {
 			mUEditorRuntime->SyncPresentationState();
 			runtimeWorld = mUEditorRuntime->GetRuntimeWorld();
 		}
+
 #endif
 
 		// ワールドの固定シミュレーション更新 + 描画フレーム更新
@@ -612,9 +620,10 @@ namespace Unnamed {
 				                          mDemoService->
 				                          GetSimulationTickRate() :
 				                          IDemoService::ResolveConfiguredTickRate();
-			const float fixedStepSeconds = IDemoService::TickStepSecondsFromRate(
-				tickRate
-			);
+			const float fixedStepSeconds =
+				IDemoService::TickStepSecondsFromRate(
+					tickRate
+				);
 
 			if (mDemoService &&
 			    (mDemoService->IsPlayback() || mDemoService->IsRecording())) {
@@ -622,17 +631,17 @@ namespace Unnamed {
 					IDemoService::ResolveConfiguredTickRate();
 				if (configuredTickRate != tickRate &&
 				    configuredTickRate !=
-				    mLastLoggedTickrateMismatchConfigured) {
+				    mLastLoggedTickRateMismatchConfigured) {
 					Warning(
 						"Engine",
 						"sv_tickrate={} is ignored while demo mode is active. Using tickrate={}.",
 						configuredTickRate,
 						tickRate
 					);
-					mLastLoggedTickrateMismatchConfigured = configuredTickRate;
+					mLastLoggedTickRateMismatchConfigured = configuredTickRate;
 				}
 			} else {
-				mLastLoggedTickrateMismatchConfigured = 0;
+				mLastLoggedTickRateMismatchConfigured = 0;
 			}
 
 			mSimulationAccumulator += std::max(0.0f, scaledDeltaTime);
@@ -748,7 +757,8 @@ namespace Unnamed {
 		mToggleFullscreenCommand.reset();
 #endif
 
-		if (mDemoService && (mDemoService->IsPlayback() || mDemoService->IsRecording())) {
+		if (mDemoService && (mDemoService->IsPlayback() || mDemoService->
+		                     IsRecording())) {
 			(void)mDemoService->Stop();
 		}
 		ServiceLocator::Register<IDemoService>(nullptr);
@@ -823,63 +833,11 @@ namespace Unnamed {
 
 	/// @brief コンソールコマンドと変数の登録
 	void Engine::RegisterConsoleCommandsAndVariables() {
-		auto TryParseFloat = [](const std::string_view text, float& outValue) {
-			const char* begin     = text.data();
-			const char* end       = text.data() + text.size();
-			auto        [ptr, ec] = std::from_chars(begin, end, outValue);
-			if (ec == std::errc() && ptr == end) {
-				return true;
-			}
-			try {
-				size_t consumed = 0;
-				outValue        = std::stof(std::string(text), &consumed);
-				return consumed == text.size();
-			} catch (...) {
-				return false;
-			}
-		};
-
-		auto ParseBool = [](const std::string_view text, bool& outValue) {
-			const std::string lower = StrUtil::ToLowerCase(std::string(text));
-			if (
-				lower == "1" ||
-				lower == "true" ||
-				lower == "on" ||
-				lower == "yes"
-			) {
-				outValue = true;
-				return true;
-			}
-			if (
-				lower == "0" ||
-				lower == "false" ||
-				lower == "off" ||
-				lower == "no"
-			) {
-				outValue = false;
-				return true;
-			}
-			return false;
-		};
-
-		auto ParseVec4 = [&](const std::vector<std::string>& args, Vec4& outValue) {
-			if (args.size() != 4) {
-				return false;
-			}
-			float values[4] = {};
-			for (size_t i = 0; i < 4; ++i) {
-				if (!TryParseFloat(args[i], values[i])) {
-					return false;
-				}
-			}
-			outValue = Vec4(values[0], values[1], values[2], values[3]);
-			return true;
-		};
-
-		const auto queueSceneTransition = [this](const std::string& rawPath) {
+		const auto QueueSceneTransition = [this](const std::string& rawPath) {
 			World* runtimeWorld = GetWorld();
 			if (!runtimeWorld) {
-				Warning("Engine", "Scene transition failed: runtime world is null.");
+				Warning("Engine",
+				        "Scene transition failed: runtime world is null.");
 				return false;
 			}
 
@@ -887,7 +845,8 @@ namespace Unnamed {
 				runtimeWorld
 			);
 			if (!transitionTarget) {
-				Warning("Engine", "Scene transition failed: transition target world is null.");
+				Warning("Engine",
+				        "Scene transition failed: transition target world is null.");
 				return false;
 			}
 
@@ -914,21 +873,21 @@ namespace Unnamed {
 
 		mMapCommand = std::make_unique<ConCommand>(
 			"map",
-			[queueSceneTransition](const std::vector<std::string>& args) {
+			[QueueSceneTransition](const std::vector<std::string>& args) {
 				if (args.empty()) {
 					Warning("Engine", "Usage: map <scenePath>");
 					return false;
 				}
 
 				// 引数を1つのパスとして扱い、空白を含むケースも吸収します。
-				return queueSceneTransition(StrUtil::Join(args, " "));
+				return QueueSceneTransition(StrUtil::Join(args, " "));
 			},
 			"Queue a scene transition. Usage: map <scenePath>"
 		);
 
 		mReloadSceneCommand = std::make_unique<ConCommand>(
 			"reloadscene",
-			[this, queueSceneTransition](const std::vector<std::string>&) {
+			[this, QueueSceneTransition](const std::vector<std::string>&) {
 				World* runtimeWorld = GetWorld();
 				if (!runtimeWorld) {
 					Warning("Engine", "Reload failed: runtime world is null.");
@@ -939,11 +898,12 @@ namespace Unnamed {
 					runtimeWorld
 				);
 				if (!transitionTarget) {
-					Warning("Engine", "Reload failed: transition target world is null.");
+					Warning("Engine",
+					        "Reload failed: transition target world is null.");
 					return false;
 				}
 
-				const std::string loadedPath = std::string(
+				const auto loadedPath = std::string(
 					transitionTarget->GetLoadedScenePath()
 				);
 				if (loadedPath.empty()) {
@@ -951,7 +911,7 @@ namespace Unnamed {
 					return false;
 				}
 
-				return queueSceneTransition(loadedPath);
+				return QueueSceneTransition(loadedPath);
 			},
 			"Reload current scene."
 		);
@@ -970,7 +930,7 @@ namespace Unnamed {
 				}
 
 				std::string report = {};
-				const bool passed = SequenceRegressionRunner::RunAll(
+				const bool  passed = SequenceRegressionRunner::RunAll(
 					*world,
 					*mAssetManager,
 					&report
@@ -1012,7 +972,7 @@ namespace Unnamed {
 		RegisterDefaultEngineComponents(componentRegistry);
 	}
 
-	World* Engine::ResolveSceneTransitionTargetWorld(World* runtimeWorld) const {
+	World* Engine::ResolveSceneTransitionTargetWorld(World* runtimeWorld) {
 #if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
 		if (auto* editorWorld = dynamic_cast<EditorWorld*>(runtimeWorld)) {
 			return editorWorld->GetRuntimeSceneWorld();
@@ -1051,13 +1011,13 @@ namespace Unnamed {
 	}
 
 	WorldServices Engine::BuildWorldServices() const noexcept {
-		WorldServices services = {};
-		services.console       = mConsoleSystem.get();
-		services.inputSystem   = mInputSystem.get();
-		services.profiler      = mProfiler.get();
-		services.assetManager  = mAssetManager.get();
-		services.demoService   = mDemoService.get();
-		services.audioSystem   = mAudioSystem.get();
+		WorldServices services;
+		services.console      = mConsoleSystem.get();
+		services.inputSystem  = mInputSystem.get();
+		services.profiler     = mProfiler.get();
+		services.assetManager = mAssetManager.get();
+		services.demoService  = mDemoService.get();
+		services.audioSystem  = mAudioSystem.get();
 		return services;
 	}
 

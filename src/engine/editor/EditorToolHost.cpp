@@ -88,7 +88,9 @@ namespace Unnamed {
 		}
 
 		mAssetManager->RegisterReload(
-			[this](AssetID) { mEditorGuiScriptPanel->Reload(); }
+			[this](AssetID) {
+				mEditorGuiScriptPanel->Reload();
+			}
 		);
 
 		mNotification = std::make_unique<EditorNotification>();
@@ -101,6 +103,9 @@ namespace Unnamed {
 			}
 			tool->Shutdown();
 		}
+
+		mEditorLuaSystem->Shutdown();
+
 		mMainDockInitialized = false;
 	}
 
@@ -231,7 +236,7 @@ namespace Unnamed {
 				constexpr auto stopColor = ImVec4(
 					0.79f, 0.31f, 0.31f, 1.0f
 				);
-				ImVec2 available     = ImGui::GetContentRegionAvail();
+				ImVec2       available     = ImGui::GetContentRegionAvail();
 				const ImVec2 windowPadding = ImGui::GetStyle().WindowPadding;
 				ImGui::SameLine();
 
@@ -299,7 +304,7 @@ namespace Unnamed {
 
 			ImGui::PopStyleVar(3); // WinRound, WinBorder, WinPadding
 
-			const ImGuiID dockSpaceId = ImGui::GetID("MainEditorDockSpace");
+			const ImGuiID dockSpaceId  = ImGui::GetID("MainEditorDockSpace");
 			const ImVec2  dockNodeSize = ImGui::GetContentRegionAvail();
 			ImGui::DockSpace(
 				dockSpaceId,

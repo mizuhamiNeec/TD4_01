@@ -69,7 +69,9 @@ namespace Unnamed {
 			tool->Initialize(services);
 		}
 
-		mEditorLuaSystem      = std::make_unique<EditorLuaSystem>();
+		mEditorLuaSystem = std::make_unique<EditorLuaSystem>();
+		mEditorLuaSystem->Init();
+
 		mEditorGuiScriptPanel = std::make_unique<EditorGuiScriptPanel>();
 		if (mEditorGuiScriptPanel) {
 			mEditorGuiScriptPanel->Initialize(
@@ -80,6 +82,10 @@ namespace Unnamed {
 				"./content/core/editorgui/test.edgui.lua"
 			);
 		}
+
+		mAssetManager->RegisterReload(
+			[this](AssetID) { mEditorGuiScriptPanel->Reload(); }
+		);
 
 		mNotification = std::make_unique<EditorNotification>();
 	}

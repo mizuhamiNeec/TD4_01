@@ -6,6 +6,7 @@
 
 #include <core/string/StrUtil.h>
 
+#include "engine/editor/EditorGuiScriptPanel.h"
 #include "engine/editor/EditorNotification.h"
 #include "engine/editor/GuiEditorTool.h"
 #include "engine/game/IGameModule.h"
@@ -13,6 +14,7 @@
 #include "engine/ImGui/ImGuiWidgets.h"
 #include "engine/render/RenderModule.h"
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
+#include "engine/unnamed/subsystem/editorluasystem/EditorLuaSystem.h"
 
 namespace Unnamed {
 	static constexpr std::string_view kChannel = "EdTlHost";
@@ -70,6 +72,24 @@ namespace Unnamed {
 			}
 			tool->Initialize(services);
 		}
+
+		mEditorLuaSystem = std::make_unique<EditorLuaSystem>();
+		mEditorLuaSystem->Init();
+
+		mEditorGuiScriptPanel = std::make_unique<EditorGuiScriptPanel>();
+		if (mEditorGuiScriptPanel) {
+			mEditorGuiScriptPanel->Initialize(
+				mAssetManager, mEditorLuaSystem.get()
+			);
+
+			mEditorGuiScriptPanel->SetScriptPath(
+				"./content/core/editorgui/test.edgui.lua"
+			);
+		}
+
+		mAssetManager->RegisterReload(
+			[this](AssetID) { mEditorGuiScriptPanel->Reload(); }
+		);
 
 		mNotification = std::make_unique<EditorNotification>();
 	}
@@ -211,7 +231,7 @@ namespace Unnamed {
 				constexpr auto stopColor = ImVec4(
 					0.79f, 0.31f, 0.31f, 1.0f
 				);
-				ImVec2       available     = ImGui::GetContentRegionAvail();
+				ImVec2 available     = ImGui::GetContentRegionAvail();
 				const ImVec2 windowPadding = ImGui::GetStyle().WindowPadding;
 				ImGui::SameLine();
 
@@ -279,7 +299,7 @@ namespace Unnamed {
 
 			ImGui::PopStyleVar(3); // WinRound, WinBorder, WinPadding
 
-			const ImGuiID dockSpaceId  = ImGui::GetID("MainEditorDockSpace");
+			const ImGuiID dockSpaceId = ImGui::GetID("MainEditorDockSpace");
 			const ImVec2  dockNodeSize = ImGui::GetContentRegionAvail();
 			ImGui::DockSpace(
 				dockSpaceId,
@@ -330,9 +350,10 @@ namespace Unnamed {
 			);
 		}
 
-		ImGui::ShowDemoWindow();
-
+		mEditorGuiScriptPanel->Draw();
 		mNotification->Update(frameContext.deltaTime);
+
+		ImGui::ShowDemoWindow();
 	}
 
 	void EditorToolHost::CollectRenderViews(

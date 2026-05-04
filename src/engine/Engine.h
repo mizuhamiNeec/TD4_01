@@ -61,14 +61,14 @@ namespace Unnamed {
 
 		/// @brief エンジン標準コンポーネントの登録を保証します。
 		/// @param componentRegistry 登録先のコンポーネントレジストリ
-		void RegisterEngineComponents(ComponentRegistry& componentRegistry);
+		static void RegisterEngineComponents(ComponentRegistry& componentRegistry);
 
 		/// @brief シーン遷移処理の対象となるワールドを解決します。
 		/// @param runtimeWorld 現在の実行対象ワールド
 		/// @return 実際にシーン遷移を適用するワールド
-		[[nodiscard]] World* ResolveSceneTransitionTargetWorld(
+		[[nodiscard]] static World* ResolveSceneTransitionTargetWorld(
 			World* runtimeWorld
-		) const;
+		);
 
 		/// @brief フルスクリーンの切り替えを行います。
 		void ToggleFullscreen() const;
@@ -90,21 +90,21 @@ namespace Unnamed {
 		EngineConfig mConfig;
 
 		// 基本システム
-		std::unique_ptr<class AssetManager>       mAssetManager;
+		std::unique_ptr<AssetManager>             mAssetManager;
 		std::unique_ptr<class PlatformEventsImpl> mPlatformEvents;
-		std::unique_ptr<class WindowManager>      mWindowManager;
+		std::unique_ptr<WindowManager>            mWindowManager;
 
 		// 基幹システム
-		std::unique_ptr<ConsoleSystem>        mConsoleSystem;
-		std::unique_ptr<class TerminalSystem> mTerminalSystem;
-		std::unique_ptr<IDemoService>         mDemoService;
-
-		std::unique_ptr<class TimeSystem>  mTimeSystem;
-		std::unique_ptr<class InputSystem> mInputSystem;
-		std::unique_ptr<class Profiler>    mProfiler;
+		std::unique_ptr<ConsoleSystem>         mConsoleSystem;
+		std::unique_ptr<class TerminalSystem>  mTerminalSystem;
+		std::unique_ptr<class TimeSystem>      mTimeSystem;
+		std::unique_ptr<InputSystem>           mInputSystem;
 
 		std::unique_ptr<Rhi::IRhiDevice>      mRhiDevice;
 		std::unique_ptr<Render::RenderModule> mRenderModule;
+
+		std::unique_ptr<Profiler>     mProfiler;
+		std::unique_ptr<IDemoService> mDemoService;
 
 		std::unique_ptr<World> mWorld;
 
@@ -114,21 +114,20 @@ namespace Unnamed {
 #endif
 
 		std::unique_ptr<AudioSystem> mAudioSystem;
-		std::unique_ptr<ConCommand> mQuitCommand;
-		std::unique_ptr<ConCommand> mToggleEditorCommand;
-		std::unique_ptr<ConCommand> mToggleFullscreenCommand;
-		std::unique_ptr<ConCommand> mMapCommand;
-		std::unique_ptr<ConCommand> mReloadSceneCommand;
-		std::unique_ptr<ConCommand> mPostFxSetCommand;
-		std::unique_ptr<ConCommand> mPostFxEnableCommand;
-		std::unique_ptr<ConCommand> mPostFxClearParamCommand;
-		std::unique_ptr<ConCommand> mPostFxClearPassCommand;
-		std::unique_ptr<ConCommand> mPostFxResetCommand;
-		std::unique_ptr<ConCommand> mPostFxListCommand;
-		std::unique_ptr<ConCommand> mPostFxChainCommand;
-		std::unique_ptr<ConCommand> mPostFxChainReloadCommand;
-		std::unique_ptr<ConCommand> mSequenceRegressionRunCommand;
-
+		std::unique_ptr<ConCommand>  mQuitCommand;
+		std::unique_ptr<ConCommand>  mToggleEditorCommand;
+		std::unique_ptr<ConCommand>  mToggleFullscreenCommand;
+		std::unique_ptr<ConCommand>  mMapCommand;
+		std::unique_ptr<ConCommand>  mReloadSceneCommand;
+		std::unique_ptr<ConCommand>  mPostFxSetCommand;
+		std::unique_ptr<ConCommand>  mPostFxEnableCommand;
+		std::unique_ptr<ConCommand>  mPostFxClearParamCommand;
+		std::unique_ptr<ConCommand>  mPostFxClearPassCommand;
+		std::unique_ptr<ConCommand>  mPostFxResetCommand;
+		std::unique_ptr<ConCommand>  mPostFxListCommand;
+		std::unique_ptr<ConCommand>  mPostFxChainCommand;
+		std::unique_ptr<ConCommand>  mPostFxChainReloadCommand;
+		std::unique_ptr<ConCommand>  mSequenceRegressionRunCommand;
 
 		std::unique_ptr<Render::RenderFrameContext> mRenderFrameContext;
 		float mAssetHotReloadPollAccumulator = 0.0f;
@@ -136,7 +135,7 @@ namespace Unnamed {
 		uint32_t mFrameIndex = 0;
 		uint32_t mLastResizeWidth = 0;
 		uint32_t mLastResizeHeight = 0;
-		uint32_t mLastLoggedTickrateMismatchConfigured = 0;
+		uint32_t mLastLoggedTickRateMismatchConfigured = 0;
 
 #ifdef _DEBUG
 		bool mIsEditorMode = true;

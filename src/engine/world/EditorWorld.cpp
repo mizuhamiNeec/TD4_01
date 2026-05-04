@@ -31,6 +31,8 @@ namespace Unnamed {
 				: return 1280.0f / 720.0f;
 				case Render::SCENE_RENDER_MODE::FHD_1080P
 				: return 1920.0f / 1080.0f;
+				case Render::SCENE_RENDER_MODE::UHD_4K
+				: return 3840.0f / 2160.0f;
 				case Render::SCENE_RENDER_MODE::FIT_VIEWPORT:
 				default: {
 					const uint32_t width = std::max(
@@ -303,7 +305,8 @@ namespace Unnamed {
 			case Render::SCENE_RENDER_MODE::FIXED_ASPECT_16X9:
 			case Render::SCENE_RENDER_MODE::FIXED_ASPECT_4X3:
 			case Render::SCENE_RENDER_MODE::HD_720P:
-			case Render::SCENE_RENDER_MODE::FHD_1080P: {
+			case Render::SCENE_RENDER_MODE::FHD_1080P:
+			case Render::SCENE_RENDER_MODE::UHD_4K: {
 				shouldUpdate = request.mode != mLastAspectMode;
 				break;
 			}

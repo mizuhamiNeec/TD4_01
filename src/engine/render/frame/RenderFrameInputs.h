@@ -35,6 +35,7 @@ namespace Unnamed::Render {
 		FIXED_ASPECT_4X3,
 		HD_720P,
 		FHD_1080P,
+		UHD_4K,
 	};
 
 	struct SceneViewRenderMode {

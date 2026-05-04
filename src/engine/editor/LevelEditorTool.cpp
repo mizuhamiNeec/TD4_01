@@ -125,6 +125,11 @@ namespace Unnamed {
 					height = 1080;
 					break;
 				}
+				case Render::SCENE_RENDER_MODE::UHD_4K: {
+					width  = 3840;
+					height = 2160;
+					break;
+				}
 				default: {
 					break;
 				}
@@ -184,8 +189,7 @@ namespace Unnamed {
 			mEditorWorld.GetRuntimeSceneWorld(),
 			services.assetManager
 		);
-		//LoadImGuizmoSettings(mConsoleSystem);
-
+		
 		auto guizmoConfig = mConsoleSystem->GetConVarAs<ConVar<std::string>>(
 			"im_guizmoconfigpath"
 		);
@@ -639,6 +643,8 @@ namespace Unnamed {
 			case EDITOR_VIEWPORT_RENDER_MODE::FHD1080
 			: sceneRequest.mode = Render::SCENE_RENDER_MODE::FHD_1080P;
 				break;
+			case EDITOR_VIEWPORT_RENDER_MODE::UHD4K :
+				sceneRequest.mode = Render::SCENE_RENDER_MODE::UHD_4K;
 			default: break;
 		}
 

@@ -44,7 +44,7 @@ namespace Unnamed {
 			);
 
 			ViewportFitResult result;
-			result.aspectRatio       = safeContentWidth / safeContentHeight;
+			result.aspectRatio = safeContentWidth / safeContentHeight;
 
 			float fitWidth  = safePanelWidth;
 			float fitHeight = fitWidth / result.aspectRatio;
@@ -95,8 +95,8 @@ namespace Unnamed {
 			const auto   outputIt   = mViewOutputs.find(std::string(viewKey));
 			const bool   hasOutput  = outputIt != mViewOutputs.end();
 			const Vec2   outputSize = hasOutput ?
-				                          outputIt->second.size :
-				                          Vec2(drawWidth, drawHeight);
+				                        outputIt->second.size :
+				                        Vec2(drawWidth, drawHeight);
 			const ViewportFitResult fit = ComputeViewportFitResult(
 				Vec2(panePos.x, panePos.y),
 				Vec2(drawWidth, drawHeight),
@@ -134,9 +134,11 @@ namespace Unnamed {
 					outputIt->second.srvCpu
 				);
 				ImGui::SetCursorScreenPos(fitPos);
-				ImGui::Image(
+				ImGuiWidgets::ImageWithRounding(
 					tex,
 					ImVec2(fit.drawSize.x, fit.drawSize.y),
+					4.0f,
+					ImDrawFlags_RoundCornersAll,
 					ImVec2(outputIt->second.uvMin.x, outputIt->second.uvMin.y),
 					ImVec2(outputIt->second.uvMax.x, outputIt->second.uvMax.y)
 				);
@@ -299,6 +301,8 @@ namespace Unnamed {
 				case EDITOR_VIEWPORT_RENDER_MODE::FHD1080
 				: viewportModeLabel = "FHD";
 					break;
+				case EDITOR_VIEWPORT_RENDER_MODE::UHD4K
+				: viewportModeLabel = "UHD4K";
 				default: break;
 			}
 			ImGui::SetNextItemWidth(140.0f);
@@ -340,6 +344,13 @@ namespace Unnamed {
 					EDITOR_VIEWPORT_RENDER_MODE::FHD1080
 				)) {
 					mViewportRenderMode = EDITOR_VIEWPORT_RENDER_MODE::FHD1080;
+				}
+				if (ImGui::Selectable(
+					"UHD4K",
+					mViewportRenderMode ==
+					EDITOR_VIEWPORT_RENDER_MODE::UHD4K
+				)) {
+					mViewportRenderMode = EDITOR_VIEWPORT_RENDER_MODE::UHD4K;
 				}
 				ImGui::EndCombo();
 			}

@@ -45,6 +45,7 @@ namespace Unnamed {
 		FIXED_ASPECT_4_3,
 		HD720,
 		FHD1080,
+		UHD4K,
 	};
 
 	enum class EDITOR_GRID_SNAP_UNIT : uint8_t {

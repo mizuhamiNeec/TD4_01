@@ -1,4 +1,7 @@
-﻿#include "EditorGuiScriptPanel.h"
+#ifdef _DEBUG
+#include "EditorGuiScriptPanel.h"
+
+#include <imgui.h>
 
 namespace Unnamed {
 	constexpr ImVec4 kTextColorError(1.0f, 0.35f, 0.35f, 1.0f);
@@ -106,3 +109,5 @@ namespace Unnamed {
 		}
 	}
 }
+
+#endif

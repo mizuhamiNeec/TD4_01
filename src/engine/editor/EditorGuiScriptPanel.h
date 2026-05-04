@@ -1,4 +1,6 @@
-﻿#pragma once
+#pragma once
+#ifdef _DEBUG
+
 #include <core/assets/AssetManager.h>
 
 #include "engine/unnamed/subsystem/EditorLuaSystem/EditorLuaSystem.h"
@@ -25,3 +27,5 @@ namespace Unnamed {
 		std::string mLastError;
 	};
 }
+
+#endif

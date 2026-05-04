@@ -180,7 +180,7 @@
                             1.0
                         ]
                     },
-                    "guid": 0,
+                    "guid": 13339722074811050496,
                     "type": "engine.Transform"
                 }
             ],
@@ -192,8 +192,7 @@
         }
     ],
     "folders": [
-        "Env",
-        "Env/Trash's"
+        "Env"
     ],
     "version": 1
 }

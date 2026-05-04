@@ -5,10 +5,10 @@
 #include <imgui_internal.h>
 
 #include <core/string/StrUtil.h>
-#include "EditorGuiScriptPanel.h"
-#include "GuiEditorTool.h"
 
+#include "engine/editor/EditorGuiScriptPanel.h"
 #include "engine/editor/EditorNotification.h"
+#include "engine/editor/GuiEditorTool.h"
 #include "engine/game/IGameModule.h"
 #include "engine/ImGui/Icons.h"
 #include "engine/ImGui/ImGuiWidgets.h"
@@ -317,7 +317,6 @@ namespace Unnamed {
 		}
 
 		mEditorGuiScriptPanel->Draw();
-
 		mNotification->Update(frameContext.deltaTime);
 
 		ImGui::ShowDemoWindow();

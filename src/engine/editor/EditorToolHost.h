@@ -71,13 +71,13 @@ namespace Unnamed {
 
 		std::vector<std::unique_ptr<IEditorTool>> mOwnedTools;
 		LevelEditorTool*                          mLevelTool = nullptr;
-		bool                                      mMainDockInitialized = false;
 
 		std::unique_ptr<class EditorNotification>   mNotification;
 		std::unique_ptr<class EditorLuaSystem>      mEditorLuaSystem;
 		std::unique_ptr<class EditorGuiScriptPanel> mEditorGuiScriptPanel;
 
-		bool mShowAbout = false;
+		bool mMainDockInitialized = false;
+		bool mShowAbout           = false;
 	};
 }
 

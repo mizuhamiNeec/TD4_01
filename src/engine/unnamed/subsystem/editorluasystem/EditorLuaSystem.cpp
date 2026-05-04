@@ -1,6 +1,9 @@
-﻿#include "EditorLuaSystem.h"
+#include "EditorLuaSystem.h"
 
 #include <thirdparty/lua/lua.hpp>
+#ifdef _DEBUG
+#include <imgui.h>
+#endif
 
 #include "core/assets/loader/TextureLoaderDirectXTex.h"
 
@@ -14,13 +17,22 @@ namespace Unnamed {
 
 		int LuaUiText(lua_State* lua) {
 			const char* text = luaL_checkstring(lua, 1);
+#ifdef _DEBUG
 			ImGui::TextUnformatted(text);
+#else
+			(void)text;
+#endif
 			return 0;
 		}
 
 		int LuaUiButton(lua_State* lua) {
-			const char* text    = luaL_checkstring(lua, 1);
-			const bool  pressed = ImGui::Button(text);
+			const char* text = luaL_checkstring(lua, 1);
+#ifdef _DEBUG
+			const bool pressed = ImGui::Button(text);
+#else
+			(void)text;
+			constexpr bool pressed = false;
+#endif
 
 			lua_pushboolean(lua, pressed);
 			return 1;

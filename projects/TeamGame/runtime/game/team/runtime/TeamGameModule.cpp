@@ -43,7 +43,7 @@ namespace Unnamed {
 			.gameRoot            = "./projects/TeamGame",
 			.contentRoot         = "./projects/TeamGame/content",
 			.configRoot          = "./projects/TeamGame/config",
-			.defaultStartupScene = "scenes/bootstrap.json",
+			.defaultStartupScene = "scenes/title.json",
 		};
 	}
 

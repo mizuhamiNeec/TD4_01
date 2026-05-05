@@ -3,6 +3,7 @@
 #include "core/ComponentRegistry.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 #include "MicComponent.h"
+#include "PlayerMoveComponent.h"
 
 namespace Unnamed {
 	namespace {
@@ -32,6 +33,8 @@ namespace Unnamed {
 
 	void RegisterTeamGameComponents(ComponentRegistry &componentRegistry) {
 		RegisterComponentIfMissing<MyGame::MicComponent>(
-			componentRegistry, "team.TeamSample", "Team Sample");
+			componentRegistry, "mygame.MicComponent", "Mic Component");
+		RegisterComponentIfMissing<MyGame::PlayerMoveComponent>(
+			componentRegistry, "mygame.PlayerMoveComponent", "Player Move Component");
 	}
 }

@@ -33,14 +33,14 @@ namespace Unnamed {
 		[[nodiscard]] bool IsCurrentDirectoryRelativePath(
 			const std::string_view path
 		) {
-			return path.rfind("./", 0) == 0 || path.rfind("../", 0) == 0;
+			return path.starts_with("./") || path.starts_with("../");
 		}
 
 		[[nodiscard]] bool IsEngineRootRelativePath(
 			const std::string_view path
 		) {
-			return path.rfind("content/", 0) == 0 ||
-			       path.rfind("projects/", 0) == 0;
+			return path.starts_with("content/") ||
+			       path.starts_with("projects/");
 		}
 
 		[[nodiscard]] std::string ResolveAssetLoadPath(
@@ -224,7 +224,7 @@ namespace Unnamed {
 
 			SpecialMsg(
 				LogLevel::Success, kChannel,
-				"アセットを読み込みました: {} (ID: {})", normalizedPath, id
+				"Loaded asset from file: {} (ID: {})", normalizedPath, id
 			);
 
 			return id;
@@ -258,7 +258,6 @@ namespace Unnamed {
 		std::string,
 		TextureAssetData&&,
 		const std::vector<AssetID>&
-	
 	);
 
 	template
@@ -267,7 +266,6 @@ namespace Unnamed {
 		std::string,
 		SequenceAssetData&&,
 		const std::vector<AssetID>&
-	
 	);
 
 	void AssetManager::AddRef(const AssetID id) {
@@ -346,6 +344,7 @@ namespace Unnamed {
 	template const SoundAssetData*             AssetManager::Get(AssetID) const;
 	template const UiDocumentAssetData*        AssetManager::Get(AssetID) const;
 	template const EventPresentationAssetData* AssetManager::Get(AssetID) const;
+	template const EditorGuiData*              AssetManager::Get(AssetID) const;
 
 	const std::vector<AssetID>& AssetManager::GetDependencies(
 		const AssetID id
@@ -577,13 +576,13 @@ namespace Unnamed {
 		const AssetID id      = AllocateID();
 		mPathToID[normalized] = id;
 
-		namespace fs = std::filesystem;
+		namespace Fs = std::filesystem;
 
 		Node& node           = mNodes[id];
 		node.meta.type       = type;
 		node.meta.sourcePath = normalized;
 		node.meta.loaded     = false;
-		node.meta.name       = fs::path(normalized).filename().string();
+		node.meta.name       = Fs::path(normalized).filename().string();
 
 		mNameToID[node.meta.name] = id;
 		return id;

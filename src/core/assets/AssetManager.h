@@ -35,6 +35,7 @@ namespace Unnamed {
 		/// @brief ファイルからアセットをロードします
 		/// @param path ロードするファイルのパス
 		/// @param typeOpt アセットの種類（省略可能）
+		/// @param policy ロードポリシー（デフォルトはUseCachedIfLoaded）
 		/// @return ロードしたアセットのID
 		AssetID LoadFromFile(
 			const std::string& path,
@@ -77,7 +78,6 @@ namespace Unnamed {
 		/// @param id アセットのID
 		/// @return アセットのメタデータへの参照
 		[[nodiscard]] const AssetMetaData& Meta(AssetID id) const;
-
 
 		/// @brief アセットのペイロードを取得します
 		/// @tparam T ペイロードの型

@@ -18,6 +18,7 @@ namespace Unnamed {
 		UI_DOCUMENT        = 1 << 10, // UIドキュメント
 		EVENT_PRESENTATION = 1 << 11, // EventPresentation v2 プロファイル
 		SEQUENCE           = 1 << 12, // Sequence / Timeline
+		EDITOR_GUI         = 1 << 13, // Editor GUI
 	};
 
 	std::string ToString(ASSET_TYPE e);

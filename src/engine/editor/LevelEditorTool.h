@@ -10,9 +10,10 @@
 #include <unordered_map>
 #include <vector>
 
+#include "ContentBrowser.h"
+#include "EditorNotification.h"
 #include "EditorViewportCameraManager.h"
 #include "IEditorTool.h"
-#include "ContentBrowser.h"
 
 #include "core/math/Vec2.h"
 
@@ -45,6 +46,7 @@ namespace Unnamed {
 		FIXED_ASPECT_4_3,
 		HD720,
 		FHD1080,
+		UHD4K,
 	};
 
 	enum class EDITOR_GRID_SNAP_UNIT : uint8_t {
@@ -100,8 +102,6 @@ namespace Unnamed {
 			Vec2                        uvMax       = Vec2(1.0f, 1.0f);
 		};
 
-		static void LoadImGuizmoSettings(ConsoleSystem* console);
-
 		[[nodiscard]] Render::SceneViewRenderMode BuildSceneViewModeForSize(
 			float width,
 			float height,
@@ -131,7 +131,7 @@ namespace Unnamed {
 		void DrawProfilerWindow();
 
 		[[nodiscard]] Entity* GetSelectedEntity() const;
-		bool                  SaveSceneAs(const std::string& path) const;
+		[[nodiscard]] bool    SaveSceneAs(const std::string& path) const;
 
 		/// @brief 指定パスのシーンをエディターワールドへロードします。
 		/// @param path ロードするシーンパス

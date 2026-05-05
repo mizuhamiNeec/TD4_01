@@ -5,6 +5,7 @@
 #include "AssetID.h"
 #include "FileStamp.h"
 
+#include "types/EditorGuiData.h"
 #include "types/EventPresentationAssetData.h"
 #include "types/MaterialAssetData.h"
 #include "types/MaterialInstanceAssetData.h"
@@ -36,7 +37,8 @@ namespace Unnamed {
 		SequenceAssetData,
 		SoundAssetData,
 		UiDocumentAssetData,
-		EventPresentationAssetData
+		EventPresentationAssetData,
+		EditorGuiData
 	>;
 
 	/// @brief アセットのロード結果を表す構造体

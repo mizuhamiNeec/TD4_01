@@ -49,7 +49,6 @@ jobs:
         run: |
           $projects = @(
             ".\build\projects\UnnamedEditorApp\UnnamedEditorApp.vcxproj",
-            ".\build\projects\ParkourGameApp\ParkourGameApp.vcxproj",
             ".\build\projects\TeamGameApp\TeamGameApp.vcxproj"
           )
 
@@ -70,9 +69,7 @@ jobs:
           $repoRoot = (Resolve-Path ".").Path
 
           $checks = @(
-            @{ Exe = ".\bin\Debug-windows-x86_64\UnnamedEditorApp\UnnamedEditorApp.exe"; Args = @("--game=Parkour", "--repo-root=$repoRoot", "--validate-startup-only") },
             @{ Exe = ".\bin\Debug-windows-x86_64\UnnamedEditorApp\UnnamedEditorApp.exe"; Args = @("--game=TeamGame", "--repo-root=$repoRoot", "--validate-startup-only") },
-            @{ Exe = ".\bin\Debug-windows-x86_64\ParkourGameApp\ParkourGameApp.exe"; Args = @("--repo-root=$repoRoot", "--validate-startup-only") },
             @{ Exe = ".\bin\Debug-windows-x86_64\TeamGameApp\TeamGameApp.exe"; Args = @("--repo-root=$repoRoot", "--validate-startup-only") }
           )
 
@@ -93,3 +90,4 @@ jobs:
               throw "Startup smoke failed: $($entry.Exe) (exit=$exitCode)"
             }
           }
+

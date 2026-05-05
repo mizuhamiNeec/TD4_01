@@ -44,26 +44,40 @@ namespace MyGame {
 		UpdatePhysics(deltaTime);
 
 		// -----------------------------------------------------------------------
-		// 2️⃣ 誘導機能（ターゲット追従・収束）
+		// 2️⃣ 地面衝突処理（バウンス）
+		// -----------------------------------------------------------------------
+		// 理由：地面に衝突したときの反射を計算し、リアルな物理挙動を実現
+		HandleGroundCollision();
+
+		// -----------------------------------------------------------------------
+		// 3️⃣ 摩擦を適用
+		// -----------------------------------------------------------------------
+		// 理由：地面上の速度を段階的に減衰させ、最終的に停止させる
+		ApplyFriction();
+
+		// -----------------------------------------------------------------------
+		// 4️⃣ 誘導機能（ターゲット追従・収束）
 		// -----------------------------------------------------------------------
 		// 理由：物理と分離することで、自然で段階的なホーミング効果を実現
 		ApplyHoming(deltaTime);
 
 		// -----------------------------------------------------------------------
-		// 3️⃣ 時間更新
+		// 5️⃣ 時間更新
 		// -----------------------------------------------------------------------
 		_elapsedTime += deltaTime;
 
 		// -----------------------------------------------------------------------
-		// 4️⃣ 着地判定
+		// 6️⃣ 停止判定（完全に停止したか確認）
 		// -----------------------------------------------------------------------
-		// 理由：フライト終了条件を判定してフラグを更新
-		if (CheckLanding()) {
+		// 理由：速度が十分に小さくなったら、フライトを終了する
+		float speed = _velocity.Length();
+		if (_bIsGrounded && speed < _stopVelocityThreshold) {
 			_bIsInFlight = false;
+			_velocity = Vec3(0.0f, 0.0f, 0.0f);  // 完全に停止
 		}
 
 		// -----------------------------------------------------------------------
-		// 5️⃣ TransformComponent と同期
+		// 7️⃣ TransformComponent と同期
 		// -----------------------------------------------------------------------
 		// 理由：計算した位置をエンティティの Transform に反映
 		auto* transform = GetOwner()->GetComponent<Unnamed::TransformComponent>();
@@ -280,6 +294,21 @@ namespace MyGame {
 		ImGui::Separator();
 
 		// -----------------------------------------------------------------------
+		// バウンス・摩擦パラメータ
+		// -----------------------------------------------------------------------
+		ImGui::Text("=== Bounce & Friction Parameters ===");
+		ImGui::SliderFloat("Bounce Damping", &_bounceDamping, 0.0f, 1.0f, "%.3f");
+		ImGui::SliderFloat("Friction Coefficient", &_frictionCoefficient, 0.0f, 1.0f, "%.3f");
+		ImGui::SliderFloat("Ground Level", &_groundLevel, -10.0f, 10.0f, "%.2f");
+		ImGui::SliderFloat("Stop Velocity Threshold", &_stopVelocityThreshold, 0.001f, 0.1f, "%.4f");
+
+		// NOTE: パラメータ説明
+		ImGui::TextDisabled("Bounce: 0=no bounce, 1=full energy | Friction: 0=fast stop, 1=no friction");
+		ImGui::Checkbox("Is Grounded", &_bIsGrounded);
+
+		ImGui::Separator();
+
+		// -----------------------------------------------------------------------
 		// コントロールボタン
 		// -----------------------------------------------------------------------
 		ImGui::Text("=== Control ===");
@@ -327,6 +356,18 @@ namespace MyGame {
 		if (auto val = reader.Read<float>("homingEndTime")) {
 			_homingEndTime = val.value();
 		}
+		if (auto val = reader.Read<float>("bounceDamping")) {
+			_bounceDamping = val.value();
+		}
+		if (auto val = reader.Read<float>("frictionCoefficient")) {
+			_frictionCoefficient = val.value();
+		}
+		if (auto val = reader.Read<float>("groundLevel")) {
+			_groundLevel = val.value();
+		}
+		if (auto val = reader.Read<float>("stopVelocityThreshold")) {
+			_stopVelocityThreshold = val.value();
+		}
 	}
 
 	void GolfBallComponent::Serialize(Unnamed::JsonWriter& writer) const {
@@ -346,6 +387,14 @@ namespace MyGame {
 		writer.Write(_homingStartTime);
 		writer.Key("homingEndTime");
 		writer.Write(_homingEndTime);
+		writer.Key("bounceDamping");
+		writer.Write(_bounceDamping);
+		writer.Key("frictionCoefficient");
+		writer.Write(_frictionCoefficient);
+		writer.Key("groundLevel");
+		writer.Write(_groundLevel);
+		writer.Key("stopVelocityThreshold");
+		writer.Write(_stopVelocityThreshold);
 	}
 
 	// -----------------------------------------------------------------------
@@ -483,6 +532,77 @@ namespace MyGame {
 	// -----------------------------------------------------------------------
 	// 状態管理（内部実装）
 	// -----------------------------------------------------------------------
+
+	void GolfBallComponent::HandleGroundCollision() {
+		// -----------------------------------------------------------------------
+		// 地面衝突判定
+		// -----------------------------------------------------------------------
+		// 理由：Y座標が地面レベル以下に到達したら、衝突と判定して反射を計算
+		
+		if (_position.y <= _groundLevel) {
+			// -----------------------------------------------------------------------
+			// 地面に到達した場合の処理
+			// -----------------------------------------------------------------------
+
+			// NOTE: 位置を地面にクリップ（貫通を防止）
+			_position.y = _groundLevel;
+
+			// NOTE: 縦方向（Y）の速度を反転して反発係数を適用
+			// 理由：完全な弾性衝突ではなく、エネルギー損失を伴わせる
+			// 反発係数が低いほど、バウンドは小さくなる
+			_velocity.y = -_velocity.y * _bounceDamping;
+
+			// NOTE: 地面接触フラグを有効化
+			_bIsGrounded = true;
+
+			// -----------------------------------------------------------------------
+			// 横方向速度の減衰（衝突時のエネルギー損失）
+			// -----------------------------------------------------------------------
+			// 理由：地面との衝突によって、横方向速度も一定程度失われる
+			float collisionDamping = 0.9f;
+			_velocity.x *= collisionDamping;
+			_velocity.z *= collisionDamping;
+		} else {
+			// -----------------------------------------------------------------------
+			// 空中にいる場合
+			// -----------------------------------------------------------------------
+			_bIsGrounded = false;
+		}
+	}
+
+	void GolfBallComponent::ApplyFriction() {
+		// -----------------------------------------------------------------------
+		// 地表摩擦を適用（地面上にいる場合のみ）
+		// -----------------------------------------------------------------------
+		// 理由：地面上の横方向速度を段階的に減衰させ、自然な停止を実現
+
+		if (!_bIsGrounded) {
+			return;  // 空中にいる場合は摩擦なし
+		}
+
+		// -----------------------------------------------------------------------
+		// 横方向速度に摩擦を適用
+		// -----------------------------------------------------------------------
+		// 理由：毎フレーム、摩擦係数を掛けることで指数関数的な速度減衰を実現
+		// 例：0.95^30 ≈ 0.21 で、約30フレーム後に約80%減少
+
+		_velocity.x *= _frictionCoefficient;
+		_velocity.z *= _frictionCoefficient;
+
+		// NOTE: 縦方向（Y）の速度も地面上で少し減衰（跳ね返りが減る）
+		// ただし、次フレームの重力計算で再び速度が加わるため、
+		// 摩擦の効果は主に横方向に現れる
+		_velocity.y *= _frictionCoefficient;
+
+		// -----------------------------------------------------------------------
+		// 速度が非常に小さい場合は完全に0に設定
+		// -----------------------------------------------------------------------
+		// 理由：数値誤差で無限に微小な速度が残ることを防止
+		float speed = _velocity.Length();
+		if (speed < _stopVelocityThreshold) {
+			_velocity = Vec3(0.0f, 0.0f, 0.0f);
+		}
+	}
 
 	bool GolfBallComponent::CheckLanding() const {
 		// -----------------------------------------------------------------------

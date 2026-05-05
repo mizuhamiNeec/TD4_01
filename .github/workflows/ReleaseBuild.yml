@@ -48,7 +48,6 @@ jobs:
         shell: pwsh
         run: |
           $projects = @(
-            ".\build\projects\ParkourGameApp\ParkourGameApp.vcxproj",
             ".\build\projects\TeamGameApp\TeamGameApp.vcxproj"
           )
 
@@ -69,7 +68,6 @@ jobs:
           $repoRoot = (Resolve-Path ".").Path
 
           $checks = @(
-            @{ Exe = ".\bin\Release-windows-x86_64\ParkourGameApp\ParkourGameApp.exe"; Args = @("--repo-root=$repoRoot", "--validate-startup-only") },
             @{ Exe = ".\bin\Release-windows-x86_64\TeamGameApp\TeamGameApp.exe"; Args = @("--repo-root=$repoRoot", "--validate-startup-only") }
           )
 
@@ -90,3 +88,4 @@ jobs:
               throw "Startup smoke failed: $($entry.Exe) (exit=$exitCode)"
             }
           }
+

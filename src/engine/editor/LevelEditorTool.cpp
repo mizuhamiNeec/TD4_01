@@ -6,6 +6,7 @@
 #include <imgui_internal.h>
 
 #include "EditorNotification.h"
+#include "ImGuizmoConfigLoader.h"
 
 #include "core/io/json/JsonReader.h"
 #include "core/string/StrUtil.h"
@@ -124,6 +125,11 @@ namespace Unnamed {
 					height = 1080;
 					break;
 				}
+				case Render::SCENE_RENDER_MODE::UHD_4K: {
+					width  = 3840;
+					height = 2160;
+					break;
+				}
 				default: {
 					break;
 				}
@@ -183,7 +189,27 @@ namespace Unnamed {
 			mEditorWorld.GetRuntimeSceneWorld(),
 			services.assetManager
 		);
-		LoadImGuizmoSettings(mConsoleSystem);
+
+		auto guizmoConfig = mConsoleSystem->GetConVarAs<ConVar<std::string>>(
+			"im_guizmoconfigpath"
+		);
+
+		if (guizmoConfig) {
+			ImGuizmoConfigLoader(guizmoConfig->GetValue());
+
+			SpecialMsg(
+				LogLevel::Success,
+				"LevelEditorTool",
+				"ImGuizmo settings loaded from config file: {}",
+				guizmoConfig->GetValue()
+			);
+		} else {
+			Warning(
+				"LevelEditorTool",
+				"ConVar 'im_guizmoconfigpath' not found. ImGuizmo settings will not be loaded from config file."
+			);
+		}
+
 		mInitialized = true;
 	}
 
@@ -584,86 +610,6 @@ namespace Unnamed {
 		mShowProfilerWindow = open;
 	}
 
-	void LevelEditorTool::LoadImGuizmoSettings(ConsoleSystem* console) {
-		if (!console) {
-			return;
-		}
-
-		auto guizmoConfig = console->GetConVarAs<ConVar<std::string>>(
-			"im_guizmoconfigpath"
-		);
-
-		auto Vec4ToImVec4 = [](const Vec4& vec) {
-			return ImVec4(vec.x, vec.y, vec.z, vec.w);
-		};
-
-		if (guizmoConfig) {
-			JsonReader reader(guizmoConfig->GetValue());
-			auto&      style  = ImGuizmo::GetStyle();
-			auto&      colors = style.Colors;
-
-			// Style
-			{
-				const auto rs                  = reader["style"];
-				style.TranslationLineThickness =
-					rs["translationLineThickness"].GetFloat();
-				style.TranslationLineArrowSize =
-					rs["translationLineArrowSize"].GetFloat();
-				style.RotationLineThickness =
-					rs["rotationLineThickness"].GetFloat();
-				style.RotationOuterLineThickness =
-					rs["rotationOuterLineThickness"].GetFloat();
-				style.ScaleLineThickness =
-					rs["scaleLineThickness"].GetFloat();
-				style.ScaleLineCircleSize =
-					rs["scaleLineCircleSize"].GetFloat();
-				style.HatchedAxisLineThickness =
-					rs["hatchedAxisLineThickness"].GetFloat();
-				style.CenterCircleSize =
-					rs["centerCircleSize"].GetFloat();
-			}
-
-			// Color
-			{
-				using namespace ImGuizmo;
-				auto       rc = reader["color"];
-				const auto dx = rc["directionX"].GetArray();
-				colors[DIRECTION_X] = Vec4ToImVec4(dx.GetVec4());
-				const auto dy = rc["directionY"].GetArray();
-				colors[DIRECTION_Y] = Vec4ToImVec4(dy.GetVec4());
-				const auto dz = rc["directionZ"].GetArray();
-				colors[DIRECTION_Z] = Vec4ToImVec4(dz.GetVec4());
-				const auto px = rc["planeX"].GetArray();
-				colors[PLANE_X] = Vec4ToImVec4(px.GetVec4());
-				const auto py = rc["planeY"].GetArray();
-				colors[PLANE_Y] = Vec4ToImVec4(py.GetVec4());
-				const auto pz = rc["planeZ"].GetArray();
-				colors[PLANE_Z] = Vec4ToImVec4(pz.GetVec4());
-				const auto sel = rc["selection"].GetArray();
-				colors[SELECTION] = Vec4ToImVec4(sel.GetVec4());
-				const auto inact = rc["inactive"].GetArray();
-				colors[INACTIVE] = Vec4ToImVec4(inact.GetVec4());
-				const auto tline = rc["translationLine"].GetArray();
-				colors[TRANSLATION_LINE] = Vec4ToImVec4(tline.GetVec4());
-				const auto sline = rc["scaleLine"].GetArray();
-				colors[SCALE_LINE] = Vec4ToImVec4(sline.GetVec4());
-				const auto rborder = rc["rotationUsingBorder"].GetArray();
-				colors[ROTATION_USING_BORDER] = Vec4ToImVec4(rborder.GetVec4());
-				const auto rfill = rc["rotationUsingFill"].GetArray();
-				colors[ROTATION_USING_FILL] = Vec4ToImVec4(rfill.GetVec4());
-				const auto hatch = rc["hatchedAxisLines"].GetArray();
-				colors[HATCHED_AXIS_LINES] = Vec4ToImVec4(hatch.GetVec4());
-				const auto text = rc["text"].GetArray();
-				colors[TEXT] = Vec4ToImVec4(text.GetVec4());
-				const auto textShadow = rc["textShadow"].GetArray();
-				colors[TEXT_SHADOW] = Vec4ToImVec4(textShadow.GetVec4());
-			}
-
-			// どっちが正方向かわからんくなるので禁止
-			ImGuizmo::AllowAxisFlip(false);
-		}
-	}
-
 	Render::SceneViewRenderMode LevelEditorTool::BuildSceneViewModeForSize(
 		const float width, const float height, const bool forceFit
 	) const {
@@ -696,6 +642,8 @@ namespace Unnamed {
 			case EDITOR_VIEWPORT_RENDER_MODE::FHD1080
 			: sceneRequest.mode = Render::SCENE_RENDER_MODE::FHD_1080P;
 				break;
+			case EDITOR_VIEWPORT_RENDER_MODE::UHD4K :
+				sceneRequest.mode = Render::SCENE_RENDER_MODE::UHD_4K;
 			default: break;
 		}
 

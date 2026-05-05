@@ -62,6 +62,8 @@ imgui.ini
 # --- Repo-specific ---
 /ClassDiagram.cd
 .github/copilot-instructions.md
+/premake5.exe
+projects/*/config/user.cfg
 
 # アセットの.objは除外しない。
 !/content/**/*.obj

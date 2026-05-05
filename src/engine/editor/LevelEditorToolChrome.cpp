@@ -44,11 +44,11 @@ namespace Unnamed {
 		}
 
 		[[nodiscard]] std::string ResolveEditorSceneRootPath() {
-			constexpr std::string_view kChannel = "LevelEditorTool";
+			constexpr std::string_view kChannel           = "LevelEditorTool";
 			constexpr std::string_view kFallbackSceneRoot =
 				"./content/core/scenes";
-			static bool                sWarnedMissingModule = false;
-			static bool                sWarnedUnavailableSceneRoot = false;
+			static bool sWarnedMissingModule        = false;
+			static bool sWarnedUnavailableSceneRoot = false;
 
 			const IGameModule* gameModule = ServiceLocator::Get<IGameModule>();
 			if (!gameModule) {
@@ -160,20 +160,44 @@ namespace Unnamed {
 					const std::string savePath = currentPath.empty() ?
 						                             defaultScenePath :
 						                             currentPath;
-					SaveSceneAs(savePath);
+					if (SaveSceneAs(savePath)) {
+						Msg(
+							"LevelEditorTool",
+							"Scene saved successfully: {}",
+							savePath
+						);
+					} else {
+						Warning(
+							"LevelEditorTool",
+							"Failed to save scene: {}",
+							savePath
+						);
+					}
 				}
 
 				if (ImGui::MenuItem("Save As (sandbox.json)")) {
-					SaveSceneAs(defaultScenePath);
+					if (SaveSceneAs(defaultScenePath)) {
+						Msg(
+							"LevelEditorTool",
+							"Scene saved successfully: {}",
+							defaultScenePath
+						);
+					} else {
+						Warning(
+							"LevelEditorTool",
+							"Failed to save scene: {}",
+							defaultScenePath
+						);
+					}
 				}
 
 				ImGui::Separator();
 
 				if (ImGui::BeginMenu("Open Scene")) {
 					static std::vector<std::string> sSceneCandidates = {};
-					static std::string              sSceneRoot = {};
+					static std::string              sSceneRoot       = {};
 					if (sSceneRoot != sceneRoot) {
-						sSceneRoot = sceneRoot;
+						sSceneRoot       = sceneRoot;
 						sSceneCandidates = CollectSceneCandidates(sceneRoot);
 					}
 					if (sSceneCandidates.empty()) {
@@ -187,7 +211,7 @@ namespace Unnamed {
 					ImGui::Separator();
 
 					constexpr size_t maxQuickOpenCount = 24;
-					const size_t quickOpenCount = std::min(
+					const size_t     quickOpenCount    = std::min(
 						sSceneCandidates.size(),
 						maxQuickOpenCount
 					);
@@ -420,7 +444,9 @@ namespace Unnamed {
 					"256", "512", "1024"
 				};
 
-				auto FindNearestGridSnapIndex = [](const float valueInCurrentUnit) {
+				auto FindNearestGridSnapIndex = [](
+					const float valueInCurrentUnit
+				) {
 					uint32_t nearestIndex = 0u;
 					float    nearestDiff  =
 						std::abs(valueInCurrentUnit - kGridSnapValues[0]);
@@ -435,13 +461,13 @@ namespace Unnamed {
 					return nearestIndex;
 				};
 
-				const bool showHu = mGridSnapUnit == EDITOR_GRID_SNAP_UNIT::HU;
+				const bool  showHu = mGridSnapUnit == EDITOR_GRID_SNAP_UNIT::HU;
 				const float gridSnapInCurrentUnit =
 					showHu ? Math::MtoH(mGridSnap) : mGridSnap;
 				uint32_t itemCurrentIndex = FindNearestGridSnapIndex(
 					gridSnapInCurrentUnit
 				);
-				const auto& labels = kGridSnapLabels;
+				const auto& labels     = kGridSnapLabels;
 				const char* comboLabel = labels[itemCurrentIndex];
 
 				ImGui::Text("Grid: ");
@@ -493,10 +519,11 @@ namespace Unnamed {
 					itemCurrentIndex, size
 
 				);
-				const float selectedGridSnap = kGridSnapValues[itemCurrentIndex];
+				const float selectedGridSnap = kGridSnapValues[
+					itemCurrentIndex];
 				mGridSnap = showHu ?
-					Math::HtoM(selectedGridSnap) :
-					selectedGridSnap;
+					            Math::HtoM(selectedGridSnap) :
+					            selectedGridSnap;
 				ImGui::PopID();
 				ImGui::PopItemWidth();
 			}
@@ -507,4 +534,3 @@ namespace Unnamed {
 }
 
 #endif
-

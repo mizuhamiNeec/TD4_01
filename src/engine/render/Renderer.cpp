@@ -420,6 +420,11 @@ namespace Unnamed::Render {
 				height = 1080;
 				break;
 			}
+			case SCENE_RENDER_MODE::UHD_4K: {
+				width  = 3840;
+				height = 2160;
+				break;
+			}
 			default: break;
 		}
 
@@ -469,10 +474,10 @@ namespace Unnamed::Render {
 		mGeometryPass.resolved        = mPipelineRegistry.GetGraphics(
 			mGeometryPass.pipeline
 		);
-		mSkyboxPass.geom.resolved     = mPipelineRegistry.GetGraphics(
+		mSkyboxPass.geom.resolved = mPipelineRegistry.GetGraphics(
 			mSkyboxPass.geom.pipeline
 		);
-		mSpritePass.geom.resolved     = mPipelineRegistry.GetGraphics(
+		mSpritePass.geom.resolved = mPipelineRegistry.GetGraphics(
 			mSpritePass.geom.pipeline
 		);
 		mBillboardPass.depthGeom.resolved = mPipelineRegistry.GetGraphics(
@@ -645,4 +650,3 @@ namespace Unnamed::Render {
 		state.outputTextureId  = 0;
 	}
 }
-

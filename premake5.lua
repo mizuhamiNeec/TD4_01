@@ -36,7 +36,7 @@ function WarningSettings()
 		warnings "Extra"
 		buildoptions { "/W4" }
 		fatalwarnings { "All" }
-		linkoptions { "/IGNORE:4099" }
+		linkoptions { "/IGNORE:4099" } -- Assimpが発狂するので無視
 	filter {}
 end
 
@@ -68,7 +68,6 @@ end
 
 function CommonProjectSettings(projectName)
 	CommonSettings()
-	WarningSettings()
 	ConfigurationSettings()
 	UnnamedSettings()
 	WindowsPlatformSettings()
@@ -128,10 +127,24 @@ project "DirectXTex"
 		"src/thirdparty/DirectXTex/Shaders/Compiled",
 	}
 
+project "Lua"
+	kind "StaticLib"
+	CommonProjectSettings("%{prj.name}")
+
+	files {
+		"src/thirdparty/lua/*.h",
+		"src/thirdparty/lua/*.c",
+	}
+
+	includedirs {
+		"src/thirdparty/lua",
+	}
+
 group "Engine/Runtime"
 project "UnnamedEngineRuntime"
 	kind "StaticLib"
 	CommonProjectSettings("%{prj.name}")
+	WarningSettings()
 
 	files {
 		"src/pch.h",
@@ -167,7 +180,7 @@ project "UnnamedEngineRuntime"
 
 	EngineIncludeDirs()
 	libdirs { "src/thirdparty/DirectXTex/" }
-	links { "DirectXTex" }
+	links { "DirectXTex", "Lua" }
 	LinkAssimpByConfig()
 
 	filter "configurations:Debug"
@@ -177,6 +190,7 @@ project "UnnamedEngineRuntime"
 project "UnnamedEditorRuntime"
 	kind "StaticLib"
 	CommonProjectSettings("%{prj.name}")
+	WarningSettings()
 
 	files {
 		"src/pch.h",
@@ -191,6 +205,8 @@ project "UnnamedEditorRuntime"
 		"src/engine/ui/ImGuiLayer.cpp",
 		"src/engine/gui/editor/**.h",
 		"src/engine/gui/editor/**.cpp",
+		"src/engine/unnamed/subsystem/editorluasystem/**.h",
+		"src/engine/unnamed/subsystem/editorluasystem/**.cpp",
 		"src/thirdparty/ImGui/imgui.cpp",
 		"src/thirdparty/ImGui/imgui_draw.cpp",
 		"src/thirdparty/ImGui/imgui_widgets.cpp",
@@ -237,6 +253,7 @@ group "Engine/Applications"
 project "UnnamedEditorApp"
 	kind "WindowedApp"
 	CommonProjectSettings("%{prj.name}")
+	WarningSettings()
 
 	files {
 		"src/pch.h",

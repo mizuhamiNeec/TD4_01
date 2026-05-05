@@ -22,6 +22,8 @@ namespace Unnamed {
 				: return 1280.0f / 720.0f;
 				case Render::SCENE_RENDER_MODE::FHD_1080P
 				: return 1920.0f / 1080.0f;
+				case Render::SCENE_RENDER_MODE::UHD_4K
+				: return 3840.0f / 2160.0f;
 				case Render::SCENE_RENDER_MODE::FIT_VIEWPORT:
 				default: {
 					const float width = static_cast<float>(std::max(

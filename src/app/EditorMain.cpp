@@ -5,33 +5,21 @@
 
 #include "AppLaunchOptions.h"
 #include "GameModuleFactory.h"
-#include "game/parkour/runtime/ParkourGameModule.h"
 #include "game/team/runtime/TeamGameModule.h"
 
 namespace {
 	[[nodiscard]] bool RegisterEditorRuntimeModules() {
-		if (!Unnamed::RegisterGameModule(
-			"Parkour",
-			&Unnamed::CreateParkourGameModule
-		)) {
-			Error(
-				"EditorApp",
-				"Failed to register Parkour runtime module."
-			);
-			return false;
-		}
 		if (!Unnamed::RegisterGameModule(
 			"TeamGame",
 			&Unnamed::CreateTeamGameModule
 		)) {
 			Error(
 				"EditorApp",
-				"Failed to register TeamGame runtime module."
+				"ゲームモジュール 'TeamGame' の登録に失敗しました。"
 			);
 			return false;
 		}
 
-		(void)Unnamed::RegisterGameModuleAlias("ParkourGame", "Parkour");
 		(void)Unnamed::RegisterGameModuleAlias("Team", "TeamGame");
 		return true;
 	}
@@ -39,8 +27,11 @@ namespace {
 	[[nodiscard]] std::string ResolveEditorGameName(
 		const Unnamed::AppLaunchOptions& launchOptions
 	) {
-		if (!launchOptions.gameName.has_value() || launchOptions.gameName->empty()) {
-			return "Parkour";
+		if (
+			!launchOptions.gameName.has_value() ||
+			launchOptions.gameName->empty()
+		) {
+			return "TeamGame";
 		}
 		return *launchOptions.gameName;
 	}
@@ -70,15 +61,12 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR commandLine, int) {
 	}
 
 	const std::string gameName = ResolveEditorGameName(launchOptions);
-	std::unique_ptr<Unnamed::IGameModule> gameModule =
+	const std::unique_ptr<Unnamed::IGameModule> gameModule =
 		Unnamed::CreateGameModule(gameName);
+
 	if (!gameModule) {
-		Error("EditorApp", "Unknown game profile '{}'. Fallback to Parkour", gameName);
-		gameModule = Unnamed::CreateGameModule("Parkour");
-		if (!gameModule) {
-			Fatal("EditorApp", "Failed to create fallback Parkour game module.");
-			return EXIT_FAILURE;
-		}
+		Fatal("EditorApp", "ゲームモジュール '{}' の生成に失敗しました。", gameName);
+		return EXIT_FAILURE;
 	}
 
 #ifdef _DEBUG
@@ -90,7 +78,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR commandLine, int) {
 		*gameModule,
 		{
 			.failOnUnknownComponentTypes = failOnUnknown,
-			.emitDetailedLogs = true,
+			.emitDetailedLogs            = true,
 		}
 	);
 	if (!validated) {

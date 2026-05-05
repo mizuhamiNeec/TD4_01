@@ -28,7 +28,7 @@
 			"enabled": true,
 			"shader": "../shaders/programs/postfx_vignette.shader.json",
 			"scalars": {
-				"Intensity": 2
+				"Intensity": 1.25
 			},
 			"colors": {
 				"Tint": [1.0, 1.0, 1.0, 1.0]

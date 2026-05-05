@@ -10,9 +10,10 @@
 #include <unordered_map>
 #include <vector>
 
+#include "ContentBrowser.h"
+#include "EditorNotification.h"
 #include "EditorViewportCameraManager.h"
 #include "IEditorTool.h"
-#include "ContentBrowser.h"
 
 #include "core/math/Vec2.h"
 

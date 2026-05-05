@@ -1,12 +1,10 @@
 #ifdef _DEBUG
-#include "LevelEditorTool.h"
-
 #include <algorithm>
 #include <cmath>
 #include <format>
 #include <imgui.h>
 
-#include <engine/unnamed/subsystem/console/ConsoleSystem.h>
+#include "LevelEditorTool.h"
 
 #include "core/string/StrUtil.h"
 
@@ -17,6 +15,7 @@
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/framework/components/editor/EditorCameraComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
+#include "engine/unnamed/subsystem/console/ConsoleSystem.h"
 #include "engine/world/EditorWorld.h"
 
 #include "sequence/SequenceEditorController.h"

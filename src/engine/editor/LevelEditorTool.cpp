@@ -189,7 +189,7 @@ namespace Unnamed {
 			mEditorWorld.GetRuntimeSceneWorld(),
 			services.assetManager
 		);
-		
+
 		auto guizmoConfig = mConsoleSystem->GetConVarAs<ConVar<std::string>>(
 			"im_guizmoconfigpath"
 		);
@@ -311,9 +311,8 @@ namespace Unnamed {
 				)) {
 					Vec2 virtualViewportSize = mViewportSize;
 					if (const auto outputIt = mViewOutputs.find(
-							mActiveViewportViewKey
-						);
-						outputIt != mViewOutputs.end()) {
+						mActiveViewportViewKey
+					); outputIt != mViewOutputs.end()) {
 						virtualViewportSize = Vec2(
 							std::max(1.0f, outputIt->second.size.x),
 							std::max(1.0f, outputIt->second.size.y)

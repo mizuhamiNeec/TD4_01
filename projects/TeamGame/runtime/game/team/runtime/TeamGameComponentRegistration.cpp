@@ -3,8 +3,6 @@
 #include "core/ComponentRegistry.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 
-#include "game/team/components/TeamSampleComponent.h"
-
 namespace Unnamed {
 	namespace {
 		template <typename T>
@@ -35,8 +33,6 @@ namespace Unnamed {
 	}
 
 	void RegisterTeamGameComponents(ComponentRegistry& componentRegistry) {
-		RegisterComponentIfMissing<TeamSampleComponent>(
-			componentRegistry, "team.TeamSample", "Team Sample"
-		);
+		(void)componentRegistry;
 	}
 }

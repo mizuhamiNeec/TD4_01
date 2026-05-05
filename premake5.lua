@@ -227,28 +227,8 @@ project "UnnamedEditorRuntime"
 
 	filter "configurations:Debug"
 		defines { "UNNAMED_WITH_EDITOR" }
-	filter {}
-
-group "Games/Parkour"
--- Phase 10: Parkour runtime sources moved from src/game to projects/ParkourGame/runtime.
-project "ParkourRuntime"
-	kind "StaticLib"
-	CommonProjectSettings("%{prj.name}")
-
-	files {
-		"src/pch.h",
-		"src/pch.cpp",
-		"projects/ParkourGame/runtime/**.h",
-		"projects/ParkourGame/runtime/**.cpp",
-	}
-
-	excludes {
-		"src/transplantation/**",
-	}
-
-	EngineIncludeDirs()
-	includedirs { "projects/ParkourGame/runtime" }
-
+filter {}
+	
 group "Games/TeamGame"
 -- Phase 11: TeamGame runtime sources moved from src/game to projects/TeamGame/runtime.
 project "TeamGameRuntime"
@@ -286,13 +266,11 @@ project "UnnamedEditorApp"
 
 	EngineIncludeDirs()
 	includedirs {
-		"projects/ParkourGame/runtime",
 		"projects/TeamGame/runtime",
 	}
 	links {
 		"UnnamedEngineRuntime",
 		"UnnamedEditorRuntime",
-		"ParkourRuntime",
 		"TeamGameRuntime",
 		"DirectXTex",
 	}
@@ -302,38 +280,8 @@ project "UnnamedEditorApp"
 	LinkAssimpByConfig()
 	CopyDxCompilerDlls()
 	linkoptions {
-		"/WHOLEARCHIVE:ParkourRuntime.lib",
 		"/WHOLEARCHIVE:TeamGameRuntime.lib",
 	}
-
-group "Games/Parkour"
-project "ParkourGameApp"
-	kind "WindowedApp"
-	CommonProjectSettings("%{prj.name}")
-
-	files {
-		"src/pch.h",
-		"src/pch.cpp",
-		"src/app/AppLaunchOptions.h",
-		"src/app/GameModuleFactory.h",
-		"src/app/GameModuleFactory.cpp",
-		"src/app/GameMain.cpp",
-	}
-
-	EngineIncludeDirs()
-	includedirs { "projects/ParkourGame/runtime" }
-	links {
-		"UnnamedEngineRuntime",
-		"ParkourRuntime",
-		"DirectXTex",
-	}
-	filter "configurations:Debug"
-		links { "UnnamedEditorRuntime" }
-		defines { "UNNAMED_WITH_EDITOR" }
-	filter {}
-	LinkAssimpByConfig()
-	CopyDxCompilerDlls()
-	linkoptions { "/WHOLEARCHIVE:ParkourRuntime.lib" }
 
 group "Games/TeamGame"
 project "TeamGameApp"

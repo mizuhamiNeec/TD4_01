@@ -59,17 +59,17 @@
                 {
                     "active": true,
                     "data": {
-                        "parentEntityGuid": 0,
+                        "parentEntityGuid": 5,
                         "position": [
-                            9.753599166870117,
-                            1.6256003379821777,
-                            -13.81760025024414
+                            0.0,
+                            2.5,
+                            -8.199999809265137
                         ],
                         "rotation": [
-                            0.08052121847867966,
-                            -0.3812268078327179,
-                            0.03335258364677429,
-                            0.9203641414642334
+                            0.18652403354644775,
+                            0.0,
+                            0.0,
+                            0.9824504256248474
                         ],
                         "scale": [
                             0.9999998807907104,
@@ -86,7 +86,7 @@
                         "cameraActive": true,
                         "exposureEv": 3.0,
                         "farZ": 10000.0,
-                        "fovYDegrees": 40.0,
+                        "fovYDegrees": 90.0,
                         "nearZ": 0.009999999776482582
                     },
                     "guid": 16771323243344039964,
@@ -148,6 +148,15 @@
                     },
                     "guid": 15170849770376363326,
                     "type": "engine.StaticMeshRenderer"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "dynamic": false,
+                        "enabled": true
+                    },
+                    "guid": 0,
+                    "type": "engine.StaticMeshCollider"
                 }
             ],
             "folderPath": "Env",
@@ -188,6 +197,58 @@
             "guid": 4,
             "isEditorOnly": false,
             "name": "Entity",
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "bounceDamping": 0.699999988079071,
+                        "flightTime": 2.0,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "groundLevel": 0.0,
+                        "homingEndTime": 1.5,
+                        "homingStartTime": 0.5,
+                        "homingStrength": 1.0,
+                        "maxSpeedClamp": 50.0,
+                        "randomRadius": 1.0,
+                        "stopVelocityThreshold": 0.009999999776482582
+                    },
+                    "guid": 0,
+                    "type": "mygame.GolfBall"
+                }
+            ],
+            "folderPath": "",
+            "guid": 5,
+            "isEditorOnly": false,
+            "name": "Ball",
             "visible": true
         }
     ],

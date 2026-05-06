@@ -7,6 +7,10 @@
 #include <core/math/random/random.h>
 #include <cmath>
 
+#include <engine/world/World.h>
+
+#include "collision/SphereKinematicCollisionResolver.h"
+
 #ifdef _DEBUG
 #include "imgui.h"
 #endif
@@ -29,6 +33,16 @@ namespace MyGame {
 		if (transform) {
 			_position = transform->GetPosition();
 		}
+		
+		// 物理エンジンをワールドから取得
+		_physicsEngine = GetWorld() ? &GetWorld()->GetPhysicsEngine() : nullptr;
+		
+		mCollisionResolver = std::make_unique<Unnamed::SphereKinematicCollisionResolver>(
+			_physicsEngine
+		);
+		
+		auto* sphereKCR = dynamic_cast<Unnamed::SphereKinematicCollisionResolver*>(mCollisionResolver.get());
+		sphereKCR->UpdateHull(_position, _radius); // 初期位置と半径でコリジョンハルを設定 
 	}
 
 	void GolfBallComponent::OnTick(float deltaTime) {
@@ -77,6 +91,14 @@ namespace MyGame {
 		}
 
 		// -----------------------------------------------------------------------
+		// 7️⃣ 衝突応答 & 速度クリップ
+		// -----------------------------------------------------------------------
+		auto* sphereKCR = dynamic_cast<Unnamed::SphereKinematicCollisionResolver*>(mCollisionResolver.get());
+		sphereKCR->SlideMove(
+			_position, _velocity, deltaTime
+		);
+		
+		// -----------------------------------------------------------------------
 		// 7️⃣ TransformComponent と同期
 		// -----------------------------------------------------------------------
 		// 理由：計算した位置をエンティティの Transform に反映
@@ -86,6 +108,15 @@ namespace MyGame {
 			// NOTE: 瞬間的な位置変更なので補間をリセット
 			transform->RequestInterpolationResync();
 		}
+
+		// デバッグ描画
+		GetWorld()->GetDebugDraw().DrawSphere(
+			transform->GetPosition(),
+			transform->GetRotation(),
+			_radius, 
+			Vec4::cyan,
+			16
+		);
 	}
 
 	void GolfBallComponent::OnDetached() {

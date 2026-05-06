@@ -1,5 +1,6 @@
 #include "TeamGameComponentRegistration.h"
 
+#include "collision/base/BaseKinematicCollisionResolver.h"
 #include "core/ComponentRegistry.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 #include "MicComponent.h"

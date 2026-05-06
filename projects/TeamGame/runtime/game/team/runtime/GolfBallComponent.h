@@ -4,6 +4,12 @@
 #include <core/io/json/JsonWriter.h>
 #include <core/math/Vec3.h>
 
+#include <engine/physics/core/Physics.h>
+
+namespace Unnamed {
+	class BaseKinematicCollisionResolver;
+}
+
 namespace MyGame {
 
 /// @brief ゴルフボールの放物運動を管理するコンポーネント
@@ -135,6 +141,16 @@ private:
 	/// @reason 地面上での速度減衰を計算
 	void ApplyFriction();
 
+	// -----------------------------------------------------------------------
+	// 物理
+	// -----------------------------------------------------------------------	
+	Unnamed::Physics::Engine*                                _physicsEngine = nullptr;
+	
+	/// 物理衝突解決用のリゾルバ
+	std::unique_ptr<Unnamed::BaseKinematicCollisionResolver> mCollisionResolver;
+	
+	float _radius = 0.4f; // ボールの半径
+	
 	// -----------------------------------------------------------------------
 	// 放物運動パラメータ
 	// -----------------------------------------------------------------------

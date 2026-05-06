@@ -514,6 +514,170 @@ namespace Unnamed::Physics {
 		return outCount;
 	}
 
+	int Engine::SphereOverlapRaw(
+		const Vec3& center,
+		const float radius,
+		Hit*        outHits,
+		const int   maxHits
+	) const {
+		if (maxHits <= 0 || outHits == nullptr || radius <= 0.0f) {
+			return 0;
+		}
+
+		const int collectorCap = std::clamp(maxHits * 12, 256, 4096);
+		std::vector<Hit> collected(static_cast<size_t>(collectorCap));
+
+		const AABB sphereAABB = {
+			.min = center - Vec3(radius),
+			.max = center + Vec3(radius)
+		};
+
+		const auto GatherSet = [
+			&center,
+			&radius,
+			&sphereAABB
+		](
+			const std::vector<RegisteredBVH>& bvhSet,
+			Hit*                             writePtr,
+			const int                        writeCap
+		) {
+			if (writeCap <= 0 || writePtr == nullptr) {
+				return 0;
+			}
+
+			std::vector<const RegisteredBVH*> filtered;
+			filtered.reserve(bvhSet.size());
+
+			for (const auto& bvh : bvhSet) {
+				if (bvh.nodes.empty() || bvh.triangles.empty()) {
+					continue;
+				}
+				const AABB rootBounds = ToWorldBounds(bvh, bvh.nodes[0].bounds);
+				if (IsAABBOverlap(sphereAABB, rootBounds)) {
+					filtered.emplace_back(&bvh);
+				}
+			}
+			if (filtered.size() > 1) {
+				std::ranges::sort(
+					filtered,
+					[](const RegisteredBVH* lhs, const RegisteredBVH* rhs) {
+						return lhs->ownerGuid < rhs->ownerGuid;
+					}
+				);
+			}
+
+			Physics::SphereCast cast;
+			cast.center = center;
+			cast.radius = radius;
+
+			uint32_t stack[64];
+			int      collectedCount = 0;
+			for (auto* bvh : filtered) {
+				int sp      = 0;
+				stack[sp++] = 0;
+
+				while (sp) {
+					const uint32_t index = stack[--sp];
+					const auto& [bounds, leftFirst, rightFirst, primCount] = bvh->nodes[index];
+					const AABB nodeBounds = ToWorldBounds(*bvh, bounds);
+
+					if (!IsAABBOverlap(sphereAABB, nodeBounds)) {
+						continue;
+					}
+
+					if (primCount == 0) {
+						stack[sp++] = leftFirst;
+						stack[sp++] = rightFirst;
+					} else {
+						const uint32_t first = leftFirst;
+						for (uint32_t i = 0; i < primCount; ++i) {
+							if (collectedCount >= writeCap) {
+								break;
+							}
+
+							const uint32_t triIdx = bvh->triIndices[first + i];
+							const Triangle tri    = ToWorldTriangle(*bvh, triIdx);
+
+							float depth = 0.0f;
+							Vec3  normal = Vec3::zero;
+							if (!cast.OverlapAtStart(tri, depth, normal)) {
+								continue;
+							}
+
+							if (normal.SqrLength() > 1.0e-12f) {
+								normal.Normalize();
+							} else {
+								normal = (tri.v1 - tri.v0).Cross(tri.v2 - tri.v0);
+								if (normal.SqrLength() > 1.0e-12f) {
+									normal.Normalize();
+								} else {
+									continue;
+								}
+							}
+
+							Hit& out = writePtr[static_cast<size_t>(collectedCount++)];
+							out.toi           = 1.0f;
+							out.depth         = depth;
+							out.normal        = normal;
+							out.pos           = center - normal * radius;
+							out.triIndex      = triIdx;
+							out.hitEntityGuid = bvh->ownerGuid;
+							out.startSolid    = true;
+							out.allsolid      = false;
+						}
+					}
+				}
+			}
+
+			return collectedCount;
+		};
+
+		int collectedCount = 0;
+		collectedCount += GatherSet(mStaticBVHs, collected.data(), collectorCap);
+		if (collectedCount < collectorCap) {
+			collectedCount += GatherSet(
+				mDynamicBVHs,
+				collected.data() + collectedCount,
+				collectorCap - collectedCount
+			);
+		}
+
+		if (collectedCount <= 0) {
+			return 0;
+		}
+		if (collectedCount > 1) {
+			std::sort(
+				collected.begin(),
+				collected.begin() + collectedCount,
+				[](const Hit& lhs, const Hit& rhs) {
+					if (lhs.depth != rhs.depth) {
+						return lhs.depth > rhs.depth;
+					}
+					if (lhs.hitEntityGuid != rhs.hitEntityGuid) {
+						return lhs.hitEntityGuid < rhs.hitEntityGuid;
+					}
+					if (lhs.triIndex != rhs.triIndex) {
+						return lhs.triIndex < rhs.triIndex;
+					}
+					if (lhs.normal.x != rhs.normal.x) {
+						return lhs.normal.x < rhs.normal.x;
+					}
+					if (lhs.normal.y != rhs.normal.y) {
+						return lhs.normal.y < rhs.normal.y;
+					}
+					if (lhs.normal.z != rhs.normal.z) {
+						return lhs.normal.z < rhs.normal.z;
+					}
+					return false;
+				}
+			);
+		}
+
+		const int outCount = std::min(maxHits, collectedCount);
+		std::copy_n(collected.data(), outCount, outHits);
+		return outCount;
+	}
+
 	// --- Static/Dynamic mesh registration ---
 	void Engine::ClearStaticMeshes() {
 		mStaticBVHs.clear();

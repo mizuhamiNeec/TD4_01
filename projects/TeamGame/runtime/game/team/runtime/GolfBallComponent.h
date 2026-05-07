@@ -149,7 +149,7 @@ private:
 	/// 物理衝突解決用のリゾルバ
 	std::unique_ptr<Unnamed::BaseKinematicCollisionResolver> mCollisionResolver;
 	
-	float _radius = 0.4f; // ボールの半径
+	float _radius = 0.25f; // ボールの半径
 	
 	// -----------------------------------------------------------------------
 	// 放物運動パラメータ

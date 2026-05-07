@@ -7,6 +7,7 @@
 #include <core/math/random/random.h>
 #include <cmath>
 
+#include <engine/ImGui/ImGuiWidgets.h>
 #include <engine/world/World.h>
 
 #include "collision/SphereKinematicCollisionResolver.h"
@@ -99,7 +100,7 @@ namespace MyGame {
 		);
 		
 		// -----------------------------------------------------------------------
-		// 7️⃣ TransformComponent と同期
+		// 8 TransformComponent と同期
 		// -----------------------------------------------------------------------
 		// 理由：計算した位置をエンティティの Transform に反映
 		auto* transform = GetOwner()->GetComponent<Unnamed::TransformComponent>();
@@ -219,6 +220,18 @@ namespace MyGame {
 
 #ifdef _DEBUG
 	void GolfBallComponent::DrawInspectorImGui() {
+		ImGui::Text("=== Golf Ball Settings ===");
+		if (ImGui::DragFloat("Radius", &_radius, 0.25f, 0.1f, 100.0f, "%.2f")) {
+			// NOTE: 半径を変更したらコリジョンハルも更新
+			auto* sphereKCR = dynamic_cast<Unnamed::SphereKinematicCollisionResolver*>(mCollisionResolver.get());
+			sphereKCR->UpdateHull(_position, _radius);
+		}
+		
+		if (ImGuiWidgets::DragVec3("Velocity(override)", _velocity, Vec3::zero, 0.1f, "%.2f[m/s]")) {
+			// NOTE: デバッグ用に速度を直接編集可能にする
+			_bIsInFlight = true; // 直接編集したらフライト状態にする
+		}
+		
 		ImGui::Text("=== Golf Ball Projectile Motion ===");
 		ImGui::Separator();
 

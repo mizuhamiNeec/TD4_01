@@ -110,6 +110,15 @@ namespace MyGame {
 		void Serialize(Unnamed::JsonWriter& writer) const override;
 
 	private:
+		/// マイク入力で拡縮する対象のエンティティGUID(初期はオーナー)
+		uint64_t scaleTargetEntityGuid_ = 0u;
+
+		/// スケール変化の感度（0.0fで変化なし、1.0fで完全に反応）
+		Vec3 scaleMultiplier = Vec3::one;
+		
+		/// 音量変化に対するスケールの反応速度(1.0fで即座に反応)
+		float scaleResponsiveness_ = 0.25f;
+		
 		/// 内部的なMagVoiceBridgeインスタンス
 		std::unique_ptr<MagVoiceBridge> voiceBridge_;
 

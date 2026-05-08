@@ -1,4 +1,14 @@
 #include "MicComponent.h"
+
+#include <core/math/Math.h>
+
+#include <engine/ImGui/ImGuiWidgets.h>
+#include <engine/scene/Scene.h>
+#include <engine/unnamed/framework/components/TransformComponent.h>
+#include <engine/unnamed/framework/components/ui/UiCanvasComponent.h>
+#include <engine/unnamed/framework/entity/Entity.h>
+#include <engine/unnamed/subsystem/console/Log.h>
+
 #include "./core/ComponentRegistry.h"
 
 #ifdef _DEBUG
@@ -6,6 +16,7 @@
 #endif
 
 namespace MyGame {
+	static constexpr std::string_view kChannel = "Mic";
 
 	// -----------------------------------------------------------------------
 	// ライフサイクル
@@ -107,7 +118,9 @@ namespace MyGame {
 	}
 
 	float MicComponent::GetVoiceCharacteristicScore() const {
-		return voiceBridge_ ? voiceBridge_->GetVoiceCharacteristicScore() : 0.0f;
+		return voiceBridge_ ?
+			       voiceBridge_->GetVoiceCharacteristicScore() :
+			       0.0f;
 	}
 
 	MagVoiceBridge::VolumeStats MicComponent::GetVolumeStats() const {
@@ -146,9 +159,13 @@ namespace MyGame {
 		}
 	}
 
-	void MicComponent::SetVoiceDetectionThresholds(float zcRateThreshold, float volumeThresholdDB) {
+	void MicComponent::SetVoiceDetectionThresholds(
+		float zcRateThreshold, float volumeThresholdDB
+	) {
 		if (voiceBridge_) {
-			voiceBridge_->SetVoiceDetectionThresholds(zcRateThreshold, volumeThresholdDB);
+			voiceBridge_->SetVoiceDetectionThresholds(
+				zcRateThreshold, volumeThresholdDB
+			);
 		}
 	}
 
@@ -164,16 +181,60 @@ namespace MyGame {
 		return "MicComponent";
 	}
 
-	void MicComponent::OnTick(float ) {
+	void MicComponent::OnTick(float) {
 		// NOTE: BaseComponent から毎フレーム呼び出される
 		if (bIsCapturing_ && voiceBridge_) {
 			voiceBridge_->Update();
+
+			// 指定されたエンティティを拡縮する
+			auto* transform =
+				GetScene()->
+				FindEntity(scaleTargetEntityGuid_)->
+				GetComponent<Unnamed::TransformComponent>();
+			
+			if (!transform) {
+				// 特に指定されていない場合は自分自身のTransformComponentを使用
+				transform = GetOwner()->GetComponent<Unnamed::TransformComponent>();
+			}
+
+			// TODO: とりあえずここで拡縮を変えているが、
+			// 複数に適用させたいときにVoiceBridgeインスタンスが増えて良くない
+			// ので修正予定(VoiceInputDancerコンポーネントみたいなやつにイベントを飛ばす感じにする)
+			
+			transform->SetScale(
+				Math::Lerp(
+					transform->GetScale(),
+					scaleMultiplier * GetSmoothedVolume(),
+					scaleResponsiveness_
+				)
+			); // 音量に応じてスケールを変化
 		}
 	}
 
 #ifdef _DEBUG
 	void MicComponent::DrawInspectorImGui() {
 		ImGui::Text("=== Mic Component ===");
+
+		if (
+			ImGui::SliderInt(
+				"Scale Target Entity GUID",
+				reinterpret_cast<int*>(&scaleTargetEntityGuid_),
+				0,
+				std::numeric_limits<uint64_t>::max(),
+				"%llu"
+			)
+		) {
+			// NOTE: GUIDは符号なし整数なので負の値は0にクランプ
+			scaleTargetEntityGuid_ = std::max(0ull, scaleTargetEntityGuid_);
+		}
+
+		ImGui::DragFloat(
+			"Scale Responsiveness", &scaleResponsiveness_, 0.01f, 0.1f, 1.0f
+		);
+
+		ImGuiWidgets::DragVec3(
+			"Scale Multiplier", scaleMultiplier, Vec3::one, 0.01f, "%.2f"
+		);
 
 		// 状態表示
 		ImGui::Checkbox("Initialized", &bIsInitialized_);
@@ -205,15 +266,23 @@ namespace MyGame {
 			ImGui::Separator();
 
 			// 音量情報
-			ImGui::Text("Current RMS: %.3f (%.1f dB)", stats.currentRMS, stats.currentRMSDB);
-			ImGui::Text("Smoothed: %.3f (%.1f dB)", stats.smoothedRMS, stats.smoothedRMSDB);
+			ImGui::Text(
+				"Current RMS: %.3f (%.1f dB)", stats.currentRMS,
+				stats.currentRMSDB
+			);
+			ImGui::Text(
+				"Smoothed: %.3f (%.1f dB)", stats.smoothedRMS,
+				stats.smoothedRMSDB
+			);
 			ImGui::Text("Peak: %.3f (%.1f dB)", stats.peakValue, stats.peakDB);
 			ImGui::Text("Volume: %.1f%%", stats.percentage);
 
 			ImGui::Separator();
 
 			// 音声検出情報
-			ImGui::Text("Voice Detected: %s", stats.isVoiceDetected ? "YES" : "NO");
+			ImGui::Text(
+				"Voice Detected: %s", stats.isVoiceDetected ? "YES" : "NO"
+			);
 			ImGui::Text("Voice Score: %.3f", stats.voiceScore);
 			ImGui::Text("ZCR: %.3f", CalculateZeroCrossingRate());
 
@@ -221,13 +290,11 @@ namespace MyGame {
 			ImGui::ProgressBar(stats.smoothedRMS, ImVec2(-1.0f, 0.0f));
 		}
 	}
-	void MicComponent::Deserialize(const Unnamed::JsonReader &) {
-	}
-	void MicComponent::Serialize(Unnamed::JsonWriter &) const {
-	}
+
+	void MicComponent::Deserialize(const Unnamed::JsonReader&) {}
+	void MicComponent::Serialize(Unnamed::JsonWriter&) const {}
 #endif
 
 	// 忘れると死ぬやつ
 	REGISTER_COMPONENT(MicComponent);
-
 } // namespace MyGame

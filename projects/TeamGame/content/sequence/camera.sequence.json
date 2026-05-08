@@ -1,0 +1,112 @@
+{
+    "version": 2,
+    "name": "transform_animation",
+    "displayRate": 30,
+    "tickResolution": 30,
+    "lengthFrames": 180,
+    "bindings": [
+        {
+            "bindingId": 1,
+            "entityGuid": 43,
+            "componentStableName": "engine.Transform",
+            "propertyPath": ""
+        }
+    ],
+    "tracks": [
+        {
+            "trackId": 10,
+            "name": "PositionTrack",
+            "trackType": "transform",
+            "blendMode": "absolute",
+            "priority": 0,
+            "bindingId": 1,
+            "sections": [
+                {
+                    "sectionId": 20,
+                    "startFrame": 0,
+                    "endFrame": 180,
+                    "priority": 0,
+                    "transformPosX": {
+                
+                    },
+                    "transformPosY": {
+                
+                    },
+                    "transformPosZ": {
+                    
+                    },
+                    "transformRotX": {
+                        "channelId": 10004,
+                        "keys": []
+                    },
+                    "transformRotY": {
+                        "channelId": 10005,
+                        "keys": [
+                            {
+                                "keyId": 10051,
+                                "frame": 0,
+                                "value": 0.0,
+                                "arriveTangent": 0.0,
+                                "leaveTangent": 0.0,
+                                "interpolation": "linear"
+                            },
+                            {
+                                "keyId": 10052,
+                                "frame": 180,
+                                "value": 0.125,
+                                "arriveTangent": 0.0,
+                                "leaveTangent": 0.0,
+                                "interpolation": "linear"
+                            }
+                        ]
+                    },
+                    "transformRotZ": {
+                        "channelId": 10006,
+                        "keys": []
+                    },
+                    "transformRotW": {
+                        "channelId": 10007,
+                        "keys": []
+                    },
+                    "transformScaleX": {
+                        "channelId": 10008,
+                        "keys": []
+                    },
+                    "transformScaleY": {
+                        "channelId": 10009,
+                        "keys": []
+                    },
+                    "transformScaleZ": {
+                        "channelId": 10010,
+                        "keys": []
+                    },
+                    "boolKeys": [],
+                    "cameraCutKeys": [],
+                    "eventKeys": [],
+                    "skeletal": {
+                        "stateId": "",
+                        "layerIndex": 0,
+                        "playOnEnter": false,
+                        "stopOnExit": false,
+                        "weightCurve": {
+                            "channelId": 10011,
+                            "keys": []
+                        },
+                        "playbackCurve": {
+                            "channelId": 10012,
+                            "keys": []
+                        },
+                        "speedCurve": {
+                            "channelId": 10013,
+                            "keys": []
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "editor": {
+        "scrubFireEvents": false,
+        "autoKeyEnabled": false
+    }
+}

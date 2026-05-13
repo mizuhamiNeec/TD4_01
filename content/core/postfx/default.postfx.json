@@ -7,7 +7,7 @@
 			"shader": "../shaders/programs/postfx_bloom.shader.json",
 			"scalars": {
 				"Intensity": 3.0,
-				"Threshold": 1.1,
+				"Threshold": 1.4,
 				"Radius": 1.0,
 				"Knee": 0.5
 			}

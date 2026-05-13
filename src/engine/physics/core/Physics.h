@@ -75,6 +75,19 @@ namespace Unnamed::Physics {
 			int        maxHits
 		) const;
 
+		/// @brief スフィアとメッシュの重なりを収集します。
+		/// @param center 球の中心位置
+		/// @param radius 球の半径
+		/// @param outHits 衝突情報の出力先配列
+		/// @param maxHits 出力先配列の最大ヒット数
+		/// @return ヒットした数を返す
+		int SphereOverlapRaw(
+			const Vec3& center,
+			float       radius,
+			Hit*        outHits,
+			int         maxHits
+		) const;
+
 		/// @brief ボックスとメッシュの重なりを集約なしで収集します。
 		/// @param box ボックス情報
 		/// @param outHits 衝突情報の出力先配列

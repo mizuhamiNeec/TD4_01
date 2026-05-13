@@ -1,16 +1,20 @@
 #include "TeamGameComponentRegistration.h"
 
+#include "collision/base/BaseKinematicCollisionResolver.h"
 #include "core/ComponentRegistry.h"
 #include "engine/unnamed/subsystem/console/Log.h"
+#include "MicComponent.h"
+#include "PlayerMoveComponent.h"
+#include "PlayerControlComponent.h"
+#include "GolfBallComponent.h"
 
 namespace Unnamed {
 	namespace {
 		template <typename T>
 		void RegisterComponentIfMissing(
-			ComponentRegistry&      componentRegistry,
+			ComponentRegistry &componentRegistry,
 			const std::string_view stableName,
-			const std::string_view displayName
-		) {
+			const std::string_view displayName) {
 			if (componentRegistry.IsRegistered(stableName)) {
 				return;
 			}
@@ -20,19 +24,24 @@ namespace Unnamed {
 				[]() -> std::unique_ptr<BaseComponent> {
 					return std::make_unique<T>();
 				},
-				displayName
-			);
+				displayName);
 			if (!registered) {
 				Warning(
 					"TeamGameRuntime",
 					"Failed to register game component '{}'.",
-					stableName
-				);
+					stableName);
 			}
 		}
 	}
 
-	void RegisterTeamGameComponents(ComponentRegistry& componentRegistry) {
-		(void)componentRegistry;
+	void RegisterTeamGameComponents(ComponentRegistry &componentRegistry) {
+		RegisterComponentIfMissing<MyGame::MicComponent>(
+			componentRegistry, "mygame.MicComponent", "Mic Component");
+		RegisterComponentIfMissing<MyGame::PlayerMoveComponent>(
+			componentRegistry, "mygame.PlayerMoveComponent", "Player Move Component");
+		RegisterComponentIfMissing<MyGame::PlayerControlComponent>(
+			componentRegistry, "mygame.PlayerControlComponent", "Player Control Component");
+		RegisterComponentIfMissing<MyGame::GolfBallComponent>(
+			componentRegistry, "mygame.GolfBall", "Golf Ball");
 	}
 }

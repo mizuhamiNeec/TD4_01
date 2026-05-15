@@ -8,10 +8,10 @@
                     {
                         "data": {
                             "anchors": [
-                                0.20000000298023224,
-                                0.20000000298023224,
-                                0.800000011920929,
-                                0.800000011920929
+                                0.5,
+                                0.5,
+                                0.5,
+                                0.5
                             ],
                             "constraints": {
                                 "maxHeight": 3.4028234663852886e+38,
@@ -26,14 +26,14 @@
                                 0.0
                             ],
                             "pivot": [
-                                0.0,
-                                0.0
+                                0.5,
+                                0.5
                             ],
                             "rect": [
                                 0.0,
                                 0.0,
-                                0.0,
-                                0.0
+                                1024.0,
+                                256.0
                             ],
                             "sizePolicy": [
                                 "Fixed",
@@ -49,13 +49,13 @@
                                 0.0
                             ],
                             "color": [
-                                0.1839081048965454,
                                 1.0,
-                                0.0,
+                                1.0,
+                                1.0,
                                 1.0
                             ],
                             "rotationRad": 0.0,
-                            "texturePath": "content/core/textures/sun.png",
+                            "texturePath": "projects/TeamGame/content/textures/clear.png",
                             "uvMax": [
                                 1.0,
                                 1.0

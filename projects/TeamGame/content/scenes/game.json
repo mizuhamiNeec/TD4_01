@@ -60,6 +60,7 @@
             "guid": 1,
             "isEditorOnly": false,
             "name": "Tree",
+            "tags": [],
             "visible": true
         },
         {
@@ -126,6 +127,7 @@
             "guid": 3,
             "isEditorOnly": false,
             "name": "Ground",
+            "tags": [],
             "visible": true
         },
         {
@@ -160,6 +162,7 @@
             "guid": 4,
             "isEditorOnly": false,
             "name": "Entity",
+            "tags": [],
             "visible": true
         },
         {
@@ -217,7 +220,7 @@
                                 "slotIndex": 0
                             }
                         ],
-                        "meshPath": "content/core/models/ShaderBall.obj"
+                        "meshPath": "projects/TeamGame/content/models/ball.obj"
                     },
                     "guid": 14777388331480032377,
                     "type": "engine.StaticMeshRenderer"
@@ -292,6 +295,7 @@
             "guid": 30,
             "isEditorOnly": false,
             "name": "Tree Copy",
+            "tags": [],
             "visible": true
         },
         {
@@ -354,6 +358,7 @@
             "guid": 31,
             "isEditorOnly": false,
             "name": "Tree Copy Copy",
+            "tags": [],
             "visible": true
         },
         {
@@ -416,6 +421,7 @@
             "guid": 32,
             "isEditorOnly": false,
             "name": "Tree Copy Copy Copy",
+            "tags": [],
             "visible": true
         },
         {
@@ -478,6 +484,7 @@
             "guid": 33,
             "isEditorOnly": false,
             "name": "Tree Copy Copy Copy Copy",
+            "tags": [],
             "visible": true
         },
         {
@@ -540,6 +547,7 @@
             "guid": 34,
             "isEditorOnly": false,
             "name": "Tree Copy Copy Copy Copy Copy",
+            "tags": [],
             "visible": true
         },
         {
@@ -602,6 +610,7 @@
             "guid": 35,
             "isEditorOnly": false,
             "name": "Tree Copy Copy Copy Copy Copy Copy",
+            "tags": [],
             "visible": true
         },
         {
@@ -664,6 +673,7 @@
             "guid": 36,
             "isEditorOnly": false,
             "name": "Tree Copy Copy Copy Copy Copy Copy Copy",
+            "tags": [],
             "visible": true
         },
         {
@@ -726,6 +736,7 @@
             "guid": 37,
             "isEditorOnly": false,
             "name": "Tree Copy Copy Copy Copy Copy Copy Copy Copy",
+            "tags": [],
             "visible": true
         },
         {
@@ -788,6 +799,7 @@
             "guid": 38,
             "isEditorOnly": false,
             "name": "Tree Copy Copy Copy Copy Copy Copy Copy Copy Copy",
+            "tags": [],
             "visible": true
         },
         {
@@ -799,7 +811,7 @@
                         "parentEntityGuid": 0,
                         "position": [
                             0.0,
-                            1.0,
+                            0.07999999821186066,
                             0.0
                         ],
                         "rotation": [
@@ -819,26 +831,6 @@
                 },
                 {
                     "active": true,
-                    "data": {
-                        "billboardDepthMode": "DepthTest",
-                        "pixelSize": [
-                            1920.0,
-                            1080.0
-                        ],
-                        "receiveInput": true,
-                        "sortKey": 0,
-                        "spaceMode": "WorldPlane",
-                        "uiAssetPath": "projects/TeamGame/content/ui/hole.ui.json",
-                        "worldSize": [
-                            2.0,
-                            1.125
-                        ]
-                    },
-                    "guid": 15394088561237164104,
-                    "type": "engine.UiCanvas"
-                },
-                {
-                    "active": true,
                     "data": {},
                     "guid": 16476393568158639362,
                     "type": "mygame.MicComponent"
@@ -847,18 +839,38 @@
                     "active": true,
                     "data": {
                         "debugLogEnabled": true,
-                        "height": 10.0,
-                        "radius": 20.0,
+                        "height": 2.0,
+                        "radius": 1.0,
                         "targetTag": "Ball"
                     },
                     "guid": 16476393568158639363,
                     "type": "engine.CylinderTrigger"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "gravity": 9.8100004196167,
+                        "jumpForce": 5.0,
+                        "moveSpeed": 5.0
+                    },
+                    "guid": 15253389314605096656,
+                    "type": "mygame.PlayerMoveComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "jumpActionName": "Jump",
+                        "moveAxisName": "MoveAxis"
+                    },
+                    "guid": 14637999987159216151,
+                    "type": "mygame.PlayerControlComponent"
                 }
             ],
             "folderPath": "",
             "guid": 42,
             "isEditorOnly": false,
-            "name": "Entity",
+            "name": "Hole",
+            "tags": [],
             "visible": true
         },
         {
@@ -905,6 +917,57 @@
             "guid": 43,
             "isEditorOnly": false,
             "name": "Camera",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 42,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            -6.181724643283815e-08,
+                            0.7071068286895752,
+                            -6.181724643283815e-08,
+                            -0.7071068286895752
+                        ],
+                        "scale": [
+                            0.30000001192092896,
+                            0.30000001192092896,
+                            0.30000001192092896
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "C:/Users/MizuHami/Repositories/TD4_01/projects/TeamGame/content/materials/instances/player.matinst.json",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/player.matinst.json",
+                                "slotIndex": 0
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/player/Player_Hole.obj"
+                    },
+                    "guid": 0,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 44,
+            "isEditorOnly": false,
+            "name": "PlayerModel",
+            "tags": [],
             "visible": true
         }
     ],

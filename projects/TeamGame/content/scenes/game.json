@@ -60,6 +60,7 @@
             "guid": 1,
             "isEditorOnly": false,
             "name": "Tree",
+            "tags": [],
             "visible": true
         },
         {
@@ -126,6 +127,7 @@
             "guid": 3,
             "isEditorOnly": false,
             "name": "Ground",
+            "tags": [],
             "visible": true
         },
         {
@@ -160,6 +162,7 @@
             "guid": 4,
             "isEditorOnly": false,
             "name": "Entity",
+            "tags": [],
             "visible": true
         },
         {
@@ -292,6 +295,7 @@
             "guid": 30,
             "isEditorOnly": false,
             "name": "Tree Copy",
+            "tags": [],
             "visible": true
         },
         {
@@ -354,6 +358,7 @@
             "guid": 31,
             "isEditorOnly": false,
             "name": "Tree Copy Copy",
+            "tags": [],
             "visible": true
         },
         {
@@ -416,6 +421,7 @@
             "guid": 32,
             "isEditorOnly": false,
             "name": "Tree Copy Copy Copy",
+            "tags": [],
             "visible": true
         },
         {
@@ -478,6 +484,7 @@
             "guid": 33,
             "isEditorOnly": false,
             "name": "Tree Copy Copy Copy Copy",
+            "tags": [],
             "visible": true
         },
         {
@@ -540,6 +547,7 @@
             "guid": 34,
             "isEditorOnly": false,
             "name": "Tree Copy Copy Copy Copy Copy",
+            "tags": [],
             "visible": true
         },
         {
@@ -602,6 +610,7 @@
             "guid": 35,
             "isEditorOnly": false,
             "name": "Tree Copy Copy Copy Copy Copy Copy",
+            "tags": [],
             "visible": true
         },
         {
@@ -664,6 +673,7 @@
             "guid": 36,
             "isEditorOnly": false,
             "name": "Tree Copy Copy Copy Copy Copy Copy Copy",
+            "tags": [],
             "visible": true
         },
         {
@@ -726,6 +736,7 @@
             "guid": 37,
             "isEditorOnly": false,
             "name": "Tree Copy Copy Copy Copy Copy Copy Copy Copy",
+            "tags": [],
             "visible": true
         },
         {
@@ -788,6 +799,7 @@
             "guid": 38,
             "isEditorOnly": false,
             "name": "Tree Copy Copy Copy Copy Copy Copy Copy Copy Copy",
+            "tags": [],
             "visible": true
         },
         {
@@ -859,6 +871,7 @@
             "guid": 42,
             "isEditorOnly": false,
             "name": "Entity",
+            "tags": [],
             "visible": true
         },
         {
@@ -905,6 +918,64 @@
             "guid": 43,
             "isEditorOnly": false,
             "name": "Camera",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 11053102599363384673,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "gravity": 9.8100004196167,
+                        "mass": 1.0,
+                        "startPositionX": 0.0,
+                        "startPositionY": 0.0,
+                        "startPositionZ": 0.0
+                    },
+                    "guid": 17109618122316225082,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "",
+                        "materialSlots": [],
+                        "meshPath": "projects/TeamGame/content/models/tree.obj"
+                    },
+                    "guid": 11435055239696848149,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 44,
+            "isEditorOnly": false,
+            "name": "Entity",
+            "tags": [],
             "visible": true
         }
     ],

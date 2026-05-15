@@ -205,7 +205,25 @@ namespace MyGame {
 		if (auto val = reader.Read<float>("mass")) {
 			_mass = val.value();
 		}
-		
+		if (auto val = reader.Read<float>("gravity")) {
+			_gravity = val.value();
+		}
+		float startPositionX = _startPosition.x;
+		float startPositionY = _startPosition.y;
+		float startPositionZ = _startPosition.z;
+
+
+		if (auto val = reader.Read<float>("startPositionX")) {
+			startPositionX = val.value();
+		}
+		if (auto val = reader.Read<float>("startPositionY")) {
+			startPositionY = val.value();
+		}
+		if (auto val = reader.Read<float>("startPositionZ")) {
+			startPositionZ = val.value();
+		}
+		// 初期位置
+		_startPosition = Vec3(startPositionX, startPositionY, startPositionZ);
 	}
 
 	void TrashObjMoverComponent::Serialize(Unnamed::JsonWriter& writer) const {
@@ -218,8 +236,13 @@ namespace MyGame {
 		writer.Key("gravity");
 		writer.Write(_gravity);
 		// 初期位置
-		writer.Key("startPosition");
-		writer.Write(_startPosition);
+		writer.Key("startPositionX");
+		writer.Write(_startPosition.x);
+		writer.Key("startPositionY");
+		writer.Write(_startPosition.y);
+		writer.Key("startPositionZ");
+		writer.Write(_startPosition.z);
+
 
 
 	}

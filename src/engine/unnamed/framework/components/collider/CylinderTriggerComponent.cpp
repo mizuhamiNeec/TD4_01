@@ -23,6 +23,35 @@ namespace Unnamed {
 			return StrUtil::TrimSpaces(std::string(tag));
 		}
 
+		void ReadGuidArrayUnique(
+			const JsonReader&         reader,
+			const char*               key,
+			std::vector<uint64_t>& outGuids
+		) {
+			outGuids.clear();
+			const JsonReader values = reader[key];
+			if (!values.Valid() || !values.IsArray()) {
+				return;
+			}
+
+			for (size_t i = 0; i < values.Size(); ++i) {
+				const JsonReader value = values[i];
+				if (!value.Valid()) {
+					continue;
+				}
+
+				const auto guid = value.TryGetUint64();
+				if (!guid.has_value()) {
+					continue;
+				}
+
+				if (std::ranges::find(outGuids, guid.value()) != outGuids.end()) {
+					continue;
+				}
+				outGuids.emplace_back(guid.value());
+			}
+		}
+
 		struct CylinderShape {
 			Vec3  center = Vec3::zero;
 			float radius = 0.0f;
@@ -104,6 +133,13 @@ namespace Unnamed {
 
 		ImGui::Checkbox("Debug Log Enabled", &mDebugLogEnabled);
 		ImGui::Text("Current overlaps: %zu", mPreviousDetectedGuids.size());
+		ImGui::Text(
+			"Enter Activate Targets: %zu", mEnterActivateEntityGuids.size()
+		);
+		ImGui::Text(
+			"Exit Deactivate Targets: %zu",
+			mExitDeactivateEntityGuids.size()
+		);
 	}
 #endif
 
@@ -127,6 +163,17 @@ namespace Unnamed {
 		if (debugLogEnabled.Valid()) {
 			mDebugLogEnabled = debugLogEnabled.GetBool(mDebugLogEnabled);
 		}
+
+		ReadGuidArrayUnique(
+			reader,
+			"enterActivateEntityGuids",
+			mEnterActivateEntityGuids
+		);
+		ReadGuidArrayUnique(
+			reader,
+			"exitDeactivateEntityGuids",
+			mExitDeactivateEntityGuids
+		);
 	}
 
 	void CylinderTriggerComponent::Serialize(JsonWriter& writer) const {
@@ -138,6 +185,18 @@ namespace Unnamed {
 		writer.Write(mTargetTag);
 		writer.Key("debugLogEnabled");
 		writer.Write(mDebugLogEnabled);
+		writer.Key("enterActivateEntityGuids");
+		writer.BeginArray();
+		for (const uint64_t guid : mEnterActivateEntityGuids) {
+			writer.Write(guid);
+		}
+		writer.EndArray();
+		writer.Key("exitDeactivateEntityGuids");
+		writer.BeginArray();
+		for (const uint64_t guid : mExitDeactivateEntityGuids) {
+			writer.Write(guid);
+		}
+		writer.EndArray();
 	}
 
 	void CylinderTriggerComponent::RunDetection() {
@@ -183,8 +242,50 @@ namespace Unnamed {
 			currentDetected.emplace(candidate->GetGuid());
 		}
 
+		const bool wasOccupied = !mPreviousDetectedGuids.empty();
+		const bool isOccupied  = !currentDetected.empty();
+		if (!wasOccupied && isOccupied) {
+			ExecuteEntityActivationActions(
+				mEnterActivateEntityGuids,
+				true,
+				"enterActivateEntityGuids"
+			);
+		}
+		if (wasOccupied && !isOccupied) {
+			ExecuteEntityActivationActions(
+				mExitDeactivateEntityGuids,
+				false,
+				"exitDeactivateEntityGuids"
+			);
+		}
+
 		EmitTransitionLogs(currentDetected);
 		mPreviousDetectedGuids = std::move(currentDetected);
+	}
+
+	void CylinderTriggerComponent::ExecuteEntityActivationActions(
+		const std::vector<uint64_t>& targetGuids,
+		const bool                   activeState,
+		const std::string_view       actionName
+	) const {
+		Scene* scene = GetScene();
+		if (!scene) {
+			return;
+		}
+
+		for (const uint64_t guid : targetGuids) {
+			Entity* target = scene->FindEntity(guid);
+			if (!target) {
+				Warning(
+					"CylinderTrigger",
+					"{} target entity not found. guid={}",
+					actionName,
+					guid
+				);
+				continue;
+			}
+			target->SetActive(activeState);
+		}
 	}
 
 	void CylinderTriggerComponent::EmitTransitionLogs(

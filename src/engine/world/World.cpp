@@ -528,6 +528,7 @@ namespace Unnamed {
 		}
 		mScene.reset();
 		mLoadedScenePath.clear();
+		mUiTextureAssetIdByPath.clear();
 	}
 
 	void World::FillRenderFrameInputs(
@@ -947,9 +948,9 @@ namespace Unnamed {
 					Render::ScreenSpriteInput sprite =
 						UiCanvasRuntime::BuildScreenSprite(draw.image, sort);
 					if (!draw.image.texturePath.empty()) {
-						const AssetID textureAssetId = assetManager.LoadFromFile(
-							draw.image.texturePath,
-							ASSET_TYPE::TEXTURE
+						const AssetID textureAssetId = ResolveCachedUiTextureAsset(
+							assetManager,
+							draw.image.texturePath
 						);
 						if (textureAssetId != kInvalidAssetID) {
 							sprite.texture.textureAssetId = textureAssetId;
@@ -1250,6 +1251,32 @@ namespace Unnamed {
 	bool World::BuildUiInputCamera(Render::RenderCameraInput& outCamera) const {
 		outCamera = {};
 		return false;
+	}
+
+	AssetID World::ResolveCachedUiTextureAsset(
+		AssetManager& assetManager,
+		const std::string_view texturePath
+	) {
+		const std::string normalizedPath = StrUtil::NormalizePath(
+			StrUtil::TrimSpaces(std::string(texturePath))
+		);
+		if (normalizedPath.empty()) {
+			return kInvalidAssetID;
+		}
+
+		if (const auto cached = mUiTextureAssetIdByPath.find(normalizedPath);
+			cached != mUiTextureAssetIdByPath.end()) {
+			return cached->second;
+		}
+
+		const AssetID loadedAssetId = assetManager.LoadFromFile(
+			normalizedPath,
+			ASSET_TYPE::TEXTURE
+		);
+		if (loadedAssetId != kInvalidAssetID) {
+			mUiTextureAssetIdByPath.emplace(normalizedPath, loadedAssetId);
+		}
+		return loadedAssetId;
 	}
 
 	void World::OnSceneLoaded() {}

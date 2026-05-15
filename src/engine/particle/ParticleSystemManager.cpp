@@ -1,9 +1,14 @@
 #include "ParticleSystemManager.h"
 
-#include <Logger.h>
 #include <fstream>
 #include <filesystem>
 #include <json.hpp>
+
+#include "engine/unnamed/subsystem/console/Log.h"
+
+#include "Particle/ParticleSystem.h"
+
+static constexpr std::string_view kChannel = "PtclSysMgr";
 
 using json = nlohmann::json;
 
@@ -62,7 +67,7 @@ bool ParticleSystemManager::Rename(const std::string& oldName, const std::string
 	// 同名チェック
 	for (const auto& sys : systems_) {
 		if (sys && sys.get() != target && sys->GetName() == newName) {
-			Logger::Log("ParticleSystemManager::Rename : name already exists : " + newName + "\n");
+			Warning(kChannel, "ParticleSystemManager::Rename : name already exists : {}", newName);
 			return false;
 		}
 	}
@@ -104,9 +109,12 @@ void ParticleSystemManager::RegisterPreset(const std::string& systemName,const s
 	if (!system) {
 		system = Create(systemName);
 	}
-	if (!system) {
-		Logger::Log("ParticleSystemManager::RegisterPreset : failed to create/find system : "
-			+ systemName + "\n");
+	if (!system) {		
+		Error(
+			kChannel, 
+			"ParticleSystemManager::RegisterPreset : failed to create/find system : {}",
+			systemName
+			);
 		return;
 	}
 
@@ -131,7 +139,10 @@ const std::vector<std::string>* ParticleSystemManager::GetPresets(const std::str
 void ParticleSystemManager::RegisterEmitter(const std::string& systemName,ParticleEmitterInstance* emitter,float startTime,float duration,bool autoPlay)
 {
 	if (!emitter) {
-		Logger::Log("ParticleSystemManager::RegisterEmitter : emitter is null\n");
+		Error(
+			kChannel,
+			"ParticleSystemManager::RegisterEmitter : emitter is null"
+			);
 		return;
 	}
 
@@ -141,8 +152,7 @@ void ParticleSystemManager::RegisterEmitter(const std::string& systemName,Partic
 		system = Create(systemName);
 	}
 	if (!system) {
-		Logger::Log("ParticleSystemManager::RegisterEmitter : failed to create/find system : "
-			+ systemName + "\n");
+		Error(kChannel, "ParticleSystemManager::RegisterEmitter : failed to create/find system : {}", systemName);
 		return;
 	}
 
@@ -152,7 +162,7 @@ void ParticleSystemManager::RegisterEmitter(const std::string& systemName,Partic
 
 // ===== JSON =====
 
-void ParticleSystemManager::EmitSystem(const std::string& systemName, const Transform& transform, const std::function<ParticleEmitterInstance* (const std::string& presetName, const Transform& transform)>& emitterFactory)
+void ParticleSystemManager::EmitSystem(const std::string& systemName, const Mat4& transform)>& emitterFactory)
 {
 	if (systemName.empty()) {
 		return;
@@ -202,7 +212,7 @@ bool ParticleSystemManager::SaveToJson(const std::string& systemName,const std::
 
 	ParticleSystem* system = Find(systemName);
 	if (!system) {
-		Logger::Log("ParticleSystemManager::SaveToJson : system not found : " + systemName + "\n");
+		Error(kChannel, "ParticleSystemManager::SaveToJson : system not found : {}", systemName);
 		return false;
 	}
 
@@ -268,7 +278,7 @@ bool ParticleSystemManager::SaveToJson(const std::string& systemName,const std::
 
 	std::ofstream ofs(path);
 	if (!ofs) {
-		Logger::Log("ParticleSystemManager::SaveToJson : failed to open file : " + path.string() + "\n");
+		Error(kChannel, "ParticleSystemManager::SaveToJson : failed to open file : {}", path.string());
 		return false;
 	}
 
@@ -286,13 +296,13 @@ bool ParticleSystemManager::LoadFromJson(const std::string& systemName,const std
 	fs::path path = fs::path(directory) / (systemName + ".json");
 
 	if (!fs::exists(path)) {
-		Logger::Log("ParticleSystemManager::LoadFromJson : file not found : " + path.string() + "\n");
+		Error(kChannel, "ParticleSystemManager::LoadFromJson : file not found : {}", path.string());
 		return false;
 	}
 
 	std::ifstream ifs(path);
 	if (!ifs) {
-		Logger::Log("ParticleSystemManager::LoadFromJson : failed to open file : " + path.string() + "\n");
+		Error(kChannel, "ParticleSystemManager::LoadFromJson : failed to open file : {}", path.string());
 		return false;
 	}
 
@@ -307,7 +317,7 @@ bool ParticleSystemManager::LoadFromJson(const std::string& systemName,const std
 	// System を作成 or 取得
 	ParticleSystem* system = Create(nameInJson);
 	if (!system) {
-		Logger::Log("ParticleSystemManager::LoadFromJson : failed to create system : " + nameInJson + "\n");
+		Error(kChannel, "ParticleSystemManager::LoadFromJson : failed to create system : {}", nameInJson);
 		return false;
 	}
 

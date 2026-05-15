@@ -1,9 +1,16 @@
 #include "ParticlePresetLibrary.h"
 
-#include <Logger.h>
 #include <fstream>
 #include <filesystem>
 #include <json.hpp>
+
+#include "core/math/Vec4.h"
+
+#include "engine/unnamed/subsystem/console/Log.h"
+
+#include "Particle/ParticlePreset.h"
+
+static constexpr std::string_view kChannel = "PPL";
 
 using json = nlohmann::json;
 
@@ -180,8 +187,8 @@ void from_json(const json& j, ParticlePreset& p)
 	p.name = j.value("name", "");
 
 	// 古い形式との互換用: 直下に Vec3 / Vec4 がある場合も読む
-	auto readVec3 = [&j](const char* key, Vector3 defaultValue) {
-		Vector3 v = defaultValue;
+	auto readVec3 = [&j](const char* key, Vec3 defaultValue) {
+		Vec3 v = defaultValue;
 		if (j.contains(key) && j[key].is_array() && j[key].size() == 3) {
 			v.x = j[key][0].get<float>();
 			v.y = j[key][1].get<float>();
@@ -190,8 +197,8 @@ void from_json(const json& j, ParticlePreset& p)
 		return v;
 		};
 
-	auto readVec4 = [&j](const char* key, Vector4 defaultValue) {
-		Vector4 v = defaultValue;
+	auto readVec4 = [&j](const char* key, Vec4 defaultValue) {
+		Vec4 v = defaultValue;
 		if (j.contains(key) && j[key].is_array() && j[key].size() == 4) {
 			v.x = j[key][0].get<float>();
 			v.y = j[key][1].get<float>();
@@ -238,8 +245,8 @@ void from_json(const json& j, ParticlePreset& p)
 	// ========= particleSpawn =========
 	if (j.contains("particleSpawn") && j["particleSpawn"].is_object()) {
 		const auto& ps = j["particleSpawn"];
-		auto read3 = [&ps](const char* key, Vector3 def) {
-			Vector3 v = def;
+		auto read3 = [&ps](const char* key, Vec3 def) {
+			Vec3 v = def;
 			if (ps.contains(key) && ps[key].is_array() && ps[key].size() == 3) {
 				v.x = ps[key][0].get<float>();
 				v.y = ps[key][1].get<float>();
@@ -259,8 +266,8 @@ void from_json(const json& j, ParticlePreset& p)
 				const auto& obj = ps[key];
 				r.useRandom = obj.value("useRandom", def.useRandom);
 
-				auto read3v = [&obj](const char* k, Vector3 dv) {
-					Vector3 v = dv;
+				auto read3v = [&obj](const char* k, Vec3 dv) {
+					Vec3 v = dv;
 					if (obj.contains(k) && obj[k].is_array() && obj[k].size() == 3) {
 						v.x = obj[k][0].get<float>();
 						v.y = obj[k][1].get<float>();
@@ -293,8 +300,8 @@ void from_json(const json& j, ParticlePreset& p)
 	// ========= particleUpdate =========
 	if (j.contains("particleUpdate") && j["particleUpdate"].is_object()) {
 		const auto& pu = j["particleUpdate"];
-		auto read3 = [&pu](const char* key, Vector3 def) {
-			Vector3 v = def;
+		auto read3 = [&pu](const char* key, Vec3 def) {
+			Vec3 v = def;
 			if (pu.contains(key) && pu[key].is_array() && pu[key].size() == 3) {
 				v.x = pu[key][0].get<float>();
 				v.y = pu[key][1].get<float>();
@@ -316,8 +323,8 @@ void from_json(const json& j, ParticlePreset& p)
 				const auto& obj = pu[key];
 				r.useRandom = obj.value("useRandom", def.useRandom);
 
-				auto read3v = [&obj](const char* k, Vector3 dv) {
-					Vector3 v = dv;
+				auto read3v = [&obj](const char* k, Vec3 dv) {
+					Vec3 v = dv;
 					if (obj.contains(k) && obj[k].is_array() && obj[k].size() == 3) {
 						v.x = obj[k][0].get<float>();
 						v.y = obj[k][1].get<float>();
@@ -357,8 +364,8 @@ void from_json(const json& j, ParticlePreset& p)
 	// ========= render =========
 	if (j.contains("render") && j["render"].is_object()) {
 		const auto& r = j["render"];
-		auto read4 = [&r](const char* key, Vector4 def) {
-			Vector4 v = def;
+		auto read4 = [&r](const char* key, Vec4 def) {
+			Vec4 v = def;
 			if (r.contains(key) && r[key].is_array() && r[key].size() == 4) {
 				v.x = r[key][0].get<float>();
 				v.y = r[key][1].get<float>();
@@ -473,7 +480,7 @@ bool ParticlePresetLibrary::SaveToJson(const ParticlePreset& preset,const std::s
 
 		std::ofstream ofs(path);
 		if (!ofs) {
-			Logger::Log("Failed to open particle preset json: " + path.string());
+			Error(kChannel, "Failed to open particle preset json: {}", path.string());
 			return false;
 		}
 		ofs << j.dump(4); // インデント付きで保存
@@ -485,7 +492,7 @@ bool ParticlePresetLibrary::SaveToJson(const ParticlePreset& preset,const std::s
 		return true;
 	}
 	catch (const std::exception& e) {
-		Logger::Log(std::string("Exception in SaveToJson: ") + e.what());
+		Fatal(kChannel, "Failed to save particle preset json: {}", e.what());
 		return false;
 	}
 }
@@ -513,7 +520,7 @@ bool ParticlePresetLibrary::LoadFromJson(const std::string& presetName,ParticleP
 		return true;
 	}
 	catch (const std::exception& e) {
-		Logger::Log(std::string("Exception in LoadFromJson: ") + e.what());
+		Fatal(kChannel, "Failed to load particle preset json: {}", e.what());
 		return false;
 	}
 }

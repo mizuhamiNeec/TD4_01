@@ -1,28 +1,26 @@
 #pragma once
-#include "DirectXCommon.h"
-#include "SrvManager.h"
-#include <Camera/Camera.h>
-#include <Model.h>
-#include "TextureManager.h"
-#include "WinApp.h"
-#include <Camera/CameraManager.h>
-#include "MathFunctions.h"
-#include "engine/TimeManager.h"
-
-#include "ParticleEmitterInstance.h"
-#include "ParticleSystem.h"
-#include "ParticlePreset.h"
-#include "ParticlePresetLibrary.h"
-#include "ParticleSystemManager.h"
-
 #include <random>
 #include <string>
-#include <algorithm>
 #include <unordered_map>
 #include <vector>
 #include <filesystem>
-#include <json.hpp>
 #include <d3d12.h>
+
+#include <wrl/client.h>
+
+#include "../ParticlePreset.h"
+
+#include "core/math/Mat4.h"
+#include "core/math/Vec3.h"
+#include "core/math/Vec4.h"
+
+#include "engine/particle/ParticlePresetLibrary.h"
+#include "engine/particle/ParticleSystemManager.h"
+
+class ParticleSystem;
+class ParticleEmitterInstance;
+struct ParticlePreset;
+enum class VertexDataType;
 
 class ParticleManager
 {
@@ -30,7 +28,7 @@ public:
 
 	//ParticleのEmitter構造体
 	struct Emitter {
-		Transform transform;
+		Mat4 transform;
 		uint32_t count;  //発生数
 		float frequency;  //発生頻度
 		float frequencyTime;  //頻度用時刻
@@ -88,12 +86,12 @@ public:
 	/// </summary>
 	/// <param name="presetName">JSON ファイル名と同じプリセット名</param>
 	/// <param name="emitterTransform">発生元の Transform（位置/回転/スケール）</param>
-	void EmitByPresetName(const std::string& presetName, const Transform& emitterTransform);
+	void EmitByPresetName(const std::string& presetName, const Mat4& emitterTransform);
 
 	/// 登録済みプリセットから、単発の EmitterInstance を作って即再生する
 	/// System に属さない単独の Emitter として動作する
 	/// @return 作成された EmitterInstance（操作したい場合のみ使う。捨てても OK）
-	ParticleEmitterInstance* EmitPreset(const std::string& presetName,const Transform& emitterTransform);
+	ParticleEmitterInstance* EmitPreset(const std::string& presetName, const Mat4& emitterTransform);
 
 	const std::string& GetCurrentEditingPresetName() const { return presetLibrary_.GetCurrentEditingName(); }
 
@@ -110,7 +108,7 @@ public:
 	/// <returns>生成されたエミッターインスタンス（nullptr の場合は失敗）</returns>
 	ParticleEmitterInstance* CreateEmitterInstanceFromPreset(
 		const std::string& presetName,
-		const Transform& emitterTransform);
+		const Mat4& emitterTransform);
 
 	/// <summary>
 	/// 新システム用エミッターの更新処理
@@ -131,7 +129,8 @@ public:
 	ParticleEmitterInstance* AddEmitterToSystem(
 		const std::string& systemName,
 		const std::string& presetName,
-		const Transform& emitterTransform);
+		const Mat4&        emitterTransform
+	);
 
 	// ----------------------------------------
 	// Systemにプリセットを登録する簡易API
@@ -150,7 +149,7 @@ public:
 	void ClearAllSystems();
 
 	// System名を指定して、登録されている全プリセットを一括Emitする
-	void EmitSystemByName(const std::string& systemName, const Transform& emitterTransform);
+	void EmitSystemByName(const std::string& systemName, const Mat4& emitterTransform);
 
 	// --- System JSON 保存/読み込み ---
 	bool SaveSystemToJson(const std::string& systemName, const std::string& directory = "Resources/ParticleSystem");
@@ -178,10 +177,10 @@ private:
 	std::vector<std::unique_ptr<ParticleEmitterInstance>> emitterInstances_;
 
 	// System を使った Emit（ステップ2で実装）
-	void EmitSystem(const std::string& systemName, const Transform& transform);
+	void EmitSystem(const std::string& systemName, const Mat4& transform);
 
 	// EmitterInstanceのパーティクルをインスタンシングバッファへ書き込む
-	void PopulateInstancesFromEmitters(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& billboardMatrix);
+	void PopulateInstancesFromEmitters(const Mat4& viewProjectionMatrix, const Mat4& billboardMatrix);
 
 	/// <summary>
 	/// 頂点リソースの生成、バッファービューの作成
@@ -217,17 +216,17 @@ private:
 
 	// 頂点データの拡張
 	struct VertexData {
-		Vector4 position;
-		Vector2 texcoord;
-		Vector3 normal;
+		Vec4 position;
+		Vec2 texcoord;
+		Vec3 normal;
 	};
 
 	// マテリアルを拡張する
 	struct Material {
-		Vector4 color;
+		Vec4 color;
 		int32_t enableLighting;
 		float padding[3];
-		Matrix4x4 uvTransform;
+		Mat4 uvTransform;
 		float shininess;
 	};
 
@@ -238,14 +237,14 @@ private:
 	};
 
 	struct TransformationMatrix {
-		Matrix4x4 WVP;
-		Matrix4x4 World;
-		Matrix4x4 WorldInverseTranspose;
+		Mat4 WVP;
+		Mat4 World;
+		Mat4 WorldInverseTranspose;
 	};
 
 	// Node構造体
 	struct Node {
-		Matrix4x4 localMatrix;  // NodeのTransform
+		Mat4 localMatrix;  // NodeのTransform
 		std::string name;  // Nodeの名前
 		std::vector<Node> children;  // 子供のNode
 	};
@@ -259,24 +258,24 @@ private:
 
 	//Particle構造体
 	struct Particle {
-		Transform transform;
-		Vector3 velocity;
-		Vector3   rotationSpeed{ 0.0f, 0.0f, 0.0f };   // 回転速度(rad/秒)
-		Vector3   scaleSpeed{ 0.0f, 0.0f, 0.0f };      // スケール変化速度(/秒)
-		Vector4   color{ 1.0f, 1.0f, 1.0f, 1.0f };
+		Mat4 transform;
+		Vec3 velocity;
+		Vec3   rotationSpeed{ 0.0f, 0.0f, 0.0f };   // 回転速度(rad/秒)
+		Vec3   scaleSpeed{ 0.0f, 0.0f, 0.0f };      // スケール変化速度(/秒)
+		Vec4   color{ 1.0f, 1.0f, 1.0f, 1.0f };
 		float lifeTime;
 		float currentTime;
 
 		// カーブ用の基準値
-		Vector3 initialScale{ 1.0f, 1.0f, 1.0f };
-		Vector4 initialColor{ 1.0f, 1.0f, 1.0f, 1.0f };
+		Vec3 initialScale{ 1.0f, 1.0f, 1.0f };
+		Vec4 initialColor{ 1.0f, 1.0f, 1.0f, 1.0f };
 	};
 
 	struct ParticleForGPU
 	{
-		Matrix4x4 WVP;
-		Matrix4x4 World;
-		Vector4 color;
+		Mat4 WVP;
+		Mat4 World;
+		Vec4 color;
 		float flipY; // ← 追加（0.0f or 1.0f）
 		float padding[3]; // アラインメントのため
 	};
@@ -308,8 +307,8 @@ private:
 		// インスタンシングデータを書き込むためのポインタ
 		ParticleForGPU* instancingDataPtr = nullptr;
 
-		Vector2 textureLeftTop = { 0.0f, 0.0f }; // テクスチャ左上座標
-		Vector2 textureSize = { 0.0f, 0.0f }; // テクスチャサイズを追加
+		Vec2 textureLeftTop = { 0.0f, 0.0f }; // テクスチャ左上座標
+		Vec2 textureSize = { 0.0f, 0.0f }; // テクスチャサイズを追加
 
 		bool flipY = false; // デフォルトは反転しない
 
@@ -339,7 +338,7 @@ private:
 	/// <param name="randomEngine"></param>
 	/// <param name="translate"></param>
 	/// <returns></returns>
-	Particle MakeNewParticle(std::mt19937& randomEngine, const Vector3& translate);
+	Particle MakeNewParticle(std::mt19937& randomEngine, const Vec3& translate);
 
 	/// <summary>
 	/// Primitiveパーティクル生成器
@@ -347,21 +346,21 @@ private:
 	/// <param name="randomEngine"></param>
 	/// <param name="translate"></param>
 	/// <returns></returns>
-	Particle PrimitiveMakeNewParticle(std::mt19937& randomEngine, const Vector3& translate);
+	Particle PrimitiveMakeNewParticle(std::mt19937& randomEngine, const Vec3& translate);
 
 	/// <summary>
 	/// ringパーティクル生成器
 	/// </summary>
 	/// <param name="translate"></param>
 	/// <returns></returns>
-	Particle RingMakeNewParticle(const Vector3& translate);
+	Particle RingMakeNewParticle(const Vec3& translate);
 
 	/// <summary>
 	/// cylinderパーティクル生成器
 	/// </summary>
 	/// <param name="translate"></param>
 	/// <returns></returns>
-	Particle CylinderMakeNewParticle(const Vector3& translate);
+	Particle CylinderMakeNewParticle(const Vec3& translate);
 
 public:
 
@@ -375,34 +374,34 @@ public:
 	/// <param name="name"></param>
 	/// <param name="position"></param>
 	/// <param name="count"></param>
-	void Emit(const std::string& name, const Transform& transform, uint32_t count, bool useRandomPosition);
+	void Emit(const std::string& name, Mat4& transform, uint32_t count, bool useRandomPosition);
 
-	void PrimitiveEmit(const std::string name, const Transform& transform, uint32_t count);
+	void PrimitiveEmit(const std::string name, Mat4& transform, uint32_t count);
 
-	void RingEmit(const std::string& name, const Transform& transform, uint32_t count);
+	void RingEmit(const std::string& name, Mat4& transform, uint32_t count);
 
-	void CylinderEmit(const std::string& name, const Transform& transform, uint32_t count);
+	void CylinderEmit(const std::string& name, Mat4& transform, uint32_t count);
 
 	// スケール
-	void SetScaleToGroup(const std::string& groupName, const Vector3& scale);
+	void SetScaleToGroup(const std::string& groupName, const Vec3& scale);
 
 	// 回転
-	void SetRotationToGroup(const std::string& groupName, const Vector3& rotation);
+	void SetRotationToGroup(const std::string& groupName, const Vec3& rotation);
 
 	// 位置
-	void SetTranslationToGroup(const std::string& groupName, const Vector3& translation);
+	void SetTranslationToGroup(const std::string& groupName, const Vec3& translation);
 
 	// 速度
-	void SetVelocityToGroup(const std::string& groupName, const Vector3& velocity);
+	void SetVelocityToGroup(const std::string& groupName, const Vec3& velocity);
 
 	// 回転速度
-	void SetRotationSpeedToGroup(const std::string& groupName, const Vector3& rotationSpeed);
+	void SetRotationSpeedToGroup(const std::string& groupName, const Vec3& rotationSpeed);
 
 	// スケール速度
-	void SetScaleSpeedToGroup(const std::string& groupName, const Vector3& scaleSpeed);
+	void SetScaleSpeedToGroup(const std::string& groupName, const Vec3& scaleSpeed);
 
 	// 色
-	void SetColorToGroup(const std::string& groupName, const Vector4& color);
+	void SetColorToGroup(const std::string& groupName, const Vec4& color);
 
 	// 寿命（LifeTime）を一括設定
 	void SetLifeTimeToGroup(const std::string& groupName, float lifeTime);
@@ -469,15 +468,15 @@ private:
 	// Cameraの初期化
 	Camera* camera_ = nullptr;
 	//常にカメラ目線
-	Transform cameraTransform{ {1.0f,1.0f,1.0f},{1.0f,1.0f,1.0f},{0.0f,23.0f,10.0f} };
+	Mat4 cameraTransform{ {1.0f,1.0f,1.0f},{1.0f,1.0f,1.0f},{0.0f,23.0f,10.0f} };
 
-	Matrix4x4 worldviewProjectionMatrix;
+	Mat4 worldviewProjectionMatrix;
 
 	//テクスチャ切り出しサイズ
-	Vector2 textureSize = { 0.0f,0.0f };
+	Vec2 textureSize = { 0.0f,0.0f };
 	std::string FilePath = {};
 	//サイズ
-	Vector2 size = { 640.0f,360.0f };
+	Vec2 size = { 640.0f,360.0f };
 
 	bool ringSamplerAdd = false;
 

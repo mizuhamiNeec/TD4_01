@@ -1,9 +1,10 @@
 #pragma once
 #include <vector>
 #include <string>
-#include "Transform.h"
 #include "Particle.h"       // struct Particle { position, velocity, life,... }
 #include "ParticlePreset.h" // struct ParticlePreset {...}
+
+#include "core/math/Mat4.h"
 
 class ParticleEmitterInstance
 {
@@ -17,8 +18,8 @@ public:
 	// ==============================
 	// ※プリセットへの「生ポインタ」を保持するだけ（所有権は ParticleManager）
 	void Initialize(const PMPreset* preset);
-	void SetTransform(const Transform& t);
-	const Transform& GetTransform() const { return emitterTransform_; }
+	void SetTransform(const Mat4& t);
+	const Mat4& GetTransform() const { return emitterTransform_; }
 
 	// ==============================
 	// 再生制御
@@ -61,7 +62,7 @@ private:
 	const PMPreset* preset_ = nullptr;
 
 	// エミッタ自体の Transform（発生位置・向き）
-	Transform emitterTransform_{};
+	Mat4 emitterTransform_{};
 
 	// 実行時の粒子状態
 	std::vector<Particle> particles_;

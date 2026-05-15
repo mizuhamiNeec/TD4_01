@@ -1,9 +1,10 @@
 #pragma once
-#include "ParticlePreset.h"
 
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+struct ParticlePreset;
 
 // ===============================================
 // プリセット（ParticlePreset）の保存・読込・検索を担当

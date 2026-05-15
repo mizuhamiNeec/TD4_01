@@ -16,11 +16,21 @@ public:
     virtual ~ParticleModule() = default;
 
     // Emit 時の初期化処理
-    virtual void ApplySpawn(ParticleEmitterInstance& emitter, Particle& p) {}
+    virtual void ApplySpawn(ParticleEmitterInstance& emitter, Particle& p) {
+        (void)emitter;
+        (void)p;
+    }
 
     // 更新処理（毎フレーム）
-    virtual void ApplyUpdate(ParticleEmitterInstance& emitter, Particle& p, float dt) {}
+    virtual void ApplyUpdate(ParticleEmitterInstance& emitter, Particle& p, float dt) {
+        (void)emitter;
+        (void)p;
+        (void)dt;
+    }
 
     // 描画時の処理（必要なら）
-    virtual void ApplyRender(ParticleEmitterInstance& emitter, Particle& p) {}
+    virtual void ApplyRender(ParticleEmitterInstance& emitter, Particle& p) {
+        (void)emitter;
+        (void)p;
+    }
 };

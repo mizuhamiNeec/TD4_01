@@ -1,7 +1,6 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "Transform.h"
 #include "ParticleEmitterInstance.h"
 
 // ===============================================
@@ -41,8 +40,8 @@ public:
 	void SetName(const std::string& n) { name_ = n; }
 
 	// ----- System 全体の Transform（必要なら使用） -----
-	const Transform& GetTransform() const { return transform_; }
-	void SetTransform(const Transform& t) { transform_ = t; }
+	// const Transform& GetTransform() const { return transform_; }
+	// void SetTransform(const Transform& t) { transform_ = t; }
 
 	// ----- 所属エミッタ一覧 -----
 	const EmitterList& GetEmitters() const { return emitters_; }
@@ -107,7 +106,7 @@ public:
 
 private:
 	std::string name_;
-	Transform   transform_{};
+	Mat4   transform_{};
 
 	// 実行時にぶら下がるエミッタ
 	EmitterList emitters_;

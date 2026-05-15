@@ -1,6 +1,15 @@
 #include "ParticleManager.h"
-#include <Logger.h>
+
+#include <DirectXTex.h>
+#include <json.hpp>
 #include <numbers>
+
+#include "../ParticleEmitterInstance.h"
+#include "../ParticleSystem.h"
+
+#include "engine/unnamed/subsystem/console/Log.h"
+
+static constexpr std::string_view kChannel = "PtclMgr";
 
 using json = nlohmann::json;
 
@@ -56,27 +65,27 @@ void ParticleManager::Update()
 	// ========= カメラ行列の計算 =========
 	// カメラが持っている ViewProjection 行列をそのまま使う
 	// これにより fov / aspect / near / far の不一致が起きない
-	Matrix4x4 viewProjectionMatrix = camera_->GetViewProjectionMatrix();
+	Mat4 viewProjectionMatrix = camera_->GetViewProjectionMatrix();
 
 	// ビルボード用にカメラ行列も取得
-	Matrix4x4 cameraMatrix = MakeAffineMatrix(
+	Mat4 cameraMatrix = Mat4::Affine(
 		{ 1.0f,1.0f,1.0f },
 		camera_->GetRotate(),
 		camera_->GetTranslate()
 	);
 
 	// ========= ビルボード行列の計算 =========
-	Matrix4x4 backToFrontMatrix = MakeRotateYMatrix(std::numbers::pi_v<float>);
-	Matrix4x4 billboardMatrix{};
+	Mat4 backToFrontMatrix = Mat4::RotateY(std::numbers::pi_v<float>);
+	Mat4 billboardMatrix{};
 	if (usebillboardMatrix) {
-		billboardMatrix = Multiply(backToFrontMatrix, cameraMatrix);
+		billboardMatrix = backToFrontMatrix * cameraMatrix;
 		// 平行移動は無視
 		billboardMatrix.m[3][0] = 0.0f;
 		billboardMatrix.m[3][1] = 0.0f;
 		billboardMatrix.m[3][2] = 0.0f;
 	}
 	else {
-		billboardMatrix = MakeIdentity4x4();
+		billboardMatrix = Mat4::identity;
 	}
 
 	// 1) System を更新（Emitter の Play/Stop タイミング制御だけ）
@@ -125,11 +134,11 @@ void ParticleManager::Draw()
 		// このグループ専用のブレンドモードから PSO を取得
 		auto psoIt = pipelineStateCache_.find(group.blendMode);
 		if (psoIt == pipelineStateCache_.end() || !psoIt->second) {
-			// 念のため、無ければノーマルにフォールバック
-			Logger::Log("PSO for group blend mode not found, fallback to normal.");
+			// 念のため、無ければノーマルにフォールバック			
+			Warning(kChannel, "PSO for group blend mode not found, fallback to normal.");
 			psoIt = pipelineStateCache_.find(kBlendModeNormal);
 			if (psoIt == pipelineStateCache_.end() || !psoIt->second) {
-				Logger::Log("Default PSO not found. Skip this group.");
+				Warning(kChannel, "Default PSO not found. Skip this group.");
 				continue;
 			}
 		}
@@ -137,8 +146,8 @@ void ParticleManager::Draw()
 		// グループごとに PSO をセット
 		commandList->SetPipelineState(psoIt->second.Get());
 
-		Vector2 textureLeftTop = group.textureLeftTop;
-		Vector2 textureSize = group.textureSize;
+		Vec2 textureLeftTop = group.textureLeftTop;
+		Vec2 textureSize = group.textureSize;
 
 		for (auto& particle : group.particleList) {
 			// 必要ならUV計算の処理など
@@ -483,7 +492,7 @@ void ParticleManager::LoadAllPresets(const std::string& directory)
 void ParticleManager::RegisterPreset(const ParticlePreset& preset)
 {
 	if (preset.name.empty()) {
-		Logger::Log("ParticleManager::RegisterPreset : preset.name is empty. skipped.\n");
+		Error(kChannel, "ParticleManager::RegisterPreset : preset.name is empty. skipped.");
 		return;
 	}
 
@@ -495,7 +504,7 @@ void ParticleManager::RegisterPreset(const ParticlePreset& preset)
 	EnsureGroupForPreset(preset);
 }
 
-void ParticleManager::EmitByPresetName(const std::string& presetName,const Transform& emitterTransform)
+void ParticleManager::EmitByPresetName(const std::string& presetName, const Mat4& emitterTransform)
 {
 	// ---- プリセット検索 or 読み込み ----
 	ParticlePreset preset;
@@ -507,7 +516,7 @@ void ParticleManager::EmitByPresetName(const std::string& presetName,const Trans
 		else {
 			// まだメモリに無ければ JSON から読み込みを試す
 			if (!LoadPresetFromJson(presetName, preset)) {
-				Logger::Log("ParticleManager::EmitByPresetName : preset not found -> " + presetName);
+				Error(kChannel, "ParticleManager::EmitByPresetName : preset not found -> {}", presetName);
 				return;
 			}
 		}
@@ -562,7 +571,7 @@ void ParticleManager::EmitByPresetName(const std::string& presetName,const Trans
 		break;
 
 	default:
-		Logger::Log("ParticleManager::EmitByPresetName : unsupported vertexType in preset -> " + presetName);
+		Error(kChannel, "ParticleManager::EmitByPresetName : unsupported vertexType in preset -> {}", presetName);
 		break;
 	}
 
@@ -586,13 +595,12 @@ void ParticleManager::EmitByPresetName(const std::string& presetName,const Trans
 	}
 }
 
-ParticleEmitterInstance* ParticleManager::EmitPreset(const std::string& presetName, const Transform& emitterTransform)
+ParticleEmitterInstance* ParticleManager::EmitPreset(const std::string& presetName, const Mat4& emitterTransform)
 {
 	// (1) プリセットが登録されているか確認
 	const ParticlePreset* preset = presetLibrary_.Find(presetName);
 	if (!preset) {
-		Logger::Log("ParticleManager::EmitPreset : preset not registered -> "
-			+ presetName + "\n");
+		Error(kChannel, "ParticleManager::EmitPreset : preset not registered -> {}", presetName);
 		return nullptr;
 	}
 
@@ -633,8 +641,10 @@ ParticleEmitterInstance* ParticleManager::CreateEmitterInstanceFromPreset(const 
 	ParticlePreset* preset = FindPreset(presetName);
 	if (!preset) {
 		// 見つからない場合はログを出して nullptr を返す
-		Logger::Log(std::string("ParticleManager::CreateEmitterInstanceFromPreset : preset not found : ")
-			+ presetName + "\n");
+		Error(
+			kChannel, "ParticleManager::CreateEmitterInstanceFromPreset : preset not found -> {}",
+			presetName
+		);
 		return nullptr;
 	}
 
@@ -677,7 +687,8 @@ ParticleSystem* ParticleManager::FindSystem(const std::string& systemName)
 	return systemManager_.Find(systemName);
 }
 
-ParticleEmitterInstance* ParticleManager::AddEmitterToSystem(const std::string& systemName, const std::string& presetName, const Transform& emitterTransform)
+ParticleEmitterInstance* ParticleManager::AddEmitterToSystem(const std::string& systemName, const std::string& presetName, const Mat4&
+	emitterTransform)
 {
 	// EmitterInstance の生成 → ParticleManager の責務
 	// System への登録 → ParticleSystemManager に委譲
@@ -688,8 +699,7 @@ ParticleEmitterInstance* ParticleManager::AddEmitterToSystem(const std::string& 
 		system = systemManager_.Create(systemName);
 	}
 	if (!system) {
-		Logger::Log("ParticleManager::AddEmitterToSystem : failed to create/find system : "
-			+ systemName + "\n");
+		Error(kChannel, "ParticleManager::AddEmitterToSystem : failed to create/find system -> {}", systemName);
 		return nullptr;
 	}
 
@@ -698,8 +708,9 @@ ParticleEmitterInstance* ParticleManager::AddEmitterToSystem(const std::string& 
 		CreateEmitterInstanceFromPreset(presetName, emitterTransform);
 
 	if (!emitter) {
-		Logger::Log("ParticleManager::AddEmitterToSystem : failed to create emitter from preset : "
-			+ presetName + "\n");
+		Error(
+			kChannel, "ParticleManager::AddEmitterToSystem : failed to create emitter from preset -> {}",
+		);
 		return nullptr;
 	}
 
@@ -743,7 +754,7 @@ void ParticleManager::ClearAllSystems()
 	systemManager_.ClearAll();
 }
 
-void ParticleManager::EmitSystemByName(const std::string& systemName, const Transform& emitterTransform)
+void ParticleManager::EmitSystemByName(const std::string& systemName, const Mat4& emitterTransform)
 {
 	// EmitSystem() に丸投げする
 	EmitSystem(systemName, emitterTransform);
@@ -769,12 +780,12 @@ bool ParticleManager::RenameSystem(const std::string& oldName, const std::string
 	return systemManager_.Rename(oldName, newName);
 }
 
-void ParticleManager::EmitSystem(const std::string& systemName, const Transform& transform)
+void ParticleManager::EmitSystem(const std::string& systemName, const Mat4& transform)
 {
 	systemManager_.EmitSystem(
 		systemName,
 		transform,
-		[this, systemName](const std::string& presetName, const Transform& tf)
+		[this, systemName](const std::string& presetName, const Mat4& tf)
 		-> ParticleEmitterInstance*
 		{
 			// ParticleManager の AddEmitterToSystem を呼ぶ
@@ -783,7 +794,7 @@ void ParticleManager::EmitSystem(const std::string& systemName, const Transform&
 		});
 }
 
-void ParticleManager::PopulateInstancesFromEmitters(const Matrix4x4& viewProjectionMatrix,const Matrix4x4& billboardMatrix)
+void ParticleManager::PopulateInstancesFromEmitters(const Mat4& viewProjectionMatrix,const Mat4& billboardMatrix)
 {
 	for (auto& emitterPtr : emitterInstances_) {
 		if (!emitterPtr) {
@@ -812,9 +823,9 @@ void ParticleManager::PopulateInstancesFromEmitters(const Matrix4x4& viewProject
 			}
 
 			// === Transform から World 行列を作る ===
-			Vector3 scale = p.scale;
-			Vector3 rotate = p.rotation;
-			Vector3 position = p.position;
+			Vec3 scale = p.scale;
+			Vec3 rotate = p.rotation;
+			Vec3 position = p.position;
 
 			// ★ Local Space モードの場合、エミッタのワールド座標を加算して
 			//    パーティクルのローカル座標をワールド座標に変換する
@@ -825,29 +836,28 @@ void ParticleManager::PopulateInstancesFromEmitters(const Matrix4x4& viewProject
 				position.z += et.translate.z;
 			}
 
-			Matrix4x4 scaleMatrix = MakeScaleMatrix(scale);
+			Mat4 scaleMatrix = Mat4::Scale(scale);
 
-			Matrix4x4 rotateMatrix = MakeIdentity4x4();
+			Mat4 rotateMatrix =  Mat4::identity;
 			if (usebillboardMatrix) {
 				// ビルボード使用時は Z 回転だけ
-				rotateMatrix = MakeRotateZMatrix(rotate.z);
+				rotateMatrix = Mat4::RotateZ(rotate.z);
 			}
 			else {
-				Matrix4x4 rotX = MakeRotateXMatrix(rotate.x);
-				Matrix4x4 rotY = MakeRotateYMatrix(rotate.y);
-				Matrix4x4 rotZ = MakeRotateZMatrix(rotate.z);
-				rotateMatrix = Multiply(rotZ, Multiply(rotY, rotX));
+				Mat4 rotX = Mat4::RotateX(rotate.x);
+				Mat4 rotY = Mat4::RotateY(rotate.y);
+				Mat4 rotZ = Mat4::RotateZ(rotate.z);
+				rotateMatrix = rotZ * rotY * rotX;
 			}
 
-			Matrix4x4 translateMatrix = MakeTranslateMatrix(position);
+			Mat4 translateMatrix = Mat4::Translate(position); 
 
-			Matrix4x4 bbMatrix = usebillboardMatrix ? billboardMatrix : MakeIdentity4x4();
+			Mat4 bbMatrix = usebillboardMatrix ? billboardMatrix : Mat4::identity;
 
 			// world = S * Billboard * R * T
-			Matrix4x4 worldMatrix =
-				Multiply(Multiply(Multiply(scaleMatrix, bbMatrix), rotateMatrix), translateMatrix);
+			Mat4 worldMatrix = scaleMatrix * bbMatrix * rotateMatrix * translateMatrix;
 
-			Matrix4x4 wvp = Multiply(worldMatrix, viewProjectionMatrix);
+			Mat4 wvp = worldMatrix * viewProjectionMatrix;
 
 			// === GPU インスタンスへ書き込み ===
 			ParticleForGPU& gpu = group.instancingDataPtr[group.instanceCount];
@@ -855,7 +865,7 @@ void ParticleManager::PopulateInstancesFromEmitters(const Matrix4x4& viewProject
 			gpu.World = worldMatrix;
 
 			// 色（Emitter 側で ColorCurve 適用済）
-			Vector4 outColor = p.color;
+			Vec4 outColor = p.color;
 
 			// 寿命によるフェードだけここで掛ける
 			float age = (p.maxLife > 0.0f) ? (p.life / p.maxLife) : 0.0f;
@@ -941,10 +951,10 @@ void ParticleManager::CreateCylinderVertexData() {
 		float sinTheta = std::sin(theta), cosTheta = std::cos(theta);
 		float sinNext = std::sin(nextTheta), cosNext = std::cos(nextTheta);
 
-		Vector3 bottom1 = { kRadius * cosTheta, -kHeight / 2, kRadius * sinTheta };
-		Vector3 bottom2 = { kRadius * cosNext, -kHeight / 2, kRadius * sinNext };
-		Vector3 top1 = { kRadius * cosTheta, kHeight / 2, kRadius * sinTheta };
-		Vector3 top2 = { kRadius * cosNext, kHeight / 2, kRadius * sinNext };
+		Vec3 bottom1 = { kRadius * cosTheta, -kHeight / 2, kRadius * sinTheta };
+		Vec3 bottom2 = { kRadius * cosNext, -kHeight / 2, kRadius * sinNext };
+		Vec3 top1 = { kRadius * cosTheta, kHeight / 2, kRadius * sinTheta };
+		Vec3 top2 = { kRadius * cosNext, kHeight / 2, kRadius * sinNext };
 
 		// 側面（2三角形）
 		modelData.vertices.push_back({ { bottom1.x, bottom1.y, bottom1.z, 1.0f }, { 0.0f, 1.0f }, { cosTheta, 0.0f, sinTheta } });
@@ -986,9 +996,11 @@ void ParticleManager::CreateParticleGroup(const std::string name,const std::stri
 		// ★ここは実際に存在するパーティクル用テクスチャに合わせてください
 		//   さっき Inspector で使っていたパスにしています
 		resolvedTexPath = "Resources/ParticleTexture/smoke.png";
-		Logger::Log(
-			"ParticleManager::CreateParticleGroup : textureFilePath is empty. "
-			"Use default texture -> " + resolvedTexPath);
+		Warning(
+			kChannel,"ParticleManager::CreateParticleGroup : textureFilePath is empty. Use default texture -> {}",
+			resolvedTexPath
+		);
+		
 	}
 
 	// ----------------------------------------
@@ -1005,7 +1017,7 @@ void ParticleManager::CreateParticleGroup(const std::string name,const std::stri
 	// テクスチャサイズを取得（必要なら後で使えるように）
 	const DirectX::TexMetadata& metadata =
 		TextureManager::GetInstance()->GetMetaData(resolvedTexPath);
-	Vector2 textureSize = {
+	Vec2 textureSize = {
 		static_cast<float>(metadata.width),
 		static_cast<float>(metadata.height)
 	};
@@ -1021,8 +1033,8 @@ void ParticleManager::CreateParticleGroup(const std::string name,const std::stri
 		0, nullptr, reinterpret_cast<void**>(&newGroup.instancingDataPtr));
 
 	for (uint32_t index = 0; index < kNumMaxInstance; ++index) {
-		newGroup.instancingDataPtr[index].WVP = MakeIdentity4x4();
-		newGroup.instancingDataPtr[index].World = MakeIdentity4x4();
+		newGroup.instancingDataPtr[index].WVP = Mat4::identity;
+		newGroup.instancingDataPtr[index].World = Mat4::identity;
 		// newGroup.instancingDataPtr[index].Color = {1,1,1,1}; // 必要なら
 	}
 
@@ -1059,10 +1071,10 @@ void ParticleManager::CreateMaterialData()
 
 	//書き込むためのアドレスを取得
 	materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
-	materialData->color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+	materialData->color = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	//SpriteはLightingしないのfalseを設定する
 	materialData->enableLighting = false;
-	materialData->uvTransform = MakeIdentity4x4();
+	materialData->uvTransform = Mat4::identity;
 }
 
 void ParticleManager::InstancingMaxResource()
@@ -1072,9 +1084,9 @@ void ParticleManager::InstancingMaxResource()
 	instancingResource2->Map(0, nullptr, reinterpret_cast<void**>(&instancingData2));
 	for (uint32_t index = 0; index < kNumMaxInstance; ++index)
 	{
-		instancingData2[index].WVP = MakeIdentity4x4();
-		instancingData2[index].World = MakeIdentity4x4();
-		//instancingData2[index].color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+		instancingData2[index].WVP = Mat4::identity;
+		instancingData2[index].World = Mat4::identity;
+		//instancingData2[index].color = Vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 }
 
@@ -1204,10 +1216,10 @@ std::vector<ParticleManager::VertexData> ParticleManager::MakeCylinderVertices()
 		float sinTheta = std::sin(theta), cosTheta = std::cos(theta);
 		float sinNext = std::sin(nextTheta), cosNext = std::cos(nextTheta);
 
-		Vector3 bottom1 = { kRadius * cosTheta, -kHeight / 2, kRadius * sinTheta };
-		Vector3 bottom2 = { kRadius * cosNext,  -kHeight / 2, kRadius * sinNext };
-		Vector3 top1 = { kRadius * cosTheta,  kHeight / 2, kRadius * sinTheta };
-		Vector3 top2 = { kRadius * cosNext,   kHeight / 2, kRadius * sinNext };
+		Vec3 bottom1 = { kRadius * cosTheta, -kHeight / 2, kRadius * sinTheta };
+		Vec3 bottom2 = { kRadius * cosNext,  -kHeight / 2, kRadius * sinNext };
+		Vec3 top1 = { kRadius * cosTheta,  kHeight / 2, kRadius * sinTheta };
+		Vec3 top2 = { kRadius * cosNext,   kHeight / 2, kRadius * sinNext };
 
 		// 側面（三角形1）
 		v.push_back({ { bottom1.x, bottom1.y, bottom1.z, 1.0f }, { 0.0f, 1.0f }, { cosTheta, 0.0f, sinTheta } });
@@ -1233,7 +1245,7 @@ std::vector<ParticleManager::VertexData> ParticleManager::MakeCylinderVertices()
 	return v;
 }
 
-ParticleManager::Particle ParticleManager::MakeNewParticle(std::mt19937& randomEngine, const Vector3& translate)
+ParticleManager::Particle ParticleManager::MakeNewParticle(std::mt19937& randomEngine, const Vec3& translate)
 {
 	// 位置だけランダムにばら撒く
 	std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
@@ -1243,12 +1255,12 @@ ParticleManager::Particle ParticleManager::MakeNewParticle(std::mt19937& randomE
 	particle.transform.scale = { 1.0f, 1.0f, 1.0f };
 	particle.transform.rotate = { 0.0f, 0.0f, 0.0f };
 
-	Vector3 randomTranslate{
+	Vec3 randomTranslate{
 		distribution(randomEngine),
 		distribution(randomEngine),
 		distribution(randomEngine)
 	};
-	particle.transform.translate = Add(translate, randomTranslate);
+	particle.transform.translate = translate + randomTranslate;
 
 	// 速度・色・寿命はプリセット側(Set系)で一括設定するので、
 	// ここではデフォルト値だけ入れておく
@@ -1266,7 +1278,7 @@ ParticleManager::Particle ParticleManager::MakeNewParticle(std::mt19937& randomE
 	return particle;
 }
 
-ParticleManager::Particle ParticleManager::PrimitiveMakeNewParticle(std::mt19937& randomEngine, const Vector3& translate)
+ParticleManager::Particle ParticleManager::PrimitiveMakeNewParticle(std::mt19937& randomEngine, const Vec3& translate)
 {
 	// ランダム生成器
 	std::uniform_real_distribution<float> distRotate(0.0f, std::numbers::pi_v<float>);
@@ -1292,13 +1304,11 @@ ParticleManager::Particle ParticleManager::PrimitiveMakeNewParticle(std::mt19937
 	return particle;
 }
 
-ParticleManager::Particle ParticleManager::RingMakeNewParticle(const Vector3& translate)
+ParticleManager::Particle ParticleManager::RingMakeNewParticle(const Vec3& translate)
 {
 	Particle p{};
 
-	p.transform.scale = { 1,1,1 };
-	p.transform.rotate = { 0,0,0 };
-	p.transform.translate = translate;
+	p.transform =  Mat4::Translate(translate);
 
 	// パラメータは後でプリセットから Set～ で当てる
 	p.velocity = { 0,0,0 };
@@ -1311,13 +1321,11 @@ ParticleManager::Particle ParticleManager::RingMakeNewParticle(const Vector3& tr
 	return p;
 }
 
-ParticleManager::Particle ParticleManager::CylinderMakeNewParticle(const Vector3& translate)
+ParticleManager::Particle ParticleManager::CylinderMakeNewParticle(const Vec3& translate)
 {
 	Particle p{};
-
-	p.transform.scale = { 1,1,1 };
-	p.transform.rotate = { 0,0,0 };
-	p.transform.translate = translate;
+	
+	p.transform = Mat4::Translate(translate);
 
 	// パラメータは後でプリセットから Set～ で当てる
 	p.velocity = { 0,0,0 };
@@ -1385,7 +1393,7 @@ ParticleManager::ParticleGroup& ParticleManager::EnsureGroupForPreset(const Part
 	return group;
 }
 
-void ParticleManager::Emit(const std::string& name, const Transform& transform, uint32_t count, bool useRandomPosition) {
+void ParticleManager::Emit(const std::string& name, Mat4& transform, uint32_t count, bool useRandomPosition) {
 	if (particleGroups.find(name) == particleGroups.end()) {
 		assert("Specified particle group does not exist!");
 		return;
@@ -1407,13 +1415,11 @@ void ParticleManager::Emit(const std::string& name, const Transform& transform, 
 
 		if (useRandomPosition) {
 			// 位置だけランダム
-			particle = MakeNewParticle(randomEngine, transform.translate);
+			particle = MakeNewParticle(randomEngine, transform.GetTranslate());
 		}
 		else {
 			// 完全に固定位置で出す
-			particle.transform.translate = transform.translate;
-			particle.transform.scale = { 1.0f, 1.0f, 1.0f };
-			particle.transform.rotate = { 0.0f, 0.0f, 0.0f };
+			particle.transform= Mat4::Affine(Vec3::one, Vec3::zero, transform.GetTranslate());
 
 			particle.velocity = { 0.0f, 0.0f, 0.0f };
 			particle.rotationSpeed = { 0.0f, 0.0f, 0.0f };
@@ -1424,14 +1430,13 @@ void ParticleManager::Emit(const std::string& name, const Transform& transform, 
 		}
 
 		// Emit 引数側のスケール／回転を上書き
-		particle.transform.scale = transform.scale;
-		particle.transform.rotate = transform.rotate;
+		particle.transform = Mat4::Affine(transform.GetScale(), transform.GetRotate(), particle.transform.GetTranslate());
 
 		group.particleList.push_back(particle);
 	}
 }
 
-void ParticleManager::PrimitiveEmit(const std::string name, const Transform& transform, uint32_t count)
+void ParticleManager::PrimitiveEmit(const std::string name, Mat4& transform, uint32_t count)
 {
 	if (particleGroups.find(name) == particleGroups.end()) {
 		// パーティクルグループが存在しない場合はエラーを出力して終了
@@ -1452,14 +1457,15 @@ void ParticleManager::PrimitiveEmit(const std::string name, const Transform& tra
 
 	// 指定された数のパーティクルを生成して追加
 	for (uint32_t i = 0; i < actualCount; ++i) {
-		Particle particle = PrimitiveMakeNewParticle(randomEngine, transform.translate);
-		particle.transform.rotate = transform.rotate;
-		particle.transform.scale = transform.scale;
+		Particle particle = PrimitiveMakeNewParticle(randomEngine, transform.GetTranslate());
+		
+		particle.transform = Mat4::Affine(transform.GetScale(), transform.GetRotate(), particle.transform.GetTranslate());
+		
 		group.particleList.push_back(particle);
 	}
 }
 
-void ParticleManager::RingEmit(const std::string& name, const Transform& transform, uint32_t count)
+void ParticleManager::RingEmit(const std::string& name, Mat4& transform, uint32_t count)
 {
 	if (particleGroups.find(name) == particleGroups.end()) {
 		assert("Specified particle group does not exist!");
@@ -1477,15 +1483,17 @@ void ParticleManager::RingEmit(const std::string& name, const Transform& transfo
 	uint32_t actualCount = (count < maxToAdd) ? count : maxToAdd;
 
 	for (uint32_t i = 0; i < actualCount; ++i) {
-		Particle particle = RingMakeNewParticle(transform.translate);
-		particle.transform.rotate = transform.rotate;
-		particle.transform.scale = transform.scale;
+		Particle particle = RingMakeNewParticle(transform.GetTranslate());
+		particle.transform = Mat4::Affine(transform.GetScale(), transform.GetRotate(), particle.transform.GetTranslate());
+		
 		group.particleList.push_back(particle);
 	}
 }
 
-void ParticleManager::CylinderEmit(const std::string& name,
-	const Transform& transform, uint32_t count)
+void ParticleManager::CylinderEmit(
+	const std::string& name,
+	Mat4&              transform, uint32_t count
+)
 {
 	if (particleGroups.find(name) == particleGroups.end()) {
 		assert("Specified particle group does not exist!");
@@ -1503,42 +1511,41 @@ void ParticleManager::CylinderEmit(const std::string& name,
 	uint32_t actualCount = (count < maxToAdd) ? count : maxToAdd;
 
 	for (uint32_t i = 0; i < actualCount; ++i) {
-		Particle particle = CylinderMakeNewParticle(transform.translate);
-		particle.transform.rotate = transform.rotate;
-		particle.transform.scale = transform.scale;
+		Particle particle = CylinderMakeNewParticle(transform.GetTranslate());
+		particle.transform = Mat4::Affine(transform.GetScale(), transform.GetRotate(), particle.transform.GetTranslate());
 		group.particleList.push_back(particle);
 	}
 }
 
 
-void ParticleManager::SetScaleToGroup(const std::string& groupName, const Vector3& scale) {
+void ParticleManager::SetScaleToGroup(const std::string& groupName, const Vec3& scale) {
 	auto it = particleGroups.find(groupName);
 	if (it == particleGroups.end()) return;
 
 	for (auto& particle : it->second.particleList) {
-		particle.transform.scale = scale;
+		particle.transform = Mat4::Affine(scale, particle.transform.GetRotate(), particle.transform.GetTranslate());
 	}
 }
 
-void ParticleManager::SetRotationToGroup(const std::string& groupName, const Vector3& rotation) {
+void ParticleManager::SetRotationToGroup(const std::string& groupName, const Vec3& rotation) {
 	auto it = particleGroups.find(groupName);
 	if (it == particleGroups.end()) return;
 
 	for (auto& particle : it->second.particleList) {
-		particle.transform.rotate = rotation;
+		particle.transform = Mat4::Affine(particle.transform.GetScale(), rotation, particle.transform.GetTranslate());
 	}
 }
 
-void ParticleManager::SetTranslationToGroup(const std::string& groupName, const Vector3& translation) {
+void ParticleManager::SetTranslationToGroup(const std::string& groupName, const Vec3& translation) {
 	auto it = particleGroups.find(groupName);
 	if (it == particleGroups.end()) return;
 
 	for (auto& particle : it->second.particleList) {
-		particle.transform.translate = translation;
+		particle.transform = Mat4::Affine(particle.transform.GetScale(), particle.transform.GetRotate(), translation);
 	}
 }
 
-void ParticleManager::SetVelocityToGroup(const std::string& groupName, const Vector3& velocity) {
+void ParticleManager::SetVelocityToGroup(const std::string& groupName, const Vec3& velocity) {
 	auto it = particleGroups.find(groupName);
 	if (it == particleGroups.end()) return;
 
@@ -1547,7 +1554,7 @@ void ParticleManager::SetVelocityToGroup(const std::string& groupName, const Vec
 	}
 }
 
-void ParticleManager::SetRotationSpeedToGroup(const std::string& groupName, const Vector3& rotationSpeed)
+void ParticleManager::SetRotationSpeedToGroup(const std::string& groupName, const Vec3& rotationSpeed)
 {
 	auto it = particleGroups.find(groupName);
 	if (it == particleGroups.end()) return;
@@ -1557,7 +1564,7 @@ void ParticleManager::SetRotationSpeedToGroup(const std::string& groupName, cons
 	}
 }
 
-void ParticleManager::SetScaleSpeedToGroup(const std::string& groupName, const Vector3& scaleSpeed)
+void ParticleManager::SetScaleSpeedToGroup(const std::string& groupName, const Vec3& scaleSpeed)
 {
 	auto it = particleGroups.find(groupName);
 	if (it == particleGroups.end()) return;
@@ -1567,7 +1574,7 @@ void ParticleManager::SetScaleSpeedToGroup(const std::string& groupName, const V
 	}
 }
 
-void ParticleManager::SetColorToGroup(const std::string& groupName, const Vector4& color) {
+void ParticleManager::SetColorToGroup(const std::string& groupName, const Vec4& color) {
 	auto it = particleGroups.find(groupName);
 	if (it == particleGroups.end()) return;
 
@@ -1702,7 +1709,11 @@ void ParticleManager::RootSignature()
 	HRESULT hr = D3D12SerializeRootSignature(&descriptionRootSignature_,
 		D3D_ROOT_SIGNATURE_VERSION_1, &signatureBlob, &errorBlob);
 	if (FAILED(hr)) {
-		Logger::Log(reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
+		Fatal( 
+			kChannel, 
+			"Failed to serialize root signature: %s",
+			reinterpret_cast<char*>(errorBlob->GetBufferPointer())
+		);
 		assert(false);
 	}
 	//バイナリを元に生成
@@ -1711,7 +1722,7 @@ void ParticleManager::RootSignature()
 		signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature_));
 
 	if (FAILED(hr)) {
-		Logger::Log("rootsig\n");
+		Fatal(kChannel, "rootsig");
 		exit(1);
 	}
 
@@ -1742,14 +1753,14 @@ void ParticleManager::GraphicsPipelineState(BlendMode blendMode)
 	vertexShaderBlob_ = dxCommon_->CompileShader(L"Resources/shaders/Particle.VS.hlsl",
 		L"vs_6_0"/*, dxCommon->GetDxcUtils(), dxCommon->GetDxcCompiler(), dxCommon->GetIncludeHandler()*/);
 	if (vertexShaderBlob_ == nullptr) {
-		Logger::Log("vertexShaderBlob_\n");
+		Fatal(kChannel, "vertexShaderBlob");
 		exit(1);
 	}
 	assert(vertexShaderBlob_ != nullptr);
 	pixelShaderBlob_ = dxCommon_->CompileShader(L"Resources/shaders/Particle.PS.hlsl",
 		L"ps_6_0"/*, dxCommon->GetDxcUtils(), dxCommon->GetDxcCompiler(), dxCommon->GetIncludeHandler()*/);
 	if (pixelShaderBlob_ == nullptr) {
-		Logger::Log("pixelShaderBlob_\n");
+		Fatal(kChannel, "pixelShaderBlob");
 		exit(1);
 	}
 	assert(pixelShaderBlob_ != nullptr);
@@ -1767,7 +1778,7 @@ void ParticleManager::GraphicsPipelineState(BlendMode blendMode)
 		pipelineStateCache_[blendMode] = pipelineState;
 	}
 	else {
-		Logger::Log("Failed to create PSO for blend mode: " + std::to_string(blendMode));
+		Fatal(kChannel, "Failed to create PSO for blend mode: {}", std::to_string(blendMode));
 		assert(false && "PSO creation failed!");
 	}
 }
@@ -1794,7 +1805,7 @@ void ParticleManager::InputLayout()
 	inputLayoutDesc_.NumElements = _countof(inputElementDescs);
 }
 
-void ParticleManager::BlendState(BlendMode blendMode)
+void ParticleManager::BlendState(const BlendMode blendMode)
 {
 	////=========BlendStateの設定を行う=========////
 
@@ -1906,7 +1917,7 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> ParticleManager::PSO()
 
 	// PSOの生成に失敗した場合、ログを出力し、nullポインタを返す
 	if (FAILED(hr)) {
-		Logger::Log("PSO creation failed");
+		Error(kChannel, "Failed to create PSO: HRESULT = 0x%X", hr);
 		return nullptr;
 	}
 

@@ -1,12 +1,14 @@
 #pragma once
-#include "ParticleSystem.h"
-#include "ParticleEmitterInstance.h"
 
 #include <functional>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "Particle/ParticleEmitterInstance.h"
+
+struct Mat4;
+class ParticleSystem;
 // ===============================================
 // 複数の ParticleSystem を保有・管理する
 // 
@@ -58,7 +60,7 @@ public:
 
 	/// System を Emit（再生）する
 	/// emitterFactory プリセット名から EmitterInstance を生成する関数
-	void EmitSystem(const std::string& systemName,const Transform& transform,const std::function<ParticleEmitterInstance* (const std::string& presetName,const Transform& transform)>& emitterFactory);
+	void EmitSystem(const std::string& systemName,const Mat4& transform,const std::function<ParticleEmitterInstance* (const std::string& presetName,const Mat4& transform)>& emitterFactory);
 
 	// ===== JSON 保存/読込 =====
 

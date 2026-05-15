@@ -1,5 +1,4 @@
 #include "ParticleEmitterInstance.h"
-#include "ParticleManager.h"   // ParticleManager::ParticlePreset を見るため
 #include <algorithm>
 #include <random>
 
@@ -37,7 +36,7 @@ void ParticleEmitterInstance::Initialize(const PMPreset* preset)
 	playing_ = true;
 }
 
-void ParticleEmitterInstance::SetTransform(const Transform& t)
+void ParticleEmitterInstance::SetTransform(const Mat4& t)
 {
 	emitterTransform_ = t;
 }
@@ -81,7 +80,7 @@ void ParticleEmitterInstance::SpawnParticles()
 
 		// Local Space の場合: 原点(0,0,0)からの相対座標
 		// World Space の場合: エミッタのワールド座標が基準
-		Vector3 pos = spawn.useLocalSpace ? Vector3{ 0,0,0 } : emitterTransform_.translate;
+		Vec3 pos = spawn.useLocalSpace ? Vec3{ 0,0,0 } : emitterTransform_.GetTranslate();
 
 		// --- EmitterSpawn 側のランダム位置（既存） ---
 		if (spawn.useRandomPosition) {
@@ -92,7 +91,7 @@ void ParticleEmitterInstance::SpawnParticles()
 		}
 
 		// --- ParticleSpawn.initialOffset のランダム ---
-		Vector3 offset = pSpawn.initialOffset;
+		Vec3 offset = pSpawn.initialOffset;
 		if (pSpawn.initialOffsetRandom.useRandom) {
 			offset.x = RandomRange(
 				pSpawn.initialOffsetRandom.minValue.x,
@@ -111,7 +110,7 @@ void ParticleEmitterInstance::SpawnParticles()
 		p.position = pos;
 
 		// --- 初期スケール（ランダム対応） ---
-		Vector3 scale = pSpawn.initialScale;
+		Vec3 scale = pSpawn.initialScale;
 		if (pSpawn.initialScaleRandom.useRandom) {
 			scale.x = RandomRange(
 				pSpawn.initialScaleRandom.minValue.x,
@@ -126,7 +125,7 @@ void ParticleEmitterInstance::SpawnParticles()
 		p.scale = scale;
 
 		// --- 初期回転（ランダム対応） ---
-		Vector3 rot = pSpawn.initialRotate;
+		Vec3 rot = pSpawn.initialRotate;
 		if (pSpawn.initialRotateRandom.useRandom) {
 			rot.x = RandomRange(
 				pSpawn.initialRotateRandom.minValue.x,
@@ -148,7 +147,7 @@ void ParticleEmitterInstance::SpawnParticles()
 		// ========= ParticleUpdate 側 =========
 
 		// --- 速度（ランダム対応） ---
-		Vector3 vel = u.velocity;
+		Vec3 vel = u.velocity;
 		if (u.velocityRandom.useRandom) {
 			vel.x = RandomRange(
 				u.velocityRandom.minValue.x, u.velocityRandom.maxValue.x);
@@ -160,7 +159,7 @@ void ParticleEmitterInstance::SpawnParticles()
 		p.velocity = vel;
 
 		// --- 回転速度（ランダム対応） ---
-		Vector3 rotSpd = u.rotationSpeed;
+		Vec3 rotSpd = u.rotationSpeed;
 		if (u.rotationRandom.useRandom) {
 			rotSpd.x = RandomRange(
 				u.rotationRandom.minValue.x, u.rotationRandom.maxValue.x);
@@ -172,7 +171,7 @@ void ParticleEmitterInstance::SpawnParticles()
 		p.rotationSpeed = rotSpd;
 
 		// --- スケール速度（ランダム対応） ---
-		Vector3 sclSpd = u.scaleSpeed;
+		Vec3 sclSpd = u.scaleSpeed;
 		if (u.scaleRandom.useRandom) {
 			sclSpd.x = RandomRange(
 				u.scaleRandom.minValue.x, u.scaleRandom.maxValue.x);
@@ -266,9 +265,6 @@ void ParticleEmitterInstance::UpdateParticles(float dt)
 		// 色：グラデーション + 時間カーブ + 強さカーブ
 		// =============================
 		{
-			// NormalizedAge = p.life / p.maxLife
-			float age = p.life / p.maxLife;
-
 			// 1) グラデーション用の t を決める（時間カーブ）
 			float gradT = age;
 			if (renderM.gradientTimeCurve.enabled && !renderM.gradientTimeCurve.keys.empty()) {
@@ -277,7 +273,7 @@ void ParticleEmitterInstance::UpdateParticles(float dt)
 			gradT = std::clamp(gradT, 0.0f, 1.0f);
 
 			// 2) グラデーションから「ベース色」を取得
-			Vector4 col = p.initialColor;
+			Vec4 col = p.initialColor;
 			if (renderM.colorGradient.enabled && !renderM.colorGradient.keys.empty()) {
 				col = renderM.colorGradient.Evaluate(gradT);
 			}

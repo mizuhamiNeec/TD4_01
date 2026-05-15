@@ -2,8 +2,10 @@
 #include <string>
 #include <vector>
 
-#include "MathFunctions.h"
-#include "engine/BlendMode.h"
+#include "../BlendMode.h"
+
+#include "core/math/Vec3.h"
+#include "core/math/Vec4.h"
 
 // ===============================================
 // 共通で使う列挙型
@@ -30,8 +32,8 @@ struct CurveKey {
 // ===============================================
 struct RandomRange3 {
 	bool useRandom = false;
-	Vector3 minValue{ 0,0,0 };
-	Vector3 maxValue{ 0,0,0 };
+	Vec3 minValue{ 0,0,0 };
+	Vec3 maxValue{ 0,0,0 };
 };
 
 
@@ -63,14 +65,14 @@ struct Curve1D {
 //======================================
 struct ColorKey4 {
 	float   t = 0.0f;          // 0〜1 (NormalizedAge か時間カーブの値)
-	Vector4 color{ 1,1,1,1 };  // この t での色
+	Vec4 color{ 1,1,1,1 };  // この t での色
 };
 
 struct ColorGradient {
 	bool enabled = false;
 	std::vector<ColorKey4> keys;
 
-	Vector4 Evaluate(float t) const {
+	Vec4 Evaluate(float t) const {
 		if (!enabled || keys.empty()) {
 			return { 1,1,1,1 };
 		}
@@ -82,7 +84,7 @@ struct ColorGradient {
 			const ColorKey4& k1 = keys[i + 1];
 			if (t >= k0.t && t <= k1.t && k1.t > k0.t) {
 				float u = (t - k0.t) / (k1.t - k0.t);
-				Vector4 c{};
+				Vec4 c{};
 				c.x = k0.color.x + (k1.color.x - k0.color.x) * u;
 				c.y = k0.color.y + (k1.color.y - k0.color.y) * u;
 				c.z = k0.color.z + (k1.color.z - k0.color.z) * u;
@@ -117,24 +119,24 @@ struct EmitterSpawnModule {
 
 // --- Particle Spawn モジュール ---
 struct ParticleSpawnModule {
-	Vector3 initialScale{ 1,1,1 };
+	Vec3 initialScale{ 1,1,1 };
 	RandomRange3 initialScaleRandom;
 
-	Vector3 initialRotate{ 0,0,0 };
+	Vec3 initialRotate{ 0,0,0 };
 	RandomRange3 initialRotateRandom;
 
-	Vector3 initialOffset{ 0,0,0 };
+	Vec3 initialOffset{ 0,0,0 };
 	RandomRange3 initialOffsetRandom; // エミッタからの相対オフセット
 };
 
 // --- Particle Update モジュール ---
 struct ParticleUpdateModule {
 	float   lifeTime = 1.0f;               // 寿命
-	Vector3 velocity = { 0, 0, 0 };        // 速度
+	Vec3 velocity = { 0, 0, 0 };        // 速度
 	RandomRange3 velocityRandom;
-	Vector3 rotationSpeed = { 0, 0, 0 };   // 回転速度
+	Vec3 rotationSpeed = { 0, 0, 0 };   // 回転速度
 	RandomRange3 rotationRandom;
-	Vector3 scaleSpeed = { 0, 0, 0 };      // スケール速度
+	Vec3 scaleSpeed = { 0, 0, 0 };      // スケール速度
 	RandomRange3 scaleRandom;
 	bool    useGravity = false;              // 重力
 
@@ -144,7 +146,7 @@ struct ParticleUpdateModule {
 
 // --- Render モジュール ---
 struct RenderModule {
-	Vector4 color = { 1, 1, 1, 1 };  // 色
+	Vec4 color = { 1, 1, 1, 1 };  // 色
 	bool    useBillboard = true;           // ビルボード
 	bool    flipY = false;          // Cylinder の上下反転など
 

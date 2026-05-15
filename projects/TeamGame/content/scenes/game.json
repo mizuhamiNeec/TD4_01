@@ -9,7 +9,7 @@
                         "parentEntityGuid": 0,
                         "position": [
                             0.7765448093414307,
-                            8.889924743016309e-07,
+                            1.7690939903259277,
                             -8.472517013549805
                         ],
                         "rotation": [
@@ -100,7 +100,7 @@
                                 "slotIndex": 0
                             },
                             {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/nongreen.matinst.json",
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/ground.matinst.json",
                                 "slotIndex": 1
                             },
                             {
@@ -108,7 +108,7 @@
                                 "slotIndex": 2
                             }
                         ],
-                        "meshPath": "projects/TeamGame/content/models/ground.obj"
+                        "meshPath": "projects/TeamGame/content/models/stage.obj"
                     },
                     "guid": 15170849770376363326,
                     "type": "engine.StaticMeshRenderer"
@@ -174,7 +174,7 @@
                         "parentEntityGuid": 0,
                         "position": [
                             0.2993084788322449,
-                            2.318265438079834,
+                            3.495110034942627,
                             10.141738891601563
                         ],
                         "rotation": [
@@ -243,9 +243,9 @@
                     "data": {
                         "parentEntityGuid": 0,
                         "position": [
-                            -9.168036460876465,
-                            0.0,
-                            8.164898872375488
+                            0.29903602600097656,
+                            4.542592525482178,
+                            31.675682067871094
                         ],
                         "rotation": [
                             0.0,
@@ -306,9 +306,9 @@
                     "data": {
                         "parentEntityGuid": 0,
                         "position": [
-                            -3.6300227642059326,
-                            0.0,
-                            12.438386917114258
+                            1.4882042407989502,
+                            3.2109601497650146,
+                            23.79271125793457
                         ],
                         "rotation": [
                             0.0,
@@ -369,9 +369,9 @@
                     "data": {
                         "parentEntityGuid": 0,
                         "position": [
-                            -12.774293899536133,
-                            0.0,
-                            4.56376314163208
+                            -12.77429485321045,
+                            2.1638455390930176,
+                            31.555559158325195
                         ],
                         "rotation": [
                             0.0,
@@ -433,7 +433,7 @@
                         "parentEntityGuid": 0,
                         "position": [
                             3.7607598304748535,
-                            9.5367431640625e-07,
+                            2.4806551933288574,
                             15.985489845275879
                         ],
                         "rotation": [
@@ -496,7 +496,7 @@
                         "parentEntityGuid": 0,
                         "position": [
                             10.705204010009766,
-                            9.5367431640625e-07,
+                            2.794067859649658,
                             13.167596817016602
                         ],
                         "rotation": [
@@ -558,9 +558,9 @@
                     "data": {
                         "parentEntityGuid": 0,
                         "position": [
-                            -14.016162872314453,
-                            9.5367431640625e-07,
-                            0.5278396606445313
+                            -20.943557739257813,
+                            0.19025874137878418,
+                            -5.046061992645264
                         ],
                         "rotation": [
                             0.0,
@@ -621,9 +621,9 @@
                     "data": {
                         "parentEntityGuid": 0,
                         "position": [
-                            -12.902463912963867,
-                            9.5367431640625e-07,
-                            -3.274707794189453
+                            8.481850624084473,
+                            2.5378353595733643,
+                            -3.2747087478637695
                         ],
                         "rotation": [
                             0.0,
@@ -684,8 +684,8 @@
                     "data": {
                         "parentEntityGuid": 0,
                         "position": [
-                            -9.151528358459473,
-                            9.5367431640625e-07,
+                            8.968249320983887,
+                            2.7327170372009277,
                             -6.5618791580200195
                         ],
                         "rotation": [
@@ -748,8 +748,8 @@
                         "parentEntityGuid": 0,
                         "position": [
                             -5.0422210693359375,
-                            9.5367431640625e-07,
-                            -8.308355331420898
+                            1.0953364372253418,
+                            -6.902397155761719
                         ],
                         "rotation": [
                             0.0,
@@ -811,7 +811,7 @@
                         "parentEntityGuid": 0,
                         "position": [
                             0.0,
-                            0.07999999821186066,
+                            2.2526872158050537,
                             0.0
                         ],
                         "rotation": [
@@ -839,6 +839,10 @@
                     "active": true,
                     "data": {
                         "debugLogEnabled": true,
+                        "enterActivateEntityGuids": [
+                            45
+                        ],
+                        "exitDeactivateEntityGuids": [],
                         "height": 2.0,
                         "radius": 1.0,
                         "targetTag": "Ball"
@@ -879,10 +883,10 @@
                 {
                     "active": true,
                     "data": {
-                        "parentEntityGuid": 0,
+                        "parentEntityGuid": 42,
                         "position": [
                             0.0,
-                            1.100000023841858,
+                            1.0199999809265137,
                             -2.0
                         ],
                         "rotation": [
@@ -944,13 +948,13 @@
                             0.30000001192092896
                         ]
                     },
-                    "guid": 0,
+                    "guid": 13063450174624324934,
                     "type": "engine.Transform"
                 },
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "C:/Users/MizuHami/Repositories/TD4_01/projects/TeamGame/content/materials/instances/player.matinst.json",
+                        "materialInstancePath": "",
                         "materialSlots": [
                             {
                                 "materialInstancePath": "projects/TeamGame/content/materials/instances/player.matinst.json",
@@ -959,7 +963,7 @@
                         ],
                         "meshPath": "projects/TeamGame/content/models/player/Player_Hole.obj"
                     },
-                    "guid": 0,
+                    "guid": 13183277114207846604,
                     "type": "engine.StaticMeshRenderer"
                 }
             ],
@@ -969,10 +973,66 @@
             "name": "PlayerModel",
             "tags": [],
             "visible": true
+        },
+        {
+            "active": false,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 17023767963826987551,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "billboardDepthMode": "DepthTest",
+                        "pixelSize": [
+                            1920.0,
+                            1080.0
+                        ],
+                        "receiveInput": true,
+                        "sortKey": 0,
+                        "spaceMode": "Screen",
+                        "uiAssetPath": "projects/TeamGame/content/ui/clear.ui.json",
+                        "worldSize": [
+                            2.0,
+                            1.125
+                        ]
+                    },
+                    "guid": 9815354890616739296,
+                    "type": "engine.UiCanvas"
+                }
+            ],
+            "folderPath": "UserInterface",
+            "guid": 45,
+            "isEditorOnly": false,
+            "name": "ClearUI",
+            "tags": [],
+            "visible": true
         }
     ],
     "folders": [
-        "Env"
+        "Env",
+        "UserInterface"
     ],
     "version": 1
 }

@@ -839,6 +839,8 @@
                     "active": true,
                     "data": {
                         "debugLogEnabled": true,
+                        "enterActivateEntityGuids": [45],
+                        "exitDeactivateEntityGuids": [],
                         "height": 2.0,
                         "radius": 1.0,
                         "targetTag": "Ball"

@@ -23,21 +23,27 @@ namespace MyGame {
 		/// コンポーネントがデタッチされたときに呼び出される
 		void OnDetached() override;
 
-		// -----------------------------------------------------------------------
-		// ゴミオブジェクト設定
-		// -----------------------------------------------------------------------
+	// -----------------------------------------------------------------------
+	// ゴミオブジェクト設定
+	// -----------------------------------------------------------------------
 
-		/// @brief ゴミの重量を設定
-		void SetMass(float mass);
+	/// @brief ゴミの重量を設定
+	void SetMass(float mass);
 
-		/// @brief ゴミの重量を取得
-		[[nodiscard]] float GetMass() const;
+	/// @brief ゴミの重量を取得
+	[[nodiscard]] float GetMass() const;
 
-		/// @brief ゴミのタイプを設定（例: "plastic", "metal", "organic"）
-		void SetTrashType(const std::string& type);
+	/// @brief ゴミのタイプを設定（例: "plastic", "metal", "organic"）
+	void SetTrashType(const std::string& type);
 
-		/// @brief ゴミのタイプを取得
-		[[nodiscard]] const std::string& GetTrashType() const;
+	/// @brief ゴミのタイプを取得
+	[[nodiscard]] const std::string& GetTrashType() const;
+
+	/// @brief ゴミを落下状態に設定
+	void SetFalling(bool isFalling);
+
+	/// @brief ゴミが落下中かを取得
+	[[nodiscard]] bool IsFalling() const;
 
 		// -----------------------------------------------------------------------
 		// BaseComponent override
@@ -62,6 +68,9 @@ namespace MyGame {
 
 		/// ゴミのタイプ（分類用）
 		std::string _trashType = "generic";
+
+		/// ゴミが穴に落下中かどうか
+		bool _isFalling = false;
 	};
 
 }

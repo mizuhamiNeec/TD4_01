@@ -46,6 +46,14 @@ namespace MyGame {
 		return _trashType;
 	}
 
+	void TrashObjMoverComponent::SetFalling(bool isFalling) {
+		_isFalling = isFalling;
+	}
+
+	bool TrashObjMoverComponent::IsFalling() const {
+		return _isFalling;
+	}
+
 	// -----------------------------------------------------------------------
 	// BaseComponent override
 	// -----------------------------------------------------------------------
@@ -71,6 +79,9 @@ namespace MyGame {
 		// ゴミのタイプ
 		ImGui::InputText("Trash Type", &_trashType);
 
+		// ゴミの落下状態
+		ImGui::Checkbox("Is Falling", &_isFalling);
+
 		ImGui::Separator();
 		ImGui::TextWrapped("Note: This object is controlled by physics engine when collided with player.");
 	}
@@ -84,6 +95,9 @@ namespace MyGame {
 		if (auto val = reader.Read<std::string>("trashType")) {
 			_trashType = val.value();
 		}
+		if (auto val = reader.Read<bool>("isFalling")) {
+			_isFalling = val.value();
+		}
 	}
 
 	void TrashObjMoverComponent::Serialize(Unnamed::JsonWriter& writer) const {
@@ -92,6 +106,8 @@ namespace MyGame {
 		writer.Write(_mass);
 		writer.Key("trashType");
 		writer.Write(_trashType);
+		writer.Key("isFalling");
+		writer.Write(_isFalling);
 	}
 
 	// NOTE: 忘れると死ぬやつ

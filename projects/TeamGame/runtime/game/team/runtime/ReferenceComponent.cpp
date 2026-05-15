@@ -101,7 +101,7 @@ namespace MyGame {
 		// 他のエンティティにアクセスする例
 		// オーナー->シーンからエンティティを検索する
 		// 詳しくはシーンのヘッダーを見てね!!
-		// GetOwner()->GetScene()->FindEntity(/*エンティティのGUID*/);
+		GetOwner()->GetScene()->FindEntity(/*エンティティのGUID*/);
 
 		//
 	}

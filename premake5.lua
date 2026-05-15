@@ -100,6 +100,12 @@ function LinkAssimpByConfig()
 	filter {}
 end
 
+function GenerateProjects() 
+	prebuildcommands {
+    	'powershell -NoProfile -ExecutionPolicy Bypass -Command "Write-Host \\"[Premake PreBuild] %{prj.name} %{cfg.buildcfg} %{cfg.platform}\\"; Get-Date | Out-File -Encoding utf8 \\"%{wks.location}/prebuild_test.log\\""',
+	}
+end
+
 function CopyDxCompilerDlls()
 	postbuildcommands {
 		'copy /Y "$(WindowsSdkDir)bin\\$(TargetPlatformVersion)\\x64\\dxcompiler.dll" "%{cfg.targetdir}\\dxcompiler.dll"',
@@ -278,6 +284,7 @@ project "UnnamedEditorApp"
 		defines { "UNNAMED_WITH_EDITOR" }
 	filter {}
 	LinkAssimpByConfig()
+	GenerateProjects()
 	CopyDxCompilerDlls()
 	linkoptions {
 		"/WHOLEARCHIVE:TeamGameRuntime.lib",
@@ -309,4 +316,5 @@ project "TeamGameApp"
 		defines { "UNNAMED_WITH_EDITOR" }
 	filter {}
 	LinkAssimpByConfig()
+	GenerateProjects()
 	CopyDxCompilerDlls()

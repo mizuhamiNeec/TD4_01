@@ -1,8 +1,8 @@
 {
-	"name": "tree",
+	"name": "player",
 	"material": "../../../../../content/core/materials/dev.material.json",
 	"textures": {
-		"BaseColor": "../../models/color.png"
+		"BaseColor": "../../models/player/Player_Hole.png"
 	},
 	"scalars": {
 		"Metallic": 0.0,

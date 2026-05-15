@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <unordered_set>
+#include <vector>
 
 #include "../base/BaseComponent.h"
 
@@ -33,6 +34,11 @@ namespace Unnamed {
 
 	private:
 		void RunDetection();
+		void ExecuteEntityActivationActions(
+			const std::vector<uint64_t>& targetGuids,
+			bool                         activeState,
+			std::string_view             actionName
+		) const;
 		void EmitTransitionLogs(
 			const std::unordered_set<uint64_t>& currentDetected
 		) const;
@@ -41,6 +47,8 @@ namespace Unnamed {
 		float       mHeight          = 2.0f;
 		std::string mTargetTag       = "Ball";
 		bool        mDebugLogEnabled = false;
+		std::vector<uint64_t> mEnterActivateEntityGuids;
+		std::vector<uint64_t> mExitDeactivateEntityGuids;
 
 		std::unordered_set<uint64_t> mPreviousDetectedGuids;
 	};

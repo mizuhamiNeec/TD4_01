@@ -1,5 +1,5 @@
 {
-    "name": "ui/title.ui.json",
+    "name": "ui/clear.ui.json",
     "root": {
         "children": [
             {
@@ -8,74 +8,10 @@
                     {
                         "data": {
                             "anchors": [
-                                0.0,
-                                0.0,
-                                1.0,
-                                1.0
-                            ],
-                            "constraints": {
-                                "maxHeight": 3.4028234663852886e+38,
-                                "maxWidth": 3.4028234663852886e+38,
-                                "minHeight": 0.0,
-                                "minWidth": 0.0
-                            },
-                            "margins": [
-                                0.0,
-                                0.0,
-                                0.0,
-                                0.0
-                            ],
-                            "pivot": [
-                                0.0,
-                                0.0
-                            ],
-                            "rect": [
-                                0.0,
-                                0.0,
-                                240.0,
-                                120.0
-                            ],
-                            "sizePolicy": [
-                                "Fixed",
-                                "Fixed"
-                            ]
-                        },
-                        "type": "Transform"
-                    },
-                    {
-                        "data": {
-                            "borderColor": [
-                                0.0,
-                                0.0,
-                                0.0,
-                                1.0
-                            ],
-                            "borderThickness": 0.0,
-                            "cornerRadius": 4.0,
-                            "fillColor": [
-                                0.3207527995109558,
-                                0.4921915829181671,
-                                0.8812260627746582,
-                                1.0
-                            ]
-                        },
-                        "type": "PanelStyle"
-                    }
-                ],
-                "enabled": true,
-                "name": "Panel",
-                "visible": true
-            },
-            {
-                "children": [],
-                "components": [
-                    {
-                        "data": {
-                            "anchors": [
                                 0.5,
-                                0.4000000059604645,
                                 0.5,
-                                0.4000000059604645
+                                0.5,
+                                0.5
                             ],
                             "constraints": {
                                 "maxHeight": 3.4028234663852886e+38,
@@ -97,7 +33,7 @@
                                 0.0,
                                 0.0,
                                 1024.0,
-                                512.0
+                                256.0
                             ],
                             "sizePolicy": [
                                 "Fixed",
@@ -119,7 +55,7 @@
                                 1.0
                             ],
                             "rotationRad": 0.0,
-                            "texturePath": "projects/TeamGame/content/textures/title.png",
+                            "texturePath": "projects/TeamGame/content/textures/clear.png",
                             "uvMax": [
                                 1.0,
                                 1.0

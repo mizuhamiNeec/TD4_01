@@ -416,7 +416,7 @@ namespace Unnamed::EditorContentBrowser {
 					ImGuiTableFlags_Resizable |
 					ImGuiTableFlags_BordersInnerV |
 					ImGuiTableFlags_SizingFixedFit,
-					ImVec2(0.0f, 420.0f)
+					ImVec2(0.0f, 0.0f)
 				)
 			) {
 				ImGui::TableSetupColumn(
@@ -562,7 +562,8 @@ namespace Unnamed::EditorContentBrowser {
 			return committed;
 		}
 
-		bool DrawTopBar(BrowserViewState& state) {
+		bool DrawTopBar(BrowserViewState& state, const bool showRootSelector) {
+			EnsurePickerStateValid(state);
 			const fs::path rootPath = fs::path(state.rootPath).
 				lexically_normal();
 			fs::path currentPath = fs::path(state.currentPath).
@@ -644,6 +645,7 @@ namespace Unnamed::EditorContentBrowser {
 	) {
 		bool changed  = false;
 		bool rejected = false;
+		bool isOpen   = true;
 
 		ImGui::PushID(label);
 		ImGui::AlignTextToFramePadding();
@@ -754,27 +756,53 @@ namespace Unnamed::EditorContentBrowser {
 		if (
 			ImGui::BeginPopupModal(
 				popupId.c_str(),
-				nullptr,
-				ImGuiWindowFlags_NoSavedSettings
+				&isOpen,
+				ImGuiWindowFlags_NoSavedSettings | 
+				ImGuiWindowFlags_NoResize |
+				ImGuiWindowFlags_NoMove |
+				ImGuiWindowFlags_NoCollapse
 			)
-		) {
-			(void)DrawTopBar(pickerState);
+		) {			
+			(void)DrawTopBar(pickerState, true);
+			
+			const float footerHeight = ImGui::GetFrameHeightWithSpacing();
+			const float contentHeight = ImGui::GetContentRegionAvail().y - footerHeight;
+			
+			if (ImGui::BeginChild(
+				"##AssetPickerContent",
+				ImVec2(0.0f, contentHeight),
+				true,
+				ImGuiWindowFlags_None
+			)) {
+				std::string committedPath;
+				const bool committedByDoubleClick = DrawContentView(
+					pickerState,
+					acceptedMask,
+					false,
+					&committedPath,
+					nullptr
+				);
+				if (committedByDoubleClick && TryCommitAssetPath(
+						path, committedPath, acceptedMask
+					)) {
+					changed = true;
+					ImGui::CloseCurrentPopup();
+				}
+				ImGui::EndChild();
+			}
+			
+			std::string selectText = "Select";
+			std::string cancelText = "Cancel";
+			
+			auto selectWidth = ImGui::CalcTextSize(selectText.c_str());
+			auto cancelWidth = ImGui::CalcTextSize(cancelText.c_str());
+			auto buttonHorizSize = std::max(selectWidth.x, cancelWidth.x) + ImGui::GetStyle().FramePadding.x * 2.0f;
+			ImGui::SetCursorPosX(ImGui::GetContentRegionAvail().x - buttonHorizSize * 2.0f - ImGui::GetStyle().FramePadding.x);
 
-			std::string committedPath;
-			const bool  committedByDoubleClick = DrawContentView(
-				pickerState,
-				acceptedMask,
-				false,
-				&committedPath,
-				nullptr
-			);
-			if (committedByDoubleClick && TryCommitAssetPath(
-				    path, committedPath, acceptedMask
-			    )) {
-				changed = true;
+			if (ImGui::Button("Cancel")) {
 				ImGui::CloseCurrentPopup();
 			}
-
+			ImGui::SameLine();
 			if (ImGui::Button("Select")) {
 				if (
 					!pickerState.selectedPath.empty() &&
@@ -785,10 +813,6 @@ namespace Unnamed::EditorContentBrowser {
 					changed = true;
 					ImGui::CloseCurrentPopup();
 				}
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("Cancel")) {
-				ImGui::CloseCurrentPopup();
 			}
 			ImGui::EndPopup();
 		}
@@ -822,7 +846,7 @@ namespace Unnamed::EditorContentBrowser {
 			return;
 		}
 
-		(void)DrawTopBar(state);
+		(void)DrawTopBar(state, false);
 		(void)DrawContentView(
 			state,
 			kAssetTypeMaskAny,

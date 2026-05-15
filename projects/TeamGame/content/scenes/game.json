@@ -227,6 +227,9 @@
             "guid": 5,
             "isEditorOnly": false,
             "name": "Ball",
+            "tags": [
+                "Ball"
+            ],
             "visible": true
         },
         {
@@ -839,6 +842,17 @@
                     "data": {},
                     "guid": 16476393568158639362,
                     "type": "mygame.MicComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "debugLogEnabled": true,
+                        "height": 10.0,
+                        "radius": 20.0,
+                        "targetTag": "Ball"
+                    },
+                    "guid": 16476393568158639363,
+                    "type": "engine.CylinderTrigger"
                 }
             ],
             "folderPath": "",

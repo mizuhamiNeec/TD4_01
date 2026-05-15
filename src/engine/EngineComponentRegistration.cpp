@@ -6,6 +6,7 @@
 #include "engine/unnamed/framework/components/SkyboxComponent.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/framework/components/audio/AudioSourceComponent.h"
+#include "engine/unnamed/framework/components/collider/CylinderTriggerComponent.h"
 #include "engine/unnamed/framework/components/collider/StaticMeshColliderComponent.h"
 #include "engine/unnamed/framework/components/mesh/SkeletalAnimationComponent.h"
 #include "engine/unnamed/framework/components/mesh/SkeletalMeshRendererComponent.h"
@@ -45,6 +46,7 @@ namespace Unnamed {
 		registerIfMissing(SkyboxComponent{});
 		registerIfMissing(StaticMeshRendererComponent{});
 		registerIfMissing(StaticMeshColliderComponent{});
+		registerIfMissing(CylinderTriggerComponent{});
 		registerIfMissing(SkeletalMeshRendererComponent{});
 		registerIfMissing(SkeletalAnimationComponent{});
 		registerIfMissing(UiCanvasComponent{});

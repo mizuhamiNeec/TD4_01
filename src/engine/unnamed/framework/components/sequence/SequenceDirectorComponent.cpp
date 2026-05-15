@@ -11,11 +11,13 @@
 
 #include "core/ComponentRegistry.h"
 #include "core/assets/AssetManager.h"
+#include "core/assets/AssetType.h"
 #include "core/assets/types/SequenceAssetData.h"
 #include "core/io/json/JsonReader.h"
 #include "core/io/json/JsonWriter.h"
 
 #include "engine/ImGui/Icons.h"
+#include "engine/ImGui/ImGuiWidgets.h"
 #include "engine/scene/Scene.h"
 #include "engine/sequence/SequencePlayer.h"
 #include "engine/sequence/SequenceRuntime.h"
@@ -85,7 +87,11 @@ namespace Unnamed {
 
 #ifdef _DEBUG
 	void SequenceDirectorComponent::DrawInspectorImGui() {
-		DrawStringInput<256>("Sequence Path", mSequencePath);
+		(void)ImGuiWidgets::AssetPathPicker(
+			"Sequence Path",
+			mSequencePath,
+			ImGuiWidgets::AssetTypeToMask(ASSET_TYPE::SEQUENCE)
+		);
 		ImGui::Checkbox("Play On Attach", &mPlayOnAttach);
 		ImGui::Checkbox("Auto Stop When Completed", &mAutoStopWhenCompleted);
 		ImGui::DragFloat("Play Rate", &mPlayRate, 0.05f, 0.0f, 8.0f);

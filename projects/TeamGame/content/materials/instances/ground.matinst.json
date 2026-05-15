@@ -2,7 +2,7 @@
 	"name": "tree",
 	"material": "../../../../../content/core/materials/dev.material.json",
 	"textures": {
-		"BaseColor": "../../textures/ground.png"
+		"BaseColor": "../../models/color.png"
 	},
 	"scalars": {
 		"Metallic": 0.0,

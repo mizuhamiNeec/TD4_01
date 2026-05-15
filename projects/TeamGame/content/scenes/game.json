@@ -944,13 +944,13 @@
                             0.30000001192092896
                         ]
                     },
-                    "guid": 0,
+                    "guid": 13063450174624324934,
                     "type": "engine.Transform"
                 },
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "C:/Users/MizuHami/Repositories/TD4_01/projects/TeamGame/content/materials/instances/player.matinst.json",
+                        "materialInstancePath": "",
                         "materialSlots": [
                             {
                                 "materialInstancePath": "projects/TeamGame/content/materials/instances/player.matinst.json",
@@ -959,7 +959,7 @@
                         ],
                         "meshPath": "projects/TeamGame/content/models/player/Player_Hole.obj"
                     },
-                    "guid": 0,
+                    "guid": 13183277114207846604,
                     "type": "engine.StaticMeshRenderer"
                 }
             ],
@@ -969,10 +969,66 @@
             "name": "PlayerModel",
             "tags": [],
             "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 17023767963826987551,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "billboardDepthMode": "DepthTest",
+                        "pixelSize": [
+                            1920.0,
+                            1080.0
+                        ],
+                        "receiveInput": true,
+                        "sortKey": 0,
+                        "spaceMode": "Screen",
+                        "uiAssetPath": "projects/TeamGame/content/ui/clear.ui.json",
+                        "worldSize": [
+                            2.0,
+                            1.125
+                        ]
+                    },
+                    "guid": 9815354890616739296,
+                    "type": "engine.UiCanvas"
+                }
+            ],
+            "folderPath": "UserInterface",
+            "guid": 45,
+            "isEditorOnly": false,
+            "name": "ClearUI",
+            "tags": [],
+            "visible": true
         }
     ],
     "folders": [
-        "Env"
+        "Env",
+        "UserInterface"
     ],
     "version": 1
 }

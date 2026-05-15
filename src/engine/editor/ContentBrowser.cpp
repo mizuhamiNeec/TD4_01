@@ -29,6 +29,10 @@ namespace Unnamed::EditorContentBrowser {
 		};
 
 		std::unordered_map<ImGuiID, BrowserViewState> sPickerStates;
+		constexpr std::array<std::string_view, 2> kPickerRoots = {
+			"./content",
+			"./projects"
+		};
 
 		std::string NormalizePath(const fs::path& path) {
 			return StrUtil::NormalizePath(path.lexically_normal().string());
@@ -45,6 +49,58 @@ namespace Unnamed::EditorContentBrowser {
 			}
 			return normalizedPath.starts_with(normalizedRoot) &&
 			       normalizedPath[normalizedRoot.size()] == '/';
+		}
+
+		bool DirectoryExists(const std::string_view path) {
+			std::error_code ec;
+			return
+				fs::exists(fs::path(path), ec) &&
+				fs::is_directory(fs::path(path), ec) &&
+				!ec;
+		}
+
+		std::string ResolveExistingPickerRoot(
+			const std::string_view preferredRoot
+		) {
+			if (DirectoryExists(preferredRoot)) {
+				return std::string(preferredRoot);
+			}
+			for (const auto candidate : kPickerRoots) {
+				if (DirectoryExists(candidate)) {
+					return std::string(candidate);
+				}
+			}
+			return std::string("./content");
+		}
+
+		void EnsurePickerStateValid(BrowserViewState& state) {
+			state.rootPath = ResolveExistingPickerRoot(state.rootPath);
+			const fs::path rootPath = fs::path(state.rootPath).lexically_normal();
+			const fs::path currentPath = fs::path(state.currentPath).
+				lexically_normal();
+			if (
+				state.currentPath.empty() ||
+				!IsPathInsideRoot(currentPath, rootPath)
+			) {
+				state.currentPath = NormalizePath(rootPath);
+			}
+		}
+
+		std::string ResolvePickerRootFromAssetPath(const std::string& path) {
+			const std::string normalized = NormalizePath(fs::path(path));
+			if (
+				normalized.starts_with("projects/") ||
+				normalized.starts_with("./projects/")
+			) {
+				return ResolveExistingPickerRoot("./projects");
+			}
+			if (
+				normalized.starts_with("content/") ||
+				normalized.starts_with("./content/")
+			) {
+				return ResolveExistingPickerRoot("./content");
+			}
+			return {};
 		}
 
 		bool TryCommitAssetPath(
@@ -194,9 +250,13 @@ namespace Unnamed::EditorContentBrowser {
 				ImGui::SetNextItemOpen(true, ImGuiCond_Once);
 			}
 
-			const std::string label = nodePath == rootPath ?
-				                          "content" :
-				                          nodePath.filename().string();
+			std::string label = nodePath.filename().string();
+			if (nodePath == rootPath) {
+				label = nodePath.filename().string();
+				if (label.empty()) {
+					label = NormalizePath(rootPath);
+				}
+			}
 			const bool opened = ImGui::TreeNodeEx(
 				node.c_str(),
 				flags,
@@ -528,6 +588,32 @@ namespace Unnamed::EditorContentBrowser {
 			ImGui::RadioButton("Icon", &viewMode, 1);
 			state.iconView = viewMode == 1;
 			ImGui::SameLine();
+			if (showRootSelector) {
+				int rootIndex = state.rootPath == "./projects" ? 1 : 0;
+				ImGui::PushItemWidth(130.0f);
+				if (ImGui::BeginCombo(
+					"##AssetPickerRoot", rootIndex == 0 ? "content" : "projects"
+				)) {
+					for (int i = 0; i < static_cast<int>(kPickerRoots.size()); ++i) {
+						const bool selected = i == rootIndex;
+						const char* label = i == 0 ? "content" : "projects";
+						if (ImGui::Selectable(label, selected)) {
+							rootIndex = i;
+							state.rootPath = ResolveExistingPickerRoot(
+								kPickerRoots[static_cast<size_t>(i)]
+							);
+							state.currentPath = state.rootPath;
+							state.selectedPath.clear();
+						}
+						if (selected) {
+							ImGui::SetItemDefaultFocus();
+						}
+					}
+					ImGui::EndCombo();
+				}
+				ImGui::PopItemWidth();
+				ImGui::SameLine();
+			}
 			ImGui::TextDisabled("%s", NormalizePath(currentPath).c_str());
 
 			state.currentPath = NormalizePath(currentPath);
@@ -614,11 +700,9 @@ namespace Unnamed::EditorContentBrowser {
 		const ImGuiID     widgetId    = ImGui::GetID("##AssetPath");
 		BrowserViewState& pickerState = sPickerStates[widgetId];
 		if (pickerState.rootPath.empty()) {
-			pickerState.rootPath = "./content";
+			pickerState.rootPath = ResolveExistingPickerRoot("./content");
 		}
-		if (pickerState.currentPath.empty()) {
-			pickerState.currentPath = pickerState.rootPath;
-		}
+		EnsurePickerStateValid(pickerState);
 
 		ImGui::SameLine();
 		const std::string popupId = std::format(
@@ -626,6 +710,13 @@ namespace Unnamed::EditorContentBrowser {
 			static_cast<uint32_t>(widgetId)
 		);
 		if (ImGui::Button("...")) {
+			if (!path.empty()) {
+				const std::string rootFromPath = ResolvePickerRootFromAssetPath(path);
+				if (!rootFromPath.empty()) {
+					pickerState.rootPath = rootFromPath;
+				}
+			}
+			EnsurePickerStateValid(pickerState);
 			const fs::path rootPath = fs::path(pickerState.rootPath).
 				lexically_normal();
 			const fs::path targetPath = fs::path(path).lexically_normal();

@@ -103,6 +103,16 @@ namespace Unnamed {
 			entity.SetActive(entityActive);
 			entity.SetVisible(entityVisible);
 			entity.SetFolderPath(folderPath);
+			const JsonReader tags = e["tags"];
+			if (tags.Valid() && tags.IsArray()) {
+				for (size_t ti = 0; ti < tags.Size(); ++ti) {
+					const JsonReader tagValue = tags[ti];
+					if (!tagValue.Valid() || !tagValue.IsString()) {
+						continue;
+					}
+					(void)entity.AddTag(tagValue.GetString(""));
+				}
+			}
 
 			const JsonReader comps = e["components"];
 			if (!comps.Valid()) {
@@ -191,6 +201,13 @@ namespace Unnamed {
 
 			writer.Key("visible");
 			writer.Write(e.IsVisible());
+
+			writer.Key("tags");
+			writer.BeginArray();
+			for (const std::string& tag : e.GetTags()) {
+				writer.Write(tag);
+			}
+			writer.EndArray();
 
 			writer.Key("components");
 			writer.BeginArray();

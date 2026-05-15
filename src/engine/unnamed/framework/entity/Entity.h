@@ -223,6 +223,25 @@ namespace Unnamed {
 		[[nodiscard]] std::string_view GetFolderPath() const noexcept;
 		void SetFolderPath(std::string_view folderPath);
 
+		/// @brief 指定したタグを持っているかを取得します。
+		/// @param tag 確認するタグ
+		/// @return タグを持っている場合は true
+		[[nodiscard]] bool HasTag(std::string_view tag) const;
+
+		/// @brief タグを追加します。
+		/// @param tag 追加するタグ
+		/// @return 追加できた場合は true（空文字または重複は false）
+		[[nodiscard]] bool AddTag(std::string_view tag);
+
+		/// @brief タグを削除します。
+		/// @param tag 削除するタグ
+		/// @return 削除できた場合は true
+		[[nodiscard]] bool RemoveTag(std::string_view tag);
+
+		/// @brief タグ一覧を取得します。
+		/// @return タグ一覧
+		[[nodiscard]] const std::vector<std::string>& GetTags() const noexcept;
+
 		/// @brief 全てのコンポーネントに対して関数を実行します。
 		/// @tparam Func 呼び出し可能オブジェクト型（`void(BaseComponent&)` 等）
 		/// @param func 各コンポーネントに対して呼ばれる関数
@@ -264,6 +283,7 @@ namespace Unnamed {
 
 		std::string mName = "unnamed";         // 名前
 		std::string mFolderPath;               // エディタ階層上のフォルダパス
+		std::vector<std::string> mTags;        // エンティティタグ
 		Scene*      mScene          = nullptr; // 所属しているシーン
 		uint64_t    mGuid           = 0;       // GUID
 		bool        mIsEditorOnly   = false;   // エディター専用か?

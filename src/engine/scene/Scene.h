@@ -54,6 +54,32 @@ namespace Unnamed {
 		/// @return エンティティのポインタ。存在しない場合は nullptr。
 		[[nodiscard]] const Entity* FindEntity(EntityId id) const;
 
+		/// @brief 指定したタグを持つエンティティを取得します。
+		/// @param tag 検索するタグ
+		/// @return 条件に一致したエンティティ一覧
+		[[nodiscard]] std::vector<Entity*> FindEntitiesByTag(
+			std::string_view tag
+		);
+
+		/// @brief 指定したタグを持つエンティティを取得します。(const版)
+		/// @param tag 検索するタグ
+		/// @return 条件に一致したエンティティ一覧
+		[[nodiscard]] std::vector<const Entity*> FindEntitiesByTag(
+			std::string_view tag
+		) const;
+
+		/// @brief 指定したタグを持つ最初のエンティティを取得します。
+		/// @param tag 検索するタグ
+		/// @return 見つかったエンティティ。存在しない場合は nullptr。
+		[[nodiscard]] Entity* FindFirstEntityByTag(std::string_view tag);
+
+		/// @brief 指定したタグを持つ最初のエンティティを取得します。(const版)
+		/// @param tag 検索するタグ
+		/// @return 見つかったエンティティ。存在しない場合は nullptr。
+		[[nodiscard]] const Entity* FindFirstEntityByTag(
+			std::string_view tag
+		) const;
+
 		/// @brief シーン内のエンティティ数を取得します。
 		[[nodiscard]] size_t GetEntityCount() const;
 

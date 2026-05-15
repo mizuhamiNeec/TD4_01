@@ -4,6 +4,7 @@
 #include <iterator>
 
 #include "core/guidgenerator/GuidGenerator.h"
+#include "core/string/StrUtil.h"
 
 #include "engine/scene/Scene.h"
 #include "engine/unnamed/subsystem/console/Log.h"
@@ -17,6 +18,10 @@ namespace Unnamed {
 		) {
 			return component != nullptr &&
 			       component->GetStableName() == "Transform";
+		}
+
+		[[nodiscard]] std::string NormalizeTag(const std::string_view tag) {
+			return StrUtil::TrimSpaces(std::string(tag));
 		}
 	}
 
@@ -428,6 +433,47 @@ namespace Unnamed {
 		while (!mFolderPath.empty() && mFolderPath.back() == '/') {
 			mFolderPath.pop_back();
 		}
+	}
+
+	bool Entity::HasTag(const std::string_view tag) const {
+		const std::string normalized = NormalizeTag(tag);
+		if (normalized.empty()) {
+			return false;
+		}
+
+		return std::ranges::find(mTags, normalized) != mTags.end();
+	}
+
+	bool Entity::AddTag(const std::string_view tag) {
+		const std::string normalized = NormalizeTag(tag);
+		if (normalized.empty()) {
+			return false;
+		}
+		if (std::ranges::find(mTags, normalized) != mTags.end()) {
+			return false;
+		}
+
+		mTags.emplace_back(normalized);
+		return true;
+	}
+
+	bool Entity::RemoveTag(const std::string_view tag) {
+		const std::string normalized = NormalizeTag(tag);
+		if (normalized.empty()) {
+			return false;
+		}
+
+		const auto it = std::ranges::find(mTags, normalized);
+		if (it == mTags.end()) {
+			return false;
+		}
+
+		mTags.erase(it);
+		return true;
+	}
+
+	const std::vector<std::string>& Entity::GetTags() const noexcept {
+		return mTags;
 	}
 
 	void Entity::RebuildComponentTypeIndex() {

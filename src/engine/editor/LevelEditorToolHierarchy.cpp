@@ -414,6 +414,9 @@ namespace Unnamed {
 			duplicated.SetFolderPath(source.GetFolderPath());
 			duplicated.SetActive(source.IsActive());
 			duplicated.SetVisible(source.IsVisible());
+			for (const std::string& tag : source.GetTags()) {
+				(void)duplicated.AddTag(tag);
+			}
 			scene.AddFolder(source.GetFolderPath());
 
 			source.ForEachComponent(
@@ -1115,6 +1118,47 @@ namespace Unnamed {
 		}
 
 		ImGui::PopStyleVar();
+
+		static uint64_t              tagInputEntityId = 0;
+		static std::array<char, 128> tagInputBuffer   = {};
+		if (tagInputEntityId != entity->GetGuid()) {
+			tagInputEntityId = entity->GetGuid();
+			std::ranges::fill(tagInputBuffer, '\0');
+		}
+
+		ImGui::TextUnformatted("Tags");
+		std::string tagToRemove;
+		const auto& tags = entity->GetTags();
+		if (tags.empty()) {
+			ImGui::TextDisabled("(no tags)");
+		} else {
+			for (size_t tagIndex = 0; tagIndex < tags.size(); ++tagIndex) {
+				ImGui::PushID(static_cast<int>(tagIndex));
+				ImGui::BulletText("%s", tags[tagIndex].c_str());
+				ImGui::SameLine();
+				if (ImGui::SmallButton("Remove")) {
+					tagToRemove = tags[tagIndex];
+				}
+				ImGui::PopID();
+			}
+		}
+
+		const bool addTagByEnter = ImGui::InputText(
+			"##EntityTagInput",
+			tagInputBuffer.data(),
+			tagInputBuffer.size(),
+			ImGuiInputTextFlags_EnterReturnsTrue
+		);
+		ImGui::SameLine();
+		const bool addTagByButton = ImGui::Button("Add Tag");
+		if (addTagByEnter || addTagByButton) {
+			if (entity->AddTag(tagInputBuffer.data())) {
+				std::ranges::fill(tagInputBuffer, '\0');
+			}
+		}
+		if (!tagToRemove.empty()) {
+			(void)entity->RemoveTag(tagToRemove);
+		}
 
 		ImGui::Separator();
 

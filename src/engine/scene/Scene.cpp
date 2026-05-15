@@ -141,6 +141,52 @@ namespace Unnamed {
 		return it != mEntityById.end() ? it->second : nullptr;
 	}
 
+	std::vector<Entity*> Scene::FindEntitiesByTag(const std::string_view tag) {
+		std::vector<Entity*> results;
+		results.reserve(mEntities.size());
+		for (const auto& entityPtr : mEntities) {
+			if (!entityPtr || !entityPtr->HasTag(tag)) {
+				continue;
+			}
+			results.emplace_back(entityPtr.get());
+		}
+		return results;
+	}
+
+	std::vector<const Entity*> Scene::FindEntitiesByTag(
+		const std::string_view tag
+	) const {
+		std::vector<const Entity*> results;
+		results.reserve(mEntities.size());
+		for (const auto& entityPtr : mEntities) {
+			if (!entityPtr || !entityPtr->HasTag(tag)) {
+				continue;
+			}
+			results.emplace_back(entityPtr.get());
+		}
+		return results;
+	}
+
+	Entity* Scene::FindFirstEntityByTag(const std::string_view tag) {
+		for (const auto& entityPtr : mEntities) {
+			if (!entityPtr || !entityPtr->HasTag(tag)) {
+				continue;
+			}
+			return entityPtr.get();
+		}
+		return nullptr;
+	}
+
+	const Entity* Scene::FindFirstEntityByTag(const std::string_view tag) const {
+		for (const auto& entityPtr : mEntities) {
+			if (!entityPtr || !entityPtr->HasTag(tag)) {
+				continue;
+			}
+			return entityPtr.get();
+		}
+		return nullptr;
+	}
+
 	size_t Scene::GetEntityCount() const {
 		return mEntities.size();
 	}

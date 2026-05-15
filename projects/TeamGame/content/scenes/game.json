@@ -883,10 +883,10 @@
                 {
                     "active": true,
                     "data": {
-                        "parentEntityGuid": 0,
+                        "parentEntityGuid": 42,
                         "position": [
                             0.0,
-                            1.100000023841858,
+                            1.0199999809265137,
                             -2.0
                         ],
                         "rotation": [

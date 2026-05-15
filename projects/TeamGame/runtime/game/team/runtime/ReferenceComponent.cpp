@@ -97,6 +97,13 @@ namespace MyGame {
 		if (_sampleValue > 1.0f) {
 			_sampleValue = 0.0f;
 		}
+
+		// 他のエンティティにアクセスする例
+		// オーナー->シーンからエンティティを検索する
+		// 詳しくはシーンのヘッダーを見てね!!
+		// GetOwner()->GetScene()->FindEntity(/*エンティティのGUID*/);
+
+		//
 	}
 
 	void ReferenceComponent::OnDetached() {

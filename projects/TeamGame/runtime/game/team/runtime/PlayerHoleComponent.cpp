@@ -2,7 +2,6 @@
 #include "TrashObjMoverComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
 #include <engine/unnamed/framework/components/TransformComponent.h>
-#include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 #include "engine/scene/Scene.h"
 #include "./core/ComponentRegistry.h"
 #include <core/math/Vec3.h>
@@ -14,15 +13,20 @@
 
 namespace MyGame {
 
-	// -----------------------------------------------------------------------
-	// ライフサイクル
-	// -----------------------------------------------------------------------
+	// ===================================================================
+	// セクション1: ライフサイクル メソッド
+	// ===================================================================
 
 	void PlayerHoleComponent::OnAttached() {
 		// NOTE: コンポーネントがアタッチされたときに初期化
 		_trashInHole.clear();
 		_previousTrashInHole.clear();
 		_isHoleActive = true;
+
+		// NOTE: 所有者のTransformComponentをキャッシュ
+		if (GetOwner()) {
+			_ownerTransform = GetOwner()->GetComponent<Unnamed::TransformComponent>();
+		}
 	}
 
 	void PlayerHoleComponent::OnTick(float deltaTime) {
@@ -30,6 +34,9 @@ namespace MyGame {
 		if (!_isHoleActive) {
 			return;
 		}
+
+		// NOTE: 穴のサイズ変更アニメーションを更新
+		UpdateHoleSizeAnimation(deltaTime);
 
 		// NOTE: 穴の範囲内にいるゴミを検出
 		DetectTrashInHole();
@@ -42,15 +49,15 @@ namespace MyGame {
 		// NOTE: クリーンアップ処理
 		_trashInHole.clear();
 		_previousTrashInHole.clear();
+		_ownerTransform = nullptr;
 	}
 
-	// -----------------------------------------------------------------------
-	// 穴設定
-	// -----------------------------------------------------------------------
+	// ===================================================================
+	// セクション2: 公開インターフェース - 穴設定
+	// ===================================================================
 
-	/// @brief 穴の半径を設定
 	void PlayerHoleComponent::SetHoleRadius(float radius) {
-		_holeRadius = radius;
+		_holeRadius = std::max(0.1f, radius);
 	}
 
 	float PlayerHoleComponent::GetHoleRadius() const {
@@ -73,17 +80,57 @@ namespace MyGame {
 		return _isHoleActive;
 	}
 
-	// -----------------------------------------------------------------------
-	// ゴミ検出・処理
-	// -----------------------------------------------------------------------
+	// ===================================================================
+	// セクション2: 公開インターフェース - 穴の操作
+	// ===================================================================
+
+	void PlayerHoleComponent::MovePole(const Vec3& direction, float speed) {
+		// NOTE: 穴をプレイヤーの相対座標で移動
+		if (!GetOwner() || !_ownerTransform) {
+			return;
+		}
+
+		// NOTE: 世界座標での移動量を計算
+		Vec3 moveAmount = direction * speed;
+
+		// NOTE: 穴の世界座標を移動
+		Vec3 currentHoleWorldPos = GetHoleWorldPosition();
+		Vec3 newHoleWorldPos = currentHoleWorldPos + moveAmount;
+
+		// NOTE: プレイヤーの現在位置を取得
+		Vec3 playerPos = _ownerTransform->GetPosition();
+
+		// NOTE: 穴の新しい相対位置を計算
+		_holeOffset = newHoleWorldPos - playerPos;
+	}
+
+	void PlayerHoleComponent::SetPoleSize(float newSize) {
+		// NOTE: 穴のサイズを即座に変更
+		_holeRadius = std::max(0.1f, newSize);
+		_targetHoleRadius = _holeRadius;
+	}
+
+	void PlayerHoleComponent::SetPoleSizeSmooth(float targetSize, float speed) {
+		// NOTE: 穴のサイズをスムーズに変更（アニメーション付き）
+		_targetHoleRadius = std::max(0.1f, targetSize);
+		_holeSizeChangeSpeed = std::max(0.01f, speed);
+	}
+
+	// ===================================================================
+	// セクション2: 公開インターフェース - ゴミ検出・処理
+	// ===================================================================
 
 	int PlayerHoleComponent::GetTrashInHoleCount() const {
 		return static_cast<int>(_trashInHole.size());
 	}
 
-	// -----------------------------------------------------------------------
-	// BaseComponent override
-	// -----------------------------------------------------------------------
+	const std::vector<Unnamed::Entity*>& PlayerHoleComponent::GetTrashInHole() const {
+		return _trashInHole;
+	}
+
+	// ===================================================================
+	// セクション3: BaseComponent の必須オーバーライド
+	// ===================================================================
 
 	std::string_view PlayerHoleComponent::GetStableName() const {
 		return "mygame.PlayerHoleComponent";
@@ -101,10 +148,22 @@ namespace MyGame {
 		ImGui::Text("Hole Configuration");
 
 		// 穴の半径
-		ImGui::SliderFloat("Hole Radius", &_holeRadius, 0.1f, 20.0f, "%.2f units");
+		if (ImGui::SliderFloat("Hole Radius", &_holeRadius, 0.1f, 20.0f, "%.2f units")) {
+			_holeRadius = std::max(0.1f, _holeRadius);
+		}
+
+		// 穴のターゲットサイズ（スムーズ変更用）
+		if (ImGui::SliderFloat("Target Hole Radius", &_targetHoleRadius, 0.1f, 20.0f, "%.2f units")) {
+			_targetHoleRadius = std::max(0.1f, _targetHoleRadius);
+		}
 
 		// 穴の中心位置（相対座標）
 		ImGui::DragFloat3("Hole Offset", &_holeOffset.x, 0.1f, -10.0f, 10.0f, "%.2f");
+
+		// 穴のサイズ変更速度
+		if (ImGui::SliderFloat("Size Change Speed", &_holeSizeChangeSpeed, 0.01f, 10.0f, "%.2f")) {
+			_holeSizeChangeSpeed = std::max(0.01f, _holeSizeChangeSpeed);
+		}
 
 		ImGui::Separator();
 		ImGui::Text("Hole Status");
@@ -127,7 +186,9 @@ namespace MyGame {
 			ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Trash List:");
 			for (size_t i = 0; i < _trashInHole.size(); ++i) {
 				if (_trashInHole[i]) {
-					ImGui::BulletText("#%zu: %s (GUID: %s)", i, _trashInHole[i]->GetName().c_str(), _trashInHole[i]->GetGuid().c_str());
+					auto name = _trashInHole[i]->GetName();
+					ImGui::BulletText("#%zu: %.*s", i, 
+						static_cast<int>(name.size()), name.data());
 				}
 			}
 		} else {
@@ -139,13 +200,33 @@ namespace MyGame {
 	void PlayerHoleComponent::Deserialize(const Unnamed::JsonReader& reader) {
 		// NOTE: JSONから値を読み込む
 		if (auto val = reader.Read<float>("holeRadius")) {
-			_holeRadius = val.value();
+			_holeRadius = std::max(0.1f, val.value());
 		}
-		if (auto val = reader.Read<Vec3>("holeOffset")) {
-			_holeOffset = val.value();
+
+		// 穴のオフセット位置（Vec3）
+		float offsetX = _holeOffset.x;
+		float offsetY = _holeOffset.y;
+		float offsetZ = _holeOffset.z;
+
+		if (auto val = reader.Read<float>("holeOffsetX")) {
+			offsetX = val.value();
 		}
+		if (auto val = reader.Read<float>("holeOffsetY")) {
+			offsetY = val.value();
+		}
+		if (auto val = reader.Read<float>("holeOffsetZ")) {
+			offsetZ = val.value();
+		}
+		_holeOffset = Vec3(offsetX, offsetY, offsetZ);
+
 		if (auto val = reader.Read<bool>("isHoleActive")) {
 			_isHoleActive = val.value();
+		}
+		if (auto val = reader.Read<float>("targetHoleRadius")) {
+			_targetHoleRadius = std::max(0.1f, val.value());
+		}
+		if (auto val = reader.Read<float>("holeSizeChangeSpeed")) {
+			_holeSizeChangeSpeed = std::max(0.01f, val.value());
 		}
 	}
 
@@ -153,29 +234,35 @@ namespace MyGame {
 		// NOTE: 値をJSONに書き込む
 		writer.Key("holeRadius");
 		writer.Write(_holeRadius);
-		writer.Key("holeOffset");
-		writer.Write(_holeOffset);
+
+		// 穴のオフセット位置をfloat x3で保存
+		writer.Key("holeOffsetX");
+		writer.Write(_holeOffset.x);
+		writer.Key("holeOffsetY");
+		writer.Write(_holeOffset.y);
+		writer.Key("holeOffsetZ");
+		writer.Write(_holeOffset.z);
+
 		writer.Key("isHoleActive");
 		writer.Write(_isHoleActive);
+		writer.Key("targetHoleRadius");
+		writer.Write(_targetHoleRadius);
+		writer.Key("holeSizeChangeSpeed");
+		writer.Write(_holeSizeChangeSpeed);
 	}
 
-	// -----------------------------------------------------------------------
-	// 内部処理
-	// -----------------------------------------------------------------------
+	// ===================================================================
+	// セクション7: プライベート ヘルパーメソッド
+	// ===================================================================
 
 	Vec3 PlayerHoleComponent::GetHoleWorldPosition() const {
 		// NOTE: 穴の世界座標を計算（プレイヤーの位置 + オフセット）
-		if (!GetOwner()) {
-			return _holeOffset;
-		}
-
-		auto* transform = GetOwner()->GetComponent<Unnamed::TransformComponent>();
-		if (!transform) {
+		if (!GetOwner() || !_ownerTransform) {
 			return _holeOffset;
 		}
 
 		// NOTE: プレイヤーの位置にオフセットを加算
-		Vec3 playerPos = transform->GetPosition();
+		Vec3 playerPos = _ownerTransform->GetPosition();
 		return playerPos + _holeOffset;
 	}
 
@@ -189,7 +276,6 @@ namespace MyGame {
 		}
 
 		// NOTE: シーン内のすべてのエンティティを走査
-		// GetOwner() はプレイヤーエンティティなので、そのシーンから取得
 		auto* scene = GetOwner()->GetScene();
 		if (!scene) {
 			return;
@@ -255,28 +341,8 @@ namespace MyGame {
 			return;
 		}
 
-		// -----------------------------------------------------------------------
-		// 落下処理を実行
-		// -----------------------------------------------------------------------
-		// 
-		// TrashObjMoverComponent の落下フラグを設定することで、
-		// 穴に入ったゴミが落下状態に移行します。
-		// 
-		// 落下フラグが立つと:
-		// 1. 物理エンジンが重力を適用
-		// 2. ゴミが穴に吸い込まれるように落下
-		// 3. Y座標が一定以下になったら削除 or リセット
-		// 
-
 		// NOTE: ゴミを落下状態に設定
 		trashComponent->SetFalling(true);
-
-#ifdef _DEBUG
-		// NOTE: デバッグ用ログ出力
-		if (trashEntity) {
-			// 将来的にゴミが穴に入ったときのデバッグ情報を出力
-		}
-#endif
 	}
 
 	void PlayerHoleComponent::UpdateTrashList() {
@@ -294,6 +360,27 @@ namespace MyGame {
 
 		// NOTE: 今フレームの状態を保存
 		_previousTrashInHole = _trashInHole;
+	}
+
+	void PlayerHoleComponent::UpdateHoleSizeAnimation(float deltaTime) {
+		// NOTE: 穴のサイズをスムーズに変更（ターゲットサイズに向かって補間）
+		if (std::abs(_holeRadius - _targetHoleRadius) < 0.01f) {
+			_holeRadius = _targetHoleRadius;
+			return;
+		}
+
+		// NOTE: 線形補間でサイズを変更
+		float direction = _targetHoleRadius > _holeRadius ? 1.0f : -1.0f;
+		float changeAmount = _holeSizeChangeSpeed * deltaTime;
+
+		_holeRadius += changeAmount * direction;
+
+		// NOTE: ターゲットを超えないようにクリップ
+		if (direction > 0.0f) {
+			_holeRadius = std::min(_holeRadius, _targetHoleRadius);
+		} else {
+			_holeRadius = std::max(_holeRadius, _targetHoleRadius);
+		}
 	}
 
 	// NOTE: 忘れると死ぬやつ

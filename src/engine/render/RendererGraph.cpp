@@ -1,8 +1,10 @@
 #include "Renderer.h"
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <cmath>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 
@@ -268,6 +270,53 @@ namespace Unnamed::Render {
 				outParams.color1 = value;
 			}
 		}
+
+		[[nodiscard]] uint32_t ResolveParticleBlendModeIndex(
+			const WORLD_PARTICLE_BLEND_MODE blendMode
+		) {
+			switch (blendMode) {
+				case WORLD_PARTICLE_BLEND_MODE::NONE: return 0;
+				case WORLD_PARTICLE_BLEND_MODE::NORMAL: return 1;
+				case WORLD_PARTICLE_BLEND_MODE::ADD: return 2;
+				case WORLD_PARTICLE_BLEND_MODE::SUBTRACT: return 3;
+				case WORLD_PARTICLE_BLEND_MODE::MULTIPLY: return 4;
+				case WORLD_PARTICLE_BLEND_MODE::SCREEN: return 5;
+				default: return 1;
+			}
+		}
+
+		struct ParticleInstanceData {
+			Vec4 worldRow0 = Vec4::zero;
+			Vec4 worldRow1 = Vec4::zero;
+			Vec4 worldRow2 = Vec4::zero;
+			Vec4 worldRow3 = Vec4::zero;
+			Vec4 color     = Vec4::one;
+			Vec4 uvRect    = Vec4(0.0f, 0.0f, 1.0f, 1.0f);
+		};
+
+		struct ParticleBatchKey {
+			uint32_t textureId      = 0;
+			uint32_t blendModeIndex = 1;
+			WORLD_PARTICLE_SHAPE shape = WORLD_PARTICLE_SHAPE::PLANE;
+
+			[[nodiscard]] bool operator==(const ParticleBatchKey& rhs) const {
+				return textureId == rhs.textureId &&
+				       blendModeIndex == rhs.blendModeIndex &&
+				       shape == rhs.shape;
+			}
+		};
+
+		struct ParticleBatchKeyHasher {
+			[[nodiscard]] size_t operator()(const ParticleBatchKey& key) const {
+				size_t h = std::hash<uint32_t>{}(key.textureId);
+				h ^= std::hash<uint32_t>{}(key.blendModeIndex) + 0x9e3779b9 + (h << 6) +
+				     (h >> 2);
+				h ^= std::hash<uint32_t>{}(static_cast<uint32_t>(key.shape)) + 0x9e3779b9 +
+				     (h << 6) + (h >> 2);
+				return h;
+			}
+		};
+
 	}
 
 	void Renderer::BuildGraph(
@@ -421,6 +470,10 @@ namespace Unnamed::Render {
 			const std::vector<uint32_t> worldSpriteTextureIds =
 				collectTextureIds(
 					view.worldSprites
+				);
+			const std::vector<uint32_t> worldParticleTextureIds =
+				collectTextureIds(
+					view.worldParticles
 				);
 			const std::vector<uint32_t> screenSpriteTextureIds =
 				collectTextureIds(
@@ -1046,6 +1099,469 @@ namespace Unnamed::Render {
 							);
 							pass.DrawIndexedTest(
 								mBillboardPass.depthGeom.indexCount
+							);
+						}
+					}
+				);
+
+				mGraph.AddPass(
+					prefix + "WorldParticleDepth",
+					[colorId, depthId, worldParticleTextureIds](
+					RenderGraphBuilder& b
+				) {
+						b.WriteRt(colorId);
+						b.WriteDepth(depthId);
+						for (const uint32_t texId : worldParticleTextureIds) {
+							b.ReadSrvPs(texId);
+						}
+					},
+					[this, viewIndex, state, &renderDevice](RenderPassContext& pass) {
+						const RenderViewInput& view = mFrameViews[viewIndex];
+						if (view.worldParticles.empty()) {
+							return;
+						}
+						if (!std::any_of(
+							view.worldParticles.begin(),
+							view.worldParticles.end(),
+							[](const WorldParticleInput& particle) {
+								return particle.depthTest;
+							}
+						)) {
+							return;
+						}
+
+						auto& allocator = static_cast<Rhi::D3D12Device&>(
+							renderDevice.GetRhiDevice()
+						).GetFrameUploadAllocator();
+						Rhi::FrameConstants frame = BuildSceneFrameConstants(
+							view.camera, state.logicalWidth, state.logicalHeight, 0.0f
+						);
+						const D3D12_GPU_VIRTUAL_ADDRESS frameCb =
+							allocator.AllocateConstantBuffer(&frame, sizeof(frame));
+						if (frameCb == 0) {
+							Warning(
+								"RendererGraph",
+								"WorldParticleDepth: frame constant allocation failed. skip pass."
+							);
+							return;
+						}
+						const Mat4 cameraWorld = frame.view.Inverse();
+						const Vec3 cameraRight = cameraWorld.GetRight().Normalized();
+						const Vec3 cameraUp = cameraWorld.GetUp().Normalized();
+						const Vec3 cameraForward = cameraWorld.GetForward().Normalized();
+
+						pass.SetViewportAndScissor(
+							0.0f,
+							0.0f,
+							static_cast<float>(state.logicalWidth),
+							static_cast<float>(state.logicalHeight)
+						);
+						pass.SetSrvUavHeap();
+						pass.SetRenderTargetAndDepth(
+							std::span<const uint32_t>(&state.colorTextureId, 1),
+							state.depthTextureId
+						);
+						auto resolveGeometry = [this](
+							const WORLD_PARTICLE_SHAPE shape
+						) -> const ParticleGeometryRes* {
+							switch (shape) {
+								case WORLD_PARTICLE_SHAPE::RING:
+									return &mParticlePass.ringGeom;
+								case WORLD_PARTICLE_SHAPE::CYLINDER:
+									return &mParticlePass.cylinderGeom;
+								case WORLD_PARTICLE_SHAPE::PLANE:
+								default:
+									return &mParticlePass.planeGeom;
+							}
+						};
+
+						auto emitBatch = [&](
+							const ParticleBatchKey& key,
+							const std::vector<ParticleInstanceData>& instances
+						) -> bool {
+							if (instances.empty()) {
+								return true;
+							}
+
+							const auto& pipeline = mParticlePass.depthGeom[key.blendModeIndex];
+							if (!pipeline.resolved || !pipeline.resolved->pso) {
+								return true;
+							}
+
+							const ParticleGeometryRes* geometry = resolveGeometry(key.shape);
+							if (!geometry->vb || !geometry->ib || geometry->indexCount == 0) {
+								return true;
+							}
+
+							const uint32_t instanceBytes = static_cast<uint32_t>(
+								sizeof(ParticleInstanceData) * instances.size()
+							);
+							const D3D12_GPU_VIRTUAL_ADDRESS instanceBufferVa =
+								allocator.AllocateBuffer(
+									instances.data(),
+									instanceBytes,
+									16u
+								);
+							if (instanceBufferVa == 0) {
+								return false;
+							}
+
+							const D3D12_VERTEX_BUFFER_VIEW instanceVbv = {
+								.BufferLocation = instanceBufferVa,
+								.SizeInBytes = instanceBytes,
+								.StrideInBytes = static_cast<UINT>(
+									sizeof(ParticleInstanceData)
+								),
+							};
+							const std::array<D3D12_VERTEX_BUFFER_VIEW, 2> vbvs = {
+								geometry->vbv,
+								instanceVbv
+							};
+
+							pass.SetGraphicsPipeline(
+								pipeline.resolved->rootSignature,
+								pipeline.resolved->pso
+							);
+							pass.BindGraphicsCbv(ToRootIndex(GEOM_ROOT_SLOT::FRAME), frameCb);
+							pass.SetVertexBuffers(vbvs);
+							pass.SetIndexBuffer(geometry->ibv);
+							pass.BindGraphicsSrvTable(
+								ToRootIndex(GEOM_ROOT_SLOT::BASE_COLOR_TEXTURE),
+								key.textureId
+							);
+							pass.DrawIndexedInstanced(
+								geometry->indexCount,
+								static_cast<uint32_t>(instances.size())
+							);
+							return true;
+						};
+
+						bool exhausted = false;
+						ParticleBatchKey currentKey = {};
+						std::vector<ParticleInstanceData> currentInstances = {};
+						bool hasBatch = false;
+
+						for (const auto& particle : view.worldParticles) {
+							if (!particle.depthTest) {
+								continue;
+							}
+
+							Vec3 right   = particle.worldRight;
+							Vec3 up      = particle.worldUp;
+							Vec3 forward = particle.worldForward;
+							if (particle.useBillboard) {
+								const float cosV = std::cos(particle.rotation.z);
+								const float sinV = std::sin(particle.rotation.z);
+								right = cameraRight * cosV + cameraUp * sinV;
+								up = cameraRight * -sinV + cameraUp * cosV;
+								forward = cameraForward;
+							}
+							if (right.SqrLength() < 1e-6f) {
+								right = Vec3::right;
+							}
+							if (up.SqrLength() < 1e-6f) {
+								up = Vec3::up;
+							}
+							if (forward.SqrLength() < 1e-6f) {
+								forward = right.Cross(up);
+							}
+							right = right.Normalized();
+							up = up.Normalized();
+							forward = forward.Normalized();
+
+							ParticleInstanceData instance = {};
+							instance.worldRow0 = Vec4(
+								right.x * particle.scale.x * 0.5f,
+								right.y * particle.scale.x * 0.5f,
+								right.z * particle.scale.x * 0.5f,
+								0.0f
+							);
+							instance.worldRow1 = Vec4(
+								up.x * particle.scale.y * 0.5f,
+								up.y * particle.scale.y * 0.5f,
+								up.z * particle.scale.y * 0.5f,
+								0.0f
+							);
+							instance.worldRow2 = Vec4(
+								forward.x * particle.scale.z * 0.5f,
+								forward.y * particle.scale.z * 0.5f,
+								forward.z * particle.scale.z * 0.5f,
+								0.0f
+							);
+							instance.worldRow3 = Vec4(
+								particle.worldPosition.x,
+								particle.worldPosition.y,
+								particle.worldPosition.z,
+								1.0f
+							);
+							instance.color = particle.color;
+							instance.uvRect = particle.flipY ? Vec4(0.0f, 1.0f, 1.0f, 0.0f)
+							                                 : Vec4(0.0f, 0.0f, 1.0f, 1.0f);
+
+							ParticleBatchKey key = {};
+							key.textureId = ResolveSpriteTexture(renderDevice, particle.texture);
+							key.blendModeIndex =
+								ResolveParticleBlendModeIndex(particle.blendMode);
+							key.shape = particle.shape;
+
+							if (!hasBatch) {
+								currentKey = key;
+								currentInstances.clear();
+								currentInstances.emplace_back(instance);
+								hasBatch = true;
+								continue;
+							}
+
+							if (!(currentKey == key)) {
+								if (!emitBatch(currentKey, currentInstances)) {
+									exhausted = true;
+									break;
+								}
+								currentKey = key;
+								currentInstances.clear();
+							}
+
+							currentInstances.emplace_back(instance);
+						}
+
+						if (!exhausted && hasBatch) {
+							if (!emitBatch(currentKey, currentInstances)) {
+								exhausted = true;
+							}
+						}
+						if (exhausted) {
+							Warning(
+								"RendererGraph",
+								"WorldParticleDepth: upload allocator exhausted while streaming instance buffer."
+							);
+						}
+					}
+				);
+
+				mGraph.AddPass(
+					prefix + "WorldParticleFront",
+					[colorId, worldParticleTextureIds](RenderGraphBuilder& b) {
+						b.WriteRt(colorId);
+						for (const uint32_t texId : worldParticleTextureIds) {
+							b.ReadSrvPs(texId);
+						}
+					},
+					[this, viewIndex, state, &renderDevice](RenderPassContext& pass) {
+						const RenderViewInput& view = mFrameViews[viewIndex];
+						if (view.worldParticles.empty()) {
+							return;
+						}
+						if (!std::any_of(
+							view.worldParticles.begin(),
+							view.worldParticles.end(),
+							[](const WorldParticleInput& particle) {
+								return !particle.depthTest;
+							}
+						)) {
+							return;
+						}
+
+						auto& allocator = static_cast<Rhi::D3D12Device&>(
+							renderDevice.GetRhiDevice()
+						).GetFrameUploadAllocator();
+						Rhi::FrameConstants frame = BuildSceneFrameConstants(
+							view.camera, state.logicalWidth, state.logicalHeight, 0.0f
+						);
+						const D3D12_GPU_VIRTUAL_ADDRESS frameCb =
+							allocator.AllocateConstantBuffer(&frame, sizeof(frame));
+						if (frameCb == 0) {
+							Warning(
+								"RendererGraph",
+								"WorldParticleFront: frame constant allocation failed. skip pass."
+							);
+							return;
+						}
+						const Mat4 cameraWorld = frame.view.Inverse();
+						const Vec3 cameraRight = cameraWorld.GetRight().Normalized();
+						const Vec3 cameraUp = cameraWorld.GetUp().Normalized();
+						const Vec3 cameraForward = cameraWorld.GetForward().Normalized();
+
+						pass.SetViewportAndScissor(
+							0.0f,
+							0.0f,
+							static_cast<float>(state.logicalWidth),
+							static_cast<float>(state.logicalHeight)
+						);
+						pass.SetSrvUavHeap();
+						pass.SetRenderTarget(state.colorTextureId);
+
+						auto resolveGeometry = [this](
+							const WORLD_PARTICLE_SHAPE shape
+						) -> const ParticleGeometryRes* {
+							switch (shape) {
+								case WORLD_PARTICLE_SHAPE::RING:
+									return &mParticlePass.ringGeom;
+								case WORLD_PARTICLE_SHAPE::CYLINDER:
+									return &mParticlePass.cylinderGeom;
+								case WORLD_PARTICLE_SHAPE::PLANE:
+								default:
+									return &mParticlePass.planeGeom;
+							}
+						};
+
+						auto emitBatch = [&](
+							const ParticleBatchKey& key,
+							const std::vector<ParticleInstanceData>& instances
+						) -> bool {
+							if (instances.empty()) {
+								return true;
+							}
+
+							const auto& pipeline = mParticlePass.frontGeom[key.blendModeIndex];
+							if (!pipeline.resolved || !pipeline.resolved->pso) {
+								return true;
+							}
+
+							const ParticleGeometryRes* geometry = resolveGeometry(key.shape);
+							if (!geometry->vb || !geometry->ib || geometry->indexCount == 0) {
+								return true;
+							}
+
+							const uint32_t instanceBytes = static_cast<uint32_t>(
+								sizeof(ParticleInstanceData) * instances.size()
+							);
+							const D3D12_GPU_VIRTUAL_ADDRESS instanceBufferVa =
+								allocator.AllocateBuffer(
+									instances.data(),
+									instanceBytes,
+									16u
+								);
+							if (instanceBufferVa == 0) {
+								return false;
+							}
+
+							const D3D12_VERTEX_BUFFER_VIEW instanceVbv = {
+								.BufferLocation = instanceBufferVa,
+								.SizeInBytes = instanceBytes,
+								.StrideInBytes = static_cast<UINT>(
+									sizeof(ParticleInstanceData)
+								),
+							};
+							const std::array<D3D12_VERTEX_BUFFER_VIEW, 2> vbvs = {
+								geometry->vbv,
+								instanceVbv
+							};
+
+							pass.SetGraphicsPipeline(
+								pipeline.resolved->rootSignature,
+								pipeline.resolved->pso
+							);
+							pass.BindGraphicsCbv(ToRootIndex(GEOM_ROOT_SLOT::FRAME), frameCb);
+							pass.SetVertexBuffers(vbvs);
+							pass.SetIndexBuffer(geometry->ibv);
+							pass.BindGraphicsSrvTable(
+								ToRootIndex(GEOM_ROOT_SLOT::BASE_COLOR_TEXTURE),
+								key.textureId
+							);
+							pass.DrawIndexedInstanced(
+								geometry->indexCount,
+								static_cast<uint32_t>(instances.size())
+							);
+							return true;
+						};
+
+						bool exhausted = false;
+						ParticleBatchKey currentKey = {};
+						std::vector<ParticleInstanceData> currentInstances = {};
+						bool hasBatch = false;
+
+						for (const auto& particle : view.worldParticles) {
+							if (particle.depthTest) {
+								continue;
+							}
+
+							Vec3 right   = particle.worldRight;
+							Vec3 up      = particle.worldUp;
+							Vec3 forward = particle.worldForward;
+							if (particle.useBillboard) {
+								const float cosV = std::cos(particle.rotation.z);
+								const float sinV = std::sin(particle.rotation.z);
+								right = cameraRight * cosV + cameraUp * sinV;
+								up = cameraRight * -sinV + cameraUp * cosV;
+								forward = cameraForward;
+							}
+							if (right.SqrLength() < 1e-6f) {
+								right = Vec3::right;
+							}
+							if (up.SqrLength() < 1e-6f) {
+								up = Vec3::up;
+							}
+							if (forward.SqrLength() < 1e-6f) {
+								forward = right.Cross(up);
+							}
+							right = right.Normalized();
+							up = up.Normalized();
+							forward = forward.Normalized();
+
+							ParticleInstanceData instance = {};
+							instance.worldRow0 = Vec4(
+								right.x * particle.scale.x * 0.5f,
+								right.y * particle.scale.x * 0.5f,
+								right.z * particle.scale.x * 0.5f,
+								0.0f
+							);
+							instance.worldRow1 = Vec4(
+								up.x * particle.scale.y * 0.5f,
+								up.y * particle.scale.y * 0.5f,
+								up.z * particle.scale.y * 0.5f,
+								0.0f
+							);
+							instance.worldRow2 = Vec4(
+								forward.x * particle.scale.z * 0.5f,
+								forward.y * particle.scale.z * 0.5f,
+								forward.z * particle.scale.z * 0.5f,
+								0.0f
+							);
+							instance.worldRow3 = Vec4(
+								particle.worldPosition.x,
+								particle.worldPosition.y,
+								particle.worldPosition.z,
+								1.0f
+							);
+							instance.color = particle.color;
+							instance.uvRect = particle.flipY ? Vec4(0.0f, 1.0f, 1.0f, 0.0f)
+							                                 : Vec4(0.0f, 0.0f, 1.0f, 1.0f);
+
+							ParticleBatchKey key = {};
+							key.textureId = ResolveSpriteTexture(renderDevice, particle.texture);
+							key.blendModeIndex =
+								ResolveParticleBlendModeIndex(particle.blendMode);
+							key.shape = particle.shape;
+
+							if (!hasBatch) {
+								currentKey = key;
+								currentInstances.clear();
+								currentInstances.emplace_back(instance);
+								hasBatch = true;
+								continue;
+							}
+
+							if (!(currentKey == key)) {
+								if (!emitBatch(currentKey, currentInstances)) {
+									exhausted = true;
+									break;
+								}
+								currentKey = key;
+								currentInstances.clear();
+							}
+
+							currentInstances.emplace_back(instance);
+						}
+
+						if (!exhausted && hasBatch) {
+							if (!emitBatch(currentKey, currentInstances)) {
+								exhausted = true;
+							}
+						}
+						if (exhausted) {
+							Warning(
+								"RendererGraph",
+								"WorldParticleFront: upload allocator exhausted while streaming instance buffer."
 							);
 						}
 					}

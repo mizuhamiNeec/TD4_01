@@ -8,6 +8,8 @@
 
 #include <wrl/client.h>
 
+#include <dxcapi.h>
+
 #include "../ParticlePreset.h"
 
 #include "core/math/Mat4.h"

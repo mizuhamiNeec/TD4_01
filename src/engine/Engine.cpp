@@ -20,6 +20,7 @@
 #include <core/assets/loader/MaterialAssetLoader.h>
 #include <core/assets/loader/MaterialInstanceAssetLoader.h>
 #include <core/assets/loader/MeshAssetLoader.h>
+#include <core/assets/loader/ParticlePresetLoader.h>
 #include <core/assets/loader/PostFxChainLoader.h>
 #include <core/assets/loader/SequenceAssetLoader.h>
 #include <core/assets/loader/ShaderProgramLoader.h>
@@ -296,6 +297,9 @@ namespace Unnamed {
 		);
 		mAssetManager->RegisterLoader(
 			std::move(std::make_unique<EventPresentationLoader>())
+		);
+		mAssetManager->RegisterLoader(
+			std::move(std::make_unique<ParticlePresetLoader>())
 		);
 		mAssetManager->RegisterLoader(
 			std::move(std::make_unique<SequenceAssetLoader>())

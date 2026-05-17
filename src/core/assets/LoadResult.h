@@ -10,6 +10,7 @@
 #include "types/MaterialAssetData.h"
 #include "types/MaterialInstanceAssetData.h"
 #include "types/MeshAssetData.h"
+#include "types/ParticlePresetAssetData.h"
 #include "types/PostFxChainAssetData.h"
 #include "types/SequenceAssetData.h"
 #include "types/ShaderProgramAssetData.h"
@@ -34,6 +35,7 @@ namespace Unnamed {
 		MaterialAssetData,
 		MaterialInstanceAssetData,
 		PostFxChainAssetData,
+		ParticlePresetAssetData,
 		SequenceAssetData,
 		SoundAssetData,
 		UiDocumentAssetData,

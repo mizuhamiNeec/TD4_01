@@ -885,8 +885,9 @@ namespace Unnamed::Rhi {
 				)
 			);
 
-			// 256KBのアップロードアロケータを作成
-			mFrames[i].upload.Initialize(mDevice.Get(), 256 * 1024);
+			// 4MBのアップロードアロケータを作成
+			// パーティクルやスプライトの大量描画時に定数バッファが不足しないよう余裕を持たせる。
+			mFrames[i].upload.Initialize(mDevice.Get(), 4 * 1024 * 1024);
 
 			mFrames[i].fenceValue = 0;
 		}

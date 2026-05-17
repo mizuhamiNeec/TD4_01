@@ -68,33 +68,60 @@ namespace Unnamed::Rhi {
 	D3D12_GPU_VIRTUAL_ADDRESS D3D12FrameUploadAllocator::AllocateConstantBuffer(
 		const void* srcData, uint32_t bytes
 	) {
-		// 256バイト境界にアラインメントする
-		const uint32_t aligned = Align256(bytes);
+		return AllocateBuffer(srcData, bytes, 256u);
+	}
+
+	D3D12_GPU_VIRTUAL_ADDRESS D3D12FrameUploadAllocator::AllocateBuffer(
+		const void* srcData, const uint32_t bytes, const uint32_t alignment
+	) {
+		if (!mResource || !mMapped || srcData == nullptr || bytes == 0) {
+			Error(
+				"FUA",
+				"無効なアロケータ状態でAllocateConstantBufferが呼ばれました。resource={}, mapped={}, srcData={}, bytes={}",
+				static_cast<const void*>(mResource.Get()),
+				static_cast<const void*>(mMapped),
+				srcData,
+				bytes
+			);
+			return 0;
+		}
+
+		const uint32_t safeAlignment = alignment == 0 ? 1u : alignment;
+		const uint32_t alignedOffset = AlignTo(mOffset, safeAlignment);
+		const uint32_t endOffset     = alignedOffset + bytes;
 
 		// アロケータの容量を超える場合はエラー
-		if (mOffset + aligned > mCapacity) {
-			Fatal(
+		if (endOffset > mCapacity) {
+			Error(
 				"FUA", "フレームアップロードアロケータの容量を超えました。必要な容量: {} bytes",
-				mOffset + aligned
+				endOffset
 			);
+			return 0;
 		}
 
 		// データをコピー
-		std::memcpy(mMapped + mOffset, srcData, bytes);
+		std::memcpy(mMapped + alignedOffset, srcData, bytes);
 
 		// GPU仮想アドレスを取得
 		D3D12_GPU_VIRTUAL_ADDRESS gpuVa = mResource->GetGPUVirtualAddress();
 
 		// オフセットを加算
-		gpuVa += mOffset;
+		gpuVa += alignedOffset;
 
 		// オフセットを更新
-		mOffset += aligned;
+		mOffset = endOffset;
 
 		return gpuVa;
 	}
 
 	uint32_t D3D12FrameUploadAllocator::Align256(const uint32_t v) {
-		return v + 255u & ~255u;
+		return AlignTo(v, 256u);
+	}
+
+	uint32_t D3D12FrameUploadAllocator::AlignTo(
+		const uint32_t v, const uint32_t alignment
+	) {
+		const uint32_t safeAlignment = alignment == 0 ? 1u : alignment;
+		return (v + safeAlignment - 1u) & ~(safeAlignment - 1u);
 	}
 }

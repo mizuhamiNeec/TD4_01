@@ -379,6 +379,20 @@ namespace Unnamed::Render {
 		mCommandList->IASetVertexBuffers(0, 1, &vbv);
 	}
 
+	void RenderPassContext::SetVertexBuffers(
+		const std::span<const D3D12_VERTEX_BUFFER_VIEW> vbvs
+	) const {
+		if (vbvs.empty()) {
+			return;
+		}
+		mCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		mCommandList->IASetVertexBuffers(
+			0,
+			static_cast<UINT>(vbvs.size()),
+			vbvs.data()
+		);
+	}
+
 	void RenderPassContext::DrawTriangleTest() const {
 		mCommandList->DrawInstanced(3, 1, 0, 0);
 	}
@@ -397,6 +411,21 @@ namespace Unnamed::Render {
 		mCommandList->DrawIndexedInstanced(
 			indexCount,
 			1,
+			startIndexLocation,
+			baseVertexLocation,
+			0
+		);
+	}
+
+	void RenderPassContext::DrawIndexedInstanced(
+		const uint32_t indexCount,
+		const uint32_t instanceCount,
+		const uint32_t startIndexLocation,
+		const int32_t  baseVertexLocation
+	) const {
+		mCommandList->DrawIndexedInstanced(
+			indexCount,
+			instanceCount,
 			startIndexLocation,
 			baseVertexLocation,
 			0

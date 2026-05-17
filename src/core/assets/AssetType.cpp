@@ -20,6 +20,7 @@ std::string Unnamed::ToString(const ASSET_TYPE e) {
 		case ASSET_TYPE::EVENT_PRESENTATION: return "EVENT_PRESENTATION";
 		case ASSET_TYPE::SEQUENCE: return "SEQUENCE";
 		case ASSET_TYPE::EDITOR_GUI: return "EDITOR_GUI";
+		case ASSET_TYPE::PARTICLE_PRESET: return "PARTICLE_PRESET";
 		default: return "unknown";
 	}
 }
@@ -100,6 +101,10 @@ Unnamed::ASSET_TYPE Unnamed::GuessAssetTypeFromPath(
 
 	if (EndsWith(".edgui.json")) {
 		return ASSET_TYPE::EDITOR_GUI;
+	}
+
+	if (EndsWith(".particle.json")) {
+		return ASSET_TYPE::PARTICLE_PRESET;
 	}
 
 	return ASSET_TYPE::UNKNOWN;

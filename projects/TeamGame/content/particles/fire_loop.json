@@ -1,0 +1,61 @@
+{
+    "name": "fire_loop",
+    "emitterSettings": {
+        "vertexType": 0,
+        "textureFilePath": "projects/TeamGame/content/textures/title.png",
+        "blendMode": 1
+    },
+    "emitterSpawn": {
+        "count": 1,
+        "frequency": 0.5,
+        "repeat": true,
+        "useRandomPosition": true,
+        "useLocalSpace": false
+    },
+    "particleSpawn": {
+        "initialScale": [
+            2,
+            1,
+            1
+        ],
+        "initialRotate": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "initialOffset": [
+            0.0,
+            0.0,
+            0.0
+        ]
+    },
+    "particleUpdate": {
+        "lifeTime": 3.0,
+        "velocity": [
+            0.0,
+            10.0,
+            0.0
+        ],
+        "rotationSpeed": [
+            0.0,
+            0.0,
+            10.0
+        ],
+        "scaleSpeed": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "useGravity": true
+    },
+    "render": {
+        "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+        ],
+        "useBillboard": true,
+        "flipY": true
+    }
+}

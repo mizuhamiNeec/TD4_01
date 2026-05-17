@@ -162,7 +162,14 @@ void ParticleSystemManager::RegisterEmitter(const std::string& systemName,Partic
 
 // ===== JSON =====
 
-void ParticleSystemManager::EmitSystem(const std::string& systemName, const Mat4& transform)>& emitterFactory)
+void ParticleSystemManager::EmitSystem(
+	const std::string& systemName,
+	const Mat4&        transform,
+	const std::function<ParticleEmitterInstance*(
+		const std::string& presetName,
+		const Mat4&        transform
+	)>& emitterFactory
+)
 {
 	if (systemName.empty()) {
 		return;

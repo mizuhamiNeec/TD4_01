@@ -340,6 +340,7 @@ namespace Unnamed {
 	template const MaterialAssetData*          AssetManager::Get(AssetID) const;
 	template const MaterialInstanceAssetData*  AssetManager::Get(AssetID) const;
 	template const PostFxChainAssetData*       AssetManager::Get(AssetID) const;
+	template const ParticlePresetAssetData*    AssetManager::Get(AssetID) const;
 	template const SequenceAssetData*          AssetManager::Get(AssetID) const;
 	template const SoundAssetData*             AssetManager::Get(AssetID) const;
 	template const UiDocumentAssetData*        AssetManager::Get(AssetID) const;

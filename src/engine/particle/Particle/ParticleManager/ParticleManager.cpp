@@ -1,5 +1,7 @@
 #include "ParticleManager.h"
 
+#pragma comment(lib, "dxcompiler.lib")
+
 #include <DirectXTex.h>
 #include <json.hpp>
 #include <numbers>
@@ -635,7 +637,7 @@ const ParticlePreset* ParticleManager::FindPreset(const std::string& name) const
 	return presetLibrary_.Find(name);
 }
 
-ParticleEmitterInstance* ParticleManager::CreateEmitterInstanceFromPreset(const std::string& presetName, const Transform& emitterTransform)
+ParticleEmitterInstance* ParticleManager::CreateEmitterInstanceFromPreset(const std::string& presetName, const Mat4& emitterTransform)
 {
 	// プリセットを検索
 	ParticlePreset* preset = FindPreset(presetName);

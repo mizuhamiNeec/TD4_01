@@ -40,6 +40,7 @@ namespace Unnamed {
 	void GuiEditorTool::Shutdown() {
 		mGuiPreviewSprites.clear();
 		mGuiPreviewDrawCommands.clear();
+		mGuiPreviewTextureAssetCache.clear();
 		mGuiEditorContext.reset();
 		mGuiEditorScreenStack.reset();
 		mGuiEditorRoot.reset();
@@ -219,10 +220,25 @@ namespace Unnamed {
 					static_cast<int32_t>(i)
 				);
 				if (assetManager && !draw.image.texturePath.empty()) {
-					const AssetID textureAssetId = assetManager->LoadFromFile(
-						draw.image.texturePath,
-						ASSET_TYPE::TEXTURE
-					);
+					const std::string normalizedTexturePath =
+						StrUtil::NormalizePath(draw.image.texturePath);
+					AssetID textureAssetId = kInvalidAssetID;
+					if (const auto cached = mGuiPreviewTextureAssetCache.find(
+						normalizedTexturePath
+					); cached != mGuiPreviewTextureAssetCache.end()) {
+						textureAssetId = cached->second;
+					} else {
+						textureAssetId = assetManager->LoadFromFile(
+							normalizedTexturePath,
+							ASSET_TYPE::TEXTURE
+						);
+						if (textureAssetId != kInvalidAssetID) {
+							mGuiPreviewTextureAssetCache.emplace(
+								normalizedTexturePath,
+								textureAssetId
+							);
+						}
+					}
 					if (textureAssetId != kInvalidAssetID) {
 						sprite.texture.textureAssetId = textureAssetId;
 					}

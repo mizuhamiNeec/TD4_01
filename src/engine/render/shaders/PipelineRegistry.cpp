@@ -41,9 +41,17 @@ namespace Unnamed::Render {
 				return false;
 			}
 
-			const AssetID shaderSourceId = assetManager.LoadFromFile(
-				src->value().sourcePath, ASSET_TYPE::SHADER_SOURCE
+			AssetID shaderSourceId = assetManager.FindByPath(
+				src->value().sourcePath
 			);
+			if (
+				shaderSourceId == kInvalidAssetID ||
+				!assetManager.Meta(shaderSourceId).loaded
+			) {
+				shaderSourceId = assetManager.LoadFromFile(
+					src->value().sourcePath, ASSET_TYPE::SHADER_SOURCE
+				);
+			}
 			if (shaderSourceId == kInvalidAssetID) {
 				return false;
 			}

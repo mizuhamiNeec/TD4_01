@@ -471,12 +471,14 @@ namespace Unnamed::Render {
 
 		constexpr std::string_view kDefaultMaterialInstance =
 			"./content/core/materials/instances/dev_default.matinst.json";
-		const AssetID materialInstanceId = assetManager.LoadFromFile(
-			std::string(kDefaultMaterialInstance), ASSET_TYPE::MATERIAL_INSTANCE
-		);
-		if (materialInstanceId != kInvalidAssetID) {
-			requestedMaterialInstances.emplace_back(materialInstanceId);
-			mDefaultMaterialInstance = materialInstanceId;
+		if (mDefaultMaterialInstance == kInvalidAssetID) {
+			mDefaultMaterialInstance = assetManager.LoadFromFile(
+				std::string(kDefaultMaterialInstance),
+				ASSET_TYPE::MATERIAL_INSTANCE
+			);
+		}
+		if (mDefaultMaterialInstance != kInvalidAssetID) {
+			requestedMaterialInstances.emplace_back(mDefaultMaterialInstance);
 		}
 
 		// 可視オブジェクトが参照する全マテリアルインスタンスを収集します。

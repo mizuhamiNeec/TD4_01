@@ -1,9 +1,12 @@
 #pragma once
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
+#include "core/assets/AssetID.h"
 #include "core/guidgenerator/GuidGenerator.h"
 
 #include "engine/render/frame/RenderFrameInputs.h"
@@ -245,6 +248,11 @@ namespace Unnamed {
 			Render::RenderCameraInput& outCamera
 		) const;
 
+		[[nodiscard]] AssetID ResolveCachedUiTextureAsset(
+			AssetManager& assetManager,
+			std::string_view texturePath
+		);
+
 		/// @brief シーンがロードされたときに呼び出されます。派生クラスでオーバーライドして、シーンロード時の処理を実装できます。
 		virtual void OnSceneLoaded();
 
@@ -265,6 +273,7 @@ namespace Unnamed {
 		WorldTime                        mTime;            // ワールドの時間情報
 		WorldDebugDraw                   mDebugDraw;
 		std::vector<Render::ScreenSpriteInput> mDebugScreenSprites;
+		std::unordered_map<std::string, AssetID> mUiTextureAssetIdByPath;
 		WorldServices                    mServices;
 	};
 }

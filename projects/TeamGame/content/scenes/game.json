@@ -873,7 +873,7 @@
             "folderPath": "",
             "guid": 42,
             "isEditorOnly": false,
-            "name": "Hole",
+            "name": "Entity",
             "tags": [],
             "visible": true
         },
@@ -930,56 +930,6 @@
                 {
                     "active": true,
                     "data": {
-                        "parentEntityGuid": 42,
-                        "position": [
-                            0.0,
-                            0.0,
-                            0.0
-                        ],
-                        "rotation": [
-                            -6.181724643283815e-08,
-                            0.7071068286895752,
-                            -6.181724643283815e-08,
-                            -0.7071068286895752
-                        ],
-                        "scale": [
-                            0.30000001192092896,
-                            0.30000001192092896,
-                            0.30000001192092896
-                        ]
-                    },
-                    "guid": 13063450174624324934,
-                    "type": "engine.Transform"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "materialInstancePath": "",
-                        "materialSlots": [
-                            {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/player.matinst.json",
-                                "slotIndex": 0
-                            }
-                        ],
-                        "meshPath": "projects/TeamGame/content/models/player/Player_Hole.obj"
-                    },
-                    "guid": 13183277114207846604,
-                    "type": "engine.StaticMeshRenderer"
-                }
-            ],
-            "folderPath": "",
-            "guid": 44,
-            "isEditorOnly": false,
-            "name": "PlayerModel",
-            "tags": [],
-            "visible": true
-        },
-        {
-            "active": false,
-            "components": [
-                {
-                    "active": true,
-                    "data": {
                         "parentEntityGuid": 0,
                         "position": [
                             0.0,
@@ -998,34 +948,36 @@
                             1.0
                         ]
                     },
-                    "guid": 17023767963826987551,
+                    "guid": 11053102599363384673,
                     "type": "engine.Transform"
                 },
                 {
                     "active": true,
                     "data": {
-                        "billboardDepthMode": "DepthTest",
-                        "pixelSize": [
-                            1920.0,
-                            1080.0
-                        ],
-                        "receiveInput": true,
-                        "sortKey": 0,
-                        "spaceMode": "Screen",
-                        "uiAssetPath": "projects/TeamGame/content/ui/clear.ui.json",
-                        "worldSize": [
-                            2.0,
-                            1.125
-                        ]
+                        "gravity": 9.8100004196167,
+                        "mass": 1.0,
+                        "startPositionX": 0.0,
+                        "startPositionY": 0.0,
+                        "startPositionZ": 0.0
                     },
-                    "guid": 9815354890616739296,
-                    "type": "engine.UiCanvas"
+                    "guid": 17109618122316225082,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "",
+                        "materialSlots": [],
+                        "meshPath": "projects/TeamGame/content/models/tree.obj"
+                    },
+                    "guid": 11435055239696848149,
+                    "type": "engine.StaticMeshRenderer"
                 }
             ],
-            "folderPath": "UserInterface",
-            "guid": 45,
+            "folderPath": "",
+            "guid": 44,
             "isEditorOnly": false,
-            "name": "ClearUI",
+            "name": "Entity",
             "tags": [],
             "visible": true
         }

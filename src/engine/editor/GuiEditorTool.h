@@ -9,6 +9,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "core/assets/AssetID.h"
+
 #include "IEditorTool.h"
 
 #include "engine/gui/UiDocument.h"
@@ -76,6 +78,7 @@ namespace Unnamed {
 		std::unique_ptr<Gui::GuiEditorContext> mGuiEditorContext;
 		std::vector<Gui::UiDrawCommand> mGuiPreviewDrawCommands;
 		std::vector<Render::ScreenSpriteInput> mGuiPreviewSprites;
+		std::unordered_map<std::string, AssetID> mGuiPreviewTextureAssetCache;
 		bool mGuiPreviewTextWarningLogged = false;
 	};
 }

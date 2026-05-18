@@ -108,7 +108,7 @@
                                 "slotIndex": 2
                             }
                         ],
-                        "meshPath": "projects/TeamGame/content/models/stage.obj"
+                        "meshPath": "projects/TeamGame/content/models/fullflat.obj"
                     },
                     "guid": 15170849770376363326,
                     "type": "engine.StaticMeshRenderer"
@@ -811,7 +811,7 @@
                         "parentEntityGuid": 0,
                         "position": [
                             0.0,
-                            2.2526872158050537,
+                            0.0,
                             0.0
                         ],
                         "rotation": [
@@ -868,6 +868,23 @@
                     },
                     "guid": 14637999987159216151,
                     "type": "mygame.PlayerControlComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "holeOffsetX": 0.0,
+                        "holeOffsetY": 0.0,
+                        "holeOffsetZ": 0.0,
+                        "holeRadius": 2.0,
+                        "holeSizeChangeSpeed": 1.0,
+                        "isHoleActive": true,
+                        "suckEffectDistance": 2.0,
+                        "suckIntensityCurve": 2.0,
+                        "suckPower": 0.02500000037252903,
+                        "targetHoleRadius": 2.0
+                    },
+                    "guid": 12660474219426583893,
+                    "type": "mygame.PlayerHoleComponent"
                 }
             ],
             "folderPath": "",
@@ -886,14 +903,14 @@
                         "parentEntityGuid": 42,
                         "position": [
                             0.0,
-                            1.0199999809265137,
-                            -2.0
+                            4.0,
+                            -4.0
                         ],
                         "rotation": [
+                            0.4226182997226715,
                             0.0,
                             0.0,
-                            0.0,
-                            1.0
+                            0.9063078165054321
                         ],
                         "scale": [
                             1.0,
@@ -932,8 +949,8 @@
                     "data": {
                         "parentEntityGuid": 0,
                         "position": [
-                            0.0,
-                            0.0,
+                            4.902866363525391,
+                            4.0841264724731445,
                             0.0
                         ],
                         "rotation": [
@@ -954,11 +971,19 @@
                 {
                     "active": true,
                     "data": {
+                        "airRotationSpeed": 360.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
                         "gravity": 9.8100004196167,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
                         "mass": 1.0,
-                        "startPositionX": 0.0,
-                        "startPositionY": 0.0,
-                        "startPositionZ": 0.0
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
                     },
                     "guid": 17109618122316225082,
                     "type": "mygame.TrashObjMoverComponent"
@@ -978,6 +1003,116 @@
             "guid": 44,
             "isEditorOnly": false,
             "name": "Entity",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 42,
+                        "position": [
+                            0.0,
+                            0.009999999776482582,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            2.0,
+                            1.0,
+                            2.0
+                        ]
+                    },
+                    "guid": 16399929095914845057,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "",
+                        "materialSlots": [],
+                        "meshPath": "projects/TeamGame/content/models/Hall.obj"
+                    },
+                    "guid": 15308562012175029346,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 45,
+            "isEditorOnly": false,
+            "name": "Entity",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            -2.620710849761963,
+                            13.322283744812012,
+                            3.3338921070098877
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 17873216637215190388,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "airRotationSpeed": 360.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
+                        "mass": 1.0,
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
+                    },
+                    "guid": 13747369780696099267,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "",
+                        "materialSlots": [],
+                        "meshPath": "projects/TeamGame/content/models/tree.obj"
+                    },
+                    "guid": 13984909417495581734,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 46,
+            "isEditorOnly": false,
+            "name": "Entity Copy",
             "tags": [],
             "visible": true
         }

@@ -6,6 +6,7 @@
 #include "./core/ComponentRegistry.h"
 #include <core/math/Vec3.h>
 #include <algorithm>
+#include <cmath>
 
 #ifdef _DEBUG
 #include "imgui.h"
@@ -14,7 +15,7 @@
 namespace MyGame {
 
 	// ===================================================================
-	// セクション1: ライフサイクル メソッド
+	// ライフサイクル メソッド
 	// ===================================================================
 
 	void PlayerHoleComponent::OnAttached() {
@@ -43,6 +44,9 @@ namespace MyGame {
 
 		// NOTE: 穴に入ったゴミと前フレームのゴミを比較して、新規追加を処理
 		UpdateTrashList();
+
+		// NOTE: 穴に入っているゴミに吸い込み処理を適用
+		ApplySuckForceToTrash(deltaTime);
 	}
 
 	void PlayerHoleComponent::OnDetached() {
@@ -53,7 +57,7 @@ namespace MyGame {
 	}
 
 	// ===================================================================
-	// セクション2: 公開インターフェース - 穴設定
+	// 公開インターフェース - 穴設定
 	// ===================================================================
 
 	void PlayerHoleComponent::SetHoleRadius(float radius) {
@@ -81,7 +85,7 @@ namespace MyGame {
 	}
 
 	// ===================================================================
-	// セクション2: 公開インターフェース - 穴の操作
+	// 公開インターフェース - 穴の操作
 	// ===================================================================
 
 	void PlayerHoleComponent::MovePole(const Vec3& direction, float speed) {
@@ -117,7 +121,7 @@ namespace MyGame {
 	}
 
 	// ===================================================================
-	// セクション2: 公開インターフェース - ゴミ検出・処理
+	// 公開インターフェース - ゴミ検出・処理
 	// ===================================================================
 
 	int PlayerHoleComponent::GetTrashInHoleCount() const {
@@ -129,7 +133,7 @@ namespace MyGame {
 	}
 
 	// ===================================================================
-	// セクション3: BaseComponent の必須オーバーライド
+	// BaseComponent の必須オーバーライド
 	// ===================================================================
 
 	std::string_view PlayerHoleComponent::GetStableName() const {
@@ -164,6 +168,26 @@ namespace MyGame {
 		if (ImGui::SliderFloat("Size Change Speed", &_holeSizeChangeSpeed, 0.01f, 10.0f, "%.2f")) {
 			_holeSizeChangeSpeed = std::max(0.01f, _holeSizeChangeSpeed);
 		}
+
+	ImGui::Separator();
+	ImGui::Text("Suck Force Parameters");
+
+	// Suck Power
+	ImGui::SliderFloat("Suck Power (Grounded Trash)", &_suckPower, 0.0f, 1.0f, "%.3f");
+	ImGui::TextWrapped("Suck power applied to grounded trash (0.0 to 1.0)");
+
+	// Suck Effect Distance
+	if (ImGui::SliderFloat("Suck Effect Distance", &_suckEffectDistance, 0.0f, 20.0f, "%.2f")) {
+		_suckEffectDistance = std::max(0.0f, _suckEffectDistance);
+	}
+	ImGui::TextWrapped("Distance range for suck effect (from hole radius)");
+
+	// Suck Intensity Curve
+	ImGui::SliderFloat("Suck Intensity Curve", &_suckIntensityCurve, 0.1f, 3.0f, "%.2f");
+	ImGui::TextWrapped("Adjusts how suck power increases with distance");
+	ImGui::TextWrapped("  1.0 = Linear (even increase)");
+	ImGui::TextWrapped("  2.0 = Squared (rapid increase)");
+	ImGui::TextWrapped("  0.5 = Square root (slow increase)");
 
 		ImGui::Separator();
 		ImGui::Text("Hole Status");
@@ -228,6 +252,17 @@ namespace MyGame {
 		if (auto val = reader.Read<float>("holeSizeChangeSpeed")) {
 			_holeSizeChangeSpeed = std::max(0.01f, val.value());
 		}
+
+	// 吸い込み力関連
+	if (auto val = reader.Read<float>("suckPower")) {
+		_suckPower = val.value();
+	}
+	if (auto val = reader.Read<float>("suckEffectDistance")) {
+		_suckEffectDistance = std::max(0.0f, val.value());
+	}
+	if (auto val = reader.Read<float>("suckIntensityCurve")) {
+		_suckIntensityCurve = val.value();
+	}
 	}
 
 	void PlayerHoleComponent::Serialize(Unnamed::JsonWriter& writer) const {
@@ -249,10 +284,18 @@ namespace MyGame {
 		writer.Write(_targetHoleRadius);
 		writer.Key("holeSizeChangeSpeed");
 		writer.Write(_holeSizeChangeSpeed);
+
+	// 吸い込み力関連
+	writer.Key("suckPower");
+	writer.Write(_suckPower);
+	writer.Key("suckEffectDistance");
+	writer.Write(_suckEffectDistance);
+	writer.Key("suckIntensityCurve");
+	writer.Write(_suckIntensityCurve);
 	}
 
 	// ===================================================================
-	// セクション7: プライベート ヘルパーメソッド
+	// プライベート ヘルパーメソッド
 	// ===================================================================
 
 	Vec3 PlayerHoleComponent::GetHoleWorldPosition() const {
@@ -380,6 +423,91 @@ namespace MyGame {
 			_holeRadius = std::min(_holeRadius, _targetHoleRadius);
 		} else {
 			_holeRadius = std::max(_holeRadius, _targetHoleRadius);
+		}
+	}
+
+	void PlayerHoleComponent::ApplySuckForceToTrash(float deltaTime) {
+		// NOTE: 穴の周辺のゴミに吸い込み力を適用
+		// シーン内のすべてのゴミをスキャンして、吸い込み範囲内のゴミに吸い込み力を適用
+
+		// 所有者（プレイヤー）のエンティティからシーンを取得
+		if (!GetOwner()) {
+			return;
+		}
+
+		auto* scene = GetOwner()->GetScene();
+		if (!scene) {
+			return;
+		}
+
+		// シーン内のすべてのエンティティを取得
+		const auto& entities = scene->GetEntities();
+
+		Vec3 holeWorldPos = GetHoleWorldPosition();
+		float suckRangeOuter = _holeRadius + _suckEffectDistance;
+
+		// 各エンティティをチェック
+		for (const auto& entityPtr : entities) {
+			if (!entityPtr) {
+				continue;
+			}
+
+			auto* entity = entityPtr.get();
+
+			// ゴミのTrashObjMoverComponentを取得
+			auto* trashComponent = entity->GetComponent<TrashObjMoverComponent>();
+			if (!trashComponent) {
+				continue;
+			}
+
+			// ゴミのTransformComponentを取得
+			auto* transform = entity->GetComponent<Unnamed::TransformComponent>();
+			if (!transform) {
+				continue;
+			}
+
+			// 穴の中心からゴミまでの距離を計算
+			Vec3 trashPos = transform->GetPosition();
+			Vec3 diffToHole = holeWorldPos - trashPos;
+			float distanceToHole = diffToHole.Length();
+
+			// 吸い込み範囲外
+			if (distanceToHole >= suckRangeOuter) {
+				// 吸い込み範囲外 - ゴミに吸い込み力を適用しない
+				trashComponent->ClearHoleSuckPosition();
+				continue;
+			}
+
+			// 穴に既に落ちている場合（穴の半径より内側）
+			if (distanceToHole < _holeRadius) {
+				// 穴に落ちているゴミは吸い込み力を適用しない（そのまま落下）
+				trashComponent->ClearHoleSuckPosition();
+				continue;
+			}
+
+			// 吸い込み範囲内（穴より大きい円の中にいるが、穴には落ちていない）
+			// 距離に基づいて吸い込み力を計算
+
+			// ゴミが落下状態かどうかで処理を分ける
+			bool isFalling = trashComponent->IsFalling();
+
+			// 落下中のゴミは吸い込まない（そのまま落下させる）
+			if (isFalling) {
+				trashComponent->ClearHoleSuckPosition();
+				continue;
+			}
+
+			// 地上にあるゴミのみ吸い込む
+			float distanceFromHoleEdge = distanceToHole - _holeRadius;
+			float suckPowerFalloff = distanceFromHoleEdge / _suckEffectDistance; // 0.0～1.0（逆順）
+			suckPowerFalloff = 1.0f - suckPowerFalloff; // 反転：外側ほど弱い
+			
+			// 吸い込み強度曲線を適用（近づくほど強くなる効果）
+			suckPowerFalloff = std::pow(suckPowerFalloff, _suckIntensityCurve);
+			
+			float suckPower = _suckPower * suckPowerFalloff; // 設定値に基づいた吸い込み力
+
+			trashComponent->SetHoleSuckPosition(holeWorldPos, suckPower);
 		}
 	}
 

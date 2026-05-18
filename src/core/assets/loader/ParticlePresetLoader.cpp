@@ -19,10 +19,22 @@ namespace Unnamed {
 		[[nodiscard]] bool LooksLikeParticlePresetText(
 			const std::string& source
 		) {
-			return source.find("\"emitterSettings\"") != std::string::npos &&
-			       source.find("\"emitterSpawn\"") != std::string::npos &&
-			       source.find("\"particleUpdate\"") != std::string::npos &&
-			       source.find("\"render\"") != std::string::npos;
+			const bool hasEmitterSpawn =
+				source.find("\"emitterSpawn\"") != std::string::npos;
+
+			// version 2: モジュールリスト形式（emitterSpawn + modules 配列）
+			const bool newFormat =
+				hasEmitterSpawn &&
+				source.find("\"modules\"") != std::string::npos;
+
+			// 旧形式: emitterSettings / particleUpdate / render が直下にある
+			const bool oldFormat =
+				source.find("\"emitterSettings\"") != std::string::npos &&
+				hasEmitterSpawn &&
+				source.find("\"particleUpdate\"") != std::string::npos &&
+				source.find("\"render\"") != std::string::npos;
+
+			return newFormat || oldFormat;
 		}
 	}
 

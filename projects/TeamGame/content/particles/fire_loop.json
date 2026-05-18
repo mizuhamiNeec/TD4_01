@@ -6,11 +6,11 @@
         "blendMode": 1
     },
     "emitterSpawn": {
-        "count": 1,
+        "count": 60,
         "frequency": 0.5,
         "repeat": true,
         "useRandomPosition": true,
-        "useLocalSpace": false
+        "useLocalSpace": true
     },
     "particleSpawn": {
         "initialScale": [
@@ -37,8 +37,8 @@
             0.0
         ],
         "rotationSpeed": [
-            0.0,
-            0.0,
+            10.0,
+            10.0,
             10.0
         ],
         "scaleSpeed": [
@@ -51,7 +51,7 @@
     "render": {
         "color": [
             1.0,
-            1.0,
+            0.4,
             1.0,
             1.0
         ],

@@ -1,8 +1,10 @@
 #pragma once
+#include <memory>
 #include <vector>
 #include <string>
 #include "Particle.h"       // struct Particle { position, velocity, life,... }
 #include "ParticlePreset.h" // struct ParticlePreset {...}
+#include "ParticleModule.h" // class ParticleModule（モジュール基底クラス）
 
 #include "core/math/Mat4.h"
 
@@ -42,6 +44,13 @@ public:
 	void UpdateParticles(float dt);
 
 	// ==============================
+	// モジュール（Niagara の Module 相当）
+	// ==============================
+	// このエミッタが持つモジュール列（読み取り専用）。
+	// エディタ表示やデバッグから参照できる。
+	const std::vector<std::unique_ptr<ParticleModule>>& GetModules() const { return modules_; }
+
+	// ==============================
 	// 描画側から見るための情報（Read-only）
 	// ==============================
 	const PMPreset* GetPreset() const { return preset_; }
@@ -58,8 +67,16 @@ public:
 	bool IsLocalSpace() const { return preset_ ? preset_->emitterSpawn.useLocalSpace : false; }
 
 private:
+	// 標準モジュール列を生成して modules_ に詰める
+	void BuildModules();
+
+private:
 	// Niagara の「モジュール」情報（定数データ）
 	const PMPreset* preset_ = nullptr;
+
+	// このエミッタに適用するモジュール列。
+	// Emit 時／更新時にこの順番で ApplySpawn / ApplyUpdate される。
+	std::vector<std::unique_ptr<ParticleModule>> modules_;
 
 	// エミッタ自体の Transform（発生位置・向き）
 	Mat4 emitterTransform_{};

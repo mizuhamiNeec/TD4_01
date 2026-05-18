@@ -162,15 +162,35 @@ struct RenderModule {
 };
 
 // ===============================================
+// ModuleSlot
+// 「どのモジュールを・どの順番で・有効/無効で」エミッタに積むかを表す。
+// UE5 Niagara の「モジュールスタック」の 1 行に相当する。
+//
+// パラメータの実体は上の各 *Module 構造体（EmitterSpawnModule など）が保持し、
+// JSON では modules 配列の各要素の "params" として読み書きされる。
+// ※ ModuleSlot 自体は文字列＋bool だけなのでコピー可能。
+// ===============================================
+struct ModuleSlot {
+	std::string type;           // モジュール種別名（"Lifetime" / "Velocity" など）
+	bool        enabled = true; // 有効/無効（Niagara のチェックボックス相当）
+};
+
+// ===============================================
 // ParticlePreset
 // ===============================================
 struct ParticlePreset {
 	std::string name;               // プリセット名
 
-	// ---- 各モジュール ----
+	// ---- 各モジュールのパラメータ実体 ----
 	EmitterSettingsModule emitterSettings;
 	EmitterSpawnModule    emitterSpawn;
 	ParticleSpawnModule   particleSpawn;
 	ParticleUpdateModule  particleUpdate;
 	RenderModule          render;
+
+	// ---- モジュールスタック ----
+	// 振る舞いモジュールの種類・順序・有効状態。
+	// 空の場合、ParticleEmitterInstance / JSON 出力は
+	// ParticleModuleRegistry の既定スタックを使う。
+	std::vector<ModuleSlot> modules;
 };

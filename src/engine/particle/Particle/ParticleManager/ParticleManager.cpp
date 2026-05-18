@@ -829,13 +829,13 @@ void ParticleManager::PopulateInstancesFromEmitters(const Mat4& viewProjectionMa
 			Vec3 rotate = p.rotation;
 			Vec3 position = p.position;
 
-			// ★ Local Space モードの場合、エミッタのワールド座標を加算して
-			//    パーティクルのローカル座標をワールド座標に変換する
+			// ★ Local Space モードの場合、エミッタのワールド行列を適用して
+			//    パーティクルのローカル座標をワールド座標へ変換する。
+			//    以前は平行移動だけ加算していたが、それだとエミッタの
+			//    回転・スケールが粒子位置に反映されなかった。
+			//    TransformPoint で行列全体（移動・回転・スケール）を適用する。
 			if (emitter.IsLocalSpace()) {
-				const Transform& et = emitter.GetTransform();
-				position.x += et.translate.x;
-				position.y += et.translate.y;
-				position.z += et.translate.z;
+				position = emitter.GetTransform().TransformPoint(position);
 			}
 
 			Mat4 scaleMatrix = Mat4::Scale(scale);

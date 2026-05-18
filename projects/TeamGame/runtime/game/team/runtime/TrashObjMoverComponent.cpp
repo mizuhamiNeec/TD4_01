@@ -50,13 +50,14 @@ namespace MyGame {
 		);
 
 		// 位置
+		_startPosition = { 0,10,0 };
 		_position = _startPosition;
 	}
 
 	void TrashObjMoverComponent::OnTick(float deltaTime) {
 		// NOTE: 基本的に何もしない - 物理エンジンが動きを制御
 		// 必要に応じてゴミの状態をチェックする処理をここに追加
-
+		this->deltaTime = deltaTime;
 
 		// 状態処理
 		StateProcess();
@@ -85,10 +86,11 @@ namespace MyGame {
 		// -----------------------------------------------------------------------
 		// 理由：速度が十分に小さくなったら、フライトを終了する
 		float speed = _velocity.Length();
-		if (_isOnGround && speed < _stopVelocityThreshold) {
+		if (_isOnGround && speed < _stopVelocityThreshold && _isAction) {
 			_state = State::Idle;	// 待機状態に
 			_isAction = false;		// アクションフラグOFF
 			_velocity = Vec3(0.0f, 0.0f, 0.0f);  // 完全に停止
+			_shockWaveRotation = Vec3::zero;
 		}
 
 		// -----------------------------------------------------------------------
@@ -99,6 +101,11 @@ namespace MyGame {
 		boxKCR->SlideMove(
 			_position, _velocity, deltaTime
 		);
+		if (boxKCR) {
+			boxKCR->UpdateHull(_position, _halfSize);
+		}
+
+		_shockWaveRotation;
 
 		// -----------------------------------------------------------------------
 		// 8 TransformComponent と同期
@@ -106,6 +113,14 @@ namespace MyGame {
 		// 理由：計算した位置をエンティティの Transform に反映
 		auto* transform = GetOwner()->GetComponent<Unnamed::TransformComponent>();
 		if (transform) {
+
+			_rotation = transform->GetRotation().GetAxis();
+			
+			_rotation += _shockWaveRotation * deltaTime;
+
+			transform->SetRotation(Quaternion::Euler(_rotation));
+
+			transform->GetRotation().RotateVector(_shockWaveRotation * deltaTime);
 			transform->SetPosition(_position);
 			// NOTE: 瞬間的な位置変更なので補間をリセット
 			transform->RequestInterpolationResync();
@@ -160,15 +175,9 @@ namespace MyGame {
 #ifdef _DEBUG
 	void TrashObjMoverComponent::DrawInspectorImGui() {
 		ImGui::Text("=== Trash Object Mover Component ===");
-		if (ImGui::DragFloat3("BoxhalfSize", &_halfSize.x, 0.25f, 0.1f, 100.0f, "%.2f")) {
-			// NOTE: 半径を変更したらコリジョンハルも更新
-			auto* boxKCR = dynamic_cast<Unnamed::BoxKinematicCollisionResolver*>(mCollisionResolver.get());
-			boxKCR->UpdateHull(_position, _halfSize);
-		}
-
 		ImGui::Separator();
 		ImGui::Text("Trash Object Properties");
-		
+
 		// -----------------------------------------------------------------------
 		// パラメータ調整
 		// -----------------------------------------------------------------------
@@ -176,16 +185,15 @@ namespace MyGame {
 		ImGui::SliderFloat("Mass", &_mass, 0.1f, 100.0f, "%.2f kg");					// ゴミの重量
 		ImGui::SliderFloat("Gravity", &_gravity, 0.0f, 20.0f, "%.2f");					// 重力
 		ImGui::SliderFloat("Max Speed Clamp", &_maxSpeedClamp, 0.0f, 100.0f, "%.2f");	// 最大速度
-		ImGui::SliderFloat("Bounce Damping", &_bounceDamping, 0.0f, 1.0f, "%.3f");
 		ImGui::Separator();
 
-		
-		// -----------------------------------------------------------------------
-		// 衝撃波表示
-		// -----------------------------------------------------------------------
-		ImGui::InputFloat3("OccurrenceLocation", &_occurrenceLocation.x, "%.2");		// 発生位置
-		ImGui::InputFloat("ShockWaveStrength", &_shockWaveStrength);					// 衝撃波強度
-		ImGui::InputFloat3("ShockWaveDirection", &_shockWaveDirection.x);				// 衝撃波
+		ImGui::Text("=== Bounce & Friction Parameters ===");
+		ImGui::SliderFloat("Bounce Damping", &_bounceDamping, 0.0f, 1.0f, "%.3f");
+		ImGui::SliderFloat("Friction Coefficient", &_frictionCoefficient, 0.0f, 1.0f, "%.3f");
+		ImGui::SliderFloat("Ground Level", &_groundLevel, -10.0f, 10.0f, "%.2f");
+		ImGui::SliderFloat("Stop Velocity Threshold", &_stopVelocityThreshold, 0.001f, 0.1f, "%.4f");
+
+
 		// -----------------------------------------------------------------------
 		// 位置・速度表示
 		// -----------------------------------------------------------------------
@@ -194,9 +202,56 @@ namespace MyGame {
 		float speed = _velocity.Length();
 		ImGui::Text("Speed: %.2f units/sec", speed);
 
+		ImGui::Checkbox("isGravity", &_isGravity);
 
 		ImGui::Separator();
 		ImGui::TextWrapped("Note: This object is controlled by physics engine when collided with player.");
+
+		if (ImGui::Button("Idle")) {
+			_state = MyGame::TrashObjMoverComponent::State::Idle;
+		}
+		if (ImGui::Button("Flying")) {
+			_state = MyGame::TrashObjMoverComponent::State::Flying;
+		}
+		if (ImGui::Button("Landing")) {
+			_state = MyGame::TrashObjMoverComponent::State::Landing;
+		}
+
+		ImGui::Separator();
+		// -----------------------------------------------------------------------
+		// 衝撃波表示
+		// -----------------------------------------------------------------------
+		ImGui::InputFloat3("OccurrenceLocation", &_occurrenceLocation.x, "%.2");		// 発生位置
+		ImGui::InputFloat("ShockWaveStrength", &_shockWaveStrength);					// 衝撃波強度
+		ImGui::InputFloat3("ShockWaveDirection", &_shockWaveDirection.x);				// 衝撃波
+		ImGui::InputFloat3("ShockWaveRotation", &_shockWaveRotation.x);				// 衝撃波
+
+		// 衝撃波発生位置
+		ImGui::DragFloat3("occurrenceLocation", &_occurrenceLocation.x, 0.1f);
+		// 衝撃波強度
+		ImGui::DragFloat("shockWaveStrength", &_shockWaveStrength, 0.1f);
+
+		// 衝撃波発生
+		if (ImGui::Button("ShockWave")) {
+			SetShockWave(_occurrenceLocation, _shockWaveStrength);
+		}
+
+		auto* transform = GetOwner()->GetComponent<Unnamed::TransformComponent>();
+
+		if (transform) {
+
+			Vec3 pos = transform->GetPosition();
+
+			ImGui::DragFloat3("halfSize", &_halfSize.x, 0.1f);
+			if (ImGui::DragFloat3("Position", &pos.x, 0.1f)) {
+
+				transform->SetPosition(pos);
+
+				_position = pos;
+
+				transform->RequestInterpolationResync();
+			}
+		}
 	}
 #endif
 
@@ -228,7 +283,7 @@ namespace MyGame {
 
 	void TrashObjMoverComponent::Serialize(Unnamed::JsonWriter& writer) const {
 		// NOTE: 値をJSONに書き込む
-		
+
 		// 質量
 		writer.Key("mass");
 		writer.Write(_mass);
@@ -247,12 +302,13 @@ namespace MyGame {
 
 	}
 
-	void TrashObjMoverComponent::UpdatePhysics(float deltaTime){
+	void TrashObjMoverComponent::UpdatePhysics(float deltaTime) {
 		// -----------------------------------------------------------------------
 		// 3️⃣ 重力を加算（Y軸の負方向加速度）
 		// -----------------------------------------------------------------------
 		// 理由：重力は常に下向きに作用し、Y速度を減少させる
-		_velocity.y -= _gravity * deltaTime;
+		if (_isGravity)
+			_velocity.y -= _gravity * deltaTime;
 
 		// NOTE: 速度の大きさ（スピード）を計算
 		float speed = _velocity.Length();
@@ -265,12 +321,12 @@ namespace MyGame {
 	}
 
 	void TrashObjMoverComponent::StateProcess() {
-	
+
 		switch (_state)
 		{
 		case MyGame::TrashObjMoverComponent::State::Idle:	// 待機
 			// 物理挙動OFF
-			_isRigidBoby = false;	
+			_isRigidBoby = false;
 			// 重力OFF
 			_isGravity = false;
 			// アニメーション演出OFF
@@ -287,14 +343,15 @@ namespace MyGame {
 		case MyGame::TrashObjMoverComponent::State::Landing:// 着地
 			// アニメーション演出OFF
 			_isAnimation = true;
-
+			// 重力ON
+			_isGravity = false;
 			break;
 		case MyGame::TrashObjMoverComponent::State::Settled:// 
 			break;
 		default:
 			break;
 		}
-	
+
 	}
 
 	void TrashObjMoverComponent::HandleGroundCollision() {
@@ -319,6 +376,9 @@ namespace MyGame {
 			// NOTE: 地面接触フラグを有効化
 			_isOnGround = true;
 
+			// 着地
+			_state = State::Landing;
+
 			// -----------------------------------------------------------------------
 			// 横方向速度の減衰（衝突時のエネルギー損失）
 			// -----------------------------------------------------------------------
@@ -332,6 +392,8 @@ namespace MyGame {
 			// 空中にいる場合
 			// -----------------------------------------------------------------------
 			_isOnGround = false;
+
+			_state = State::Flying;
 		}
 	}
 
@@ -366,13 +428,14 @@ namespace MyGame {
 		float speed = _velocity.Length();
 		if (speed < _stopVelocityThreshold) {
 			_velocity = Vec3(0.0f, 0.0f, 0.0f);
+			_shockWaveRotation = Vec3::zero;
 		}
 	}
 
 	void TrashObjMoverComponent::SetShockWave(const Vec3& occurrenceLocation, const float strength) {
 		// 発生位置
 		_occurrenceLocation = occurrenceLocation;
-	
+
 		// 衝撃波強度
 		_shockWaveStrength = strength;
 
@@ -392,15 +455,33 @@ namespace MyGame {
 
 		_position = transform->GetPosition();
 
+		Vec3 sub = Vec3(_position - _occurrenceLocation);
 		// 衝撃波方向設定
-		_shockWaveDirection = Vec3(_occurrenceLocation - _position).Normalized();
-
+		if (sub.Length() != 0.0f) {
+			_shockWaveDirection = sub.Normalized();
+		}
+		else {
+			// 同じ位置の場合は上方向に
+			_shockWaveDirection = Vec3{ 0,1.0f,0 };
+		}
 		// 回転方向
 		_shockWaveRotation = _occurrenceLocation * _shockWaveStrength;
 
 		// 速度設定
 		_velocity = Vec3(_shockWaveDirection * _shockWaveStrength) / _mass;
 
+		// 位置
+		_position += _velocity * deltaTime;
+
+		// -----------------------------------------------------------------------
+		// 8 TransformComponent と同期
+		// -----------------------------------------------------------------------
+		if (transform) {
+			transform->SetPosition(_position);
+			// NOTE: 瞬間的な位置変更なので補間をリセット
+			transform->RequestInterpolationResync();
+		}
+		isColl = false;
 	}
 
 	// NOTE: 忘れると死ぬやつ

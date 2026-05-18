@@ -111,7 +111,7 @@ namespace MyGame {
 		std::unique_ptr<Unnamed::BaseKinematicCollisionResolver> mCollisionResolver;
 
 		/// サイズ半径
-		Vec3 _halfSize = { 0.5f,0.5f ,0.5f };
+		Vec3 _halfSize = { 0.5f,0.0f ,0.5f };
 
 		/// 速度
 		Vec3 _velocity = {};
@@ -125,7 +125,7 @@ namespace MyGame {
 
 		/// 地表摩擦係数（0.0～1.0、毎フレームの速度減衰）
 		/// 理由：地面上での横方向速度を徐々に減衰させる
-		float _frictionCoefficient = 0.95f;
+		float _frictionCoefficient = 0.45f;
 
 		/// 地面判定の高さ閾値（単位: units）
 		/// 理由：Y <= この値で地面衝突と判定
@@ -137,15 +137,24 @@ namespace MyGame {
 
 		/// 速度上限クランプ値（単位: units/sec）
 		float _maxSpeedClamp = 50.0f;
+
+		///　
+		bool isColl = true;
+
+		///
+		float deltaTime = 0.0f;
 	private: /// ゴミ自体の情報
 		/// ゴミの重量（物理エンジンが使用）
 		float _mass = 1.0f;
 
 		/// 初期位置
-		Vec3 _startPosition = {};
+		Vec3 _startPosition = {0,10,0};
 
 		/// 位置 
 		Vec3 _position = {};
+
+		/// 回転
+		Vec3 _rotation = {};
 
 		/// 状態
 		State _state = State::Idle;

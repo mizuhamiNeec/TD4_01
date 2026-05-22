@@ -43,7 +43,10 @@ namespace MyGame {
 		);
 		
 		auto* sphereKCR = dynamic_cast<Unnamed::SphereKinematicCollisionResolver*>(mCollisionResolver.get());
-		sphereKCR->UpdateHull(_position, _radius); // 初期位置と半径でコリジョンハルを設定 
+		sphereKCR->UpdateHull(_position, _radius); // 初期位置と半径でコリジョンハルを設定
+		
+		// FIXME: ゲーム開始時に発射(先生に見せる用)
+		Launch();
 	}
 
 	void GolfBallComponent::OnTick(float deltaTime) {

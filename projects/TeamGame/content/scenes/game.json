@@ -840,7 +840,7 @@
                     "data": {
                         "debugLogEnabled": true,
                         "enterActivateEntityGuids": [
-                            45
+                            47
                         ],
                         "exitDeactivateEntityGuids": [],
                         "height": 2.0,
@@ -890,7 +890,7 @@
             "folderPath": "",
             "guid": 42,
             "isEditorOnly": false,
-            "name": "Entity",
+            "name": "Player",
             "tags": [],
             "visible": true
         },
@@ -907,10 +907,10 @@
                             -4.0
                         ],
                         "rotation": [
-                            0.4226182997226715,
+                            0.2588190734386444,
                             0.0,
                             0.0,
-                            0.9063078165054321
+                            0.9659258723258972
                         ],
                         "scale": [
                             1.0,
@@ -991,8 +991,13 @@
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "",
-                        "materialSlots": [],
+                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                                "slotIndex": 0
+                            }
+                        ],
                         "meshPath": "projects/TeamGame/content/models/tree.obj"
                     },
                     "guid": 11435055239696848149,
@@ -1002,7 +1007,7 @@
             "folderPath": "",
             "guid": 44,
             "isEditorOnly": false,
-            "name": "Entity",
+            "name": "Trash",
             "tags": [],
             "visible": true
         },
@@ -1101,8 +1106,13 @@
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "",
-                        "materialSlots": [],
+                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                                "slotIndex": 0
+                            }
+                        ],
                         "meshPath": "projects/TeamGame/content/models/tree.obj"
                     },
                     "guid": 13984909417495581734,
@@ -1112,7 +1122,1322 @@
             "folderPath": "",
             "guid": 46,
             "isEditorOnly": false,
-            "name": "Entity Copy",
+            "name": "Trash_1",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": false,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 11794289230583883859,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "billboardDepthMode": "DepthTest",
+                        "pixelSize": [
+                            1920.0,
+                            1080.0
+                        ],
+                        "receiveInput": true,
+                        "sortKey": 0,
+                        "spaceMode": "Screen",
+                        "uiAssetPath": "projects/TeamGame/content/ui/clear.ui.json",
+                        "worldSize": [
+                            2.0,
+                            1.125
+                        ]
+                    },
+                    "guid": 12990290697736916220,
+                    "type": "engine.UiCanvas"
+                }
+            ],
+            "folderPath": "UserInterface",
+            "guid": 47,
+            "isEditorOnly": false,
+            "name": "Clear_UI",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            5.379815101623535,
+                            22.721744537353516,
+                            8.560715675354004
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.25724878907203674,
+                            0.0,
+                            0.9663451910018921
+                        ],
+                        "scale": [
+                            0.9999995827674866,
+                            1.0,
+                            0.9999995827674866
+                        ]
+                    },
+                    "guid": 14539573430691371252,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "airRotationSpeed": 120.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
+                        "mass": 1.0,
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
+                    },
+                    "guid": 14483579811285035821,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "content/core/materials/instances/red.matinst.json",
+                                "slotIndex": 0
+                            }
+                        ],
+                        "meshPath": "content/core/models/error.obj"
+                    },
+                    "guid": 9645997868672172759,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 48,
+            "isEditorOnly": false,
+            "name": "Trash_1 Copy",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            -4.865588188171387,
+                            27.350482940673828,
+                            8.483651161193848
+                        ],
+                        "rotation": [
+                            0.0,
+                            -0.11096314340829849,
+                            0.0,
+                            0.9938245415687561
+                        ],
+                        "scale": [
+                            0.9999987483024597,
+                            1.0,
+                            0.9999987483024597
+                        ]
+                    },
+                    "guid": 14195416329089478008,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "airRotationSpeed": 120.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
+                        "mass": 1.0,
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
+                    },
+                    "guid": 16535982952759129420,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "content/core/materials/instances/gray.matinst.json",
+                                "slotIndex": 0
+                            }
+                        ],
+                        "meshPath": "content/core/models/ShaderBall.obj"
+                    },
+                    "guid": 9795599615569061890,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 49,
+            "isEditorOnly": false,
+            "name": "Trash_1 Copy Copy",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.1953037977218628,
+                            22.434873580932617,
+                            5.278099536895752
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 10007540309653544674,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "airRotationSpeed": 360.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
+                        "mass": 1.0,
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
+                    },
+                    "guid": 13934349670377210898,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                                "slotIndex": 0
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/tree.obj"
+                    },
+                    "guid": 11867006729802649283,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 50,
+            "isEditorOnly": false,
+            "name": "Trash_1 Copy 2",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            -4.069209575653076,
+                            32.77443313598633,
+                            12.734682083129883
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 16950978760062717505,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "airRotationSpeed": 360.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
+                        "mass": 1.0,
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
+                    },
+                    "guid": 18382166094365934117,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                                "slotIndex": 0
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/tree.obj"
+                    },
+                    "guid": 15742538072623045989,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 51,
+            "isEditorOnly": false,
+            "name": "Trash_1 Copy 2 Copy",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            2.011746883392334,
+                            42.47006607055664,
+                            10.905000686645508
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 17244580816613051934,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "airRotationSpeed": 360.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
+                        "mass": 1.0,
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
+                    },
+                    "guid": 18080048883835707868,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                                "slotIndex": 0
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/tree.obj"
+                    },
+                    "guid": 14569114788094966661,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 52,
+            "isEditorOnly": false,
+            "name": "Trash_1 Copy 2 Copy Copy",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            -0.40609657764434814,
+                            47.48239517211914,
+                            15.496484756469727
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 18334630400767374306,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "airRotationSpeed": 360.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
+                        "mass": 1.0,
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
+                    },
+                    "guid": 10102453838868389569,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                                "slotIndex": 0
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/tree.obj"
+                    },
+                    "guid": 17088342774566314401,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 53,
+            "isEditorOnly": false,
+            "name": "Trash_1 Copy 2 Copy Copy Copy",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            -1.224297046661377,
+                            45.059661865234375,
+                            12.493619918823242
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 16498910212382176335,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "airRotationSpeed": 360.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
+                        "mass": 1.0,
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
+                    },
+                    "guid": 17463878094131525765,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                                "slotIndex": 0
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/tree.obj"
+                    },
+                    "guid": 13205098209811680688,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 54,
+            "isEditorOnly": false,
+            "name": "Trash_1 Copy 2 Copy Copy Copy 2",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            1.2174632549285889,
+                            51.45471954345703,
+                            7.551462173461914
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 10240417907350302842,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "airRotationSpeed": 360.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
+                        "mass": 1.0,
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
+                    },
+                    "guid": 13473931555765109740,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                                "slotIndex": 0
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/tree.obj"
+                    },
+                    "guid": 13082509558010453765,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 55,
+            "isEditorOnly": false,
+            "name": "Trash_1 Copy 2 Copy Copy Copy 2 Copy",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            -3.1965394020080566,
+                            55.513633728027344,
+                            18.404861450195313
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 18016848862261426533,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "airRotationSpeed": 360.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
+                        "mass": 1.0,
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
+                    },
+                    "guid": 14891493535392413153,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                                "slotIndex": 0
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/tree.obj"
+                    },
+                    "guid": 12963312595753460883,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 56,
+            "isEditorOnly": false,
+            "name": "Trash_1 Copy 2 Copy Copy Copy 2 Copy Copy",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            1.325162410736084,
+                            58.82718276977539,
+                            13.74812126159668
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 15939949066737038625,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "airRotationSpeed": 360.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
+                        "mass": 1.0,
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
+                    },
+                    "guid": 18138878891513705811,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                                "slotIndex": 0
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/tree.obj"
+                    },
+                    "guid": 13432972060312291486,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 57,
+            "isEditorOnly": false,
+            "name": "Trash_1 Copy 2 Copy Copy Copy 2 Copy Copy Copy",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            -6.288531303405762,
+                            68.0228042602539,
+                            12.760950088500977
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 10023233753354272805,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "airRotationSpeed": 360.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
+                        "mass": 1.0,
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
+                    },
+                    "guid": 15874929740795934331,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                                "slotIndex": 0
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/tree.obj"
+                    },
+                    "guid": 16978864784695853028,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 58,
+            "isEditorOnly": false,
+            "name": "Trash_1 Copy 2 Copy Copy Copy 2 Copy Copy Copy Copy",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            3.354644536972046,
+                            68.0228042602539,
+                            12.268855094909668
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 13789354517459901364,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "airRotationSpeed": 360.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
+                        "mass": 1.0,
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
+                    },
+                    "guid": 14722105343944514639,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                                "slotIndex": 0
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/tree.obj"
+                    },
+                    "guid": 9870233932623431088,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 59,
+            "isEditorOnly": false,
+            "name": "Trash_1 Copy 2 Copy Copy Copy 2 Copy Copy Copy Copy Copy",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.415419340133667,
+                            74.4382095336914,
+                            16.91947364807129
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 9847894807547286087,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "airRotationSpeed": 360.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
+                        "mass": 1.0,
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
+                    },
+                    "guid": 16646612629041793175,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                                "slotIndex": 0
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/tree.obj"
+                    },
+                    "guid": 15130055833966000854,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 60,
+            "isEditorOnly": false,
+            "name": "Trash_1 Copy 2 Copy Copy Copy 2 Copy Copy Copy Copy Copy Copy",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            7.917603015899658,
+                            82.20925903320313,
+                            16.91947364807129
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 16566344904516874177,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "airRotationSpeed": 360.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
+                        "mass": 1.0,
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
+                    },
+                    "guid": 16540111895147249664,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                                "slotIndex": 0
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/tree.obj"
+                    },
+                    "guid": 13303740908350673137,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 61,
+            "isEditorOnly": false,
+            "name": "Trash_1 Copy 2 Copy Copy Copy 2 Copy Copy Copy Copy Copy Copy Copy",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            -2.3499650955200195,
+                            84.25810241699219,
+                            21.593124389648438
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 10014489060122839051,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "airRotationSpeed": 360.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
+                        "mass": 1.0,
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
+                    },
+                    "guid": 9753304168327313138,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                                "slotIndex": 0
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/tree.obj"
+                    },
+                    "guid": 18299719646289728521,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 62,
+            "isEditorOnly": false,
+            "name": "Trash_1 Copy 2 Copy Copy Copy 2 Copy Copy Copy Copy Copy Copy Copy Copy",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            -2.3499650955200195,
+                            84.25810241699219,
+                            9.097408294677734
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 9641566921697448261,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "airRotationSpeed": 360.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
+                        "mass": 1.0,
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
+                    },
+                    "guid": 15661970326362960684,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                                "slotIndex": 0
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/tree.obj"
+                    },
+                    "guid": 15911991086526638034,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 63,
+            "isEditorOnly": false,
+            "name": "Trash_1 Copy 2 Copy Copy Copy 2 Copy Copy Copy Copy Copy Copy Copy Copy Copy",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            -8.25613784790039,
+                            88.60184478759766,
+                            15.503772735595703
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 10536719816971170562,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "airRotationSpeed": 360.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
+                        "mass": 1.0,
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
+                    },
+                    "guid": 10907088303943063001,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                                "slotIndex": 0
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/tree.obj"
+                    },
+                    "guid": 10965530330757616732,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 64,
+            "isEditorOnly": false,
+            "name": "Trash_1 Copy 2 Copy Copy Copy 2 Copy Copy Copy Copy Copy Copy Copy Copy Copy Copy",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            -0.25595831871032715,
+                            102.1989974975586,
+                            9.991494178771973
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 10810248179210480823,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "airRotationSpeed": 360.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
+                        "mass": 1.0,
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
+                    },
+                    "guid": 14766374964637049802,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                                "slotIndex": 0
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/tree.obj"
+                    },
+                    "guid": 15617263936554764919,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 65,
+            "isEditorOnly": false,
+            "name": "Trash_1 Copy 2 Copy Copy Copy 2 Copy Copy Copy Copy Copy Copy Copy Copy Copy Copy Copy",
             "tags": [],
             "visible": true
         }

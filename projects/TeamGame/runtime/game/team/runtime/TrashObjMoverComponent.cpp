@@ -51,55 +51,46 @@ namespace MyGame {
 			UpdateHoleSuck(deltaTime);
 		}
 
-		// NOTE: 落下状態でない場合のみ物理更新を実行
-		if (_bIsFalling) {
-			// 落下状態：重力のみを適用
-			_velocity.y -= _gravity * deltaTime;
-			_position += _velocity * deltaTime;
+		// NOTE: 常に物理更新を実行（衝撃波による速度でも地面衝突判定が必要）
+		// -----------------------------------------------------------------------
+		// 物理計算（重力）
+		// -----------------------------------------------------------------------
+		UpdatePhysics(deltaTime);
 
-			// 空中での回転を更新
+		// -----------------------------------------------------------------------
+		// 衝突応答 & SlideMove（リゾルバが位置を更新）
+		// -----------------------------------------------------------------------
+		// NOTE: SlideMove が _position と _velocity を更新する
+		// 地面衝突、バウンス、速度クリップはすべてリゾルバが処理
+		if (_collisionResolver) {
+			auto *boxKCR = dynamic_cast<Unnamed::BoxKinematicCollisionResolver *>(_collisionResolver.get());
+			if (boxKCR) {
+				boxKCR->SlideMove(_position, _velocity, deltaTime);
+			}
+		}
+
+		// -----------------------------------------------------------------------
+		// 速度上限でクランプ
+		// -----------------------------------------------------------------------
+		ClampVelocity();
+
+		// -----------------------------------------------------------------------
+		// 落下中・衝突中による回転更新
+		// -----------------------------------------------------------------------
+		bool bWasGrounded = _bIsGrounded;
+		_bIsGrounded = (_velocity.y >= -_stopVelocityThreshold && _velocity.y <= _stopVelocityThreshold);
+		UpdateAirRotation(deltaTime);
+		if (!_bIsGrounded) {
+			// 空中：速度方向に回転
 			UpdateAirRotation(deltaTime);
-		} else {
-			// -----------------------------------------------------------------------
-			// 物理計算（重力）
-			// -----------------------------------------------------------------------
-			UpdatePhysics(deltaTime);
+		} else if (bWasGrounded != _bIsGrounded && _bIsGrounded) {
+			// 着地した：回転をリセット開始
+			_bIsResetingRotation = true;
+		}
 
-			// -----------------------------------------------------------------------
-			// 衝突応答 & SlideMove（リゾルバが位置を更新）
-			// -----------------------------------------------------------------------
-			// NOTE: SlideMove が _position と _velocity を更新する
-			// 地面衝突、バウンス、速度クリップはすべてリゾルバが処理
-			if (_collisionResolver) {
-				auto *boxKCR = dynamic_cast<Unnamed::BoxKinematicCollisionResolver *>(_collisionResolver.get());
-				if (boxKCR) {
-					boxKCR->SlideMove(_position, _velocity, deltaTime);
-				}
-			}
-
-			// -----------------------------------------------------------------------
-			// 速度上限でクランプ
-			// -----------------------------------------------------------------------
-			ClampVelocity();
-
-			// -----------------------------------------------------------------------
-			// 落下中・衝突中による回転更新
-			// -----------------------------------------------------------------------
-			bool bWasGrounded = _bIsGrounded;
-			_bIsGrounded = (_velocity.y >= -_stopVelocityThreshold && _velocity.y <= _stopVelocityThreshold);
-
-			if (!_bIsGrounded) {
-				// 空中：速度方向に回転
-				UpdateAirRotation(deltaTime);
-			} else if (bWasGrounded != _bIsGrounded && _bIsGrounded) {
-				// 着地した：回転をリセット開始
-				_bIsResetingRotation = true;
-			}
-
-			// 回転リセット中なら続行
-			if (_bIsResetingRotation) {
-				UpdateRotationReset(deltaTime);
-			}
+		// 回転リセット中なら続行
+		if (_bIsResetingRotation) {
+			UpdateRotationReset(deltaTime);
 		}
 
 		// -----------------------------------------------------------------------
@@ -136,6 +127,10 @@ namespace MyGame {
 
 	Vec3 TrashObjMoverComponent::GetCurrentVelocity() const {
 		return _velocity;
+	}
+
+	void TrashObjMoverComponent::SetVelocity(const Vec3 &velocity) {
+		_velocity = velocity;
 	}
 
 	// ===================================================================

@@ -205,7 +205,9 @@
                         "homingStrength": 1.0,
                         "maxSpeedClamp": 50.0,
                         "randomRadius": 1.0,
-                        "stopVelocityThreshold": 0.009999999776482582
+                        "startPosEntityGuid": "",
+                        "stopVelocityThreshold": 0.009999999776482582,
+                        "targetPosEntityGuid": ""
                     },
                     "guid": 16452083266744588109,
                     "type": "mygame.GolfBall"
@@ -885,6 +887,20 @@
                     },
                     "guid": 12660474219426583893,
                     "type": "mygame.PlayerHoleComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "coolTime": 0.5,
+                        "forceMultiplier": 0.5,
+                        "maxShockWaveRadius": 20.0,
+                        "minShockWaveRadius": 5.0,
+                        "upwardForceMultiplier": 1.0,
+                        "volumeDeltaMultiplier": 10.0,
+                        "volumeThreshold": 0.30000001192092896
+                    },
+                    "guid": 0,
+                    "type": "mygame.gameplay.VoiceShockWave"
                 }
             ],
             "folderPath": "",
@@ -991,7 +1007,7 @@
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialInstancePath": "",
                         "materialSlots": [
                             {
                                 "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
@@ -1106,7 +1122,7 @@
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialInstancePath": "",
                         "materialSlots": [
                             {
                                 "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
@@ -1371,7 +1387,7 @@
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialInstancePath": "",
                         "materialSlots": [
                             {
                                 "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
@@ -1441,7 +1457,7 @@
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialInstancePath": "",
                         "materialSlots": [
                             {
                                 "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
@@ -1511,7 +1527,7 @@
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialInstancePath": "",
                         "materialSlots": [
                             {
                                 "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
@@ -1581,7 +1597,7 @@
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialInstancePath": "",
                         "materialSlots": [
                             {
                                 "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
@@ -1651,7 +1667,7 @@
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialInstancePath": "",
                         "materialSlots": [
                             {
                                 "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
@@ -1721,7 +1737,7 @@
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialInstancePath": "",
                         "materialSlots": [
                             {
                                 "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
@@ -1791,7 +1807,7 @@
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialInstancePath": "",
                         "materialSlots": [
                             {
                                 "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
@@ -1861,7 +1877,7 @@
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialInstancePath": "",
                         "materialSlots": [
                             {
                                 "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
@@ -1931,7 +1947,7 @@
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialInstancePath": "",
                         "materialSlots": [
                             {
                                 "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
@@ -2001,7 +2017,7 @@
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialInstancePath": "",
                         "materialSlots": [
                             {
                                 "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
@@ -2071,7 +2087,7 @@
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialInstancePath": "",
                         "materialSlots": [
                             {
                                 "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
@@ -2141,7 +2157,7 @@
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialInstancePath": "",
                         "materialSlots": [
                             {
                                 "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
@@ -2211,7 +2227,7 @@
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialInstancePath": "",
                         "materialSlots": [
                             {
                                 "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
@@ -2281,7 +2297,7 @@
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialInstancePath": "",
                         "materialSlots": [
                             {
                                 "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
@@ -2351,7 +2367,7 @@
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialInstancePath": "",
                         "materialSlots": [
                             {
                                 "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
@@ -2421,7 +2437,7 @@
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                        "materialInstancePath": "",
                         "materialSlots": [
                             {
                                 "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",

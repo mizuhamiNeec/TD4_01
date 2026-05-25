@@ -55,11 +55,15 @@ namespace MyGame {
 		/// 現在の速度を取得
 		[[nodiscard]] Vec3 GetCurrentVelocity() const;
 
+		/// 速度を設定
+		void SetVelocity(const Vec3& velocity);
+
 		/// ゴミが落下状態かを取得
 		[[nodiscard]] bool IsFalling() const;
 
-		/// @brief ゴミを落下状態に設定
-		/// @param isFalling true: 落下開始、false: 落下終了
+		/// @brief ゴミを落下状態に設定（穴に落ちるときに使用）
+		/// @param isFalling true: 穴への落下を開始、false: 落下終了
+		/// @note 通常の物理演算（地面衝突判定）は常に実行されます
 		void SetFalling(bool isFalling);
 
 		// -----------------------------------------------------------------------

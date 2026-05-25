@@ -51,6 +51,14 @@ public:
 	/// @param targetPos ターゲット基準点（ワールド座標）
 	void SetTargetPoint(const Vec3& targetPos);
 
+	/// @brief 発射開始位置をエンティティから設定（GolfBallStartPosComponent 付きエンティティ）
+	/// @param entity GolfBallStartPosComponent がアタッチされたエンティティ
+	void SetStartPosEntity(Unnamed::Entity* entity);
+
+	/// @brief ターゲット位置をエンティティから設定（GolfBallEndPosComponent 付きエンティティ）
+	/// @param entity GolfBallEndPosComponent がアタッチされたエンティティ
+	void SetTargetPosEntity(Unnamed::Entity* entity);
+
 	/// @brief 発射を開始（初速を逆算して計算）
 	void Launch();
 
@@ -224,6 +232,26 @@ private:
 	/// 地面に接触しているかのフラグ
 	/// 理由：摩擦を適用するかどうかの判定に使用
 	bool _bIsGrounded = false;
+
+	// -----------------------------------------------------------------------
+	// エンティティ参照
+	// -----------------------------------------------------------------------
+
+	/// 発射位置を指定するエンティティ（GolfBallStartPosComponent 付き）
+	/// 理由：外部から参照を受け取ってその位置を発射地点として使用
+	Unnamed::Entity* _startPosEntity = nullptr;
+
+	/// 着弾位置を指定するエンティティ（GolfBallEndPosComponent 付き）
+	/// 理由：外部から参照を受け取ってその位置を着弾地点として使用
+	Unnamed::Entity* _targetPosEntity = nullptr;
+
+	/// 発射位置エンティティのGUID（JSON保存用）
+	/// 理由：エンティティポインタは直接保存できないためGUIDで参照
+	std::string _startPosEntityGuid = "";
+
+	/// 着弾位置エンティティのGUID（JSON保存用）
+	/// 理由：エンティティポインタは直接保存できないためGUIDで参照
+	std::string _targetPosEntityGuid = "";
 };
 
 }

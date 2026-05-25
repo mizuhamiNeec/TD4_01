@@ -7,6 +7,8 @@
 #include "PlayerMoveComponent.h"
 #include "PlayerControlComponent.h"
 #include "GolfBallComponent.h"
+#include "GolfBallStartPosComponent.h"
+#include "GolfBallEndPosComponent.h"
 #include "TrashObjMoverComponent.h"
 #include "PlayerHoleComponent.h"
 
@@ -45,6 +47,10 @@ namespace Unnamed {
 			componentRegistry, "mygame.PlayerControlComponent", "Player Control Component");
 		RegisterComponentIfMissing<MyGame::GolfBallComponent>(
 			componentRegistry, "mygame.GolfBall", "Golf Ball");
+		RegisterComponentIfMissing<MyGame::GolfBallStartPosComponent>(
+			componentRegistry, "mygame.GolfBallStartPos", "Golf Ball Start Position");
+		RegisterComponentIfMissing<MyGame::GolfBallEndPosComponent>(
+			componentRegistry, "mygame.GolfBallEndPos", "Golf Ball End Position");
 		RegisterComponentIfMissing<MyGame::TrashObjMoverComponent>(
 			componentRegistry, "mygame.TrashObjMoverComponent", "Trash Obj");
 		RegisterComponentIfMissing<MyGame::PlayerHoleComponent>(

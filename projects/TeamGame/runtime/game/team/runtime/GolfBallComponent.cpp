@@ -9,8 +9,12 @@
 
 #include <engine/ImGui/ImGuiWidgets.h>
 #include <engine/world/World.h>
+#include <engine/scene/Scene.h>
 
 #include "collision/SphereKinematicCollisionResolver.h"
+
+#include "GolfBallStartPosComponent.h"
+#include "GolfBallEndPosComponent.h"
 
 #ifdef _DEBUG
 #include "imgui.h"
@@ -50,6 +54,25 @@ namespace MyGame {
 	}
 
 	void GolfBallComponent::OnTick(float deltaTime) {
+		// -----------------------------------------------------------------------
+		// 0️⃣ 参照エンティティの位置を同期（毎フレーム更新）
+		// -----------------------------------------------------------------------
+		// 理由：発射位置・着弾位置が Editor で変更されても常に同期する
+		if (_startPosEntity) {
+			auto* startTransform = _startPosEntity->GetComponent<Unnamed::TransformComponent>();
+			if (startTransform) {
+				_position = startTransform->GetPosition();  // ← 毎フレーム発射位置を同期
+			}
+		}
+
+		if (_targetPosEntity && !_bIsInFlight) {
+			// NOTE: フライト中でない場合のみ着弾位置を更新
+			auto* targetTransform = _targetPosEntity->GetComponent<Unnamed::TransformComponent>();
+			if (targetTransform) {
+				SetTargetPoint(targetTransform->GetPosition());  // ← 着弾位置を同期
+			}
+		}
+
 		// NOTE: フライト中でない場合は更新不要
 		if (!_bIsInFlight) {
 			return;
@@ -163,6 +186,72 @@ namespace MyGame {
 			0.0f,
 			std::sin(angle) * radius
 		);
+	}
+
+	void GolfBallComponent::SetStartPosEntity(Unnamed::Entity* entity) {
+		// -----------------------------------------------------------------------
+		// エンティティ参照を保存
+		// -----------------------------------------------------------------------
+		// 理由：後で設定ボタン押下時に使用
+		_startPosEntity = entity;
+
+		// NOTE: GUID を保存（JSON 復元時に使用）
+		if (entity) {
+			_startPosEntityGuid = std::to_string(entity->GetGuid());
+		} else {
+			_startPosEntityGuid = "";
+		}
+
+		// NOTE: 即座に発射位置を設定
+		if (!entity) {
+			return;
+		}
+
+		// -----------------------------------------------------------------------
+		// TransformComponent から位置を取得
+		// -----------------------------------------------------------------------
+		// 理由：別エンティティの位置情報をゴルフボールの発射地点として使用
+		auto* transform = entity->GetComponent<Unnamed::TransformComponent>();
+		if (!transform) {
+			return;  // TransformComponent がない場合は処理しない
+		}
+
+		// NOTE: エンティティのワールド座標を発射位置として設定
+		Vec3 startPos = transform->GetPosition();
+		SetStartPoint(startPos);
+	}
+
+	void GolfBallComponent::SetTargetPosEntity(Unnamed::Entity* entity) {
+		// -----------------------------------------------------------------------
+		// エンティティ参照を保存
+		// -----------------------------------------------------------------------
+		// 理由：後で設定ボタン押下時に使用
+		_targetPosEntity = entity;
+
+		// NOTE: GUID を保存（JSON 復元時に使用）
+		if (entity) {
+			_targetPosEntityGuid = std::to_string(entity->GetGuid());
+		} else {
+			_targetPosEntityGuid = "";
+		}
+
+		// NOTE: 即座に着弾位置を設定
+		if (!entity) {
+			return;
+		}
+
+		// -----------------------------------------------------------------------
+		// TransformComponent から位置を取得
+		// -----------------------------------------------------------------------
+		// 理由：別エンティティの位置情報をゴルフボールの着弾地点として使用
+		auto* transform = entity->GetComponent<Unnamed::TransformComponent>();
+		if (!transform) {
+			return;  // TransformComponent がない場合は処理しない
+		}
+
+		// NOTE: エンティティのワールド座標をターゲット位置として設定
+		Vec3 targetPos = transform->GetPosition();
+		SetTargetPoint(targetPos);
 	}
 
 	void GolfBallComponent::Launch() {
@@ -282,6 +371,60 @@ namespace MyGame {
 
 		ImGui::Text("Current Start: (%.2f, %.2f, %.2f)", _position.x, _position.y, _position.z);
 
+		// -----------------------------------------------------------------------
+		// エンティティ参照による発射地点設定
+		// -----------------------------------------------------------------------
+		ImGui::Separator();
+		ImGui::Text("--- Set From Entity (GolfBallStartPosComponent) ---");
+		ImGui::TextDisabled("注：GolfBallStartPosComponentをアタッチしたエンティティを指定");
+
+		// NOTE: 世界中から GolfBallStartPosComponent を持つエンティティを検索
+		std::vector<Unnamed::Entity*> startPosEntities;
+		int startPosEntityIndex = -1;
+		
+		auto* world = GetWorld();
+		if (world) {
+			auto* scene = world->GetScenePtr();
+			if (scene) {
+				const auto& allEntities = scene->GetEntities();
+				for (const auto& entity : allEntities) {
+					if (entity && entity->GetComponent<GolfBallStartPosComponent>()) {
+						startPosEntities.push_back(entity.get());
+						// 既に設定済みならそのインデックスを保存
+						if (entity.get() == _startPosEntity) {
+							startPosEntityIndex = static_cast<int>(startPosEntities.size()) - 1;
+						}
+					}
+				}
+			}
+		}
+
+		// NOTE: 現在設定されているエンティティを表示
+		if (_startPosEntity) {
+			ImGui::Text("Assigned Entity: %.*s", (int)_startPosEntity->GetName().size(), _startPosEntity->GetName().data());
+			ImGui::SameLine();
+			if (ImGui::Button("Clear##start_entity", ImVec2(60, 0))) {
+				_startPosEntity = nullptr;
+			}
+		} else {
+			ImGui::Text("Assigned Entity: None");
+		}
+
+		// NOTE: コンボボックスでエンティティ選択
+		if (!startPosEntities.empty()) {
+			std::vector<const char*> items;
+			for (const auto* entity : startPosEntities) {
+				items.push_back(entity->GetName().data());
+			}
+
+			if (ImGui::Combo("Start Position Entity##combo_start", &startPosEntityIndex, items.data(), static_cast<int>(items.size()))) {
+				// NOTE: コンボボックスから選択されたら即座に設定
+				if (startPosEntityIndex >= 0 && startPosEntityIndex < static_cast<int>(startPosEntities.size())) {
+					SetStartPosEntity(startPosEntities[startPosEntityIndex]);
+				}
+			}
+		}
+
 		ImGui::Separator();
 
 		// -----------------------------------------------------------------------
@@ -307,6 +450,59 @@ namespace MyGame {
 		ImGui::Text("Target Offset: (%.2f, %.2f, %.2f)", _targetRandomOffset.x, _targetRandomOffset.y, _targetRandomOffset.z);
 		Vec3 finalTarget = _targetBase + _targetRandomOffset;
 		ImGui::Text("Final Target: (%.2f, %.2f, %.2f)", finalTarget.x, finalTarget.y, finalTarget.z);
+
+		// -----------------------------------------------------------------------
+		// エンティティ参照による着弾地点設定
+		// -----------------------------------------------------------------------
+		ImGui::Separator();
+		ImGui::Text("--- Set From Entity (GolfBallEndPosComponent) ---");
+		ImGui::TextDisabled("注：GolfBallEndPosComponentをアタッチしたエンティティを指定");
+
+		// NOTE: 世界中から GolfBallEndPosComponent を持つエンティティを検索
+		std::vector<Unnamed::Entity*> endPosEntities;
+		int endPosEntityIndex = -1;
+		
+		if (world) {
+			auto* scene = world->GetScenePtr();
+			if (scene) {
+				const auto& allEntities = scene->GetEntities();
+				for (const auto& entity : allEntities) {
+					if (entity && entity->GetComponent<GolfBallEndPosComponent>()) {
+						endPosEntities.push_back(entity.get());
+						// 既に設定済みならそのインデックスを保存
+						if (entity.get() == _targetPosEntity) {
+							endPosEntityIndex = static_cast<int>(endPosEntities.size()) - 1;
+						}
+					}
+				}
+			}
+		}
+
+		// NOTE: 現在設定されているエンティティを表示
+		if (_targetPosEntity) {
+			ImGui::Text("Assigned Entity: %.*s", (int)_targetPosEntity->GetName().size(), _targetPosEntity->GetName().data());
+			ImGui::SameLine();
+			if (ImGui::Button("Clear##target_entity", ImVec2(60, 0))) {
+				_targetPosEntity = nullptr;
+			}
+		} else {
+			ImGui::Text("Assigned Entity: None");
+		}
+
+		// NOTE: コンボボックスでエンティティ選択
+		if (!endPosEntities.empty()) {
+			std::vector<const char*> items;
+			for (const auto* entity : endPosEntities) {
+				items.push_back(entity->GetName().data());
+			}
+
+			if (ImGui::Combo("End Position Entity##combo_end", &endPosEntityIndex, items.data(), static_cast<int>(items.size()))) {
+				// NOTE: コンボボックスから選択されたら即座に設定
+				if (endPosEntityIndex >= 0 && endPosEntityIndex < static_cast<int>(endPosEntities.size())) {
+					SetTargetPosEntity(endPosEntities[endPosEntityIndex]);
+				}
+			}
+		}
 
 		ImGui::Separator();
 
@@ -416,6 +612,17 @@ namespace MyGame {
 		if (auto val = reader.Read<float>("stopVelocityThreshold")) {
 			_stopVelocityThreshold = val.value();
 		}
+
+		// -----------------------------------------------------------------------
+		// エンティティ参照のGUID を読み込む
+		// -----------------------------------------------------------------------
+		// 理由：保存されたエンティティ参照を復元
+		if (auto val = reader.Read<std::string>("startPosEntityGuid")) {
+			_startPosEntityGuid = val.value();
+		}
+		if (auto val = reader.Read<std::string>("targetPosEntityGuid")) {
+			_targetPosEntityGuid = val.value();
+		}
 	}
 
 	void GolfBallComponent::Serialize(Unnamed::JsonWriter& writer) const {
@@ -443,6 +650,15 @@ namespace MyGame {
 		writer.Write(_groundLevel);
 		writer.Key("stopVelocityThreshold");
 		writer.Write(_stopVelocityThreshold);
+
+		// -----------------------------------------------------------------------
+		// エンティティ参照のGUID を書き込む
+		// -----------------------------------------------------------------------
+		// 理由：エンティティ参照をGUID形式で保存
+		writer.Key("startPosEntityGuid");
+		writer.Write(_startPosEntityGuid);
+		writer.Key("targetPosEntityGuid");
+		writer.Write(_targetPosEntityGuid);
 	}
 
 	// -----------------------------------------------------------------------

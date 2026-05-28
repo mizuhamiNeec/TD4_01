@@ -43,14 +43,6 @@ namespace MyGame {
 	}
 
 	void TrashObjMoverComponent::OnTick(float deltaTime) {
-		// -----------------------------------------------------------------------
-		// 吸い込み処理（落下状態 または 地上で吸い込み中）
-		// -----------------------------------------------------------------------
-		if (_bIsBeingSucked && _holeSuckPower > 0.0f) {
-			// 落下状態でも地上でも、吸い込み力があれば適用
-			UpdateHoleSuck(deltaTime);
-		}
-
 		// NOTE: 常に物理更新を実行（衝撃波による速度でも地面衝突判定が必要）
 		// -----------------------------------------------------------------------
 		// 物理計算（重力）
@@ -58,15 +50,43 @@ namespace MyGame {
 		UpdatePhysics(deltaTime);
 
 		// -----------------------------------------------------------------------
-		// 衝突応答 & SlideMove（リゾルバが位置を更新）
+		// 穴の内側判定（衝突判定をスキップするかどうかを決定）
 		// -----------------------------------------------------------------------
-		// NOTE: SlideMove が _position と _velocity を更新する
-		// 地面衝突、バウンス、速度クリップはすべてリゾルバが処理
-		if (_collisionResolver) {
-			auto *boxKCR = dynamic_cast<Unnamed::BoxKinematicCollisionResolver *>(_collisionResolver.get());
-			if (boxKCR) {
-				boxKCR->SlideMove(_position, _velocity, deltaTime);
+		if (_bIsBeingSucked) {
+			Vec3 directionToHole = _holeSuckPosition - _position;
+			float distanceToHole = directionToHole.Length();
+			// NOTE: 穴の半径より内側にいるかの判定（穴の半径を約1.5倍してバッファを持たせる）
+			_bIsInsideHole = (distanceToHole < 1.5f); // NOTE: 穴の標準半径は2.0なので、3.0以下で内側と判定
+		} else {
+			_bIsInsideHole = false;
+		}
+
+		// -----------------------------------------------------------------------
+		// 衝突応答 & SlideMove（リゾルバが位置を更新）
+		// NOTE: 穴の内側にいる場合は衝突判定をスキップ
+		// -----------------------------------------------------------------------
+		if (!_bIsInsideHole) {
+			// NOTE: SlideMove が _position と _velocity を更新する
+			// 地面衝突、バウンス、速度クリップはすべてリゾルバが処理
+			if (_collisionResolver) {
+				auto *boxKCR = dynamic_cast<Unnamed::BoxKinematicCollisionResolver *>(_collisionResolver.get());
+				if (boxKCR) {
+					boxKCR->SlideMove(_position, _velocity, deltaTime);
+				}
 			}
+		} else {
+			// NOTE: 穴の内側：位置を重力と吸い込み速度のみで更新（衝突判定なし）
+			_position += _velocity * deltaTime;
+		}
+
+		// -----------------------------------------------------------------------
+		// 吸い込み処理（落下状態 または 地上で吸い込み中）
+		// NOTE: コリジョン処理の後に吸い込み処理を実行することで、
+		// ゴミが穴の内側に位置しても地形との衝突判定が正常に機能する
+		// -----------------------------------------------------------------------
+		if (_bIsBeingSucked && _holeSuckPower > 0.0f) {
+			// NOTE: 吸い込み処理を更新（速度のみを調整、位置は物理演算で更新）
+			UpdateHoleSuck(deltaTime);
 		}
 
 		// -----------------------------------------------------------------------
@@ -81,14 +101,14 @@ namespace MyGame {
 		_bIsGrounded = (_velocity.y >= -_stopVelocityThreshold && _velocity.y <= _stopVelocityThreshold);
 		UpdateAirRotation(deltaTime);
 		if (!_bIsGrounded) {
-			// 空中：速度方向に回転
+			// NOTE: 空中：速度方向に回転
 			UpdateAirRotation(deltaTime);
 		} else if (bWasGrounded != _bIsGrounded && _bIsGrounded) {
-			// 着地した：回転をリセット開始
+			// NOTE: 着地した：回転をリセット開始
 			_bIsResetingRotation = true;
 		}
 
-		// 回転リセット中なら続行
+		// NOTE: 回転リセット中なら続行
 		if (_bIsResetingRotation) {
 			UpdateRotationReset(deltaTime);
 		}
@@ -460,37 +480,46 @@ namespace MyGame {
 	}
 
 	void TrashObjMoverComponent::UpdateHoleSuck(float deltaTime) {
-		// 穴への吸い込み処理（落下状態・地上両方に対応）
+		// NOTE: 穴への吸い込み処理（落下状態・地上両方に対応）
 		if (!_bIsBeingSucked || _holeSuckPower <= 0.0f) {
 			return;
 		}
 
-		// 穴への方向ベクトルを計算
+		// NOTE: 穴への方向ベクトルを計算
 		Vec3 directionToHole = _holeSuckPosition - _position;
 		float distanceToHole = directionToHole.Length();
 
-		// 距離が非常に小さい場合はスキップ
+		// NOTE: 距離が非常に小さい場合はスキップ
 		if (distanceToHole < 0.01f) {
-			// 穴の中心に吸い込まれた - 吸い込み処理完了
+			// NOTE: 穴の中心に吸い込まれた - 吸い込み処理完了
 			return;
 		}
 
-		// 方向ベクトルを正規化
+		// NOTE: 方向ベクトルを正規化
 		Vec3 directionNormalized = directionToHole.Normalized();
 
-		// 吸い込み力に基づいて加速度を計算
-		// suckPower = 1.0の時: 60単位/秒²の加速度（穴への引力）
-		// より強い吸い込み感を出すために数値を大きくした
-		const float kBaseSuckAcceleration = 60.0f;
-		Vec3 suckAcceleration = directionNormalized * kBaseSuckAcceleration * _holeSuckPower;
+		// NOTE: 穴の内側では、吸い込み力を弱めて落下を優先させる
+		float suckMultiplier = 1.0f;
+		if (_bIsInsideHole) {
+			// NOTE: 穴の内側では吸い込み力を30%に減衰させ、重力による落下を優先
+			suckMultiplier = 0.3f;
+		}
 
-		// 速度に吸い込み加速度を追加
+		// NOTE: 吸い込み力に基づいて加速度を計算
+		// suckPower = 1.0の時: 60単位/秒²の加速度（穴への引力）
+		const float kBaseSuckAcceleration = 60.0f;
+		Vec3 suckAcceleration = directionNormalized * kBaseSuckAcceleration * _holeSuckPower * suckMultiplier;
+
+		// NOTE: 速度に吸い込み加速度を追加
 		_velocity += suckAcceleration * deltaTime;
 
-		// 位置を更新
-		_position += _velocity * deltaTime;
+		// NOTE: 穴の内側では位置更新は OnTick() で既に行われているためスキップ
+		// NOTE: 穴の外側では位置更新が必要
+		if (!_bIsInsideHole) {
+			_position += _velocity * deltaTime;
+		}
 
-		// 吸い込み中も回転を更新
+		// NOTE: 吸い込み中も回転を更新
 		UpdateAirRotation(deltaTime);
 	}
 

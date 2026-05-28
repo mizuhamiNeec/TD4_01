@@ -1,23 +1,23 @@
 #pragma once
 
-#include "engine/unnamed/framework/components/base/BaseComponent.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
-#include <core/io/json/JsonReader.h>
-#include <core/io/json/JsonWriter.h>
-#include <core/math/Vec3.h>
-#include <core/math/Quaternion.h>
-#include <string>
-#include <memory>
+#include "engine/unnamed/framework/components/base/BaseComponent.h"
 #include <algorithm>
 #include <cmath>
+#include <core/io/json/JsonReader.h>
+#include <core/io/json/JsonWriter.h>
+#include <core/math/Quaternion.h>
+#include <core/math/Vec3.h>
+#include <memory>
+#include <string>
 
-#include <engine/physics/core/Physics.h>
 #include "collision/BoxKinematicCollisionResolver.h"
+#include <engine/physics/core/Physics.h>
 
 namespace MyGame {
 
 	/// @brief ゴミオブジェクトの移動・回転・吸い込みを管理するコンポーネント
-	/// 
+	///
 	/// ゴミの物理演算と挙動制御:
 	/// - 重力により常に下方向に加速（自由落下）
 	/// - 地面衝突時に反発・摩擦を適用
@@ -61,9 +61,8 @@ namespace MyGame {
 		/// ゴミが落下状態かを取得
 		[[nodiscard]] bool IsFalling() const;
 
-		/// @brief ゴミを落下状態に設定（穴に落ちるときに使用）
-		/// @param isFalling true: 穴への落下を開始、false: 落下終了
-		/// @note 通常の物理演算（地面衝突判定）は常に実行されます
+		/// @brief ゴミを落下状態に設定
+		/// @param isFalling true: 落下開始、false: 落下終了
 		void SetFalling(bool isFalling);
 
 		// -----------------------------------------------------------------------
@@ -73,7 +72,7 @@ namespace MyGame {
 		/// @brief 穴の位置と吸い込み力を設定
 		/// @param holePosition 穴の世界座標
 		/// @param suckPower 吸い込み力（0.0～1.0、大きいほど強く）
-		void SetHoleSuckPosition(const Vec3& holePosition, float suckPower);
+		void SetHoleSuckPosition(const Vec3 &holePosition, float suckPower);
 
 		/// 吸い込み処理を無効化（吸い込み力をクリア）
 		void ClearHoleSuckPosition();
@@ -90,10 +89,10 @@ namespace MyGame {
 #endif
 
 		/// コンポーネントの値を読み込む際に使用されます
-		void Deserialize(const Unnamed::JsonReader& reader) override;
+		void Deserialize(const Unnamed::JsonReader &reader) override;
 
 		/// コンポーネントの値を書き込む際に使用されます
-		void Serialize(Unnamed::JsonWriter& writer) const override;
+		void Serialize(Unnamed::JsonWriter &writer) const override;
 
 	private:
 		// -----------------------------------------------------------------------
@@ -101,13 +100,13 @@ namespace MyGame {
 		// -----------------------------------------------------------------------
 
 		/// 物理エンジンのポインタ
-		Unnamed::Physics::Engine* _physicsEngine = nullptr;
+		Unnamed::Physics::Engine *_physicsEngine = nullptr;
 
 		/// 物理衝突解決用のリゾルバ
 		std::unique_ptr<Unnamed::BoxKinematicCollisionResolver> _collisionResolver;
 
 		/// ボックスサイズ（半径）
-		Vec3 _halfSize = { 0.5f, 0.5f, 0.5f };
+		Vec3 _halfSize = {0.5f, 0.5f, 0.5f};
 
 		/// 現在の速度
 		Vec3 _velocity = {};
@@ -184,12 +183,15 @@ namespace MyGame {
 		/// 吸い込み中フラグ
 		bool _bIsBeingSucked = false;
 
+		/// 穴の内側に位置しているフラグ（地面衝突判定をスキップするため）
+		bool _bIsInsideHole = false;
+
 		// -----------------------------------------------------------------------
 		// キャッシュ
 		// -----------------------------------------------------------------------
 
 		/// TransformComponentのキャッシュ
-		Unnamed::TransformComponent* _transform = nullptr;
+		Unnamed::TransformComponent *_transform = nullptr;
 
 		// -----------------------------------------------------------------------
 		// ヘルパーメソッド

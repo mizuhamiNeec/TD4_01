@@ -45,7 +45,7 @@ namespace MyGame {
 		// NOTE: 穴に入ったゴミと前フレームのゴミを比較して、新規追加を処理
 		UpdateTrashList();
 
-		// NOTE: 穴に入っているゴミに吸い込み処理を適用
+		// NOTE: 穴に入っているゴミ（すべてのゴミ）に吸い込み処理を適用
 		ApplySuckForceToTrash(deltaTime);
 	}
 
@@ -389,14 +389,13 @@ namespace MyGame {
 	}
 
 	void PlayerHoleComponent::UpdateTrashList() {
-		// NOTE: 穴に入ったゴミと前フレームのゴミを比較
-		// 新規に入ったゴミに対して落下処理を実行
+		// NOTE: 穴に新規に入ったゴミに対して落下処理を実行
 
 		for (auto* trashEntity : _trashInHole) {
 			// NOTE: 前フレームのリストに無ければ、新規に穴に入ったゴミ
 			auto it = std::find(_previousTrashInHole.begin(), _previousTrashInHole.end(), trashEntity);
 			if (it == _previousTrashInHole.end()) {
-				// NOTE: 新規に穴に入ったゴミ - 落下処理を実行
+				// NOTE: 新規に穴に入ったゴミ
 				MakeTrashFall(trashEntity);
 			}
 		}
@@ -427,10 +426,9 @@ namespace MyGame {
 	}
 
 	void PlayerHoleComponent::ApplySuckForceToTrash(float deltaTime) {
-		// NOTE: 穴の周辺のゴミに吸い込み力を適用
-		// シーン内のすべてのゴミをスキャンして、吸い込み範囲内のゴミに吸い込み力を適用
+		// NOTE: 穴の範囲内のすべてのゴミに吸い込み力を適用
+		// 落下中のゴミでも地上のゴミでも、強い吸い込み力を適用して穴へ引っ張る
 
-		// 所有者（プレイヤー）のエンティティからシーンを取得
 		if (!GetOwner()) {
 			return;
 		}
@@ -440,13 +438,10 @@ namespace MyGame {
 			return;
 		}
 
-		// シーン内のすべてのエンティティを取得
 		const auto& entities = scene->GetEntities();
-
 		Vec3 holeWorldPos = GetHoleWorldPosition();
 		float suckRangeOuter = _holeRadius + _suckEffectDistance;
 
-		// 各エンティティをチェック
 		for (const auto& entityPtr : entities) {
 			if (!entityPtr) {
 				continue;
@@ -454,60 +449,49 @@ namespace MyGame {
 
 			auto* entity = entityPtr.get();
 
-			// ゴミのTrashObjMoverComponentを取得
+			// NOTE: ゴミのトラッシュコンポーネントを取得
 			auto* trashComponent = entity->GetComponent<TrashObjMoverComponent>();
 			if (!trashComponent) {
 				continue;
 			}
 
-			// ゴミのTransformComponentを取得
+			// NOTE: ゴミのTransformを取得
 			auto* transform = entity->GetComponent<Unnamed::TransformComponent>();
 			if (!transform) {
 				continue;
 			}
 
-			// 穴の中心からゴミまでの距離を計算
 			Vec3 trashPos = transform->GetPosition();
 			Vec3 diffToHole = holeWorldPos - trashPos;
 			float distanceToHole = diffToHole.Length();
 
-			// 吸い込み範囲外
+			// NOTE: 吸い込み範囲外のゴミはクリア
 			if (distanceToHole >= suckRangeOuter) {
-				// 吸い込み範囲外 - ゴミに吸い込み力を適用しない
 				trashComponent->ClearHoleSuckPosition();
 				continue;
 			}
 
-			// 穴に既に落ちている場合（穴の半径より内側）
-			if (distanceToHole < _holeRadius) {
-				// 穴に落ちているゴミは吸い込み力を適用しない（そのまま落下）
-				trashComponent->ClearHoleSuckPosition();
-				continue;
-			}
-
-			// 吸い込み範囲内（穴より大きい円の中にいるが、穴には落ちていない）
-			// 距離に基づいて吸い込み力を計算
-
-			// ゴミが落下状態かどうかで処理を分ける
-			bool isFalling = trashComponent->IsFalling();
-
-			// 落下中のゴミは吸い込まない（そのまま落下させる）
-			if (isFalling) {
-				trashComponent->ClearHoleSuckPosition();
-				continue;
-			}
-
-			// 地上にあるゴミのみ吸い込む
-			float distanceFromHoleEdge = distanceToHole - _holeRadius;
-			float suckPowerFalloff = distanceFromHoleEdge / _suckEffectDistance; // 0.0～1.0（逆順）
-			suckPowerFalloff = 1.0f - suckPowerFalloff; // 反転：外側ほど弱い
+			// NOTE: 吸い込み範囲内（穴の半径 + _suckEffectDistance以内）
+			// 穴に入ったゴミ、吸い込み範囲のゴミ、すべてに吸い込み力を適用
 			
-			// 吸い込み強度曲線を適用（近づくほど強くなる効果）
-			suckPowerFalloff = std::pow(suckPowerFalloff, _suckIntensityCurve);
+			// NOTE: 距離に基づいて吸い込み力を計算
+			// 穴の中心に近いほど強い
+			float normalizedDistance = distanceToHole / suckRangeOuter;
+			normalizedDistance = std::max(0.0f, std::min(1.0f, normalizedDistance));
 			
-			float suckPower = _suckPower * suckPowerFalloff; // 設定値に基づいた吸い込み力
+			// NOTE: 強度曲線を適用（反転：内側ほど強い）
+			float falloff = 1.0f - normalizedDistance;
+			falloff = std::pow(falloff, _suckIntensityCurve);
+			
+			// NOTE: 吸い込み力を計算
+			float suckPower = _suckPower * falloff;
 
-			trashComponent->SetHoleSuckPosition(holeWorldPos, suckPower);
+			// NOTE: すべてのゴミに吸い込み力を適用
+			if (suckPower > 0.0f) {
+				trashComponent->SetHoleSuckPosition(holeWorldPos, suckPower);
+			} else {
+				trashComponent->ClearHoleSuckPosition();
+			}
 		}
 	}
 

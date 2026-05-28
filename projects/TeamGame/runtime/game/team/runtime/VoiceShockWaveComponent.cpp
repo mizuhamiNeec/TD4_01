@@ -40,8 +40,17 @@ namespace MyGame {
 		// NOTE: MagVoiceBridge の初期化（初回のみ）
 		if (!_voiceBridgeInstance) {
 			_voiceBridgeInstance = new MagVoiceBridge();
-			if (_voiceBridgeInstance && _voiceBridgeInstance->Initialize()) {
-				_voiceBridgeInstance->Start();
+			if (_voiceBridgeInstance) {
+				bool initSuccess = _voiceBridgeInstance->Initialize();
+				if (initSuccess) {
+					bool startSuccess = _voiceBridgeInstance->Start();
+					// NOTE: Start失敗時のエラーハンドリング
+					if (!startSuccess) {
+						// NOTE: Start失敗 - ただし継続
+					}
+				} else {
+					// NOTE: Initialize失敗 - ただし継続
+				}
 			}
 		}
 
@@ -172,14 +181,22 @@ namespace MyGame {
 		// NOTE: MagVoiceBridge の情報を表示
 		auto* voiceBridge = GetVoiceBridge();
 		if (voiceBridge) {
-			auto stats = voiceBridge->GetVolumeStats();
 			ImGui::Separator();
 			ImGui::Text("=== 音声統計情報 ===");
-			ImGui::Text("現在のRMS: %.3f (%.2f dB)", stats.currentRMS, stats.currentRMSDB);
-			ImGui::Text("ピーク音量: %.3f (%.2f dB)", stats.peakValue, stats.peakDB);
-			ImGui::Text("スムージング済み音量: %.3f (%.2f dB)", stats.smoothedRMS, stats.smoothedRMSDB);
-			ImGui::Text("音声スコア: %.3f", stats.voiceScore);
-			ImGui::Text("音声検出: %s", stats.isVoiceDetected ? "検出中" : "未検出");
+			float currentRMS = voiceBridge->GetCurrentVolume();
+			float currentRMSDB = voiceBridge->GetCurrentVolumeDB();
+			float peakValue = voiceBridge->GetPeakVolume();
+			float peakDB = voiceBridge->GetPeakVolumeDB();
+			float smoothedRMS = voiceBridge->GetSmoothedVolume();
+			float smoothedRMSDB = voiceBridge->GetSmoothedVolumeDB();
+			float voiceScore = voiceBridge->GetVoiceCharacteristicScore();
+			bool isVoiceDetected = voiceBridge->IsVoiceDetected();
+			
+			ImGui::Text("現在のRMS: %.3f (%.2f dB)", currentRMS, currentRMSDB);
+			ImGui::Text("ピーク音量: %.3f (%.2f dB)", peakValue, peakDB);
+			ImGui::Text("スムージング済み音量: %.3f (%.2f dB)", smoothedRMS, smoothedRMSDB);
+			ImGui::Text("音声スコア: %.3f", voiceScore);
+			ImGui::Text("音声検出: %s", isVoiceDetected ? "検出中" : "未検出");
 		}
 	}
 #endif
@@ -242,15 +259,27 @@ namespace MyGame {
 		}
 
 		// NOTE: スムージング済み音量を取得（ノイズ対策）
+		float volume = 0.0f;
 		try {
-			_lastVolume = voiceBridge->GetSmoothedVolume();
+			volume = voiceBridge->GetSmoothedVolume();
 		} catch (...) {
 			// NOTE: MagVoiceBridge のメソッド呼び出しが失敗した場合
 			return;
 		}
 
-		// NOTE: 音量が閾値を超えており、クールタイムが終了している場合
-		if (_lastVolume >= _volumeThreshold && _coolTimeCounter <= 0.0f) {
+		// NOTE: 音量を保存
+		_lastVolume = volume;
+
+		// NOTE: クールタイムが終了しており、音量が閾値を超えている場合
+		bool coolTimeReady = (_coolTimeCounter <= 0.0f);
+		bool volumeAboveThreshold = (_lastVolume >= _volumeThreshold);
+		
+		// NOTE: デバッグ：条件をすべて確認
+		// NOTE: 衝撃波が発火する条件：
+		// 1. coolTimeCounter <= 0 （クールタイムが終了）
+		// 2. lastVolume >= volumeThreshold （音量が閾値を超える）
+		
+		if (coolTimeReady && volumeAboveThreshold) {
 			// NOTE: 衝撃波を発火
 			FireShockWave(_lastVolume);
 
@@ -267,6 +296,7 @@ namespace MyGame {
 		float volumeDelta = std::abs(volume - _previousVolume);
 		
 		// NOTE: 基本的な力を計算（音量ベース）
+		// volume が 0.3 なら 1.5、0.6 なら 3.0 の力を生成
 		float baseForce = volume * _forceMultiplier;
 		
 		// NOTE: 変動率による力の増幅（急激な変化ほど強い）
@@ -274,6 +304,9 @@ namespace MyGame {
 		
 		// NOTE: 最終的な力 = ベース力 + 変動による増幅
 		float forceStrength = baseForce + deltaForce;
+		
+		// NOTE: 最小の力を保証（力が弱すぎないようにする）
+		forceStrength = std::max(1.0f, forceStrength);
 
 		// NOTE: 衝撃波の半径を音量に応じて動的に変更
 		// volume が 0.0 なら _minShockWaveRadius、1.0 なら _maxShockWaveRadius
@@ -362,14 +395,12 @@ namespace MyGame {
 				forceVector.y += upwardForce;
 				
 				// NOTE: 現在の速度を取得して新しい速度を計算
+				// 衝撃波による力は既存の速度に加算される（衝撃波の効果を最大化）
 				Vec3 currentVelocity = trashMover->GetCurrentVelocity();
 				Vec3 newVelocity = currentVelocity + forceVector;
 				
 				// NOTE: 新しい速度を設定
 				trashMover->SetVelocity(newVelocity);
-				
-				// NOTE: 吸い込みをクリア（念のため）
-				trashMover->ClearHoleSuckPosition();
 				
 				// NOTE: 物理演算は常に実行されるため、SetFalling は不要
 				// 地面衝突判定が自動的に行われるようになった

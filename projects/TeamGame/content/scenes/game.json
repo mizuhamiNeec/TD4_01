@@ -899,7 +899,7 @@
                         "volumeDeltaMultiplier": 10.0,
                         "volumeThreshold": 0.30000001192092896
                     },
-                    "guid": 0,
+                    "guid": 9942397187543023552,
                     "type": "mygame.gameplay.VoiceShockWave"
                 }
             ],
@@ -998,6 +998,11 @@
                         "mass": 1.0,
                         "maxSpeedClamp": 50.0,
                         "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
                         "tiltLerpSpeed": 0.15000000596046448,
                         "tiltTowardMovementStrength": 0.800000011920929
                     },
@@ -1068,7 +1073,7 @@
             "folderPath": "",
             "guid": 45,
             "isEditorOnly": false,
-            "name": "Entity",
+            "name": "Hole",
             "tags": [],
             "visible": true
         },
@@ -1113,6 +1118,11 @@
                         "mass": 1.0,
                         "maxSpeedClamp": 50.0,
                         "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
                         "tiltLerpSpeed": 0.15000000596046448,
                         "tiltTowardMovementStrength": 0.800000011920929
                     },
@@ -1238,6 +1248,11 @@
                         "mass": 1.0,
                         "maxSpeedClamp": 50.0,
                         "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
                         "tiltLerpSpeed": 0.15000000596046448,
                         "tiltTowardMovementStrength": 0.800000011920929
                     },
@@ -1308,6 +1323,11 @@
                         "mass": 1.0,
                         "maxSpeedClamp": 50.0,
                         "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
                         "tiltLerpSpeed": 0.15000000596046448,
                         "tiltTowardMovementStrength": 0.800000011920929
                     },
@@ -1378,6 +1398,11 @@
                         "mass": 1.0,
                         "maxSpeedClamp": 50.0,
                         "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
                         "tiltLerpSpeed": 0.15000000596046448,
                         "tiltTowardMovementStrength": 0.800000011920929
                     },
@@ -1448,6 +1473,11 @@
                         "mass": 1.0,
                         "maxSpeedClamp": 50.0,
                         "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
                         "tiltLerpSpeed": 0.15000000596046448,
                         "tiltTowardMovementStrength": 0.800000011920929
                     },
@@ -1518,6 +1548,11 @@
                         "mass": 1.0,
                         "maxSpeedClamp": 50.0,
                         "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
                         "tiltLerpSpeed": 0.15000000596046448,
                         "tiltTowardMovementStrength": 0.800000011920929
                     },
@@ -1588,6 +1623,11 @@
                         "mass": 1.0,
                         "maxSpeedClamp": 50.0,
                         "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
                         "tiltLerpSpeed": 0.15000000596046448,
                         "tiltTowardMovementStrength": 0.800000011920929
                     },
@@ -1658,6 +1698,11 @@
                         "mass": 1.0,
                         "maxSpeedClamp": 50.0,
                         "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
                         "tiltLerpSpeed": 0.15000000596046448,
                         "tiltTowardMovementStrength": 0.800000011920929
                     },
@@ -1728,6 +1773,11 @@
                         "mass": 1.0,
                         "maxSpeedClamp": 50.0,
                         "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
                         "tiltLerpSpeed": 0.15000000596046448,
                         "tiltTowardMovementStrength": 0.800000011920929
                     },
@@ -1798,6 +1848,11 @@
                         "mass": 1.0,
                         "maxSpeedClamp": 50.0,
                         "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
                         "tiltLerpSpeed": 0.15000000596046448,
                         "tiltTowardMovementStrength": 0.800000011920929
                     },
@@ -1868,6 +1923,11 @@
                         "mass": 1.0,
                         "maxSpeedClamp": 50.0,
                         "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
                         "tiltLerpSpeed": 0.15000000596046448,
                         "tiltTowardMovementStrength": 0.800000011920929
                     },
@@ -1938,6 +1998,11 @@
                         "mass": 1.0,
                         "maxSpeedClamp": 50.0,
                         "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
                         "tiltLerpSpeed": 0.15000000596046448,
                         "tiltTowardMovementStrength": 0.800000011920929
                     },
@@ -2008,6 +2073,11 @@
                         "mass": 1.0,
                         "maxSpeedClamp": 50.0,
                         "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
                         "tiltLerpSpeed": 0.15000000596046448,
                         "tiltTowardMovementStrength": 0.800000011920929
                     },
@@ -2078,6 +2148,11 @@
                         "mass": 1.0,
                         "maxSpeedClamp": 50.0,
                         "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
                         "tiltLerpSpeed": 0.15000000596046448,
                         "tiltTowardMovementStrength": 0.800000011920929
                     },
@@ -2148,6 +2223,11 @@
                         "mass": 1.0,
                         "maxSpeedClamp": 50.0,
                         "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
                         "tiltLerpSpeed": 0.15000000596046448,
                         "tiltTowardMovementStrength": 0.800000011920929
                     },
@@ -2218,6 +2298,11 @@
                         "mass": 1.0,
                         "maxSpeedClamp": 50.0,
                         "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
                         "tiltLerpSpeed": 0.15000000596046448,
                         "tiltTowardMovementStrength": 0.800000011920929
                     },
@@ -2288,6 +2373,11 @@
                         "mass": 1.0,
                         "maxSpeedClamp": 50.0,
                         "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
                         "tiltLerpSpeed": 0.15000000596046448,
                         "tiltTowardMovementStrength": 0.800000011920929
                     },
@@ -2358,6 +2448,11 @@
                         "mass": 1.0,
                         "maxSpeedClamp": 50.0,
                         "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
                         "tiltLerpSpeed": 0.15000000596046448,
                         "tiltTowardMovementStrength": 0.800000011920929
                     },
@@ -2428,6 +2523,11 @@
                         "mass": 1.0,
                         "maxSpeedClamp": 50.0,
                         "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
                         "tiltLerpSpeed": 0.15000000596046448,
                         "tiltTowardMovementStrength": 0.800000011920929
                     },
@@ -2454,6 +2554,66 @@
             "guid": 65,
             "isEditorOnly": false,
             "name": "Trash_1 Copy 2 Copy Copy Copy 2 Copy Copy Copy Copy Copy Copy Copy Copy Copy Copy Copy",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "baseScaleX": 1.0,
+                        "baseScaleY": 1.0,
+                        "baseScaleZ": 1.0,
+                        "groundY": 0.0,
+                        "maxHeight": 8.0,
+                        "maxScale": 1.0,
+                        "minScale": 0.15000000596046448,
+                        "shadowYBias": 0.019999999552965164
+                    },
+                    "guid": 0,
+                    "type": "mygame.FakeShadow"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "",
+                        "materialSlots": [],
+                        "meshPath": "projects/TeamGame/content/models/Hall.obj"
+                    },
+                    "guid": 0,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 66,
+            "isEditorOnly": false,
+            "name": "FakeShadow",
             "tags": [],
             "visible": true
         }

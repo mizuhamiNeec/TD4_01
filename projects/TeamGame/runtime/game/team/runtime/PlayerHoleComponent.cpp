@@ -1,5 +1,6 @@
 #include "PlayerHoleComponent.h"
 #include "TrashObjMoverComponent.h"
+#include "GolfBallComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
 #include <engine/unnamed/framework/components/TransformComponent.h>
 #include "engine/scene/Scene.h"
@@ -346,9 +347,10 @@ namespace MyGame {
 			return false;
 		}
 
-		// NOTE: TrashObjMoverComponent を持つかチェック
+		// NOTE: TrashObjMoverComponent または GolfBallComponent を持つかチェック
 		auto* trashComponent = entity->GetComponent<TrashObjMoverComponent>();
-		if (!trashComponent) {
+		auto* golfBallComponent = entity->GetComponent<GolfBallComponent>();
+		if (!trashComponent && !golfBallComponent) {
 			return false;
 		}
 
@@ -449,9 +451,10 @@ namespace MyGame {
 
 			auto* entity = entityPtr.get();
 
-			// NOTE: ゴミのトラッシュコンポーネントを取得
+			// NOTE: ゴミまたはゴルフボールの移動コンポーネントを取得
 			auto* trashComponent = entity->GetComponent<TrashObjMoverComponent>();
-			if (!trashComponent) {
+			auto* golfBallComponent = entity->GetComponent<GolfBallComponent>();
+			if (!trashComponent && !golfBallComponent) {
 				continue;
 			}
 
@@ -467,7 +470,12 @@ namespace MyGame {
 
 			// NOTE: 吸い込み範囲外のゴミはクリア
 			if (distanceToHole >= suckRangeOuter) {
-				trashComponent->ClearHoleSuckPosition();
+				if (trashComponent) {
+					trashComponent->ClearHoleSuckPosition();
+				}
+				if (golfBallComponent) {
+					golfBallComponent->ClearHoleSuckPosition();
+				}
 				continue;
 			}
 
@@ -488,9 +496,19 @@ namespace MyGame {
 
 			// NOTE: すべてのゴミに吸い込み力を適用
 			if (suckPower > 0.0f) {
-				trashComponent->SetHoleSuckPosition(holeWorldPos, suckPower);
+				if (trashComponent) {
+					trashComponent->SetHoleSuckPosition(holeWorldPos, suckPower);
+				}
+				if (golfBallComponent) {
+					golfBallComponent->SetHoleSuckPosition(holeWorldPos, suckPower);
+				}
 			} else {
-				trashComponent->ClearHoleSuckPosition();
+				if (trashComponent) {
+					trashComponent->ClearHoleSuckPosition();
+				}
+				if (golfBallComponent) {
+					golfBallComponent->ClearHoleSuckPosition();
+				}
 			}
 		}
 	}

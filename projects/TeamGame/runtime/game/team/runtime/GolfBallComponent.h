@@ -66,6 +66,14 @@ public:
 	/// @param force 加える力のベクトル
 	void ApplyForce(const Vec3& force);
 
+	/// @brief 穴の位置と吸い込み力を設定
+	/// @param holePosition 穴の世界座標
+	/// @param suckPower 吸い込み力（0.0～1.0、大きいほど強く）
+	void SetHoleSuckPosition(const Vec3& holePosition, float suckPower);
+
+	/// @brief 穴への吸い込み処理を無効化
+	void ClearHoleSuckPosition();
+
 	// -----------------------------------------------------------------------
 	// 状態取得
 	// -----------------------------------------------------------------------
@@ -131,6 +139,9 @@ private:
 	/// @return 正規化された誘導方向ベクトル
 	/// @reason 現在位置からターゲットへ向かう方向を導出
 	[[nodiscard]] Vec3 CalcHomingDirection() const;
+
+	/// @brief 穴への吸い込み処理
+	void UpdateHoleSuck(float deltaTime);
 
 	// -----------------------------------------------------------------------
 	// 状態管理（内部メソッド）
@@ -236,6 +247,21 @@ private:
 	/// 地面に接触しているかのフラグ
 	/// 理由：摩擦を適用するかどうかの判定に使用
 	bool _bIsGrounded = false;
+
+	/// 衝撃波など、発射ターゲットとは独立した外力で動いているか
+	bool _bIsExternalMotion = false;
+
+	/// 吸い込み対象の穴の位置
+	Vec3 _holeSuckPosition = Vec3(0.0f, 0.0f, 0.0f);
+
+	/// 吸い込み力（0.0～1.0、大きいほど強く）
+	float _holeSuckPower = 0.0f;
+
+	/// 吸い込み中フラグ
+	bool _bIsBeingSucked = false;
+
+	/// 穴の内側に位置しているフラグ（地面衝突判定をスキップするため）
+	bool _bIsInsideHole = false;
 
 	// -----------------------------------------------------------------------
 	// エンティティ参照

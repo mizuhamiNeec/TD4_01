@@ -5,6 +5,7 @@
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 #include <core/math/Math.h>
 #include <core/math/random/random.h>
+#include <algorithm>
 #include <cmath>
 
 #include <engine/ImGui/ImGuiWidgets.h>
@@ -32,6 +33,9 @@ namespace MyGame {
 		_velocity = Vec3(0.0f, 0.0f, 0.0f);
 		_elapsedTime = 0.0f;
 		_bIsInFlight = false;
+		_bIsExternalMotion = false;
+		_bIsBeingSucked = false;
+		_bIsInsideHole = false;
 
 		// NOTE: TransformComponent と同期
 		auto* transform = GetOwner()->GetComponent<Unnamed::TransformComponent>();
@@ -58,14 +62,14 @@ namespace MyGame {
 		// 0️⃣ 参照エンティティの位置を同期（毎フレーム更新）
 		// -----------------------------------------------------------------------
 		// 理由：発射位置・着弾位置が Editor で変更されても常に同期する
-		if (_startPosEntity) {
+		if (_startPosEntity && !_bIsInFlight && !_bIsBeingSucked) {
 			auto* startTransform = _startPosEntity->GetComponent<Unnamed::TransformComponent>();
 			if (startTransform) {
 				_position = startTransform->GetPosition();  // ← 毎フレーム発射位置を同期
 			}
 		}
 
-		if (_targetPosEntity && !_bIsInFlight) {
+		if (_targetPosEntity && !_bIsInFlight && !_bIsBeingSucked) {
 			// NOTE: フライト中でない場合のみ着弾位置を更新
 			auto* targetTransform = _targetPosEntity->GetComponent<Unnamed::TransformComponent>();
 			if (targetTransform) {
@@ -74,7 +78,7 @@ namespace MyGame {
 		}
 
 		// NOTE: フライト中でない場合は更新不要
-		if (!_bIsInFlight) {
+		if (!_bIsInFlight && !_bIsBeingSucked) {
 			return;
 		}
 
@@ -85,49 +89,73 @@ namespace MyGame {
 		UpdatePhysics(deltaTime);
 
 		// -----------------------------------------------------------------------
-		// 2️⃣ 地面衝突処理（バウンス）
+		// 2️⃣ 穴への吸い込み処理
+		// -----------------------------------------------------------------------
+		if (_bIsBeingSucked) {
+			Vec3 directionToHole = _holeSuckPosition - _position;
+			_bIsInsideHole = (directionToHole.Length() < 1.5f);
+			UpdateHoleSuck(deltaTime);
+		} else {
+			_bIsInsideHole = false;
+		}
+
+		// -----------------------------------------------------------------------
+		// 3️⃣ 地面衝突処理（バウンス）
 		// -----------------------------------------------------------------------
 		// 理由：地面に衝突したときの反射を計算し、リアルな物理挙動を実現
-		HandleGroundCollision();
+		if (!_bIsInsideHole) {
+			HandleGroundCollision();
+		} else {
+			_bIsGrounded = false;
+		}
 
 		// -----------------------------------------------------------------------
-		// 3️⃣ 摩擦を適用
+		// 4️⃣ 摩擦を適用
 		// -----------------------------------------------------------------------
 		// 理由：地面上の速度を段階的に減衰させ、最終的に停止させる
-		ApplyFriction();
+		if (!_bIsInsideHole) {
+			ApplyFriction();
+		}
 
 		// -----------------------------------------------------------------------
-		// 4️⃣ 誘導機能（ターゲット追従・収束）
+		// 5️⃣ 誘導機能（ターゲット追従・収束）
 		// -----------------------------------------------------------------------
 		// 理由：物理と分離することで、自然で段階的なホーミング効果を実現
-		ApplyHoming(deltaTime);
+		if (!_bIsExternalMotion && !_bIsBeingSucked) {
+			ApplyHoming(deltaTime);
+		}
 
 		// -----------------------------------------------------------------------
-		// 5️⃣ 時間更新
+		// 6️⃣ 時間更新
 		// -----------------------------------------------------------------------
 		_elapsedTime += deltaTime;
 
 		// -----------------------------------------------------------------------
-		// 6️⃣ 停止判定（完全に停止したか確認）
+		// 7️⃣ 停止判定（完全に停止したか確認）
 		// -----------------------------------------------------------------------
 		// 理由：速度が十分に小さくなったら、フライトを終了する
 		float speed = _velocity.Length();
-		if (_bIsGrounded && speed < _stopVelocityThreshold) {
+		if (!_bIsBeingSucked && _bIsGrounded && speed < _stopVelocityThreshold) {
 			_bIsInFlight = false;
+			_bIsExternalMotion = false;
 			_velocity = Vec3(0.0f, 0.0f, 0.0f);  // 完全に停止
 		}
 
 		// -----------------------------------------------------------------------
-		// 7️⃣ 衝突応答 & 速度クリップ
+		// 8️⃣ 衝突応答 & 速度クリップ
 		// -----------------------------------------------------------------------
-		auto* sphereKCR = dynamic_cast<Unnamed::SphereKinematicCollisionResolver*>(mCollisionResolver.get());
-		// ↓衝突応答の責任者
-		sphereKCR->SlideMove(
-			_position, _velocity, deltaTime
-		);
+		if (!_bIsInsideHole) {
+			auto* sphereKCR = dynamic_cast<Unnamed::SphereKinematicCollisionResolver*>(mCollisionResolver.get());
+			// ↓衝突応答の責任者
+			sphereKCR->SlideMove(
+				_position, _velocity, deltaTime
+			);
+		} else {
+			_position += _velocity * deltaTime;
+		}
 		
 		// -----------------------------------------------------------------------
-		// 8 TransformComponent と同期
+		// 9 TransformComponent と同期
 		// -----------------------------------------------------------------------
 		// 理由：計算した位置をエンティティの Transform に反映
 		auto* transform = GetOwner()->GetComponent<Unnamed::TransformComponent>();
@@ -277,6 +305,7 @@ namespace MyGame {
 		// NOTE: フライト開始
 		_elapsedTime = 0.0f;
 		_bIsInFlight = true;
+		_bIsExternalMotion = false;
 	}
 
 	// -----------------------------------------------------------------------
@@ -285,11 +314,28 @@ namespace MyGame {
 
 	void GolfBallComponent::ApplyForce(const Vec3& force) {
 		// NOTE: 衝撃波などの外部からの力をそのまま速度に加える
-		// 理由：簡潔で直感的。飛行中はホーミングと組み合わさる
+		// 理由：ゴミと同じく、停止中でも衝撃波だけで吹っ飛ばせるようにする
 		_velocity += force;
+		_bIsInFlight = true;
+		_bIsExternalMotion = true;
+		_bIsGrounded = false;
 		
 		// NOTE: 速度上限を適用して不自然な加速を防止
 		ClampVelocity();
+	}
+
+	void GolfBallComponent::SetHoleSuckPosition(const Vec3& holePosition, float suckPower) {
+		_holeSuckPosition = holePosition;
+		_holeSuckPower = std::clamp(suckPower, 0.0f, 1.0f);
+		_bIsBeingSucked = true;
+		_bIsInFlight = true;
+		_bIsExternalMotion = true;
+	}
+
+	void GolfBallComponent::ClearHoleSuckPosition() {
+		_holeSuckPower = 0.0f;
+		_bIsBeingSucked = false;
+		_bIsInsideHole = false;
 	}
 
 	// -----------------------------------------------------------------------
@@ -798,6 +844,25 @@ namespace MyGame {
 		// NOTE: 方向ベクトルを正規化（長さ1にする）
 		// 理由：誘導力は方向のみに依存し、距離に関わらず均一の加速度を与える
 		return directionToTarget * (1.0f / distanceToTarget);
+	}
+
+	void GolfBallComponent::UpdateHoleSuck(float deltaTime) {
+		if (!_bIsBeingSucked || _holeSuckPower <= 0.0f) {
+			return;
+		}
+
+		Vec3 directionToHole = _holeSuckPosition - _position;
+		float distanceToHole = directionToHole.Length();
+		if (distanceToHole < 0.01f) {
+			return;
+		}
+
+		Vec3 directionNormalized = directionToHole.Normalized();
+		float suckMultiplier = _bIsInsideHole ? 0.3f : 1.0f;
+
+		const float kBaseSuckAcceleration = 60.0f;
+		Vec3 suckAcceleration = directionNormalized * kBaseSuckAcceleration * _holeSuckPower * suckMultiplier;
+		_velocity += suckAcceleration * deltaTime;
 	}
 
 	// -----------------------------------------------------------------------

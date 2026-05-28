@@ -453,6 +453,7 @@ namespace MyGame {
 				
 				// NOTE: 新しい速度を設定
 				trashMover->SetVelocity(newVelocity);
+				trashMover->StartShockWaveSpin(forceVector);
 				
 				#ifdef _DEBUG
 				static int shockCount = 0;

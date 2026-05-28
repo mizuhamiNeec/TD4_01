@@ -58,6 +58,9 @@ namespace MyGame {
 		/// 速度を設定
 		void SetVelocity(const Vec3& velocity);
 
+		/// 衝撃波で吹っ飛ばされたときのアニメ的な回転演出を開始
+		void StartShockWaveSpin(const Vec3& impulse);
+
 		/// ゴミが落下状態かを取得
 		[[nodiscard]] bool IsFalling() const;
 
@@ -170,6 +173,33 @@ namespace MyGame {
 		/// 移動方向への傾きの滑らかさ（小=ゆっくり、大=急激）
 		float _tiltLerpSpeed = 0.15f;
 
+		/// 衝撃波スピン中フラグ
+		bool _bIsShockSpinActive = false;
+
+		/// 衝撃波スピンの残り時間
+		float _shockSpinTimer = 0.0f;
+
+		/// 衝撃波スピンの総時間
+		float _shockSpinDuration = 1.1f;
+
+		/// 衝撃波スピンの回転軸
+		Vec3 _shockSpinAxis = Vec3::right;
+
+		/// 衝撃波スピンの初速（度/秒）
+		float _shockSpinSpeedDeg = 1080.0f;
+
+		/// 衝撃波スピンの強さ倍率
+		float _shockSpinSpeedMultiplier = 85.0f;
+
+		/// 衝撃波スピンの上限（度/秒）
+		float _shockSpinMaxSpeedDeg = 2160.0f;
+
+		/// 衝撃波中に混ぜる横揺れの強さ（度）
+		float _shockSpinWobbleDeg = 18.0f;
+
+		/// 衝撃波中に混ぜる横揺れの速さ
+		float _shockSpinWobbleSpeed = 18.0f;
+
 		// -----------------------------------------------------------------------
 		// 吸い込み機能
 		// -----------------------------------------------------------------------
@@ -211,6 +241,9 @@ namespace MyGame {
 
 		/// 空中での回転を更新（移動方向に傾く）
 		void UpdateAirRotation(float deltaTime);
+
+		/// 衝撃波で吹っ飛ばされたときの大げさな回転を更新
+		void UpdateShockSpin(float deltaTime);
 
 		/// 着地時の回転リセット処理
 		void UpdateRotationReset(float deltaTime);

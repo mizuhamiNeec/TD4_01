@@ -59,7 +59,7 @@ namespace MyGame {
 		/// @param forceMultiplier 倍率、デフォルト: 5.0
 		void SetForceMultiplier(float forceMultiplier);
 
-		/// @brief 衝撃波発火の最小検出音量閾値を設定
+		/// 衝撃波発火の最小検出音量閾値を設定
 		/// @param threshold 0.0～1.0、デフォルト: 0.3
 		void SetVolumeThreshold(float threshold);
 
@@ -122,21 +122,27 @@ namespace MyGame {
 		/// @param testVolume テスト音量（0.0～1.0）
 		void FireTestShockWave(float testVolume);
 
+	public:
+		/// @brief グローバルな MagVoiceBridge インスタンスを設定（TeamGameModule から呼ばれる）
+		static void SetVoiceBridgeInstance(MagVoiceBridge* bridge) {
+			_voiceBridgeInstance = bridge;
+		}
+
 		// -----------------------------------------------------------------------
 		// メンバ変数
 		// -----------------------------------------------------------------------
 
 		/// 衝撃波の作用範囲（円形の半径）
-		float _shockWaveRadius = 10.0f;
+		float _shockWaveRadius = 15.0f;
 
-		/// 音量から力への変換倍率
-		float _forceMultiplier = 5.0f;
+		/// 音量から力への変換倍率（水平方向）
+		float _forceMultiplier = 20.0f;
 
-		/// 衝撃波発火の音量閾値（0.0～1.0）
-		float _volumeThreshold = 0.3f;
+		/// 衝撃波発火の音量閾値（0.0～1.0）- 大幅に削減
+		float _volumeThreshold = 0.01f;
 
 		/// 衝撃波発火のクールタイム（秒）
-		float _coolTime = 0.5f;
+		float _coolTime = 0.1f;
 
 		/// クールタイム用のカウンター
 		float _coolTimeCounter = 0.0f;
@@ -151,16 +157,16 @@ namespace MyGame {
 		bool _bIsShockWaveActive = false;
 
 		/// 衝撃波の最大半径（音量最大時）
-		float _maxShockWaveRadius = 20.0f;
+		float _maxShockWaveRadius = 25.0f;
 
 		/// 衝撃波の最小半径（音量最小時）
-		float _minShockWaveRadius = 5.0f;
+		float _minShockWaveRadius = 8.0f;
 
 		/// 音量の変動率による力の倍率
-		float _volumeDeltaMultiplier = 10.0f;
+		float _volumeDeltaMultiplier = 5.0f;
 
-		/// 打ち上げ力（Y軸方向）- アニメ的な演出用
-		float _upwardForceMultiplier = 15.0f;
+		/// 打ち上げ力（Y軸方向）- 大幅に強化
+		float _upwardForceMultiplier = 50.0f;
 
 		/// テスト用：現在のテスト音量値
 		float _testVolume = 0.5f;

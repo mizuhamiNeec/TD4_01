@@ -33,31 +33,37 @@ namespace MyGame {
 	MagVoiceBridge* VoiceShockWaveComponent::_voiceBridgeInstance = nullptr;
 
 	// =========================================================================
+	// グローバル初期化関数（TeamGameModule から呼ばれる）
+	// =========================================================================
+
+	void SetGlobalVoiceBridge(MagVoiceBridge* bridge) {
+		VoiceShockWaveComponent::SetVoiceBridgeInstance(bridge);
+	}
+
+	// =========================================================================
 	// ライフサイクル
 	// =========================================================================
 
 	void VoiceShockWaveComponent::OnAttached() {
-		// NOTE: MagVoiceBridge の初期化（初回のみ）
-		if (!_voiceBridgeInstance) {
-			_voiceBridgeInstance = new MagVoiceBridge();
-			if (_voiceBridgeInstance) {
-				bool initSuccess = _voiceBridgeInstance->Initialize();
-				if (initSuccess) {
-					bool startSuccess = _voiceBridgeInstance->Start();
-					// NOTE: Start失敗時のエラーハンドリング
-					if (!startSuccess) {
-						// NOTE: Start失敗 - ただし継続
-					}
-				} else {
-					// NOTE: Initialize失敗 - ただし継続
-				}
-			}
-		}
+		// NOTE: MagVoiceBridge のインスタンスが既に初期化・起動済みのはず
+		// （TeamGameModule::Initialize() で行われている）
+		// ここでは単に参照を保持して使用するだけ
 
 		_coolTimeCounter = 0.0f;
 		_lastVolume = 0.0f;
 		_previousVolume = 0.0f;
 		_bIsShockWaveActive = false;
+
+		auto* voiceBridge = GetVoiceBridge();
+		if (!voiceBridge) {
+			#ifdef _DEBUG
+			OutputDebugStringA("[VoiceShockWave] WARNING: MagVoiceBridge not initialized\n");
+			#endif
+		} else {
+			#ifdef _DEBUG
+			OutputDebugStringA("[VoiceShockWave] OnAttached - MagVoiceBridge ready\n");
+			#endif
+		}
 	}
 
 	void VoiceShockWaveComponent::OnTick(float deltaTime) {
@@ -142,19 +148,24 @@ namespace MyGame {
 		ImGui::SliderFloat("水平方向の力倍率##vsw_force", &_forceMultiplier, 0.1f, 20.0f, "%.2f");
 		ImGui::SliderFloat("音量変動の力倍率##vsw_delta", &_volumeDeltaMultiplier, 0.1f, 50.0f, "%.2f");
 		ImGui::SliderFloat("打ち上げ力倍率##vsw_upward", &_upwardForceMultiplier, 1.0f, 50.0f, "%.2f");
-		ImGui::SliderFloat("音量閾値##vsw_threshold", &_volumeThreshold, 0.0f, 1.0f, "%.3f");
+		ImGui::SliderFloat("音量閾値##vsw_threshold", &_volumeThreshold, 0.0f, 0.5f, "%.4f");
 		ImGui::SliderFloat("クールタイム##vsw_cooltime", &_coolTime, 0.0f, 5.0f, "%.2f");
 
 		ImGui::Separator();
 
 		// NOTE: 現在の音量情報を表示
 		ImGui::Text("=== 音声情報 ===");
-		ImGui::Text("現在の音量: %.3f", _lastVolume);
-		ImGui::Text("前フレーム音量: %.3f", _previousVolume);
-		ImGui::Text("音量の変動量: %.3f", std::abs(_lastVolume - _previousVolume));
-		ImGui::Text("音量閾値: %.3f", _volumeThreshold);
+		ImGui::Text("現在の音量: %.4f (%.2f %%)", _lastVolume, _lastVolume * 100.0f);
+		ImGui::ProgressBar(_lastVolume, ImVec2(-1.0f, 20.0f), "");
+		ImGui::Text("前フレーム音量: %.4f", _previousVolume);
+		ImGui::Text("音量の変動量: %.4f", std::abs(_lastVolume - _previousVolume));
+		ImGui::Text("音量閾値: %.4f", _volumeThreshold);
 		ImGui::Text("衝撃波アクティブ: %s", _bIsShockWaveActive ? "有効" : "無効");
 		ImGui::Text("クールタイム: %.2f / %.2f秒", _coolTimeCounter, _coolTime);
+
+		if (_coolTimeCounter > 0.0f) {
+			ImGui::ProgressBar(_coolTimeCounter / _coolTime, ImVec2(-1.0f, 20.0f), "CoolTime");
+		}
 
 		ImGui::Separator();
 
@@ -163,15 +174,15 @@ namespace MyGame {
 		ImGui::SliderFloat("テスト音量##test_volume", &_testVolume, 0.0f, 1.0f, "%.3f");
 		
 		if (ImGui::Button("弱い声を出す##test_weak", ImVec2(150, 30))) {
-			FireTestShockWave(0.3f);
+			FireTestShockWave(0.1f);
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("普通の声##test_normal", ImVec2(150, 30))) {
-			FireTestShockWave(0.6f);
+			FireTestShockWave(0.2f);
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("大きい声##test_loud", ImVec2(150, 30))) {
-			FireTestShockWave(1.0f);
+			FireTestShockWave(0.5f);
 		}
 		
 		if (ImGui::Button("カスタム音量で発火##test_custom", ImVec2(300, 30))) {
@@ -182,21 +193,30 @@ namespace MyGame {
 		auto* voiceBridge = GetVoiceBridge();
 		if (voiceBridge) {
 			ImGui::Separator();
-			ImGui::Text("=== 音声統計情報 ===");
-			float currentRMS = voiceBridge->GetCurrentVolume();
-			float currentRMSDB = voiceBridge->GetCurrentVolumeDB();
-			float peakValue = voiceBridge->GetPeakVolume();
-			float peakDB = voiceBridge->GetPeakVolumeDB();
-			float smoothedRMS = voiceBridge->GetSmoothedVolume();
-			float smoothedRMSDB = voiceBridge->GetSmoothedVolumeDB();
-			float voiceScore = voiceBridge->GetVoiceCharacteristicScore();
-			bool isVoiceDetected = voiceBridge->IsVoiceDetected();
+			ImGui::Text("=== 音声統計情報（リアルタイム） ===");
 			
-			ImGui::Text("現在のRMS: %.3f (%.2f dB)", currentRMS, currentRMSDB);
-			ImGui::Text("ピーク音量: %.3f (%.2f dB)", peakValue, peakDB);
-			ImGui::Text("スムージング済み音量: %.3f (%.2f dB)", smoothedRMS, smoothedRMSDB);
-			ImGui::Text("音声スコア: %.3f", voiceScore);
-			ImGui::Text("音声検出: %s", isVoiceDetected ? "検出中" : "未検出");
+			auto stats = voiceBridge->GetVolumeStats();
+			
+			ImGui::Text("現在のRMS: %.4f (%.2f dB)", stats.currentRMS, stats.currentRMSDB);
+			ImGui::ProgressBar(stats.currentRMS, ImVec2(-1.0f, 15.0f), "Current RMS");
+			
+			ImGui::Text("ピーク音量: %.4f (%.2f dB)", stats.peakValue, stats.peakDB);
+			ImGui::ProgressBar(stats.peakValue, ImVec2(-1.0f, 15.0f), "Peak");
+			
+			ImGui::Text("スムージング済み音量: %.4f (%.2f dB)", stats.smoothedRMS, stats.smoothedRMSDB);
+			ImGui::ProgressBar(stats.smoothedRMS, ImVec2(-1.0f, 15.0f), "Smoothed");
+			
+			ImGui::Text("音声スコア: %.3f", stats.voiceScore);
+			ImGui::Text("音声検出: %s", stats.isVoiceDetected ? "✓ 検出中" : "✗ 未検出");
+			ImGui::Text("ボリューム：%.1f %%", stats.percentage);
+			
+			if (ImGui::CollapsingHeader("詳細統計情報", ImGuiTreeNodeFlags_DefaultOpen)) {
+				ImGui::BulletText("閾値: %.4f", _volumeThreshold);
+				ImGui::BulletText("現在の状態: %s", 
+					(stats.smoothedRMS >= _volumeThreshold) ? "✓ 閾値超過" : "✗ 閾値未満");
+			}
+		} else {
+			ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "ERROR: MagVoiceBridge not initialized");
 		}
 	}
 #endif
@@ -225,6 +245,14 @@ namespace MyGame {
 		if (auto val = reader.Read<float>("coolTime")) {
 			_coolTime = val.value();
 		}
+
+		#ifdef _DEBUG
+		char buffer[256];
+		sprintf_s(buffer, sizeof(buffer),
+			"[VoiceShockWave] Loaded - Threshold: %.4f, CoolTime: %.2f\n",
+			_volumeThreshold, _coolTime);
+		OutputDebugStringA(buffer);
+		#endif
 	}
 
 	void VoiceShockWaveComponent::Serialize(Unnamed::JsonWriter& writer) const {
@@ -274,13 +302,30 @@ namespace MyGame {
 		bool coolTimeReady = (_coolTimeCounter <= 0.0f);
 		bool volumeAboveThreshold = (_lastVolume >= _volumeThreshold);
 		
-		// NOTE: デバッグ：条件をすべて確認
-		// NOTE: 衝撃波が発火する条件：
-		// 1. coolTimeCounter <= 0 （クールタイムが終了）
-		// 2. lastVolume >= volumeThreshold （音量が閾値を超える）
+		// NOTE: デバッグ出力（音量状態を確認）
+		#ifdef _DEBUG
+		static float debugTimer = 0.0f;
+		debugTimer += 1.0f / 60.0f; // 仮定：60FPS
+		if (debugTimer >= 0.5f) { // 0.5秒ごとに出力
+			char buffer[256];
+			sprintf_s(buffer, sizeof(buffer),
+				"[Audio] Volume: %.3f, Threshold: %.3f, CoolTime: %.2f/%.2f, Ready: %s\n",
+				_lastVolume, _volumeThreshold, _coolTimeCounter, _coolTime,
+				coolTimeReady ? "YES" : "NO");
+			OutputDebugStringA(buffer);
+			debugTimer = 0.0f;
+		}
+		#endif
 		
 		if (coolTimeReady && volumeAboveThreshold) {
 			// NOTE: 衝撃波を発火
+			#ifdef _DEBUG
+			char buffer[256];
+			sprintf_s(buffer, sizeof(buffer),
+				"[SHOCKWAVE] FIRED! Volume: %.3f, Force: calculated\n", _lastVolume);
+			OutputDebugStringA(buffer);
+			#endif
+			
 			FireShockWave(_lastVolume);
 
 			// NOTE: クールタイムをリセット
@@ -292,21 +337,19 @@ namespace MyGame {
 	}
 
 	void VoiceShockWaveComponent::FireShockWave(float volume) {
-		// NOTE: 音量の変動率を計算（0-0.2 vs 0-0.8 のような急激な変化を検出）
-		float volumeDelta = std::abs(volume - _previousVolume);
-		
-		// NOTE: 基本的な力を計算（音量ベース）
-		// volume が 0.3 なら 1.5、0.6 なら 3.0 の力を生成
-		float baseForce = volume * _forceMultiplier;
+		// NOTE: 音量ベースの力を計算（非常に感度良く）
+		// 小さな音でも反応するように、べき乗で増幅
+		float baseForce = volume * volume * _forceMultiplier;  // 音量の二乗で増幅
 		
 		// NOTE: 変動率による力の増幅（急激な変化ほど強い）
+		float volumeDelta = std::abs(volume - _previousVolume);
 		float deltaForce = volumeDelta * _volumeDeltaMultiplier;
 		
 		// NOTE: 最終的な力 = ベース力 + 変動による増幅
 		float forceStrength = baseForce + deltaForce;
 		
-		// NOTE: 最小の力を保証（力が弱すぎないようにする）
-		forceStrength = std::max(1.0f, forceStrength);
+		// NOTE: 最小の力を大幅に下げる（より敏感に反応）
+		forceStrength = std::max(0.5f, forceStrength);
 
 		// NOTE: 衝撃波の半径を音量に応じて動的に変更
 		// volume が 0.0 なら _minShockWaveRadius、1.0 なら _maxShockWaveRadius
@@ -330,6 +373,14 @@ namespace MyGame {
 
 		// NOTE: アクティブフラグを立てる（次フレームでリセット）
 		_bIsShockWaveActive = true;
+
+		#ifdef _DEBUG
+		char buffer[256];
+		sprintf_s(buffer, sizeof(buffer),
+			"[SHOCKWAVE] Volume: %.4f, Force: %.2f, Radius: %.2f, UpwardMul: %.2f\n",
+			volume, forceStrength, dynamicRadius, _upwardForceMultiplier);
+		OutputDebugStringA(buffer);
+		#endif
 	}
 
 	void VoiceShockWaveComponent::ApplyForceToEntitiesInRange(const Vec3& shockWaveCenter, float forceStrength, float radius) {
@@ -387,12 +438,13 @@ namespace MyGame {
 				direction.y = 0.0f;
 				direction = direction.Normalized();
 
-				// NOTE: 水平方向の力（反発）
-				Vec3 forceVector = direction * forceStrength;
+				// NOTE: 水平方向の力（反発）- 弱めに調整（垂直方向を強調）
+				Vec3 forceVector = direction * forceStrength * 0.6f;
 				
-				// NOTE: 上向き力を追加（アニメ的な打ち上げ効果）
+				// NOTE: 上向き力を追加（打ち上げを強調）
+				// forceStrength * _upwardForceMultiplier で大幅に強化
 				float upwardForce = forceStrength * _upwardForceMultiplier;
-				forceVector.y += upwardForce;
+				forceVector.y = upwardForce;
 				
 				// NOTE: 現在の速度を取得して新しい速度を計算
 				// 衝撃波による力は既存の速度に加算される（衝撃波の効果を最大化）
@@ -402,8 +454,18 @@ namespace MyGame {
 				// NOTE: 新しい速度を設定
 				trashMover->SetVelocity(newVelocity);
 				
-				// NOTE: 物理演算は常に実行されるため、SetFalling は不要
-				// 地面衝突判定が自動的に行われるようになった
+				#ifdef _DEBUG
+				static int shockCount = 0;
+				shockCount++;
+				if (shockCount % 5 == 0) {
+					char buffer[256];
+					sprintf_s(buffer, sizeof(buffer),
+						"[TRASH HIT] Force: (%.2f, %.2f, %.2f), NewVel: (%.2f, %.2f, %.2f)\n",
+						forceVector.x, forceVector.y, forceVector.z,
+						newVelocity.x, newVelocity.y, newVelocity.z);
+					OutputDebugStringA(buffer);
+				}
+				#endif
 			}
 
 			// NOTE: GolfBallComponent を持つエンティティ？
@@ -413,12 +475,12 @@ namespace MyGame {
 				Vec3 direction = targetPos - shockWaveCenter;
 				direction = direction.Normalized();
 
-				// NOTE: 水平方向の力をベクトルに変換
-				Vec3 forceVector = direction * forceStrength;
+				// NOTE: 水平方向の力をベクトルに変換 - 弱めに調整
+				Vec3 forceVector = direction * forceStrength * 0.6f;
 				
-				// NOTE: 上向き力を追加（アニメ的な打ち上げ効果）
+				// NOTE: 上向き力を追加（打ち上げを強調）
 				float upwardForce = forceStrength * _upwardForceMultiplier;
-				forceVector.y += upwardForce;
+				forceVector.y = upwardForce;
 				
 				// NOTE: 力を加算
 				golfBall->ApplyForce(forceVector);

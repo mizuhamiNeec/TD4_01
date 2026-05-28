@@ -2390,11 +2390,11 @@
                         "materialInstancePath": "",
                         "materialSlots": [
                             {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/golfcart.matinst.json",
                                 "slotIndex": 0
                             }
                         ],
-                        "meshPath": "projects/TeamGame/content/models/tree.obj"
+                        "meshPath": "projects/TeamGame/content/models/golfcart/Golfcart.obj"
                     },
                     "guid": 15911991086526638034,
                     "type": "engine.StaticMeshRenderer"
@@ -2465,11 +2465,11 @@
                         "materialInstancePath": "",
                         "materialSlots": [
                             {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/fish.matinst.json",
                                 "slotIndex": 0
                             }
                         ],
-                        "meshPath": "projects/TeamGame/content/models/tree.obj"
+                        "meshPath": "projects/TeamGame/content/models/fish/Fish.obj"
                     },
                     "guid": 10965530330757616732,
                     "type": "engine.StaticMeshRenderer"
@@ -2478,7 +2478,7 @@
             "folderPath": "",
             "guid": 64,
             "isEditorOnly": false,
-            "name": "Trash_1 Copy 2 Copy Copy Copy 2 Copy Copy Copy Copy Copy Copy Copy Copy Copy Copy",
+            "name": "Fish",
             "tags": [],
             "visible": true
         },
@@ -2490,9 +2490,9 @@
                     "data": {
                         "parentEntityGuid": 0,
                         "position": [
-                            -0.25595831871032715,
-                            102.1989974975586,
-                            9.991494178771973
+                            0.06586593389511108,
+                            6.7110514640808105,
+                            0.06566596031188965
                         ],
                         "rotation": [
                             0.0,
@@ -2540,11 +2540,15 @@
                         "materialInstancePath": "",
                         "materialSlots": [
                             {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/colorcone.matinst.json",
                                 "slotIndex": 0
+                            },
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/colorcone.matinst.json",
+                                "slotIndex": 1
                             }
                         ],
-                        "meshPath": "projects/TeamGame/content/models/tree.obj"
+                        "meshPath": "projects/TeamGame/content/models/colorcone/Colorcone.obj"
                     },
                     "guid": 15617263936554764919,
                     "type": "engine.StaticMeshRenderer"
@@ -2553,7 +2557,7 @@
             "folderPath": "",
             "guid": 65,
             "isEditorOnly": false,
-            "name": "Trash_1 Copy 2 Copy Copy Copy 2 Copy Copy Copy Copy Copy Copy Copy Copy Copy Copy Copy",
+            "name": "ColorCone",
             "tags": [],
             "visible": true
         },

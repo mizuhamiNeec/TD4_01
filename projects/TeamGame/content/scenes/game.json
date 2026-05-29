@@ -1228,7 +1228,7 @@
                     "data": {
                         "parentEntityGuid": 0,
                         "position": [
-                            0.06586593389511108,
+                            -6.556951522827148,
                             6.7110514640808105,
                             -30.0
                         ],
@@ -1356,6 +1356,322 @@
             "guid": 66,
             "isEditorOnly": false,
             "name": "FakeShadow",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.06586593389511108,
+                            6.7110514640808105,
+                            -35.72697830200195
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 10411906556768863372,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "airRotationSpeed": 360.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
+                        "mass": 1.0,
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
+                    },
+                    "guid": 15579392773896985215,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/colorcone.matinst.json",
+                                "slotIndex": 0
+                            },
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/colorcone.matinst.json",
+                                "slotIndex": 1
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/colorcone/Colorcone.obj"
+                    },
+                    "guid": 16851041328411451071,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 67,
+            "isEditorOnly": false,
+            "name": "ColorCone Copy",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            9.308892250061035,
+                            6.7110514640808105,
+                            -25.01710319519043
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 17412889041407548646,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "airRotationSpeed": 360.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
+                        "mass": 1.0,
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
+                    },
+                    "guid": 18165180915077556022,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/colorcone.matinst.json",
+                                "slotIndex": 0
+                            },
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/colorcone.matinst.json",
+                                "slotIndex": 1
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/colorcone/Colorcone.obj"
+                    },
+                    "guid": 17788766498793958507,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 68,
+            "isEditorOnly": false,
+            "name": "ColorCone Copy Copy",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            7.532252311706543,
+                            5.941121578216553,
+                            -31.53022575378418
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 10595954120123171453,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "airRotationSpeed": 360.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
+                        "mass": 1.0,
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
+                    },
+                    "guid": 15405318237239725563,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/colorcone.matinst.json",
+                                "slotIndex": 0
+                            },
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/colorcone.matinst.json",
+                                "slotIndex": 1
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/colorcone/Colorcone.obj"
+                    },
+                    "guid": 10128849865436338715,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 69,
+            "isEditorOnly": false,
+            "name": "ColorCone Copy Copy Copy",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            -0.20078355073928833,
+                            6.7110514640808105,
+                            -29.517736434936523
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 16561546375806239792,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "airRotationSpeed": 360.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
+                        "mass": 1.0,
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
+                    },
+                    "guid": 11509524559667488026,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/colorcone.matinst.json",
+                                "slotIndex": 0
+                            },
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/colorcone.matinst.json",
+                                "slotIndex": 1
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/colorcone/Colorcone.obj"
+                    },
+                    "guid": 12608911885177034542,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 70,
+            "isEditorOnly": false,
+            "name": "ColorCone Copy Copy Copy Copy",
             "tags": [],
             "visible": true
         }

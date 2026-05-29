@@ -21,6 +21,7 @@ namespace Unnamed::Render {
 	enum class SPRITE_TEXTURE_SOURCE : uint8_t {
 		ASSET = 0,
 		VIEW_OUTPUT = 1,
+		VIEW_SCENE_COLOR = 2,
 	};
 
 	struct SpriteTextureRef {
@@ -84,6 +85,9 @@ namespace Unnamed::Render {
 		float                 farZ      = 10000.0f;
 		PROJECTION_DEPTH_MODE depthMode = PROJECTION_DEPTH_MODE::ReverseZ;
 		bool                  valid     = false;
+
+		bool                  useClipPlane = false;
+		Vec4                  clipPlane    = Vec4::zero;
 	};
 
 	struct SkyboxInput {
@@ -144,6 +148,7 @@ namespace Unnamed::Render {
 		float   rotationRad    = 0.0f;
 		int32_t sortKey        = 0;
 		bool    uvFlipY        = false;
+		bool    screenSpaceUv  = false;
 	};
 
 	enum class WORLD_PARTICLE_SHAPE : uint8_t {
@@ -188,12 +193,21 @@ namespace Unnamed::Render {
 		std::vector<DebugLineInput> lines;
 	};
 
+	struct PortalRenderInput {
+		std::string viewKey;
+		Vec3        worldPosition = Vec3::zero;
+		Vec3        worldRight    = Vec3::right;
+		Vec3        worldUp       = Vec3::up;
+		Vec2        sizeWorld     = Vec2::one;
+	};
+
 	struct RenderViewInput {
 		std::string viewKey;
 
 		RENDER_VIEW_TYPE      type = RENDER_VIEW_TYPE::SCENE;
 		RenderViewOutputDesc  output = {};
 		SceneViewRenderMode   sceneViewMode = {};
+		bool                  enablePostFx = true;
 		std::vector<PostFxPassOverride> postFxPassOverrides;
 		RenderCameraInput     camera = {};
 		SkyboxInput           skybox = {};
@@ -204,6 +218,7 @@ namespace Unnamed::Render {
 		std::vector<WorldSpriteInput>     worldSprites;
 		std::vector<WorldParticleInput>   worldParticles;
 		std::vector<ScreenSpriteInput>    screenSprites;
+		std::vector<PortalRenderInput>    portals;
 	};
 
 	struct RenderFrameInputs {

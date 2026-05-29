@@ -10,7 +10,8 @@ namespace Unnamed::Rhi {
 		Mat4  viewProj    = Mat4::identity; // 64 +
 		Vec3  cameraPos   = Vec3::zero;     // 16 +
 		float time        = 0.0f;           // 4 +
-		float padding[12] = {};             // 48 = 256
+		Vec4  clipPlane   = Vec4(0.0f, 0.0f, 0.0f, 1.0f); // 16 +
+		float padding[8]  = {};             // 32 = 256
 	};
 
 	static_assert(

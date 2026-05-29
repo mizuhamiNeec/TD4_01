@@ -1514,6 +1514,92 @@
             "name": "golf_ball_trail",
             "tags": [],
             "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 42,
+                        "position": [
+                            0.0,
+                            -0.008999999612569809,
+                            0.0
+                        ],
+                        "rotation": [
+                            -0.7071068286895752,
+                            0.0,
+                            0.0,
+                            0.7071068286895752
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0000001192092896,
+                            1.0000001192092896
+                        ]
+                    },
+                    "guid": 15407108177555294787,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "ExitEntityGuid": 67,
+                        "SizeX": 5.0,
+                        "SizeY": 5.0
+                    },
+                    "guid": 16749372253451517539,
+                    "type": "engine.PortalComponent"
+                }
+            ],
+            "folderPath": "",
+            "guid": 66,
+            "isEditorOnly": false,
+            "name": "PortalPlane",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 42,
+                        "position": [
+                            0.0,
+                            -0.0010000000474974513,
+                            0.0
+                        ],
+                        "rotation": [
+                            -0.7071068286895752,
+                            0.0,
+                            0.0,
+                            0.7071068286895752
+                        ],
+                        "scale": [
+                            1.0000038146972656,
+                            1.0000032186508179,
+                            1.0000009536743164
+                        ]
+                    },
+                    "guid": 15110330010583520210,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {},
+                    "guid": 17278974508920256612,
+                    "type": "engine.PortalExitComponent"
+                }
+            ],
+            "folderPath": "",
+            "guid": 67,
+            "isEditorOnly": false,
+            "name": "PortalExit",
+            "tags": [],
+            "visible": true
         }
     ],
     "folders": [

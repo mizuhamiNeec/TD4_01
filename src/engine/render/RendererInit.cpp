@@ -245,6 +245,9 @@ namespace Unnamed::Render {
 			"./content/core/shaders/programs/sprite_overlay.shader.json",
 			ASSET_TYPE::SHADER_PROGRAM
 		);
+		const AssetID portalProgramId = LoadAsset(
+			assetManager,
+			"./content/core/shaders/programs/portal.shader.json",
 		const AssetID particleProgramId = LoadAsset(
 			assetManager,
 			"./content/core/shaders/programs/particle.shader.json",
@@ -409,6 +412,20 @@ namespace Unnamed::Render {
 		);
 		mSpritePass.geom.pipeline = mPipelineRegistry.RegisterGraphics(spriteSpec);
 		mSpritePass.geom.resolved = nullptr;
+
+		auto portalSpec = RendererPipelineCatalog::MakeSpritePreset(
+			"Portal",
+			portalProgramId,
+			dx.GetGeomRootSignature(),
+			kSceneHdrColorFormat,
+			spriteLayout
+		);
+		portalSpec.psoTemplate.depthEnable = true;
+		portalSpec.psoTemplate.depthWriteEnable = true;
+		portalSpec.psoTemplate.dsvFormat = DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
+		portalSpec.psoTemplate.depthFunc = D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+		mPortalPass.pipeline = mPipelineRegistry.RegisterGraphics(portalSpec);
+		mPortalPass.resolved = nullptr;
 
 		auto billboardDepthSpec = spriteSpec;
 		billboardDepthSpec.debugName              = "WorldBillboardDepth";
@@ -589,6 +606,11 @@ namespace Unnamed::Render {
 		mBillboardPass.frontGeom.vbv        = mSpritePass.geom.vbv;
 		mBillboardPass.frontGeom.ibv        = mSpritePass.geom.ibv;
 		mBillboardPass.frontGeom.indexCount = mSpritePass.geom.indexCount;
+		mPortalPass.vb         = mSpritePass.geom.vb;
+		mPortalPass.ib         = mSpritePass.geom.ib;
+		mPortalPass.vbv        = mSpritePass.geom.vbv;
+		mPortalPass.ibv        = mSpritePass.geom.ibv;
+		mPortalPass.indexCount = mSpritePass.geom.indexCount;
 		LoadSceneMeshResources(renderDevice, dx);
 		LoadMaterialResources(renderDevice, dx);
 		renderDevice.GetRegistry().OnResize(

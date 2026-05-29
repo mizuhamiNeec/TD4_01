@@ -146,6 +146,38 @@ namespace Unnamed::Render {
 		bool    uvFlipY        = false;
 	};
 
+	enum class WORLD_PARTICLE_SHAPE : uint8_t {
+		PLANE = 0,
+		RING = 1,
+		CYLINDER = 2,
+	};
+
+	enum class WORLD_PARTICLE_BLEND_MODE : uint8_t {
+		NONE = 0,
+		NORMAL = 1,
+		ADD = 2,
+		SUBTRACT = 3,
+		MULTIPLY = 4,
+		SCREEN = 5,
+	};
+
+	struct WorldParticleInput {
+		SpriteTextureRef texture;
+		Vec3 worldPosition = Vec3::zero;
+		Vec3 worldRight = Vec3::right;
+		Vec3 worldUp = Vec3::up;
+		Vec3 worldForward = Vec3::forward;
+		Vec3 scale = Vec3::one;
+		Vec3 rotation = Vec3::zero;
+		Vec4 color = Vec4::one;
+		int32_t sortKey = 0;
+		bool depthTest = true;
+		bool useBillboard = true;
+		bool flipY = false;
+		WORLD_PARTICLE_SHAPE shape = WORLD_PARTICLE_SHAPE::PLANE;
+		WORLD_PARTICLE_BLEND_MODE blendMode = WORLD_PARTICLE_BLEND_MODE::NORMAL;
+	};
+
 	struct DebugLineInput {
 		Vec3 start = Vec3::zero;
 		Vec3 end   = Vec3::right;
@@ -170,6 +202,7 @@ namespace Unnamed::Render {
 		std::vector<SkinningPaletteInput> skinningPalettes;
 		std::vector<WorldBillboardInput>  worldBillboards;
 		std::vector<WorldSpriteInput>     worldSprites;
+		std::vector<WorldParticleInput>   worldParticles;
 		std::vector<ScreenSpriteInput>    screenSprites;
 	};
 

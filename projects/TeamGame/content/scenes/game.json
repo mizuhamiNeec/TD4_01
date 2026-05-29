@@ -855,7 +855,8 @@
                     "data": {
                         "debugLogEnabled": true,
                         "enterActivateEntityGuids": [
-                            47
+                            47,
+                            71
                         ],
                         "exitDeactivateEntityGuids": [],
                         "height": 2.0,

@@ -99,6 +99,86 @@ namespace Unnamed::Render {
 			};
 		}
 
+		Rhi::VertexLayoutDesc BuildParticleVertexLayout() {
+			return Rhi::VertexLayoutDesc{
+				.stride   = sizeof(float) * 5,
+				.elements = {
+					Rhi::VertexElementDesc{
+						.semantic         = Rhi::VertexSemantic::POSITION,
+						.semanticIndex    = 0,
+						.format           = Rhi::VertexFormat::FLOAT3,
+						.offset           = 0,
+						.inputSlot        = 0,
+						.perInstance      = false,
+						.instanceStepRate = 0,
+					},
+					Rhi::VertexElementDesc{
+						.semantic         = Rhi::VertexSemantic::TEXCOORD,
+						.semanticIndex    = 0,
+						.format           = Rhi::VertexFormat::FLOAT2,
+						.offset           = sizeof(float) * 3,
+						.inputSlot        = 0,
+						.perInstance      = false,
+						.instanceStepRate = 0,
+					},
+					Rhi::VertexElementDesc{
+						.semantic         = Rhi::VertexSemantic::TEXCOORD,
+						.semanticIndex    = 1,
+						.format           = Rhi::VertexFormat::FLOAT4,
+						.offset           = sizeof(float) * 0,
+						.inputSlot        = 1,
+						.perInstance      = true,
+						.instanceStepRate = 1,
+					},
+					Rhi::VertexElementDesc{
+						.semantic         = Rhi::VertexSemantic::TEXCOORD,
+						.semanticIndex    = 2,
+						.format           = Rhi::VertexFormat::FLOAT4,
+						.offset           = sizeof(float) * 4,
+						.inputSlot        = 1,
+						.perInstance      = true,
+						.instanceStepRate = 1,
+					},
+					Rhi::VertexElementDesc{
+						.semantic         = Rhi::VertexSemantic::TEXCOORD,
+						.semanticIndex    = 3,
+						.format           = Rhi::VertexFormat::FLOAT4,
+						.offset           = sizeof(float) * 8,
+						.inputSlot        = 1,
+						.perInstance      = true,
+						.instanceStepRate = 1,
+					},
+					Rhi::VertexElementDesc{
+						.semantic         = Rhi::VertexSemantic::TEXCOORD,
+						.semanticIndex    = 4,
+						.format           = Rhi::VertexFormat::FLOAT4,
+						.offset           = sizeof(float) * 12,
+						.inputSlot        = 1,
+						.perInstance      = true,
+						.instanceStepRate = 1,
+					},
+					Rhi::VertexElementDesc{
+						.semantic         = Rhi::VertexSemantic::COLOR,
+						.semanticIndex    = 0,
+						.format           = Rhi::VertexFormat::FLOAT4,
+						.offset           = sizeof(float) * 16,
+						.inputSlot        = 1,
+						.perInstance      = true,
+						.instanceStepRate = 1,
+					},
+					Rhi::VertexElementDesc{
+						.semantic         = Rhi::VertexSemantic::TEXCOORD,
+						.semanticIndex    = 5,
+						.format           = Rhi::VertexFormat::FLOAT4,
+						.offset           = sizeof(float) * 20,
+						.inputSlot        = 1,
+						.perInstance      = true,
+						.instanceStepRate = 1,
+					},
+				}
+			};
+		}
+
 		Rhi::VertexLayoutDesc BuildLineVertexLayout() {
 			return Rhi::VertexLayoutDesc{
 				.stride   = sizeof(float) * 7,
@@ -165,6 +245,11 @@ namespace Unnamed::Render {
 			"./content/core/shaders/programs/sprite_overlay.shader.json",
 			ASSET_TYPE::SHADER_PROGRAM
 		);
+		const AssetID particleProgramId = LoadAsset(
+			assetManager,
+			"./content/core/shaders/programs/particle.shader.json",
+			ASSET_TYPE::SHADER_PROGRAM
+		);
 		const AssetID debugLineProgramId = LoadAsset(
 			assetManager,
 			"./content/core/shaders/programs/DebugLine.shader.json",
@@ -196,6 +281,7 @@ namespace Unnamed::Render {
 		);
 		const Rhi::VertexLayoutDesc geometryLayout = BuildGeometryVertexLayout();
 		const Rhi::VertexLayoutDesc spriteLayout   = BuildSpriteVertexLayout();
+		const Rhi::VertexLayoutDesc particleLayout = BuildParticleVertexLayout();
 		const Rhi::VertexLayoutDesc lineLayout     = BuildLineVertexLayout();
 
 		mFullscreenPass.pipeline = mPipelineRegistry.RegisterGraphics(
@@ -348,6 +434,111 @@ namespace Unnamed::Render {
 		);
 		mBillboardPass.frontGeom.resolved = nullptr;
 
+		auto particleBaseSpec = RendererPipelineCatalog::MakeSpritePreset(
+			"WorldParticle",
+			particleProgramId,
+			dx.GetGeomRootSignature(),
+			kSceneHdrColorFormat,
+			particleLayout
+		);
+
+		const auto applyParticleBlendMode =
+			[](GraphicsPipelineSpec& spec, const uint32_t blendModeIndex) {
+			auto& pso = spec.psoTemplate;
+			switch (blendModeIndex) {
+				case 0: {
+					pso.blendEnable    = false;
+					pso.srcBlend       = D3D12_BLEND_ONE;
+					pso.destBlend      = D3D12_BLEND_ZERO;
+					pso.blendOp        = D3D12_BLEND_OP_ADD;
+					pso.srcBlendAlpha  = D3D12_BLEND_ONE;
+					pso.destBlendAlpha = D3D12_BLEND_ZERO;
+					pso.blendOpAlpha   = D3D12_BLEND_OP_ADD;
+					break;
+				}
+				case 1: {
+					pso.blendEnable    = true;
+					pso.srcBlend       = D3D12_BLEND_SRC_ALPHA;
+					pso.destBlend      = D3D12_BLEND_INV_SRC_ALPHA;
+					pso.blendOp        = D3D12_BLEND_OP_ADD;
+					pso.srcBlendAlpha  = D3D12_BLEND_ONE;
+					pso.destBlendAlpha = D3D12_BLEND_INV_SRC_ALPHA;
+					pso.blendOpAlpha   = D3D12_BLEND_OP_ADD;
+					break;
+				}
+				case 2: {
+					pso.blendEnable    = true;
+					pso.srcBlend       = D3D12_BLEND_SRC_ALPHA;
+					pso.destBlend      = D3D12_BLEND_ONE;
+					pso.blendOp        = D3D12_BLEND_OP_ADD;
+					pso.srcBlendAlpha  = D3D12_BLEND_ONE;
+					pso.destBlendAlpha = D3D12_BLEND_ONE;
+					pso.blendOpAlpha   = D3D12_BLEND_OP_ADD;
+					break;
+				}
+				case 3: {
+					pso.blendEnable    = true;
+					pso.srcBlend       = D3D12_BLEND_SRC_ALPHA;
+					pso.destBlend      = D3D12_BLEND_ONE;
+					pso.blendOp        = D3D12_BLEND_OP_REV_SUBTRACT;
+					pso.srcBlendAlpha  = D3D12_BLEND_ONE;
+					pso.destBlendAlpha = D3D12_BLEND_ONE;
+					pso.blendOpAlpha   = D3D12_BLEND_OP_REV_SUBTRACT;
+					break;
+				}
+				case 4: {
+					pso.blendEnable    = true;
+					pso.srcBlend       = D3D12_BLEND_ZERO;
+					pso.destBlend      = D3D12_BLEND_SRC_COLOR;
+					pso.blendOp        = D3D12_BLEND_OP_ADD;
+					pso.srcBlendAlpha  = D3D12_BLEND_ZERO;
+					pso.destBlendAlpha = D3D12_BLEND_SRC_ALPHA;
+					pso.blendOpAlpha   = D3D12_BLEND_OP_ADD;
+					break;
+				}
+				case 5: {
+					pso.blendEnable    = true;
+					pso.srcBlend       = D3D12_BLEND_INV_DEST_COLOR;
+					pso.destBlend      = D3D12_BLEND_ONE;
+					pso.blendOp        = D3D12_BLEND_OP_ADD;
+					pso.srcBlendAlpha  = D3D12_BLEND_INV_DEST_ALPHA;
+					pso.destBlendAlpha = D3D12_BLEND_ONE;
+					pso.blendOpAlpha   = D3D12_BLEND_OP_ADD;
+					break;
+				}
+				default: break;
+			}
+		};
+
+		for (uint32_t blendModeIndex = 0;
+		     blendModeIndex < ParticlePassRes::kBlendModeCount;
+		     ++blendModeIndex) {
+			auto particleDepthSpec = particleBaseSpec;
+			particleDepthSpec.debugName =
+				"WorldParticleDepth_" + std::to_string(blendModeIndex);
+			applyParticleBlendMode(particleDepthSpec, blendModeIndex);
+			particleDepthSpec.psoTemplate.depthEnable = true;
+			particleDepthSpec.psoTemplate.depthWriteEnable = false;
+			particleDepthSpec.psoTemplate.dsvFormat =
+				DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
+			particleDepthSpec.psoTemplate.depthFunc =
+				D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+			mParticlePass.depthGeom[blendModeIndex].pipeline =
+				mPipelineRegistry.RegisterGraphics(particleDepthSpec);
+			mParticlePass.depthGeom[blendModeIndex].resolved = nullptr;
+
+			auto particleFrontSpec = particleDepthSpec;
+			particleFrontSpec.debugName =
+				"WorldParticleFront_" + std::to_string(blendModeIndex);
+			particleFrontSpec.psoTemplate.depthEnable = false;
+			particleFrontSpec.psoTemplate.depthWriteEnable = false;
+			particleFrontSpec.psoTemplate.dsvFormat = DXGI_FORMAT_UNKNOWN;
+			particleFrontSpec.psoTemplate.depthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+			mParticlePass.frontGeom[blendModeIndex].pipeline =
+				mPipelineRegistry.RegisterGraphics(particleFrontSpec);
+			mParticlePass.frontGeom[blendModeIndex].resolved = nullptr;
+		}
+
 		mLinePass.pipeline = mPipelineRegistry.RegisterGraphics(
 			RendererPipelineCatalog::MakeLinePreset(
 				"DebugLine",
@@ -386,6 +577,7 @@ namespace Unnamed::Render {
 
 		CreateTriangleTestResources(dx);
 		CreateQuadResources(dx);
+		CreateParticleShapeResources(dx);
 		CreateSkyboxCubeResources(dx);
 		mBillboardPass.depthGeom.vb         = mSpritePass.geom.vb;
 		mBillboardPass.depthGeom.ib         = mSpritePass.geom.ib;

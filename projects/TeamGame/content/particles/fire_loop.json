@@ -1,0 +1,87 @@
+{
+    "name": "fire_loop",
+    "emitterSettings": {
+        "vertexType": 0,
+        "textureFilePath": "projects/TeamGame/content/textures/circle2.png",
+        "blendMode": 2
+    },
+    "emitterSpawn": {
+        "count": 3,
+        "frequency": 0.35,
+        "repeat": true,
+        "useRandomPosition": true,
+        "useLocalSpace": true,
+        "emitShape": 0,
+        "boxHalfSize": [
+            4.0,
+            0.5,
+            4.0
+        ],
+        "sphereRadius": 0.0
+    },
+    "particleSpawn": {
+        "initialScale": [
+            0.4,
+            0.4,
+            0.4
+        ],
+        "initialRotate": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "initialOffset": [
+            0.0,
+            0.0,
+            0.0
+        ]
+    },
+    "particleUpdate": {
+        "lifeTime": 6.5,
+        "velocity": [
+            -2.5,
+            -2.5,
+            0.0
+        ],
+        "rotationSpeed": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "scaleSpeed": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "useGravity": false
+    },
+    "render": {
+        "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+        ],
+        "useBillboard": true,
+        "flipY": true
+    },
+    "trail": {
+        "enabled": true,
+        "maxPoints": 32,
+        "recordInterval": 0.04,
+        "widthHead": 0.6,
+        "widthTail": 0.05,
+        "colorHead": [
+            0.5,
+            0.8,
+            1.0,
+            1.0
+        ],
+        "colorTail": [
+            0.1,
+            0.4,
+            1.0,
+            0.0
+        ]
+    }
+}

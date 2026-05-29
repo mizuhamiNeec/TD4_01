@@ -26,11 +26,21 @@ namespace Unnamed ::Rhi {
 			const void* srcData, uint32_t bytes
 		);
 
+		/// @brief 任意アラインメントで領域をアロケートし、データをコピーします。
+		/// @param srcData コピー元のデータ
+		/// @param bytes コピーするバイト数
+		/// @param alignment アラインメント（2の冪乗）
+		/// @return GPU仮想アドレス。失敗した場合は0。
+		D3D12_GPU_VIRTUAL_ADDRESS AllocateBuffer(
+			const void* srcData, uint32_t bytes, uint32_t alignment
+		);
+
 	private:
 		/// @brief 256バイト境界にアラインメントする
 		/// @param v 元の値
 		 /// @return アラインメントされた値
 		static uint32_t Align256(uint32_t v);
+		static uint32_t AlignTo(uint32_t v, uint32_t alignment);
 
 		Microsoft::WRL::ComPtr<ID3D12Resource> mResource;
 		uint8_t*                               mMapped   = nullptr;

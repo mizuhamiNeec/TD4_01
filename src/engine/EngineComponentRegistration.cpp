@@ -11,6 +11,7 @@
 #include "engine/unnamed/framework/components/mesh/SkeletalAnimationComponent.h"
 #include "engine/unnamed/framework/components/mesh/SkeletalMeshRendererComponent.h"
 #include "engine/unnamed/framework/components/mesh/StaticMeshRendererComponent.h"
+#include "engine/unnamed/framework/components/particle/ParticleEmitterComponent.h"
 #include "engine/unnamed/framework/components/sequence/SequenceDirectorComponent.h"
 #include "engine/unnamed/framework/components/ui/UiCanvasComponent.h"
 #include "engine/unnamed/subsystem/console/Log.h"
@@ -49,6 +50,7 @@ namespace Unnamed {
 		registerIfMissing(CylinderTriggerComponent{});
 		registerIfMissing(SkeletalMeshRendererComponent{});
 		registerIfMissing(SkeletalAnimationComponent{});
+		registerIfMissing(ParticleEmitterComponent{});
 		registerIfMissing(UiCanvasComponent{});
 		registerIfMissing(AudioSourceComponent{});
 		registerIfMissing(SequenceDirectorComponent{});

@@ -1358,6 +1358,150 @@
             "name": "FakeShadow",
             "tags": [],
             "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 14390700056023624390,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "autoPlay": true,
+                        "depthTest": true,
+                        "presetName": "",
+                        "presetPath": "projects/TeamGame/content/particles/fire_loop.json",
+                        "sortKeyBias": 0,
+                        "timeScale": 1.0
+                    },
+                    "guid": 12264589234032906613,
+                    "type": "engine.ParticleEmitter"
+                }
+            ],
+            "folderPath": "",
+            "guid": 46,
+            "isEditorOnly": false,
+            "name": "ParticleEmitter",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            3.0,
+                            1.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 14390700056023624391,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "autoPlay": true,
+                        "depthTest": true,
+                        "presetName": "",
+                        "presetPath": "projects/TeamGame/content/particles/golf_ball_trail.json",
+                        "sortKeyBias": 0,
+                        "timeScale": 1.0
+                    },
+                    "guid": 12264589234032906614,
+                    "type": "engine.ParticleEmitter"
+                }
+            ],
+            "folderPath": "",
+            "guid": 47,
+            "isEditorOnly": false,
+            "name": "ParticleEmitter_GolfTrail",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            2.25,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 14390700056023624392,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "autoPlay": true,
+                        "depthTest": true,
+                        "presetName": "",
+                        "presetPath": "projects/TeamGame/content/particles/clear_burst.json",
+                        "sortKeyBias": 0,
+                        "timeScale": 1.0
+                    },
+                    "guid": 12264589234032906615,
+                    "type": "engine.ParticleEmitter"
+                }
+            ],
+            "folderPath": "",
+            "guid": 48,
+            "isEditorOnly": false,
+            "name": "ParticleEmitter_ClearBurst",
+            "tags": [],
+            "visible": true
         }
     ],
     "folders": [

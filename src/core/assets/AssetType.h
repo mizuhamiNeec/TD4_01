@@ -19,6 +19,7 @@ namespace Unnamed {
 		EVENT_PRESENTATION = 1 << 11, // EventPresentation v2 プロファイル
 		SEQUENCE           = 1 << 12, // Sequence / Timeline
 		EDITOR_GUI         = 1 << 13, // Editor GUI
+		PARTICLE_PRESET    = 1 << 14, // Particle preset JSON
 	};
 
 	std::string ToString(ASSET_TYPE e);

@@ -172,6 +172,7 @@ project "UnnamedEngineRuntime"
 	excludes {
 		"src/thirdparty/**",
 		"src/transplantation/**",
+		"src/engine/particle/Particle/ParticleManager/**",
 		"src/engine/editor/**",
 		"src/engine/gui/editor/**",
 		"src/engine/ImGui/**",

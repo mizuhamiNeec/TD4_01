@@ -119,6 +119,26 @@ namespace Unnamed::Render {
 					return a.sortKey < b.sortKey;
 				}
 			);
+			std::sort(
+				view.worldParticles.begin(),
+				view.worldParticles.end(),
+				[&view](
+				const WorldParticleInput& a, const WorldParticleInput& b
+			) {
+					if (a.sortKey != b.sortKey) {
+						return a.sortKey < b.sortKey;
+					}
+					if (!view.camera.valid) {
+						return false;
+					}
+					const float distSqA = (a.worldPosition - view.camera.cameraPos)
+					                      .SqrLength();
+					const float distSqB = (b.worldPosition - view.camera.cameraPos)
+					                      .SqrLength();
+					// 同一sortKey内は遠いものから描画して透過破綻を抑制。
+					return distSqA > distSqB;
+				}
+			);
 
 			if (
 				mPresentViewKey.empty() &&
@@ -221,6 +241,7 @@ namespace Unnamed::Render {
 			if (
 				!view.worldBillboards.empty() ||
 				!view.worldSprites.empty() ||
+				!view.worldParticles.empty() ||
 				!view.screenSprites.empty()
 			) {
 				requiresSpriteTextures = true;
@@ -242,6 +263,14 @@ namespace Unnamed::Render {
 				}
 			}
 			for (const auto& s : view.screenSprites) {
+				if (s.texture.source == SPRITE_TEXTURE_SOURCE::ASSET) {
+					requiresSpriteTextures = true;
+					(void)EnsureSpriteTextureLoaded(
+						renderDevice, s.texture.textureAssetId
+					);
+				}
+			}
+			for (const auto& s : view.worldParticles) {
 				if (s.texture.source == SPRITE_TEXTURE_SOURCE::ASSET) {
 					requiresSpriteTextures = true;
 					(void)EnsureSpriteTextureLoaded(
@@ -486,6 +515,14 @@ namespace Unnamed::Render {
 		mBillboardPass.frontGeom.resolved = mPipelineRegistry.GetGraphics(
 			mBillboardPass.frontGeom.pipeline
 		);
+		for (size_t i = 0; i < ParticlePassRes::kBlendModeCount; ++i) {
+			mParticlePass.depthGeom[i].resolved = mPipelineRegistry.GetGraphics(
+				mParticlePass.depthGeom[i].pipeline
+			);
+			mParticlePass.frontGeom[i].resolved = mPipelineRegistry.GetGraphics(
+				mParticlePass.frontGeom[i].pipeline
+			);
+		}
 		mLinePass.resolved = mPipelineRegistry.GetGraphics(mLinePass.pipeline);
 
 		for (auto& pass : mPostFxPasses) {

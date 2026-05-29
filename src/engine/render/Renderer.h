@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <functional>
 #include <string>
 #include <string_view>
@@ -155,6 +156,28 @@ namespace Unnamed::Render {
 			GeometryPassRes frontGeom = {};
 		};
 
+		struct ParticlePipelineRes {
+			PipelineHandle                  pipeline = {};
+			const ResolvedGraphicsPipeline* resolved = nullptr;
+		};
+
+		struct ParticleGeometryRes {
+			Microsoft::WRL::ComPtr<ID3D12Resource> vb;
+			Microsoft::WRL::ComPtr<ID3D12Resource> ib;
+			D3D12_VERTEX_BUFFER_VIEW               vbv        = {};
+			D3D12_INDEX_BUFFER_VIEW                ibv        = {};
+			uint32_t                               indexCount = 0;
+		};
+
+		struct ParticlePassRes {
+			static constexpr uint32_t kBlendModeCount = 6;
+			std::array<ParticlePipelineRes, kBlendModeCount> depthGeom = {};
+			std::array<ParticlePipelineRes, kBlendModeCount> frontGeom = {};
+			ParticleGeometryRes                              planeGeom = {};
+			ParticleGeometryRes                              ringGeom = {};
+			ParticleGeometryRes                              cylinderGeom = {};
+		};
+
 		struct SkyboxPassRes {
 			GeometryPassRes geom = {};
 		};
@@ -214,6 +237,7 @@ namespace Unnamed::Render {
 		GeometryPassRes          mGeometryPass        = {};
 		SpritePassRes            mSpritePass          = {};
 		BillboardPassRes         mBillboardPass       = {};
+		ParticlePassRes          mParticlePass        = {};
 		SkyboxPassRes            mSkyboxPass          = {};
 		LinePassRes              mLinePass            = {};
 		AdvancedRenderFoundation mAdvancedFoundation  = {};
@@ -257,6 +281,7 @@ namespace Unnamed::Render {
 			RenderDevice& renderDevice, AssetID textureAssetId
 		);
 		void        EnsureSpriteFallbackTexture(RenderDevice& renderDevice);
+		void        CreateParticleShapeResources(Rhi::D3D12Device& dx);
 		void        InitializeDebugLineResources(Rhi::D3D12Device& dx);
 		void        UploadDebugLinesForFrame();
 		static void ReleaseViewRuntimeTextures(

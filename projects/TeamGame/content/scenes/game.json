@@ -1055,51 +1055,6 @@
             "visible": true
         },
         {
-            "active": true,
-            "components": [
-                {
-                    "active": true,
-                    "data": {
-                        "parentEntityGuid": 42,
-                        "position": [
-                            0.0,
-                            0.009999999776482582,
-                            0.0
-                        ],
-                        "rotation": [
-                            0.0,
-                            0.0,
-                            0.0,
-                            1.0
-                        ],
-                        "scale": [
-                            2.0,
-                            1.0,
-                            2.0
-                        ]
-                    },
-                    "guid": 16399929095914845057,
-                    "type": "engine.Transform"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "materialInstancePath": "",
-                        "materialSlots": [],
-                        "meshPath": "projects/TeamGame/content/models/Hall.obj"
-                    },
-                    "guid": 15308562012175029346,
-                    "type": "engine.StaticMeshRenderer"
-                }
-            ],
-            "folderPath": "",
-            "guid": 45,
-            "isEditorOnly": false,
-            "name": "Hole",
-            "tags": [],
-            "visible": true
-        },
-        {
             "active": false,
             "components": [
                 {
@@ -1554,7 +1509,7 @@
                 }
             ],
             "folderPath": "",
-            "guid": 66,
+            "guid": 10271558206346713442,
             "isEditorOnly": false,
             "name": "PortalPlane",
             "tags": [],

@@ -998,9 +998,9 @@
                             1.0
                         ],
                         "scale": [
-                            1.0,
-                            1.0,
-                            1.0
+                            4.0,
+                            4.0,
+                            4.0
                         ]
                     },
                     "guid": 11053102599363384673,
@@ -1041,7 +1041,7 @@
                                 "slotIndex": 0
                             }
                         ],
-                        "meshPath": "projects/TeamGame/content/models/tree.obj"
+                        "meshPath": "projects/TeamGame/content/models/trash_bag/trash_bag.obj"
                     },
                     "guid": 11435055239696848149,
                     "type": "engine.StaticMeshRenderer"
@@ -1173,9 +1173,9 @@
                             1.0
                         ],
                         "scale": [
-                            1.0,
-                            1.0,
-                            1.0
+                            0.4000000059604645,
+                            0.4000000059604645,
+                            0.4000000059604645
                         ]
                     },
                     "guid": 10536719816971170562,
@@ -1248,9 +1248,9 @@
                             1.0
                         ],
                         "scale": [
-                            1.0,
-                            1.0,
-                            1.0
+                            0.5,
+                            0.5,
+                            0.5
                         ]
                     },
                     "guid": 10810248179210480823,

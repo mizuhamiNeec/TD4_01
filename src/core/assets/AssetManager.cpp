@@ -182,12 +182,11 @@ namespace Unnamed {
 
 		// 不明の場合はスロットだけ作成
 		const AssetID id = FindOrCreateSlotByPath(normalizedPath, deduced);
-		Node&         n  = mNodes[id];
 		if (
 			policy == AssetLoadPolicy::UseCachedIfLoaded &&
-			n.meta.loaded &&
-			(!typeOpt.has_value() || n.meta.type == *typeOpt ||
-			 n.meta.type == ASSET_TYPE::UNKNOWN)
+			mNodes[id].meta.loaded &&
+			(!typeOpt.has_value() || mNodes[id].meta.type == *typeOpt ||
+			 mNodes[id].meta.type == ASSET_TYPE::UNKNOWN)
 		) {
 			if (profiler) {
 				profiler->AddSample("Asset.Load.CacheHit", 1.0f);
@@ -207,7 +206,10 @@ namespace Unnamed {
 				continue;
 			}
 
-			LoadResult r     = l->Load(normalizedPath);
+			LoadResult r = l->Load(normalizedPath);
+			// Load中に依存アセットの再帰ロードが走るため、
+			// mNodes再配置後でも安全なように参照を取り直します。
+			Node& n = mNodes[id];
 			n.payload        = std::move(r.payload);
 			n.meta.type      = deduced == ASSET_TYPE::UNKNOWN ? t : deduced;
 			n.meta.loaded    = true;
@@ -230,7 +232,7 @@ namespace Unnamed {
 			return id;
 		}
 
-		n.meta.loaded = false;
+		mNodes[id].meta.loaded = false;
 		return id;
 	}
 
@@ -370,30 +372,33 @@ namespace Unnamed {
 			return false;
 		}
 
-		Node& n = mNodes[id];
-
 		// ソースパスが空か?
-		if (n.meta.sourcePath.empty()) {
+		if (mNodes[id].meta.sourcePath.empty()) {
 			return false;
 		}
+		const std::string sourcePath = mNodes[id].meta.sourcePath;
+		const ASSET_TYPE  sourceType = mNodes[id].meta.type;
 
 		// ローダーを探す
 		for (const auto& l : mLoaders) {
 			auto t = ASSET_TYPE::UNKNOWN;
 			// このローダーで読めるか?
-			if (!l->CanLoad(n.meta.sourcePath, &t)) {
+			if (!l->CanLoad(sourcePath, &t)) {
 				continue;
 			}
 			// アセットタイプが違うか?
-			if (t != n.meta.type && n.meta.type != ASSET_TYPE::UNKNOWN) {
+			if (t != sourceType && sourceType != ASSET_TYPE::UNKNOWN) {
 				continue;
 			}
 
 			// 再読み込み
-			LoadResult r     = l->Load(n.meta.sourcePath);
+			LoadResult r = l->Load(sourcePath);
+			// Reload中も依存再ロードでmNodesが再配置される可能性があるため、
+			// 参照はLoad後に取り直します。
+			Node& n = mNodes[id];
 			n.payload        = std::move(r.payload);
 			n.meta.loaded    = true;
-			n.meta.fileStamp = CompleteFileStamp(n.meta.sourcePath, r.stamp);
+			n.meta.fileStamp = CompleteFileStamp(sourcePath, r.stamp);
 			n.meta.version++;
 
 			// 依存の設定

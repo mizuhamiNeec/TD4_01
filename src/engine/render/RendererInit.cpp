@@ -16,9 +16,7 @@ namespace Unnamed::Render {
 			AssetManager&      assetManager,
 			const std::string& path,
 			const ASSET_TYPE   type
-		) {
-			return assetManager.LoadFromFile(path, type);
-		}
+		) { return assetManager.LoadFromFile(path, type); }
 
 		Rhi::VertexLayoutDesc BuildGeometryVertexLayout() {
 			return Rhi::VertexLayoutDesc{
@@ -248,6 +246,8 @@ namespace Unnamed::Render {
 		const AssetID portalProgramId = LoadAsset(
 			assetManager,
 			"./content/core/shaders/programs/portal.shader.json",
+			ASSET_TYPE::SHADER_PROGRAM
+		);
 		const AssetID particleProgramId = LoadAsset(
 			assetManager,
 			"./content/core/shaders/programs/particle.shader.json",
@@ -282,10 +282,12 @@ namespace Unnamed::Render {
 		const DXGI_FORMAT swapChainFormat = Rhi::ToDxgiFormat(
 			dx.GetSwapChain().GetFormat()
 		);
-		const Rhi::VertexLayoutDesc geometryLayout = BuildGeometryVertexLayout();
+		const Rhi::VertexLayoutDesc geometryLayout =
+			BuildGeometryVertexLayout();
 		const Rhi::VertexLayoutDesc spriteLayout   = BuildSpriteVertexLayout();
-		const Rhi::VertexLayoutDesc particleLayout = BuildParticleVertexLayout();
-		const Rhi::VertexLayoutDesc lineLayout     = BuildLineVertexLayout();
+		const Rhi::VertexLayoutDesc particleLayout =
+			BuildParticleVertexLayout();
+		const Rhi::VertexLayoutDesc lineLayout = BuildLineVertexLayout();
 
 		mFullscreenPass.pipeline = mPipelineRegistry.RegisterGraphics(
 			RendererPipelineCatalog::MakeFullscreenPreset(
@@ -317,12 +319,13 @@ namespace Unnamed::Render {
 		);
 		mToneMapPass.resolved = nullptr;
 
-		auto bloomDownsampleSpec = RendererPipelineCatalog::MakeFullscreenPreset(
-			"BloomDownsample",
-			bloomDownsampleProgramId,
-			dx.GetFsRootSignature(),
-			kSceneHdrColorFormat
-		);
+		auto bloomDownsampleSpec =
+			RendererPipelineCatalog::MakeFullscreenPreset(
+				"BloomDownsample",
+				bloomDownsampleProgramId,
+				dx.GetFsRootSignature(),
+				kSceneHdrColorFormat
+			);
 		mBloomDownsamplePass.pipeline = mPipelineRegistry.RegisterGraphics(
 			bloomDownsampleSpec
 		);
@@ -334,10 +337,10 @@ namespace Unnamed::Render {
 			dx.GetFsRootSignature(),
 			kSceneHdrColorFormat
 		);
-		bloomUpsampleSpec.psoTemplate.blendEnable    = true;
-		bloomUpsampleSpec.psoTemplate.srcBlend       = D3D12_BLEND_ONE;
-		bloomUpsampleSpec.psoTemplate.destBlend      = D3D12_BLEND_ONE;
-		bloomUpsampleSpec.psoTemplate.srcBlendAlpha  = D3D12_BLEND_ONE;
+		bloomUpsampleSpec.psoTemplate.blendEnable = true;
+		bloomUpsampleSpec.psoTemplate.srcBlend = D3D12_BLEND_ONE;
+		bloomUpsampleSpec.psoTemplate.destBlend = D3D12_BLEND_ONE;
+		bloomUpsampleSpec.psoTemplate.srcBlendAlpha = D3D12_BLEND_ONE;
 		bloomUpsampleSpec.psoTemplate.destBlendAlpha = D3D12_BLEND_ONE;
 		mBloomUpsamplePass.pipeline = mPipelineRegistry.RegisterGraphics(
 			bloomUpsampleSpec
@@ -350,10 +353,10 @@ namespace Unnamed::Render {
 			dx.GetFsRootSignature(),
 			kSceneHdrColorFormat
 		);
-		bloomCombineSpec.psoTemplate.blendEnable    = true;
-		bloomCombineSpec.psoTemplate.srcBlend       = D3D12_BLEND_ONE;
-		bloomCombineSpec.psoTemplate.destBlend      = D3D12_BLEND_ONE;
-		bloomCombineSpec.psoTemplate.srcBlendAlpha  = D3D12_BLEND_ONE;
+		bloomCombineSpec.psoTemplate.blendEnable = true;
+		bloomCombineSpec.psoTemplate.srcBlend = D3D12_BLEND_ONE;
+		bloomCombineSpec.psoTemplate.destBlend = D3D12_BLEND_ONE;
+		bloomCombineSpec.psoTemplate.srcBlendAlpha = D3D12_BLEND_ONE;
 		bloomCombineSpec.psoTemplate.destBlendAlpha = D3D12_BLEND_ONE;
 		mBloomCombinePass.pipeline = mPipelineRegistry.RegisterGraphics(
 			bloomCombineSpec
@@ -400,7 +403,9 @@ namespace Unnamed::Render {
 			geometryLayout
 		);
 		skyboxSpec.psoTemplate.cullMode = D3D12_CULL_MODE_NONE;
-		mSkyboxPass.geom.pipeline = mPipelineRegistry.RegisterGraphics(skyboxSpec);
+		mSkyboxPass.geom.pipeline       = mPipelineRegistry.RegisterGraphics(
+			skyboxSpec
+		);
 		mSkyboxPass.geom.resolved = nullptr;
 
 		auto spriteSpec = RendererPipelineCatalog::MakeSpritePreset(
@@ -410,7 +415,9 @@ namespace Unnamed::Render {
 			kSceneLdrColorFormat,
 			spriteLayout
 		);
-		mSpritePass.geom.pipeline = mPipelineRegistry.RegisterGraphics(spriteSpec);
+		mSpritePass.geom.pipeline = mPipelineRegistry.RegisterGraphics(
+			spriteSpec
+		);
 		mSpritePass.geom.resolved = nullptr;
 
 		auto portalSpec = RendererPipelineCatalog::MakeSpritePreset(
@@ -427,24 +434,26 @@ namespace Unnamed::Render {
 		mPortalPass.pipeline = mPipelineRegistry.RegisterGraphics(portalSpec);
 		mPortalPass.resolved = nullptr;
 
-		auto billboardDepthSpec = spriteSpec;
-		billboardDepthSpec.debugName              = "WorldBillboardDepth";
-		billboardDepthSpec.psoTemplate.rtvFormat  = kSceneHdrColorFormat;
-		billboardDepthSpec.psoTemplate.depthEnable = true;
+		auto billboardDepthSpec                         = spriteSpec;
+		billboardDepthSpec.debugName                    = "WorldBillboardDepth";
+		billboardDepthSpec.psoTemplate.rtvFormat        = kSceneHdrColorFormat;
+		billboardDepthSpec.psoTemplate.depthEnable      = true;
 		billboardDepthSpec.psoTemplate.depthWriteEnable = true;
-		billboardDepthSpec.psoTemplate.dsvFormat = DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
-		billboardDepthSpec.psoTemplate.depthFunc = D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+		billboardDepthSpec.psoTemplate.dsvFormat        =
+			DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
+		billboardDepthSpec.psoTemplate.depthFunc =
+			D3D12_COMPARISON_FUNC_GREATER_EQUAL;
 		mBillboardPass.depthGeom.pipeline = mPipelineRegistry.RegisterGraphics(
 			billboardDepthSpec
 		);
 		mBillboardPass.depthGeom.resolved = nullptr;
 
-		auto billboardFrontSpec = billboardDepthSpec;
-		billboardFrontSpec.debugName                   = "WorldBillboardFront";
-		billboardFrontSpec.psoTemplate.depthEnable     = false;
+		auto billboardFrontSpec                         = billboardDepthSpec;
+		billboardFrontSpec.debugName                    = "WorldBillboardFront";
+		billboardFrontSpec.psoTemplate.depthEnable      = false;
 		billboardFrontSpec.psoTemplate.depthWriteEnable = false;
-		billboardFrontSpec.psoTemplate.dsvFormat       = DXGI_FORMAT_UNKNOWN;
-		billboardFrontSpec.psoTemplate.depthFunc       =
+		billboardFrontSpec.psoTemplate.dsvFormat        = DXGI_FORMAT_UNKNOWN;
+		billboardFrontSpec.psoTemplate.depthFunc        =
 			D3D12_COMPARISON_FUNC_ALWAYS;
 		mBillboardPass.frontGeom.pipeline = mPipelineRegistry.RegisterGraphics(
 			billboardFrontSpec
@@ -530,13 +539,13 @@ namespace Unnamed::Render {
 		for (uint32_t blendModeIndex = 0;
 		     blendModeIndex < ParticlePassRes::kBlendModeCount;
 		     ++blendModeIndex) {
-			auto particleDepthSpec = particleBaseSpec;
+			auto particleDepthSpec      = particleBaseSpec;
 			particleDepthSpec.debugName =
 				"WorldParticleDepth_" + std::to_string(blendModeIndex);
 			applyParticleBlendMode(particleDepthSpec, blendModeIndex);
-			particleDepthSpec.psoTemplate.depthEnable = true;
+			particleDepthSpec.psoTemplate.depthEnable      = true;
 			particleDepthSpec.psoTemplate.depthWriteEnable = false;
-			particleDepthSpec.psoTemplate.dsvFormat =
+			particleDepthSpec.psoTemplate.dsvFormat        =
 				DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
 			particleDepthSpec.psoTemplate.depthFunc =
 				D3D12_COMPARISON_FUNC_GREATER_EQUAL;
@@ -544,13 +553,14 @@ namespace Unnamed::Render {
 				mPipelineRegistry.RegisterGraphics(particleDepthSpec);
 			mParticlePass.depthGeom[blendModeIndex].resolved = nullptr;
 
-			auto particleFrontSpec = particleDepthSpec;
+			auto particleFrontSpec      = particleDepthSpec;
 			particleFrontSpec.debugName =
 				"WorldParticleFront_" + std::to_string(blendModeIndex);
 			particleFrontSpec.psoTemplate.depthEnable = false;
 			particleFrontSpec.psoTemplate.depthWriteEnable = false;
 			particleFrontSpec.psoTemplate.dsvFormat = DXGI_FORMAT_UNKNOWN;
-			particleFrontSpec.psoTemplate.depthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+			particleFrontSpec.psoTemplate.depthFunc =
+				D3D12_COMPARISON_FUNC_ALWAYS;
 			mParticlePass.frontGeom[blendModeIndex].pipeline =
 				mPipelineRegistry.RegisterGraphics(particleFrontSpec);
 			mParticlePass.frontGeom[blendModeIndex].resolved = nullptr;
@@ -606,11 +616,11 @@ namespace Unnamed::Render {
 		mBillboardPass.frontGeom.vbv        = mSpritePass.geom.vbv;
 		mBillboardPass.frontGeom.ibv        = mSpritePass.geom.ibv;
 		mBillboardPass.frontGeom.indexCount = mSpritePass.geom.indexCount;
-		mPortalPass.vb         = mSpritePass.geom.vb;
-		mPortalPass.ib         = mSpritePass.geom.ib;
-		mPortalPass.vbv        = mSpritePass.geom.vbv;
-		mPortalPass.ibv        = mSpritePass.geom.ibv;
-		mPortalPass.indexCount = mSpritePass.geom.indexCount;
+		mPortalPass.vb                      = mSpritePass.geom.vb;
+		mPortalPass.ib                      = mSpritePass.geom.ib;
+		mPortalPass.vbv                     = mSpritePass.geom.vbv;
+		mPortalPass.ibv                     = mSpritePass.geom.ibv;
+		mPortalPass.indexCount              = mSpritePass.geom.indexCount;
 		LoadSceneMeshResources(renderDevice, dx);
 		LoadMaterialResources(renderDevice, dx);
 		renderDevice.GetRegistry().OnResize(

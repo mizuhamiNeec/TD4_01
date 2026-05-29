@@ -58,6 +58,10 @@ VsOut VsMain(VsIn i) {
 
 /// @brief PBR入力を活かしつつトゥーン調ライティングを適用して最終色を出力する。
 float4 PsMain(VsOut i) : SV_Target {
+	if (dot(float4(i.positionWS, 1.0f), gClipPlane) < 0.0f) {
+		discard;
+	}
+
 	// ベースカラーをマテリアル係数込みで計算する。
 	float4 baseColor = gBaseColorTex.Sample(gLinearWrap, i.uv) * gBaseColor;
 	float3 albedo    = baseColor.rgb;

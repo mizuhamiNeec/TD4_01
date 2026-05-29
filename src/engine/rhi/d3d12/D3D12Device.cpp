@@ -813,7 +813,7 @@ namespace Unnamed::Rhi {
 			param[1].ParameterType             = D3D12_ROOT_PARAMETER_TYPE_CBV;
 			param[1].Descriptor.ShaderRegister = 1; // b1
 			param[1].Descriptor.RegisterSpace  = 0;
-			param[1].ShaderVisibility          = D3D12_SHADER_VISIBILITY_VERTEX;
+			param[1].ShaderVisibility          = D3D12_SHADER_VISIBILITY_ALL;
 
 			param[2].ParameterType             = D3D12_ROOT_PARAMETER_TYPE_CBV;
 			param[2].Descriptor.ShaderRegister = 2; // b2

@@ -25,17 +25,20 @@
 #include "engine/sequence/SequenceRuntime.h"
 #include "engine/unnamed/framework/components/SkyboxComponent.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
+#include "engine/unnamed/framework/components/CameraComponent.h"
 #include "engine/unnamed/framework/components/editor/EditorCameraComponent.h"
 #include "engine/unnamed/framework/components/mesh/SkeletalAnimationComponent.h"
 #include "engine/unnamed/framework/components/mesh/SkeletalMeshRendererComponent.h"
 #include "engine/unnamed/framework/components/mesh/StaticMeshRendererComponent.h"
+#include "engine/unnamed/framework/components/portal/PortalComponent.h"
+#include "engine/unnamed/framework/components/portal/PortalExitComponent.h"
+#include "engine/unnamed/framework/components/sequence/SequenceDirectorComponent.h"
 #include "engine/unnamed/framework/components/particle/ParticleEmitterComponent.h"
 #include "engine/unnamed/framework/components/ui/UiCanvasComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/primitive/Primitives.h"
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
 #include "engine/unnamed/subsystem/console/Log.h"
-// ReSharper disable once CppUnusedIncludeDirective
 #include "engine/unnamed/subsystem/console/concommand/ConVar.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 #include "engine/unnamed/subsystem/input/InputSystem.h"
@@ -1025,6 +1028,100 @@ namespace Unnamed {
 				sprite.uvFlipY         = true;
 				sceneView.worldSprites.emplace_back(sprite);
 			}
+		}
+
+		for (const auto& entity : mScene->GetEntities()) {
+			if (!entity || !entity->IsActive() || !entity->IsVisible()) {
+				continue;
+			}
+
+			auto* portal    = entity->GetComponent<PortalComponent>();
+			auto* transform = entity->GetComponent<TransformComponent>();
+			if (!portal || !transform) {
+				continue;
+			}
+
+			const uint64_t exitGuid = portal->GetExitEntityGuid();
+			if (exitGuid == 0) {
+				continue;
+			}
+
+			Entity* exitEntity = mScene->FindEntity(exitGuid);
+			if (!exitEntity) {
+				continue;
+			}
+
+			auto* exitTransform = exitEntity->GetComponent<TransformComponent>();
+			if (!exitTransform) {
+				continue;
+			}
+
+			const std::string portalViewKey =
+				std::string("portal.") + std::to_string(entity->GetGuid());
+
+			Mat4 entryMat = transform->RenderWorldMat();
+			Mat4 exitMat  = exitTransform->RenderWorldMat();
+
+			const Vec3 entryRight = entryMat.GetRight().Normalized();
+			const Vec3 entryUp    = entryMat.GetUp().Normalized();
+			const Vec3 entryNormal = entryRight.Cross(entryUp).Normalized();
+			const Vec3 entryPos    =
+				entryMat.GetTranslate() + entryNormal * 0.01f;
+
+			Render::WorldSpriteInput portalSprite = {};
+			portalSprite.texture.source =
+				Render::SPRITE_TEXTURE_SOURCE::VIEW_SCENE_COLOR;
+			portalSprite.texture.viewKey = portalViewKey;
+			portalSprite.worldPosition = entryPos;
+			portalSprite.worldRight = entryRight;
+			portalSprite.worldUp = entryUp;
+			portalSprite.sizeWorld = portal->GetSize();
+			portalSprite.color = Vec4::one;
+			portalSprite.rotationRad = 0.0f;
+			portalSprite.sortKey = -1000;
+			portalSprite.uvFlipY = true;
+			portalSprite.screenSpaceUv = true;
+			sceneView.worldSprites.emplace_back(std::move(portalSprite));
+
+			Render::RenderViewInput portalCamView = {};
+			portalCamView.viewKey = portalViewKey;
+			portalCamView.type    = Render::RENDER_VIEW_TYPE::SCENE;
+			portalCamView.output.sizeMode =
+				Render::RENDER_VIEW_SIZE_MODE::MATCH_BACK_BUFFER;
+			portalCamView.output.presentToSwapChain = false;
+			portalCamView.output.clearSwapChainWhenNotPresenting = true;
+			portalCamView.sceneViewMode.mode = Render::SCENE_RENDER_MODE::FIT_VIEWPORT;
+			portalCamView.enablePostFx = false;
+
+			Mat4 mainCamMat       = sceneView.camera.view.Inverse();
+			Mat4 entryLocalCamMat = mainCamMat * entryMat.Inverse();
+			Mat4 portalCamWorld   = entryLocalCamMat * exitMat;
+
+			portalCamView.camera = sceneView.camera;
+			portalCamView.camera.view = portalCamWorld.Inverse();
+			portalCamView.camera.cameraPos = portalCamWorld.GetTranslate();
+			portalCamView.camera.viewProj =
+				portalCamView.camera.view * portalCamView.camera.proj;
+
+			const Vec3 exitRight = exitMat.GetRight().Normalized();
+			const Vec3 exitUp = exitMat.GetUp().Normalized();
+			const Vec3 exitNormal = exitRight.Cross(exitUp).Normalized();
+			const Vec3 clipNormal = exitNormal * -1.0f;
+			const Vec3 clipPoint = exitMat.GetTranslate();
+			portalCamView.camera.useClipPlane = true;
+			portalCamView.camera.clipPlane = Vec4(
+				clipNormal.x,
+				clipNormal.y,
+				clipNormal.z,
+				-clipNormal.Dot(clipPoint)
+			);
+
+			for (const auto& obj : sceneView.visibleObjects) {
+				portalCamView.visibleObjects.emplace_back(obj);
+			}
+			portalCamView.skybox = sceneView.skybox;
+
+			inputs.views.emplace_back(std::move(portalCamView));
 		}
 
 		if (!mDebugScreenSprites.empty()) {

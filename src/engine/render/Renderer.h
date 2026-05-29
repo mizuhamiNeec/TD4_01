@@ -239,6 +239,7 @@ namespace Unnamed::Render {
 		BillboardPassRes         mBillboardPass       = {};
 		ParticlePassRes          mParticlePass        = {};
 		SkyboxPassRes            mSkyboxPass          = {};
+		GeometryPassRes          mPortalPass          = {};
 		LinePassRes              mLinePass            = {};
 		AdvancedRenderFoundation mAdvancedFoundation  = {};
 

@@ -56,6 +56,10 @@ VsOut VsMain(VsIn i) {
 }
 
 float4 PsMain(VsOut i) : SV_Target {
+	if (dot(float4(i.positionWS, 1.0f), gClipPlane) < 0.0f) {
+		discard;
+	}
+
 	// ベースカラーのテクスチャサンプリング
 	float3 texColor = gBaseColorTex.Sample(gLinearWrap, i.uv).rgb;
 

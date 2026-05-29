@@ -777,8 +777,8 @@ namespace Unnamed::Render {
 						for (const auto& portal : view.portals) {
 							if (!portal.viewKey.empty()) {
 								const auto stateIt = mViewStates.find(portal.viewKey);
-								if (stateIt != mViewStates.end() && stateIt->second.outputTextureId != 0) {
-									b.ReadSrvPs(stateIt->second.outputTextureId);
+								if (stateIt != mViewStates.end() && stateIt->second.colorTextureId != 0) {
+									b.ReadSrvPs(stateIt->second.colorTextureId);
 								}
 							}
 						}
@@ -829,7 +829,7 @@ namespace Unnamed::Render {
 							if (!portal.viewKey.empty()) {
 								const auto stateIt = mViewStates.find(portal.viewKey);
 								if (stateIt != mViewStates.end()) {
-									textureId = stateIt->second.outputTextureId;
+									textureId = stateIt->second.colorTextureId;
 								}
 							}
 							if (textureId == 0) {
@@ -1365,9 +1365,10 @@ namespace Unnamed::Render {
 					}
 				);
 
-				uint32_t postFxInputId             = state.colorTextureId;
-				uint32_t postFxOutputId            = state.postFxTextureAId;
-				auto     BuildResolvedPostFxParams =
+				if (view.enablePostFx) {
+					uint32_t postFxInputId             = state.colorTextureId;
+					uint32_t postFxOutputId            = state.postFxTextureAId;
+					auto     BuildResolvedPostFxParams =
 					[&view](const PostFxRuntimePass& passRes) {
 					PostFxParamsConstants     params       = {};
 					const PostFxPassOverride* viewOverride =
@@ -1840,7 +1841,8 @@ namespace Unnamed::Render {
 					}
 				);
 
-				outputId = toneMapOutputId;
+					outputId = toneMapOutputId;
+				}
 			}
 
 			if (view.type == RENDER_VIEW_TYPE::SPRITE_ONLY) {

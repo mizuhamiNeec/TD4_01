@@ -536,8 +536,19 @@ namespace Unnamed {
 				viewIt->camera.cameraPos = portalCamWorld.GetTranslate();
 				viewIt->camera.viewProj =
 					viewIt->camera.view * viewIt->camera.proj;
-				viewIt->camera.useClipPlane = false;
-				viewIt->camera.clipPlane = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
+				const Vec3 exitRight = exitMat.GetRight().Normalized();
+				const Vec3 exitUp = exitMat.GetUp().Normalized();
+				const Vec3 exitNormal = exitRight.Cross(exitUp).Normalized();
+				const Vec3 clipNormal = exitNormal * -1.0f;
+				const Vec3 clipPoint = exitMat.GetTranslate();
+				viewIt->camera.useClipPlane = true;
+				viewIt->camera.clipPlane = Vec4(
+					clipNormal.x,
+					clipNormal.y,
+					clipNormal.z,
+					-clipNormal.Dot(clipPoint)
+				);
+				viewIt->enablePostFx = false;
 			}
 		};
 

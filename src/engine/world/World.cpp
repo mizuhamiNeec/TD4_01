@@ -1062,7 +1062,8 @@ namespace Unnamed {
 				entryMat.GetTranslate() + entryNormal * 0.01f;
 
 			Render::WorldSpriteInput portalSprite = {};
-			portalSprite.texture.source = Render::SPRITE_TEXTURE_SOURCE::VIEW_OUTPUT;
+			portalSprite.texture.source =
+				Render::SPRITE_TEXTURE_SOURCE::VIEW_SCENE_COLOR;
 			portalSprite.texture.viewKey = portalViewKey;
 			portalSprite.worldPosition = entryPos;
 			portalSprite.worldRight = entryRight;
@@ -1083,6 +1084,7 @@ namespace Unnamed {
 			portalCamView.output.presentToSwapChain = false;
 			portalCamView.output.clearSwapChainWhenNotPresenting = true;
 			portalCamView.sceneViewMode.mode = Render::SCENE_RENDER_MODE::FIT_VIEWPORT;
+			portalCamView.enablePostFx = false;
 
 			Mat4 mainCamMat       = sceneView.camera.view.Inverse();
 			Mat4 entryLocalCamMat = mainCamMat * entryMat.Inverse();
@@ -1094,10 +1096,18 @@ namespace Unnamed {
 			portalCamView.camera.viewProj =
 				portalCamView.camera.view * portalCamView.camera.proj;
 
-			// 無限平面クリップが強すぎるため、ポータルカメラ側の
-			// 平面クリップは使用しない（表示面の矩形マスクで切り取る）。
-			portalCamView.camera.useClipPlane = false;
-			portalCamView.camera.clipPlane = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
+			const Vec3 exitRight = exitMat.GetRight().Normalized();
+			const Vec3 exitUp = exitMat.GetUp().Normalized();
+			const Vec3 exitNormal = exitRight.Cross(exitUp).Normalized();
+			const Vec3 clipNormal = exitNormal * -1.0f;
+			const Vec3 clipPoint = exitMat.GetTranslate();
+			portalCamView.camera.useClipPlane = true;
+			portalCamView.camera.clipPlane = Vec4(
+				clipNormal.x,
+				clipNormal.y,
+				clipNormal.z,
+				-clipNormal.Dot(clipPoint)
+			);
 
 			for (const auto& obj : sceneView.visibleObjects) {
 				portalCamView.visibleObjects.emplace_back(obj);

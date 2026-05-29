@@ -21,6 +21,7 @@ namespace Unnamed::Render {
 	enum class SPRITE_TEXTURE_SOURCE : uint8_t {
 		ASSET = 0,
 		VIEW_OUTPUT = 1,
+		VIEW_SCENE_COLOR = 2,
 	};
 
 	struct SpriteTextureRef {
@@ -174,6 +175,7 @@ namespace Unnamed::Render {
 		RENDER_VIEW_TYPE      type = RENDER_VIEW_TYPE::SCENE;
 		RenderViewOutputDesc  output = {};
 		SceneViewRenderMode   sceneViewMode = {};
+		bool                  enablePostFx = true;
 		std::vector<PostFxPassOverride> postFxPassOverrides;
 		RenderCameraInput     camera = {};
 		SkyboxInput           skybox = {};

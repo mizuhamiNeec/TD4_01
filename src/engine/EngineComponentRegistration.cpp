@@ -11,6 +11,8 @@
 #include "engine/unnamed/framework/components/mesh/SkeletalAnimationComponent.h"
 #include "engine/unnamed/framework/components/mesh/SkeletalMeshRendererComponent.h"
 #include "engine/unnamed/framework/components/mesh/StaticMeshRendererComponent.h"
+#include "engine/unnamed/framework/components/portal/PortalComponent.h"
+#include "engine/unnamed/framework/components/portal/PortalExitComponent.h"
 #include "engine/unnamed/framework/components/sequence/SequenceDirectorComponent.h"
 #include "engine/unnamed/framework/components/ui/UiCanvasComponent.h"
 #include "engine/unnamed/subsystem/console/Log.h"
@@ -43,6 +45,8 @@ namespace Unnamed {
 
 		registerIfMissing(TransformComponent{});
 		registerIfMissing(CameraComponent{});
+		registerIfMissing(PortalComponent{});
+		registerIfMissing(PortalExitComponent{});
 		registerIfMissing(SkyboxComponent{});
 		registerIfMissing(StaticMeshRendererComponent{});
 		registerIfMissing(StaticMeshColliderComponent{});

@@ -25,16 +25,19 @@
 #include "engine/sequence/SequenceRuntime.h"
 #include "engine/unnamed/framework/components/SkyboxComponent.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
+#include "engine/unnamed/framework/components/CameraComponent.h"
 #include "engine/unnamed/framework/components/editor/EditorCameraComponent.h"
 #include "engine/unnamed/framework/components/mesh/SkeletalAnimationComponent.h"
 #include "engine/unnamed/framework/components/mesh/SkeletalMeshRendererComponent.h"
 #include "engine/unnamed/framework/components/mesh/StaticMeshRendererComponent.h"
+#include "engine/unnamed/framework/components/portal/PortalComponent.h"
+#include "engine/unnamed/framework/components/portal/PortalExitComponent.h"
+#include "engine/unnamed/framework/components/sequence/SequenceDirectorComponent.h"
 #include "engine/unnamed/framework/components/ui/UiCanvasComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/primitive/Primitives.h"
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
 #include "engine/unnamed/subsystem/console/Log.h"
-// ReSharper disable once CppUnusedIncludeDirective
 #include "engine/unnamed/subsystem/console/concommand/ConVar.h"
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 #include "engine/unnamed/subsystem/input/InputSystem.h"
@@ -1018,6 +1021,72 @@ namespace Unnamed {
 				sprite.uvFlipY         = true;
 				sceneView.worldSprites.emplace_back(sprite);
 			}
+		}
+
+		for (const auto& entity : mScene->GetEntities()) {
+			if (!entity || !entity->IsActive() || !entity->IsVisible()) continue;
+			
+			auto* portal = entity->GetComponent<PortalComponent>();
+			auto* transform = entity->GetComponent<TransformComponent>();
+			if (!portal || !transform) continue;
+
+			uint64_t exitGuid = portal->GetExitEntityGuid();
+			if (exitGuid == 0) continue;
+
+			Entity* exitEntity = mScene->FindEntity(exitGuid);
+			if (!exitEntity) continue;
+
+			auto* exitTransform = exitEntity->GetComponent<TransformComponent>();
+			if (!exitTransform) continue;
+
+			std::string portalViewKey = std::string("portal.") + std::to_string(entity->GetGuid());
+
+			Mat4 entryMat = transform->RenderWorldMat();
+			Mat4 exitMat = exitTransform->RenderWorldMat();
+
+			Render::PortalRenderInput portalInput = {};
+			portalInput.viewKey = portalViewKey;
+			portalInput.worldPosition = entryMat.GetTranslate();
+			portalInput.worldRight = entryMat.GetRight().Normalized();
+			portalInput.worldUp = entryMat.GetUp().Normalized();
+			portalInput.sizeWorld = portal->GetSize();
+			sceneView.portals.emplace_back(portalInput);
+
+			// Add a new RenderViewInput for the portal exit camera
+			Render::RenderViewInput portalCamView = {};
+			portalCamView.viewKey = portalViewKey;
+			portalCamView.type = Render::RENDER_VIEW_TYPE::SCENE;
+			// 画面サイズに合わせる (もしくは固定サイズ)
+			portalCamView.output.sizeMode = Render::RENDER_VIEW_SIZE_MODE::MATCH_BACK_BUFFER;
+			portalCamView.output.presentToSwapChain = false;
+			portalCamView.output.clearSwapChainWhenNotPresenting = true;
+			portalCamView.sceneViewMode.mode = Render::SCENE_RENDER_MODE::FIT_VIEWPORT;
+
+			// ポータルカメラの計算:
+			// entryTransform から見たメインカメラの相対位置を、exitTransform から見た位置に適用する。
+			Mat4 mainCamMat = sceneView.camera.view.Inverse();
+
+			// entryMat.Inverse() * mainCamMat = entryLocalCamMat
+			Mat4 entryLocalCamMat = mainCamMat * entryMat.Inverse();
+			// ポータル出口はZが反転しているか？ 出口から「出る」向きになるため、Z反転またはそのまま。通常そのまま。
+			Mat4 portalCamWorld = entryLocalCamMat * exitMat;
+
+			portalCamView.camera = sceneView.camera;
+			portalCamView.camera.view = portalCamWorld.Inverse();
+			portalCamView.camera.cameraPos = portalCamWorld.GetTranslate();
+			
+			// 無限平面クリップが強すぎるため、ポータルカメラ側の
+			// 平面クリップは使用しない（表示面の矩形マスクで切り取る）。
+			portalCamView.camera.useClipPlane = false;
+			portalCamView.camera.clipPlane = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+			// ここではポータルから見たシーンのオブジェクトを収集（再帰は1段のみ）
+			for (const auto& obj : sceneView.visibleObjects) {
+				portalCamView.visibleObjects.emplace_back(obj);
+			}
+			portalCamView.skybox = sceneView.skybox;
+
+			inputs.views.emplace_back(std::move(portalCamView));
 		}
 
 		if (!mDebugScreenSprites.empty()) {

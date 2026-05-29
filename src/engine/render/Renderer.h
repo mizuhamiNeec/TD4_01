@@ -215,6 +215,7 @@ namespace Unnamed::Render {
 		SpritePassRes            mSpritePass          = {};
 		BillboardPassRes         mBillboardPass       = {};
 		SkyboxPassRes            mSkyboxPass          = {};
+		GeometryPassRes          mPortalPass          = {};
 		LinePassRes              mLinePass            = {};
 		AdvancedRenderFoundation mAdvancedFoundation  = {};
 

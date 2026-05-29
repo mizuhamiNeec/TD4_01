@@ -43,6 +43,7 @@ namespace Unnamed::Render {
 			frame.viewProj = frame.view * frame.proj;
 			frame.cameraPos = camera.valid ? camera.cameraPos : Vec3::zero;
 			frame.time = time;
+			frame.clipPlane = (camera.valid && camera.useClipPlane) ? camera.clipPlane : Vec4(0.0f, 0.0f, 0.0f, 1.0f);
 			return frame;
 		}
 
@@ -761,6 +762,125 @@ namespace Unnamed::Render {
 									0
 								);
 							}
+						}
+					}
+				);
+
+				mGraph.AddPass(
+					prefix + "Portals",
+					[colorId, depthId, viewIndex, this](RenderGraphBuilder& b) {
+						b.WriteRt(colorId);
+						b.WriteDepth(depthId);
+						const RenderViewInput& view = mFrameViews[viewIndex];
+						for (const auto& portal : view.portals) {
+							if (!portal.viewKey.empty()) {
+								const auto stateIt = mViewStates.find(portal.viewKey);
+								if (stateIt != mViewStates.end() && stateIt->second.outputTextureId != 0) {
+									b.ReadSrvPs(stateIt->second.outputTextureId);
+								}
+							}
+						}
+					},
+					[this, viewIndex, state, &renderDevice](RenderPassContext& pass) {
+						const RenderViewInput& view = mFrameViews[viewIndex];
+						if (view.portals.empty()) {
+							return;
+						}
+
+						auto& allocator = static_cast<Rhi::D3D12Device&>(
+							renderDevice.GetRhiDevice()
+						).GetFrameUploadAllocator();
+						Rhi::FrameConstants frame = BuildSceneFrameConstants(
+							view.camera, state.logicalWidth, state.logicalHeight, 0.0f
+						);
+						const D3D12_GPU_VIRTUAL_ADDRESS frameCb =
+							allocator.AllocateConstantBuffer(
+								&frame, sizeof(frame)
+							);
+
+						pass.SetViewportAndScissor(
+							0.0f, 0.0f,
+							static_cast<float>(state.logicalWidth),
+							static_cast<float>(state.logicalHeight)
+						);
+						pass.SetSrvUavHeap();
+						pass.SetRenderTargetAndDepth(
+							std::span<const uint32_t>(&state.colorTextureId, 1),
+							state.depthTextureId
+						);
+
+						if (!mPortalPass.resolved || !mPortalPass.resolved->pso) {
+							return;
+						}
+						pass.SetGraphicsPipeline(
+							mPortalPass.resolved->rootSignature,
+							mPortalPass.resolved->pso
+						);
+						pass.BindGraphicsCbv(
+							ToRootIndex(GEOM_ROOT_SLOT::FRAME), frameCb
+						);
+						pass.SetVertexBuffer(mPortalPass.vbv);
+						pass.SetIndexBuffer(mPortalPass.ibv);
+
+						for (const auto& portal : view.portals) {
+							uint32_t textureId = 0;
+							if (!portal.viewKey.empty()) {
+								const auto stateIt = mViewStates.find(portal.viewKey);
+								if (stateIt != mViewStates.end()) {
+									textureId = stateIt->second.outputTextureId;
+								}
+							}
+							if (textureId == 0) {
+								EnsureSpriteFallbackTexture(renderDevice);
+								textureId = mSpriteFallbackTextureId;
+							}
+
+							Vec3 right = portal.worldRight;
+							Vec3 up    = portal.worldUp;
+							if (right.SqrLength() < 1e-6f) right = Vec3::right;
+							if (up.SqrLength() < 1e-6f) up = Vec3::up;
+							right = right.Normalized();
+							up    = up.Normalized();
+							const Vec3 normal = right.Cross(up).Normalized();
+
+							Rhi::ObjectConstants object = {};
+							object.world                = Mat4::identity;
+							object.world.m[0][0]        =
+								right.x * portal.sizeWorld.x * 0.5f;
+							object.world.m[0][1] =
+								right.y * portal.sizeWorld.x * 0.5f;
+							object.world.m[0][2] =
+								right.z * portal.sizeWorld.x * 0.5f;
+							object.world.m[1][0] =
+								up.x * portal.sizeWorld.y * 0.5f;
+							object.world.m[1][1] =
+								up.y * portal.sizeWorld.y * 0.5f;
+							object.world.m[1][2] =
+								up.z * portal.sizeWorld.y * 0.5f;
+							object.world.m[2][0]        = normal.x;
+							object.world.m[2][1]        = normal.y;
+							object.world.m[2][2]        = normal.z;
+							const Vec3 portalSurfacePos =
+								portal.worldPosition + normal * 0.01f;
+							object.world.m[3][0]        = portalSurfacePos.x;
+							object.world.m[3][1]        = portalSurfacePos.y;
+							object.world.m[3][2]        = portalSurfacePos.z;
+							object.worldInverseTranspose = object.world.Inverse().Transpose();
+							object.skinningInfo = Vec4(0.0f, 0.0f, 1.0f, 1.0f);
+
+							const D3D12_GPU_VIRTUAL_ADDRESS objectCb = allocator.AllocateConstantBuffer(&object, sizeof(object));
+
+							pass.BindGraphicsCbv(
+								ToRootIndex(GEOM_ROOT_SLOT::OBJECT), objectCb
+							);
+							pass.BindGraphicsCbv(
+								ToRootIndex(GEOM_ROOT_SLOT::SKINNING), objectCb
+							);
+							pass.BindGraphicsSrvTable(
+								ToRootIndex(GEOM_ROOT_SLOT::BASE_COLOR_TEXTURE),
+								textureId
+							);
+							pass.DrawIndexedTest(mPortalPass.indexCount);
 						}
 					}
 				);

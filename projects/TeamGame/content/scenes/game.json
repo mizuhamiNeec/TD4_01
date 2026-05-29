@@ -2444,6 +2444,92 @@
             "name": "ColorCone",
             "tags": [],
             "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            -15.923927307128906,
+                            2.867520332336426,
+                            7.110408782958984
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "ExitEntityGuid": 67,
+                        "SizeX": 128.0,
+                        "SizeY": 128.0
+                    },
+                    "guid": 0,
+                    "type": "PortalComponent"
+                }
+            ],
+            "folderPath": "",
+            "guid": 66,
+            "isEditorOnly": false,
+            "name": "PortalPlane",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            -1.0364093780517578,
+                            0.0,
+                            -7.651302337646484
+                        ],
+                        "rotation": [
+                            1.1905178780580172e-06,
+                            -0.3852940499782562,
+                            1.1905178780580172e-06,
+                            0.9227938652038574
+                        ],
+                        "scale": [
+                            1.0000038146972656,
+                            1.0000030994415283,
+                            1.0000008344650269
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {},
+                    "guid": 0,
+                    "type": "PortalExitComponent"
+                }
+            ],
+            "folderPath": "",
+            "guid": 67,
+            "isEditorOnly": false,
+            "name": "PortalExit",
+            "tags": [],
+            "visible": true
         }
     ],
     "folders": [

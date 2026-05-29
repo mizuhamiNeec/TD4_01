@@ -2,6 +2,7 @@
 #include "LevelEditorTool.h"
 
 #include <algorithm>
+#include <optional>
 #include <imgui.h>
 #include <imgui_internal.h>
 
@@ -383,27 +384,27 @@ namespace Unnamed {
 	) {
 		SyncPresentationState();
 
-		Render::RenderViewInput              sourceScene = {};
-		bool                                 hasScene    = false;
+		std::optional<Render::RenderViewInput> sourceScene;
 		std::vector<Render::RenderViewInput> preservedViews;
 		preservedViews.reserve(inputs.views.size());
-		for (const auto& view : inputs.views) {
-			if (!hasScene && view.type == Render::RENDER_VIEW_TYPE::SCENE) {
-				sourceScene = view;
-				hasScene    = true;
+		for (auto& view : inputs.views) {
+			if (!sourceScene && view.type == Render::RENDER_VIEW_TYPE::SCENE) {
+				sourceScene.emplace(std::move(view));
 				continue;
 			}
-			preservedViews.emplace_back(view);
+			preservedViews.emplace_back(std::move(view));
 		}
 
-		if (!hasScene) {
-			sourceScene.viewKey         = std::string(kViewScenePerspective);
-			sourceScene.type            = Render::RENDER_VIEW_TYPE::SCENE;
-			sourceScene.output.sizeMode =
+		if (!sourceScene) {
+			sourceScene.emplace();
+			sourceScene->viewKey         = std::string(kViewScenePerspective);
+			sourceScene->type            = Render::RENDER_VIEW_TYPE::SCENE;
+			sourceScene->output.sizeMode =
 				Render::RENDER_VIEW_SIZE_MODE::MATCH_BACK_BUFFER;
 		}
+		Render::RenderViewInput& sourceSceneRef = *sourceScene;
 
-		auto BuildSceneView = [this, &sourceScene](
+		auto BuildSceneView = [this, &sourceSceneRef](
 			const std::string_view      key,
 			const float                 width,
 			const float                 height,
@@ -411,7 +412,7 @@ namespace Unnamed {
 			const bool                  exposeToUi,
 			const bool                  presentToSwapChain
 		) {
-			Render::RenderViewInput view = sourceScene;
+			Render::RenderViewInput view = sourceSceneRef;
 			view.viewKey                 = std::string(key);
 			view.type                    = Render::RENDER_VIEW_TYPE::SCENE;
 			view.sceneViewMode           = BuildSceneViewModeForSize(
@@ -429,9 +430,9 @@ namespace Unnamed {
 			mCameraManager.SyncGameplayCameraAspect(
 				mEditorWorld, view.sceneViewMode, binding
 			);
-			const Render::RenderCameraInput* fallback = sourceScene.camera.
+			const Render::RenderCameraInput* fallback = sourceSceneRef.camera.
 				valid ?
-					&sourceScene.camera :
+					&sourceSceneRef.camera :
 					nullptr;
 			const EditorViewportCameraManager::ResolvedCamera resolved =
 				mCameraManager.ResolveViewCamera(

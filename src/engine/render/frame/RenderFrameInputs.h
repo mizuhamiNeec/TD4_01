@@ -84,6 +84,9 @@ namespace Unnamed::Render {
 		float                 farZ      = 10000.0f;
 		PROJECTION_DEPTH_MODE depthMode = PROJECTION_DEPTH_MODE::ReverseZ;
 		bool                  valid     = false;
+
+		bool                  useClipPlane = false;
+		Vec4                  clipPlane    = Vec4::zero;
 	};
 
 	struct SkyboxInput {
@@ -156,6 +159,14 @@ namespace Unnamed::Render {
 		std::vector<DebugLineInput> lines;
 	};
 
+	struct PortalRenderInput {
+		std::string viewKey;
+		Vec3        worldPosition = Vec3::zero;
+		Vec3        worldRight    = Vec3::right;
+		Vec3        worldUp       = Vec3::up;
+		Vec2        sizeWorld     = Vec2::one;
+	};
+
 	struct RenderViewInput {
 		std::string viewKey;
 
@@ -171,6 +182,7 @@ namespace Unnamed::Render {
 		std::vector<WorldBillboardInput>  worldBillboards;
 		std::vector<WorldSpriteInput>     worldSprites;
 		std::vector<ScreenSpriteInput>    screenSprites;
+		std::vector<PortalRenderInput>    portals;
 	};
 
 	struct RenderFrameInputs {

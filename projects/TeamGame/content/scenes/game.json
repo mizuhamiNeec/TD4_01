@@ -910,6 +910,9 @@
                         "maxShockWaveRadius": 10.0,
                         "minShockWaveRadius": 5.0,
                         "upwardForceMultiplier": 5.0,
+                        "voiceGateDuration": 0.07999999821186066,
+                        "voiceMinDB": -35.0,
+                        "voiceScoreThreshold": 0.3499999940395355,
                         "volumeDeltaMultiplier": 10.0,
                         "volumeThreshold": 0.0
                     },
@@ -940,7 +943,7 @@
                             0.2588190734386444,
                             0.0,
                             0.0,
-                            0.9659258723258972
+                            0.9659258127212524
                         ],
                         "scale": [
                             1.0,
@@ -1673,6 +1676,55 @@
             "guid": 70,
             "isEditorOnly": false,
             "name": "ColorCone Copy Copy Copy Copy",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 5,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "autoPlay": true,
+                        "depthTest": true,
+                        "drawEmitterShape": true,
+                        "presetName": "golf_ball_trail",
+                        "presetPath": "projects/TeamGame/content/particles/golf_ball_trail.json",
+                        "sortKeyBias": 0,
+                        "timeScale": 1.0
+                    },
+                    "guid": 0,
+                    "type": "engine.ParticleEmitter"
+                }
+            ],
+            "folderPath": "",
+            "guid": 72,
+            "isEditorOnly": false,
+            "name": "golf_ball_trail",
             "tags": [],
             "visible": true
         }

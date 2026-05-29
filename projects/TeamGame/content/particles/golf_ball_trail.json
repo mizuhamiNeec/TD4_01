@@ -7,7 +7,7 @@
     },
     "emitterSpawn": {
         "count": 1,
-        "frequency": 0.15,
+        "frequency": 0.08,
         "repeat": true,
         "useRandomPosition": false,
         "useLocalSpace": false,
@@ -67,8 +67,8 @@
     },
     "trail": {
         "enabled": true,
-        "maxPoints": 20,
-        "recordInterval": 0.06,
+        "maxPoints": 16,
+        "recordInterval": 0.05,
         "widthHead": 0.4,
         "widthTail": 0.05,
         "colorHead": [

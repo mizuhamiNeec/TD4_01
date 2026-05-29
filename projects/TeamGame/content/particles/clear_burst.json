@@ -6,9 +6,9 @@
         "blendMode": 2
     },
     "emitterSpawn": {
-        "count": 12,
-        "frequency": 2.0,
-        "repeat": true,
+        "count": 24,
+        "frequency": 0.05,
+        "repeat": false,
         "useRandomPosition": false,
         "useLocalSpace": false,
         "emitShape": 0,

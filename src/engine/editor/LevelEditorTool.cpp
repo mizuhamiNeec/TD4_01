@@ -16,6 +16,9 @@
 #include "engine/platform/WindowManager.h"
 #include "engine/render/Renderer.h"
 #include "engine/scene/SceneSerializer.h"
+#include "engine/unnamed/framework/components/TransformComponent.h"
+#include "engine/unnamed/framework/components/portal/PortalComponent.h"
+#include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 #include "engine/unnamed/subsystem/console/concommand/ConVar.h"
@@ -388,11 +391,32 @@ namespace Unnamed {
 		std::vector<Render::RenderViewInput> preservedViews;
 		preservedViews.reserve(inputs.views.size());
 		for (auto& view : inputs.views) {
-			if (!sourceScene && view.type == Render::RENDER_VIEW_TYPE::SCENE) {
+			if (
+				!sourceScene &&
+				view.type == Render::RENDER_VIEW_TYPE::SCENE &&
+				view.viewKey == "world.main"
+			) {
 				sourceScene.emplace(std::move(view));
 				continue;
 			}
 			preservedViews.emplace_back(std::move(view));
+		}
+
+		if (!sourceScene) {
+			std::vector<Render::RenderViewInput> repackedViews;
+			repackedViews.reserve(preservedViews.size());
+			for (auto& view : preservedViews) {
+				if (
+					!sourceScene &&
+					view.type == Render::RENDER_VIEW_TYPE::SCENE &&
+					!view.viewKey.starts_with("portal.")
+				) {
+					sourceScene.emplace(std::move(view));
+					continue;
+				}
+				repackedViews.emplace_back(std::move(view));
+			}
+			preservedViews = std::move(repackedViews);
 		}
 
 		if (!sourceScene) {
@@ -449,6 +473,72 @@ namespace Unnamed {
 			return view;
 		};
 
+		auto SyncPortalViewsToSceneCamera = [this](
+			const Render::RenderCameraInput& sceneCamera,
+			std::vector<Render::RenderViewInput>& views
+		) {
+			if (!sceneCamera.valid) {
+				return;
+			}
+			const Scene* scene = mEditorWorld.GetActiveScene();
+			if (!scene) {
+				return;
+			}
+
+			const Mat4 mainCamMat = sceneCamera.view.Inverse();
+			for (const auto& entity : scene->GetEntities()) {
+				if (!entity || !entity->IsActive() || !entity->IsVisible()) {
+					continue;
+				}
+
+				const auto* portal = entity->GetComponent<PortalComponent>();
+				const auto* transform = entity->GetComponent<TransformComponent>();
+				if (!portal || !transform) {
+					continue;
+				}
+
+				const uint64_t exitGuid = portal->GetExitEntityGuid();
+				if (exitGuid == 0) {
+					continue;
+				}
+
+				const Entity* exitEntity = scene->FindEntity(exitGuid);
+				if (!exitEntity) {
+					continue;
+				}
+
+				const auto* exitTransform =
+					exitEntity->GetComponent<TransformComponent>();
+				if (!exitTransform) {
+					continue;
+				}
+
+				const std::string portalViewKey =
+					std::string("portal.") + std::to_string(entity->GetGuid());
+				auto viewIt = std::find_if(
+					views.begin(),
+					views.end(),
+					[&portalViewKey](const Render::RenderViewInput& view) {
+						return view.viewKey == portalViewKey;
+					}
+				);
+				if (viewIt == views.end()) {
+					continue;
+				}
+
+				Mat4 entryMat = transform->RenderWorldMat();
+				Mat4 exitMat = exitTransform->RenderWorldMat();
+				Mat4 entryLocalCamMat = mainCamMat * entryMat.Inverse();
+				Mat4 portalCamWorld = entryLocalCamMat * exitMat;
+
+				viewIt->camera = sceneCamera;
+				viewIt->camera.view = portalCamWorld.Inverse();
+				viewIt->camera.cameraPos = portalCamWorld.GetTranslate();
+				viewIt->camera.useClipPlane = false;
+				viewIt->camera.clipPlane = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
+			}
+		};
+
 		std::vector<Render::RenderViewInput> composedViews;
 		composedViews.reserve(8 + preservedViews.size());
 		composedViews.insert(
@@ -468,16 +558,16 @@ namespace Unnamed {
 			}
 		}
 
-		composedViews.emplace_back(
-			BuildSceneView(
-				kViewScenePerspective,
-				sceneTargetSize.x,
-				sceneTargetSize.y,
-				ResolveViewportBinding(kViewScenePerspective),
-				true,
-				mPresentMode == EDITOR_PRESENT_MODE::FULLSCREEN_SWAP_CHAIN
-			)
+		Render::RenderViewInput perspectiveView = BuildSceneView(
+			kViewScenePerspective,
+			sceneTargetSize.x,
+			sceneTargetSize.y,
+			ResolveViewportBinding(kViewScenePerspective),
+			true,
+			mPresentMode == EDITOR_PRESENT_MODE::FULLSCREEN_SWAP_CHAIN
 		);
+		SyncPortalViewsToSceneCamera(perspectiveView.camera, composedViews);
+		composedViews.emplace_back(std::move(perspectiveView));
 
 		inputs.views = std::move(composedViews);
 	}

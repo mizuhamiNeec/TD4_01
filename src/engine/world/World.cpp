@@ -1024,63 +1024,78 @@ namespace Unnamed {
 		}
 
 		for (const auto& entity : mScene->GetEntities()) {
-			if (!entity || !entity->IsActive() || !entity->IsVisible()) continue;
-			
-			auto* portal = entity->GetComponent<PortalComponent>();
-			auto* transform = entity->GetComponent<TransformComponent>();
-			if (!portal || !transform) continue;
+			if (!entity || !entity->IsActive() || !entity->IsVisible()) {
+				continue;
+			}
 
-			uint64_t exitGuid = portal->GetExitEntityGuid();
-			if (exitGuid == 0) continue;
+			auto* portal    = entity->GetComponent<PortalComponent>();
+			auto* transform = entity->GetComponent<TransformComponent>();
+			if (!portal || !transform) {
+				continue;
+			}
+
+			const uint64_t exitGuid = portal->GetExitEntityGuid();
+			if (exitGuid == 0) {
+				continue;
+			}
 
 			Entity* exitEntity = mScene->FindEntity(exitGuid);
-			if (!exitEntity) continue;
+			if (!exitEntity) {
+				continue;
+			}
 
 			auto* exitTransform = exitEntity->GetComponent<TransformComponent>();
-			if (!exitTransform) continue;
+			if (!exitTransform) {
+				continue;
+			}
 
-			std::string portalViewKey = std::string("portal.") + std::to_string(entity->GetGuid());
+			const std::string portalViewKey =
+				std::string("portal.") + std::to_string(entity->GetGuid());
 
 			Mat4 entryMat = transform->RenderWorldMat();
-			Mat4 exitMat = exitTransform->RenderWorldMat();
+			Mat4 exitMat  = exitTransform->RenderWorldMat();
 
-			Render::PortalRenderInput portalInput = {};
-			portalInput.viewKey = portalViewKey;
-			portalInput.worldPosition = entryMat.GetTranslate();
-			portalInput.worldRight = entryMat.GetRight().Normalized();
-			portalInput.worldUp = entryMat.GetUp().Normalized();
-			portalInput.sizeWorld = portal->GetSize();
-			sceneView.portals.emplace_back(portalInput);
+			const Vec3 entryRight = entryMat.GetRight().Normalized();
+			const Vec3 entryUp    = entryMat.GetUp().Normalized();
+			const Vec3 entryNormal = entryRight.Cross(entryUp).Normalized();
+			const Vec3 entryPos    =
+				entryMat.GetTranslate() + entryNormal * 0.01f;
 
-			// Add a new RenderViewInput for the portal exit camera
+			Render::WorldSpriteInput portalSprite = {};
+			portalSprite.texture.source = Render::SPRITE_TEXTURE_SOURCE::VIEW_OUTPUT;
+			portalSprite.texture.viewKey = portalViewKey;
+			portalSprite.worldPosition = entryPos;
+			portalSprite.worldRight = entryRight;
+			portalSprite.worldUp = entryUp;
+			portalSprite.sizeWorld = portal->GetSize();
+			portalSprite.color = Vec4::one;
+			portalSprite.rotationRad = 0.0f;
+			portalSprite.sortKey = 0;
+			portalSprite.uvFlipY = true;
+			sceneView.worldSprites.emplace_back(std::move(portalSprite));
+
 			Render::RenderViewInput portalCamView = {};
 			portalCamView.viewKey = portalViewKey;
-			portalCamView.type = Render::RENDER_VIEW_TYPE::SCENE;
-			// 画面サイズに合わせる (もしくは固定サイズ)
-			portalCamView.output.sizeMode = Render::RENDER_VIEW_SIZE_MODE::MATCH_BACK_BUFFER;
+			portalCamView.type    = Render::RENDER_VIEW_TYPE::SCENE;
+			portalCamView.output.sizeMode =
+				Render::RENDER_VIEW_SIZE_MODE::MATCH_BACK_BUFFER;
 			portalCamView.output.presentToSwapChain = false;
 			portalCamView.output.clearSwapChainWhenNotPresenting = true;
 			portalCamView.sceneViewMode.mode = Render::SCENE_RENDER_MODE::FIT_VIEWPORT;
 
-			// ポータルカメラの計算:
-			// entryTransform から見たメインカメラの相対位置を、exitTransform から見た位置に適用する。
-			Mat4 mainCamMat = sceneView.camera.view.Inverse();
-
-			// entryMat.Inverse() * mainCamMat = entryLocalCamMat
+			Mat4 mainCamMat       = sceneView.camera.view.Inverse();
 			Mat4 entryLocalCamMat = mainCamMat * entryMat.Inverse();
-			// ポータル出口はZが反転しているか？ 出口から「出る」向きになるため、Z反転またはそのまま。通常そのまま。
-			Mat4 portalCamWorld = entryLocalCamMat * exitMat;
+			Mat4 portalCamWorld   = entryLocalCamMat * exitMat;
 
 			portalCamView.camera = sceneView.camera;
 			portalCamView.camera.view = portalCamWorld.Inverse();
 			portalCamView.camera.cameraPos = portalCamWorld.GetTranslate();
-			
+
 			// 無限平面クリップが強すぎるため、ポータルカメラ側の
 			// 平面クリップは使用しない（表示面の矩形マスクで切り取る）。
 			portalCamView.camera.useClipPlane = false;
 			portalCamView.camera.clipPlane = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
-			// ここではポータルから見たシーンのオブジェクトを収集（再帰は1段のみ）
 			for (const auto& obj : sceneView.visibleObjects) {
 				portalCamView.visibleObjects.emplace_back(obj);
 			}

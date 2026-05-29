@@ -186,6 +186,12 @@ private:
 	
 	float _radius = 0.25f; // ボールの半径
 
+	/// ボールの重さ。外力による速度変化を抑えるために使用
+	float _mass = 4.0f;
+
+	/// 外力で一度に増える上向き速度の上限
+	float _maxExternalUpwardVelocity = 8.0f;
+
 	/// 起動時に自動で発射するか
 	bool _bLaunchOnStart = true;
 	

@@ -204,6 +204,8 @@
                         "homingStartTime": 0.5,
                         "homingStrength": 1.0,
                         "launchOnStart": true,
+                        "mass": 4.0,
+                        "maxExternalUpwardVelocity": 8.0,
                         "maxSpeedClamp": 50.0,
                         "radius": 0.25,
                         "randomRadius": 1.0,
@@ -902,7 +904,7 @@
                 {
                     "active": true,
                     "data": {
-                        "coolTime": 0.0,
+                        "coolTime": 0.10000000149011612,
                         "forceMultiplier": 0.009999999776482582,
                         "maxShockWaveRadius": 10.0,
                         "minShockWaveRadius": 5.0,

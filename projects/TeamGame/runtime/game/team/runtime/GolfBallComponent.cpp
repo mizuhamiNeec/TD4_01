@@ -306,9 +306,12 @@ namespace MyGame {
 	// -----------------------------------------------------------------------
 
 	void GolfBallComponent::ApplyForce(const Vec3& force) {
-		// NOTE: 衝撃波などの外部からの力をそのまま速度に加える
-		// 理由：ゴミと同じく、停止中でも衝撃波だけで吹っ飛ばせるようにする
-		_velocity += force;
+		// NOTE: 衝撃波などの外力は質量で割って速度変化として扱う。
+		// 理由：ボールは軽すぎる扱いだと上方向へ過剰に吹き飛び、戻ってこなくなる。
+		Vec3 velocityDelta = force * (1.0f / std::max(0.1f, _mass));
+		velocityDelta.y = std::clamp(velocityDelta.y, -_maxExternalUpwardVelocity, _maxExternalUpwardVelocity);
+
+		_velocity += velocityDelta;
 		_bIsInFlight = true;
 		_bIsExternalMotion = true;
 		_bIsGrounded = false;
@@ -439,6 +442,8 @@ namespace MyGame {
 		if (ImGui::DragFloat("半径##golf_radius", &_radius, 0.25f, 0.1f, 100.0f, "%.2f")) {
 			ApplyPositionToRuntime();
 		}
+		ImGui::SliderFloat("重さ##golf_mass", &_mass, 0.1f, 30.0f, "%.2f kg");
+		ImGui::SliderFloat("外力の上向き速度上限##golf_external_up_limit", &_maxExternalUpwardVelocity, 0.0f, 30.0f, "%.2f");
 		ImGui::Checkbox("起動時に自動発射##golf_launch_on_start", &_bLaunchOnStart);
 		
 		if (ImGuiWidgets::DragVec3("速度を直接上書き##golf_velocity_override", _velocity, Vec3::zero, 0.1f, "%.2f[m/s]")) {
@@ -708,6 +713,12 @@ namespace MyGame {
 		if (auto val = reader.Read<float>("radius")) {
 			_radius = val.value();
 		}
+		if (auto val = reader.Read<float>("mass")) {
+			_mass = std::max(0.1f, val.value());
+		}
+		if (auto val = reader.Read<float>("maxExternalUpwardVelocity")) {
+			_maxExternalUpwardVelocity = std::max(0.0f, val.value());
+		}
 		if (auto val = reader.Read<bool>("launchOnStart")) {
 			_bLaunchOnStart = val.value();
 		}
@@ -789,6 +800,10 @@ namespace MyGame {
 		// Key(), Write() の順序で呼び出す
 		writer.Key("radius");
 		writer.Write(_radius);
+		writer.Key("mass");
+		writer.Write(_mass);
+		writer.Key("maxExternalUpwardVelocity");
+		writer.Write(_maxExternalUpwardVelocity);
 		writer.Key("launchOnStart");
 		writer.Write(_bLaunchOnStart);
 		writer.Key("startPointX");

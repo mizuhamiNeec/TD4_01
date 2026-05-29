@@ -50,9 +50,11 @@ namespace MyGame {
 		// ここでは単に参照を保持して使用するだけ
 
 		_coolTimeCounter = 0.0f;
+		_elapsedTime = 0.0f;
 		_lastVolume = 0.0f;
 		_previousVolume = 0.0f;
 		_bIsShockWaveActive = false;
+		_lastGolfBallHitTimes.clear();
 
 		auto* voiceBridge = GetVoiceBridge();
 		if (!voiceBridge) {
@@ -67,6 +69,8 @@ namespace MyGame {
 	}
 
 	void VoiceShockWaveComponent::OnTick(float deltaTime) {
+		_elapsedTime += deltaTime;
+
 		// NOTE: MagVoiceBridge を更新
 		auto* voiceBridge = GetVoiceBridge();
 		if (voiceBridge) {
@@ -148,6 +152,7 @@ namespace MyGame {
 		ImGui::SliderFloat("水平方向の力倍率##vsw_force", &_forceMultiplier, 0.1f, 20.0f, "%.2f");
 		ImGui::SliderFloat("音量変動の力倍率##vsw_delta", &_volumeDeltaMultiplier, 0.1f, 50.0f, "%.2f");
 		ImGui::SliderFloat("打ち上げ力倍率##vsw_upward", &_upwardForceMultiplier, 1.0f, 50.0f, "%.2f");
+		ImGui::SliderFloat("ボール再ヒット間隔##vsw_ball_hit_interval", &_golfBallHitInterval, 0.0f, 2.0f, "%.2f");
 		ImGui::SliderFloat("音量閾値##vsw_threshold", &_volumeThreshold, 0.0f, 0.5f, "%.4f");
 		ImGui::SliderFloat("クールタイム##vsw_cooltime", &_coolTime, 0.0f, 5.0f, "%.2f");
 
@@ -239,6 +244,9 @@ namespace MyGame {
 		if (auto val = reader.Read<float>("upwardForceMultiplier")) {
 			_upwardForceMultiplier = val.value();
 		}
+		if (auto val = reader.Read<float>("golfBallHitInterval")) {
+			_golfBallHitInterval = std::max(0.0f, val.value());
+		}
 		if (auto val = reader.Read<float>("volumeThreshold")) {
 			_volumeThreshold = val.value();
 		}
@@ -268,6 +276,8 @@ namespace MyGame {
 		writer.Write(_volumeDeltaMultiplier);
 		writer.Key("upwardForceMultiplier");
 		writer.Write(_upwardForceMultiplier);
+		writer.Key("golfBallHitInterval");
+		writer.Write(_golfBallHitInterval);
 		writer.Key("volumeThreshold");
 		writer.Write(_volumeThreshold);
 		writer.Key("coolTime");
@@ -472,21 +482,45 @@ namespace MyGame {
 			// NOTE: GolfBallComponent を持つエンティティ？
 			auto* golfBall = entity->GetComponent<GolfBallComponent>();
 			if (golfBall) {
+				const uint64_t entityGuid = entity->GetGuid();
+				if (!CanHitGolfBall(entityGuid)) {
+					continue;
+				}
+
 				// NOTE: ボール位置から衝撃波中心への方向を計算（反発方向）
 				Vec3 direction = targetPos - shockWaveCenter;
+				direction.y = 0.0f;
 				direction = direction.Normalized();
 
-				// NOTE: 水平方向の力をベクトルに変換 - 弱めに調整
+				// NOTE: ゴミと同じ水平反発を使い、範囲外へ抜けやすくする
 				Vec3 forceVector = direction * forceStrength * 0.6f;
 				
-				// NOTE: 上向き力を追加（打ち上げを強調）
+				// NOTE: 上方向は GolfBallComponent 側の質量と上限で制御する
 				float upwardForce = forceStrength * _upwardForceMultiplier;
 				forceVector.y = upwardForce;
 				
 				// NOTE: 力を加算
 				golfBall->ApplyForce(forceVector);
+				MarkGolfBallHit(entityGuid);
 			}
 		}
+	}
+
+	bool VoiceShockWaveComponent::CanHitGolfBall(uint64_t entityGuid) const {
+		if (_golfBallHitInterval <= 0.0f) {
+			return true;
+		}
+
+		const auto it = _lastGolfBallHitTimes.find(entityGuid);
+		if (it == _lastGolfBallHitTimes.end()) {
+			return true;
+		}
+
+		return (_elapsedTime - it->second) >= _golfBallHitInterval;
+	}
+
+	void VoiceShockWaveComponent::MarkGolfBallHit(uint64_t entityGuid) {
+		_lastGolfBallHitTimes[entityGuid] = _elapsedTime;
 	}
 
 	MagVoiceBridge* VoiceShockWaveComponent::GetVoiceBridge() {

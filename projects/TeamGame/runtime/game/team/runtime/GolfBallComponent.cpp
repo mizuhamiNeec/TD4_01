@@ -102,9 +102,36 @@ namespace MyGame {
 		if (_bIsBeingSucked) {
 			Vec3 directionToHole = _holeSuckPosition - _position;
 			_bIsInsideHole = (directionToHole.Length() < 1.5f);
-			UpdateHoleSuck(deltaTime);
 		} else {
 			_bIsInsideHole = false;
+		}
+
+		if (_bIsBeingSucked) {
+			if (!_bIsInsideHole) {
+				if (auto* sphereKCR = dynamic_cast<Unnamed::SphereKinematicCollisionResolver*>(mCollisionResolver.get())) {
+					sphereKCR->SlideMove(_position, _velocity, deltaTime);
+				}
+			} else {
+				_position += _velocity * deltaTime;
+			}
+
+			UpdateHoleSuck(deltaTime);
+			ClampVelocity();
+
+			auto* transform = GetOwner()->GetComponent<Unnamed::TransformComponent>();
+			if (transform) {
+				transform->SetPosition(_position);
+				transform->RequestInterpolationResync();
+
+				GetWorld()->GetDebugDraw().DrawSphere(
+					transform->GetPosition(),
+					transform->GetRotation(),
+					_radius,
+					Vec4::cyan,
+					16
+				);
+			}
+			return;
 		}
 
 		// -----------------------------------------------------------------------
@@ -1001,6 +1028,10 @@ namespace MyGame {
 		const float kBaseSuckAcceleration = 60.0f;
 		Vec3 suckAcceleration = directionNormalized * kBaseSuckAcceleration * _holeSuckPower * suckMultiplier;
 		_velocity += suckAcceleration * deltaTime;
+
+		if (!_bIsInsideHole) {
+			_position += _velocity * deltaTime;
+		}
 	}
 
 	// -----------------------------------------------------------------------

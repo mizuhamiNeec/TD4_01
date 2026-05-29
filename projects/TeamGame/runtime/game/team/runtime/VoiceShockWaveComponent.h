@@ -102,8 +102,8 @@ namespace MyGame {
 		// 衝撃波処理（内部メソッド）
 		// -----------------------------------------------------------------------
 
-		/// @brief 音量を取得して衝撃波発火の判定を行う
-		void CheckAndFireShockWave();
+		/// @brief 音声統計を取得して衝撃波発火の判定を行う
+		void CheckAndFireShockWave(float deltaTime);
 
 		/// @brief 衝撃波を発火し、範囲内のエンティティに力を加える
 		/// @param volume 音量（0.0～1.0）に基づいた力の大きさ
@@ -138,14 +138,26 @@ namespace MyGame {
 		/// 音量から力への変換倍率（水平方向）
 		float _forceMultiplier = 20.0f;
 
-		/// 衝撃波発火の音量閾値（0.0～1.0）- 大幅に削減
-		float _volumeThreshold = 0.01f;
+		/// 衝撃波発火の音量閾値（0.0～1.0）
+		float _volumeThreshold = 0.08f;
+
+		/// 衝撃波発火に必要なスムージング済み音量（dB）
+		float _voiceMinDB = -35.0f;
+
+		/// 衝撃波発火に必要な声らしさスコア
+		float _voiceScoreThreshold = 0.35f;
+
+		/// 声判定がこの時間継続したら衝撃波発火を許可する
+		float _voiceGateDuration = 0.08f;
 
 		/// 衝撃波発火のクールタイム（秒）
 		float _coolTime = 0.1f;
 
 		/// クールタイム用のカウンター
 		float _coolTimeCounter = 0.0f;
+
+		/// 声判定が継続している時間
+		float _voiceGateTimer = 0.0f;
 
 		/// 直近の音量（デバッグ用）
 		float _lastVolume = 0.0f;

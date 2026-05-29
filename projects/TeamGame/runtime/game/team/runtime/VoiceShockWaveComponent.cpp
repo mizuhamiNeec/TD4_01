@@ -50,6 +50,7 @@ namespace MyGame {
 		// ここでは単に参照を保持して使用するだけ
 
 		_coolTimeCounter = 0.0f;
+		_voiceGateTimer = 0.0f;
 		_lastVolume = 0.0f;
 		_previousVolume = 0.0f;
 		_bIsShockWaveActive = false;
@@ -79,7 +80,7 @@ namespace MyGame {
 		}
 
 		// NOTE: 音量チェックと衝撃波発火判定
-		CheckAndFireShockWave();
+		CheckAndFireShockWave(deltaTime);
 
 		// NOTE: 衝撃波のアクティブ状態をリセット（毎フレーム）
 		_bIsShockWaveActive = false;
@@ -149,6 +150,9 @@ namespace MyGame {
 		ImGui::SliderFloat("音量変動の力倍率##vsw_delta", &_volumeDeltaMultiplier, 0.1f, 50.0f, "%.2f");
 		ImGui::SliderFloat("打ち上げ力倍率##vsw_upward", &_upwardForceMultiplier, 1.0f, 50.0f, "%.2f");
 		ImGui::SliderFloat("音量閾値##vsw_threshold", &_volumeThreshold, 0.0f, 0.5f, "%.4f");
+		ImGui::SliderFloat("声判定の最小dB##vsw_voice_min_db", &_voiceMinDB, -80.0f, -10.0f, "%.1f dB");
+		ImGui::SliderFloat("声スコア閾値##vsw_voice_score", &_voiceScoreThreshold, 0.0f, 1.0f, "%.2f");
+		ImGui::SliderFloat("声継続時間##vsw_voice_gate", &_voiceGateDuration, 0.0f, 0.5f, "%.2f");
 		ImGui::SliderFloat("クールタイム##vsw_cooltime", &_coolTime, 0.0f, 5.0f, "%.2f");
 
 		ImGui::Separator();
@@ -160,6 +164,7 @@ namespace MyGame {
 		ImGui::Text("前フレーム音量: %.4f", _previousVolume);
 		ImGui::Text("音量の変動量: %.4f", std::abs(_lastVolume - _previousVolume));
 		ImGui::Text("音量閾値: %.4f", _volumeThreshold);
+		ImGui::Text("声ゲート: %.2f / %.2f秒", _voiceGateTimer, _voiceGateDuration);
 		ImGui::Text("衝撃波アクティブ: %s", _bIsShockWaveActive ? "有効" : "無効");
 		ImGui::Text("クールタイム: %.2f / %.2f秒", _coolTimeCounter, _coolTime);
 
@@ -212,8 +217,10 @@ namespace MyGame {
 			
 			if (ImGui::CollapsingHeader("詳細統計情報", ImGuiTreeNodeFlags_DefaultOpen)) {
 				ImGui::BulletText("閾値: %.4f", _volumeThreshold);
+				ImGui::BulletText("声dB閾値: %.1f dB", _voiceMinDB);
+				ImGui::BulletText("声スコア閾値: %.2f", _voiceScoreThreshold);
 				ImGui::BulletText("現在の状態: %s", 
-					(stats.smoothedRMS >= _volumeThreshold) ? "✓ 閾値超過" : "✗ 閾値未満");
+					(stats.isVoiceDetected && stats.smoothedRMS >= _volumeThreshold && stats.smoothedRMSDB >= _voiceMinDB && stats.voiceScore >= _voiceScoreThreshold) ? "✓ 声ゲート通過" : "✗ 声ゲート未通過");
 			}
 		} else {
 			ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "ERROR: MagVoiceBridge not initialized");
@@ -240,7 +247,16 @@ namespace MyGame {
 			_upwardForceMultiplier = val.value();
 		}
 		if (auto val = reader.Read<float>("volumeThreshold")) {
-			_volumeThreshold = val.value();
+			_volumeThreshold = std::max(0.0f, val.value());
+		}
+		if (auto val = reader.Read<float>("voiceMinDB")) {
+			_voiceMinDB = val.value();
+		}
+		if (auto val = reader.Read<float>("voiceScoreThreshold")) {
+			_voiceScoreThreshold = std::clamp(val.value(), 0.0f, 1.0f);
+		}
+		if (auto val = reader.Read<float>("voiceGateDuration")) {
+			_voiceGateDuration = std::max(0.0f, val.value());
 		}
 		if (auto val = reader.Read<float>("coolTime")) {
 			_coolTime = val.value();
@@ -270,6 +286,12 @@ namespace MyGame {
 		writer.Write(_upwardForceMultiplier);
 		writer.Key("volumeThreshold");
 		writer.Write(_volumeThreshold);
+		writer.Key("voiceMinDB");
+		writer.Write(_voiceMinDB);
+		writer.Key("voiceScoreThreshold");
+		writer.Write(_voiceScoreThreshold);
+		writer.Key("voiceGateDuration");
+		writer.Write(_voiceGateDuration);
 		writer.Key("coolTime");
 		writer.Write(_coolTime);
 	}
@@ -278,29 +300,40 @@ namespace MyGame {
 	// 衝撃波処理（内部メソッド）
 	// =========================================================================
 
-	void VoiceShockWaveComponent::CheckAndFireShockWave() {
-		// NOTE: MagVoiceBridge から音量を取得
+	void VoiceShockWaveComponent::CheckAndFireShockWave(float deltaTime) {
+		// NOTE: MagVoiceBridge からノイズカット・声判定済みの統計を取得
 		auto* voiceBridge = GetVoiceBridge();
 		if (!voiceBridge) {
 			// NOTE: 初期化がまだ完了していない
 			return;
 		}
 
-		// NOTE: スムージング済み音量を取得（ノイズ対策）
-		float volume = 0.0f;
+		MagVoiceBridge::VolumeStats stats{};
 		try {
-			volume = voiceBridge->GetSmoothedVolume();
+			stats = voiceBridge->GetVolumeStats();
 		} catch (...) {
 			// NOTE: MagVoiceBridge のメソッド呼び出しが失敗した場合
 			return;
 		}
 
-		// NOTE: 音量を保存
-		_lastVolume = volume;
+		const bool voiceGate =
+			stats.isVoiceDetected &&
+			stats.smoothedRMS >= _volumeThreshold &&
+			stats.smoothedRMSDB >= _voiceMinDB &&
+			stats.voiceScore >= _voiceScoreThreshold;
 
-		// NOTE: クールタイムが終了しており、音量が閾値を超えている場合
+		if (voiceGate) {
+			_voiceGateTimer += deltaTime;
+		} else {
+			_voiceGateTimer = 0.0f;
+		}
+
+		// NOTE: 声ゲートを通過した音量だけ衝撃波に使う
+		_lastVolume = voiceGate ? stats.smoothedRMS : 0.0f;
+
+		// NOTE: クールタイムが終了しており、声ゲートが一定時間継続している場合
 		bool coolTimeReady = (_coolTimeCounter <= 0.0f);
-		bool volumeAboveThreshold = (_lastVolume >= _volumeThreshold);
+		bool voiceGateReady = (_voiceGateTimer >= _voiceGateDuration);
 		
 		// NOTE: デバッグ出力（音量状態を確認）
 		#ifdef _DEBUG
@@ -309,20 +342,30 @@ namespace MyGame {
 		if (debugTimer >= 0.5f) { // 0.5秒ごとに出力
 			char buffer[256];
 			sprintf_s(buffer, sizeof(buffer),
-				"[Audio] Volume: %.3f, Threshold: %.3f, CoolTime: %.2f/%.2f, Ready: %s\n",
-				_lastVolume, _volumeThreshold, _coolTimeCounter, _coolTime,
-				coolTimeReady ? "YES" : "NO");
+				"[Audio] Voice: %s, Gate: %s, RMS: %.3f, Smoothed: %.3f(%.1fdB), Score: %.3f, GateTime: %.2f/%.2f, CoolTime: %.2f/%.2f, Ready: %s\n",
+				stats.isVoiceDetected ? "YES" : "NO",
+				voiceGate ? "YES" : "NO",
+				stats.currentRMS,
+				stats.smoothedRMS,
+				stats.smoothedRMSDB,
+				stats.voiceScore,
+				_voiceGateTimer,
+				_voiceGateDuration,
+				_coolTimeCounter,
+				_coolTime,
+				(coolTimeReady && voiceGateReady) ? "YES" : "NO");
 			OutputDebugStringA(buffer);
 			debugTimer = 0.0f;
 		}
 		#endif
 		
-		if (coolTimeReady && volumeAboveThreshold) {
+		if (coolTimeReady && voiceGateReady) {
 			// NOTE: 衝撃波を発火
 			#ifdef _DEBUG
 			char buffer[256];
 			sprintf_s(buffer, sizeof(buffer),
-				"[SHOCKWAVE] FIRED! Volume: %.3f, Force: calculated\n", _lastVolume);
+				"[SHOCKWAVE] FIRED! VoiceVolume: %.3f, SmoothedDB: %.1f, VoiceScore: %.3f, Force: calculated\n",
+				_lastVolume, stats.smoothedRMSDB, stats.voiceScore);
 			OutputDebugStringA(buffer);
 			#endif
 			

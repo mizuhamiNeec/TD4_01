@@ -1,23 +1,23 @@
 #pragma once
 
-#include "engine/unnamed/framework/components/base/BaseComponent.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
-#include <core/io/json/JsonReader.h>
-#include <core/io/json/JsonWriter.h>
-#include <core/math/Vec3.h>
-#include <core/math/Quaternion.h>
-#include <string>
-#include <memory>
+#include "engine/unnamed/framework/components/base/BaseComponent.h"
 #include <algorithm>
 #include <cmath>
+#include <core/io/json/JsonReader.h>
+#include <core/io/json/JsonWriter.h>
+#include <core/math/Quaternion.h>
+#include <core/math/Vec3.h>
+#include <memory>
+#include <string>
 
-#include <engine/physics/core/Physics.h>
 #include "collision/BoxKinematicCollisionResolver.h"
+#include <engine/physics/core/Physics.h>
 
 namespace MyGame {
 
 	/// @brief ゴミオブジェクトの移動・回転・吸い込みを管理するコンポーネント
-	/// 
+	///
 	/// ゴミの物理演算と挙動制御:
 	/// - 重力により常に下方向に加速（自由落下）
 	/// - 地面衝突時に反発・摩擦を適用
@@ -55,6 +55,12 @@ namespace MyGame {
 		/// 現在の速度を取得
 		[[nodiscard]] Vec3 GetCurrentVelocity() const;
 
+		/// 速度を設定
+		void SetVelocity(const Vec3& velocity);
+
+		/// 衝撃波で吹っ飛ばされたときのアニメ的な回転演出を開始
+		void StartShockWaveSpin(const Vec3& impulse);
+
 		/// ゴミが落下状態かを取得
 		[[nodiscard]] bool IsFalling() const;
 
@@ -69,7 +75,7 @@ namespace MyGame {
 		/// @brief 穴の位置と吸い込み力を設定
 		/// @param holePosition 穴の世界座標
 		/// @param suckPower 吸い込み力（0.0～1.0、大きいほど強く）
-		void SetHoleSuckPosition(const Vec3& holePosition, float suckPower);
+		void SetHoleSuckPosition(const Vec3 &holePosition, float suckPower);
 
 		/// 吸い込み処理を無効化（吸い込み力をクリア）
 		void ClearHoleSuckPosition();
@@ -86,10 +92,10 @@ namespace MyGame {
 #endif
 
 		/// コンポーネントの値を読み込む際に使用されます
-		void Deserialize(const Unnamed::JsonReader& reader) override;
+		void Deserialize(const Unnamed::JsonReader &reader) override;
 
 		/// コンポーネントの値を書き込む際に使用されます
-		void Serialize(Unnamed::JsonWriter& writer) const override;
+		void Serialize(Unnamed::JsonWriter &writer) const override;
 
 	private:
 		// -----------------------------------------------------------------------
@@ -97,13 +103,13 @@ namespace MyGame {
 		// -----------------------------------------------------------------------
 
 		/// 物理エンジンのポインタ
-		Unnamed::Physics::Engine* _physicsEngine = nullptr;
+		Unnamed::Physics::Engine *_physicsEngine = nullptr;
 
 		/// 物理衝突解決用のリゾルバ
 		std::unique_ptr<Unnamed::BoxKinematicCollisionResolver> _collisionResolver;
 
 		/// ボックスサイズ（半径）
-		Vec3 _halfSize = { 0.5f, 0.5f, 0.5f };
+		Vec3 _halfSize = {0.5f, 0.5f, 0.5f};
 
 		/// 現在の速度
 		Vec3 _velocity = {};
@@ -167,6 +173,33 @@ namespace MyGame {
 		/// 移動方向への傾きの滑らかさ（小=ゆっくり、大=急激）
 		float _tiltLerpSpeed = 0.15f;
 
+		/// 衝撃波スピン中フラグ
+		bool _bIsShockSpinActive = false;
+
+		/// 衝撃波スピンの残り時間
+		float _shockSpinTimer = 0.0f;
+
+		/// 衝撃波スピンの総時間
+		float _shockSpinDuration = 1.1f;
+
+		/// 衝撃波スピンの回転軸
+		Vec3 _shockSpinAxis = Vec3::right;
+
+		/// 衝撃波スピンの初速（度/秒）
+		float _shockSpinSpeedDeg = 1080.0f;
+
+		/// 衝撃波スピンの強さ倍率
+		float _shockSpinSpeedMultiplier = 85.0f;
+
+		/// 衝撃波スピンの上限（度/秒）
+		float _shockSpinMaxSpeedDeg = 2160.0f;
+
+		/// 衝撃波中に混ぜる横揺れの強さ（度）
+		float _shockSpinWobbleDeg = 18.0f;
+
+		/// 衝撃波中に混ぜる横揺れの速さ
+		float _shockSpinWobbleSpeed = 18.0f;
+
 		// -----------------------------------------------------------------------
 		// 吸い込み機能
 		// -----------------------------------------------------------------------
@@ -180,12 +213,15 @@ namespace MyGame {
 		/// 吸い込み中フラグ
 		bool _bIsBeingSucked = false;
 
+		/// 穴の内側に位置しているフラグ（地面衝突判定をスキップするため）
+		bool _bIsInsideHole = false;
+
 		// -----------------------------------------------------------------------
 		// キャッシュ
 		// -----------------------------------------------------------------------
 
 		/// TransformComponentのキャッシュ
-		Unnamed::TransformComponent* _transform = nullptr;
+		Unnamed::TransformComponent *_transform = nullptr;
 
 		// -----------------------------------------------------------------------
 		// ヘルパーメソッド
@@ -205,6 +241,9 @@ namespace MyGame {
 
 		/// 空中での回転を更新（移動方向に傾く）
 		void UpdateAirRotation(float deltaTime);
+
+		/// 衝撃波で吹っ飛ばされたときの大げさな回転を更新
+		void UpdateShockSpin(float deltaTime);
 
 		/// 着地時の回転リセット処理
 		void UpdateRotationReset(float deltaTime);

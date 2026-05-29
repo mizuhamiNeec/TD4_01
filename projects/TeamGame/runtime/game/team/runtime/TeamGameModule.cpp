@@ -1,5 +1,7 @@
 #include "TeamGameModule.h"
 #include "TeamGameComponentRegistration.h"
+#include "MagVoiceBridge.h"
+#include "VoiceShockWaveComponent.h"
 
 #include "engine/game/IDemoService.h"
 #include "engine/physics/core/Physics.h"
@@ -9,6 +11,56 @@
 namespace Unnamed {
 	void TeamGameModule::Initialize(EngineServices& services) {
 		(void)services;
+
+		// NOTE: ゲーム開始時に MagVoiceBridge を初期化・起動
+		// これにより、すべてのシーンでマイクからの音声入力が有効になる
+		InitializeMagVoiceBridge();
+	}
+
+	void TeamGameModule::InitializeMagVoiceBridge() {
+		// NOTE: VoiceShockWaveComponent の静的メンバを初期化
+		// VoiceShockWaveComponent が使用する _voiceBridgeInstance を作成
+		MagVoiceBridge* voiceBridge = new MagVoiceBridge();
+		
+		if (voiceBridge) {
+			bool initSuccess = voiceBridge->Initialize();
+			if (initSuccess) {
+				// NOTE: 音声感度を大幅に調整（敏感に反応するように）
+				voiceBridge->SetSmoothingFactor(0.2f);  // より反応的（0.4 → 0.2）
+				voiceBridge->SetNoiseFloor(-80.0f);     // ノイズフロアを下げる（-50dB → -80dB）
+				voiceBridge->SetVolumeRange(-80.0f, 0.0f);  // 音量範囲を拡大
+
+				bool startSuccess = voiceBridge->Start();
+				if (startSuccess) {
+					#ifdef _DEBUG
+					OutputDebugStringA("[TeamGameModule] ✓ MagVoiceBridge initialized and started successfully\n");
+					OutputDebugStringA("[TeamGameModule] Audio sensitivity: HIGH (SmoothingFactor=0.2, NoiseFloor=-80dB)\n");
+					OutputDebugStringA("[TeamGameModule] Audio capture is now active\n");
+					#endif
+					// NOTE: VoiceShockWaveComponent に MagVoiceBridge を設定
+					SetGlobalMagVoiceBridge(voiceBridge);
+				} else {
+					#ifdef _DEBUG
+					OutputDebugStringA("[TeamGameModule] ✗ ERROR: Failed to start MagVoiceBridge\n");
+					#endif
+					delete voiceBridge;
+				}
+			} else {
+				#ifdef _DEBUG
+				OutputDebugStringA("[TeamGameModule] ✗ ERROR: Failed to initialize MagVoiceBridge\n");
+				#endif
+				delete voiceBridge;
+			}
+		}
+	}
+
+	void TeamGameModule::SetGlobalMagVoiceBridge(MagVoiceBridge* bridge) {
+		// NOTE: VoiceShockWaveComponent の静的メンバを設定
+		MyGame::VoiceShockWaveComponent::SetVoiceBridgeInstance(bridge);
+		
+		#ifdef _DEBUG
+		OutputDebugStringA("[TeamGameModule] MagVoiceBridge set to VoiceShockWaveComponent\n");
+		#endif
 	}
 
 	std::unique_ptr<World> TeamGameModule::CreateRuntimeWorld(

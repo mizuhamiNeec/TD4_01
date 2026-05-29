@@ -11,6 +11,7 @@
 namespace MyGame {
 
 	class TrashObjMoverComponent;
+	class GolfBallComponent;
 
 	/// @brief プレイヤーの穴システムコンポーネント
 	/// 

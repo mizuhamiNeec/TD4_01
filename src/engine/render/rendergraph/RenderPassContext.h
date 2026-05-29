@@ -79,6 +79,9 @@ namespace Unnamed::Render {
 
 		void SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY topology) const;
 		void SetVertexBuffer(const D3D12_VERTEX_BUFFER_VIEW& vbv) const;
+		void SetVertexBuffers(
+			std::span<const D3D12_VERTEX_BUFFER_VIEW> vbvs
+		) const;
 
 		void DrawTriangleTest() const;
 		void DrawInstanced(
@@ -86,6 +89,12 @@ namespace Unnamed::Render {
 		) const;
 		void DrawIndexedTest(
 			uint32_t indexCount,
+			uint32_t startIndexLocation = 0,
+			int32_t  baseVertexLocation = 0
+		) const;
+		void DrawIndexedInstanced(
+			uint32_t indexCount,
+			uint32_t instanceCount,
 			uint32_t startIndexLocation = 0,
 			int32_t  baseVertexLocation = 0
 		) const;

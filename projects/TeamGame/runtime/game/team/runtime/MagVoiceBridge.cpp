@@ -266,10 +266,10 @@ void MagVoiceBridge::CaptureAudioData() {
 		for (uint32_t frame = 0; frame < packetLength; ++frame) {
 			float channelAverage = 0.0f;
 
-			// NOTE: 全チャンネルの絶対値を加算する
+			// NOTE: ゼロクロス率で声判定するため、符号付きのまま平均する
 			for (uint16_t ch = 0; ch < channelCount_; ++ch) {
 				uint32_t sampleIndex = frame * channelCount_ + ch;
-				channelAverage += std::abs(pFloatData[sampleIndex]);
+				channelAverage += pFloatData[sampleIndex];
 			}
 
 			// NOTE: チャンネル数で平均化してモノラルに統一する

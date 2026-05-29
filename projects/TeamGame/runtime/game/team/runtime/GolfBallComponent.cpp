@@ -5,12 +5,19 @@
 #include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 #include <core/math/Math.h>
 #include <core/math/random/random.h>
+#include <algorithm>
 #include <cmath>
+#include <cstdint>
+#include <cstdlib>
 
 #include <engine/ImGui/ImGuiWidgets.h>
 #include <engine/world/World.h>
+#include <engine/scene/Scene.h>
 
 #include "collision/SphereKinematicCollisionResolver.h"
+
+#include "GolfBallStartPosComponent.h"
+#include "GolfBallEndPosComponent.h"
 
 #ifdef _DEBUG
 #include "imgui.h"
@@ -24,17 +31,16 @@ namespace MyGame {
 
 	void GolfBallComponent::OnAttached() {
 		// NOTE: コンポーネント初期化時に状態をリセット
-		_position = Vec3(0.0f, 0.0f, 0.0f);
+		_position = _startPoint;
 		_velocity = Vec3(0.0f, 0.0f, 0.0f);
 		_elapsedTime = 0.0f;
 		_bIsInFlight = false;
+		_bIsExternalMotion = false;
+		_bIsBeingSucked = false;
+		_bIsInsideHole = false;
+		_bInitialSetupApplied = false;
+		_bHasAutoLaunched = false;
 
-		// NOTE: TransformComponent と同期
-		auto* transform = GetOwner()->GetComponent<Unnamed::TransformComponent>();
-		if (transform) {
-			_position = transform->GetPosition();
-		}
-		
 		// 物理エンジンをワールドから取得
 		_physicsEngine = GetWorld() ? &GetWorld()->GetPhysicsEngine() : nullptr;
 		
@@ -42,16 +48,45 @@ namespace MyGame {
 			_physicsEngine
 		);
 		
-		auto* sphereKCR = dynamic_cast<Unnamed::SphereKinematicCollisionResolver*>(mCollisionResolver.get());
-		sphereKCR->UpdateHull(_position, _radius); // 初期位置と半径でコリジョンハルを設定
-		
-		// FIXME: ゲーム開始時に発射(先生に見せる用)
-		Launch();
+		ApplyPositionToRuntime();
 	}
 
 	void GolfBallComponent::OnTick(float deltaTime) {
+		ResolveSavedEntityReferences();
+		if (!_bInitialSetupApplied) {
+			SyncSetupFromReferencedEntities();
+			SetStartPoint(_startPoint);
+			_bInitialSetupApplied = true;
+
+			if (_bLaunchOnStart && !_bHasAutoLaunched) {
+				Launch();
+				_bHasAutoLaunched = true;
+			}
+		}
+
+		// -----------------------------------------------------------------------
+		// 0️⃣ 参照エンティティの位置を同期（毎フレーム更新）
+		// -----------------------------------------------------------------------
+		// 理由：発射位置・着弾位置が Editor で変更されても常に同期する
+		if (_startPosEntity && !_bIsInFlight && !_bIsBeingSucked) {
+			auto* startTransform = _startPosEntity->GetComponent<Unnamed::TransformComponent>();
+			if (startTransform) {
+				_startPoint = startTransform->GetPosition();
+				_position = _startPoint;  // ← 毎フレーム発射位置を同期
+				ApplyPositionToRuntime();
+			}
+		}
+
+		if (_targetPosEntity && !_bIsInFlight && !_bIsBeingSucked) {
+			// NOTE: フライト中でない場合のみ着弾位置を更新
+			auto* targetTransform = _targetPosEntity->GetComponent<Unnamed::TransformComponent>();
+			if (targetTransform) {
+				_targetBase = targetTransform->GetPosition();  // ← 着弾位置を同期
+			}
+		}
+
 		// NOTE: フライト中でない場合は更新不要
-		if (!_bIsInFlight) {
+		if (!_bIsInFlight && !_bIsBeingSucked) {
 			return;
 		}
 
@@ -62,49 +97,73 @@ namespace MyGame {
 		UpdatePhysics(deltaTime);
 
 		// -----------------------------------------------------------------------
-		// 2️⃣ 地面衝突処理（バウンス）
+		// 2️⃣ 穴への吸い込み処理
+		// -----------------------------------------------------------------------
+		if (_bIsBeingSucked) {
+			Vec3 directionToHole = _holeSuckPosition - _position;
+			_bIsInsideHole = (directionToHole.Length() < 1.5f);
+			UpdateHoleSuck(deltaTime);
+		} else {
+			_bIsInsideHole = false;
+		}
+
+		// -----------------------------------------------------------------------
+		// 3️⃣ 地面衝突処理（バウンス）
 		// -----------------------------------------------------------------------
 		// 理由：地面に衝突したときの反射を計算し、リアルな物理挙動を実現
-		HandleGroundCollision();
+		if (!_bIsInsideHole) {
+			HandleGroundCollision();
+		} else {
+			_bIsGrounded = false;
+		}
 
 		// -----------------------------------------------------------------------
-		// 3️⃣ 摩擦を適用
+		// 4️⃣ 摩擦を適用
 		// -----------------------------------------------------------------------
 		// 理由：地面上の速度を段階的に減衰させ、最終的に停止させる
-		ApplyFriction();
+		if (!_bIsInsideHole) {
+			ApplyFriction();
+		}
 
 		// -----------------------------------------------------------------------
-		// 4️⃣ 誘導機能（ターゲット追従・収束）
+		// 5️⃣ 誘導機能（ターゲット追従・収束）
 		// -----------------------------------------------------------------------
 		// 理由：物理と分離することで、自然で段階的なホーミング効果を実現
-		ApplyHoming(deltaTime);
+		if (!_bIsExternalMotion && !_bIsBeingSucked) {
+			ApplyHoming(deltaTime);
+		}
 
 		// -----------------------------------------------------------------------
-		// 5️⃣ 時間更新
+		// 6️⃣ 時間更新
 		// -----------------------------------------------------------------------
 		_elapsedTime += deltaTime;
 
 		// -----------------------------------------------------------------------
-		// 6️⃣ 停止判定（完全に停止したか確認）
+		// 7️⃣ 停止判定（完全に停止したか確認）
 		// -----------------------------------------------------------------------
 		// 理由：速度が十分に小さくなったら、フライトを終了する
 		float speed = _velocity.Length();
-		if (_bIsGrounded && speed < _stopVelocityThreshold) {
+		if (!_bIsBeingSucked && _bIsGrounded && speed < _stopVelocityThreshold) {
 			_bIsInFlight = false;
+			_bIsExternalMotion = false;
 			_velocity = Vec3(0.0f, 0.0f, 0.0f);  // 完全に停止
 		}
 
 		// -----------------------------------------------------------------------
-		// 7️⃣ 衝突応答 & 速度クリップ
+		// 8️⃣ 衝突応答 & 速度クリップ
 		// -----------------------------------------------------------------------
-		auto* sphereKCR = dynamic_cast<Unnamed::SphereKinematicCollisionResolver*>(mCollisionResolver.get());
-		// ↓衝突応答の責任者
-		sphereKCR->SlideMove(
-			_position, _velocity, deltaTime
-		);
+		if (!_bIsInsideHole) {
+			auto* sphereKCR = dynamic_cast<Unnamed::SphereKinematicCollisionResolver*>(mCollisionResolver.get());
+			// ↓衝突応答の責任者
+			sphereKCR->SlideMove(
+				_position, _velocity, deltaTime
+			);
+		} else {
+			_position += _velocity * deltaTime;
+		}
 		
 		// -----------------------------------------------------------------------
-		// 8 TransformComponent と同期
+		// 9 TransformComponent と同期
 		// -----------------------------------------------------------------------
 		// 理由：計算した位置をエンティティの Transform に反映
 		auto* transform = GetOwner()->GetComponent<Unnamed::TransformComponent>();
@@ -134,38 +193,89 @@ namespace MyGame {
 
 	void GolfBallComponent::SetStartPoint(const Vec3& startPos) {
 		// NOTE: 開始位置を設定
+		_startPoint = startPos;
 		_position = startPos;
 		_elapsedTime = 0.0f;
-
-		// NOTE: TransformComponent と同期
-		auto* transform = GetOwner()->GetComponent<Unnamed::TransformComponent>();
-		if (transform) {
-			transform->SetPosition(_position);
-		}
+		ApplyPositionToRuntime();
 	}
 
 	void GolfBallComponent::SetTargetPoint(const Vec3& targetPos) {
 		// NOTE: ターゲット基準位置を設定
 		_targetBase = targetPos;
+		RefreshTargetRandomOffset();
+	}
+
+	void GolfBallComponent::SetStartPosEntity(Unnamed::Entity* entity) {
+		// -----------------------------------------------------------------------
+		// エンティティ参照を保存
+		// -----------------------------------------------------------------------
+		// 理由：後で設定ボタン押下時に使用
+		_startPosEntity = entity;
+
+		// NOTE: GUID を保存（JSON 復元時に使用）
+		if (entity) {
+			_startPosEntityGuid = std::to_string(entity->GetGuid());
+		} else {
+			_startPosEntityGuid = "";
+		}
+
+		// NOTE: 即座に発射位置を設定
+		if (!entity) {
+			return;
+		}
 
 		// -----------------------------------------------------------------------
-		// ランダムオフセットを計算
+		// TransformComponent から位置を取得
 		// -----------------------------------------------------------------------
-		// 理由：毎回同じ着地点になるのは不自然なため、ターゲット周辺のランダム位置を決定
-		
-		float angle = Random::FloatRange(0.0f, 2.0f * 3.14159265358979f);
-		float radius = Random::FloatRange(0.0f, _randomRadius);
+		// 理由：別エンティティの位置情報をゴルフボールの発射地点として使用
+		auto* transform = entity->GetComponent<Unnamed::TransformComponent>();
+		if (!transform) {
+			return;  // TransformComponent がない場合は処理しない
+		}
 
-		// NOTE: 水平面（XZ平面）でランダムオフセットを計算
-		// Y成分は0（高さは重力により自動調整）
-		_targetRandomOffset = Vec3(
-			std::cos(angle) * radius,
-			0.0f,
-			std::sin(angle) * radius
-		);
+		// NOTE: エンティティのワールド座標を発射位置として設定
+		Vec3 startPos = transform->GetPosition();
+		SetStartPoint(startPos);
+	}
+
+	void GolfBallComponent::SetTargetPosEntity(Unnamed::Entity* entity) {
+		// -----------------------------------------------------------------------
+		// エンティティ参照を保存
+		// -----------------------------------------------------------------------
+		// 理由：後で設定ボタン押下時に使用
+		_targetPosEntity = entity;
+
+		// NOTE: GUID を保存（JSON 復元時に使用）
+		if (entity) {
+			_targetPosEntityGuid = std::to_string(entity->GetGuid());
+		} else {
+			_targetPosEntityGuid = "";
+		}
+
+		// NOTE: 即座に着弾位置を設定
+		if (!entity) {
+			return;
+		}
+
+		// -----------------------------------------------------------------------
+		// TransformComponent から位置を取得
+		// -----------------------------------------------------------------------
+		// 理由：別エンティティの位置情報をゴルフボールの着弾地点として使用
+		auto* transform = entity->GetComponent<Unnamed::TransformComponent>();
+		if (!transform) {
+			return;  // TransformComponent がない場合は処理しない
+		}
+
+		// NOTE: エンティティのワールド座標をターゲット位置として設定
+		Vec3 targetPos = transform->GetPosition();
+		SetTargetPoint(targetPos);
 	}
 
 	void GolfBallComponent::Launch() {
+		ResolveSavedEntityReferences();
+		SyncSetupFromReferencedEntities();
+		RefreshTargetRandomOffset();
+
 		// -----------------------------------------------------------------------
 		// 初速を逆算で計算
 		// -----------------------------------------------------------------------
@@ -188,6 +298,41 @@ namespace MyGame {
 		// NOTE: フライト開始
 		_elapsedTime = 0.0f;
 		_bIsInFlight = true;
+		_bIsExternalMotion = false;
+	}
+
+	// -----------------------------------------------------------------------
+	// 外部からの力（衝撃波など）
+	// -----------------------------------------------------------------------
+
+	void GolfBallComponent::ApplyForce(const Vec3& force) {
+		// NOTE: 水平方向はゴミと同じく衝撃波をしっかり受け、Y方向だけ質量と上限で抑える。
+		// 理由：全成分を質量で割ると、ボールが衝撃波でほとんど動かなくなる。
+		Vec3 velocityDelta = force;
+		velocityDelta.y = force.y * (1.0f / std::max(0.1f, _mass));
+		velocityDelta.y = std::clamp(velocityDelta.y, -_maxExternalUpwardVelocity, _maxExternalUpwardVelocity);
+
+		_velocity += velocityDelta;
+		_bIsInFlight = true;
+		_bIsExternalMotion = true;
+		_bIsGrounded = false;
+		
+		// NOTE: 速度上限を適用して不自然な加速を防止
+		ClampVelocity();
+	}
+
+	void GolfBallComponent::SetHoleSuckPosition(const Vec3& holePosition, float suckPower) {
+		_holeSuckPosition = holePosition;
+		_holeSuckPower = std::clamp(suckPower, 0.0f, 1.0f);
+		_bIsBeingSucked = true;
+		_bIsInFlight = true;
+		_bIsExternalMotion = true;
+	}
+
+	void GolfBallComponent::ClearHoleSuckPosition() {
+		_holeSuckPower = 0.0f;
+		_bIsBeingSucked = false;
+		_bIsInsideHole = false;
 	}
 
 	// -----------------------------------------------------------------------
@@ -210,6 +355,76 @@ namespace MyGame {
 		return _elapsedTime;
 	}
 
+	void GolfBallComponent::ResolveSavedEntityReferences() {
+		auto resolve = [this](const std::string& guidText) -> Unnamed::Entity* {
+			if (guidText.empty() || !GetScene()) {
+				return nullptr;
+			}
+
+			char* end = nullptr;
+			const uint64_t guid = std::strtoull(guidText.c_str(), &end, 10);
+			if (end == guidText.c_str() || guid == 0) {
+				return nullptr;
+			}
+
+			return GetScene()->FindEntity(guid);
+		};
+
+		if (!_startPosEntity) {
+			if (auto* entity = resolve(_startPosEntityGuid)) {
+				if (entity->GetComponent<GolfBallStartPosComponent>()) {
+					_startPosEntity = entity;
+				}
+			}
+		}
+
+		if (!_targetPosEntity) {
+			if (auto* entity = resolve(_targetPosEntityGuid)) {
+				if (entity->GetComponent<GolfBallEndPosComponent>()) {
+					_targetPosEntity = entity;
+				}
+			}
+		}
+	}
+
+	void GolfBallComponent::SyncSetupFromReferencedEntities() {
+		if (_startPosEntity) {
+			if (auto* transform = _startPosEntity->GetComponent<Unnamed::TransformComponent>()) {
+				_startPoint = transform->GetPosition();
+			}
+		}
+
+		if (_targetPosEntity) {
+			if (auto* transform = _targetPosEntity->GetComponent<Unnamed::TransformComponent>()) {
+				_targetBase = transform->GetPosition();
+			}
+		}
+	}
+
+	void GolfBallComponent::ApplyPositionToRuntime() {
+		if (auto* transform = GetOwner()->GetComponent<Unnamed::TransformComponent>()) {
+			transform->SetPosition(_position);
+			transform->RequestInterpolationResync();
+		}
+
+		if (mCollisionResolver) {
+			if (auto* sphereKCR = dynamic_cast<Unnamed::SphereKinematicCollisionResolver*>(mCollisionResolver.get())) {
+				sphereKCR->UpdateHull(_position, _radius);
+			}
+		}
+	}
+
+	void GolfBallComponent::RefreshTargetRandomOffset() {
+		float angle = Random::FloatRange(0.0f, 2.0f * 3.14159265358979f);
+		float radius = Random::FloatRange(0.0f, _randomRadius);
+
+		_targetRandomOffset = Vec3(
+			std::cos(angle) * radius,
+			0.0f,
+			std::sin(angle) * radius
+		);
+	}
+
 	// -----------------------------------------------------------------------
 	// BaseComponent override
 	// -----------------------------------------------------------------------
@@ -224,156 +439,269 @@ namespace MyGame {
 
 #ifdef _DEBUG
 	void GolfBallComponent::DrawInspectorImGui() {
-		ImGui::Text("=== Golf Ball Settings ===");
-		if (ImGui::DragFloat("Radius", &_radius, 0.25f, 0.1f, 100.0f, "%.2f")) {
-			// NOTE: 半径を変更したらコリジョンハルも更新
-			auto* sphereKCR = dynamic_cast<Unnamed::SphereKinematicCollisionResolver*>(mCollisionResolver.get());
-			sphereKCR->UpdateHull(_position, _radius);
+		ImGui::Text("=== ゴルフボール設定 ===");
+		if (ImGui::DragFloat("半径##golf_radius", &_radius, 0.25f, 0.1f, 100.0f, "%.2f")) {
+			ApplyPositionToRuntime();
 		}
+		ImGui::SliderFloat("重さ##golf_mass", &_mass, 0.1f, 30.0f, "%.2f kg");
+		ImGui::SliderFloat("外力の上向き速度上限##golf_external_up_limit", &_maxExternalUpwardVelocity, 0.0f, 30.0f, "%.2f");
+		ImGui::Checkbox("起動時に自動発射##golf_launch_on_start", &_bLaunchOnStart);
 		
-		if (ImGuiWidgets::DragVec3("Velocity(override)", _velocity, Vec3::zero, 0.1f, "%.2f[m/s]")) {
+		if (ImGuiWidgets::DragVec3("速度を直接上書き##golf_velocity_override", _velocity, Vec3::zero, 0.1f, "%.2f[m/s]")) {
 			// NOTE: デバッグ用に速度を直接編集可能にする
 			_bIsInFlight = true; // 直接編集したらフライト状態にする
 		}
 		
-		ImGui::Text("=== Golf Ball Projectile Motion ===");
+		ImGui::Text("=== 飛行状態 ===");
 		ImGui::Separator();
 
 		// -----------------------------------------------------------------------
 		// フライト状態表示
 		// -----------------------------------------------------------------------
-		ImGui::Text("Flight Status: %s", _bIsInFlight ? "IN FLIGHT" : "LANDED");
-		ImGui::Text("Elapsed Time: %.2f sec", _elapsedTime);
-		ImGui::ProgressBar(_elapsedTime / _flightTime, ImVec2(0, 0), "Progress");
+		ImGui::Text("状態: %s", _bIsInFlight ? "飛行中" : "停止中");
+		ImGui::Text("経過時間: %.2f 秒", _elapsedTime);
+		ImGui::ProgressBar(_elapsedTime / std::max(0.001f, _flightTime), ImVec2(0, 0), "進行度");
 
 		ImGui::Separator();
 
 		// -----------------------------------------------------------------------
 		// 位置・速度表示
 		// -----------------------------------------------------------------------
-		ImGui::Text("Position: (%.2f, %.2f, %.2f)", _position.x, _position.y, _position.z);
-		ImGui::Text("Velocity: (%.2f, %.2f, %.2f)", _velocity.x, _velocity.y, _velocity.z);
+		ImGui::Text("現在位置: (%.2f, %.2f, %.2f)", _position.x, _position.y, _position.z);
+		ImGui::Text("現在速度: (%.2f, %.2f, %.2f)", _velocity.x, _velocity.y, _velocity.z);
 		float speed = _velocity.Length();
-		ImGui::Text("Speed: %.2f units/sec", speed);
+		ImGui::Text("速度の大きさ: %.2f units/sec", speed);
 
 		ImGui::Separator();
 
 		// -----------------------------------------------------------------------
 		// 発射地点設定セクション
 		// -----------------------------------------------------------------------
-		ImGui::Text("=== Start Point Setup ===");
+		ImGui::Text("=== 発射位置設定 ===");
 		
-		// NOTE: 発射地点を直接編集可能にする
-		// 理由：テスト時に発射地点を自由に変更したい
-		static float startPoint[3] = { 0.0f, 0.0f, 0.0f };
-		ImGui::InputFloat3("Start Point##input", startPoint, "%.2f");
+		if (ImGuiWidgets::DragVec3("発射位置##golf_start_point", _startPoint, Vec3::zero, 0.1f, "%.2f")) {
+			_startPosEntity = nullptr;
+			_startPosEntityGuid = "";
+			if (!_bIsInFlight && !_bIsBeingSucked) {
+				SetStartPoint(_startPoint);
+			}
+		}
 		
-		if (ImGui::Button("Set Start Point", ImVec2(150, 0))) {
-			SetStartPoint(Vec3(startPoint[0], startPoint[1], startPoint[2]));
+		if (ImGui::Button("発射位置へボールを移動##golf_apply_start", ImVec2(190, 0))) {
+			SetStartPoint(_startPoint);
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("Set From Current", ImVec2(150, 0))) {
+		if (ImGui::Button("現在位置を発射位置にする##golf_start_from_current", ImVec2(210, 0))) {
 			// NOTE: 現在位置を発射地点として設定
-			startPoint[0] = _position.x;
-			startPoint[1] = _position.y;
-			startPoint[2] = _position.z;
-			SetStartPoint(_position);
+			_startPosEntity = nullptr;
+			_startPosEntityGuid = "";
+			_startPoint = _position;
 		}
 
-		ImGui::Text("Current Start: (%.2f, %.2f, %.2f)", _position.x, _position.y, _position.z);
+		ImGui::Text("保存される発射位置: (%.2f, %.2f, %.2f)", _startPoint.x, _startPoint.y, _startPoint.z);
+
+		// -----------------------------------------------------------------------
+		// エンティティ参照による発射地点設定
+		// -----------------------------------------------------------------------
+		ImGui::Separator();
+		ImGui::Text("--- マーカーから設定（GolfBallStartPosComponent） ---");
+		ImGui::TextDisabled("発射位置マーカーを選ぶと、そのエンティティの位置を実行時に参照します");
+
+		// NOTE: 世界中から GolfBallStartPosComponent を持つエンティティを検索
+		std::vector<Unnamed::Entity*> startPosEntities;
+		int startPosEntityIndex = -1;
+		
+		auto* world = GetWorld();
+		if (world) {
+			auto* scene = world->GetScenePtr();
+			if (scene) {
+				const auto& allEntities = scene->GetEntities();
+				for (const auto& entity : allEntities) {
+					if (entity && entity->GetComponent<GolfBallStartPosComponent>()) {
+						startPosEntities.push_back(entity.get());
+						// 既に設定済みならそのインデックスを保存
+						if (entity.get() == _startPosEntity) {
+							startPosEntityIndex = static_cast<int>(startPosEntities.size()) - 1;
+						}
+					}
+				}
+			}
+		}
+
+		// NOTE: 現在設定されているエンティティを表示
+		if (_startPosEntity) {
+			ImGui::Text("設定中のマーカー: %.*s", (int)_startPosEntity->GetName().size(), _startPosEntity->GetName().data());
+			ImGui::SameLine();
+			if (ImGui::Button("解除##start_entity", ImVec2(60, 0))) {
+				_startPosEntity = nullptr;
+				_startPosEntityGuid = "";
+			}
+		} else {
+			ImGui::Text("設定中のマーカー: なし");
+		}
+
+		// NOTE: コンボボックスでエンティティ選択
+		if (!startPosEntities.empty()) {
+			std::vector<const char*> items;
+			for (const auto* entity : startPosEntities) {
+				items.push_back(entity->GetName().data());
+			}
+
+			if (ImGui::Combo("発射位置マーカー##combo_start", &startPosEntityIndex, items.data(), static_cast<int>(items.size()))) {
+				// NOTE: コンボボックスから選択されたら即座に設定
+				if (startPosEntityIndex >= 0 && startPosEntityIndex < static_cast<int>(startPosEntities.size())) {
+					SetStartPosEntity(startPosEntities[startPosEntityIndex]);
+				}
+			}
+		} else {
+			ImGui::TextDisabled("発射位置マーカーがシーン内にありません");
+		}
 
 		ImGui::Separator();
 
 		// -----------------------------------------------------------------------
 		// 着弾地点設定セクション
 		// -----------------------------------------------------------------------
-		ImGui::Text("=== Target Point Setup ===");
+		ImGui::Text("=== 着弾位置設定 ===");
 		
-		// NOTE: ターゲット基準位置を直接編集可能にする
-		// 理由：テスト時に着弾地点を自由に変更したい
-		static float targetPoint[3] = { 10.0f, 0.0f, 0.0f };
-		ImGui::InputFloat3("Target Point##input", targetPoint, "%.2f");
-		
-		if (ImGui::Button("Set Target Point", ImVec2(150, 0))) {
-			SetTargetPoint(Vec3(targetPoint[0], targetPoint[1], targetPoint[2]));
-		}
-		ImGui::SameLine();
-		if (ImGui::Button("Update Offset", ImVec2(150, 0))) {
-			// NOTE: ランダムオフセットを再計算（同じターゲットで別の着地点を試す）
-			SetTargetPoint(_targetBase);
+		if (ImGuiWidgets::DragVec3("着弾基準位置##golf_target_point", _targetBase, Vec3::zero, 0.1f, "%.2f")) {
+			_targetPosEntity = nullptr;
+			_targetPosEntityGuid = "";
 		}
 
-		ImGui::Text("Target Base: (%.2f, %.2f, %.2f)", _targetBase.x, _targetBase.y, _targetBase.z);
-		ImGui::Text("Target Offset: (%.2f, %.2f, %.2f)", _targetRandomOffset.x, _targetRandomOffset.y, _targetRandomOffset.z);
+		if (ImGui::Button("ランダム着地点を再計算##golf_refresh_target_offset", ImVec2(220, 0))) {
+			// NOTE: ランダムオフセットを再計算（同じターゲットで別の着地点を試す）
+			RefreshTargetRandomOffset();
+		}
+
+		ImGui::Text("着弾基準位置: (%.2f, %.2f, %.2f)", _targetBase.x, _targetBase.y, _targetBase.z);
+		ImGui::Text("ランダム補正: (%.2f, %.2f, %.2f)", _targetRandomOffset.x, _targetRandomOffset.y, _targetRandomOffset.z);
 		Vec3 finalTarget = _targetBase + _targetRandomOffset;
-		ImGui::Text("Final Target: (%.2f, %.2f, %.2f)", finalTarget.x, finalTarget.y, finalTarget.z);
+		ImGui::Text("最終着地点: (%.2f, %.2f, %.2f)", finalTarget.x, finalTarget.y, finalTarget.z);
+
+		// -----------------------------------------------------------------------
+		// エンティティ参照による着弾地点設定
+		// -----------------------------------------------------------------------
+		ImGui::Separator();
+		ImGui::Text("--- マーカーから設定（GolfBallEndPosComponent） ---");
+		ImGui::TextDisabled("着弾位置マーカーを選ぶと、そのエンティティの位置を実行時に参照します");
+
+		// NOTE: 世界中から GolfBallEndPosComponent を持つエンティティを検索
+		std::vector<Unnamed::Entity*> endPosEntities;
+		int endPosEntityIndex = -1;
+		
+		if (world) {
+			auto* scene = world->GetScenePtr();
+			if (scene) {
+				const auto& allEntities = scene->GetEntities();
+				for (const auto& entity : allEntities) {
+					if (entity && entity->GetComponent<GolfBallEndPosComponent>()) {
+						endPosEntities.push_back(entity.get());
+						// 既に設定済みならそのインデックスを保存
+						if (entity.get() == _targetPosEntity) {
+							endPosEntityIndex = static_cast<int>(endPosEntities.size()) - 1;
+						}
+					}
+				}
+			}
+		}
+
+		// NOTE: 現在設定されているエンティティを表示
+		if (_targetPosEntity) {
+			ImGui::Text("設定中のマーカー: %.*s", (int)_targetPosEntity->GetName().size(), _targetPosEntity->GetName().data());
+			ImGui::SameLine();
+			if (ImGui::Button("解除##target_entity", ImVec2(60, 0))) {
+				_targetPosEntity = nullptr;
+				_targetPosEntityGuid = "";
+			}
+		} else {
+			ImGui::Text("設定中のマーカー: なし");
+		}
+
+		// NOTE: コンボボックスでエンティティ選択
+		if (!endPosEntities.empty()) {
+			std::vector<const char*> items;
+			for (const auto* entity : endPosEntities) {
+				items.push_back(entity->GetName().data());
+			}
+
+			if (ImGui::Combo("着弾位置マーカー##combo_end", &endPosEntityIndex, items.data(), static_cast<int>(items.size()))) {
+				// NOTE: コンボボックスから選択されたら即座に設定
+				if (endPosEntityIndex >= 0 && endPosEntityIndex < static_cast<int>(endPosEntities.size())) {
+					SetTargetPosEntity(endPosEntities[endPosEntityIndex]);
+				}
+			}
+		} else {
+			ImGui::TextDisabled("着弾位置マーカーがシーン内にありません");
+		}
 
 		ImGui::Separator();
 
 		// -----------------------------------------------------------------------
 		// パラメータ調整
 		// -----------------------------------------------------------------------
-		ImGui::Text("=== Physics Parameters ===");
-		ImGui::SliderFloat("Gravity", &_gravity, 0.0f, 20.0f, "%.2f");
-		ImGui::SliderFloat("Flight Time", &_flightTime, 0.1f, 10.0f, "%.2f");
-		ImGui::SliderFloat("Random Radius", &_randomRadius, 0.0f, 10.0f, "%.2f");
-		ImGui::SliderFloat("Max Speed Clamp", &_maxSpeedClamp, 0.0f, 100.0f, "%.2f");
+		ImGui::Text("=== 物理パラメータ ===");
+		ImGui::SliderFloat("重力##golf_gravity", &_gravity, 0.0f, 20.0f, "%.2f");
+		ImGui::SliderFloat("到達時間##golf_flight_time", &_flightTime, 0.1f, 10.0f, "%.2f");
+		ImGui::SliderFloat("着地点ランダム半径##golf_random_radius", &_randomRadius, 0.0f, 10.0f, "%.2f");
+		ImGui::SliderFloat("最大速度##golf_max_speed", &_maxSpeedClamp, 0.0f, 100.0f, "%.2f");
 
 		ImGui::Separator();
 
 		// -----------------------------------------------------------------------
 		// 風パラメータ
 		// -----------------------------------------------------------------------
-		ImGui::Text("=== Wind Parameters ===");
-		ImGui::SliderFloat("Wind X", &_wind.x, -10.0f, 10.0f, "%.2f");
-		ImGui::SliderFloat("Wind Y", &_wind.y, -10.0f, 10.0f, "%.2f");
-		ImGui::SliderFloat("Wind Z", &_wind.z, -10.0f, 10.0f, "%.2f");
+		ImGui::Text("=== 風パラメータ ===");
+		ImGui::SliderFloat("風 X##golf_wind_x", &_wind.x, -10.0f, 10.0f, "%.2f");
+		ImGui::SliderFloat("風 Y##golf_wind_y", &_wind.y, -10.0f, 10.0f, "%.2f");
+		ImGui::SliderFloat("風 Z##golf_wind_z", &_wind.z, -10.0f, 10.0f, "%.2f");
 
 		ImGui::Separator();
 
 		// -----------------------------------------------------------------------
 		// ホーミングパラメータ
 		// -----------------------------------------------------------------------
-		ImGui::Text("=== Homing Parameters ===");
-		ImGui::SliderFloat("Homing Strength", &_homingStrength, 0.0f, 5.0f, "%.2f");
-		ImGui::SliderFloat("Homing Start Time", &_homingStartTime, 0.0f, _flightTime, "%.2f");
-		ImGui::SliderFloat("Homing End Time", &_homingEndTime, _homingStartTime, _flightTime, "%.2f");
+		ImGui::Text("=== ホーミングパラメータ ===");
+		ImGui::SliderFloat("ホーミング強度##golf_homing_strength", &_homingStrength, 0.0f, 5.0f, "%.2f");
+		ImGui::SliderFloat("ホーミング開始時間##golf_homing_start", &_homingStartTime, 0.0f, _flightTime, "%.2f");
+		ImGui::SliderFloat("ホーミング終了時間##golf_homing_end", &_homingEndTime, _homingStartTime, _flightTime, "%.2f");
 
 		ImGui::Separator();
 
 		// -----------------------------------------------------------------------
 		// バウンス・摩擦パラメータ
 		// -----------------------------------------------------------------------
-		ImGui::Text("=== Bounce & Friction Parameters ===");
-		ImGui::SliderFloat("Bounce Damping", &_bounceDamping, 0.0f, 1.0f, "%.3f");
-		ImGui::SliderFloat("Friction Coefficient", &_frictionCoefficient, 0.0f, 1.0f, "%.3f");
-		ImGui::SliderFloat("Ground Level", &_groundLevel, -10.0f, 10.0f, "%.2f");
-		ImGui::SliderFloat("Stop Velocity Threshold", &_stopVelocityThreshold, 0.001f, 0.1f, "%.4f");
+		ImGui::Text("=== バウンド・摩擦パラメータ ===");
+		ImGui::SliderFloat("反発係数##golf_bounce", &_bounceDamping, 0.0f, 1.0f, "%.3f");
+		ImGui::SliderFloat("摩擦係数##golf_friction", &_frictionCoefficient, 0.0f, 1.0f, "%.3f");
+		ImGui::SliderFloat("地面の高さ##golf_ground_level", &_groundLevel, -10.0f, 10.0f, "%.2f");
+		ImGui::SliderFloat("停止判定速度##golf_stop_threshold", &_stopVelocityThreshold, 0.001f, 0.1f, "%.4f");
 
 		// NOTE: パラメータ説明
-		ImGui::TextDisabled("Bounce: 0=no bounce, 1=full energy | Friction: 0=fast stop, 1=no friction");
-		ImGui::Checkbox("Is Grounded", &_bIsGrounded);
+		ImGui::TextDisabled("反発: 0=跳ねない、1=エネルギー維持 / 摩擦: 0=すぐ止まる、1=減速しない");
+		ImGui::Checkbox("接地中##golf_grounded", &_bIsGrounded);
 
 		ImGui::Separator();
 
 		// -----------------------------------------------------------------------
 		// コントロールボタン
 		// -----------------------------------------------------------------------
-		ImGui::Text("=== Control ===");
+		ImGui::Text("=== 操作 ===");
 		
-		if (ImGui::Button("Launch", ImVec2(100, 30))) {
+		if (ImGui::Button("発射##golf_launch", ImVec2(100, 30))) {
 			// NOTE: 現在設定されている発射地点とターゲット地点で発射
 			Launch();
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("Reset", ImVec2(100, 30))) {
+		if (ImGui::Button("リセット##golf_reset", ImVec2(100, 30))) {
 			// NOTE: 状態をリセット
 			_bIsInFlight = false;
 			_elapsedTime = 0.0f;
 			_velocity = Vec3(0.0f, 0.0f, 0.0f);
+			SetStartPoint(_startPoint);
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("Stop", ImVec2(100, 30))) {
+		if (ImGui::Button("停止##golf_stop", ImVec2(100, 30))) {
 			// NOTE: 即座に着地させる
 			_bIsInFlight = false;
 		}
@@ -383,6 +711,45 @@ namespace MyGame {
 	void GolfBallComponent::Deserialize(const Unnamed::JsonReader& reader) {
 		// NOTE: JSON から パラメータを読み込む
 		// Read() は std::optional<T> を返すため、value() で値を取得
+		if (auto val = reader.Read<float>("radius")) {
+			_radius = val.value();
+		}
+		if (auto val = reader.Read<float>("mass")) {
+			_mass = std::max(0.1f, val.value());
+		}
+		if (auto val = reader.Read<float>("maxExternalUpwardVelocity")) {
+			_maxExternalUpwardVelocity = std::max(0.0f, val.value());
+		}
+		if (auto val = reader.Read<bool>("launchOnStart")) {
+			_bLaunchOnStart = val.value();
+		}
+		if (auto val = reader.Read<float>("startPointX")) {
+			_startPoint.x = val.value();
+		}
+		if (auto val = reader.Read<float>("startPointY")) {
+			_startPoint.y = val.value();
+		}
+		if (auto val = reader.Read<float>("startPointZ")) {
+			_startPoint.z = val.value();
+		}
+		if (auto val = reader.Read<float>("targetBaseX")) {
+			_targetBase.x = val.value();
+		}
+		if (auto val = reader.Read<float>("targetBaseY")) {
+			_targetBase.y = val.value();
+		}
+		if (auto val = reader.Read<float>("targetBaseZ")) {
+			_targetBase.z = val.value();
+		}
+		if (auto val = reader.Read<float>("windX")) {
+			_wind.x = val.value();
+		}
+		if (auto val = reader.Read<float>("windY")) {
+			_wind.y = val.value();
+		}
+		if (auto val = reader.Read<float>("windZ")) {
+			_wind.z = val.value();
+		}
 		if (auto val = reader.Read<float>("gravity")) {
 			_gravity = val.value();
 		}
@@ -416,11 +783,48 @@ namespace MyGame {
 		if (auto val = reader.Read<float>("stopVelocityThreshold")) {
 			_stopVelocityThreshold = val.value();
 		}
+
+		// -----------------------------------------------------------------------
+		// エンティティ参照のGUID を読み込む
+		// -----------------------------------------------------------------------
+		// 理由：保存されたエンティティ参照を復元
+		if (auto val = reader.Read<std::string>("startPosEntityGuid")) {
+			_startPosEntityGuid = val.value();
+		}
+		if (auto val = reader.Read<std::string>("targetPosEntityGuid")) {
+			_targetPosEntityGuid = val.value();
+		}
 	}
 
 	void GolfBallComponent::Serialize(Unnamed::JsonWriter& writer) const {
 		// NOTE: パラメータを JSON に書き込む
 		// Key(), Write() の順序で呼び出す
+		writer.Key("radius");
+		writer.Write(_radius);
+		writer.Key("mass");
+		writer.Write(_mass);
+		writer.Key("maxExternalUpwardVelocity");
+		writer.Write(_maxExternalUpwardVelocity);
+		writer.Key("launchOnStart");
+		writer.Write(_bLaunchOnStart);
+		writer.Key("startPointX");
+		writer.Write(_startPoint.x);
+		writer.Key("startPointY");
+		writer.Write(_startPoint.y);
+		writer.Key("startPointZ");
+		writer.Write(_startPoint.z);
+		writer.Key("targetBaseX");
+		writer.Write(_targetBase.x);
+		writer.Key("targetBaseY");
+		writer.Write(_targetBase.y);
+		writer.Key("targetBaseZ");
+		writer.Write(_targetBase.z);
+		writer.Key("windX");
+		writer.Write(_wind.x);
+		writer.Key("windY");
+		writer.Write(_wind.y);
+		writer.Key("windZ");
+		writer.Write(_wind.z);
 		writer.Key("gravity");
 		writer.Write(_gravity);
 		writer.Key("flightTime");
@@ -443,6 +847,15 @@ namespace MyGame {
 		writer.Write(_groundLevel);
 		writer.Key("stopVelocityThreshold");
 		writer.Write(_stopVelocityThreshold);
+
+		// -----------------------------------------------------------------------
+		// エンティティ参照のGUID を書き込む
+		// -----------------------------------------------------------------------
+		// 理由：エンティティ参照をGUID形式で保存
+		writer.Key("startPosEntityGuid");
+		writer.Write(_startPosEntityGuid);
+		writer.Key("targetPosEntityGuid");
+		writer.Write(_targetPosEntityGuid);
 	}
 
 	// -----------------------------------------------------------------------
@@ -569,6 +982,25 @@ namespace MyGame {
 		// NOTE: 方向ベクトルを正規化（長さ1にする）
 		// 理由：誘導力は方向のみに依存し、距離に関わらず均一の加速度を与える
 		return directionToTarget * (1.0f / distanceToTarget);
+	}
+
+	void GolfBallComponent::UpdateHoleSuck(float deltaTime) {
+		if (!_bIsBeingSucked || _holeSuckPower <= 0.0f) {
+			return;
+		}
+
+		Vec3 directionToHole = _holeSuckPosition - _position;
+		float distanceToHole = directionToHole.Length();
+		if (distanceToHole < 0.01f) {
+			return;
+		}
+
+		Vec3 directionNormalized = directionToHole.Normalized();
+		float suckMultiplier = _bIsInsideHole ? 0.3f : 1.0f;
+
+		const float kBaseSuckAcceleration = 60.0f;
+		Vec3 suckAcceleration = directionNormalized * kBaseSuckAcceleration * _holeSuckPower * suckMultiplier;
+		_velocity += suckAcceleration * deltaTime;
 	}
 
 	// -----------------------------------------------------------------------

@@ -43,31 +43,29 @@ namespace MyGame {
 	}
 
 	void TrashObjMoverComponent::OnTick(float deltaTime) {
+		// NOTE: 常に物理更新を実行（衝撃波による速度でも地面衝突判定が必要）
 		// -----------------------------------------------------------------------
-		// 吸い込み処理（落下状態 または 地上で吸い込み中）
+		// 物理計算（重力）
 		// -----------------------------------------------------------------------
-		if (_bIsBeingSucked && _holeSuckPower > 0.0f) {
-			// 落下状態でも地上でも、吸い込み力があれば適用
-			UpdateHoleSuck(deltaTime);
+		UpdatePhysics(deltaTime);
+
+		// -----------------------------------------------------------------------
+		// 穴の内側判定（衝突判定をスキップするかどうかを決定）
+		// -----------------------------------------------------------------------
+		if (_bIsBeingSucked) {
+			Vec3 directionToHole = _holeSuckPosition - _position;
+			float distanceToHole = directionToHole.Length();
+			// NOTE: 穴の半径より内側にいるかの判定（穴の半径を約1.5倍してバッファを持たせる）
+			_bIsInsideHole = (distanceToHole < 1.5f); // NOTE: 穴の標準半径は2.0なので、3.0以下で内側と判定
+		} else {
+			_bIsInsideHole = false;
 		}
 
-		// NOTE: 落下状態でない場合のみ物理更新を実行
-		if (_bIsFalling) {
-			// 落下状態：重力のみを適用
-			_velocity.y -= _gravity * deltaTime;
-			_position += _velocity * deltaTime;
-
-			// 空中での回転を更新
-			UpdateAirRotation(deltaTime);
-		} else {
-			// -----------------------------------------------------------------------
-			// 物理計算（重力）
-			// -----------------------------------------------------------------------
-			UpdatePhysics(deltaTime);
-
-			// -----------------------------------------------------------------------
-			// 衝突応答 & SlideMove（リゾルバが位置を更新）
-			// -----------------------------------------------------------------------
+		// -----------------------------------------------------------------------
+		// 衝突応答 & SlideMove（リゾルバが位置を更新）
+		// NOTE: 穴の内側にいる場合は衝突判定をスキップ
+		// -----------------------------------------------------------------------
+		if (!_bIsInsideHole) {
 			// NOTE: SlideMove が _position と _velocity を更新する
 			// 地面衝突、バウンス、速度クリップはすべてリゾルバが処理
 			if (_collisionResolver) {
@@ -76,30 +74,44 @@ namespace MyGame {
 					boxKCR->SlideMove(_position, _velocity, deltaTime);
 				}
 			}
+		} else {
+			// NOTE: 穴の内側：位置を重力と吸い込み速度のみで更新（衝突判定なし）
+			_position += _velocity * deltaTime;
+		}
 
-			// -----------------------------------------------------------------------
-			// 速度上限でクランプ
-			// -----------------------------------------------------------------------
-			ClampVelocity();
+		// -----------------------------------------------------------------------
+		// 吸い込み処理（落下状態 または 地上で吸い込み中）
+		// NOTE: コリジョン処理の後に吸い込み処理を実行することで、
+		// ゴミが穴の内側に位置しても地形との衝突判定が正常に機能する
+		// -----------------------------------------------------------------------
+		if (_bIsBeingSucked && _holeSuckPower > 0.0f) {
+			// NOTE: 吸い込み処理を更新（速度のみを調整、位置は物理演算で更新）
+			UpdateHoleSuck(deltaTime);
+		}
 
-			// -----------------------------------------------------------------------
-			// 落下中・衝突中による回転更新
-			// -----------------------------------------------------------------------
-			bool bWasGrounded = _bIsGrounded;
-			_bIsGrounded = (_velocity.y >= -_stopVelocityThreshold && _velocity.y <= _stopVelocityThreshold);
+		// -----------------------------------------------------------------------
+		// 速度上限でクランプ
+		// -----------------------------------------------------------------------
+		ClampVelocity();
 
-			if (!_bIsGrounded) {
-				// 空中：速度方向に回転
-				UpdateAirRotation(deltaTime);
-			} else if (bWasGrounded != _bIsGrounded && _bIsGrounded) {
-				// 着地した：回転をリセット開始
-				_bIsResetingRotation = true;
-			}
+		// -----------------------------------------------------------------------
+		// 落下中・衝突中による回転更新
+		// -----------------------------------------------------------------------
+		bool bWasGrounded = _bIsGrounded;
+		_bIsGrounded = (_velocity.y >= -_stopVelocityThreshold && _velocity.y <= _stopVelocityThreshold);
+		if (_bIsShockSpinActive) {
+			UpdateShockSpin(deltaTime);
+		} else if (!_bIsGrounded) {
+			// NOTE: 空中：速度方向に回転
+			UpdateAirRotation(deltaTime);
+		} else if (bWasGrounded != _bIsGrounded && _bIsGrounded) {
+			// NOTE: 着地した：回転をリセット開始
+			_bIsResetingRotation = true;
+		}
 
-			// 回転リセット中なら続行
-			if (_bIsResetingRotation) {
-				UpdateRotationReset(deltaTime);
-			}
+		// NOTE: 回転リセット中なら続行
+		if (_bIsResetingRotation) {
+			UpdateRotationReset(deltaTime);
 		}
 
 		// -----------------------------------------------------------------------
@@ -136,6 +148,46 @@ namespace MyGame {
 
 	Vec3 TrashObjMoverComponent::GetCurrentVelocity() const {
 		return _velocity;
+	}
+
+	void TrashObjMoverComponent::SetVelocity(const Vec3 &velocity) {
+		_velocity = velocity;
+	}
+
+	void TrashObjMoverComponent::StartShockWaveSpin(const Vec3 &impulse) {
+		Vec3 horizontalImpulse = impulse;
+		horizontalImpulse.y = 0.0f;
+
+		if (horizontalImpulse.Length() < 0.001f) {
+			horizontalImpulse = Vec3::forward;
+		} else {
+			horizontalImpulse = horizontalImpulse.Normalized();
+		}
+
+		Vec3 tumbleAxis = Vec3::up.Cross(horizontalImpulse);
+		if (tumbleAxis.Length() < 0.001f) {
+			tumbleAxis = Vec3::right;
+		} else {
+			tumbleAxis = tumbleAxis.Normalized();
+		}
+
+		const float directionBias = horizontalImpulse.x * 0.45f + horizontalImpulse.z * 0.25f;
+		Vec3 animeAxis = tumbleAxis + Vec3::up * directionBias;
+		if (animeAxis.Length() < 0.001f) {
+			animeAxis = tumbleAxis;
+		}
+
+		_shockSpinAxis = animeAxis.Normalized();
+		_shockSpinTimer = _shockSpinDuration;
+		_bIsShockSpinActive = true;
+		_bIsResetingRotation = false;
+
+		const float impulseSpeed = impulse.Length();
+		_shockSpinSpeedDeg = std::clamp(
+			_airRotationSpeed + impulseSpeed * _shockSpinSpeedMultiplier,
+			_airRotationSpeed,
+			_shockSpinMaxSpeedDeg
+		);
 	}
 
 	// ===================================================================
@@ -240,6 +292,16 @@ namespace MyGame {
 		ImGui::SliderFloat("Rotation Reset Speed", &_rotationResetSpeed, 0.0f, 10.0f, "%.2f");
 
 		ImGui::Separator();
+		ImGui::Text("=== Shock Wave Spin ===");
+		ImGui::SliderFloat("Shock Spin Duration", &_shockSpinDuration, 0.1f, 3.0f, "%.2f");
+		ImGui::SliderFloat("Shock Spin Multiplier", &_shockSpinSpeedMultiplier, 0.0f, 200.0f, "%.2f");
+		ImGui::SliderFloat("Shock Spin Max Speed", &_shockSpinMaxSpeedDeg, 360.0f, 3600.0f, "%.2f");
+		ImGui::SliderFloat("Shock Spin Wobble", &_shockSpinWobbleDeg, 0.0f, 60.0f, "%.2f");
+		ImGui::SliderFloat("Shock Spin Wobble Speed", &_shockSpinWobbleSpeed, 0.0f, 40.0f, "%.2f");
+		ImGui::Text("Shock Spin Active: %s", _bIsShockSpinActive ? "YES" : "NO");
+		ImGui::Text("Shock Spin Timer: %.2f", _shockSpinTimer);
+
+		ImGui::Separator();
 		ImGui::Text("=== Tilt Toward Movement ===");
 		ImGui::SliderFloat("Tilt Strength", &_tiltTowardMovementStrength, 0.0f, 1.0f, "%.2f");
 		ImGui::TextWrapped("※ 移動方向に傾く強度（0.0=傾かない、1.0=完全に傾く）");
@@ -323,6 +385,21 @@ namespace MyGame {
 		if (auto val = reader.Read<float>("tiltLerpSpeed")) {
 			_tiltLerpSpeed = val.value();
 		}
+		if (auto val = reader.Read<float>("shockSpinDuration")) {
+			_shockSpinDuration = std::max(0.1f, val.value());
+		}
+		if (auto val = reader.Read<float>("shockSpinSpeedMultiplier")) {
+			_shockSpinSpeedMultiplier = std::max(0.0f, val.value());
+		}
+		if (auto val = reader.Read<float>("shockSpinMaxSpeedDeg")) {
+			_shockSpinMaxSpeedDeg = std::max(360.0f, val.value());
+		}
+		if (auto val = reader.Read<float>("shockSpinWobbleDeg")) {
+			_shockSpinWobbleDeg = std::max(0.0f, val.value());
+		}
+		if (auto val = reader.Read<float>("shockSpinWobbleSpeed")) {
+			_shockSpinWobbleSpeed = std::max(0.0f, val.value());
+		}
 	}
 
 	void TrashObjMoverComponent::Serialize(Unnamed::JsonWriter &writer) const {
@@ -364,6 +441,21 @@ namespace MyGame {
 
 		writer.Key("tiltLerpSpeed");
 		writer.Write(_tiltLerpSpeed);
+
+		writer.Key("shockSpinDuration");
+		writer.Write(_shockSpinDuration);
+
+		writer.Key("shockSpinSpeedMultiplier");
+		writer.Write(_shockSpinSpeedMultiplier);
+
+		writer.Key("shockSpinMaxSpeedDeg");
+		writer.Write(_shockSpinMaxSpeedDeg);
+
+		writer.Key("shockSpinWobbleDeg");
+		writer.Write(_shockSpinWobbleDeg);
+
+		writer.Key("shockSpinWobbleSpeed");
+		writer.Write(_shockSpinWobbleSpeed);
 	}
 
 	// ===================================================================
@@ -443,6 +535,38 @@ namespace MyGame {
 		_currentRotation = Quaternion::Slerp(_currentRotation, targetRotation, lerpAmount);
 	}
 
+	void TrashObjMoverComponent::UpdateShockSpin(float deltaTime) {
+		if (!_bIsShockSpinActive) {
+			return;
+		}
+
+		_shockSpinTimer -= deltaTime;
+		const float normalizedTime = std::clamp(_shockSpinTimer / _shockSpinDuration, 0.0f, 1.0f);
+		const float easing = normalizedTime * normalizedTime;
+		const float spinAngleRad = _shockSpinSpeedDeg * easing * deltaTime * 3.14159265f / 180.0f;
+
+		Quaternion spinDelta = Quaternion::AxisAngle(_shockSpinAxis, spinAngleRad);
+		_currentRotation = (spinDelta * _currentRotation).Normalized();
+
+		Vec3 horizontalVelocity = _velocity;
+		horizontalVelocity.y = 0.0f;
+		if (horizontalVelocity.Length() > 0.1f && _shockSpinWobbleDeg > 0.0f) {
+			Vec3 travelDir = horizontalVelocity.Normalized();
+			const float elapsed = _shockSpinDuration - _shockSpinTimer;
+			const float wobbleWave = std::sin(elapsed * _shockSpinWobbleSpeed);
+			const float wobbleAngleRad = wobbleWave * _shockSpinWobbleDeg * normalizedTime * 3.14159265f / 180.0f;
+			Quaternion wobble = Quaternion::AxisAngle(travelDir, wobbleAngleRad);
+			_currentRotation = (wobble * _currentRotation).Normalized();
+		}
+
+		if (_shockSpinTimer <= 0.0f || _bIsGrounded) {
+			_bIsShockSpinActive = false;
+			if (_bIsGrounded) {
+				_bIsResetingRotation = true;
+			}
+		}
+	}
+
 	void TrashObjMoverComponent::UpdateRotationReset(float deltaTime) {
 		// 初期回転へ戻す（補間速度で徐々に）
 		float lerpSpeed = _rotationResetSpeed * deltaTime;
@@ -465,37 +589,46 @@ namespace MyGame {
 	}
 
 	void TrashObjMoverComponent::UpdateHoleSuck(float deltaTime) {
-		// 穴への吸い込み処理（落下状態・地上両方に対応）
+		// NOTE: 穴への吸い込み処理（落下状態・地上両方に対応）
 		if (!_bIsBeingSucked || _holeSuckPower <= 0.0f) {
 			return;
 		}
 
-		// 穴への方向ベクトルを計算
+		// NOTE: 穴への方向ベクトルを計算
 		Vec3 directionToHole = _holeSuckPosition - _position;
 		float distanceToHole = directionToHole.Length();
 
-		// 距離が非常に小さい場合はスキップ
+		// NOTE: 距離が非常に小さい場合はスキップ
 		if (distanceToHole < 0.01f) {
-			// 穴の中心に吸い込まれた - 吸い込み処理完了
+			// NOTE: 穴の中心に吸い込まれた - 吸い込み処理完了
 			return;
 		}
 
-		// 方向ベクトルを正規化
+		// NOTE: 方向ベクトルを正規化
 		Vec3 directionNormalized = directionToHole.Normalized();
 
-		// 吸い込み力に基づいて加速度を計算
-		// suckPower = 1.0の時: 60単位/秒²の加速度（穴への引力）
-		// より強い吸い込み感を出すために数値を大きくした
-		const float kBaseSuckAcceleration = 60.0f;
-		Vec3 suckAcceleration = directionNormalized * kBaseSuckAcceleration * _holeSuckPower;
+		// NOTE: 穴の内側では、吸い込み力を弱めて落下を優先させる
+		float suckMultiplier = 1.0f;
+		if (_bIsInsideHole) {
+			// NOTE: 穴の内側では吸い込み力を30%に減衰させ、重力による落下を優先
+			suckMultiplier = 0.3f;
+		}
 
-		// 速度に吸い込み加速度を追加
+		// NOTE: 吸い込み力に基づいて加速度を計算
+		// suckPower = 1.0の時: 60単位/秒²の加速度（穴への引力）
+		const float kBaseSuckAcceleration = 60.0f;
+		Vec3 suckAcceleration = directionNormalized * kBaseSuckAcceleration * _holeSuckPower * suckMultiplier;
+
+		// NOTE: 速度に吸い込み加速度を追加
 		_velocity += suckAcceleration * deltaTime;
 
-		// 位置を更新
-		_position += _velocity * deltaTime;
+		// NOTE: 穴の内側では位置更新は OnTick() で既に行われているためスキップ
+		// NOTE: 穴の外側では位置更新が必要
+		if (!_bIsInsideHole) {
+			_position += _velocity * deltaTime;
+		}
 
-		// 吸い込み中も回転を更新
+		// NOTE: 吸い込み中も回転を更新
 		UpdateAirRotation(deltaTime);
 	}
 

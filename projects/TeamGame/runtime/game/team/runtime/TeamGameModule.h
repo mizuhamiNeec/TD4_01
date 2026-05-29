@@ -2,6 +2,9 @@
 
 #include "engine/game/IGameModule.h"
 
+// 前方宣言
+class MagVoiceBridge;
+
 namespace Unnamed {
 	/// @brief TeamGame 向けの最小 GameModule 実装です。
 	class TeamGameModule final : public IGameModule {
@@ -26,6 +29,13 @@ namespace Unnamed {
 		[[nodiscard]] std::string GetDefaultStartupScenePath() const override;
 		/// @brief UI ドキュメントのデフォルトパスを返します。
 		[[nodiscard]] std::string GetDefaultUiDocumentPath() const override;
+
+	private:
+		/// @brief ゲーム開始時に MagVoiceBridge を初期化・起動
+		void InitializeMagVoiceBridge();
+
+		/// @brief グローバルな MagVoiceBridge インスタンスを設定
+		void SetGlobalMagVoiceBridge(MagVoiceBridge* bridge);
 	};
 
 	/// @brief TeamGame GameModule を生成します。

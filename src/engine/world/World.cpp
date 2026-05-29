@@ -33,6 +33,7 @@
 #include "engine/unnamed/framework/components/portal/PortalComponent.h"
 #include "engine/unnamed/framework/components/portal/PortalExitComponent.h"
 #include "engine/unnamed/framework/components/sequence/SequenceDirectorComponent.h"
+#include "engine/unnamed/framework/components/particle/ParticleEmitterComponent.h"
 #include "engine/unnamed/framework/components/ui/UiCanvasComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/primitive/Primitives.h"
@@ -622,6 +623,8 @@ namespace Unnamed {
 				StaticMeshRendererComponent>();
 			auto* skelRenderer = entity->GetComponent<
 				SkeletalMeshRendererComponent>();
+			auto* particleEmitter = entity->GetComponent<
+				ParticleEmitterComponent>();
 			auto* uiCanvas = entity->GetComponent<UiCanvasComponent>();
 			if (!transform) {
 				continue;
@@ -761,6 +764,10 @@ namespace Unnamed {
 				}
 
 				sceneView.visibleObjects.emplace_back(object);
+			}
+
+			if (particleEmitter && particleEmitter->IsActive()) {
+				particleEmitter->GatherWorldParticles(sceneView.worldParticles);
 			}
 		}
 

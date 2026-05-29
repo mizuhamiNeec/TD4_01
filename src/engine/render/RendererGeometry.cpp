@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cstdint>
 #include <iterator>
+#include <numbers>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -104,6 +106,11 @@ namespace Unnamed::Render {
 		};
 
 		struct QuadVertex {
+			float px, py, pz;
+			float u,  v;
+		};
+
+		struct ParticleVertex {
 			float px, py, pz;
 			float u,  v;
 		};
@@ -227,6 +234,219 @@ namespace Unnamed::Render {
 
 		mSpritePass.geom.vb->SetName(L"QuadVB_Default");
 		mSpritePass.geom.ib->SetName(L"QuadIB_Default");
+	}
+
+	void Renderer::CreateParticleShapeResources(Rhi::D3D12Device& dx) {
+		auto createShapeResource =
+			[&dx](
+			const std::vector<ParticleVertex>& vertices,
+			const std::wstring_view            debugName,
+			ParticleGeometryRes&               outGeom
+		) {
+			if (vertices.empty()) {
+				return;
+			}
+
+			std::vector<uint16_t> indices;
+			indices.reserve(vertices.size());
+			for (uint32_t i = 0; i < vertices.size(); ++i) {
+				indices.emplace_back(static_cast<uint16_t>(i));
+			}
+
+			auto& up = dx.GetUploadContext();
+			up.Begin();
+			auto* device  = dx.GetDevice();
+			auto* cmdList = up.GetCommandList();
+
+			Microsoft::WRL::ComPtr<ID3D12Resource> vbUpload;
+			Microsoft::WRL::ComPtr<ID3D12Resource> ibUpload;
+			CreateDefaultBufferWithUpload(
+				device,
+				cmdList,
+				vertices.data(),
+				static_cast<uint64_t>(sizeof(ParticleVertex) * vertices.size()),
+				outGeom.vb,
+				vbUpload,
+				D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER
+			);
+			CreateDefaultBufferWithUpload(
+				device,
+				cmdList,
+				indices.data(),
+				static_cast<uint64_t>(sizeof(uint16_t) * indices.size()),
+				outGeom.ib,
+				ibUpload,
+				D3D12_RESOURCE_STATE_INDEX_BUFFER
+			);
+			up.EndAndSubmitAndWait();
+
+			outGeom.vbv.BufferLocation = outGeom.vb->GetGPUVirtualAddress();
+			outGeom.vbv.SizeInBytes = static_cast<UINT>(
+				sizeof(ParticleVertex) * vertices.size()
+			);
+			outGeom.vbv.StrideInBytes = sizeof(ParticleVertex);
+			outGeom.ibv.BufferLocation = outGeom.ib->GetGPUVirtualAddress();
+			outGeom.ibv.SizeInBytes = static_cast<UINT>(
+				sizeof(uint16_t) * indices.size()
+			);
+			outGeom.ibv.Format      = DXGI_FORMAT_R16_UINT;
+			outGeom.indexCount      = static_cast<uint32_t>(indices.size());
+			outGeom.vb->SetName(std::wstring(debugName).append(L"_VB").c_str());
+			outGeom.ib->SetName(std::wstring(debugName).append(L"_IB").c_str());
+		};
+
+		const auto makePlaneVertices = []() {
+			return std::vector<ParticleVertex>{
+				{1.0f, 1.0f, 0.0f, 0.0f, 0.0f},
+				{-1.0f, 1.0f, 0.0f, 1.0f, 0.0f},
+				{1.0f, -1.0f, 0.0f, 0.0f, 1.0f},
+				{1.0f, -1.0f, 0.0f, 0.0f, 1.0f},
+				{-1.0f, 1.0f, 0.0f, 1.0f, 0.0f},
+				{-1.0f, -1.0f, 0.0f, 1.0f, 1.0f}
+			};
+		};
+
+		const auto makeRingVertices = []() {
+			constexpr uint32_t kRingDivide = 32;
+			constexpr float    kOuterRadius = 1.0f;
+			constexpr float    kInnerRadius = 0.2f;
+			const float        radianPerDivide =
+				2.0f * std::numbers::pi_v<float> / static_cast<float>(kRingDivide);
+
+			std::vector<ParticleVertex> vertices;
+			vertices.reserve(kRingDivide * 6);
+			for (uint32_t i = 0; i < kRingDivide; ++i) {
+				const float sinV     = std::sin(i * radianPerDivide);
+				const float cosV     = std::cos(i * radianPerDivide);
+				const float sinNextV = std::sin((i + 1) * radianPerDivide);
+				const float cosNextV = std::cos((i + 1) * radianPerDivide);
+				const float u        = static_cast<float>(i) /
+				               static_cast<float>(kRingDivide);
+				const float uNext    = static_cast<float>(i + 1) /
+				               static_cast<float>(kRingDivide);
+
+				vertices.emplace_back(ParticleVertex{
+					-sinV * kOuterRadius, cosV * kOuterRadius, 0.0f, u, 0.0f
+				});
+				vertices.emplace_back(ParticleVertex{
+					-sinNextV * kOuterRadius,
+					cosNextV * kOuterRadius,
+					0.0f,
+					uNext,
+					0.0f
+				});
+				vertices.emplace_back(ParticleVertex{
+					-sinV * kInnerRadius, cosV * kInnerRadius, 0.0f, u, 1.0f
+				});
+				vertices.emplace_back(ParticleVertex{
+					-sinV * kInnerRadius, cosV * kInnerRadius, 0.0f, u, 1.0f
+				});
+				vertices.emplace_back(ParticleVertex{
+					-sinNextV * kOuterRadius,
+					cosNextV * kOuterRadius,
+					0.0f,
+					uNext,
+					0.0f
+				});
+				vertices.emplace_back(ParticleVertex{
+					-sinNextV * kInnerRadius,
+					cosNextV * kInnerRadius,
+					0.0f,
+					uNext,
+					1.0f
+				});
+			}
+			return vertices;
+		};
+
+		const auto makeCylinderVertices = []() {
+			constexpr uint32_t kCylinderDivide = 32;
+			constexpr float    kHeight = 1.0f;
+			constexpr float    kRadius = 0.5f;
+			const float        radianPerDivide =
+				2.0f * std::numbers::pi_v<float> /
+				static_cast<float>(kCylinderDivide);
+
+			std::vector<ParticleVertex> vertices;
+			vertices.reserve(kCylinderDivide * 12);
+			for (uint32_t i = 0; i < kCylinderDivide; ++i) {
+				const float theta     = i * radianPerDivide;
+				const float nextTheta = (i + 1) * radianPerDivide;
+				const float sinV      = std::sin(theta);
+				const float cosV      = std::cos(theta);
+				const float sinNextV  = std::sin(nextTheta);
+				const float cosNextV  = std::cos(nextTheta);
+
+				const Vec3 bottom1 = Vec3(
+					kRadius * cosV, -kHeight * 0.5f, kRadius * sinV
+				);
+				const Vec3 bottom2 = Vec3(
+					kRadius * cosNextV, -kHeight * 0.5f, kRadius * sinNextV
+				);
+				const Vec3 top1 = Vec3(
+					kRadius * cosV, kHeight * 0.5f, kRadius * sinV
+				);
+				const Vec3 top2 = Vec3(
+					kRadius * cosNextV, kHeight * 0.5f, kRadius * sinNextV
+				);
+
+				vertices.emplace_back(ParticleVertex{
+					bottom1.x, bottom1.y, bottom1.z, 0.0f, 1.0f
+				});
+				vertices.emplace_back(ParticleVertex{
+					bottom2.x, bottom2.y, bottom2.z, 1.0f, 1.0f
+				});
+				vertices.emplace_back(ParticleVertex{
+					top1.x, top1.y, top1.z, 0.0f, 0.0f
+				});
+				vertices.emplace_back(ParticleVertex{
+					top1.x, top1.y, top1.z, 0.0f, 0.0f
+				});
+				vertices.emplace_back(ParticleVertex{
+					bottom2.x, bottom2.y, bottom2.z, 1.0f, 1.0f
+				});
+				vertices.emplace_back(ParticleVertex{
+					top2.x, top2.y, top2.z, 1.0f, 0.0f
+				});
+
+				vertices.emplace_back(ParticleVertex{
+					0.0f, kHeight * 0.5f, 0.0f, 0.5f, 0.5f
+				});
+				vertices.emplace_back(ParticleVertex{
+					top1.x, top1.y, top1.z, 0.0f, 0.0f
+				});
+				vertices.emplace_back(ParticleVertex{
+					top2.x, top2.y, top2.z, 1.0f, 0.0f
+				});
+
+				vertices.emplace_back(ParticleVertex{
+					0.0f, -kHeight * 0.5f, 0.0f, 0.5f, 0.5f
+				});
+				vertices.emplace_back(ParticleVertex{
+					bottom2.x, bottom2.y, bottom2.z, 0.0f, 0.0f
+				});
+				vertices.emplace_back(ParticleVertex{
+					bottom1.x, bottom1.y, bottom1.z, 1.0f, 0.0f
+				});
+			}
+			return vertices;
+		};
+
+		createShapeResource(
+			makePlaneVertices(),
+			L"ParticlePlane",
+			mParticlePass.planeGeom
+		);
+		createShapeResource(
+			makeRingVertices(),
+			L"ParticleRing",
+			mParticlePass.ringGeom
+		);
+		createShapeResource(
+			makeCylinderVertices(),
+			L"ParticleCylinder",
+			mParticlePass.cylinderGeom
+		);
 	}
 
 	void Renderer::CreateSkyboxCubeResources(Rhi::D3D12Device& dx) {

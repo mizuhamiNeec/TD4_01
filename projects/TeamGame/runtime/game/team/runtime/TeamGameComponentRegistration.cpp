@@ -7,8 +7,12 @@
 #include "PlayerMoveComponent.h"
 #include "PlayerControlComponent.h"
 #include "GolfBallComponent.h"
+#include "GolfBallStartPosComponent.h"
+#include "GolfBallEndPosComponent.h"
+#include "FakeShadowComponent.h"
 #include "TrashObjMoverComponent.h"
 #include "PlayerHoleComponent.h"
+#include "VoiceShockWaveComponent.h"
 
 namespace Unnamed {
 	namespace {
@@ -45,9 +49,17 @@ namespace Unnamed {
 			componentRegistry, "mygame.PlayerControlComponent", "Player Control Component");
 		RegisterComponentIfMissing<MyGame::GolfBallComponent>(
 			componentRegistry, "mygame.GolfBall", "Golf Ball");
+		RegisterComponentIfMissing<MyGame::GolfBallStartPosComponent>(
+			componentRegistry, "mygame.GolfBallStartPos", "Golf Ball Start Position");
+		RegisterComponentIfMissing<MyGame::GolfBallEndPosComponent>(
+			componentRegistry, "mygame.GolfBallEndPos", "Golf Ball End Position");
+		RegisterComponentIfMissing<MyGame::FakeShadowComponent>(
+			componentRegistry, "mygame.FakeShadow", "Fake Shadow");
 		RegisterComponentIfMissing<MyGame::TrashObjMoverComponent>(
 			componentRegistry, "mygame.TrashObjMoverComponent", "Trash Obj");
 		RegisterComponentIfMissing<MyGame::PlayerHoleComponent>(
 			componentRegistry, "mygame.PlayerHoleComponent", "Player Hole Component");
+		RegisterComponentIfMissing<MyGame::VoiceShockWaveComponent>(
+			componentRegistry, "mygame.VoiceShockWave", "Voice Shock Wave");
 	}
 }

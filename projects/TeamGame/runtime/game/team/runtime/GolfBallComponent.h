@@ -51,8 +51,28 @@ public:
 	/// @param targetPos ターゲット基準点（ワールド座標）
 	void SetTargetPoint(const Vec3& targetPos);
 
+	/// @brief 発射開始位置をエンティティから設定（GolfBallStartPosComponent 付きエンティティ）
+	/// @param entity GolfBallStartPosComponent がアタッチされたエンティティ
+	void SetStartPosEntity(Unnamed::Entity* entity);
+
+	/// @brief ターゲット位置をエンティティから設定（GolfBallEndPosComponent 付きエンティティ）
+	/// @param entity GolfBallEndPosComponent がアタッチされたエンティティ
+	void SetTargetPosEntity(Unnamed::Entity* entity);
+
 	/// @brief 発射を開始（初速を逆算して計算）
 	void Launch();
+
+	/// @brief 速度に力を加える（衝撃波など外部からの力）
+	/// @param force 加える力のベクトル
+	void ApplyForce(const Vec3& force);
+
+	/// @brief 穴の位置と吸い込み力を設定
+	/// @param holePosition 穴の世界座標
+	/// @param suckPower 吸い込み力（0.0～1.0、大きいほど強く）
+	void SetHoleSuckPosition(const Vec3& holePosition, float suckPower);
+
+	/// @brief 穴への吸い込み処理を無効化
+	void ClearHoleSuckPosition();
 
 	// -----------------------------------------------------------------------
 	// 状態取得
@@ -120,6 +140,9 @@ private:
 	/// @reason 現在位置からターゲットへ向かう方向を導出
 	[[nodiscard]] Vec3 CalcHomingDirection() const;
 
+	/// @brief 穴への吸い込み処理
+	void UpdateHoleSuck(float deltaTime);
+
 	// -----------------------------------------------------------------------
 	// 状態管理（内部メソッド）
 	// -----------------------------------------------------------------------
@@ -141,6 +164,18 @@ private:
 	/// @reason 地面上での速度減衰を計算
 	void ApplyFriction();
 
+	/// @brief 保存済み GUID から開始/着弾マーカーを復元
+	void ResolveSavedEntityReferences();
+
+	/// @brief マーカー参照がある場合に設定値へ反映
+	void SyncSetupFromReferencedEntities();
+
+	/// @brief 現在位置を Transform と衝突形状へ反映
+	void ApplyPositionToRuntime();
+
+	/// @brief ターゲット周辺のランダムオフセットを再計算
+	void RefreshTargetRandomOffset();
+
 	// -----------------------------------------------------------------------
 	// 物理
 	// -----------------------------------------------------------------------	
@@ -150,6 +185,15 @@ private:
 	std::unique_ptr<Unnamed::BaseKinematicCollisionResolver> mCollisionResolver;
 	
 	float _radius = 0.25f; // ボールの半径
+
+	/// ボールの重さ。外力による速度変化を抑えるために使用
+	float _mass = 4.0f;
+
+	/// 外力で一度に増える上向き速度の上限
+	float _maxExternalUpwardVelocity = 8.0f;
+
+	/// 起動時に自動で発射するか
+	bool _bLaunchOnStart = true;
 	
 	// -----------------------------------------------------------------------
 	// 放物運動パラメータ
@@ -206,6 +250,9 @@ private:
 	/// 現在位置（ワールド座標）
 	Vec3 _position = Vec3(0.0f, 0.0f, 0.0f);
 
+	/// 保存される発射位置
+	Vec3 _startPoint = Vec3(0.0f, 0.0f, 0.0f);
+
 	/// 現在速度
 	Vec3 _velocity = Vec3(0.0f, 0.0f, 0.0f);
 
@@ -224,6 +271,47 @@ private:
 	/// 地面に接触しているかのフラグ
 	/// 理由：摩擦を適用するかどうかの判定に使用
 	bool _bIsGrounded = false;
+
+	/// 衝撃波など、発射ターゲットとは独立した外力で動いているか
+	bool _bIsExternalMotion = false;
+
+	/// 吸い込み対象の穴の位置
+	Vec3 _holeSuckPosition = Vec3(0.0f, 0.0f, 0.0f);
+
+	/// 吸い込み力（0.0～1.0、大きいほど強く）
+	float _holeSuckPower = 0.0f;
+
+	/// 吸い込み中フラグ
+	bool _bIsBeingSucked = false;
+
+	/// 穴の内側に位置しているフラグ（地面衝突判定をスキップするため）
+	bool _bIsInsideHole = false;
+
+	/// 起動後の初期設定反映が完了したか
+	bool _bInitialSetupApplied = false;
+
+	/// 起動時自動発射を実行済みか
+	bool _bHasAutoLaunched = false;
+
+	// -----------------------------------------------------------------------
+	// エンティティ参照
+	// -----------------------------------------------------------------------
+
+	/// 発射位置を指定するエンティティ（GolfBallStartPosComponent 付き）
+	/// 理由：外部から参照を受け取ってその位置を発射地点として使用
+	Unnamed::Entity* _startPosEntity = nullptr;
+
+	/// 着弾位置を指定するエンティティ（GolfBallEndPosComponent 付き）
+	/// 理由：外部から参照を受け取ってその位置を着弾地点として使用
+	Unnamed::Entity* _targetPosEntity = nullptr;
+
+	/// 発射位置エンティティのGUID（JSON保存用）
+	/// 理由：エンティティポインタは直接保存できないためGUIDで参照
+	std::string _startPosEntityGuid = "";
+
+	/// 着弾位置エンティティのGUID（JSON保存用）
+	/// 理由：エンティティポインタは直接保存できないためGUIDで参照
+	std::string _targetPosEntityGuid = "";
 };
 
 }

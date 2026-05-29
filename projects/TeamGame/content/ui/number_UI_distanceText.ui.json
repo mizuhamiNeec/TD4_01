@@ -1,0 +1,120 @@
+{
+    "name": "ui/number_UI_distanceText.ui.json",
+    "root": {
+        "children": [
+            {
+                "children": [],
+                "components": [
+                    {
+                        "data": {
+                            "anchors": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "constraints": {
+                                "maxHeight": 3.4028234663852886e+38,
+                                "maxWidth": 3.4028234663852886e+38,
+                                "minHeight": 0.0,
+                                "minWidth": 0.0
+                            },
+                            "margins": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "pivot": [
+                                0.0,
+                                0.0
+                            ],
+                            "rect": [
+                                32.0,
+                                32.0,
+                                480.0,
+                                64.0
+                            ],
+                            "sizePolicy": [
+                                "Fixed",
+                                "Fixed"
+                            ]
+                        },
+                        "type": "Transform"
+                    },
+                    {
+                        "data": {
+                            "anchor": [
+                                0.0,
+                                0.0
+                            ],
+                            "color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "rotationRad": 0.0,
+                            "texturePath": "projects/TeamGame/content/textures/UI/number_UI/number_UI_distanceText.png",
+                            "uvMax": [
+                                1.0,
+                                1.0
+                            ],
+                            "uvMin": [
+                                0.0,
+                                0.0
+                            ]
+                        },
+                        "type": "Texture"
+                    }
+                ],
+                "enabled": true,
+                "name": "DistanceText",
+                "visible": true
+            }
+        ],
+        "components": [
+            {
+                "data": {
+                    "anchors": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "constraints": {
+                        "maxHeight": 3.4028234663852886e+38,
+                        "maxWidth": 3.4028234663852886e+38,
+                        "minHeight": 0.0,
+                        "minWidth": 0.0
+                    },
+                    "margins": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "pivot": [
+                        0.0,
+                        0.0
+                    ],
+                    "rect": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "sizePolicy": [
+                        "Fixed",
+                        "Fixed"
+                    ]
+                },
+                "type": "Transform"
+            }
+        ],
+        "enabled": true,
+        "name": "RootLayout",
+        "visible": true
+    },
+    "version": 2
+}

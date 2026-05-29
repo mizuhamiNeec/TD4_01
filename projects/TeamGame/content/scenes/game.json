@@ -871,7 +871,12 @@
                     "data": {
                         "gravity": 9.8100004196167,
                         "jumpForce": 5.0,
-                        "moveSpeed": 5.0
+                        "moveLimitCenterX": 0.0,
+                        "moveLimitCenterY": 0.0,
+                        "moveLimitCenterZ": 0.0,
+                        "moveLimitRadius": 20.0,
+                        "moveSpeed": 5.0,
+                        "useMoveLimit": false
                     },
                     "guid": 15253389314605096656,
                     "type": "mygame.PlayerMoveComponent"
@@ -1369,54 +1374,6 @@
                 {
                     "active": true,
                     "data": {
-                        "parentEntityGuid": 0,
-                        "position": [
-                            0.0,
-                            0.0,
-                            0.0
-                        ],
-                        "rotation": [
-                            0.0,
-                            0.0,
-                            0.0,
-                            1.0
-                        ],
-                        "scale": [
-                            1.0,
-                            1.0,
-                            1.0
-                        ]
-                    },
-                    "guid": 14390700056023624390,
-                    "type": "engine.Transform"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "autoPlay": true,
-                        "depthTest": true,
-                        "presetName": "",
-                        "presetPath": "projects/TeamGame/content/particles/fire_loop.json",
-                        "sortKeyBias": 0,
-                        "timeScale": 1.0
-                    },
-                    "guid": 12264589234032906613,
-                    "type": "engine.ParticleEmitter"
-                }
-            ],
-            "folderPath": "",
-            "guid": 46,
-            "isEditorOnly": false,
-            "name": "ParticleEmitter",
-            "tags": [],
-            "visible": true
-        },
-        {
-            "active": true,
-            "components": [
-                {
-                    "active": true,
-                    "data": {
                         "parentEntityGuid": 5,
                         "position": [
                             0.0,
@@ -1443,7 +1400,8 @@
                     "data": {
                         "autoPlay": true,
                         "depthTest": true,
-                        "presetName": "",
+                        "drawEmitterShape": true,
+                        "presetName": "golf_ball_trail",
                         "presetPath": "projects/TeamGame/content/particles/golf_ball_trail.json",
                         "sortKeyBias": 0,
                         "timeScale": 1.0
@@ -1468,7 +1426,7 @@
                         "parentEntityGuid": 42,
                         "position": [
                             0.0,
-                            0.3,
+                            0.30000001192092896,
                             0.0
                         ],
                         "rotation": [
@@ -1491,6 +1449,7 @@
                     "data": {
                         "autoPlay": true,
                         "depthTest": true,
+                        "drawEmitterShape": true,
                         "presetName": "",
                         "presetPath": "projects/TeamGame/content/particles/clear_burst.json",
                         "sortKeyBias": 0,
@@ -1531,7 +1490,7 @@
                             1.0
                         ]
                     },
-                    "guid": 0,
+                    "guid": 10967909412765815317,
                     "type": "engine.Transform"
                 },
                 {
@@ -1545,7 +1504,7 @@
                         "sortKeyBias": 0,
                         "timeScale": 1.0
                     },
-                    "guid": 0,
+                    "guid": 10677267549257773436,
                     "type": "engine.ParticleEmitter"
                 }
             ],

@@ -164,6 +164,18 @@ private:
 	/// @reason 地面上での速度減衰を計算
 	void ApplyFriction();
 
+	/// @brief 保存済み GUID から開始/着弾マーカーを復元
+	void ResolveSavedEntityReferences();
+
+	/// @brief マーカー参照がある場合に設定値へ反映
+	void SyncSetupFromReferencedEntities();
+
+	/// @brief 現在位置を Transform と衝突形状へ反映
+	void ApplyPositionToRuntime();
+
+	/// @brief ターゲット周辺のランダムオフセットを再計算
+	void RefreshTargetRandomOffset();
+
 	// -----------------------------------------------------------------------
 	// 物理
 	// -----------------------------------------------------------------------	
@@ -173,6 +185,9 @@ private:
 	std::unique_ptr<Unnamed::BaseKinematicCollisionResolver> mCollisionResolver;
 	
 	float _radius = 0.25f; // ボールの半径
+
+	/// 起動時に自動で発射するか
+	bool _bLaunchOnStart = true;
 	
 	// -----------------------------------------------------------------------
 	// 放物運動パラメータ
@@ -229,6 +244,9 @@ private:
 	/// 現在位置（ワールド座標）
 	Vec3 _position = Vec3(0.0f, 0.0f, 0.0f);
 
+	/// 保存される発射位置
+	Vec3 _startPoint = Vec3(0.0f, 0.0f, 0.0f);
+
 	/// 現在速度
 	Vec3 _velocity = Vec3(0.0f, 0.0f, 0.0f);
 
@@ -262,6 +280,12 @@ private:
 
 	/// 穴の内側に位置しているフラグ（地面衝突判定をスキップするため）
 	bool _bIsInsideHole = false;
+
+	/// 起動後の初期設定反映が完了したか
+	bool _bInitialSetupApplied = false;
+
+	/// 起動時自動発射を実行済みか
+	bool _bHasAutoLaunched = false;
 
 	// -----------------------------------------------------------------------
 	// エンティティ参照

@@ -8,6 +8,7 @@ cbuffer FrameCB : register(b0) {
 	float3   gCameraPos;
 	float    gTime;
 	float4   gClipPlane;
+	float2   gViewportSize;
 	float2   gFramePadding;
 }
 

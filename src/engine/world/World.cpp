@@ -1070,8 +1070,9 @@ namespace Unnamed {
 			portalSprite.sizeWorld = portal->GetSize();
 			portalSprite.color = Vec4::one;
 			portalSprite.rotationRad = 0.0f;
-			portalSprite.sortKey = 0;
+			portalSprite.sortKey = -1000;
 			portalSprite.uvFlipY = true;
+			portalSprite.screenSpaceUv = true;
 			sceneView.worldSprites.emplace_back(std::move(portalSprite));
 
 			Render::RenderViewInput portalCamView = {};
@@ -1090,6 +1091,8 @@ namespace Unnamed {
 			portalCamView.camera = sceneView.camera;
 			portalCamView.camera.view = portalCamWorld.Inverse();
 			portalCamView.camera.cameraPos = portalCamWorld.GetTranslate();
+			portalCamView.camera.viewProj =
+				portalCamView.camera.view * portalCamView.camera.proj;
 
 			// 無限平面クリップが強すぎるため、ポータルカメラ側の
 			// 平面クリップは使用しない（表示面の矩形マスクで切り取る）。

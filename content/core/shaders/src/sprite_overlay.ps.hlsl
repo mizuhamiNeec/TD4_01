@@ -9,7 +9,16 @@ struct VsOut {
 };
 
 float4 PsMain(VsOut input) : SV_Target {
-	const float4 texel = gSpriteTexture.Sample(gLinearWrapSampler, input.uv);
+	float2 sampleUv = input.uv;
+	if (gSkinningInfo.x < -0.5f) {
+		const float2 safeViewportSize = max(gViewportSize, float2(1.0f, 1.0f));
+		sampleUv = input.pos.xy / safeViewportSize;
+		if (gSkinningInfo.y <= 0.5f) {
+			sampleUv.y = 1.0f - sampleUv.y;
+		}
+	}
+
+	const float4 texel = gSpriteTexture.Sample(gLinearWrapSampler, sampleUv);
 	return float4(
 		texel.rgb * gBaseColor.rgb,
 		texel.a * saturate(gOpacity * gBaseColor.a)

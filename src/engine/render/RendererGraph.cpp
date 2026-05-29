@@ -44,6 +44,8 @@ namespace Unnamed::Render {
 			frame.cameraPos = camera.valid ? camera.cameraPos : Vec3::zero;
 			frame.time = time;
 			frame.clipPlane = (camera.valid && camera.useClipPlane) ? camera.clipPlane : Vec4(0.0f, 0.0f, 0.0f, 1.0f);
+			frame.padding[0] = static_cast<float>(width);
+			frame.padding[1] = static_cast<float>(height);
 			return frame;
 		}
 
@@ -1131,9 +1133,18 @@ namespace Unnamed::Render {
 							object.world.m[3][2] = sprite.worldPosition.z;
 							object.worldInverseTranspose =
 								object.world.Inverse().Transpose();
-							const float uvMinY = sprite.uvFlipY ? 1.0f : 0.0f;
-							const float uvMaxY = sprite.uvFlipY ? 0.0f : 1.0f;
-							object.skinningInfo = Vec4(0.0f, uvMinY, 1.0f, uvMaxY);
+							if (sprite.screenSpaceUv) {
+								object.skinningInfo = Vec4(
+									-1.0f,
+									sprite.uvFlipY ? 1.0f : 0.0f,
+									0.0f,
+									0.0f
+								);
+							} else {
+								const float uvMinY = sprite.uvFlipY ? 1.0f : 0.0f;
+								const float uvMaxY = sprite.uvFlipY ? 0.0f : 1.0f;
+								object.skinningInfo = Vec4(0.0f, uvMinY, 1.0f, uvMaxY);
+							}
 
 							Rhi::MaterialConstants material = {};
 							material.baseColor              = sprite.color;
@@ -1915,8 +1926,10 @@ namespace Unnamed::Render {
 						               );
 						object.worldInverseTranspose =
 							object.world.Inverse().Transpose();
-						const float uvMinY = sprite.uvFlipY ? 1.0f : 0.0f;
-						const float uvMaxY = sprite.uvFlipY ? 0.0f : 1.0f;
+						const float uvMinY =
+							sprite.uvFlipY ? sprite.uvMax.y : sprite.uvMin.y;
+						const float uvMaxY =
+							sprite.uvFlipY ? sprite.uvMin.y : sprite.uvMax.y;
 						const float uvMinX = sprite.uvMin.x;
 						const float uvMaxX = sprite.uvMax.x;
 						object.skinningInfo = Vec4(uvMinX, uvMinY, uvMaxX, uvMaxY);

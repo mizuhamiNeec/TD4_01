@@ -534,6 +534,8 @@ namespace Unnamed {
 				viewIt->camera = sceneCamera;
 				viewIt->camera.view = portalCamWorld.Inverse();
 				viewIt->camera.cameraPos = portalCamWorld.GetTranslate();
+				viewIt->camera.viewProj =
+					viewIt->camera.view * viewIt->camera.proj;
 				viewIt->camera.useClipPlane = false;
 				viewIt->camera.clipPlane = Vec4(0.0f, 0.0f, 0.0f, 1.0f);
 			}

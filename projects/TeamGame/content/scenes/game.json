@@ -1076,6 +1076,54 @@
             "name": "ParticleEmitter",
             "tags": [],
             "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            3.0,
+                            1.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 14390700056023624391,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "autoPlay": true,
+                        "depthTest": true,
+                        "presetName": "",
+                        "presetPath": "projects/TeamGame/content/particles/golf_ball_trail.json",
+                        "sortKeyBias": 0,
+                        "timeScale": 1.0
+                    },
+                    "guid": 12264589234032906614,
+                    "type": "engine.ParticleEmitter"
+                }
+            ],
+            "folderPath": "",
+            "guid": 47,
+            "isEditorOnly": false,
+            "name": "ParticleEmitter_GolfTrail",
+            "tags": [],
+            "visible": true
         }
     ],
     "folders": [

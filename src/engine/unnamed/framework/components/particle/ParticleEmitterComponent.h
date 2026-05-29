@@ -49,12 +49,16 @@ namespace Unnamed {
 		[[nodiscard]] Render::WORLD_PARTICLE_SHAPE ResolveRenderShape() const;
 		[[nodiscard]] Render::WORLD_PARTICLE_BLEND_MODE ResolveRenderBlendMode() const;
 
+		/// @brief 発生形状(Box/Sphere)をデバッグ描画します。
+		void DrawEmitterShapeDebug() const;
+
 		std::string mPresetName;
 		std::string mPresetPath;
-		bool        mAutoPlay    = true;
-		bool        mDepthTest   = true;
-		int32_t     mSortKeyBias = 0;
-		float       mTimeScale   = 1.0f;
+		bool        mAutoPlay         = true;
+		bool        mDepthTest        = true;
+		bool        mDrawEmitterShape = true; // 発生形状のデバッグ描画
+		int32_t     mSortKeyBias      = 0;
+		float       mTimeScale        = 1.0f;
 
 		ParticlePresetLibrary   mPresetLibrary;
 		ParticleEmitterInstance mEmitter;

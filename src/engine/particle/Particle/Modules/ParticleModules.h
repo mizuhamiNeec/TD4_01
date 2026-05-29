@@ -12,3 +12,4 @@
 #include "RotationModule.h"
 #include "SizeModule.h"
 #include "ColorModule.h"
+#include "TrailModule.h"

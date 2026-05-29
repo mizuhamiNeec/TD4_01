@@ -405,6 +405,45 @@ void ParticleManager::DrawImGuiParticlePresetEditor()
 	DragFloat("発生間隔(秒)", &preset.emitterSpawn.frequency, 0.01f, 0.0f, 60.0f);
 	Checkbox("繰り返し再生", &preset.emitterSpawn.repeat);
 	Checkbox("ランダム位置を使用", &preset.emitterSpawn.useRandomPosition);
+
+	// 発生形状（ランダム位置が有効なときのみ編集可能）
+	if (preset.emitterSpawn.useRandomPosition) {
+		const char* kShapeNames[] = { "Box", "Sphere", "Cone", "Cylinder", "Circle" };
+		int shapeIndex = static_cast<int>(preset.emitterSpawn.emitShape);
+		if (Combo("発生形状", &shapeIndex, kShapeNames, IM_ARRAYSIZE(kShapeNames))) {
+			preset.emitterSpawn.emitShape = static_cast<EmitShapeType>(shapeIndex);
+		}
+
+		switch (preset.emitterSpawn.emitShape) {
+		case EmitShapeType::Box:
+			DragFloat3("ボックス半径(half-extent)",
+				&preset.emitterSpawn.boxHalfSize.x, 0.01f, 0.0f, 1000.0f);
+			break;
+		case EmitShapeType::Sphere:
+			DragFloat("球の半径",
+				&preset.emitterSpawn.sphereRadius, 0.01f, 0.0f, 1000.0f);
+			break;
+		case EmitShapeType::Cone:
+			DragFloat("円錐: 底面半径",
+				&preset.emitterSpawn.coneRadius, 0.01f, 0.0f, 1000.0f);
+			DragFloat("円錐: 高さ",
+				&preset.emitterSpawn.coneHeight, 0.01f, 0.0f, 1000.0f);
+			break;
+		case EmitShapeType::Cylinder:
+			DragFloat("円柱: 半径",
+				&preset.emitterSpawn.cylinderRadius, 0.01f, 0.0f, 1000.0f);
+			DragFloat("円柱: 高さ",
+				&preset.emitterSpawn.cylinderHeight, 0.01f, 0.0f, 1000.0f);
+			break;
+		case EmitShapeType::Circle:
+			DragFloat("円: 半径",
+				&preset.emitterSpawn.circleRadius, 0.01f, 0.0f, 1000.0f);
+			Checkbox("円: 外周のみから発生",
+				&preset.emitterSpawn.circleEmitFromEdge);
+			break;
+		}
+	}
+
 	Checkbox("ローカル空間モード", &preset.emitterSpawn.useLocalSpace);
 
 	// --- パーティクル共通 ---
@@ -425,6 +464,20 @@ void ParticleManager::DrawImGuiParticlePresetEditor()
 	DragFloat("寿命(秒)", &preset.particleUpdate.lifeTime, 0.01f, 0.0f, 100.0f);
 	// 重力
 	Checkbox("重力を使用する", &preset.particleUpdate.useGravity);
+
+	// --- トレイル ---
+	Separator();
+	Text("トレイル");
+	Checkbox("トレイルを有効化", &preset.trail.enabled);
+	if (preset.trail.enabled) {
+		DragInt("履歴の長さ(maxPoints)", &preset.trail.maxPoints, 1, 2, 128);
+		DragFloat("記録間隔(秒)", &preset.trail.recordInterval,
+			0.001f, 0.0f, 5.0f, "%.3f");
+		DragFloat("幅: 先端(head)", &preset.trail.widthHead, 0.01f, 0.0f, 100.0f);
+		DragFloat("幅: 末端(tail)", &preset.trail.widthTail, 0.01f, 0.0f, 100.0f);
+		ColorEdit4("色: 先端(head)", &preset.trail.colorHead.x);
+		ColorEdit4("色: 末端(tail)", &preset.trail.colorTail.x);
+	}
 
 	// --- 保存ボタン ---
 	Separator();

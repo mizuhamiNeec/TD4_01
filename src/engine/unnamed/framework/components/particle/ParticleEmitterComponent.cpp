@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <filesystem>
 
 #ifdef _DEBUG
@@ -20,6 +21,7 @@
 
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/subsystem/console/Log.h"
+#include "engine/world/World.h"
 
 namespace Unnamed {
 	namespace {
@@ -95,6 +97,116 @@ namespace Unnamed {
 		}
 
 		mEmitter.Update(std::max(0.0f, deltaTime * mTimeScale));
+
+		DrawEmitterShapeDebug();
+	}
+
+	void ParticleEmitterComponent::DrawEmitterShapeDebug() const {
+		if (!mDrawEmitterShape || mPreset == nullptr) {
+			return;
+		}
+
+		const EmitterSpawnModule& spawn = mPreset->emitterSpawn;
+		// ランダム位置が無効なら発生範囲は 1 点なので形状は描かない。
+		if (!spawn.useRandomPosition) {
+			return;
+		}
+
+		World* world = GetWorld();
+		if (world == nullptr) {
+			return;
+		}
+
+		// 発生形状はエミッタのワールド座標を中心に置く。
+		// ※ GetTranslate() は非 const のためローカルコピーを介する。
+		Mat4 emitterTransform = mEmitter.GetTransform();
+		const Vec3 center = emitterTransform.GetTranslate();
+
+		// ローカル空間モードのときは発生形状もエミッタの回転に追従する。
+		const Quaternion orientation = mEmitter.IsLocalSpace()
+			                               ? emitterTransform.ToQuaternion()
+			                               : Quaternion::identity;
+
+		WorldDebugDraw& debugDraw = world->GetDebugDraw();
+		const Vec4 color{ 0.2f, 1.0f, 0.3f, 1.0f }; // 緑
+
+		// エミッタ基準の各軸（ローカル空間なら orientation により回転済み）。
+		const Vec3 axisX = orientation * Vec3::right;
+		const Vec3 axisY = orientation * Vec3::up;
+		const Vec3 axisZ = orientation * Vec3::forward;
+
+		// DrawCircle は単位回転だと XY 平面に描かれる。
+		// エミッタ形状は Y 軸基準なので、円を XZ 平面へ倒す 90° 補正をかける。
+		constexpr float  kHalfPi = 1.57079633f;
+		const Quaternion circleToXZ =
+			orientation * Quaternion::Euler(kHalfPi, 0.0f, 0.0f);
+
+		// XZ 円周上の点（angleRad）を求めるヘルパー。
+		const auto rimPoint = [&](const Vec3& discCenter, float radius,
+		                          float angleRad) {
+			return discCenter
+				+ axisX * (std::cos(angleRad) * radius)
+				+ axisZ * (std::sin(angleRad) * radius);
+		};
+
+		constexpr uint32_t kSegments = 24;
+
+		switch (spawn.emitShape) {
+		case EmitShapeType::Sphere:
+			debugDraw.DrawSphere(center, orientation, spawn.sphereRadius, color);
+			break;
+
+		case EmitShapeType::Cone: {
+			// 頂点 = center、底面 = center + axisY * height。
+			const Vec3 baseCenter = center + axisY * spawn.coneHeight;
+			debugDraw.DrawCircle(
+				baseCenter, circleToXZ, spawn.coneRadius, color, kSegments);
+			for (int i = 0; i < 4; ++i) {
+				const float a = static_cast<float>(i) * kHalfPi;
+				debugDraw.DrawLine(
+					center, rimPoint(baseCenter, spawn.coneRadius, a), color);
+			}
+			break;
+		}
+
+		case EmitShapeType::Cylinder: {
+			const Vec3 half         = axisY * (spawn.cylinderHeight * 0.5f);
+			const Vec3 topCenter    = center + half;
+			const Vec3 bottomCenter = center - half;
+			debugDraw.DrawCircle(
+				topCenter, circleToXZ, spawn.cylinderRadius, color, kSegments);
+			debugDraw.DrawCircle(
+				bottomCenter, circleToXZ, spawn.cylinderRadius, color, kSegments);
+			for (int i = 0; i < 4; ++i) {
+				const float a = static_cast<float>(i) * kHalfPi;
+				debugDraw.DrawLine(
+					rimPoint(topCenter, spawn.cylinderRadius, a),
+					rimPoint(bottomCenter, spawn.cylinderRadius, a),
+					color);
+			}
+			break;
+		}
+
+		case EmitShapeType::Circle:
+			debugDraw.DrawCircle(
+				center, circleToXZ, spawn.circleRadius, color, kSegments);
+			break;
+
+		case EmitShapeType::Box:
+		default:
+			// boxHalfSize は各軸の半径なので、DrawBox には全体サイズ(2倍)を渡す。
+			debugDraw.DrawBox(
+				center,
+				orientation,
+				Vec3{
+					spawn.boxHalfSize.x * 2.0f,
+					spawn.boxHalfSize.y * 2.0f,
+					spawn.boxHalfSize.z * 2.0f,
+				},
+				color
+			);
+			break;
+		}
 	}
 
 #ifdef _DEBUG
@@ -138,6 +250,7 @@ namespace Unnamed {
 
 		ImGui::Checkbox("Auto Play", &mAutoPlay);
 		ImGui::Checkbox("Depth Test", &mDepthTest);
+		ImGui::Checkbox("Draw Emitter Shape", &mDrawEmitterShape);
 		ImGui::DragInt("Sort Key Bias", &mSortKeyBias, 1.0f, -100000, 100000);
 		ImGui::DragFloat("Time Scale", &mTimeScale, 0.01f, 0.0f, 100.0f, "%.2f");
 		ImGui::Text("Live Particles: %zu", mEmitter.GetParticles().size());
@@ -149,6 +262,7 @@ namespace Unnamed {
 		mPresetPath = reader["presetPath"].GetString(mPresetPath);
 		mAutoPlay = reader["autoPlay"].GetBool(mAutoPlay);
 		mDepthTest = reader["depthTest"].GetBool(mDepthTest);
+		mDrawEmitterShape = reader["drawEmitterShape"].GetBool(mDrawEmitterShape);
 		mSortKeyBias = reader["sortKeyBias"].GetInt(mSortKeyBias);
 		mTimeScale = reader["timeScale"].GetFloat(mTimeScale);
 		mPreset = nullptr;
@@ -167,6 +281,8 @@ namespace Unnamed {
 		writer.Write(mAutoPlay);
 		writer.Key("depthTest");
 		writer.Write(mDepthTest);
+		writer.Key("drawEmitterShape");
+		writer.Write(mDrawEmitterShape);
 		writer.Key("sortKeyBias");
 		writer.Write(mSortKeyBias);
 		writer.Key("timeScale");
@@ -227,6 +343,59 @@ namespace Unnamed {
 			input.worldForward = particleWorld.GetForward();
 
 			outParticles.emplace_back(std::move(input));
+
+			// --- トレイル: 履歴点ごとにビルボード板ポリを並べる ---
+			if (mPreset->trail.enabled && particle.trailPoints.size() >= 2) {
+				const TrailModuleSettings& trail = mPreset->trail;
+				const std::vector<Vec3>& points = particle.trailPoints;
+				const int n = static_cast<int>(points.size());
+
+				for (int i = 0; i < n; ++i) {
+					// t: 0=末端(古い履歴) .. 1=先端(新しい履歴)
+					const float t =
+						static_cast<float>(i) / static_cast<float>(n - 1);
+
+					const float width = std::max(
+						1e-4f,
+						trail.widthTail + (trail.widthHead - trail.widthTail) * t
+					);
+
+					Render::WorldParticleInput trailInput = {};
+					trailInput.texture.source =
+						Render::SPRITE_TEXTURE_SOURCE::ASSET;
+					trailInput.texture.textureAssetId = textureAssetId;
+					trailInput.color = Vec4{
+						trail.colorTail.x +
+							(trail.colorHead.x - trail.colorTail.x) * t,
+						trail.colorTail.y +
+							(trail.colorHead.y - trail.colorTail.y) * t,
+						trail.colorTail.z +
+							(trail.colorHead.z - trail.colorTail.z) * t,
+						trail.colorTail.w +
+							(trail.colorHead.w - trail.colorTail.w) * t,
+					};
+					trailInput.scale = Vec3(width, width, width);
+					trailInput.rotation = Vec3::zero;
+					trailInput.sortKey = mSortKeyBias;
+					trailInput.depthTest = mDepthTest;
+					trailInput.useBillboard = true; // ビーズは常にカメラ目線
+					trailInput.flipY = mEmitter.IsFlipY();
+					trailInput.shape = renderShape;
+					trailInput.blendMode = renderBlendMode;
+
+					const Mat4 trailLocal = Mat4::Affine(
+						Vec3::one, Vec3::zero, points[i]
+					);
+					Mat4 trailWorld =
+						localSpace ? trailLocal * ownerWorld : trailLocal;
+					trailInput.worldPosition = trailWorld.GetTranslate();
+					trailInput.worldRight = trailWorld.GetRight();
+					trailInput.worldUp = trailWorld.GetUp();
+					trailInput.worldForward = trailWorld.GetForward();
+
+					outParticles.emplace_back(std::move(trailInput));
+				}
+			}
 		}
 	}
 

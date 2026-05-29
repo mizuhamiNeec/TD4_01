@@ -19,6 +19,17 @@ enum class VertexDataType {
 	// 今後追加予定の形状もここに列挙
 };
 
+// パーティクルの発生形状（エミッタのスポーン範囲）
+// ※ useRandomPosition が true のときに使用される。
+enum class EmitShapeType {
+	Box,      // 直方体: 各軸の half-extent 内に一様分布
+	Sphere,   // 球: 半径内に一様分布
+	Cone,     // 円錐: 頂点が原点、+Y 方向へ開く
+	Cylinder, // 円柱: Y 軸が中心軸、原点中心
+	Circle,   // 円/円盤: XZ 平面、原点中心
+	// 今後追加予定の形状もここに列挙
+};
+
 // ===============================================
 // カーブ
 // ===============================================
@@ -115,6 +126,17 @@ struct EmitterSpawnModule {
 	bool     repeat = false;        // 繰り返し
 	bool     useRandomPosition = false; // ランダム発生
 	bool     useLocalSpace = false;     // ローカル空間モード（trueならエミッタ基準の相対座標）
+
+	// 発生形状（useRandomPosition が true のときに有効）
+	EmitShapeType emitShape = EmitShapeType::Box;
+	Vec3  boxHalfSize{ 1.0f, 1.0f, 1.0f }; // Box: 各軸の半径(half-extent)
+	float sphereRadius     = 1.0f;         // Sphere: 半径
+	float coneRadius       = 1.0f;         // Cone: 底面の半径
+	float coneHeight       = 2.0f;         // Cone: 高さ(原点が頂点、+Y 方向)
+	float cylinderRadius   = 1.0f;         // Cylinder: 半径
+	float cylinderHeight   = 2.0f;         // Cylinder: 高さ(Y 軸、原点中心)
+	float circleRadius     = 1.0f;         // Circle: 半径(XZ 平面)
+	bool  circleEmitFromEdge = false;      // Circle: true=外周のみ / false=内部一様
 };
 
 // --- Particle Spawn モジュール ---
@@ -161,6 +183,19 @@ struct RenderModule {
 	Curve1D gradientTimeCurve;
 };
 
+// --- Trail モジュール ---
+// 各パーティクルの移動軌跡（過去位置の履歴）を尾として描画するための設定。
+// 描画は履歴点ごとにビルボード板ポリを並べる「ビーズチェーン」方式。
+struct TrailModuleSettings {
+	bool  enabled        = false;     // トレイルを使うか
+	int   maxPoints      = 12;        // 履歴の最大長（板ポリ枚数）
+	float recordInterval = 0.02f;     // 履歴を記録する時間間隔(秒)
+	float widthHead      = 1.0f;      // 先端(粒子側)の板ポリ幅
+	float widthTail      = 0.0f;      // 末端の板ポリ幅（先細り）
+	Vec4  colorHead      = { 1, 1, 1, 1 }; // 先端の色
+	Vec4  colorTail      = { 1, 1, 1, 0 }; // 末端の色（α=0 でフェードアウト）
+};
+
 // ===============================================
 // ModuleSlot
 // 「どのモジュールを・どの順番で・有効/無効で」エミッタに積むかを表す。
@@ -187,6 +222,7 @@ struct ParticlePreset {
 	ParticleSpawnModule   particleSpawn;
 	ParticleUpdateModule  particleUpdate;
 	RenderModule          render;
+	TrailModuleSettings   trail;
 
 	// ---- モジュールスタック ----
 	// 振る舞いモジュールの種類・順序・有効状態。

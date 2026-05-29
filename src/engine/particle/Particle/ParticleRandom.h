@@ -23,4 +23,20 @@ namespace ParticleRandom {
 	// useRandom が true なら範囲乱数、false なら fallback をそのまま返す。
 	Vec3 Evaluate(const RandomRange3& range, const Vec3& fallback);
 
+	// 原点中心の直方体（各軸 ±halfExtents）内の一様乱数点を返す。
+	Vec3 PointInBox(const Vec3& halfExtents);
+
+	// 原点中心の球（半径 radius）内の一様乱数点を返す。
+	Vec3 PointInSphere(float radius);
+
+	// 円錐（頂点が原点、+Y 方向へ開く）内の一様乱数点を返す。
+	Vec3 PointInCone(float baseRadius, float height);
+
+	// 円柱（Y 軸が中心軸、原点中心）内の一様乱数点を返す。
+	Vec3 PointInCylinder(float radius, float height);
+
+	// 円/円盤（XZ 平面、原点中心）上の一様乱数点を返す。
+	// edgeOnly が true なら外周上、false なら円盤内部に一様分布する。
+	Vec3 PointInCircle(float radius, bool edgeOnly);
+
 }

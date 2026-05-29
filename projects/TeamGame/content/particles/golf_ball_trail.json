@@ -1,21 +1,21 @@
 {
-    "name": "fire_loop",
+    "name": "golf_ball_trail",
     "emitterSettings": {
         "vertexType": 0,
         "textureFilePath": "projects/TeamGame/content/textures/circle2.png",
         "blendMode": 2
     },
     "emitterSpawn": {
-        "count": 3,
-        "frequency": 0.35,
+        "count": 1,
+        "frequency": 0.1,
         "repeat": true,
-        "useRandomPosition": true,
-        "useLocalSpace": true,
+        "useRandomPosition": false,
+        "useLocalSpace": false,
         "emitShape": 0,
         "boxHalfSize": [
-            4.0,
-            0.5,
-            4.0
+            0.0,
+            0.0,
+            0.0
         ],
         "sphereRadius": 0.0
     },
@@ -37,10 +37,10 @@
         ]
     },
     "particleUpdate": {
-        "lifeTime": 6.5,
+        "lifeTime": 1.5,
         "velocity": [
-            -2.5,
-            -2.5,
+            0.0,
+            0.0,
             0.0
         ],
         "rotationSpeed": [

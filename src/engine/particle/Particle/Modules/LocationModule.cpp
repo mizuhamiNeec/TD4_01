@@ -21,11 +21,33 @@ void LocationModule::ApplySpawn(ParticleEmitterInstance& emitter, Particle& p)
 		? Vec3{ 0, 0, 0 }
 		: emitterTransform.GetTranslate();
 
-	// --- EmitterSpawn 側のランダム位置 ---
+	// --- EmitterSpawn 側のランダム位置（発生形状に応じて分布させる） ---
 	if (spawn.useRandomPosition) {
-		pos.x += ParticleRandom::Range(-1.0f, 1.0f);
-		pos.y += ParticleRandom::Range(-1.0f, 1.0f);
-		pos.z += ParticleRandom::Range(-1.0f, 1.0f);
+		Vec3 shapeOffset{ 0, 0, 0 };
+		switch (spawn.emitShape) {
+		case EmitShapeType::Sphere:
+			shapeOffset = ParticleRandom::PointInSphere(spawn.sphereRadius);
+			break;
+		case EmitShapeType::Cone:
+			shapeOffset = ParticleRandom::PointInCone(
+				spawn.coneRadius, spawn.coneHeight);
+			break;
+		case EmitShapeType::Cylinder:
+			shapeOffset = ParticleRandom::PointInCylinder(
+				spawn.cylinderRadius, spawn.cylinderHeight);
+			break;
+		case EmitShapeType::Circle:
+			shapeOffset = ParticleRandom::PointInCircle(
+				spawn.circleRadius, spawn.circleEmitFromEdge);
+			break;
+		case EmitShapeType::Box:
+		default:
+			shapeOffset = ParticleRandom::PointInBox(spawn.boxHalfSize);
+			break;
+		}
+		pos.x += shapeOffset.x;
+		pos.y += shapeOffset.y;
+		pos.z += shapeOffset.z;
 	}
 
 	// --- ParticleSpawn.initialOffset（ランダム対応） ---

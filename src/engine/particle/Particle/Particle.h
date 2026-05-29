@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "core/math/Vec3.h"
 #include "core/math/Vec4.h"
 
@@ -26,4 +28,8 @@ struct Particle {
     float life = 0.0f;       // 生存している時間
     float maxLife = 1.0f;    // 寿命（これを超えたら死ぬ）
     bool  active = false;    // 生きているかどうか
+
+    // --- トレイル（TrailModule が使用。無効時は空のままコストゼロ） ---
+    std::vector<Vec3> trailPoints; // 過去位置の履歴（古い→新しい）
+    float             trailTimer = 0.0f; // 次の履歴を記録するまでの経過時間
 };

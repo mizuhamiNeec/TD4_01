@@ -18,9 +18,13 @@ ParticleModuleRegistry::ParticleModuleRegistry()
 	Register("Rotation", [] { return std::make_unique<RotationModule>(); });
 	Register("Size",     [] { return std::make_unique<SizeModule>(); });
 	Register("Color",    [] { return std::make_unique<ColorModule>(); });
+	Register("Trail",    [] { return std::make_unique<TrailModule>(); });
 
 	// 既定スタック順（従来の固定順と同じ。Lifetime を先頭に置く）
-	defaultOrder_ = { "Lifetime", "Location", "Velocity", "Rotation", "Size", "Color" };
+	// Trail は Velocity で位置が確定した後に履歴を記録するため末尾に置く。
+	defaultOrder_ = {
+		"Lifetime", "Location", "Velocity", "Rotation", "Size", "Color", "Trail"
+	};
 }
 
 void ParticleModuleRegistry::Register(const std::string& typeName, Factory factory)

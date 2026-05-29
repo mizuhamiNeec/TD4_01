@@ -1,5 +1,6 @@
 #include "ParticlePresetLibrary.h"
 
+#include <algorithm>
 #include <fstream>
 #include <filesystem>
 #include <json.hpp>
@@ -152,6 +153,15 @@ namespace {
 		}
 		else if (type == "Location") {
 			params["useRandomPosition"]   = p.emitterSpawn.useRandomPosition;
+			params["emitShape"]           = static_cast<int>(p.emitterSpawn.emitShape);
+			params["boxHalfSize"]         = WriteVec3(p.emitterSpawn.boxHalfSize);
+			params["sphereRadius"]        = p.emitterSpawn.sphereRadius;
+			params["coneRadius"]          = p.emitterSpawn.coneRadius;
+			params["coneHeight"]          = p.emitterSpawn.coneHeight;
+			params["cylinderRadius"]      = p.emitterSpawn.cylinderRadius;
+			params["cylinderHeight"]      = p.emitterSpawn.cylinderHeight;
+			params["circleRadius"]        = p.emitterSpawn.circleRadius;
+			params["circleEmitFromEdge"]  = p.emitterSpawn.circleEmitFromEdge;
 			params["initialOffset"]       = WriteVec3(p.particleSpawn.initialOffset);
 			params["initialOffsetRandom"] = WriteRandom3(p.particleSpawn.initialOffsetRandom);
 		}
@@ -179,6 +189,15 @@ namespace {
 			params["colorGradient"]     = WriteGradient(p.render.colorGradient);
 			params["gradientTimeCurve"] = WriteCurve1D(p.render.gradientTimeCurve);
 		}
+		else if (type == "Trail") {
+			params["enabled"]        = p.trail.enabled;
+			params["maxPoints"]      = p.trail.maxPoints;
+			params["recordInterval"] = p.trail.recordInterval;
+			params["widthHead"]      = p.trail.widthHead;
+			params["widthTail"]      = p.trail.widthTail;
+			params["colorHead"]      = WriteVec4(p.trail.colorHead);
+			params["colorTail"]      = WriteVec4(p.trail.colorTail);
+		}
 
 		return params;
 	}
@@ -193,6 +212,26 @@ namespace {
 		else if (type == "Location") {
 			p.emitterSpawn.useRandomPosition =
 				params.value("useRandomPosition", p.emitterSpawn.useRandomPosition);
+			p.emitterSpawn.emitShape = static_cast<EmitShapeType>(
+				params.value("emitShape", static_cast<int>(p.emitterSpawn.emitShape)));
+			if (params.contains("boxHalfSize")) {
+				p.emitterSpawn.boxHalfSize =
+					ReadVec3(params["boxHalfSize"], p.emitterSpawn.boxHalfSize);
+			}
+			p.emitterSpawn.sphereRadius =
+				params.value("sphereRadius", p.emitterSpawn.sphereRadius);
+			p.emitterSpawn.coneRadius =
+				params.value("coneRadius", p.emitterSpawn.coneRadius);
+			p.emitterSpawn.coneHeight =
+				params.value("coneHeight", p.emitterSpawn.coneHeight);
+			p.emitterSpawn.cylinderRadius =
+				params.value("cylinderRadius", p.emitterSpawn.cylinderRadius);
+			p.emitterSpawn.cylinderHeight =
+				params.value("cylinderHeight", p.emitterSpawn.cylinderHeight);
+			p.emitterSpawn.circleRadius =
+				params.value("circleRadius", p.emitterSpawn.circleRadius);
+			p.emitterSpawn.circleEmitFromEdge =
+				params.value("circleEmitFromEdge", p.emitterSpawn.circleEmitFromEdge);
 			if (params.contains("initialOffset")) {
 				p.particleSpawn.initialOffset =
 					ReadVec3(params["initialOffset"], p.particleSpawn.initialOffset);
@@ -266,6 +305,20 @@ namespace {
 				p.render.gradientTimeCurve = ReadCurve1D(params["gradientTimeCurve"]);
 			}
 		}
+		else if (type == "Trail") {
+			p.trail.enabled        = params.value("enabled", p.trail.enabled);
+			p.trail.maxPoints      = params.value("maxPoints", p.trail.maxPoints);
+			p.trail.recordInterval =
+				params.value("recordInterval", p.trail.recordInterval);
+			p.trail.widthHead      = params.value("widthHead", p.trail.widthHead);
+			p.trail.widthTail      = params.value("widthTail", p.trail.widthTail);
+			if (params.contains("colorHead")) {
+				p.trail.colorHead = ReadVec4(params["colorHead"], p.trail.colorHead);
+			}
+			if (params.contains("colorTail")) {
+				p.trail.colorTail = ReadVec4(params["colorTail"], p.trail.colorTail);
+			}
+		}
 	}
 
 	// 旧形式（version 無し・particleUpdate / render が直下にある形式）の読み込み。
@@ -321,6 +374,28 @@ namespace {
 			p.emitterSpawn.repeat = es.value("repeat", false);
 			p.emitterSpawn.useRandomPosition = es.value("useRandomPosition", false);
 			p.emitterSpawn.useLocalSpace = es.value("useLocalSpace", false);
+
+			// 発生形状（旧形式ファイルには無いことが多いので既定値でフォールバック）
+			p.emitterSpawn.emitShape = static_cast<EmitShapeType>(
+				es.value("emitShape", static_cast<int>(EmitShapeType::Box)));
+			p.emitterSpawn.sphereRadius = es.value("sphereRadius", p.emitterSpawn.sphereRadius);
+			if (es.contains("boxHalfSize") && es["boxHalfSize"].is_array() &&
+				es["boxHalfSize"].size() == 3) {
+				const auto& b = es["boxHalfSize"];
+				p.emitterSpawn.boxHalfSize.x = b[0].get<float>();
+				p.emitterSpawn.boxHalfSize.y = b[1].get<float>();
+				p.emitterSpawn.boxHalfSize.z = b[2].get<float>();
+			}
+			p.emitterSpawn.coneRadius = es.value("coneRadius", p.emitterSpawn.coneRadius);
+			p.emitterSpawn.coneHeight = es.value("coneHeight", p.emitterSpawn.coneHeight);
+			p.emitterSpawn.cylinderRadius =
+				es.value("cylinderRadius", p.emitterSpawn.cylinderRadius);
+			p.emitterSpawn.cylinderHeight =
+				es.value("cylinderHeight", p.emitterSpawn.cylinderHeight);
+			p.emitterSpawn.circleRadius =
+				es.value("circleRadius", p.emitterSpawn.circleRadius);
+			p.emitterSpawn.circleEmitFromEdge =
+				es.value("circleEmitFromEdge", p.emitterSpawn.circleEmitFromEdge);
 		}
 		else {
 			p.emitterSpawn.count = j.value("count", 10u);
@@ -328,6 +403,21 @@ namespace {
 			p.emitterSpawn.repeat = j.value("repeat", false);
 			p.emitterSpawn.useRandomPosition = j.value("useRandomPosition", false);
 			p.emitterSpawn.useLocalSpace = j.value("useLocalSpace", false);
+
+			p.emitterSpawn.emitShape = static_cast<EmitShapeType>(
+				j.value("emitShape", static_cast<int>(EmitShapeType::Box)));
+			p.emitterSpawn.sphereRadius = j.value("sphereRadius", p.emitterSpawn.sphereRadius);
+			p.emitterSpawn.boxHalfSize = readVec3("boxHalfSize", { 1,1,1 });
+			p.emitterSpawn.coneRadius = j.value("coneRadius", p.emitterSpawn.coneRadius);
+			p.emitterSpawn.coneHeight = j.value("coneHeight", p.emitterSpawn.coneHeight);
+			p.emitterSpawn.cylinderRadius =
+				j.value("cylinderRadius", p.emitterSpawn.cylinderRadius);
+			p.emitterSpawn.cylinderHeight =
+				j.value("cylinderHeight", p.emitterSpawn.cylinderHeight);
+			p.emitterSpawn.circleRadius =
+				j.value("circleRadius", p.emitterSpawn.circleRadius);
+			p.emitterSpawn.circleEmitFromEdge =
+				j.value("circleEmitFromEdge", p.emitterSpawn.circleEmitFromEdge);
 		}
 
 		// ========= particleSpawn =========
@@ -473,6 +563,31 @@ namespace {
 			p.render.useBillboard = j.value("useBillboard", true);
 			p.render.flipY = j.value("flipY", false);
 		}
+
+		// ========= trail（旧形式ファイルには通常無い。あれば読む） =========
+		if (j.contains("trail") && j["trail"].is_object()) {
+			const auto& tr = j["trail"];
+			p.trail.enabled        = tr.value("enabled", p.trail.enabled);
+			p.trail.maxPoints      = tr.value("maxPoints", p.trail.maxPoints);
+			p.trail.recordInterval =
+				tr.value("recordInterval", p.trail.recordInterval);
+			p.trail.widthHead      = tr.value("widthHead", p.trail.widthHead);
+			p.trail.widthTail      = tr.value("widthTail", p.trail.widthTail);
+
+			auto read4 = [](const json& obj, const char* key, Vec4 def) {
+				Vec4 v = def;
+				if (obj.contains(key) && obj[key].is_array() &&
+					obj[key].size() == 4) {
+					v.x = obj[key][0].get<float>();
+					v.y = obj[key][1].get<float>();
+					v.z = obj[key][2].get<float>();
+					v.w = obj[key][3].get<float>();
+				}
+				return v;
+				};
+			p.trail.colorHead = read4(tr, "colorHead", p.trail.colorHead);
+			p.trail.colorTail = read4(tr, "colorTail", p.trail.colorTail);
+		}
 	}
 
 } // namespace
@@ -579,6 +694,15 @@ void from_json(const json& j, ParticlePreset& p)
 			ReadModuleParams(slot.type, entry["params"], p);
 		}
 		p.modules.push_back(slot);
+	}
+
+	// Trail モジュールが追加される前に保存された version 2 データには
+	// "Trail" スロットが無い。後から有効化できるよう末尾へ補う。
+	const bool hasTrail = std::any_of(
+		p.modules.begin(), p.modules.end(),
+		[](const ModuleSlot& slot) { return slot.type == "Trail"; });
+	if (!hasTrail) {
+		p.modules.push_back(ModuleSlot{ "Trail", true });
 	}
 }
 

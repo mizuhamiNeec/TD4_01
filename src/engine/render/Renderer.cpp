@@ -543,6 +543,14 @@ namespace Unnamed::Render {
 			EnsureSpriteFallbackTexture(renderDevice);
 			return mSpriteFallbackTextureId;
 		}
+		if (textureRef.source == SPRITE_TEXTURE_SOURCE::VIEW_SCENE_COLOR) {
+			if (const auto it = mViewStates.find(textureRef.viewKey);
+				it != mViewStates.end() && it->second.colorTextureId != 0) {
+				return it->second.colorTextureId;
+			}
+			EnsureSpriteFallbackTexture(renderDevice);
+			return mSpriteFallbackTextureId;
+		}
 		return EnsureSpriteTextureLoaded(
 			renderDevice, textureRef.textureAssetId
 		);

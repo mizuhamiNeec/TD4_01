@@ -56,6 +56,24 @@ namespace MyGame {
 		/// @brief 地面に接触しているかを取得
 		[[nodiscard]] bool IsGrounded() const;
 
+		/// @brief 移動制限を有効/無効にする
+		void SetMoveLimitEnabled(bool enabled);
+
+		/// @brief 移動制限が有効かを取得
+		[[nodiscard]] bool IsMoveLimitEnabled() const;
+
+		/// @brief 移動制限の中心位置を設定
+		void SetMoveLimitCenter(const Vec3& center);
+
+		/// @brief 移動制限の中心位置を取得
+		[[nodiscard]] Vec3 GetMoveLimitCenter() const;
+
+		/// @brief 移動制限の半径を設定
+		void SetMoveLimitRadius(float radius);
+
+		/// @brief 移動制限の半径を取得
+		[[nodiscard]] float GetMoveLimitRadius() const;
+
 		// -----------------------------------------------------------------------
 		// BaseComponent override
 		// -----------------------------------------------------------------------
@@ -74,6 +92,10 @@ namespace MyGame {
 		void Serialize(Unnamed::JsonWriter& writer) const override;
 
 	private:
+		/// @brief 移動制限範囲内に位置を補正する
+		[[nodiscard]] Vec3 ClampMoveLimit(const Vec3& position) const;
+
+
 		// -----------------------------------------------------------------------
 		// 移動パラメータ
 		// -----------------------------------------------------------------------
@@ -98,6 +120,15 @@ namespace MyGame {
 
 		/// 地面レイキャストの距離
 		float _groundCheckDistance = 0.1f;
+
+		/// 移動制限を有効にするか
+		bool _bUseMoveLimit = false;
+
+		/// 移動制限の中心位置
+		Vec3 _moveLimitCenter = Vec3(0.0f, 0.0f, 0.0f);
+
+		/// 移動制限の半径（XZ平面）
+		float _moveLimitRadius = 20.0f;
 	};
 
 }

@@ -62,6 +62,9 @@ namespace MyGame {
 			_bIsGrounded = false;
 		}
 
+		// 移動制限を適用
+		newPos = ClampMoveLimit(newPos);
+
 		// 位置を更新
 		transform->SetPosition(newPos);
 	}
@@ -115,6 +118,60 @@ namespace MyGame {
 		return _bIsGrounded;
 	}
 
+	void PlayerMoveComponent::SetMoveLimitEnabled(bool enabled) {
+		_bUseMoveLimit = enabled;
+	}
+
+	bool PlayerMoveComponent::IsMoveLimitEnabled() const {
+		return _bUseMoveLimit;
+	}
+
+	void PlayerMoveComponent::SetMoveLimitCenter(const Vec3& center) {
+		_moveLimitCenter = center;
+	}
+
+	Vec3 PlayerMoveComponent::GetMoveLimitCenter() const {
+		return _moveLimitCenter;
+	}
+
+	void PlayerMoveComponent::SetMoveLimitRadius(float radius) {
+		_moveLimitRadius = std::max(0.0f, radius);
+	}
+
+	float PlayerMoveComponent::GetMoveLimitRadius() const {
+		return _moveLimitRadius;
+	}
+
+	Vec3 PlayerMoveComponent::ClampMoveLimit(const Vec3& position) const {
+		if (!_bUseMoveLimit || _moveLimitRadius <= 0.0f) {
+			return position;
+		}
+
+		Vec3 clampedPosition = position;
+
+		// NOTE: 移動制限はXZ平面の円形範囲として扱い、Yはジャンプ/重力のためそのまま残す
+		const float offsetX = position.x - _moveLimitCenter.x;
+		const float offsetZ = position.z - _moveLimitCenter.z;
+		const float distanceSq = offsetX * offsetX + offsetZ * offsetZ;
+		const float radiusSq = _moveLimitRadius * _moveLimitRadius;
+
+		if (distanceSq <= radiusSq) {
+			return clampedPosition;
+		}
+
+		const float distance = std::sqrt(distanceSq);
+		if (distance <= 0.0001f) {
+			clampedPosition.x = _moveLimitCenter.x;
+			clampedPosition.z = _moveLimitCenter.z;
+			return clampedPosition;
+		}
+
+		const float invDistance = 1.0f / distance;
+		clampedPosition.x = _moveLimitCenter.x + offsetX * invDistance * _moveLimitRadius;
+		clampedPosition.z = _moveLimitCenter.z + offsetZ * invDistance * _moveLimitRadius;
+		return clampedPosition;
+	}
+
 	// -----------------------------------------------------------------------
 	// BaseComponent override
 	// -----------------------------------------------------------------------
@@ -160,6 +217,12 @@ namespace MyGame {
 		ImGui::Text("Vertical Velocity: %.3f", _verticalVelocity);
 
 		ImGui::Separator();
+		ImGui::Text("Move Limit");
+		ImGui::Checkbox("Use Move Limit", &_bUseMoveLimit);
+		ImGui::DragFloat3("Limit Center", &_moveLimitCenter.x, 0.1f);
+		ImGui::DragFloat("Limit Radius", &_moveLimitRadius, 0.1f, 0.0f, 10000.0f);
+
+		ImGui::Separator();
 
 		// ジャンプボタン
 		if (ImGui::Button("Jump", ImVec2(100, 0))) {
@@ -180,6 +243,21 @@ namespace MyGame {
 		if (auto val = reader.Read<float>("gravity")) {
 			_gravity = val.value();
 		}
+		if (auto val = reader.Read<bool>("useMoveLimit")) {
+			_bUseMoveLimit = val.value();
+		}
+		if (auto val = reader.Read<float>("moveLimitCenterX")) {
+			_moveLimitCenter.x = val.value();
+		}
+		if (auto val = reader.Read<float>("moveLimitCenterY")) {
+			_moveLimitCenter.y = val.value();
+		}
+		if (auto val = reader.Read<float>("moveLimitCenterZ")) {
+			_moveLimitCenter.z = val.value();
+		}
+		if (auto val = reader.Read<float>("moveLimitRadius")) {
+			SetMoveLimitRadius(val.value());
+		}
 	}
 
 	void PlayerMoveComponent::Serialize(Unnamed::JsonWriter& writer) const {
@@ -191,6 +269,18 @@ namespace MyGame {
 		writer.Write(_jumpForce);
 		writer.Key("gravity");
 		writer.Write(_gravity);
+		writer.Key("useMoveLimit");
+		writer.Write(_bUseMoveLimit);
+		writer.Key("moveLimitCenterX");
+		writer.Write(_moveLimitCenter.x);
+		writer.Key("moveLimitCenterY");
+		writer.Write(_moveLimitCenter.y);
+		writer.Key("moveLimitCenterZ");
+		writer.Write(_moveLimitCenter.z	);
+
+
+		writer.Key("moveLimitRadius");
+		writer.Write(_moveLimitRadius);
 	}
 
 	// NOTE: 忘れると死ぬやつ

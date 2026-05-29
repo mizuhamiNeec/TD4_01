@@ -1017,51 +1017,6 @@
                 {
                     "active": true,
                     "data": {
-                        "parentEntityGuid": 42,
-                        "position": [
-                            0.0,
-                            0.009999999776482582,
-                            0.0
-                        ],
-                        "rotation": [
-                            0.0,
-                            0.0,
-                            0.0,
-                            1.0
-                        ],
-                        "scale": [
-                            2.0,
-                            1.0,
-                            2.0
-                        ]
-                    },
-                    "guid": 16399929095914845057,
-                    "type": "engine.Transform"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "materialInstancePath": "",
-                        "materialSlots": [],
-                        "meshPath": "projects/TeamGame/content/models/Hall.obj"
-                    },
-                    "guid": 15308562012175029346,
-                    "type": "engine.StaticMeshRenderer"
-                }
-            ],
-            "folderPath": "",
-            "guid": 45,
-            "isEditorOnly": false,
-            "name": "Entity",
-            "tags": [],
-            "visible": true
-        },
-        {
-            "active": true,
-            "components": [
-                {
-                    "active": true,
-                    "data": {
                         "parentEntityGuid": 0,
                         "position": [
                             -2.620710849761963,
@@ -2451,22 +2406,22 @@
                 {
                     "active": true,
                     "data": {
-                        "parentEntityGuid": 0,
+                        "parentEntityGuid": 42,
                         "position": [
-                            -14.67796802520752,
-                            2.867520332336426,
-                            7.110408782958984
+                            0.0,
+                            -0.008999999612569809,
+                            0.0
                         ],
                         "rotation": [
+                            -0.7071068286895752,
                             0.0,
                             0.0,
-                            0.0,
-                            1.0
+                            0.7071068286895752
                         ],
                         "scale": [
                             1.0,
-                            1.0,
-                            1.0
+                            1.0000001192092896,
+                            1.0000001192092896
                         ]
                     },
                     "guid": 15407108177555294787,
@@ -2479,7 +2434,7 @@
                         "SizeX": 5.0,
                         "SizeY": 5.0
                     },
-                    "guid": 0,
+                    "guid": 16749372253451517539,
                     "type": "engine.PortalComponent"
                 }
             ],
@@ -2496,22 +2451,22 @@
                 {
                     "active": true,
                     "data": {
-                        "parentEntityGuid": 0,
+                        "parentEntityGuid": 42,
                         "position": [
-                            -1.0364093780517578,
                             0.0,
-                            -7.651302337646484
+                            -0.0010000000474974513,
+                            0.0
                         ],
                         "rotation": [
-                            1.1905178780580172e-06,
-                            -0.3852940499782562,
-                            1.1905178780580172e-06,
-                            0.9227938652038574
+                            -0.7071068286895752,
+                            0.0,
+                            0.0,
+                            0.7071068286895752
                         ],
                         "scale": [
                             1.0000038146972656,
-                            1.0000030994415283,
-                            1.0000008344650269
+                            1.0000032186508179,
+                            1.0000009536743164
                         ]
                     },
                     "guid": 15110330010583520210,
@@ -2520,7 +2475,7 @@
                 {
                     "active": true,
                     "data": {},
-                    "guid": 0,
+                    "guid": 17278974508920256612,
                     "type": "engine.PortalExitComponent"
                 }
             ],

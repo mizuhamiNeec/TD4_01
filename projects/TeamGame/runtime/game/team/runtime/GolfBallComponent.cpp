@@ -306,9 +306,10 @@ namespace MyGame {
 	// -----------------------------------------------------------------------
 
 	void GolfBallComponent::ApplyForce(const Vec3& force) {
-		// NOTE: 衝撃波などの外力は質量で割って速度変化として扱う。
-		// 理由：ボールは軽すぎる扱いだと上方向へ過剰に吹き飛び、戻ってこなくなる。
-		Vec3 velocityDelta = force * (1.0f / std::max(0.1f, _mass));
+		// NOTE: 水平方向はゴミと同じく衝撃波をしっかり受け、Y方向だけ質量と上限で抑える。
+		// 理由：全成分を質量で割ると、ボールが衝撃波でほとんど動かなくなる。
+		Vec3 velocityDelta = force;
+		velocityDelta.y = force.y * (1.0f / std::max(0.1f, _mass));
 		velocityDelta.y = std::clamp(velocityDelta.y, -_maxExternalUpwardVelocity, _maxExternalUpwardVelocity);
 
 		_velocity += velocityDelta;

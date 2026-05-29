@@ -16,10 +16,8 @@
 #include <core/io/json/JsonReader.h>
 #include <core/io/json/JsonWriter.h>
 #include <core/math/Vec3.h>
-#include <cstdint>
 #include <string>
 #include <memory>
-#include <unordered_map>
 
 // 前方宣言
 class MagVoiceBridge;
@@ -117,12 +115,6 @@ namespace MyGame {
 		/// @param radius 衝撃波の作用半径
 		void ApplyForceToEntitiesInRange(const Vec3& shockWaveCenter, float forceStrength, float radius = 10.0f);
 
-		/// @brief ゴルフボールへの連続ヒットを抑制
-		bool CanHitGolfBall(uint64_t entityGuid) const;
-
-		/// @brief ゴルフボールへ最後にヒットした時刻を記録
-		void MarkGolfBallHit(uint64_t entityGuid);
-
 		/// @brief MagVoiceBridge のインスタンスを取得
 		MagVoiceBridge* GetVoiceBridge();
 
@@ -155,9 +147,6 @@ namespace MyGame {
 		/// クールタイム用のカウンター
 		float _coolTimeCounter = 0.0f;
 
-		/// コンポーネント稼働時間（対象別ヒット間隔の判定用）
-		float _elapsedTime = 0.0f;
-
 		/// 直近の音量（デバッグ用）
 		float _lastVolume = 0.0f;
 
@@ -179,17 +168,11 @@ namespace MyGame {
 		/// 打ち上げ力（Y軸方向）- 大幅に強化
 		float _upwardForceMultiplier = 50.0f;
 
-		/// ゴルフボールに同じ衝撃波が連続で入り続けることを防ぐ間隔
-		float _golfBallHitInterval = 0.45f;
-
 		/// テスト用：現在のテスト音量値
 		float _testVolume = 0.5f;
 
 		/// MagVoiceBridge のシングルトンインスタンス
 		static MagVoiceBridge* _voiceBridgeInstance;
-
-		/// ゴルフボールごとの最終ヒット時刻
-		std::unordered_map<uint64_t, float> _lastGolfBallHitTimes;
 	};
 
 }

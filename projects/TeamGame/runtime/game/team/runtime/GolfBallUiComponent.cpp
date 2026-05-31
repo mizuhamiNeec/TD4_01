@@ -231,6 +231,17 @@ Unnamed::Entity* MyGame::GolfBallUiComponent::ResolveTargetEntity() const {
 		return nullptr;
 	}
 
+	auto* owner = GetOwner();
+	if (
+		owner &&
+		owner->IsActive() &&
+		!_targetTag.empty() &&
+		owner->HasTag(_targetTag) &&
+		owner->GetComponent<Unnamed::TransformComponent>()
+	) {
+		return owner;
+	}
+
 	if (_targetEntityGuid != 0) {
 		if (auto* entity = scene->FindEntity(_targetEntityGuid)) {
 			return entity;
@@ -264,26 +275,24 @@ bool MyGame::GolfBallUiComponent::ProjectWorldToScreen(
 		return false;
 	}
 
-	Vec4 clip = camera.viewProj * Vec4(worldPosition, 1.0f);
-	if (std::abs(clip.w) <= kProjectionEpsilon) {
+	const Mat4 cameraWorld = camera.view.Inverse();
+	const Vec3 toTarget = worldPosition - camera.cameraPos;
+	const float cameraX = toTarget.Dot(cameraWorld.GetRight().Normalized());
+	const float cameraY = toTarget.Dot(cameraWorld.GetUp().Normalized());
+	const float cameraZ = toTarget.Dot(cameraWorld.GetForward().Normalized());
+	const float depth = std::abs(cameraZ);
+	if (depth <= kProjectionEpsilon) {
 		return false;
 	}
 
-	const bool behindCamera = clip.w < 0.0f;
-	const float invW = 1.0f / std::abs(clip.w);
-	float ndcX = clip.x * invW;
-	float ndcY = clip.y * invW;
-	if (behindCamera) {
-		ndcX = -ndcX;
-		ndcY = -ndcY;
-	}
+	const float ndcX = cameraX * camera.proj.m[0][0] / depth;
+	const float ndcY = cameraY * camera.proj.m[1][1] / depth;
 
 	outProjection.position = Vec2(
 		(ndcX * 0.5f + 0.5f) * viewportSize.x,
 		(0.5f - ndcY * 0.5f) * viewportSize.y
 	);
 	outProjection.onScreen =
-		!behindCamera &&
 		ndcX >= -1.0f &&
 		ndcX <= 1.0f &&
 		ndcY >= -1.0f &&

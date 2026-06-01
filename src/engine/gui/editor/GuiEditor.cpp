@@ -719,6 +719,19 @@ namespace Unnamed::Gui {
 			changed = true;
 		}
 
+		float layoutWeight = selected->GetLayoutWeight();
+		if (ImGui::DragFloat(
+			"Layout Weight",
+			&layoutWeight,
+			0.05f,
+			0.0001f,
+			1000.0f,
+			"%.3f"
+		)) {
+			selected->SetLayoutWeight(layoutWeight);
+			changed = true;
+		}
+
 		auto  constraints        = selected->GetSizeConstraints();
 		float constraintArray[4] = {
 			constraints.minWidth,

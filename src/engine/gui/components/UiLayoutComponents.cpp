@@ -55,14 +55,18 @@ namespace Unnamed::Gui {
 		);
 
 		struct ChildInfo {
-			UiWidget* widget      = nullptr;
-			float     fixedExtent = 0.0f;
-			bool      expand      = false;
+			UiWidget* widget       = nullptr;
+			float     extent       = 0.0f;
+			float     minExtent    = 0.0f;
+			float     maxExtent    = 0.0f;
+			float     expandWeight = 1.0f;
+			bool      expand       = false;
 		};
 
+		const bool isVertical = IsVertical();
 		std::vector<ChildInfo> infos;
 		float                  totalFixedExtent = 0.0f;
-		int                    expandCount      = 0;
+		std::vector<size_t>    expandIndices;
 
 		for (const auto& childPtr : owner.GetChildren()) {
 			UiWidget* child = childPtr.get();
@@ -72,7 +76,6 @@ namespace Unnamed::Gui {
 
 			const UiSizePolicy       policy      = child->GetSizePolicy();
 			const UiSizeConstraints& constraints = child->GetSizeConstraints();
-			const bool isVertical = IsVertical();
 			const bool expand = isVertical ?
 				                    policy.vertical == UiSizePolicyAxis::EXPAND :
 				                    policy.horizontal == UiSizePolicyAxis::EXPAND;
@@ -93,12 +96,15 @@ namespace Unnamed::Gui {
 			const float clamped = std::clamp(preferred, minValue, maxValue);
 
 			ChildInfo info = {};
-			info.widget    = child;
-			info.expand    = expand;
-			info.fixedExtent = expand ? 0.0f : clamped;
-			totalFixedExtent += info.fixedExtent;
+			info.widget       = child;
+			info.expand       = expand;
+			info.minExtent    = minValue;
+			info.maxExtent    = maxValue;
+			info.expandWeight = std::max(child->GetLayoutWeight(), 0.0001f);
+			info.extent       = expand ? 0.0f : clamped;
+			totalFixedExtent += info.extent;
 			if (expand) {
-				++expandCount;
+				expandIndices.push_back(infos.size());
 			}
 			infos.emplace_back(info);
 		}
@@ -110,13 +116,66 @@ namespace Unnamed::Gui {
 		const float totalSpacing =
 			mSpacing * static_cast<float>(std::max(0, static_cast<int>(infos.size()) - 1));
 		const float contentExtent = IsVertical() ? contentHeight : contentWidth;
-		const float remaining = std::max(
+		float remaining = std::max(
 			0.0f,
 			contentExtent - totalFixedExtent - totalSpacing
 		);
-		const float expandExtent = expandCount > 0 ?
-			                           remaining / static_cast<float>(expandCount) :
-			                           0.0f;
+
+		// Expand対象はweight比率で配分し、min/max制約に当たった要素は先に確定させる。
+		if (!expandIndices.empty()) {
+			std::vector<size_t> unresolved = expandIndices;
+
+			while (!unresolved.empty()) {
+				float unresolvedWeightSum = 0.0f;
+				for (const size_t index : unresolved) {
+					unresolvedWeightSum += infos[index].expandWeight;
+				}
+
+				if (unresolvedWeightSum <= 0.0f) {
+					for (const size_t index : unresolved) {
+						infos[index].extent = 0.0f;
+					}
+					break;
+				}
+
+				bool resolvedAny = false;
+				for (auto it = unresolved.begin(); it != unresolved.end();) {
+					const size_t index = *it;
+					ChildInfo&   info  = infos[index];
+					const float  share =
+						remaining * (info.expandWeight / unresolvedWeightSum);
+
+					if (share < info.minExtent) {
+						info.extent = info.minExtent;
+						remaining = std::max(0.0f, remaining - info.extent);
+						it = unresolved.erase(it);
+						resolvedAny = true;
+						continue;
+					}
+
+					if (share > info.maxExtent) {
+						info.extent = info.maxExtent;
+						remaining = std::max(0.0f, remaining - info.extent);
+						it = unresolved.erase(it);
+						resolvedAny = true;
+						continue;
+					}
+
+					++it;
+				}
+
+				if (resolvedAny) {
+					continue;
+				}
+
+				for (const size_t index : unresolved) {
+					ChildInfo& info = infos[index];
+					info.extent =
+						remaining * (info.expandWeight / unresolvedWeightSum);
+				}
+				break;
+			}
+		}
 
 		float cursor = IsVertical() ? mPadding.top : mPadding.left;
 		for (const ChildInfo& info : infos) {
@@ -125,15 +184,11 @@ namespace Unnamed::Gui {
 			}
 
 			const UiSizeConstraints& constraints = info.widget->GetSizeConstraints();
-			float extent = info.fixedExtent;
-			if (info.expand) {
-				extent = expandExtent;
-				extent = std::clamp(
-					extent,
-					IsVertical() ? constraints.minHeight : constraints.minWidth,
-					IsVertical() ? constraints.maxHeight : constraints.maxWidth
-				);
-			}
+			float extent = std::clamp(
+				info.extent,
+				IsVertical() ? constraints.minHeight : constraints.minWidth,
+				IsVertical() ? constraints.maxHeight : constraints.maxWidth
+			);
 
 			Rect childLocal = info.widget->GetLocalRect();
 			if (IsVertical()) {

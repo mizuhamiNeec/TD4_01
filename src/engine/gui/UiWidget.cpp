@@ -392,6 +392,19 @@ namespace Unnamed::Gui {
 		return mSizeConstraints;
 	}
 
+	void UiWidget::SetLayoutWeight(const float weight) {
+		// Expand配分の安定化のため、0以下は最小値に補正する。
+		mLayoutWeight = std::max(weight, 0.0001f);
+		if (auto* transform = GetComponent<UiTransformComponent>()) {
+			transform->SetLayoutWeight(mLayoutWeight);
+		}
+		MarkDirty(DIRTY_FLAGS::LAYOUT | DIRTY_FLAGS::DRAW);
+	}
+
+	float UiWidget::GetLayoutWeight() const {
+		return mLayoutWeight;
+	}
+
 	float UiWidget::GetPreferredWidth() const {
 		return mLocalRect.width;
 	}

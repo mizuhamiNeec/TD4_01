@@ -217,6 +217,13 @@ namespace Unnamed::Gui {
 
 		[[nodiscard]] const UiSizeConstraints& GetSizeConstraints() const;
 
+		/// @brief レイアウトのExpand配分で使う重みを設定します。
+		/// @param weight 0より大きい値を推奨（0以下は内部で最小値に補正）
+		void SetLayoutWeight(float weight);
+		/// @brief レイアウトのExpand配分で使う重みを取得します。
+		/// @return Expand配分用の重み
+		[[nodiscard]] float GetLayoutWeight() const;
+
 		[[nodiscard]] float GetPreferredWidth() const;
 		[[nodiscard]] float GetPreferredHeight() const;
 
@@ -303,6 +310,7 @@ namespace Unnamed::Gui {
 
 		UiSizePolicy      mSizePolicy;
 		UiSizeConstraints mSizeConstraints;
+		float             mLayoutWeight = 1.0f;
 
 		std::vector<std::unique_ptr<UiComponent>> mComponents;
 	};

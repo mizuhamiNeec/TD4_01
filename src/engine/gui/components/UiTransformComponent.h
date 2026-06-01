@@ -26,6 +26,9 @@ namespace Unnamed::Gui {
 		void SetPivot(const Pivot& pivot);
 		void SetSizePolicy(UiSizePolicy sizePolicy);
 		void SetSizeConstraints(UiSizeConstraints constraints);
+		/// @brief レイアウトのExpand配分で使う重みを設定します。
+		/// @param weight 0より大きい値を推奨（0以下は内部で補正）
+		void SetLayoutWeight(float weight);
 
 		[[nodiscard]] const Rect& GetRect() const;
 		[[nodiscard]] const Anchors& GetAnchors() const;
@@ -33,6 +36,9 @@ namespace Unnamed::Gui {
 		[[nodiscard]] const Pivot& GetPivot() const;
 		[[nodiscard]] UiSizePolicy GetSizePolicy() const;
 		[[nodiscard]] const UiSizeConstraints& GetSizeConstraints() const;
+		/// @brief レイアウトのExpand配分で使う重みを取得します。
+		/// @return Expand配分用の重み
+		[[nodiscard]] float GetLayoutWeight() const;
 
 	private:
 		Rect              mRect            = {};
@@ -41,6 +47,7 @@ namespace Unnamed::Gui {
 		Pivot             mPivot           = {};
 		UiSizePolicy      mSizePolicy      = {};
 		UiSizeConstraints mSizeConstraints = {};
+		float             mLayoutWeight    = 1.0f;
 		bool              mNeedsApply      = true;
 	};
 }

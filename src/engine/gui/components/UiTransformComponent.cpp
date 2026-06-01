@@ -1,5 +1,7 @@
 #include "UiTransformComponent.h"
 
+#include <algorithm>
+
 #include "engine/gui/UiSerializationHelpers.h"
 
 namespace Unnamed::Gui {
@@ -19,6 +21,7 @@ namespace Unnamed::Gui {
 		owner.SetPivot(mPivot);
 		owner.SetSizePolicy(mSizePolicy.horizontal, mSizePolicy.vertical);
 		owner.SetSizeConstraints(mSizeConstraints);
+		owner.SetLayoutWeight(mLayoutWeight);
 		mNeedsApply = false;
 	}
 
@@ -40,6 +43,9 @@ namespace Unnamed::Gui {
 
 		writer.Key("constraints");
 		WriteConstraints(writer, mSizeConstraints);
+
+		writer.Key("layoutWeight");
+		writer.Write(mLayoutWeight);
 	}
 
 	void UiTransformComponent::Deserialize(const JsonReader& reader) {
@@ -61,6 +67,9 @@ namespace Unnamed::Gui {
 		if (reader.Has("constraints")) {
 			mSizeConstraints = ReadConstraints(reader["constraints"]);
 		}
+		if (reader.Has("layoutWeight")) {
+			mLayoutWeight = std::max(reader["layoutWeight"].GetFloat(), 0.0001f);
+		}
 		mNeedsApply = true;
 	}
 
@@ -71,6 +80,7 @@ namespace Unnamed::Gui {
 		mPivot           = owner.GetPivot();
 		mSizePolicy      = owner.GetSizePolicy();
 		mSizeConstraints = owner.GetSizeConstraints();
+		mLayoutWeight    = owner.GetLayoutWeight();
 	}
 
 	void UiTransformComponent::SetRect(const Rect& rect) {
@@ -105,6 +115,11 @@ namespace Unnamed::Gui {
 		mNeedsApply      = true;
 	}
 
+	void UiTransformComponent::SetLayoutWeight(const float weight) {
+		mLayoutWeight = std::max(weight, 0.0001f);
+		mNeedsApply   = true;
+	}
+
 	const Rect& UiTransformComponent::GetRect() const {
 		return mRect;
 	}
@@ -127,5 +142,9 @@ namespace Unnamed::Gui {
 
 	const UiSizeConstraints& UiTransformComponent::GetSizeConstraints() const {
 		return mSizeConstraints;
+	}
+
+	float UiTransformComponent::GetLayoutWeight() const {
+		return mLayoutWeight;
 	}
 }

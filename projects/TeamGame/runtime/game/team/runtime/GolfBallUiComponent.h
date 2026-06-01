@@ -6,14 +6,10 @@
 #include <./core/math/Vec3.h>
 #include <./core/math/Vec4.h>
 
-#include <array>
-#include <cstdint>
 #include <string>
 
 namespace MyGame {
-	class MicComponent;
-
-	class VoiceUiComponent : public Unnamed::BaseComponent {
+	class GolfBallUiComponent : public Unnamed::BaseComponent {
 	public:
 		// -----------------------------------------------------------------------
 		// ライフサイクル
@@ -49,31 +45,32 @@ namespace MyGame {
 		void Serialize(Unnamed::JsonWriter& writer) const override;
 
 	private:
-		[[nodiscard]] MicComponent* ResolveMicComponent() const;
-		[[nodiscard]] int32_t GetActiveBarCount(float percentage) const;
-		[[nodiscard]] const std::string& GetActiveBarTexturePath(int32_t activeIndex) const;
-		void EnsureMicStarted();
-
-		uint64_t _micEntityGuid = 0;
-		std::string _micEntityTag;
-		std::array<std::string, 4> _levelTexturePaths = {
-			"projects/TeamGame/content/textures/UI/voice/voiceUI_Level0.png",
-			"projects/TeamGame/content/textures/UI/voice/voiceUI_Level1.png",
-			"projects/TeamGame/content/textures/UI/voice/voiceUI_Level2.png",
-			"projects/TeamGame/content/textures/UI/voice/voiceUI_Level3.png",
+		struct ScreenProjection {
+			Vec2 position = Vec2::zero;
+			bool onScreen = false;
 		};
-		std::string _holeTexturePath =
-			"projects/TeamGame/content/textures/UI/voice/voiceUI_Hole.png";
-		Vec2 _position = Vec2(24.0f, 24.0f);
-		Vec2 _barSize = Vec2(256.0f, 64.0f);
-		Vec2 _holeSize = Vec2(256.0f, 128.0f);
-		Vec2 _anchor = Vec2(0.0f, 0.0f);
-		Vec4 _color = Vec4::one;
-		int32_t _barCount = 8;
-		float _barStepY = 52.0f;
-		float _holeOffsetY = 384.0f;
+
+		[[nodiscard]] Unnamed::Entity* ResolveTargetEntity() const;
+		[[nodiscard]] bool ProjectWorldToScreen(
+			const Vec3& worldPosition,
+			const Vec2& viewportSize,
+			ScreenProjection& outProjection
+		) const;
+		[[nodiscard]] Vec2 ClampToScreenEdge(
+			const Vec2& screenPosition,
+			const Vec2& viewportSize
+		) const;
+
+		uint64_t _targetEntityGuid = 0;
+		std::string _targetTag = "Ball";
+		std::string _texturePath =
+			"projects/TeamGame/content/textures/UI/golfball_Loupe/golfball_Loupe.png";
+		Vec2 _spriteSize = Vec2(96.0f, 96.0f);
+		Vec2 _screenOffset = Vec2::zero;
+		float _edgePadding = 48.0f;
 		int32_t _sortKey = 1000;
-		bool _autoStartMic = true;
-		bool _micStartRequested = false;
+		bool _drawWhenOnScreen = true;
+		bool _drawWhenOffScreen = true;
+		Vec4 _color = Vec4::one;
 	};
 }

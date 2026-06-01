@@ -50,6 +50,7 @@ void MyGame::Player2BallRangeUIComponent::OnRenderTick(
 		return;
 	}
 
+	// 描画補間後の位置を使い、画面表示と距離表示のズレを抑える。
 	Mat4 playerWorld = playerTransform->RenderWorldMat();
 	Mat4 ballWorld = ballTransform->RenderWorldMat();
 	const Vec3 playerPosition = playerWorld.GetTranslate();
@@ -168,7 +169,7 @@ const {
 			(!_playerTag.empty() && owner->HasTag(_playerTag)) ||
 			(!_playerName.empty() && owner->GetName() == _playerName)
 		) {
-			// プレイヤーに直接付ける運用を標準にして、シーン側の設定量を減らす。
+			// プレイヤーに直接付けた場合も動くようにして、シーン側の参照設定を省けるようにする。
 			return owner;
 		}
 	}
@@ -198,12 +199,14 @@ Unnamed::Entity* MyGame::Player2BallRangeUIComponent::ResolveEntity(
 	}
 
 	if (!tag.empty()) {
+		// GUIDはシーン編集で変わる可能性があるため、タグ指定を次の安定した参照として使う。
 		if (auto* entity = scene->FindFirstEntityByTag(tag)) {
 			return entity;
 		}
 	}
 
 	if (!name.empty()) {
+		// 既存シーンのPlayerにはタグが無いため、名前検索を最後のフォールバックにする。
 		for (const auto& entityPtr : scene->GetEntities()) {
 			if (!entityPtr || !entityPtr->IsActive()) {
 				continue;

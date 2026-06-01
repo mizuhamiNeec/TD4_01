@@ -846,7 +846,16 @@
                 },
                 {
                     "active": true,
-                    "data": {},
+                    "data": {
+                        "scaleByVolumeEnabled": false,
+                        "scaleMultiplier": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ],
+                        "scaleResponsiveness": 0.25,
+                        "scaleTargetEntityGuid": 0
+                    },
                     "guid": 16476393568158639362,
                     "type": "mygame.MicComponent"
                 },

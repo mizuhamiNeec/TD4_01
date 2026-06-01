@@ -15,6 +15,7 @@
 #include "VoiceShockWaveComponent.h"
 #include "VoiceUiComponent.h"
 #include "GolfBallUiComponent.h"
+#include "Player2BallRangeUIComponent.h"
 
 namespace Unnamed {
 	namespace {
@@ -67,6 +68,9 @@ namespace Unnamed {
 			componentRegistry, "mygame.VoiceUiComponent", "Voice Ui Component");
 		RegisterComponentIfMissing<MyGame::GolfBallUiComponent>(
 			componentRegistry, "mygame.GolfBallUiComponent", "Golf Ball Ui Component");
+		RegisterComponentIfMissing<MyGame::Player2BallRangeUIComponent>(
+			componentRegistry, "mygame.Player2BallRangeUIComponent",
+			"Player To Ball Range UI Component");
 
 	}
 }

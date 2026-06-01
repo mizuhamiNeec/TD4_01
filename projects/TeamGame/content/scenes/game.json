@@ -1602,7 +1602,7 @@
                             1.0
                         ],
                         "drawWhenOffScreen": true,
-                        "drawWhenOnScreen": true,
+                        "drawWhenOnScreen": false,
                         "edgePadding": 48.0,
                         "screenOffset": [
                             0.0,

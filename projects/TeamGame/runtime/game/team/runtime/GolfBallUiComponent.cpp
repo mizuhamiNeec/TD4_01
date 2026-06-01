@@ -20,6 +20,8 @@
 
 namespace {
 	constexpr float kProjectionEpsilon = 1.0e-5f;
+	constexpr float kDirectionEpsilon = 1.0e-5f;
+	constexpr float kPi = 3.14159265358979323846f;
 
 	[[nodiscard]] bool IsInsideScreen(const Vec2& position, const Vec2& size) {
 		return
@@ -80,16 +82,27 @@ void MyGame::GolfBallUiComponent::OnRenderTick(
 	}
 
 	if (
-		(projection.onScreen && !_drawWhenOnScreen) ||
-		(!projection.onScreen && !_drawWhenOffScreen)
+		projection.onScreen ||
+		!_drawWhenOffScreen
 	) {
 		return;
 	}
 
-	Vec2 drawPosition = projection.onScreen ?
-		                    projection.position :
-		                    ClampToScreenEdge(projection.position, viewportSize);
+	Vec2 drawPosition = ClampToScreenEdge(projection.position, viewportSize);
 	drawPosition += _screenOffset;
+
+	Vec2 directionToTarget = projection.position - drawPosition;
+	if (directionToTarget.SqrLength() <= kDirectionEpsilon) {
+		// オフセットや端クランプで方向が潰れた場合は、画面中心から見た方向を使う。
+		directionToTarget =
+			projection.position - Vec2(viewportSize.x * 0.5f, viewportSize.y * 0.5f);
+	}
+
+	float rotationRad = 0.0f;
+	if (directionToTarget.SqrLength() > kDirectionEpsilon) {
+		// 画像のローカルY+を矢印方向とみなし、画面外のボール投影位置へ向ける。
+		rotationRad = std::atan2(-directionToTarget.x, directionToTarget.y) + kPi;
+	}
 
 	auto* assetManager = GetAssetManager();
 	if (!assetManager || _texturePath.empty()) {
@@ -108,6 +121,7 @@ void MyGame::GolfBallUiComponent::OnRenderTick(
 	sprite.positionPx = drawPosition;
 	sprite.sizePx = _spriteSize;
 	sprite.anchor = Vec2(0.5f, 0.5f);
+	sprite.rotationRad = rotationRad;
 	sprite.color = _color;
 	sprite.sortKey = _sortKey;
 

@@ -93,7 +93,7 @@ namespace MyGame {
 		int32_t _sortKey = 1000;
 
 		/// 対象が画面内にいるときもUIを描画するか
-		bool _drawWhenOnScreen = true;
+		bool _drawWhenOnScreen = false;
 
 		/// 対象が画面外にいるときも画面端にUIを描画するか
 		bool _drawWhenOffScreen = true;

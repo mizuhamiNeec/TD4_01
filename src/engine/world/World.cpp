@@ -1066,22 +1066,17 @@ namespace Unnamed {
 			const Vec3 entryUp    = entryMat.GetUp().Normalized();
 			const Vec3 entryNormal = entryRight.Cross(entryUp).Normalized();
 			const Vec3 entryPos    =
-				entryMat.GetTranslate() + entryNormal * 0.01f;
+				entryMat.GetTranslate();
 
-			Render::WorldSpriteInput portalSprite = {};
-			portalSprite.texture.source =
-				Render::SPRITE_TEXTURE_SOURCE::VIEW_SCENE_COLOR;
-			portalSprite.texture.viewKey = portalViewKey;
-			portalSprite.worldPosition = entryPos;
-			portalSprite.worldRight = entryRight;
-			portalSprite.worldUp = entryUp;
-			portalSprite.sizeWorld = portal->GetSize();
-			portalSprite.color = Vec4::one;
-			portalSprite.rotationRad = 0.0f;
-			portalSprite.sortKey = -1000;
-			portalSprite.uvFlipY = true;
-			portalSprite.screenSpaceUv = true;
-			sceneView.worldSprites.emplace_back(std::move(portalSprite));
+			// ポータル面は専用のPortalsパスで描画し、portal.shaderを使用します。
+			Render::PortalRenderInput portalSurface = {};
+			portalSurface.viewKey                   = portalViewKey;
+			portalSurface.worldPosition             = entryPos;
+			portalSurface.worldRight                = entryRight;
+			portalSurface.worldUp                   = entryUp;
+			portalSurface.sizeWorld                 = portal->GetSize();
+			portalSurface.sortKey = -1000;
+			sceneView.portals.emplace_back(std::move(portalSurface));
 
 			Render::RenderViewInput portalCamView = {};
 			portalCamView.viewKey = portalViewKey;

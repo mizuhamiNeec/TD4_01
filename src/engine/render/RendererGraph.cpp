@@ -29,9 +29,9 @@ namespace Unnamed::Render {
 		) {
 			Rhi::FrameConstants frame  = {};
 			const float         aspect = height > 0 ?
-				                     static_cast<float>(width) /
-				                     static_cast<float>(height) :
-				                     16.0f / 9.0f;
+				                             static_cast<float>(width) /
+				                             static_cast<float>(height) :
+				                             16.0f / 9.0f;
 			const Mat4 fallbackView = Mat4::identity;
 			const Mat4 fallbackProj = Mat4::PerspectiveFovD3D(
 				90.0f * Math::deg2Rad,
@@ -40,12 +40,14 @@ namespace Unnamed::Render {
 				10000.0f,
 				ProjectionDepthMode::ReverseZ
 			);
-			frame.view = camera.valid ? camera.view : fallbackView;
-			frame.proj = camera.valid ? camera.proj : fallbackProj;
-			frame.viewProj = frame.view * frame.proj;
+			frame.view      = camera.valid ? camera.view : fallbackView;
+			frame.proj      = camera.valid ? camera.proj : fallbackProj;
+			frame.viewProj  = frame.view * frame.proj;
 			frame.cameraPos = camera.valid ? camera.cameraPos : Vec3::zero;
-			frame.time = time;
-			frame.clipPlane = (camera.valid && camera.useClipPlane) ? camera.clipPlane : Vec4(0.0f, 0.0f, 0.0f, 1.0f);
+			frame.time      = time;
+			frame.clipPlane = (camera.valid && camera.useClipPlane) ?
+				                  camera.clipPlane :
+				                  Vec4(0.0f, 0.0f, 0.0f, 1.0f);
 			frame.padding[0] = static_cast<float>(width);
 			frame.padding[1] = static_cast<float>(height);
 			return frame;
@@ -84,10 +86,16 @@ namespace Unnamed::Render {
 			const uint32_t srcWidth,
 			const uint32_t srcHeight
 		) {
-			const float safeDstWidth = static_cast<float>(std::max(1u, dstWidth));
-			const float safeDstHeight = static_cast<float>(std::max(1u, dstHeight));
-			const float safeSrcWidth = static_cast<float>(std::max(1u, srcWidth));
-			const float safeSrcHeight = static_cast<float>(std::max(1u, srcHeight));
+			const float safeDstWidth = static_cast<float>(
+				std::max(1u, dstWidth));
+			const float safeDstHeight = static_cast<float>(std::max(
+				1u, dstHeight
+			));
+			const float safeSrcWidth = static_cast<float>(
+				std::max(1u, srcWidth));
+			const float safeSrcHeight = static_cast<float>(std::max(
+				1u, srcHeight
+			));
 			const float srcAspect = safeSrcWidth / safeSrcHeight;
 
 			float fitWidth  = safeDstWidth;
@@ -98,10 +106,10 @@ namespace Unnamed::Render {
 			}
 
 			FitRect rect = {};
-			rect.width = std::max(1.0f, fitWidth);
-			rect.height = std::max(1.0f, fitHeight);
-			rect.x = (safeDstWidth - rect.width) * 0.5f;
-			rect.y = (safeDstHeight - rect.height) * 0.5f;
+			rect.width   = std::max(1.0f, fitWidth);
+			rect.height  = std::max(1.0f, fitHeight);
+			rect.x       = (safeDstWidth - rect.width) * 0.5f;
+			rect.y       = (safeDstHeight - rect.height) * 0.5f;
 			return rect;
 		}
 
@@ -120,16 +128,12 @@ namespace Unnamed::Render {
 		bool EqualsIgnoreCase(
 			const std::string_view lhs, const std::string_view rhs
 		) {
-			if (lhs.size() != rhs.size()) {
-				return false;
-			}
+			if (lhs.size() != rhs.size()) { return false; }
 			for (size_t i = 0; i < lhs.size(); ++i) {
 				if (
 					std::tolower(static_cast<unsigned char>(lhs[i])) !=
 					std::tolower(static_cast<unsigned char>(rhs[i]))
-				) {
-					return false;
-				}
+				) { return false; }
 			}
 			return true;
 		}
@@ -176,9 +180,7 @@ namespace Unnamed::Render {
 			// Exposure/Saturation/Contrast/Gamma -> scalar1.xyzw
 			// Scalar0X .. Scalar1W (or S0X .. S1W) -> explicit component mapping.
 			const std::string key = CompactLowerKey(name);
-			if (key.empty()) {
-				return;
-			}
+			if (key.empty()) { return; }
 			if (key == "intensity") {
 				outParams.scalar0.x = value;
 				return;
@@ -238,9 +240,7 @@ namespace Unnamed::Render {
 				const char component = key[7];
 				if (float* dst = ResolveScalarComponent(
 					outParams, vecIndex, component
-				); dst) {
-					*dst = value;
-				}
+				); dst) { *dst = value; }
 				return;
 			}
 
@@ -249,9 +249,7 @@ namespace Unnamed::Render {
 				const char component = key[2];
 				if (float* dst = ResolveScalarComponent(
 					outParams, vecIndex, component
-				); dst) {
-					*dst = value;
-				}
+				); dst) { *dst = value; }
 			}
 		}
 
@@ -262,9 +260,7 @@ namespace Unnamed::Render {
 			// Common naming convention:
 			// Tint/Color/Color0 -> color0, Color1/SecondaryColor -> color1.
 			const std::string key = CompactLowerKey(name);
-			if (key.empty()) {
-				return;
-			}
+			if (key.empty()) { return; }
 			if (key == "tint" || key == "color" || key == "color0") {
 				outParams.color0 = value;
 				return;
@@ -298,9 +294,9 @@ namespace Unnamed::Render {
 		};
 
 		struct ParticleBatchKey {
-			uint32_t textureId      = 0;
-			uint32_t blendModeIndex = 1;
-			WORLD_PARTICLE_SHAPE shape = WORLD_PARTICLE_SHAPE::PLANE;
+			uint32_t             textureId      = 0;
+			uint32_t             blendModeIndex = 1;
+			WORLD_PARTICLE_SHAPE shape          = WORLD_PARTICLE_SHAPE::PLANE;
 
 			[[nodiscard]] bool operator==(const ParticleBatchKey& rhs) const {
 				return textureId == rhs.textureId &&
@@ -312,14 +308,16 @@ namespace Unnamed::Render {
 		struct ParticleBatchKeyHasher {
 			[[nodiscard]] size_t operator()(const ParticleBatchKey& key) const {
 				size_t h = std::hash<uint32_t>{}(key.textureId);
-				h ^= std::hash<uint32_t>{}(key.blendModeIndex) + 0x9e3779b9 + (h << 6) +
-				     (h >> 2);
-				h ^= std::hash<uint32_t>{}(static_cast<uint32_t>(key.shape)) + 0x9e3779b9 +
-				     (h << 6) + (h >> 2);
+				h ^= std::hash<uint32_t>{}(key.blendModeIndex) + 0x9e3779b9 + (
+						h << 6) +
+					(h >> 2);
+				h ^= std::hash<uint32_t>{}(
+						static_cast<uint32_t>(key.shape)
+					) + 0x9e3779b9 +
+					(h << 6) + (h >> 2);
 				return h;
 			}
 		};
-
 	}
 
 	void Renderer::BuildGraph(
@@ -391,9 +389,7 @@ namespace Unnamed::Render {
 				);
 
 				for (uint32_t i = 0; i < state.bloomMipTextureIds.size(); ++i) {
-					if (state.bloomMipTextureIds[i] != 0) {
-						continue;
-					}
+					if (state.bloomMipTextureIds[i] != 0) { continue; }
 					const uint32_t bloomWidth = std::max(
 						1u,
 						state.allocatedWidth >> static_cast<uint32_t>(i + 1)
@@ -459,9 +455,7 @@ namespace Unnamed::Render {
 				for (const auto& sprite : sprites) {
 					const uint32_t textureId =
 						ResolveSpriteTexture(renderDevice, sprite.texture);
-					if (textureId == 0) {
-						continue;
-					}
+					if (textureId == 0) { continue; }
 					if (seen.insert(textureId).second) {
 						ids.emplace_back(textureId);
 					}
@@ -527,27 +521,26 @@ namespace Unnamed::Render {
 							!mSkyboxPass.geom.resolved->pso ||
 							!mSkyboxPass.geom.vb ||
 							!mSkyboxPass.geom.ib
-						) {
-							return;
-						}
+						) { return; }
 
 						auto& allocator = static_cast<Rhi::D3D12Device&>(
 							renderDevice.GetRhiDevice()
 						).GetFrameUploadAllocator();
 						Rhi::FrameConstants frame = BuildSceneFrameConstants(
-							view.camera, state.logicalWidth, state.logicalHeight, 0.0f
+							view.camera, state.logicalWidth,
+							state.logicalHeight, 0.0f
 						);
-						Rhi::ObjectConstants object = {};
-						object.world                = Mat4::identity;
-						object.world.m[3][0]        = frame.cameraPos.x;
-						object.world.m[3][1]        = frame.cameraPos.y;
-						object.world.m[3][2]        = frame.cameraPos.z;
+						Rhi::ObjectConstants object  = {};
+						object.world                 = Mat4::identity;
+						object.world.m[3][0]         = frame.cameraPos.x;
+						object.world.m[3][1]         = frame.cameraPos.y;
+						object.world.m[3][2]         = frame.cameraPos.z;
 						object.worldInverseTranspose =
 							object.world.Inverse().Transpose();
 						object.skinningInfo = Vec4::zero;
 
 						Rhi::MaterialConstants material = {};
-						material.baseColor = Vec4(
+						material.baseColor              = Vec4(
 							view.skybox.intensity,
 							view.skybox.intensity,
 							view.skybox.intensity,
@@ -616,15 +609,14 @@ namespace Unnamed::Render {
 					RenderPassContext& pass
 				) {
 						const RenderViewInput& view = mFrameViews[viewIndex];
-						if (view.visibleObjects.empty()) {
-							return;
-						}
+						if (view.visibleObjects.empty()) { return; }
 
 						auto& allocator = static_cast<Rhi::D3D12Device&>(
 							renderDevice.GetRhiDevice()
 						).GetFrameUploadAllocator();
 						Rhi::FrameConstants frame = BuildSceneFrameConstants(
-							view.camera, state.logicalWidth, state.logicalHeight, 0.0f
+							view.camera, state.logicalWidth,
+							state.logicalHeight, 0.0f
 						);
 						const D3D12_GPU_VIRTUAL_ADDRESS frameCb =
 							allocator.AllocateConstantBuffer(
@@ -651,9 +643,8 @@ namespace Unnamed::Render {
 							std::span<const uint32_t>(&state.colorTextureId, 1),
 							state.depthTextureId
 						);
-						if (!mGeometryPass.resolved || !mGeometryPass.resolved->pso) {
-							return;
-						}
+						if (!mGeometryPass.resolved || !mGeometryPass.resolved->
+						    pso) { return; }
 						pass.SetGraphicsPipeline(
 							mGeometryPass.resolved->rootSignature,
 							mGeometryPass.resolved->pso
@@ -725,12 +716,13 @@ namespace Unnamed::Render {
 								ToRootIndex(GEOM_ROOT_SLOT::OBJECT), objectCb
 							);
 							pass.BindGraphicsCbv(
-								ToRootIndex(GEOM_ROOT_SLOT::SKINNING), skinningCb
+								ToRootIndex(GEOM_ROOT_SLOT::SKINNING),
+								skinningCb
 							);
 
 							if (mesh.submeshes.empty()) {
-								Rhi::MaterialConstants material  = {};
-								uint32_t               textureId = 0;
+								Rhi::MaterialConstants material        = {};
+								uint32_t               textureId       = 0;
 								const MaterialBinding* materialBinding =
 									fallbackMaterial;
 								if (const auto matIt = mMaterialBindings.find(
@@ -740,23 +732,27 @@ namespace Unnamed::Render {
 								}
 								if (materialBinding) {
 									material  = materialBinding->constants;
-									textureId = materialBinding->albedoTextureId;
+									textureId = materialBinding->
+										albedoTextureId;
 								}
 								if (textureId == 0) {
 									EnsureSpriteFallbackTexture(renderDevice);
 									textureId = mSpriteFallbackTextureId;
 								}
 
-								const D3D12_GPU_VIRTUAL_ADDRESS materialCbFallback =
-									allocator.AllocateConstantBuffer(
-										&material, sizeof(material)
-									);
+								const D3D12_GPU_VIRTUAL_ADDRESS
+									materialCbFallback =
+										allocator.AllocateConstantBuffer(
+											&material, sizeof(material)
+										);
 								pass.BindGraphicsCbv(
 									ToRootIndex(GEOM_ROOT_SLOT::MATERIAL),
 									materialCbFallback
 								);
 								pass.BindGraphicsSrvTable(
-									ToRootIndex(GEOM_ROOT_SLOT::BASE_COLOR_TEXTURE),
+									ToRootIndex(
+										GEOM_ROOT_SLOT::BASE_COLOR_TEXTURE
+									),
 									textureId
 								);
 								pass.DrawIndexedTest(mesh.indexCount);
@@ -764,14 +760,12 @@ namespace Unnamed::Render {
 							}
 
 							for (const auto& submesh : mesh.submeshes) {
-								if (submesh.indexCount == 0) {
-									continue;
-								}
+								if (submesh.indexCount == 0) { continue; }
 
 								AssetID submeshMaterialId = objectInput.
 									materialInstanceId;
 								if (submesh.materialIndex < objectInput.
-									materialInstanceIdsBySlot.size()) {
+								    materialInstanceIdsBySlot.size()) {
 									const AssetID slotMaterialId = objectInput.
 										materialInstanceIdsBySlot[
 											submesh.materialIndex
@@ -781,8 +775,8 @@ namespace Unnamed::Render {
 									}
 								}
 
-								Rhi::MaterialConstants material  = {};
-								uint32_t               textureId = 0;
+								Rhi::MaterialConstants material        = {};
+								uint32_t               textureId       = 0;
 								const MaterialBinding* materialBinding =
 									fallbackMaterial;
 								if (const auto matIt = mMaterialBindings.find(
@@ -792,23 +786,27 @@ namespace Unnamed::Render {
 								}
 								if (materialBinding) {
 									material  = materialBinding->constants;
-									textureId = materialBinding->albedoTextureId;
+									textureId = materialBinding->
+										albedoTextureId;
 								}
 								if (textureId == 0) {
 									EnsureSpriteFallbackTexture(renderDevice);
 									textureId = mSpriteFallbackTextureId;
 								}
 
-								const D3D12_GPU_VIRTUAL_ADDRESS materialCbSubmesh =
-									allocator.AllocateConstantBuffer(
-										&material, sizeof(material)
-									);
+								const D3D12_GPU_VIRTUAL_ADDRESS
+									materialCbSubmesh =
+										allocator.AllocateConstantBuffer(
+											&material, sizeof(material)
+										);
 								pass.BindGraphicsCbv(
 									ToRootIndex(GEOM_ROOT_SLOT::MATERIAL),
 									materialCbSubmesh
 								);
 								pass.BindGraphicsSrvTable(
-									ToRootIndex(GEOM_ROOT_SLOT::BASE_COLOR_TEXTURE),
+									ToRootIndex(
+										GEOM_ROOT_SLOT::BASE_COLOR_TEXTURE
+									),
 									textureId
 								);
 								pass.DrawIndexedTest(
@@ -829,24 +827,28 @@ namespace Unnamed::Render {
 						const RenderViewInput& view = mFrameViews[viewIndex];
 						for (const auto& portal : view.portals) {
 							if (!portal.viewKey.empty()) {
-								const auto stateIt = mViewStates.find(portal.viewKey);
-								if (stateIt != mViewStates.end() && stateIt->second.colorTextureId != 0) {
+								const auto stateIt = mViewStates.find(
+									portal.viewKey
+								);
+								if (stateIt != mViewStates.end() && stateIt->
+								    second.colorTextureId != 0) {
 									b.ReadSrvPs(stateIt->second.colorTextureId);
 								}
 							}
 						}
 					},
-					[this, viewIndex, state, &renderDevice](RenderPassContext& pass) {
+					[this, viewIndex, state, &renderDevice](
+					RenderPassContext& pass
+				) {
 						const RenderViewInput& view = mFrameViews[viewIndex];
-						if (view.portals.empty()) {
-							return;
-						}
+						if (view.portals.empty()) { return; }
 
 						auto& allocator = static_cast<Rhi::D3D12Device&>(
 							renderDevice.GetRhiDevice()
 						).GetFrameUploadAllocator();
 						Rhi::FrameConstants frame = BuildSceneFrameConstants(
-							view.camera, state.logicalWidth, state.logicalHeight, 0.0f
+							view.camera, state.logicalWidth,
+							state.logicalHeight, 0.0f
 						);
 						const D3D12_GPU_VIRTUAL_ADDRESS frameCb =
 							allocator.AllocateConstantBuffer(
@@ -864,9 +866,8 @@ namespace Unnamed::Render {
 							state.depthTextureId
 						);
 
-						if (!mPortalPass.resolved || !mPortalPass.resolved->pso) {
-							return;
-						}
+						if (!mPortalPass.resolved || !mPortalPass.resolved->
+						    pso) { return; }
 						pass.SetGraphicsPipeline(
 							mPortalPass.resolved->rootSignature,
 							mPortalPass.resolved->pso
@@ -880,7 +881,9 @@ namespace Unnamed::Render {
 						for (const auto& portal : view.portals) {
 							uint32_t textureId = 0;
 							if (!portal.viewKey.empty()) {
-								const auto stateIt = mViewStates.find(portal.viewKey);
+								const auto stateIt = mViewStates.find(
+									portal.viewKey
+								);
 								if (stateIt != mViewStates.end()) {
 									textureId = stateIt->second.colorTextureId;
 								}
@@ -892,10 +895,12 @@ namespace Unnamed::Render {
 
 							Vec3 right = portal.worldRight;
 							Vec3 up    = portal.worldUp;
-							if (right.SqrLength() < 1e-6f) right = Vec3::right;
-							if (up.SqrLength() < 1e-6f) up = Vec3::up;
-							right = right.Normalized();
-							up    = up.Normalized();
+							if (right.SqrLength() < 1e-6f)
+								right = Vec3::right;
+							if (up.SqrLength() < 1e-6f)
+								up = Vec3::up;
+							right             = right.Normalized();
+							up                = up.Normalized();
 							const Vec3 normal = right.Cross(up).Normalized();
 
 							Rhi::ObjectConstants object = {};
@@ -916,17 +921,33 @@ namespace Unnamed::Render {
 							object.world.m[2][1]        = normal.y;
 							object.world.m[2][2]        = normal.z;
 							const Vec3 portalSurfacePos =
-								portal.worldPosition + normal * 0.01f;
-							object.world.m[3][0]        = portalSurfacePos.x;
-							object.world.m[3][1]        = portalSurfacePos.y;
-							object.world.m[3][2]        = portalSurfacePos.z;
-							object.worldInverseTranspose = object.world.Inverse().Transpose();
+								portal.worldPosition;
+							object.world.m[3][0]         = portalSurfacePos.x;
+							object.world.m[3][1]         = portalSurfacePos.y;
+							object.world.m[3][2]         = portalSurfacePos.z;
+							object.worldInverseTranspose = object.world.
+								Inverse().Transpose();
 							object.skinningInfo = Vec4(0.0f, 0.0f, 1.0f, 1.0f);
 
-							const D3D12_GPU_VIRTUAL_ADDRESS objectCb = allocator.AllocateConstantBuffer(&object, sizeof(object));
+							const D3D12_GPU_VIRTUAL_ADDRESS objectCb = allocator
+								.AllocateConstantBuffer(
+									&object, sizeof(object)
+								);
+							Rhi::MaterialConstants material = {};
+							material.baseColor = Vec4::one;
+							material.opacity = 1.0f;
+							material.domainMode = 0.0f;
+							const D3D12_GPU_VIRTUAL_ADDRESS materialCb =
+								allocator.AllocateConstantBuffer(
+									&material, sizeof(material)
+								);
 
 							pass.BindGraphicsCbv(
 								ToRootIndex(GEOM_ROOT_SLOT::OBJECT), objectCb
+							);
+							pass.BindGraphicsCbv(
+								ToRootIndex(GEOM_ROOT_SLOT::MATERIAL),
+								materialCb
 							);
 							pass.BindGraphicsCbv(
 								ToRootIndex(GEOM_ROOT_SLOT::SKINNING), objectCb
@@ -955,9 +976,7 @@ namespace Unnamed::Render {
 					RenderPassContext& pass
 				) {
 						const RenderViewInput& view = mFrameViews[viewIndex];
-						if (view.worldBillboards.empty()) {
-							return;
-						}
+						if (view.worldBillboards.empty()) { return; }
 
 						if (!std::any_of(
 							view.worldBillboards.begin(),
@@ -965,15 +984,14 @@ namespace Unnamed::Render {
 							[](const WorldBillboardInput& billboard) {
 								return billboard.depthTest;
 							}
-						)) {
-							return;
-						}
+						)) { return; }
 
 						auto& allocator = static_cast<Rhi::D3D12Device&>(
 							renderDevice.GetRhiDevice()
 						).GetFrameUploadAllocator();
 						Rhi::FrameConstants frame = BuildSceneFrameConstants(
-							view.camera, state.logicalWidth, state.logicalHeight, 0.0f
+							view.camera, state.logicalWidth,
+							state.logicalHeight, 0.0f
 						);
 						const D3D12_GPU_VIRTUAL_ADDRESS frameCb =
 							allocator.AllocateConstantBuffer(
@@ -1001,9 +1019,7 @@ namespace Unnamed::Render {
 						if (
 							!mBillboardPass.depthGeom.resolved ||
 							!mBillboardPass.depthGeom.resolved->pso
-						) {
-							return;
-						}
+						) { return; }
 						pass.SetGraphicsPipeline(
 							mBillboardPass.depthGeom.resolved->rootSignature,
 							mBillboardPass.depthGeom.resolved->pso
@@ -1015,9 +1031,7 @@ namespace Unnamed::Render {
 						pass.SetIndexBuffer(mBillboardPass.depthGeom.ibv);
 
 						for (const auto& billboard : view.worldBillboards) {
-							if (!billboard.depthTest) {
-								continue;
-							}
+							if (!billboard.depthTest) { continue; }
 							const float cosine = std::cos(
 								billboard.rotationRad
 							);
@@ -1049,9 +1063,13 @@ namespace Unnamed::Render {
 							object.world.m[3][2] = billboard.worldPosition.z;
 							object.worldInverseTranspose =
 								object.world.Inverse().Transpose();
-							const float uvMinY = billboard.uvFlipY ? 1.0f : 0.0f;
-							const float uvMaxY = billboard.uvFlipY ? 0.0f : 1.0f;
-							object.skinningInfo = Vec4(0.0f, uvMinY, 1.0f, uvMaxY);
+							const float uvMinY =
+								billboard.uvFlipY ? 1.0f : 0.0f;
+							const float uvMaxY =
+								billboard.uvFlipY ? 0.0f : 1.0f;
+							object.skinningInfo = Vec4(
+								0.0f, uvMinY, 1.0f, uvMaxY
+							);
 
 							Rhi::MaterialConstants material = {};
 							material.baseColor              = billboard.color;
@@ -1070,7 +1088,8 @@ namespace Unnamed::Render {
 								ToRootIndex(GEOM_ROOT_SLOT::OBJECT), objectCb
 							);
 							pass.BindGraphicsCbv(
-								ToRootIndex(GEOM_ROOT_SLOT::MATERIAL), materialCb
+								ToRootIndex(GEOM_ROOT_SLOT::MATERIAL),
+								materialCb
 							);
 							pass.BindGraphicsCbv(
 								ToRootIndex(GEOM_ROOT_SLOT::SKINNING), objectCb
@@ -1103,15 +1122,14 @@ namespace Unnamed::Render {
 					RenderPassContext& pass
 				) {
 						const RenderViewInput& view = mFrameViews[viewIndex];
-						if (view.worldSprites.empty()) {
-							return;
-						}
+						if (view.worldSprites.empty()) { return; }
 
 						auto& allocator = static_cast<Rhi::D3D12Device&>(
 							renderDevice.GetRhiDevice()
 						).GetFrameUploadAllocator();
 						Rhi::FrameConstants frame = BuildSceneFrameConstants(
-							view.camera, state.logicalWidth, state.logicalHeight, 0.0f
+							view.camera, state.logicalWidth,
+							state.logicalHeight, 0.0f
 						);
 						const D3D12_GPU_VIRTUAL_ADDRESS frameCb =
 							allocator.AllocateConstantBuffer(
@@ -1132,9 +1150,7 @@ namespace Unnamed::Render {
 						if (
 							!mBillboardPass.depthGeom.resolved ||
 							!mBillboardPass.depthGeom.resolved->pso
-						) {
-							return;
-						}
+						) { return; }
 						pass.SetGraphicsPipeline(
 							mBillboardPass.depthGeom.resolved->rootSignature,
 							mBillboardPass.depthGeom.resolved->pso
@@ -1151,9 +1167,7 @@ namespace Unnamed::Render {
 							if (right.SqrLength() < 1e-6f) {
 								right = Vec3::right;
 							}
-							if (up.SqrLength() < 1e-6f) {
-								up = Vec3::up;
-							}
+							if (up.SqrLength() < 1e-6f) { up = Vec3::up; }
 							right             = right.Normalized();
 							up                = up.Normalized();
 							const Vec3 normal = right.Cross(up).Normalized();
@@ -1194,9 +1208,15 @@ namespace Unnamed::Render {
 									0.0f
 								);
 							} else {
-								const float uvMinY = sprite.uvFlipY ? 1.0f : 0.0f;
-								const float uvMaxY = sprite.uvFlipY ? 0.0f : 1.0f;
-								object.skinningInfo = Vec4(0.0f, uvMinY, 1.0f, uvMaxY);
+								const float uvMinY = sprite.uvFlipY ?
+									1.0f :
+									0.0f;
+								const float uvMaxY = sprite.uvFlipY ?
+									0.0f :
+									1.0f;
+								object.skinningInfo = Vec4(
+									0.0f, uvMinY, 1.0f, uvMaxY
+								);
 							}
 
 							Rhi::MaterialConstants material = {};
@@ -1217,7 +1237,8 @@ namespace Unnamed::Render {
 								ToRootIndex(GEOM_ROOT_SLOT::OBJECT), objectCb
 							);
 							pass.BindGraphicsCbv(
-								ToRootIndex(GEOM_ROOT_SLOT::MATERIAL), materialCb
+								ToRootIndex(GEOM_ROOT_SLOT::MATERIAL),
+								materialCb
 							);
 							pass.BindGraphicsCbv(
 								ToRootIndex(GEOM_ROOT_SLOT::SKINNING), objectCb
@@ -1246,29 +1267,30 @@ namespace Unnamed::Render {
 							b.ReadSrvPs(texId);
 						}
 					},
-					[this, viewIndex, state, &renderDevice](RenderPassContext& pass) {
+					[this, viewIndex, state, &renderDevice](
+					RenderPassContext& pass
+				) {
 						const RenderViewInput& view = mFrameViews[viewIndex];
-						if (view.worldParticles.empty()) {
-							return;
-						}
+						if (view.worldParticles.empty()) { return; }
 						if (!std::any_of(
 							view.worldParticles.begin(),
 							view.worldParticles.end(),
 							[](const WorldParticleInput& particle) {
 								return particle.depthTest;
 							}
-						)) {
-							return;
-						}
+						)) { return; }
 
 						auto& allocator = static_cast<Rhi::D3D12Device&>(
 							renderDevice.GetRhiDevice()
 						).GetFrameUploadAllocator();
 						Rhi::FrameConstants frame = BuildSceneFrameConstants(
-							view.camera, state.logicalWidth, state.logicalHeight, 0.0f
+							view.camera, state.logicalWidth,
+							state.logicalHeight, 0.0f
 						);
 						const D3D12_GPU_VIRTUAL_ADDRESS frameCb =
-							allocator.AllocateConstantBuffer(&frame, sizeof(frame));
+							allocator.AllocateConstantBuffer(
+								&frame, sizeof(frame)
+							);
 						if (frameCb == 0) {
 							Warning(
 								"RendererGraph",
@@ -1277,9 +1299,11 @@ namespace Unnamed::Render {
 							return;
 						}
 						const Mat4 cameraWorld = frame.view.Inverse();
-						const Vec3 cameraRight = cameraWorld.GetRight().Normalized();
+						const Vec3 cameraRight = cameraWorld.GetRight().
+							Normalized();
 						const Vec3 cameraUp = cameraWorld.GetUp().Normalized();
-						const Vec3 cameraForward = cameraWorld.GetForward().Normalized();
+						const Vec3 cameraForward = cameraWorld.GetForward().
+							Normalized();
 
 						pass.SetViewportAndScissor(
 							0.0f,
@@ -1296,35 +1320,34 @@ namespace Unnamed::Render {
 							const WORLD_PARTICLE_SHAPE shape
 						) -> const ParticleGeometryRes* {
 							switch (shape) {
-								case WORLD_PARTICLE_SHAPE::RING:
-									return &mParticlePass.ringGeom;
-								case WORLD_PARTICLE_SHAPE::CYLINDER:
-									return &mParticlePass.cylinderGeom;
+								case WORLD_PARTICLE_SHAPE::RING: return &
+										mParticlePass.ringGeom;
+								case WORLD_PARTICLE_SHAPE::CYLINDER: return &
+										mParticlePass.cylinderGeom;
 								case WORLD_PARTICLE_SHAPE::PLANE:
-								default:
-									return &mParticlePass.planeGeom;
+								default: return &mParticlePass.planeGeom;
 							}
 						};
 
 						auto emitBatch = [&](
-							const ParticleBatchKey& key,
+							const ParticleBatchKey&                  key,
 							const std::vector<ParticleInstanceData>& instances
 						) -> bool {
-							if (instances.empty()) {
-								return true;
-							}
+							if (instances.empty()) { return true; }
 
-							const auto& pipeline = mParticlePass.depthGeom[key.blendModeIndex];
+							const auto& pipeline = mParticlePass.depthGeom[key.
+								blendModeIndex];
 							if (!pipeline.resolved || !pipeline.resolved->pso) {
 								return true;
 							}
 
-							const ParticleGeometryRes* geometry = resolveGeometry(key.shape);
-							if (!geometry->vb || !geometry->ib || geometry->indexCount == 0) {
-								return true;
-							}
+							const ParticleGeometryRes* geometry =
+								resolveGeometry(key.shape);
+							if (!geometry->vb || !geometry->ib || geometry->
+							    indexCount == 0) { return true; }
 
-							const uint32_t instanceBytes = static_cast<uint32_t>(
+							const uint32_t instanceBytes = static_cast<uint32_t>
+							(
 								sizeof(ParticleInstanceData) * instances.size()
 							);
 							const D3D12_GPU_VIRTUAL_ADDRESS instanceBufferVa =
@@ -1333,18 +1356,17 @@ namespace Unnamed::Render {
 									instanceBytes,
 									16u
 								);
-							if (instanceBufferVa == 0) {
-								return false;
-							}
+							if (instanceBufferVa == 0) { return false; }
 
 							const D3D12_VERTEX_BUFFER_VIEW instanceVbv = {
 								.BufferLocation = instanceBufferVa,
-								.SizeInBytes = instanceBytes,
-								.StrideInBytes = static_cast<UINT>(
+								.SizeInBytes    = instanceBytes,
+								.StrideInBytes  = static_cast<UINT>(
 									sizeof(ParticleInstanceData)
 								),
 							};
-							const std::array<D3D12_VERTEX_BUFFER_VIEW, 2> vbvs = {
+							const std::array<D3D12_VERTEX_BUFFER_VIEW, 2> vbvs =
+							{
 								geometry->vbv,
 								instanceVbv
 							};
@@ -1353,7 +1375,9 @@ namespace Unnamed::Render {
 								pipeline.resolved->rootSignature,
 								pipeline.resolved->pso
 							);
-							pass.BindGraphicsCbv(ToRootIndex(GEOM_ROOT_SLOT::FRAME), frameCb);
+							pass.BindGraphicsCbv(
+								ToRootIndex(GEOM_ROOT_SLOT::FRAME), frameCb
+							);
 							pass.SetVertexBuffers(vbvs);
 							pass.SetIndexBuffer(geometry->ibv);
 							pass.BindGraphicsSrvTable(
@@ -1367,41 +1391,41 @@ namespace Unnamed::Render {
 							return true;
 						};
 
-						bool exhausted = false;
-						ParticleBatchKey currentKey = {};
+						bool                              exhausted = false;
+						ParticleBatchKey                  currentKey = {};
 						std::vector<ParticleInstanceData> currentInstances = {};
-						bool hasBatch = false;
+						bool                              hasBatch = false;
 
 						for (const auto& particle : view.worldParticles) {
-							if (!particle.depthTest) {
-								continue;
-							}
+							if (!particle.depthTest) { continue; }
 
 							Vec3 right   = particle.worldRight;
 							Vec3 up      = particle.worldUp;
 							Vec3 forward = particle.worldForward;
 							if (particle.useBillboard) {
-								const float cosV = std::cos(particle.rotation.z);
-								const float sinV = std::sin(particle.rotation.z);
-								right = cameraRight * cosV + cameraUp * sinV;
-								up = cameraRight * -sinV + cameraUp * cosV;
+								const float cosV = std::cos(
+									particle.rotation.z
+								);
+								const float sinV = std::sin(
+									particle.rotation.z
+								);
+								right   = cameraRight * cosV + cameraUp * sinV;
+								up      = cameraRight * -sinV + cameraUp * cosV;
 								forward = cameraForward;
 							}
 							if (right.SqrLength() < 1e-6f) {
 								right = Vec3::right;
 							}
-							if (up.SqrLength() < 1e-6f) {
-								up = Vec3::up;
-							}
+							if (up.SqrLength() < 1e-6f) { up = Vec3::up; }
 							if (forward.SqrLength() < 1e-6f) {
 								forward = right.Cross(up);
 							}
-							right = right.Normalized();
-							up = up.Normalized();
+							right   = right.Normalized();
+							up      = up.Normalized();
 							forward = forward.Normalized();
 
 							ParticleInstanceData instance = {};
-							instance.worldRow0 = Vec4(
+							instance.worldRow0            = Vec4(
 								right.x * particle.scale.x * 0.5f,
 								right.y * particle.scale.x * 0.5f,
 								right.z * particle.scale.x * 0.5f,
@@ -1425,14 +1449,19 @@ namespace Unnamed::Render {
 								particle.worldPosition.z,
 								1.0f
 							);
-							instance.color = particle.color;
-							instance.uvRect = particle.flipY ? Vec4(0.0f, 1.0f, 1.0f, 0.0f)
-							                                 : Vec4(0.0f, 0.0f, 1.0f, 1.0f);
+							instance.color  = particle.color;
+							instance.uvRect = particle.flipY ?
+								                  Vec4(0.0f, 1.0f, 1.0f, 0.0f) :
+								                  Vec4(0.0f, 0.0f, 1.0f, 1.0f);
 
 							ParticleBatchKey key = {};
-							key.textureId = ResolveSpriteTexture(renderDevice, particle.texture);
+							key.textureId        = ResolveSpriteTexture(
+								renderDevice, particle.texture
+							);
 							key.blendModeIndex =
-								ResolveParticleBlendModeIndex(particle.blendMode);
+								ResolveParticleBlendModeIndex(
+									particle.blendMode
+								);
 							key.shape = particle.shape;
 
 							if (!hasBatch) {
@@ -1477,29 +1506,30 @@ namespace Unnamed::Render {
 							b.ReadSrvPs(texId);
 						}
 					},
-					[this, viewIndex, state, &renderDevice](RenderPassContext& pass) {
+					[this, viewIndex, state, &renderDevice](
+					RenderPassContext& pass
+				) {
 						const RenderViewInput& view = mFrameViews[viewIndex];
-						if (view.worldParticles.empty()) {
-							return;
-						}
+						if (view.worldParticles.empty()) { return; }
 						if (!std::any_of(
 							view.worldParticles.begin(),
 							view.worldParticles.end(),
 							[](const WorldParticleInput& particle) {
 								return !particle.depthTest;
 							}
-						)) {
-							return;
-						}
+						)) { return; }
 
 						auto& allocator = static_cast<Rhi::D3D12Device&>(
 							renderDevice.GetRhiDevice()
 						).GetFrameUploadAllocator();
 						Rhi::FrameConstants frame = BuildSceneFrameConstants(
-							view.camera, state.logicalWidth, state.logicalHeight, 0.0f
+							view.camera, state.logicalWidth,
+							state.logicalHeight, 0.0f
 						);
 						const D3D12_GPU_VIRTUAL_ADDRESS frameCb =
-							allocator.AllocateConstantBuffer(&frame, sizeof(frame));
+							allocator.AllocateConstantBuffer(
+								&frame, sizeof(frame)
+							);
 						if (frameCb == 0) {
 							Warning(
 								"RendererGraph",
@@ -1508,9 +1538,11 @@ namespace Unnamed::Render {
 							return;
 						}
 						const Mat4 cameraWorld = frame.view.Inverse();
-						const Vec3 cameraRight = cameraWorld.GetRight().Normalized();
+						const Vec3 cameraRight = cameraWorld.GetRight().
+							Normalized();
 						const Vec3 cameraUp = cameraWorld.GetUp().Normalized();
-						const Vec3 cameraForward = cameraWorld.GetForward().Normalized();
+						const Vec3 cameraForward = cameraWorld.GetForward().
+							Normalized();
 
 						pass.SetViewportAndScissor(
 							0.0f,
@@ -1525,35 +1557,34 @@ namespace Unnamed::Render {
 							const WORLD_PARTICLE_SHAPE shape
 						) -> const ParticleGeometryRes* {
 							switch (shape) {
-								case WORLD_PARTICLE_SHAPE::RING:
-									return &mParticlePass.ringGeom;
-								case WORLD_PARTICLE_SHAPE::CYLINDER:
-									return &mParticlePass.cylinderGeom;
+								case WORLD_PARTICLE_SHAPE::RING: return &
+										mParticlePass.ringGeom;
+								case WORLD_PARTICLE_SHAPE::CYLINDER: return &
+										mParticlePass.cylinderGeom;
 								case WORLD_PARTICLE_SHAPE::PLANE:
-								default:
-									return &mParticlePass.planeGeom;
+								default: return &mParticlePass.planeGeom;
 							}
 						};
 
 						auto emitBatch = [&](
-							const ParticleBatchKey& key,
+							const ParticleBatchKey&                  key,
 							const std::vector<ParticleInstanceData>& instances
 						) -> bool {
-							if (instances.empty()) {
-								return true;
-							}
+							if (instances.empty()) { return true; }
 
-							const auto& pipeline = mParticlePass.frontGeom[key.blendModeIndex];
+							const auto& pipeline = mParticlePass.frontGeom[key.
+								blendModeIndex];
 							if (!pipeline.resolved || !pipeline.resolved->pso) {
 								return true;
 							}
 
-							const ParticleGeometryRes* geometry = resolveGeometry(key.shape);
-							if (!geometry->vb || !geometry->ib || geometry->indexCount == 0) {
-								return true;
-							}
+							const ParticleGeometryRes* geometry =
+								resolveGeometry(key.shape);
+							if (!geometry->vb || !geometry->ib || geometry->
+							    indexCount == 0) { return true; }
 
-							const uint32_t instanceBytes = static_cast<uint32_t>(
+							const uint32_t instanceBytes = static_cast<uint32_t>
+							(
 								sizeof(ParticleInstanceData) * instances.size()
 							);
 							const D3D12_GPU_VIRTUAL_ADDRESS instanceBufferVa =
@@ -1562,18 +1593,17 @@ namespace Unnamed::Render {
 									instanceBytes,
 									16u
 								);
-							if (instanceBufferVa == 0) {
-								return false;
-							}
+							if (instanceBufferVa == 0) { return false; }
 
 							const D3D12_VERTEX_BUFFER_VIEW instanceVbv = {
 								.BufferLocation = instanceBufferVa,
-								.SizeInBytes = instanceBytes,
-								.StrideInBytes = static_cast<UINT>(
+								.SizeInBytes    = instanceBytes,
+								.StrideInBytes  = static_cast<UINT>(
 									sizeof(ParticleInstanceData)
 								),
 							};
-							const std::array<D3D12_VERTEX_BUFFER_VIEW, 2> vbvs = {
+							const std::array<D3D12_VERTEX_BUFFER_VIEW, 2> vbvs =
+							{
 								geometry->vbv,
 								instanceVbv
 							};
@@ -1582,7 +1612,9 @@ namespace Unnamed::Render {
 								pipeline.resolved->rootSignature,
 								pipeline.resolved->pso
 							);
-							pass.BindGraphicsCbv(ToRootIndex(GEOM_ROOT_SLOT::FRAME), frameCb);
+							pass.BindGraphicsCbv(
+								ToRootIndex(GEOM_ROOT_SLOT::FRAME), frameCb
+							);
 							pass.SetVertexBuffers(vbvs);
 							pass.SetIndexBuffer(geometry->ibv);
 							pass.BindGraphicsSrvTable(
@@ -1596,41 +1628,41 @@ namespace Unnamed::Render {
 							return true;
 						};
 
-						bool exhausted = false;
-						ParticleBatchKey currentKey = {};
+						bool                              exhausted = false;
+						ParticleBatchKey                  currentKey = {};
 						std::vector<ParticleInstanceData> currentInstances = {};
-						bool hasBatch = false;
+						bool                              hasBatch = false;
 
 						for (const auto& particle : view.worldParticles) {
-							if (particle.depthTest) {
-								continue;
-							}
+							if (particle.depthTest) { continue; }
 
 							Vec3 right   = particle.worldRight;
 							Vec3 up      = particle.worldUp;
 							Vec3 forward = particle.worldForward;
 							if (particle.useBillboard) {
-								const float cosV = std::cos(particle.rotation.z);
-								const float sinV = std::sin(particle.rotation.z);
-								right = cameraRight * cosV + cameraUp * sinV;
-								up = cameraRight * -sinV + cameraUp * cosV;
+								const float cosV = std::cos(
+									particle.rotation.z
+								);
+								const float sinV = std::sin(
+									particle.rotation.z
+								);
+								right   = cameraRight * cosV + cameraUp * sinV;
+								up      = cameraRight * -sinV + cameraUp * cosV;
 								forward = cameraForward;
 							}
 							if (right.SqrLength() < 1e-6f) {
 								right = Vec3::right;
 							}
-							if (up.SqrLength() < 1e-6f) {
-								up = Vec3::up;
-							}
+							if (up.SqrLength() < 1e-6f) { up = Vec3::up; }
 							if (forward.SqrLength() < 1e-6f) {
 								forward = right.Cross(up);
 							}
-							right = right.Normalized();
-							up = up.Normalized();
+							right   = right.Normalized();
+							up      = up.Normalized();
 							forward = forward.Normalized();
 
 							ParticleInstanceData instance = {};
-							instance.worldRow0 = Vec4(
+							instance.worldRow0            = Vec4(
 								right.x * particle.scale.x * 0.5f,
 								right.y * particle.scale.x * 0.5f,
 								right.z * particle.scale.x * 0.5f,
@@ -1654,14 +1686,19 @@ namespace Unnamed::Render {
 								particle.worldPosition.z,
 								1.0f
 							);
-							instance.color = particle.color;
-							instance.uvRect = particle.flipY ? Vec4(0.0f, 1.0f, 1.0f, 0.0f)
-							                                 : Vec4(0.0f, 0.0f, 1.0f, 1.0f);
+							instance.color  = particle.color;
+							instance.uvRect = particle.flipY ?
+								                  Vec4(0.0f, 1.0f, 1.0f, 0.0f) :
+								                  Vec4(0.0f, 0.0f, 1.0f, 1.0f);
 
 							ParticleBatchKey key = {};
-							key.textureId = ResolveSpriteTexture(renderDevice, particle.texture);
+							key.textureId        = ResolveSpriteTexture(
+								renderDevice, particle.texture
+							);
 							key.blendModeIndex =
-								ResolveParticleBlendModeIndex(particle.blendMode);
+								ResolveParticleBlendModeIndex(
+									particle.blendMode
+								);
 							key.shape = particle.shape;
 
 							if (!hasBatch) {
@@ -1711,16 +1748,15 @@ namespace Unnamed::Render {
 							mLinePass.frameVertexCount == 0 ||
 							!mLinePass.resolved ||
 							!mLinePass.resolved->pso
-						) {
-							return;
-						}
+						) { return; }
 
 						const RenderViewInput& view = mFrameViews[viewIndex];
 						auto& allocator = static_cast<Rhi::D3D12Device&>(
 							renderDevice.GetRhiDevice()
 						).GetFrameUploadAllocator();
 						Rhi::FrameConstants frame = BuildSceneFrameConstants(
-							view.camera, state.logicalWidth, state.logicalHeight, 0.0f
+							view.camera, state.logicalWidth,
+							state.logicalHeight, 0.0f
 						);
 						const D3D12_GPU_VIRTUAL_ADDRESS frameCb =
 							allocator.AllocateConstantBuffer(
@@ -1760,34 +1796,37 @@ namespace Unnamed::Render {
 							b.ReadSrvPs(texId);
 						}
 					},
-					[this, viewIndex, state, &renderDevice](RenderPassContext& pass) {
+					[this, viewIndex, state, &renderDevice](
+					RenderPassContext& pass
+				) {
 						const RenderViewInput& view = mFrameViews[viewIndex];
-						if (view.worldBillboards.empty()) {
-							return;
-						}
+						if (view.worldBillboards.empty()) { return; }
 						if (!std::any_of(
 							view.worldBillboards.begin(),
 							view.worldBillboards.end(),
 							[](const WorldBillboardInput& billboard) {
 								return !billboard.depthTest;
 							}
-						)) {
-							return;
-						}
+						)) { return; }
 
 						auto& allocator = static_cast<Rhi::D3D12Device&>(
 							renderDevice.GetRhiDevice()
 						).GetFrameUploadAllocator();
 						Rhi::FrameConstants frame = BuildSceneFrameConstants(
-							view.camera, state.logicalWidth, state.logicalHeight, 0.0f
+							view.camera, state.logicalWidth,
+							state.logicalHeight, 0.0f
 						);
 						const D3D12_GPU_VIRTUAL_ADDRESS frameCb =
-							allocator.AllocateConstantBuffer(&frame, sizeof(frame));
+							allocator.AllocateConstantBuffer(
+								&frame, sizeof(frame)
+							);
 
 						const Mat4 cameraWorld = frame.view.Inverse();
-						const Vec3 cameraRight = cameraWorld.GetRight().Normalized();
+						const Vec3 cameraRight = cameraWorld.GetRight().
+							Normalized();
 						const Vec3 cameraUp = cameraWorld.GetUp().Normalized();
-						const Vec3 cameraForward = cameraWorld.GetForward().Normalized();
+						const Vec3 cameraForward = cameraWorld.GetForward().
+							Normalized();
 
 						pass.SetViewportAndScissor(
 							0.0f,
@@ -1800,9 +1839,7 @@ namespace Unnamed::Render {
 						if (
 							!mBillboardPass.frontGeom.resolved ||
 							!mBillboardPass.frontGeom.resolved->pso
-						) {
-							return;
-						}
+						) { return; }
 						pass.SetGraphicsPipeline(
 							mBillboardPass.frontGeom.resolved->rootSignature,
 							mBillboardPass.frontGeom.resolved->pso
@@ -1814,11 +1851,11 @@ namespace Unnamed::Render {
 						pass.SetIndexBuffer(mBillboardPass.frontGeom.ibv);
 
 						for (const auto& billboard : view.worldBillboards) {
-							if (billboard.depthTest) {
-								continue;
-							}
+							if (billboard.depthTest) { continue; }
 
-							const float cosine = std::cos(billboard.rotationRad);
+							const float cosine = std::cos(
+								billboard.rotationRad
+							);
 							const float sine = std::sin(billboard.rotationRad);
 							const Vec3  rotatedRight =
 								cameraRight * cosine + cameraUp * sine;
@@ -1827,7 +1864,7 @@ namespace Unnamed::Render {
 
 							Rhi::ObjectConstants object = {};
 							object.world                = Mat4::identity;
-							object.world.m[0][0] =
+							object.world.m[0][0]        =
 								rotatedRight.x * billboard.sizeWorld.x * 0.5f;
 							object.world.m[0][1] =
 								rotatedRight.y * billboard.sizeWorld.x * 0.5f;
@@ -1847,9 +1884,13 @@ namespace Unnamed::Render {
 							object.world.m[3][2] = billboard.worldPosition.z;
 							object.worldInverseTranspose =
 								object.world.Inverse().Transpose();
-							const float uvMinY = billboard.uvFlipY ? 1.0f : 0.0f;
-							const float uvMaxY = billboard.uvFlipY ? 0.0f : 1.0f;
-							object.skinningInfo = Vec4(0.0f, uvMinY, 1.0f, uvMaxY);
+							const float uvMinY =
+								billboard.uvFlipY ? 1.0f : 0.0f;
+							const float uvMaxY =
+								billboard.uvFlipY ? 0.0f : 1.0f;
+							object.skinningInfo = Vec4(
+								0.0f, uvMinY, 1.0f, uvMaxY
+							);
 
 							Rhi::MaterialConstants material = {};
 							material.baseColor              = billboard.color;
@@ -1857,7 +1898,9 @@ namespace Unnamed::Render {
 							material.domainMode             = 0.0f;
 
 							const D3D12_GPU_VIRTUAL_ADDRESS objectCb =
-								allocator.AllocateConstantBuffer(&object, sizeof(object));
+								allocator.AllocateConstantBuffer(
+									&object, sizeof(object)
+								);
 							const D3D12_GPU_VIRTUAL_ADDRESS materialCb =
 								allocator.AllocateConstantBuffer(
 									&material,
@@ -1867,16 +1910,21 @@ namespace Unnamed::Render {
 								ToRootIndex(GEOM_ROOT_SLOT::OBJECT), objectCb
 							);
 							pass.BindGraphicsCbv(
-								ToRootIndex(GEOM_ROOT_SLOT::MATERIAL), materialCb
+								ToRootIndex(GEOM_ROOT_SLOT::MATERIAL),
+								materialCb
 							);
 							pass.BindGraphicsCbv(
 								ToRootIndex(GEOM_ROOT_SLOT::SKINNING), objectCb
 							);
 							pass.BindGraphicsSrvTable(
 								ToRootIndex(GEOM_ROOT_SLOT::BASE_COLOR_TEXTURE),
-								ResolveSpriteTexture(renderDevice, billboard.texture)
+								ResolveSpriteTexture(
+									renderDevice, billboard.texture
+								)
 							);
-							pass.DrawIndexedTest(mBillboardPass.frontGeom.indexCount);
+							pass.DrawIndexedTest(
+								mBillboardPass.frontGeom.indexCount
+							);
 						}
 					}
 				);
@@ -1885,254 +1933,437 @@ namespace Unnamed::Render {
 					uint32_t postFxInputId             = state.colorTextureId;
 					uint32_t postFxOutputId            = state.postFxTextureAId;
 					auto     BuildResolvedPostFxParams =
-					[&view](const PostFxRuntimePass& passRes) {
-					PostFxParamsConstants     params       = {};
-					const PostFxPassOverride* viewOverride =
-						FindPostFxPassOverride(
-							passRes.name, view.postFxPassOverrides
-						);
-					for (const auto& [name, value] : passRes.scalarDefaults) {
-						ApplyScalarParam(name, value, params);
-					}
-					for (const auto& [name, value] : passRes.colorDefaults) {
-						ApplyColorParam(name, value, params);
-					}
-					if (viewOverride) {
-						for (const auto& [name, value] : viewOverride->
-						     scalarParams) {
+						[&view](const PostFxRuntimePass& passRes) {
+						PostFxParamsConstants     params       = {};
+						const PostFxPassOverride* viewOverride =
+							FindPostFxPassOverride(
+								passRes.name, view.postFxPassOverrides
+							);
+						for (const auto& [name, value] : passRes.
+						     scalarDefaults) {
 							ApplyScalarParam(name, value, params);
 						}
-						for (const auto& [name, value] : viewOverride->
-						     colorParams) {
+						for (const auto& [name, value] : passRes.
+						     colorDefaults) {
 							ApplyColorParam(name, value, params);
 						}
-					}
-					return std::pair{params, viewOverride};
-				};
-
-				struct BloomPyramidConstants {
-					Vec4 params0 = Vec4::zero;
-					// x=invSrcW, y=invSrcH, z=threshold, w=knee
-					Vec4 params1 = Vec4::zero;
-					// x=radius, y=intensity, z=firstPass
-				};
-
-				for (size_t i = 0; i < mPostFxPasses.size(); ++i) {
-					const auto passRes = mPostFxPasses[i];
-					const auto [resolvedParams, viewOverride] =
-						BuildResolvedPostFxParams(passRes);
-					bool passEnabled = passRes.enabled;
-					if (viewOverride && viewOverride->hasEnabledOverride) {
-						passEnabled = viewOverride->enabled;
-					}
-					if (!passEnabled) {
-						continue;
-					}
-
-					if (EqualsIgnoreCase(passRes.name, "Bloom")) {
-						const int mipCount = static_cast<int>(state.
-							bloomMipTextureIds.size());
-
-						const float bloomIntensity = std::max(
-							resolvedParams.scalar0.x, 0.0f
-						);
-						if (bloomIntensity <= 0.0f) {
-							continue;
+						if (viewOverride) {
+							for (const auto& [name, value] : viewOverride->
+							     scalarParams) {
+								ApplyScalarParam(name, value, params);
+							}
+							for (const auto& [name, value] : viewOverride->
+							     colorParams) {
+								ApplyColorParam(name, value, params);
+							}
 						}
-						const float bloomThreshold = resolvedParams.scalar0.y;
-						const float bloomRadius    = std::max(
-							resolvedParams.scalar0.z, 0.0f
-						);
-						const float bloomKnee = std::max(
-							resolvedParams.scalar0.w, 0.0f
-						);
+						return std::pair{params, viewOverride};
+					};
 
-						uint32_t srcId = postFxInputId;
-						for (uint32_t level = 0; std::cmp_less(level, mipCount);
-						     ++level) {
-							const uint32_t dstId = state.bloomMipTextureIds[
-								level];
-							const uint32_t srcWidth = std::max(
-								1u, state.logicalWidth >> level
-							);
-							const uint32_t srcHeight = std::max(
-								1u, state.logicalHeight >> level
-							);
-							const uint32_t dstWidth = std::max(
-								1u, state.logicalWidth >> static_cast<uint32_t>(
-									    level + 1)
-							);
-							const uint32_t dstHeight = std::max(
-								1u, state.logicalHeight >> static_cast<uint32_t>(
-									    level + 1)
-							);
+					struct BloomPyramidConstants {
+						Vec4 params0 = Vec4::zero;
+						// x=invSrcW, y=invSrcH, z=threshold, w=knee
+						Vec4 params1 = Vec4::zero;
+						// x=radius, y=intensity, z=firstPass
+					};
 
-							BloomPyramidConstants bloomCbData = {};
-							bloomCbData.params0               = Vec4(
-								1.0f / static_cast<float>(srcWidth),
-								1.0f / static_cast<float>(srcHeight),
-								bloomThreshold,
-								bloomKnee
+					for (size_t i = 0; i < mPostFxPasses.size(); ++i) {
+						const auto passRes = mPostFxPasses[i];
+						const auto [resolvedParams, viewOverride] =
+							BuildResolvedPostFxParams(passRes);
+						bool passEnabled = passRes.enabled;
+						if (viewOverride && viewOverride->hasEnabledOverride) {
+							passEnabled = viewOverride->enabled;
+						}
+						if (!passEnabled) { continue; }
+
+						if (EqualsIgnoreCase(passRes.name, "Bloom")) {
+							const int mipCount = static_cast<int>(state.
+								bloomMipTextureIds.size());
+
+							const float bloomIntensity = std::max(
+								resolvedParams.scalar0.x, 0.0f
 							);
-							bloomCbData.params1 = Vec4(
-								bloomRadius, bloomIntensity,
-								level == 0 ? 1.0f : 0.0f, 0.0f
+							if (bloomIntensity <= 0.0f) { continue; }
+							const float bloomThreshold = resolvedParams.scalar0.
+								y;
+							const float bloomRadius = std::max(
+								resolvedParams.scalar0.z, 0.0f
+							);
+							const float bloomKnee = std::max(
+								resolvedParams.scalar0.w, 0.0f
 							);
 
-							auto& allocator = static_cast<Rhi::D3D12Device&>(
-								renderDevice.GetRhiDevice()
-							).GetFrameUploadAllocator();
-							const D3D12_GPU_VIRTUAL_ADDRESS bloomCb =
-								allocator.AllocateConstantBuffer(
-									&bloomCbData, sizeof(bloomCbData)
+							uint32_t srcId = postFxInputId;
+							for (uint32_t level = 0; std::cmp_less(
+								     level, mipCount
+							     );
+							     ++level) {
+								const uint32_t dstId = state.bloomMipTextureIds[
+									level];
+								const uint32_t srcWidth = std::max(
+									1u, state.logicalWidth >> level
+								);
+								const uint32_t srcHeight = std::max(
+									1u, state.logicalHeight >> level
+								);
+								const uint32_t dstWidth = std::max(
+									1u, state.logicalWidth >> static_cast<
+										    uint32_t>(
+										    level + 1)
+								);
+								const uint32_t dstHeight = std::max(
+									1u, state.logicalHeight >> static_cast<
+										    uint32_t>(
+										    level + 1)
 								);
 
-							const uint32_t downsampleSrcId = srcId;
+								BloomPyramidConstants bloomCbData = {};
+								bloomCbData.params0               = Vec4(
+									1.0f / static_cast<float>(srcWidth),
+									1.0f / static_cast<float>(srcHeight),
+									bloomThreshold,
+									bloomKnee
+								);
+								bloomCbData.params1 = Vec4(
+									bloomRadius, bloomIntensity,
+									level == 0 ? 1.0f : 0.0f, 0.0f
+								);
+
+								auto& allocator = static_cast<Rhi::D3D12Device&>
+								(
+									renderDevice.GetRhiDevice()
+								).GetFrameUploadAllocator();
+								const D3D12_GPU_VIRTUAL_ADDRESS bloomCb =
+									allocator.AllocateConstantBuffer(
+										&bloomCbData, sizeof(bloomCbData)
+									);
+
+								const uint32_t downsampleSrcId = srcId;
+								mGraph.AddPass(
+									prefix + "BloomDownsample[" +
+									std::to_string(
+										level
+									) + "]",
+									[downsampleSrcId, dstId](
+									RenderGraphBuilder& b
+								) {
+										b.ReadSrvPs(downsampleSrcId);
+										b.WriteRt(dstId);
+									},
+									[this, dstId, dstWidth, dstHeight, bloomCb,
+										downsampleSrcId, &renderDevice](
+									RenderPassContext& pass
+								) {
+										pass.SetViewportAndScissor(
+											0.0f,
+											0.0f,
+											static_cast<float>(dstWidth),
+											static_cast<float>(dstHeight)
+										);
+										pass.SetSrvUavHeap();
+										pass.SetRenderTarget(dstId);
+										if (
+											!mBloomDownsamplePass.resolved ||
+											!mBloomDownsamplePass.resolved->pso
+										) { return; }
+										pass.SetGraphicsPipeline(
+											mBloomDownsamplePass.resolved->
+											rootSignature,
+											mBloomDownsamplePass.resolved->pso
+										);
+										pass.BindGraphicsCbv(
+											ToRootIndex(
+												FS_ROOT_SLOT::POST_FX_PARAMS
+											),
+											bloomCb
+										);
+										pass.BindGraphicsSrvTable(
+											ToRootIndex(
+												FS_ROOT_SLOT::SOURCE_TEXTURE
+											),
+											downsampleSrcId
+										);
+										pass.DrawFullscreenTriangle();
+									}
+								);
+
+								srcId = dstId;
+							}
+
+							for (
+								uint32_t level = mipCount - 1; level > 0; --
+								level
+							) {
+								const uint32_t srcLowId = state.
+									bloomMipTextureIds[
+										level];
+								const uint32_t dstHighId = state.
+									bloomMipTextureIds[
+										level - 1];
+								const uint32_t srcWidth = std::max(
+									1u, state.logicalWidth >> static_cast<
+										    uint32_t>(
+										    level + 1)
+								);
+								const uint32_t srcHeight = std::max(
+									1u, state.logicalHeight >> static_cast<
+										    uint32_t>(
+										    level + 1)
+								);
+								const uint32_t dstWidth = std::max(
+									1u, state.logicalWidth >> level
+								);
+								const uint32_t dstHeight = std::max(
+									1u, state.logicalHeight >> level
+								);
+
+								BloomPyramidConstants bloomCbData = {};
+								bloomCbData.params0               = Vec4(
+									1.0f / static_cast<float>(srcWidth),
+									1.0f / static_cast<float>(srcHeight),
+									0.0f,
+									0.0f
+								);
+								bloomCbData.params1 = Vec4(
+									bloomRadius, bloomIntensity, 0.0f, 0.0f
+								);
+
+								auto& allocator = static_cast<Rhi::D3D12Device&>
+								(
+									renderDevice.GetRhiDevice()
+								).GetFrameUploadAllocator();
+								const D3D12_GPU_VIRTUAL_ADDRESS bloomCb =
+									allocator.AllocateConstantBuffer(
+										&bloomCbData, sizeof(bloomCbData)
+									);
+
+								mGraph.AddPass(
+									prefix + "BloomUpsample[" + std::to_string(
+										level
+									) + "]",
+									[srcLowId, dstHighId](
+									RenderGraphBuilder& b
+								) {
+										b.ReadSrvPs(srcLowId);
+										b.WriteRt(dstHighId);
+									},
+									[this, dstHighId, dstWidth, dstHeight,
+										bloomCb,
+										srcLowId, &renderDevice](
+									RenderPassContext& pass
+								) {
+										pass.SetViewportAndScissor(
+											0.0f,
+											0.0f,
+											static_cast<float>(dstWidth),
+											static_cast<float>(dstHeight)
+										);
+										pass.SetSrvUavHeap();
+										pass.SetRenderTarget(dstHighId);
+										if (
+											!mBloomUpsamplePass.resolved ||
+											!mBloomUpsamplePass.resolved->pso
+										) { return; }
+										pass.SetGraphicsPipeline(
+											mBloomUpsamplePass.resolved->
+											rootSignature,
+											mBloomUpsamplePass.resolved->pso
+										);
+										pass.BindGraphicsCbv(
+											ToRootIndex(
+												FS_ROOT_SLOT::POST_FX_PARAMS
+											),
+											bloomCb
+										);
+										pass.BindGraphicsSrvTable(
+											ToRootIndex(
+												FS_ROOT_SLOT::SOURCE_TEXTURE
+											),
+											srcLowId
+										);
+										pass.DrawFullscreenTriangle();
+									}
+								);
+							}
+
+							const uint32_t bloomBaseId = state.
+								bloomMipTextureIds[
+									0];
+							const uint32_t baseCopyInId       = postFxInputId;
+							const uint32_t bloomCombinedOutId = postFxOutputId;
+
 							mGraph.AddPass(
-								prefix + "BloomDownsample[" + std::to_string(
-									level
-								) + "]",
-								[downsampleSrcId, dstId](
+								prefix + "BloomBaseCopy",
+								[baseCopyInId, bloomCombinedOutId](
 								RenderGraphBuilder& b
 							) {
-									b.ReadSrvPs(downsampleSrcId);
-									b.WriteRt(dstId);
+									b.ReadSrvPs(baseCopyInId);
+									b.WriteRt(bloomCombinedOutId);
 								},
-								[this, dstId, dstWidth, dstHeight, bloomCb,
-									downsampleSrcId, &renderDevice](
+								[this, state, baseCopyInId, bloomCombinedOutId,
+									&
+									renderDevice](
 								RenderPassContext& pass
 							) {
 									pass.SetViewportAndScissor(
 										0.0f,
 										0.0f,
-										static_cast<float>(dstWidth),
-										static_cast<float>(dstHeight)
+										static_cast<float>(state.logicalWidth),
+										static_cast<float>(state.logicalHeight)
 									);
 									pass.SetSrvUavHeap();
-									pass.SetRenderTarget(dstId);
-									if (
-										!mBloomDownsamplePass.resolved ||
-										!mBloomDownsamplePass.resolved->pso
-									) {
-										return;
-									}
+									pass.SetRenderTarget(bloomCombinedOutId);
+									if (!mHdrCopyPass.resolved || !mHdrCopyPass.
+									    resolved->pso) { return; }
 									pass.SetGraphicsPipeline(
-										mBloomDownsamplePass.resolved->rootSignature,
-										mBloomDownsamplePass.resolved->pso
-									);
-									pass.BindGraphicsCbv(
-										ToRootIndex(FS_ROOT_SLOT::POST_FX_PARAMS),
-										bloomCb
+										mHdrCopyPass.resolved->rootSignature,
+										mHdrCopyPass.resolved->pso
 									);
 									pass.BindGraphicsSrvTable(
-										ToRootIndex(FS_ROOT_SLOT::SOURCE_TEXTURE),
-										downsampleSrcId
+										ToRootIndex(
+											FS_ROOT_SLOT::SOURCE_TEXTURE
+										),
+										baseCopyInId
+									);
+									PostFxParamsConstants copyParams = {};
+									copyParams.scalar0.x = std::clamp(
+										static_cast<float>(std::max(
+											1u, state.logicalWidth
+										)) /
+										static_cast<float>(std::max(
+											1u, state.allocatedWidth
+										)),
+										0.0f,
+										1.0f
+									);
+									copyParams.scalar0.y = std::clamp(
+										static_cast<float>(std::max(
+											1u, state.logicalHeight
+										)) /
+										static_cast<float>(std::max(
+											1u, state.allocatedHeight
+										)),
+										0.0f,
+										1.0f
+									);
+									auto& allocator = static_cast<
+										Rhi::D3D12Device&>
+									(
+										renderDevice.GetRhiDevice()
+									).GetFrameUploadAllocator();
+									const D3D12_GPU_VIRTUAL_ADDRESS copyCb =
+										allocator.AllocateConstantBuffer(
+											&copyParams, sizeof(copyParams)
+										);
+									pass.BindGraphicsCbv(
+										ToRootIndex(
+											FS_ROOT_SLOT::POST_FX_PARAMS
+										),
+										copyCb
 									);
 									pass.DrawFullscreenTriangle();
 								}
 							);
 
-							srcId = dstId;
-						}
-
-						for (
-							uint32_t level = mipCount - 1; level > 0; --level
-						) {
-							const uint32_t srcLowId = state.bloomMipTextureIds[
-								level];
-							const uint32_t dstHighId = state.bloomMipTextureIds[
-								level - 1];
-							const uint32_t srcWidth = std::max(
-								1u, state.logicalWidth >> static_cast<uint32_t>(
-									    level + 1)
+							BloomPyramidConstants bloomCompositeCbData = {};
+							const uint32_t bloomBaseLogicalWidth = std::max(
+								1u, state.logicalWidth >> 1u
 							);
-							const uint32_t srcHeight = std::max(
-								1u, state.logicalHeight >> static_cast<uint32_t>(
-									    level + 1)
+							const uint32_t bloomBaseLogicalHeight = std::max(
+								1u, state.logicalHeight >> 1u
 							);
-							const uint32_t dstWidth = std::max(
-								1u, state.logicalWidth >> level
-							);
-							const uint32_t dstHeight = std::max(
-								1u, state.logicalHeight >> level
-							);
-
-							BloomPyramidConstants bloomCbData = {};
-							bloomCbData.params0               = Vec4(
-								1.0f / static_cast<float>(srcWidth),
-								1.0f / static_cast<float>(srcHeight),
+							bloomCompositeCbData.params0 = Vec4(
+								1.0f / static_cast<float>(
+									bloomBaseLogicalWidth),
+								1.0f / static_cast<float>(
+									bloomBaseLogicalHeight),
 								0.0f,
 								0.0f
 							);
-							bloomCbData.params1 = Vec4(
+							bloomCompositeCbData.params1 = Vec4(
 								bloomRadius, bloomIntensity, 0.0f, 0.0f
 							);
-
 							auto& allocator = static_cast<Rhi::D3D12Device&>(
 								renderDevice.GetRhiDevice()
 							).GetFrameUploadAllocator();
-							const D3D12_GPU_VIRTUAL_ADDRESS bloomCb =
+							const D3D12_GPU_VIRTUAL_ADDRESS bloomCompositeCb =
 								allocator.AllocateConstantBuffer(
-									&bloomCbData, sizeof(bloomCbData)
+									&bloomCompositeCbData,
+									sizeof(bloomCompositeCbData)
 								);
 
 							mGraph.AddPass(
-								prefix + "BloomUpsample[" + std::to_string(
-									level
-								) + "]",
-								[srcLowId, dstHighId](RenderGraphBuilder& b) {
-									b.ReadSrvPs(srcLowId);
-									b.WriteRt(dstHighId);
+								prefix + "BloomComposite",
+								[bloomBaseId, bloomCombinedOutId](
+								RenderGraphBuilder& b
+							) {
+									b.ReadSrvPs(bloomBaseId);
+									b.WriteRt(bloomCombinedOutId);
 								},
-								[this, dstHighId, dstWidth, dstHeight, bloomCb,
-									srcLowId, &renderDevice](
+								[this, state, bloomCombinedOutId, bloomBaseId,
+									bloomCompositeCb, &renderDevice](
 								RenderPassContext& pass
 							) {
 									pass.SetViewportAndScissor(
 										0.0f,
 										0.0f,
-										static_cast<float>(dstWidth),
-										static_cast<float>(dstHeight)
+										static_cast<float>(state.logicalWidth),
+										static_cast<float>(state.logicalHeight)
 									);
 									pass.SetSrvUavHeap();
-									pass.SetRenderTarget(dstHighId);
+									pass.SetRenderTarget(bloomCombinedOutId);
 									if (
-										!mBloomUpsamplePass.resolved ||
-										!mBloomUpsamplePass.resolved->pso
-									) {
-										return;
-									}
+										!mBloomCombinePass.resolved ||
+										!mBloomCombinePass.resolved->pso
+									) { return; }
 									pass.SetGraphicsPipeline(
-										mBloomUpsamplePass.resolved->rootSignature,
-										mBloomUpsamplePass.resolved->pso
+										mBloomCombinePass.resolved->
+										rootSignature,
+										mBloomCombinePass.resolved->pso
 									);
 									pass.BindGraphicsCbv(
-										ToRootIndex(FS_ROOT_SLOT::POST_FX_PARAMS),
-										bloomCb
+										ToRootIndex(
+											FS_ROOT_SLOT::POST_FX_PARAMS
+										),
+										bloomCompositeCb
 									);
 									pass.BindGraphicsSrvTable(
-										ToRootIndex(FS_ROOT_SLOT::SOURCE_TEXTURE),
-										srcLowId
+										ToRootIndex(
+											FS_ROOT_SLOT::SOURCE_TEXTURE
+										),
+										bloomBaseId
 									);
 									pass.DrawFullscreenTriangle();
 								}
 							);
+
+							postFxInputId  = bloomCombinedOutId;
+							postFxOutputId = postFxOutputId == state.
+							                 postFxTextureAId ?
+								                 state.postFxTextureBId :
+								                 state.postFxTextureAId;
+							continue;
 						}
 
-						const uint32_t bloomBaseId = state.bloomMipTextureIds[
-							0];
-						const uint32_t baseCopyInId       = postFxInputId;
-						const uint32_t bloomCombinedOutId = postFxOutputId;
+						auto& allocator = static_cast<Rhi::D3D12Device&>(
+							renderDevice.GetRhiDevice()
+						).GetFrameUploadAllocator();
+						const D3D12_GPU_VIRTUAL_ADDRESS postFxCb =
+							allocator.AllocateConstantBuffer(
+								&resolvedParams, sizeof(resolvedParams)
+							);
+
+						const auto inId  = postFxInputId;
+						const auto outId = postFxOutputId;
 
 						mGraph.AddPass(
-							prefix + "BloomBaseCopy",
-							[baseCopyInId, bloomCombinedOutId](
-							RenderGraphBuilder& b
-						) {
-								b.ReadSrvPs(baseCopyInId);
-								b.WriteRt(bloomCombinedOutId);
+							prefix + "PostFx_" + passRes.name,
+							[inId, outId](RenderGraphBuilder& b) {
+								b.ReadSrvPs(inId);
+								b.WriteRt(outId);
 							},
-							[this, state, baseCopyInId, bloomCombinedOutId, &
+							[this, passRes, inId, outId, state, postFxCb, &
 								renderDevice](
 							RenderPassContext& pass
 						) {
@@ -2143,140 +2374,52 @@ namespace Unnamed::Render {
 									static_cast<float>(state.logicalHeight)
 								);
 								pass.SetSrvUavHeap();
-								pass.SetRenderTarget(bloomCombinedOutId);
-								if (!mHdrCopyPass.resolved || !mHdrCopyPass.resolved->pso) {
-									return;
-								}
+								if (!passRes.pass.resolved || !passRes.pass.
+								    resolved->pso) { return; }
 								pass.SetGraphicsPipeline(
-									mHdrCopyPass.resolved->rootSignature,
-									mHdrCopyPass.resolved->pso
+									passRes.pass.resolved->rootSignature,
+									passRes.pass.resolved->pso
+								);
+								pass.SetRenderTarget(outId);
+								pass.BindGraphicsCbv(
+									ToRootIndex(FS_ROOT_SLOT::POST_FX_PARAMS),
+									postFxCb
 								);
 								pass.BindGraphicsSrvTable(
 									ToRootIndex(FS_ROOT_SLOT::SOURCE_TEXTURE),
-									baseCopyInId
-								);
-								PostFxParamsConstants copyParams = {};
-								copyParams.scalar0.x = std::clamp(
-									static_cast<float>(std::max(1u, state.logicalWidth)) /
-										static_cast<float>(std::max(1u, state.allocatedWidth)),
-									0.0f,
-									1.0f
-								);
-								copyParams.scalar0.y = std::clamp(
-									static_cast<float>(std::max(1u, state.logicalHeight)) /
-										static_cast<float>(std::max(1u, state.allocatedHeight)),
-									0.0f,
-									1.0f
-								);
-								auto& allocator = static_cast<Rhi::D3D12Device&>
-								(
-									renderDevice.GetRhiDevice()
-								).GetFrameUploadAllocator();
-								const D3D12_GPU_VIRTUAL_ADDRESS copyCb =
-									allocator.AllocateConstantBuffer(
-										&copyParams, sizeof(copyParams)
-									);
-								pass.BindGraphicsCbv(
-									ToRootIndex(FS_ROOT_SLOT::POST_FX_PARAMS),
-									copyCb
+									inId
 								);
 								pass.DrawFullscreenTriangle();
 							}
 						);
 
-						BloomPyramidConstants bloomCompositeCbData = {};
-						const uint32_t bloomBaseLogicalWidth = std::max(
-							1u, state.logicalWidth >> 1u
-						);
-						const uint32_t bloomBaseLogicalHeight = std::max(
-							1u, state.logicalHeight >> 1u
-						);
-						bloomCompositeCbData.params0               = Vec4(
-							1.0f / static_cast<float>(bloomBaseLogicalWidth),
-							1.0f / static_cast<float>(bloomBaseLogicalHeight),
-							0.0f,
-							0.0f
-						);
-						bloomCompositeCbData.params1               = Vec4(
-							bloomRadius, bloomIntensity, 0.0f, 0.0f
-						);
-						auto& allocator = static_cast<Rhi::D3D12Device&>(
-							renderDevice.GetRhiDevice()
-						).GetFrameUploadAllocator();
-						const D3D12_GPU_VIRTUAL_ADDRESS bloomCompositeCb =
-							allocator.AllocateConstantBuffer(
-								&bloomCompositeCbData,
-								sizeof(bloomCompositeCbData)
-							);
-
-						mGraph.AddPass(
-							prefix + "BloomComposite",
-							[bloomBaseId, bloomCombinedOutId](
-							RenderGraphBuilder& b
-						) {
-								b.ReadSrvPs(bloomBaseId);
-								b.WriteRt(bloomCombinedOutId);
-							},
-							[this, state, bloomCombinedOutId, bloomBaseId,
-								bloomCompositeCb, &renderDevice](
-							RenderPassContext& pass
-						) {
-								pass.SetViewportAndScissor(
-									0.0f,
-									0.0f,
-									static_cast<float>(state.logicalWidth),
-									static_cast<float>(state.logicalHeight)
-								);
-								pass.SetSrvUavHeap();
-								pass.SetRenderTarget(bloomCombinedOutId);
-								if (
-									!mBloomCombinePass.resolved ||
-									!mBloomCombinePass.resolved->pso
-								) {
-									return;
-								}
-								pass.SetGraphicsPipeline(
-									mBloomCombinePass.resolved->rootSignature,
-									mBloomCombinePass.resolved->pso
-								);
-								pass.BindGraphicsCbv(
-									ToRootIndex(FS_ROOT_SLOT::POST_FX_PARAMS),
-									bloomCompositeCb
-								);
-								pass.BindGraphicsSrvTable(
-									ToRootIndex(FS_ROOT_SLOT::SOURCE_TEXTURE),
-									bloomBaseId
-								);
-								pass.DrawFullscreenTriangle();
-							}
-						);
-
-						postFxInputId  = bloomCombinedOutId;
+						postFxInputId  = outId;
 						postFxOutputId = postFxOutputId == state.
 						                 postFxTextureAId ?
 							                 state.postFxTextureBId :
 							                 state.postFxTextureAId;
-						continue;
 					}
 
+					PostFxParamsConstants toneMapParams = {};
+					toneMapParams.scalar1.x = view.camera.exposureEv;
 					auto& allocator = static_cast<Rhi::D3D12Device&>(
 						renderDevice.GetRhiDevice()
 					).GetFrameUploadAllocator();
-					const D3D12_GPU_VIRTUAL_ADDRESS postFxCb =
+					const D3D12_GPU_VIRTUAL_ADDRESS toneMapCb =
 						allocator.AllocateConstantBuffer(
-							&resolvedParams, sizeof(resolvedParams)
+							&toneMapParams, sizeof(toneMapParams)
 						);
-
-					const auto inId  = postFxInputId;
-					const auto outId = postFxOutputId;
-
+					const uint32_t toneMapInputId  = postFxInputId;
+					const uint32_t toneMapOutputId = state.outputTextureId;
 					mGraph.AddPass(
-						prefix + "PostFx_" + passRes.name,
-						[inId, outId](RenderGraphBuilder& b) {
-							b.ReadSrvPs(inId);
-							b.WriteRt(outId);
+						prefix + "ToneMapExposure",
+						[toneMapInputId, toneMapOutputId
+						](RenderGraphBuilder& b) {
+							b.ReadSrvPs(toneMapInputId);
+							b.WriteRt(toneMapOutputId);
 						},
-						[this, passRes, inId, outId, state, postFxCb, &
+						[this, state, toneMapInputId, toneMapOutputId, toneMapCb
+							, &
 							renderDevice](
 						RenderPassContext& pass
 					) {
@@ -2287,75 +2430,24 @@ namespace Unnamed::Render {
 								static_cast<float>(state.logicalHeight)
 							);
 							pass.SetSrvUavHeap();
-							if (!passRes.pass.resolved || !passRes.pass.resolved->pso) {
-								return;
-							}
+							pass.SetRenderTarget(toneMapOutputId);
+							if (!mToneMapPass.resolved || !mToneMapPass.resolved
+							    ->pso) { return; }
 							pass.SetGraphicsPipeline(
-								passRes.pass.resolved->rootSignature,
-								passRes.pass.resolved->pso
+								mToneMapPass.resolved->rootSignature,
+								mToneMapPass.resolved->pso
 							);
-							pass.SetRenderTarget(outId);
 							pass.BindGraphicsCbv(
-								ToRootIndex(FS_ROOT_SLOT::POST_FX_PARAMS), postFxCb
+								ToRootIndex(FS_ROOT_SLOT::POST_FX_PARAMS),
+								toneMapCb
 							);
 							pass.BindGraphicsSrvTable(
-								ToRootIndex(FS_ROOT_SLOT::SOURCE_TEXTURE), inId
+								ToRootIndex(FS_ROOT_SLOT::SOURCE_TEXTURE),
+								toneMapInputId
 							);
 							pass.DrawFullscreenTriangle();
 						}
 					);
-
-					postFxInputId  = outId;
-					postFxOutputId = postFxOutputId == state.postFxTextureAId ?
-						                 state.postFxTextureBId :
-						                 state.postFxTextureAId;
-				}
-
-				PostFxParamsConstants toneMapParams = {};
-				toneMapParams.scalar1.x = view.camera.exposureEv;
-				auto& allocator = static_cast<Rhi::D3D12Device&>(
-					renderDevice.GetRhiDevice()
-				).GetFrameUploadAllocator();
-				const D3D12_GPU_VIRTUAL_ADDRESS toneMapCb =
-					allocator.AllocateConstantBuffer(
-						&toneMapParams, sizeof(toneMapParams)
-					);
-				const uint32_t toneMapInputId  = postFxInputId;
-				const uint32_t toneMapOutputId = state.outputTextureId;
-				mGraph.AddPass(
-					prefix + "ToneMapExposure",
-					[toneMapInputId, toneMapOutputId](RenderGraphBuilder& b) {
-						b.ReadSrvPs(toneMapInputId);
-						b.WriteRt(toneMapOutputId);
-					},
-					[this, state, toneMapInputId, toneMapOutputId, toneMapCb, &
-						renderDevice](
-					RenderPassContext& pass
-				) {
-						pass.SetViewportAndScissor(
-							0.0f,
-							0.0f,
-							static_cast<float>(state.logicalWidth),
-							static_cast<float>(state.logicalHeight)
-						);
-						pass.SetSrvUavHeap();
-						pass.SetRenderTarget(toneMapOutputId);
-						if (!mToneMapPass.resolved || !mToneMapPass.resolved->pso) {
-							return;
-						}
-						pass.SetGraphicsPipeline(
-							mToneMapPass.resolved->rootSignature,
-							mToneMapPass.resolved->pso
-						);
-						pass.BindGraphicsCbv(
-							ToRootIndex(FS_ROOT_SLOT::POST_FX_PARAMS), toneMapCb
-						);
-						pass.BindGraphicsSrvTable(
-							ToRootIndex(FS_ROOT_SLOT::SOURCE_TEXTURE), toneMapInputId
-						);
-						pass.DrawFullscreenTriangle();
-					}
-				);
 
 					outputId = toneMapOutputId;
 				}
@@ -2384,9 +2476,7 @@ namespace Unnamed::Render {
 				RenderPassContext& pass
 			) {
 					const RenderViewInput& view = mFrameViews[viewIndex];
-					if (view.screenSprites.empty()) {
-						return;
-					}
+					if (view.screenSprites.empty()) { return; }
 
 					auto& allocator = static_cast<Rhi::D3D12Device&>(
 						renderDevice.GetRhiDevice()
@@ -2409,9 +2499,8 @@ namespace Unnamed::Render {
 					);
 					pass.SetSrvUavHeap();
 					pass.SetRenderTarget(outputId);
-					if (!mSpritePass.geom.resolved || !mSpritePass.geom.resolved->pso) {
-						return;
-					}
+					if (!mSpritePass.geom.resolved || !mSpritePass.geom.resolved
+					    ->pso) { return; }
 					pass.SetGraphicsPipeline(
 						mSpritePass.geom.resolved->rootSignature,
 						mSpritePass.geom.resolved->pso
@@ -2432,25 +2521,27 @@ namespace Unnamed::Render {
 
 						Rhi::ObjectConstants object = {};
 						object.world                = Mat4::Scale(
-							               Vec3(
-								               sprite.sizePx.x * 0.5f,
-								               sprite.sizePx.y * 0.5f,
-								               1.0f
-							               )
-						               ) * Mat4::RotateZ(
-							               sprite.rotationRad
-						               ) * Mat4::Translate(
-							               Vec3(center.x, center.y, 0.0f)
-						               );
+							Vec3(
+								sprite.sizePx.x * 0.5f,
+								sprite.sizePx.y * 0.5f,
+								1.0f
+							)
+						) * Mat4::RotateZ(
+							sprite.rotationRad
+						) * Mat4::Translate(
+							Vec3(center.x, center.y, 0.0f)
+						);
 						object.worldInverseTranspose =
 							object.world.Inverse().Transpose();
 						const float uvMinY =
 							sprite.uvFlipY ? sprite.uvMax.y : sprite.uvMin.y;
 						const float uvMaxY =
 							sprite.uvFlipY ? sprite.uvMin.y : sprite.uvMax.y;
-						const float uvMinX = sprite.uvMin.x;
-						const float uvMaxX = sprite.uvMax.x;
-						object.skinningInfo = Vec4(uvMinX, uvMinY, uvMaxX, uvMaxY);
+						const float uvMinX  = sprite.uvMin.x;
+						const float uvMaxX  = sprite.uvMax.x;
+						object.skinningInfo = Vec4(
+							uvMinX, uvMinY, uvMaxX, uvMaxY
+						);
 
 						Rhi::MaterialConstants material = {};
 						material.baseColor              = sprite.color;
@@ -2492,9 +2583,7 @@ namespace Unnamed::Render {
 		std::vector<uint32_t> uiReadableOutputs;
 		uiReadableOutputs.reserve(frameViews.size());
 		for (const RenderViewInput& view : frameViews) {
-			if (!view.output.exposeToUi) {
-				continue;
-			}
+			if (!view.output.exposeToUi) { continue; }
 			const auto it = mViewStates.find(view.viewKey);
 			if (it == mViewStates.end() || it->second.outputTextureId == 0) {
 				continue;
@@ -2519,7 +2608,8 @@ namespace Unnamed::Render {
 				presentIt != mViewStates.end() &&
 				presentIt->second.outputTextureId != 0
 			) {
-				const uint32_t presentTexture = presentIt->second.outputTextureId;
+				const uint32_t presentTexture = presentIt->second.
+					outputTextureId;
 				const uint32_t presentLogicalWidth = std::max(
 					1u, presentIt->second.logicalWidth
 				);
@@ -2551,15 +2641,15 @@ namespace Unnamed::Render {
 						pass.SetSrvUavHeap();
 
 						PostFxParamsConstants params = {};
-						params.scalar0.x = std::clamp(
+						params.scalar0.x             = std::clamp(
 							static_cast<float>(presentLogicalWidth) /
-								static_cast<float>(presentAllocatedWidth),
+							static_cast<float>(presentAllocatedWidth),
 							0.0f,
 							1.0f
 						);
 						params.scalar0.y = std::clamp(
 							static_cast<float>(presentLogicalHeight) /
-								static_cast<float>(presentAllocatedHeight),
+							static_cast<float>(presentAllocatedHeight),
 							0.0f,
 							1.0f
 						);
@@ -2583,9 +2673,8 @@ namespace Unnamed::Render {
 							fitRect.height
 						);
 
-						if (!mFullscreenPass.resolved || !mFullscreenPass.resolved->pso) {
-							return;
-						}
+						if (!mFullscreenPass.resolved || !mFullscreenPass.
+						    resolved->pso) { return; }
 						pass.SetGraphicsPipeline(
 							mFullscreenPass.resolved->rootSignature,
 							mFullscreenPass.resolved->pso
@@ -2595,7 +2684,8 @@ namespace Unnamed::Render {
 							ToRootIndex(FS_ROOT_SLOT::POST_FX_PARAMS), postFxCb
 						);
 						pass.BindGraphicsSrvTable(
-							ToRootIndex(FS_ROOT_SLOT::SOURCE_TEXTURE), presentTexture
+							ToRootIndex(FS_ROOT_SLOT::SOURCE_TEXTURE),
+							presentTexture
 						);
 						pass.DrawFullscreenTriangle();
 					}
@@ -2629,16 +2719,10 @@ namespace Unnamed::Render {
 
 		mGraph.AddPass(
 			"ImGuiMainPass",
-			[](RenderGraphBuilder& b) {
-				b.WriteBackBufferRt();
-			},
+			[](RenderGraphBuilder& b) { b.WriteBackBufferRt(); },
 			[this](RenderPassContext& pass) {
-				if (mUiMainRenderCallback) {
-					mUiMainRenderCallback(pass);
-				}
+				if (mUiMainRenderCallback) { mUiMainRenderCallback(pass); }
 			}
 		);
 	}
 }
-
-

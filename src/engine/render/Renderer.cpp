@@ -43,7 +43,8 @@ namespace Unnamed::Render {
 		if (materialsDirty) {
 			// Hot reload 時は既存マテリアルバインディングを破棄して再構築します。
 			auto& registry = renderDevice.GetRegistry();
-			for (const auto& [materialInstanceId, binding] : mMaterialBindings) {
+			for (const auto& [materialInstanceId, binding] :
+			     mMaterialBindings) {
 				(void)materialInstanceId;
 				if (binding.albedoTextureId != 0) {
 					registry.ReleaseTexture(binding.albedoTextureId);
@@ -52,9 +53,7 @@ namespace Unnamed::Render {
 			mMaterialBindings.clear();
 			mDefaultMaterialInstance = kInvalidAssetID;
 		}
-		if (postFxDirty) {
-			RebuildPipelineCatalog(renderDevice, dx);
-		}
+		if (postFxDirty) { RebuildPipelineCatalog(renderDevice, dx); }
 
 		mFrameViews      = inputs.views;
 		mFrameDebugLines = inputs.debugDraw.lines;
@@ -76,9 +75,7 @@ namespace Unnamed::Render {
 		activeViewKeys.reserve(mFrameViews.size());
 
 		for (RenderViewInput& view : mFrameViews) {
-			if (view.viewKey.empty()) {
-				view.viewKey = "unnamed.view";
-			}
+			if (view.viewKey.empty()) { view.viewKey = "unnamed.view"; }
 			mViewExecutionOrder.emplace_back(view.viewKey);
 			activeViewKeys.emplace(view.viewKey);
 
@@ -98,60 +95,60 @@ namespace Unnamed::Render {
 				view.output.height = std::max(1u, view.output.height);
 			}
 
-			std::sort(
-				view.worldBillboards.begin(),
-				view.worldBillboards.end(),
+			std::ranges::sort(
+				view.worldBillboards,
 				[](const WorldBillboardInput& a, const WorldBillboardInput& b) {
 					return a.sortKey < b.sortKey;
 				}
 			);
-			std::sort(
-				view.worldSprites.begin(),
-				view.worldSprites.end(),
+			std::ranges::sort(
+				view.worldSprites,
 				[](const WorldSpriteInput& a, const WorldSpriteInput& b) {
 					return a.sortKey < b.sortKey;
 				}
 			);
-			std::sort(
-				view.screenSprites.begin(),
-				view.screenSprites.end(),
+			std::ranges::sort(
+				view.screenSprites,
 				[](const ScreenSpriteInput& a, const ScreenSpriteInput& b) {
 					return a.sortKey < b.sortKey;
 				}
 			);
-			std::sort(
-				view.worldParticles.begin(),
-				view.worldParticles.end(),
+			std::ranges::sort(
+				view.worldParticles,
 				[&view](
 				const WorldParticleInput& a, const WorldParticleInput& b
 			) {
 					if (a.sortKey != b.sortKey) {
 						return a.sortKey < b.sortKey;
 					}
-					if (!view.camera.valid) {
-						return false;
-					}
-					const float distSqA = (a.worldPosition - view.camera.cameraPos)
-					                      .SqrLength();
-					const float distSqB = (b.worldPosition - view.camera.cameraPos)
-					                      .SqrLength();
+					if (!view.camera.valid) { return false; }
+					const float distSqA = (
+							a.worldPosition - view.camera.cameraPos)
+						.SqrLength();
+					const float distSqB = (
+							b.worldPosition - view.camera.cameraPos)
+						.SqrLength();
 					// 同一sortKey内は遠いものから描画して透過破綻を抑制。
 					return distSqA > distSqB;
+				}
+			);
+			std::ranges::sort(
+				view.portals,
+				[](const PortalRenderInput& a, const PortalRenderInput& b) {
+					return a.sortKey < b.sortKey;
 				}
 			);
 
 			if (
 				mPresentViewKey.empty() &&
 				view.output.presentToSwapChain
-			) {
-				mPresentViewKey = view.viewKey;
-			}
+			) { mPresentViewKey = view.viewKey; }
 
-			auto&          state           = mViewStates[view.viewKey];
-			const bool     typeChanged     = state.type != view.type;
-			const uint32_t logicalWidth    = std::max(1u, view.output.width);
-			const uint32_t logicalHeight   = std::max(1u, view.output.height);
-			const bool allowGrowOnlyReuse  =
+			auto&          state = mViewStates[view.viewKey];
+			const bool     typeChanged = state.type != view.type;
+			const uint32_t logicalWidth = std::max(1u, view.output.width);
+			const uint32_t logicalHeight = std::max(1u, view.output.height);
+			const bool     allowGrowOnlyReuse =
 				view.type == RENDER_VIEW_TYPE::SCENE &&
 				view.output.exposeToUi &&
 				!view.output.presentToSwapChain &&
@@ -172,15 +169,16 @@ namespace Unnamed::Render {
 					                                      logicalHeight,
 					                                      std::max(
 						                                      1u,
-						                                      view.sceneViewMode.
+						                                      view.sceneViewMode
+						                                      .
 						                                      allocationHintHeight
 					                                      )
 				                                      ) :
 				                                      logicalHeight;
 
-			state.type         = view.type;
-			state.output       = view.output;
-			state.logicalWidth = logicalWidth;
+			state.type          = view.type;
+			state.output        = view.output;
+			state.logicalWidth  = logicalWidth;
 			state.logicalHeight = logicalHeight;
 
 			uint32_t desiredAllocatedWidth  = logicalWidth;
@@ -231,9 +229,7 @@ namespace Unnamed::Render {
 			if (!activeViewKeys.contains(it->first)) {
 				ReleaseViewRuntimeTextures(renderDevice, it->second);
 				it = mViewStates.erase(it);
-			} else {
-				++it;
-			}
+			} else { ++it; }
 		}
 
 		bool requiresSpriteTextures = false;
@@ -243,9 +239,7 @@ namespace Unnamed::Render {
 				!view.worldSprites.empty() ||
 				!view.worldParticles.empty() ||
 				!view.screenSprites.empty()
-			) {
-				requiresSpriteTextures = true;
-			}
+			) { requiresSpriteTextures = true; }
 			for (const auto& s : view.worldBillboards) {
 				if (s.texture.source == SPRITE_TEXTURE_SOURCE::ASSET) {
 					requiresSpriteTextures = true;
@@ -287,9 +281,7 @@ namespace Unnamed::Render {
 					renderDevice, view.skybox.textureAssetId
 				);
 			}
-			if (view.type != RENDER_VIEW_TYPE::SCENE) {
-				continue;
-			}
+			if (view.type != RENDER_VIEW_TYPE::SCENE) { continue; }
 			for (const auto& obj : view.visibleObjects) {
 				if (obj.meshAssetId != kInvalidAssetID) {
 					(void)EnsureMeshResourceLoaded(
@@ -320,9 +312,7 @@ namespace Unnamed::Render {
 			Profiler::ScopeTimer scope(profiler, "Render.GraphExecute");
 			mGraph.Execute(rhi);
 		}
-		if (mUiPlatformRenderCallback) {
-			mUiPlatformRenderCallback();
-		}
+		if (mUiPlatformRenderCallback) { mUiPlatformRenderCallback(); }
 
 		rhi.EndFrame();
 	}
@@ -350,18 +340,14 @@ namespace Unnamed::Render {
 	) const {
 		SceneOutputView view = {};
 		const auto      it   = mViewStates.find(std::string(viewKey));
-		if (it == mViewStates.end()) {
-			return view;
-		}
+		if (it == mViewStates.end()) { return view; }
 
 		view.textureId = it->second.outputTextureId;
-		if (view.textureId == 0) {
-			return view;
-		}
+		if (view.textureId == 0) { return view; }
 
 		const auto& registry =
 			const_cast<RenderDevice&>(renderDevice).GetRegistry();
-		view.srvCpu      = registry.GetSrvCpu(view.textureId);
+		view.srvCpu = registry.GetSrvCpu(view.textureId);
 		view.srvRevision = registry.GetSrvRevision(view.textureId);
 		view.uvMin = Vec2(0.0f, 0.0f);
 		const float safeAllocatedWidth = static_cast<float>(std::max(
@@ -373,13 +359,13 @@ namespace Unnamed::Render {
 		view.uvMax = Vec2(
 			std::clamp(
 				static_cast<float>(std::max(1u, it->second.logicalWidth)) /
-					safeAllocatedWidth,
+				safeAllocatedWidth,
 				0.0f,
 				1.0f
 			),
 			std::clamp(
 				static_cast<float>(std::max(1u, it->second.logicalHeight)) /
-					safeAllocatedHeight,
+				safeAllocatedHeight,
 				0.0f,
 				1.0f
 			)
@@ -389,9 +375,7 @@ namespace Unnamed::Render {
 
 	Vec2 Renderer::GetViewOutputSize(const std::string_view viewKey) const {
 		const auto it = mViewStates.find(std::string(viewKey));
-		if (it == mViewStates.end()) {
-			return Vec2::zero;
-		}
+		if (it == mViewStates.end()) { return Vec2::zero; }
 		return Vec2(
 			static_cast<float>(std::max(1u, it->second.logicalWidth)),
 			static_cast<float>(std::max(1u, it->second.logicalHeight))
@@ -422,9 +406,7 @@ namespace Unnamed::Render {
 			case SCENE_RENDER_MODE::FIXED_ASPECT_16X9: {
 				width  = panelWidth;
 				height = panelHeight;
-				if (width * 9 > height * 16) {
-					width = height * 16 / 9;
-				} else {
+				if (width * 9 > height * 16) { width = height * 16 / 9; } else {
 					height = width * 9 / 16;
 				}
 				break;
@@ -432,9 +414,7 @@ namespace Unnamed::Render {
 			case SCENE_RENDER_MODE::FIXED_ASPECT_4X3: {
 				width  = panelWidth;
 				height = panelHeight;
-				if (width * 3 > height * 4) {
-					width = height * 4 / 3;
-				} else {
+				if (width * 3 > height * 4) { width = height * 4 / 3; } else {
 					height = width * 3 / 4;
 				}
 				break;
@@ -460,12 +440,8 @@ namespace Unnamed::Render {
 		width  = std::clamp(width, 2u, 8192u);
 		height = std::clamp(height, 2u, 8192u);
 
-		if ((width & 1u) != 0u) {
-			--width;
-		}
-		if ((height & 1u) != 0u) {
-			--height;
-		}
+		if ((width & 1u) != 0u) { --width; }
+		if ((height & 1u) != 0u) { --height; }
 
 		width  = std::max(2u, width);
 		height = std::max(2u, height);
@@ -475,32 +451,32 @@ namespace Unnamed::Render {
 	void Renderer::ResolveRegisteredPipelines(RenderDevice& renderDevice) {
 		mPipelineRegistry.ResolveAll(renderDevice);
 
-		mFullscreenPass.resolved      = mPipelineRegistry.GetGraphics(
+		mFullscreenPass.resolved = mPipelineRegistry.GetGraphics(
 			mFullscreenPass.pipeline
 		);
-		mHdrCopyPass.resolved         = mPipelineRegistry.GetGraphics(
+		mHdrCopyPass.resolved = mPipelineRegistry.GetGraphics(
 			mHdrCopyPass.pipeline
 		);
-		mToneMapPass.resolved         = mPipelineRegistry.GetGraphics(
+		mToneMapPass.resolved = mPipelineRegistry.GetGraphics(
 			mToneMapPass.pipeline
 		);
 		mBloomDownsamplePass.resolved = mPipelineRegistry.GetGraphics(
 			mBloomDownsamplePass.pipeline
 		);
-		mBloomUpsamplePass.resolved   = mPipelineRegistry.GetGraphics(
+		mBloomUpsamplePass.resolved = mPipelineRegistry.GetGraphics(
 			mBloomUpsamplePass.pipeline
 		);
-		mBloomCombinePass.resolved    = mPipelineRegistry.GetGraphics(
+		mBloomCombinePass.resolved = mPipelineRegistry.GetGraphics(
 			mBloomCombinePass.pipeline
 		);
-		mDepthVisPass.resolved        = mPipelineRegistry.GetGraphics(
+		mDepthVisPass.resolved = mPipelineRegistry.GetGraphics(
 			mDepthVisPass.pipeline
 		);
-		mComputePass.resolved         = mPipelineRegistry.GetCompute(
+		mComputePass.resolved = mPipelineRegistry.GetCompute(
 			mComputePass.pipeline
 		);
 
-		mGeometryPass.resolved        = mPipelineRegistry.GetGraphics(
+		mGeometryPass.resolved = mPipelineRegistry.GetGraphics(
 			mGeometryPass.pipeline
 		);
 		mSkyboxPass.geom.resolved = mPipelineRegistry.GetGraphics(
@@ -514,6 +490,9 @@ namespace Unnamed::Render {
 		);
 		mBillboardPass.frontGeom.resolved = mPipelineRegistry.GetGraphics(
 			mBillboardPass.frontGeom.pipeline
+		);
+		mPortalPass.resolved = mPipelineRegistry.GetGraphics(
+			mPortalPass.pipeline
 		);
 		for (size_t i = 0; i < ParticlePassRes::kBlendModeCount; ++i) {
 			mParticlePass.depthGeom[i].resolved = mPipelineRegistry.GetGraphics(
@@ -608,12 +587,8 @@ namespace Unnamed::Render {
 	void Renderer::UploadDebugLinesForFrame() {
 		mLinePass.frameVertexCount = 0;
 		if (mLinePass.dynamicVb.Get() == nullptr || mLinePass.mappedVertices ==
-		    nullptr) {
-			return;
-		}
-		if (mFrameDebugLines.empty()) {
-			return;
-		}
+		    nullptr) { return; }
+		if (mFrameDebugLines.empty()) { return; }
 
 		const size_t requestedLines = mFrameDebugLines.size();
 		if (requestedLines > kMaxDebugLines) {

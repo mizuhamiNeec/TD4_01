@@ -473,85 +473,6 @@ namespace Unnamed {
 			return view;
 		};
 
-		auto SyncPortalViewsToSceneCamera = [this](
-			const Render::RenderCameraInput& sceneCamera,
-			std::vector<Render::RenderViewInput>& views
-		) {
-			if (!sceneCamera.valid) {
-				return;
-			}
-			const Scene* scene = mEditorWorld.GetActiveScene();
-			if (!scene) {
-				return;
-			}
-
-			const Mat4 mainCamMat = sceneCamera.view.Inverse();
-			for (const auto& entity : scene->GetEntities()) {
-				if (!entity || !entity->IsActive() || !entity->IsVisible()) {
-					continue;
-				}
-
-				const auto* portal = entity->GetComponent<PortalComponent>();
-				const auto* transform = entity->GetComponent<TransformComponent>();
-				if (!portal || !transform) {
-					continue;
-				}
-
-				const uint64_t exitGuid = portal->GetExitEntityGuid();
-				if (exitGuid == 0) {
-					continue;
-				}
-
-				const Entity* exitEntity = scene->FindEntity(exitGuid);
-				if (!exitEntity) {
-					continue;
-				}
-
-				const auto* exitTransform =
-					exitEntity->GetComponent<TransformComponent>();
-				if (!exitTransform) {
-					continue;
-				}
-
-				const std::string portalViewKey =
-					std::string("portal.") + std::to_string(entity->GetGuid());
-				auto viewIt = std::find_if(
-					views.begin(),
-					views.end(),
-					[&portalViewKey](const Render::RenderViewInput& view) {
-						return view.viewKey == portalViewKey;
-					}
-				);
-				if (viewIt == views.end()) {
-					continue;
-				}
-
-				Mat4 entryMat = transform->RenderWorldMat();
-				Mat4 exitMat = exitTransform->RenderWorldMat();
-				Mat4 entryLocalCamMat = mainCamMat * entryMat.Inverse();
-				Mat4 portalCamWorld = entryLocalCamMat * exitMat;
-
-				viewIt->camera = sceneCamera;
-				viewIt->camera.view = portalCamWorld.Inverse();
-				viewIt->camera.cameraPos = portalCamWorld.GetTranslate();
-				viewIt->camera.viewProj =
-					viewIt->camera.view * viewIt->camera.proj;
-				const Vec3 exitRight = exitMat.GetRight().Normalized();
-				const Vec3 exitUp = exitMat.GetUp().Normalized();
-				const Vec3 exitNormal = exitRight.Cross(exitUp).Normalized();
-				const Vec3 clipNormal = exitNormal * -1.0f;
-				const Vec3 clipPoint = exitMat.GetTranslate();
-				viewIt->camera.useClipPlane = true;
-				viewIt->camera.clipPlane = Vec4(
-					clipNormal.x,
-					clipNormal.y,
-					clipNormal.z,
-					-clipNormal.Dot(clipPoint)
-				);
-				viewIt->enablePostFx = false;
-			}
-		};
-
 		std::vector<Render::RenderViewInput> composedViews;
 		composedViews.reserve(8 + preservedViews.size());
 		composedViews.insert(
@@ -579,10 +500,133 @@ namespace Unnamed {
 			true,
 			mPresentMode == EDITOR_PRESENT_MODE::FULLSCREEN_SWAP_CHAIN
 		);
-		SyncPortalViewsToSceneCamera(perspectiveView.camera, composedViews);
+		RebuildPortalViewsForEditorScene(
+			perspectiveView.camera,
+			perspectiveView,
+			composedViews
+		);
 		composedViews.emplace_back(std::move(perspectiveView));
 
 		inputs.views = std::move(composedViews);
+	}
+
+	void LevelEditorTool::RebuildPortalViewsForEditorScene(
+		const Render::RenderCameraInput&      sceneCamera,
+		Render::RenderViewInput&              sceneView,
+		std::vector<Render::RenderViewInput>& views
+	) const {
+		// 毎フレーム再構成して、ポータルの追加/削除やカメラ変更を確実に反映する。
+		sceneView.portals.clear();
+		views.erase(
+			std::remove_if(
+				views.begin(),
+				views.end(),
+				[](const Render::RenderViewInput& view) {
+					return view.type == Render::RENDER_VIEW_TYPE::SCENE &&
+					       view.viewKey.starts_with("portal.");
+				}
+			),
+			views.end()
+		);
+
+		if (!sceneCamera.valid) {
+			return;
+		}
+
+		const Scene* scene = mEditorWorld.GetActiveScene();
+		if (!scene) {
+			return;
+		}
+
+		const Mat4 mainCamMat = sceneCamera.view.Inverse();
+		for (const auto& entity : scene->GetEntities()) {
+			if (!entity || !entity->IsActive() || !entity->IsVisible()) {
+				continue;
+			}
+
+			const auto* portal = entity->GetComponent<PortalComponent>();
+			const auto* transform = entity->GetComponent<TransformComponent>();
+			if (!portal || !transform) {
+				continue;
+			}
+
+			const uint64_t exitGuid = portal->GetExitEntityGuid();
+			if (exitGuid == 0) {
+				continue;
+			}
+
+			const Entity* exitEntity = scene->FindEntity(exitGuid);
+			if (!exitEntity) {
+				continue;
+			}
+
+			const auto* exitTransform =
+				exitEntity->GetComponent<TransformComponent>();
+			if (!exitTransform) {
+				continue;
+			}
+
+			const std::string portalViewKey =
+				std::string("portal.") + std::to_string(entity->GetGuid());
+
+			Mat4 entryMat = transform->RenderWorldMat();
+			Mat4 exitMat  = exitTransform->RenderWorldMat();
+
+			const Vec3 entryRight = entryMat.GetRight().Normalized();
+			const Vec3 entryUp    = entryMat.GetUp().Normalized();
+			const Vec3 entryNormal = entryRight.Cross(entryUp).Normalized();
+			const Vec3 entryPos =
+				entryMat.GetTranslate();
+
+			Render::PortalRenderInput portalSurface = {};
+			portalSurface.viewKey                   = portalViewKey;
+			portalSurface.worldPosition             = entryPos;
+			portalSurface.worldRight                = entryRight;
+			portalSurface.worldUp                   = entryUp;
+			portalSurface.sizeWorld                 = portal->GetSize();
+			portalSurface.sortKey                   = -1000;
+			sceneView.portals.emplace_back(std::move(portalSurface));
+
+			Render::RenderViewInput portalCamView = {};
+			portalCamView.viewKey                 = portalViewKey;
+			portalCamView.type                    = Render::RENDER_VIEW_TYPE::SCENE;
+			portalCamView.output.sizeMode =
+				Render::RENDER_VIEW_SIZE_MODE::MATCH_BACK_BUFFER;
+			portalCamView.output.presentToSwapChain = false;
+			portalCamView.output.clearSwapChainWhenNotPresenting = true;
+			portalCamView.output.exposeToUi = false;
+			portalCamView.sceneViewMode.mode = Render::SCENE_RENDER_MODE::FIT_VIEWPORT;
+			portalCamView.sceneViewMode.preferRealtimeResize = true;
+			portalCamView.sceneViewMode.viewportPanelWidth = 0;
+			portalCamView.sceneViewMode.viewportPanelHeight = 0;
+
+			Mat4 entryLocalCamMat = mainCamMat * entryMat.Inverse();
+			Mat4 portalCamWorld   = entryLocalCamMat * exitMat;
+
+			portalCamView.camera = sceneCamera;
+			portalCamView.camera.view = portalCamWorld.Inverse();
+			portalCamView.camera.cameraPos = portalCamWorld.GetTranslate();
+			portalCamView.camera.viewProj =
+				portalCamView.camera.view * portalCamView.camera.proj;
+
+			const Vec3 exitRight = exitMat.GetRight().Normalized();
+			const Vec3 exitUp = exitMat.GetUp().Normalized();
+			const Vec3 exitNormal = exitRight.Cross(exitUp).Normalized();
+			const Vec3 clipNormal = exitNormal * -1.0f;
+			const Vec3 clipPoint = exitMat.GetTranslate();
+			portalCamView.camera.useClipPlane = true;
+			portalCamView.camera.clipPlane = Vec4(
+				clipNormal.x,
+				clipNormal.y,
+				clipNormal.z,
+				-clipNormal.Dot(clipPoint)
+			);
+			portalCamView.enablePostFx = false;
+			portalCamView.visibleObjects = sceneView.visibleObjects;
+			portalCamView.skybox = sceneView.skybox;
+
+			views.emplace_back(std::move(portalCamView));
+		}
 	}
 
 	void LevelEditorTool::EnumerateViewKeys(

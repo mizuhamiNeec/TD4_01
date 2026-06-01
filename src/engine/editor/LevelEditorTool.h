@@ -141,6 +141,15 @@ namespace Unnamed {
 		[[nodiscard]] ViewportCameraBinding ResolveViewportBinding(
 			std::string_view viewKey
 		) const;
+		/// @brief エディタシーン向けにポータル面とポータル描画ビューを再構築します。
+		/// @param sceneCamera ビューポート描画に使用する基準カメラ
+		/// @param sceneView ポータル面を追加するシーンビュー
+		/// @param views ポータル描画ビューを保持するビュー配列
+		void RebuildPortalViewsForEditorScene(
+			const Render::RenderCameraInput&   sceneCamera,
+			Render::RenderViewInput&           sceneView,
+			std::vector<Render::RenderViewInput>& views
+		) const;
 
 		std::unique_ptr<EditorWorld> mOwnedEditorWorld;
 		EditorWorld&                 mEditorWorld;

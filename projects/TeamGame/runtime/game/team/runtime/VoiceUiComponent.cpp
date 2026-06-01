@@ -46,6 +46,7 @@ void MyGame::VoiceUiComponent::OnRenderTick(
 		return;
 	}
 
+	// UI全体の基準位置を画面内に収める
 	Vec2 basePosition = _position;
 	if (auto* inputSystem = GetInputSystem()) {
 		const Vec2 viewportSize = inputSystem->GetMouseClientViewportSize();
@@ -58,6 +59,7 @@ void MyGame::VoiceUiComponent::OnRenderTick(
 	const int32_t barCount = std::max(1, _barCount);
 	const int32_t activeBarCount = GetActiveBarCount(mic->GetVolumePercentage());
 
+	// 画像パスと位置を渡して、画面スプライトを1枚積む
 	auto queueSprite = [&](const std::string& texturePath, const Vec2& position,
 	                       const Vec2& size, int32_t sortKey) {
 		if (texturePath.empty()) {
@@ -82,11 +84,13 @@ void MyGame::VoiceUiComponent::OnRenderTick(
 		world->QueueDebugScreenSprite(std::move(sprite));
 	};
 
+	// まず全てのバーを灰色で描画する
 	for (int32_t i = 0; i < barCount; ++i) {
 		const Vec2 barPosition = basePosition + Vec2(0.0f, _barStepY * i);
 		queueSprite(_levelTexturePaths[0], barPosition, _barSize, _sortKey);
 	}
 
+	// 音量に応じて下から順に色付きバーを重ねる
 	for (int32_t i = 0; i < activeBarCount; ++i) {
 		const int32_t barIndexFromTop = barCount - 1 - i;
 		const Vec2 barPosition =
@@ -94,6 +98,7 @@ void MyGame::VoiceUiComponent::OnRenderTick(
 		queueSprite(GetActiveBarTexturePath(i), barPosition, _barSize, _sortKey + 1);
 	}
 
+	// メーター下部の穴画像を描画する
 	queueSprite(
 		_holeTexturePath,
 		basePosition + Vec2(0.0f, _holeOffsetY),
@@ -270,6 +275,7 @@ void MyGame::VoiceUiComponent::Serialize(Unnamed::JsonWriter& writer) const {
 }
 
 MyGame::MicComponent* MyGame::VoiceUiComponent::ResolveMicComponent() const {
+	// 同じEntityにMicComponentがある場合はそれを優先する
 	if (auto* owner = GetOwner()) {
 		if (auto* mic = owner->GetComponent<MicComponent>()) {
 			return mic;
@@ -281,6 +287,7 @@ MyGame::MicComponent* MyGame::VoiceUiComponent::ResolveMicComponent() const {
 		return nullptr;
 	}
 
+	// GUIDが指定されている場合は、そのEntityからMicComponentを探す
 	if (_micEntityGuid != 0) {
 		if (auto* entity = scene->FindEntity(_micEntityGuid)) {
 			if (auto* mic = entity->GetComponent<MicComponent>()) {
@@ -289,6 +296,7 @@ MyGame::MicComponent* MyGame::VoiceUiComponent::ResolveMicComponent() const {
 		}
 	}
 
+	// タグが指定されている場合は、最初に見つかったEntityからMicComponentを探す
 	if (!_micEntityTag.empty()) {
 		if (auto* entity = scene->FindFirstEntityByTag(_micEntityTag)) {
 			if (auto* mic = entity->GetComponent<MicComponent>()) {
@@ -297,6 +305,7 @@ MyGame::MicComponent* MyGame::VoiceUiComponent::ResolveMicComponent() const {
 		}
 	}
 
+	// 指定がない場合は、シーン内で最初に見つかったMicComponentを使う
 	for (const auto& entityPtr : scene->GetEntities()) {
 		if (!entityPtr || !entityPtr->IsActive()) {
 			continue;
@@ -310,6 +319,7 @@ MyGame::MicComponent* MyGame::VoiceUiComponent::ResolveMicComponent() const {
 }
 
 int32_t MyGame::VoiceUiComponent::GetActiveBarCount(float percentage) const {
+	// 0～100% を 0～バー本数 に変換する
 	const float clampedPercentage = std::clamp(percentage, 0.0f, 100.0f);
 	const int32_t barCount = std::max(1, _barCount);
 	return std::clamp(
@@ -322,6 +332,7 @@ int32_t MyGame::VoiceUiComponent::GetActiveBarCount(float percentage) const {
 const std::string& MyGame::VoiceUiComponent::GetActiveBarTexturePath(
 	int32_t activeIndex
 ) const {
+	// 下3本は緑、中3本はオレンジ、それより上は赤にする
 	if (activeIndex >= 6) {
 		return _levelTexturePaths[3];
 	}
@@ -332,6 +343,7 @@ const std::string& MyGame::VoiceUiComponent::GetActiveBarTexturePath(
 }
 
 void MyGame::VoiceUiComponent::EnsureMicStarted() {
+	// MicComponentをUI表示用に一度だけ開始する
 	if (!_autoStartMic || _micStartRequested) {
 		return;
 	}

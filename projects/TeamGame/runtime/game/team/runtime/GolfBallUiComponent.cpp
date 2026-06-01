@@ -239,6 +239,7 @@ Unnamed::Entity* MyGame::GolfBallUiComponent::ResolveTargetEntity() const {
 		owner->HasTag(_targetTag) &&
 		owner->GetComponent<Unnamed::TransformComponent>()
 	) {
+		// ボール自身にこのコンポーネントが付いている場合は、自分を追従対象にする。
 		return owner;
 	}
 
@@ -249,6 +250,7 @@ Unnamed::Entity* MyGame::GolfBallUiComponent::ResolveTargetEntity() const {
 	}
 
 	if (!_targetTag.empty()) {
+		// UI用エンティティなど別の場所に付いている場合は、タグからボールを探す。
 		if (auto* entity = scene->FindFirstEntityByTag(_targetTag)) {
 			return entity;
 		}
@@ -275,6 +277,7 @@ bool MyGame::GolfBallUiComponent::ProjectWorldToScreen(
 		return false;
 	}
 
+	// カメラのローカル軸に対するボール位置を使い、見た目の上下左右と一致する投影を行う。
 	const Mat4 cameraWorld = camera.view.Inverse();
 	const Vec3 toTarget = worldPosition - camera.cameraPos;
 	const float cameraX = toTarget.Dot(cameraWorld.GetRight().Normalized());
@@ -288,6 +291,7 @@ bool MyGame::GolfBallUiComponent::ProjectWorldToScreen(
 	const float ndcX = cameraX * camera.proj.m[0][0] / depth;
 	const float ndcY = cameraY * camera.proj.m[1][1] / depth;
 
+	// NDC(-1..1)からスクリーン座標へ変換する。Yは画面上が0なので反転する。
 	outProjection.position = Vec2(
 		(ndcX * 0.5f + 0.5f) * viewportSize.x,
 		(0.5f - ndcY * 0.5f) * viewportSize.y
@@ -312,6 +316,7 @@ Vec2 MyGame::GolfBallUiComponent::ClampToScreenEdge(
 	const float maxX = std::max(minX, viewportSize.x - minX);
 	const float maxY = std::max(minY, viewportSize.y - minY);
 
+	// 画面外の投影位置からスクリーン矩形への最近点に置く。
 	return Vec2(
 		std::clamp(screenPosition.x, minX, maxX),
 		std::clamp(screenPosition.y, minY, maxY)

@@ -24,7 +24,7 @@
                             1.0
                         ]
                     },
-                    "guid": 0,
+                    "guid": 9539539694668690619,
                     "type": "engine.Transform"
                 },
                 {
@@ -44,17 +44,165 @@
                             1.125
                         ]
                     },
-                    "guid": 0,
+                    "guid": 11384499848964147458,
                     "type": "engine.UiCanvas"
                 }
             ],
-            "folderPath": "",
+            "folderPath": "UserInterface",
             "guid": 1,
             "isEditorOnly": false,
-            "name": "UI",
+            "name": "TitleUI",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 4,
+                        "position": [
+                            0.0,
+                            128.0,
+                            -200.0
+                        ],
+                        "rotation": [
+                            0.3420201539993286,
+                            0.0,
+                            0.0,
+                            0.9396926760673523
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 16113344809480500619,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "cameraActive": true,
+                        "exposureEv": 3.0,
+                        "farZ": 10000.0,
+                        "fovYDegrees": 90.0,
+                        "nearZ": 0.009999999776482582
+                    },
+                    "guid": 10208822162515783466,
+                    "type": "game.Camera"
+                }
+            ],
+            "folderPath": "",
+            "guid": 2,
+            "isEditorOnly": false,
+            "name": "Camera",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 16745604129135200734,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/ground.matinst.json",
+                                "slotIndex": 0
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/stage.obj"
+                    },
+                    "guid": 9836226352735457533,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "Environment",
+            "guid": 3,
+            "isEditorOnly": false,
+            "name": "Stage",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 13309069979542578761,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "rotationSpeed": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.Rotator"
+                }
+            ],
+            "folderPath": "",
+            "guid": 4,
+            "isEditorOnly": false,
+            "name": "Entity",
+            "tags": [],
             "visible": true
         }
     ],
-    "folders": [],
+    "folders": [
+        "Environment",
+        "UserInterface"
+    ],
     "version": 1
 }

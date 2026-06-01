@@ -9,6 +9,12 @@
 #include "engine/world/World.h"
 
 namespace Unnamed {
+	TeamGameModule::~TeamGameModule() {
+		// 静的参照が破棄済みインスタンスを指さないよう、所有側の破棄前に切り離す。
+		SetGlobalMagVoiceBridge(nullptr);
+		voiceBridge_.reset();
+	}
+
 	void TeamGameModule::Initialize(EngineServices& services) {
 		(void)services;
 
@@ -18,9 +24,13 @@ namespace Unnamed {
 	}
 
 	void TeamGameModule::InitializeMagVoiceBridge() {
+		if (voiceBridge_) {
+			return;
+		}
+
 		// NOTE: VoiceShockWaveComponent の静的メンバを初期化
 		// VoiceShockWaveComponent が使用する _voiceBridgeInstance を作成
-		MagVoiceBridge* voiceBridge = new MagVoiceBridge();
+		auto voiceBridge = std::make_unique<MagVoiceBridge>();
 		
 		if (voiceBridge) {
 			bool initSuccess = voiceBridge->Initialize();
@@ -38,18 +48,17 @@ namespace Unnamed {
 					OutputDebugStringA("[TeamGameModule] Audio capture is now active\n");
 					#endif
 					// NOTE: VoiceShockWaveComponent に MagVoiceBridge を設定
-					SetGlobalMagVoiceBridge(voiceBridge);
+					SetGlobalMagVoiceBridge(voiceBridge.get());
+					voiceBridge_ = std::move(voiceBridge);
 				} else {
 					#ifdef _DEBUG
 					OutputDebugStringA("[TeamGameModule] ✗ ERROR: Failed to start MagVoiceBridge\n");
 					#endif
-					delete voiceBridge;
 				}
 			} else {
 				#ifdef _DEBUG
 				OutputDebugStringA("[TeamGameModule] ✗ ERROR: Failed to initialize MagVoiceBridge\n");
 				#endif
-				delete voiceBridge;
 			}
 		}
 	}

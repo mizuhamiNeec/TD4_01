@@ -102,9 +102,29 @@ namespace MyGame {
 		if (_bIsBeingSucked) {
 			Vec3 directionToHole = _holeSuckPosition - _position;
 			_bIsInsideHole = (directionToHole.Length() < 1.5f);
-			UpdateHoleSuck(deltaTime);
 		} else {
 			_bIsInsideHole = false;
+		}
+
+		if (_bIsBeingSucked) {
+			UpdateHoleSuck(deltaTime);
+			_position += _velocity * deltaTime;
+			ClampVelocity();
+
+			auto* transform = GetOwner()->GetComponent<Unnamed::TransformComponent>();
+			if (transform) {
+				transform->SetPosition(_position);
+				transform->RequestInterpolationResync();
+
+				GetWorld()->GetDebugDraw().DrawSphere(
+					transform->GetPosition(),
+					transform->GetRotation(),
+					_radius,
+					Vec4::cyan,
+					16
+				);
+			}
+			return;
 		}
 
 		// -----------------------------------------------------------------------

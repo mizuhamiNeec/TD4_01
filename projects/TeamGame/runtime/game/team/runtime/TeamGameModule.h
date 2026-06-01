@@ -2,6 +2,8 @@
 
 #include "engine/game/IGameModule.h"
 
+#include <memory>
+
 // 前方宣言
 class MagVoiceBridge;
 
@@ -9,6 +11,8 @@ namespace Unnamed {
 	/// @brief TeamGame 向けの最小 GameModule 実装です。
 	class TeamGameModule final : public IGameModule {
 	public:
+		~TeamGameModule() override;
+
 		/// @brief モジュールを初期化します。
 		void Initialize(EngineServices& services) override;
 		/// @brief Standalone 向けランタイムワールドを生成します。
@@ -36,6 +40,9 @@ namespace Unnamed {
 
 		/// @brief グローバルな MagVoiceBridge インスタンスを設定
 		void SetGlobalMagVoiceBridge(MagVoiceBridge* bridge);
+
+		/// @brief VoiceShockWaveComponent と共有する音声入力の所有権
+		std::unique_ptr<MagVoiceBridge> voiceBridge_;
 	};
 
 	/// @brief TeamGame GameModule を生成します。

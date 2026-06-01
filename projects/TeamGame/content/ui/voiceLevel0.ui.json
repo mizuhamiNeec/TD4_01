@@ -1,0 +1,738 @@
+{
+    "name": "ui/voiceLevel0.ui.json",
+    "root": {
+        "children": [
+            {
+                "children": [
+                    {
+                        "children": [],
+                        "components": [
+                            {
+                                "data": {
+                                    "anchors": [
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "constraints": {
+                                        "maxHeight": 3.4028234663852886e+38,
+                                        "maxWidth": 3.4028234663852886e+38,
+                                        "minHeight": 0.0,
+                                        "minWidth": 0.0
+                                    },
+                                    "margins": [
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "pivot": [
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "rect": [
+                                        0.0,
+                                        0.0,
+                                        256.0,
+                                        64.0
+                                    ],
+                                    "sizePolicy": [
+                                        "Fixed",
+                                        "Fixed"
+                                    ]
+                                },
+                                "type": "Transform"
+                            },
+                            {
+                                "data": {
+                                    "anchor": [
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "color": [
+                                        1.0,
+                                        1.0,
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "rotationRad": 0.0,
+                                    "texturePath": "projects/TeamGame/content/textures/UI/voice/voiceUI_Level0.png",
+                                    "uvMax": [
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "uvMin": [
+                                        0.0,
+                                        0.0
+                                    ]
+                                },
+                                "type": "Texture"
+                            }
+                        ],
+                        "enabled": true,
+                        "name": "Widget",
+                        "visible": true
+                    },
+                    {
+                        "children": [],
+                        "components": [
+                            {
+                                "data": {
+                                    "anchors": [
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "constraints": {
+                                        "maxHeight": 3.4028234663852886e+38,
+                                        "maxWidth": 3.4028234663852886e+38,
+                                        "minHeight": 0.0,
+                                        "minWidth": 0.0
+                                    },
+                                    "margins": [
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "pivot": [
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "rect": [
+                                        0.0,
+                                        64.0,
+                                        256.0,
+                                        64.0
+                                    ],
+                                    "sizePolicy": [
+                                        "Fixed",
+                                        "Fixed"
+                                    ]
+                                },
+                                "type": "Transform"
+                            },
+                            {
+                                "data": {
+                                    "anchor": [
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "color": [
+                                        1.0,
+                                        1.0,
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "rotationRad": 0.0,
+                                    "texturePath": "projects/TeamGame/content/textures/UI/voice/voiceUI_Level0.png",
+                                    "uvMax": [
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "uvMin": [
+                                        0.0,
+                                        0.0
+                                    ]
+                                },
+                                "type": "Texture"
+                            }
+                        ],
+                        "enabled": true,
+                        "name": "Panel",
+                        "visible": true
+                    },
+                    {
+                        "children": [],
+                        "components": [
+                            {
+                                "data": {
+                                    "anchors": [
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "constraints": {
+                                        "maxHeight": 3.4028234663852886e+38,
+                                        "maxWidth": 3.4028234663852886e+38,
+                                        "minHeight": 0.0,
+                                        "minWidth": 0.0
+                                    },
+                                    "margins": [
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "pivot": [
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "rect": [
+                                        0.0,
+                                        128.0,
+                                        256.0,
+                                        64.0
+                                    ],
+                                    "sizePolicy": [
+                                        "Fixed",
+                                        "Fixed"
+                                    ]
+                                },
+                                "type": "Transform"
+                            },
+                            {
+                                "data": {
+                                    "anchor": [
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "color": [
+                                        1.0,
+                                        1.0,
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "rotationRad": 0.0,
+                                    "texturePath": "projects/TeamGame/content/textures/UI/voice/voiceUI_Level0.png",
+                                    "uvMax": [
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "uvMin": [
+                                        0.0,
+                                        0.0
+                                    ]
+                                },
+                                "type": "Texture"
+                            }
+                        ],
+                        "enabled": true,
+                        "name": "Panel",
+                        "visible": true
+                    },
+                    {
+                        "children": [],
+                        "components": [
+                            {
+                                "data": {
+                                    "anchors": [
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "constraints": {
+                                        "maxHeight": 3.4028234663852886e+38,
+                                        "maxWidth": 3.4028234663852886e+38,
+                                        "minHeight": 0.0,
+                                        "minWidth": 0.0
+                                    },
+                                    "margins": [
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "pivot": [
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "rect": [
+                                        0.0,
+                                        192.0,
+                                        256.0,
+                                        64.0
+                                    ],
+                                    "sizePolicy": [
+                                        "Fixed",
+                                        "Fixed"
+                                    ]
+                                },
+                                "type": "Transform"
+                            },
+                            {
+                                "data": {
+                                    "anchor": [
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "color": [
+                                        1.0,
+                                        1.0,
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "rotationRad": 0.0,
+                                    "texturePath": "projects/TeamGame/content/textures/UI/voice/voiceUI_Level0.png",
+                                    "uvMax": [
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "uvMin": [
+                                        0.0,
+                                        0.0
+                                    ]
+                                },
+                                "type": "Texture"
+                            }
+                        ],
+                        "enabled": true,
+                        "name": "Panel",
+                        "visible": true
+                    },
+                    {
+                        "children": [],
+                        "components": [
+                            {
+                                "data": {
+                                    "anchors": [
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "constraints": {
+                                        "maxHeight": 3.4028234663852886e+38,
+                                        "maxWidth": 3.4028234663852886e+38,
+                                        "minHeight": 0.0,
+                                        "minWidth": 0.0
+                                    },
+                                    "margins": [
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "pivot": [
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "rect": [
+                                        0.0,
+                                        256.0,
+                                        256.0,
+                                        64.0
+                                    ],
+                                    "sizePolicy": [
+                                        "Fixed",
+                                        "Fixed"
+                                    ]
+                                },
+                                "type": "Transform"
+                            },
+                            {
+                                "data": {
+                                    "anchor": [
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "color": [
+                                        1.0,
+                                        1.0,
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "rotationRad": 0.0,
+                                    "texturePath": "projects/TeamGame/content/textures/UI/voice/voiceUI_Level0.png",
+                                    "uvMax": [
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "uvMin": [
+                                        0.0,
+                                        0.0
+                                    ]
+                                },
+                                "type": "Texture"
+                            }
+                        ],
+                        "enabled": true,
+                        "name": "Widget",
+                        "visible": true
+                    },
+                    {
+                        "children": [],
+                        "components": [
+                            {
+                                "data": {
+                                    "anchors": [
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "constraints": {
+                                        "maxHeight": 3.4028234663852886e+38,
+                                        "maxWidth": 3.4028234663852886e+38,
+                                        "minHeight": 0.0,
+                                        "minWidth": 0.0
+                                    },
+                                    "margins": [
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "pivot": [
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "rect": [
+                                        0.0,
+                                        320.0,
+                                        256.0,
+                                        64.0
+                                    ],
+                                    "sizePolicy": [
+                                        "Fixed",
+                                        "Fixed"
+                                    ]
+                                },
+                                "type": "Transform"
+                            },
+                            {
+                                "data": {
+                                    "anchor": [
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "color": [
+                                        1.0,
+                                        1.0,
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "rotationRad": 0.0,
+                                    "texturePath": "projects/TeamGame/content/textures/UI/voice/voiceUI_Level0.png",
+                                    "uvMax": [
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "uvMin": [
+                                        0.0,
+                                        0.0
+                                    ]
+                                },
+                                "type": "Texture"
+                            }
+                        ],
+                        "enabled": true,
+                        "name": "Widget",
+                        "visible": true
+                    },
+                    {
+                        "children": [],
+                        "components": [
+                            {
+                                "data": {
+                                    "anchors": [
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "constraints": {
+                                        "maxHeight": 3.4028234663852886e+38,
+                                        "maxWidth": 3.4028234663852886e+38,
+                                        "minHeight": 0.0,
+                                        "minWidth": 0.0
+                                    },
+                                    "margins": [
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "pivot": [
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "rect": [
+                                        0.0,
+                                        384.0,
+                                        256.0,
+                                        64.0
+                                    ],
+                                    "sizePolicy": [
+                                        "Fixed",
+                                        "Fixed"
+                                    ]
+                                },
+                                "type": "Transform"
+                            },
+                            {
+                                "data": {
+                                    "anchor": [
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "color": [
+                                        1.0,
+                                        1.0,
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "rotationRad": 0.0,
+                                    "texturePath": "projects/TeamGame/content/textures/UI/voice/voiceUI_Level0.png",
+                                    "uvMax": [
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "uvMin": [
+                                        0.0,
+                                        0.0
+                                    ]
+                                },
+                                "type": "Texture"
+                            }
+                        ],
+                        "enabled": true,
+                        "name": "Widget",
+                        "visible": true
+                    },
+                    {
+                        "children": [],
+                        "components": [
+                            {
+                                "data": {
+                                    "anchors": [
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "constraints": {
+                                        "maxHeight": 3.4028234663852886e+38,
+                                        "maxWidth": 3.4028234663852886e+38,
+                                        "minHeight": 0.0,
+                                        "minWidth": 0.0
+                                    },
+                                    "margins": [
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "pivot": [
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "rect": [
+                                        0.0,
+                                        448.0,
+                                        256.0,
+                                        64.0
+                                    ],
+                                    "sizePolicy": [
+                                        "Fixed",
+                                        "Fixed"
+                                    ]
+                                },
+                                "type": "Transform"
+                            },
+                            {
+                                "data": {
+                                    "anchor": [
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "color": [
+                                        1.0,
+                                        1.0,
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "rotationRad": 0.0,
+                                    "texturePath": "projects/TeamGame/content/textures/UI/voice/voiceUI_Level0.png",
+                                    "uvMax": [
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "uvMin": [
+                                        0.0,
+                                        0.0
+                                    ]
+                                },
+                                "type": "Texture"
+                            }
+                        ],
+                        "enabled": true,
+                        "name": "Widget",
+                        "visible": true
+                    },
+                    {
+                        "children": [],
+                        "components": [
+                            {
+                                "data": {
+                                    "anchors": [
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "constraints": {
+                                        "maxHeight": 3.4028234663852886e+38,
+                                        "maxWidth": 3.4028234663852886e+38,
+                                        "minHeight": 0.0,
+                                        "minWidth": 0.0
+                                    },
+                                    "margins": [
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "pivot": [
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "rect": [
+                                        0.0,
+                                        512.0,
+                                        256.0,
+                                        128.0
+                                    ],
+                                    "sizePolicy": [
+                                        "Fixed",
+                                        "Fixed"
+                                    ]
+                                },
+                                "type": "Transform"
+                            },
+                            {
+                                "data": {
+                                    "anchor": [
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "color": [
+                                        1.0,
+                                        1.0,
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "rotationRad": 0.0,
+                                    "texturePath": "projects/TeamGame/content/textures/UI/voice/voiceUI_Hole.png",
+                                    "uvMax": [
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "uvMin": [
+                                        0.0,
+                                        0.0
+                                    ]
+                                },
+                                "type": "Texture"
+                            }
+                        ],
+                        "enabled": true,
+                        "name": "Widget",
+                        "visible": true
+                    }
+                ],
+                "components": [
+                    {
+                        "data": {
+                            "anchors": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "constraints": {
+                                "maxHeight": 3.4028234663852886e+38,
+                                "maxWidth": 3.4028234663852886e+38,
+                                "minHeight": 0.0,
+                                "minWidth": 0.0
+                            },
+                            "margins": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "pivot": [
+                                1.0,
+                                1.0
+                            ],
+                            "rect": [
+                                -16.0,
+                                -16.0,
+                                256.0,
+                                640.0
+                            ],
+                            "sizePolicy": [
+                                "Fixed",
+                                "Expand"
+                            ]
+                        },
+                        "type": "Transform"
+                    },
+                    {
+                        "data": {
+                            "padding": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "spacing": 0.0
+                        },
+                        "type": "VerticalLayout"
+                    }
+                ],
+                "enabled": true,
+                "name": "VerticalLayout",
+                "visible": true
+            }
+        ],
+        "components": [
+            {
+                "data": {
+                    "anchors": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "constraints": {
+                        "maxHeight": 3.4028234663852886e+38,
+                        "maxWidth": 3.4028234663852886e+38,
+                        "minHeight": 0.0,
+                        "minWidth": 0.0
+                    },
+                    "margins": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "pivot": [
+                        0.0,
+                        0.0
+                    ],
+                    "rect": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "sizePolicy": [
+                        "Fixed",
+                        "Fixed"
+                    ]
+                },
+                "type": "Transform"
+            }
+        ],
+        "enabled": true,
+        "name": "RootLayout",
+        "visible": true
+    },
+    "version": 2
+}

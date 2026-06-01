@@ -846,7 +846,16 @@
                 },
                 {
                     "active": true,
-                    "data": {},
+                    "data": {
+                        "scaleByVolumeEnabled": false,
+                        "scaleMultiplier": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ],
+                        "scaleResponsiveness": 0.25,
+                        "scaleTargetEntityGuid": 0
+                    },
                     "guid": 16476393568158639362,
                     "type": "mygame.MicComponent"
                 },
@@ -998,9 +1007,9 @@
                             1.0
                         ],
                         "scale": [
-                            1.0,
-                            1.0,
-                            1.0
+                            4.0,
+                            4.0,
+                            4.0
                         ]
                     },
                     "guid": 11053102599363384673,
@@ -1041,7 +1050,7 @@
                                 "slotIndex": 0
                             }
                         ],
-                        "meshPath": "projects/TeamGame/content/models/tree.obj"
+                        "meshPath": "projects/TeamGame/content/models/trash_bag/trash_bag.obj"
                     },
                     "guid": 11435055239696848149,
                     "type": "engine.StaticMeshRenderer"
@@ -1128,9 +1137,9 @@
                             1.0
                         ],
                         "scale": [
-                            1.0,
-                            1.0,
-                            1.0
+                            0.4000000059604645,
+                            0.4000000059604645,
+                            0.4000000059604645
                         ]
                     },
                     "guid": 10536719816971170562,
@@ -1203,9 +1212,9 @@
                             1.0
                         ],
                         "scale": [
-                            1.0,
-                            1.0,
-                            1.0
+                            0.5,
+                            0.5,
+                            0.5
                         ]
                     },
                     "guid": 10810248179210480823,
@@ -1553,6 +1562,217 @@
             "guid": 67,
             "isEditorOnly": false,
             "name": "PortalExit",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0
+                        ],
+                        "drawWhenOffScreen": true,
+                        "drawWhenOnScreen": false,
+                        "edgePadding": 48.0,
+                        "screenOffset": [
+                            0.0,
+                            0.0
+                        ],
+                        "sortKey": 1000,
+                        "spriteSize": [
+                            96.0,
+                            96.0
+                        ],
+                        "targetEntityGuid": 0,
+                        "targetTag": "Ball",
+                        "texturePath": "projects/TeamGame/content/textures/UI/golfball_Loupe/golfball_Loupe.png"
+                    },
+                    "guid": 0,
+                    "type": "mygame.GolfBallUiComponent"
+                }
+            ],
+            "folderPath": "UserInterface",
+            "guid": 10271558206346713445,
+            "isEditorOnly": false,
+            "name": "GolfBall_UI",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            1250.0,
+                            256.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "anchor": [
+                            0.0,
+                            0.0
+                        ],
+                        "autoStartMic": true,
+                        "barCount": 8,
+                        "barSize": [
+                            256.0,
+                            64.0
+                        ],
+                        "barStepY": 52.0,
+                        "color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0
+                        ],
+                        "holeOffsetY": 384.0,
+                        "holeSize": [
+                            256.0,
+                            128.0
+                        ],
+                        "holeTexturePath": "projects/TeamGame/content/textures/UI/voice/voiceUI_Hole.png",
+                        "level0TexturePath": "projects/TeamGame/content/textures/UI/voice/voiceUI_Level0.png",
+                        "level1TexturePath": "projects/TeamGame/content/textures/UI/voice/voiceUI_Level1.png",
+                        "level2TexturePath": "projects/TeamGame/content/textures/UI/voice/voiceUI_Level2.png",
+                        "level3TexturePath": "projects/TeamGame/content/textures/UI/voice/voiceUI_Level3.png",
+                        "micEntityGuid": 0,
+                        "micEntityTag": "",
+                        "position": [
+                            1250.0,
+                            256.0
+                        ],
+                        "sortKey": 1000
+                    },
+                    "guid": 0,
+                    "type": "mygame.VoiceUiComponent"
+                }
+            ],
+            "folderPath": "UserInterface",
+            "guid": 10271558206346713446,
+            "isEditorOnly": false,
+            "name": "Voice_UI",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "billboardDepthMode": "DepthTest",
+                        "pixelSize": [
+                            1920.0,
+                            1080.0
+                        ],
+                        "receiveInput": true,
+                        "sortKey": 0,
+                        "spaceMode": "Screen",
+                        "uiAssetPath": "projects/TeamGame/content/ui/number_UI_distanceText.ui.json",
+                        "worldSize": [
+                            2.0,
+                            1.125
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.UiCanvas"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "ballEntityGuid": 0,
+                        "ballName": "Ball",
+                        "ballTag": "Ball",
+                        "digitWidgetName": "number_UI",
+                        "distanceScale": 1.0,
+                        "maxDisplayValue": 999,
+                        "playerEntityGuid": 0,
+                        "playerName": "Player",
+                        "playerTag": "",
+                        "uiAssetPath": "projects/TeamGame/content/ui/number_UI_distanceText.ui.json"
+                    },
+                    "guid": 0,
+                    "type": "mygame.Player2BallRangeUIComponent"
+                }
+            ],
+            "folderPath": "UserInterface",
+            "guid": 10271558206346713449,
+            "isEditorOnly": false,
+            "name": "Player2GolfBall_UI",
             "tags": [],
             "visible": true
         }

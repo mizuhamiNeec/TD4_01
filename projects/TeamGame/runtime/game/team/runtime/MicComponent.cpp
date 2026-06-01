@@ -186,15 +186,29 @@ namespace MyGame {
 		if (bIsCapturing_ && voiceBridge_) {
 			voiceBridge_->Update();
 
+			if (!scaleByVolumeEnabled_) {
+				return;
+			}
+
 			// 指定されたエンティティを拡縮する
-			auto* transform =
-				GetScene()->
-				FindEntity(scaleTargetEntityGuid_)->
-				GetComponent<Unnamed::TransformComponent>();
-			
+			Unnamed::TransformComponent* transform = nullptr;
+			if (scaleTargetEntityGuid_ != 0) {
+				if (auto* scene = GetScene()) {
+					if (auto* targetEntity = scene->FindEntity(scaleTargetEntityGuid_)) {
+						transform = targetEntity->GetComponent<Unnamed::TransformComponent>();
+					}
+				}
+			}
+
 			if (!transform) {
 				// 特に指定されていない場合は自分自身のTransformComponentを使用
-				transform = GetOwner()->GetComponent<Unnamed::TransformComponent>();
+				if (auto* owner = GetOwner()) {
+					transform = owner->GetComponent<Unnamed::TransformComponent>();
+				}
+			}
+
+			if (!transform) {
+				return;
 			}
 
 			// TODO: とりあえずここで拡縮を変えているが、
@@ -215,18 +229,13 @@ namespace MyGame {
 	void MicComponent::DrawInspectorImGui() {
 		ImGui::Text("=== Mic Component ===");
 
-		if (
-			ImGui::SliderInt(
-				"Scale Target Entity GUID",
-				reinterpret_cast<int*>(&scaleTargetEntityGuid_),
-				0,
-				std::numeric_limits<uint64_t>::max(),
-				"%llu"
-			)
-		) {
-			// NOTE: GUIDは符号なし整数なので負の値は0にクランプ
-			scaleTargetEntityGuid_ = std::max(0ull, scaleTargetEntityGuid_);
-		}
+		ImGui::Checkbox("Scale By Volume", &scaleByVolumeEnabled_);
+
+		ImGui::InputScalar(
+			"Scale Target Entity GUID",
+			ImGuiDataType_U64,
+			&scaleTargetEntityGuid_
+		);
 
 		ImGui::DragFloat(
 			"Scale Responsiveness", &scaleResponsiveness_, 0.01f, 0.1f, 1.0f
@@ -291,8 +300,40 @@ namespace MyGame {
 		}
 	}
 
-	void MicComponent::Deserialize(const Unnamed::JsonReader&) {}
-	void MicComponent::Serialize(Unnamed::JsonWriter&) const {}
+	void MicComponent::Deserialize(const Unnamed::JsonReader& reader) {
+		if (reader.Has("scaleByVolumeEnabled")) {
+			scaleByVolumeEnabled_ =
+				reader["scaleByVolumeEnabled"].GetBool(scaleByVolumeEnabled_);
+		}
+		if (reader.Has("scaleTargetEntityGuid")) {
+			scaleTargetEntityGuid_ = reader["scaleTargetEntityGuid"].GetUint64();
+		}
+		if (reader.Has("scaleMultiplier")) {
+			scaleMultiplier = reader["scaleMultiplier"].GetVec3(scaleMultiplier);
+		}
+		if (reader.Has("scaleResponsiveness")) {
+			scaleResponsiveness_ =
+				reader["scaleResponsiveness"].GetFloat(scaleResponsiveness_);
+		}
+	}
+
+	void MicComponent::Serialize(Unnamed::JsonWriter& writer) const {
+		writer.Key("scaleByVolumeEnabled");
+		writer.Write(scaleByVolumeEnabled_);
+
+		writer.Key("scaleTargetEntityGuid");
+		writer.Write(scaleTargetEntityGuid_);
+
+		writer.Key("scaleMultiplier");
+		writer.BeginArray();
+		writer.Write(scaleMultiplier.x);
+		writer.Write(scaleMultiplier.y);
+		writer.Write(scaleMultiplier.z);
+		writer.EndArray();
+
+		writer.Key("scaleResponsiveness");
+		writer.Write(scaleResponsiveness_);
+	}
 #endif
 
 	// 忘れると死ぬやつ

@@ -110,6 +110,9 @@ namespace MyGame {
 		void Serialize(Unnamed::JsonWriter& writer) const override;
 
 	private:
+		/// 音量でTransformを拡縮するか
+		bool scaleByVolumeEnabled_ = false;
+
 		/// マイク入力で拡縮する対象のエンティティGUID(初期はオーナー)
 		uint64_t scaleTargetEntityGuid_ = 0u;
 

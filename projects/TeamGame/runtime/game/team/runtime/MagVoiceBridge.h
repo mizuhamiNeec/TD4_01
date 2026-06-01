@@ -148,6 +148,9 @@ private:
 	// NOTE: WASAPI が使用するオーディオフォーマット
 	WAVEFORMATEX *waveFormat_ = nullptr;
 
+	// NOTE: CoUninitialize は CoInitializeEx が成功した場合だけ対応させる。
+	bool comInitialized_ = false;
+
 	// ===== 制御フラグ =====
 	// NOTE: Initialize() が完了したかを示す
 	std::atomic<bool> isInitialized_ = false;

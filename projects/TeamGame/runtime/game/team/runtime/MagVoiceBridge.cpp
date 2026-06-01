@@ -32,6 +32,7 @@ bool MagVoiceBridge::Initialize() {
 	if (FAILED(result)) {
 		return false;
 	}
+	comInitialized_ = true;
 
 	// NOTE: デバイス列挙用オブジェクトを生成する
 	result = CoCreateInstance(
@@ -170,7 +171,10 @@ void MagVoiceBridge::Shutdown() {
 	}
 
 	// NOTE: COM ライブラリをクリーンアップする
-	CoUninitialize();
+	if (comInitialized_) {
+		CoUninitialize();
+		comInitialized_ = false;
+	}
 
 	// NOTE: 初期化フラグをリセットする
 	isInitialized_ = false;

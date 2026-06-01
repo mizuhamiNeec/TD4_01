@@ -107,15 +107,8 @@ namespace MyGame {
 		}
 
 		if (_bIsBeingSucked) {
-			if (!_bIsInsideHole) {
-				if (auto* sphereKCR = dynamic_cast<Unnamed::SphereKinematicCollisionResolver*>(mCollisionResolver.get())) {
-					sphereKCR->SlideMove(_position, _velocity, deltaTime);
-				}
-			} else {
-				_position += _velocity * deltaTime;
-			}
-
 			UpdateHoleSuck(deltaTime);
+			_position += _velocity * deltaTime;
 			ClampVelocity();
 
 			auto* transform = GetOwner()->GetComponent<Unnamed::TransformComponent>();
@@ -1028,10 +1021,6 @@ namespace MyGame {
 		const float kBaseSuckAcceleration = 60.0f;
 		Vec3 suckAcceleration = directionNormalized * kBaseSuckAcceleration * _holeSuckPower * suckMultiplier;
 		_velocity += suckAcceleration * deltaTime;
-
-		if (!_bIsInsideHole) {
-			_position += _velocity * deltaTime;
-		}
 	}
 
 	// -----------------------------------------------------------------------

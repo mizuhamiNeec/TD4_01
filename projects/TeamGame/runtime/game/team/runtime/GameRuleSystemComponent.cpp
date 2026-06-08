@@ -348,6 +348,10 @@ void MyGame::GameRuleSystemComponent::UpdateTrashScore()
 			}
 
 			if (auto* golfBall = entity->GetComponent<GolfBallComponent>()) {
+				if (!golfBall->IsInFlight()) {
+					continue;
+				}
+
 				// NOTE: ボールを穴でキャッチできたら大型ボーナスを加算してリザルトへ進める。
 				_scoreComponent->AddBallCatchScore();
 				_isHoleInOne = true;
@@ -419,8 +423,8 @@ void MyGame::GameRuleSystemComponent::UpdateBallResult(float deltaTime)
 		return;
 	}
 
-	if (_hasBallLaunched && !_golfBallComponent->IsInFlight() && _ballFlightElapsedTime >= _minBallFlightSeconds) {
-		// NOTE: ボールが十分な時間飛んだあと停止したら通常終了とする。
+	if (_hasBallLaunched && !_golfBallComponent->IsInFlight()) {
+		// NOTE: ホールインワンのルールなので、止まった時点で失敗として終了する。
 		FinishGame();
 		return;
 	}

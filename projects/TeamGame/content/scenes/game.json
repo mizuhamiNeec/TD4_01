@@ -195,10 +195,11 @@
                 {
                     "active": true,
                     "data": {
-                        "bounceDamping": 0.5,
+                        "bounceDamping": 0.44999998807907104,
                         "flightTime": 15.0,
-                        "frictionCoefficient": 0.20000000298023224,
+                        "frictionCoefficient": 0.9850000143051147,
                         "gravity": 9.8100004196167,
+                        "groundCollisionDamping": 0.9200000166893005,
                         "groundLevel": 0.0,
                         "homingEndTime": 1.5,
                         "homingStartTime": 0.5,
@@ -212,7 +213,8 @@
                         "startPointY": 2.0,
                         "startPointZ": 30.0,
                         "startPosEntityGuid": "",
-                        "stopVelocityThreshold": 0.009999999776482582,
+                        "minBounceVerticalSpeed": 0.3499999940395355,
+                        "stopVelocityThreshold": 0.07999999821186066,
                         "targetBaseX": 0.0,
                         "targetBaseY": 0.0,
                         "targetBaseZ": -30.0,

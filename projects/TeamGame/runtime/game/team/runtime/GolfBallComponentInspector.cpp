@@ -132,6 +132,8 @@ namespace MyGame {
 		ImGui::SliderFloat("ホーミング開始時間##golf_homing_start", &_homingStartTime, 0.0f, _flightTime, "%.2f");
 		ImGui::SliderFloat("ホーミング終了時間##golf_homing_end", &_homingEndTime, _homingStartTime, _flightTime, "%.2f");
 		ImGui::SliderFloat("反発係数##golf_bounce", &_bounceDamping, 0.0f, 1.0f, "%.3f");
+		ImGui::SliderFloat("最小バウンド速度##golf_min_bounce_speed", &_minBounceVerticalSpeed, 0.0f, 5.0f, "%.3f");
+		ImGui::SliderFloat("衝突時横減衰##golf_ground_collision_damping", &_groundCollisionDamping, 0.0f, 1.0f, "%.3f");
 		ImGui::SliderFloat("摩擦係数##golf_friction", &_frictionCoefficient, 0.0f, 1.0f, "%.3f");
 		ImGui::SliderFloat("地面の高さ##golf_ground_level", &_groundLevel, -10.0f, 10.0f, "%.2f");
 		ImGui::SliderFloat("停止判定速度##golf_stop_threshold", &_stopVelocityThreshold, 0.001f, 0.1f, "%.4f");

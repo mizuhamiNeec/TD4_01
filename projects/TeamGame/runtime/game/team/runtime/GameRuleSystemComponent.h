@@ -110,7 +110,7 @@ namespace MyGame {
 		bool _autoStartCountdown = true;
 		// カウントダウン秒数
 		float _countdownSeconds = 10.0f;
-		// ボールが打たれてから終了判定を許可する最短時間
+		// 旧設定。現在はホールインワンのルールに合わせ、停止したら即失敗にする。
 		float _minBallFlightSeconds = 5.0f;
 		// ボールが打たれてから強制終了する時間
 		float _maxBallFlightSeconds = 20.0f;

@@ -237,6 +237,14 @@ private:
 	/// 理由：低いほどエネルギーを失い、バウンドが減衰する
 	float _bounceDamping = 0.7f;
 
+	/// バウンドとして扱う最小の縦方向衝突速度
+	/// 理由：小さな接地でいつまでも跳ね続ける挙動を抑える
+	float _minBounceVerticalSpeed = 0.35f;
+
+	/// 地面衝突時の横方向速度減衰
+	/// 理由：接地時に少しエネルギーを失わせ、軽すぎる跳ね返りを避ける
+	float _groundCollisionDamping = 0.92f;
+
 	/// 地表摩擦係数（0.0～1.0、毎フレームの速度減衰）
 	/// 理由：地面上での横方向速度を徐々に減衰させる
 	float _frictionCoefficient = 0.95f;

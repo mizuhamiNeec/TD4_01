@@ -525,10 +525,16 @@ namespace MyGame {
 			_homingEndTime = val.value();
 		}
 		if (auto val = reader.Read<float>("bounceDamping")) {
-			_bounceDamping = val.value();
+			_bounceDamping = std::clamp(val.value(), 0.0f, 1.0f);
+		}
+		if (auto val = reader.Read<float>("minBounceVerticalSpeed")) {
+			_minBounceVerticalSpeed = std::max(0.0f, val.value());
+		}
+		if (auto val = reader.Read<float>("groundCollisionDamping")) {
+			_groundCollisionDamping = std::clamp(val.value(), 0.0f, 1.0f);
 		}
 		if (auto val = reader.Read<float>("frictionCoefficient")) {
-			_frictionCoefficient = val.value();
+			_frictionCoefficient = std::clamp(val.value(), 0.0f, 1.0f);
 		}
 		if (auto val = reader.Read<float>("groundLevel")) {
 			_groundLevel = val.value();
@@ -592,6 +598,10 @@ namespace MyGame {
 		writer.Write(_homingEndTime);
 		writer.Key("bounceDamping");
 		writer.Write(_bounceDamping);
+		writer.Key("minBounceVerticalSpeed");
+		writer.Write(_minBounceVerticalSpeed);
+		writer.Key("groundCollisionDamping");
+		writer.Write(_groundCollisionDamping);
 		writer.Key("frictionCoefficient");
 		writer.Write(_frictionCoefficient);
 		writer.Key("groundLevel");
@@ -776,11 +786,16 @@ namespace MyGame {
 			// NOTE: 縦方向（Y）の速度を反転して反発係数を適用
 			// 理由：完全な弾性衝突ではなく、エネルギー損失を伴わせる
 			// 反発係数が低いほど、バウンドは小さくなる
-			if (!wasGrounded && _velocity.y < -_stopVelocityThreshold) {
-				// エース判定に使うため、発射後に地面へ当たった事実だけを記録する。
+			const float impactSpeed = std::max(0.0f, -_velocity.y);
+			if (!wasGrounded && impactSpeed > _stopVelocityThreshold) {
+				// エース判定では、跳ね返りが小さくても地面に触れた事実を使う。
 				++_bounceCount;
 			}
-			_velocity.y = -_velocity.y * _bounceDamping;
+			if (impactSpeed >= _minBounceVerticalSpeed) {
+				_velocity.y = impactSpeed * _bounceDamping;
+			} else {
+				_velocity.y = 0.0f;
+			}
 
 			// NOTE: 地面接触フラグを有効化
 			_bIsGrounded = true;
@@ -789,9 +804,8 @@ namespace MyGame {
 			// 横方向速度の減衰（衝突時のエネルギー損失）
 			// -----------------------------------------------------------------------
 			// 理由：地面との衝突によって、横方向速度も一定程度失われる
-			float collisionDamping = 0.9f;
-			_velocity.x *= collisionDamping;
-			_velocity.z *= collisionDamping;
+			_velocity.x *= _groundCollisionDamping;
+			_velocity.z *= _groundCollisionDamping;
 		} else {
 			// -----------------------------------------------------------------------
 			// 空中にいる場合

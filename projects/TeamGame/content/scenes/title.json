@@ -199,6 +199,56 @@
             "name": "Entity",
             "tags": [],
             "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            -3.251199960708618,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            512.0,
+                            512.0,
+                            512.0
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "projects/TeamGame/content/materials/instances/fish.matinst.json",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/fish.matinst.json",
+                                "slotIndex": 0
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/fullflat.obj"
+                    },
+                    "guid": 0,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 5,
+            "isEditorOnly": false,
+            "name": "Entity",
+            "tags": [],
+            "visible": true
         }
     ],
     "folders": [

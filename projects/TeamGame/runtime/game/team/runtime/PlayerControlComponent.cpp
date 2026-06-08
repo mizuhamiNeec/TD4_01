@@ -203,7 +203,7 @@ namespace MyGame {
 
 		// ゲームパッド入力
 		{
-			_currentMoveInput = inputSystem->Axis2D(_moveAxisName);
+			_currentMoveInput += inputSystem->Axis2D(_moveAxisName);
 		}
 
 		// NOTE: PlayerMoveComponent に移動方向を設定

@@ -51,6 +51,9 @@ namespace Unnamed::Gui {
 		Color mBorderColor  = {.r = 0.05f, .g = 0.05f, .b = 0.07f, .a = 1.0f};
 		Color mTextColor    = {.r = 1.00f, .g = 1.00f, .b = 1.00f, .a = 1.0f};
 
+		std::vector<std::string> mOnClickCommands;
+		std::vector<std::string> mOnReleaseCommands;
+		
 		float mCornerRadius = 4.0f;
 		float mFontSize     = 16.0f;
 	};

@@ -49,18 +49,25 @@ namespace MyGame {
 
 		/// カウントダウン開始
 		void Start(float seconds);
+
 		/// 停止
 		void Stop();
+
 		/// リセット
 		void Reset();
+
 		/// カウントダウンがアクティブかどうか
 		[[nodiscard]] bool IsActive() const;
+
 		/// カウントダウンが終了しているかどうか
 		[[nodiscard]] bool IsFinished() const;
+
 		/// カウントダウンの残り時間を取得
 		[[nodiscard]] float GetRemainingTime() const;
+
 		/// カウントダウンの進行度を0.0～1.0で取得（1.0が開始、0.0が終了）
 		[[nodiscard]] float GetProgress01() const;
+
 	private:
 		// カウントダウンの残り時間
 		float _countDownTime = 0.0f;

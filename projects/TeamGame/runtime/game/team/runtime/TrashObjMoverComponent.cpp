@@ -332,6 +332,13 @@ namespace MyGame {
 		ImGui::Separator();
 		ImGui::Text("Is Grounded: %s", _bIsGrounded ? "YES" : "NO");
 		ImGui::TextWrapped("Note: This object is always under gravity. When falling, gravity-only movement is used (no collision response). Air rotation applies when airborne.");
+
+		// -----------------------------------------------------------------------
+		// スコア表示
+		// -----------------------------------------------------------------------
+		ImGui::Separator();
+		ImGui::SliderInt("Score", &_scoreValue, 0, 10000);
+
 	}
 #endif
 
@@ -404,6 +411,9 @@ namespace MyGame {
 		if (auto val = reader.Read<float>("shockSpinWobbleSpeed")) {
 			_shockSpinWobbleSpeed = std::max(0.0f, val.value());
 		}
+		if (auto val = reader.Read<int>("ScoreValue")) {
+			_scoreValue = val.value();
+		}
 	}
 
 	void TrashObjMoverComponent::Serialize(Unnamed::JsonWriter &writer) const {
@@ -460,6 +470,9 @@ namespace MyGame {
 
 		writer.Key("shockSpinWobbleSpeed");
 		writer.Write(_shockSpinWobbleSpeed);
+
+		writer.Key("ScoreValue");	
+		writer.Write(_scoreValue);
 	}
 
 	// ===================================================================

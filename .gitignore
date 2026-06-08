@@ -63,6 +63,7 @@ imgui.ini
 /ClassDiagram.cd
 .github/copilot-instructions.md
 /premake5.exe
+content/core/cfg/user.cfg
 projects/*/config/user.cfg
 
 # アセットの.objは除外しない。

@@ -18,6 +18,8 @@
 #include "engine/unnamed/framework/components/ui/UiCanvasComponent.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 
+#include "unnamed/framework/components/RotatorComponent.h"
+
 namespace Unnamed {
 	void RegisterDefaultEngineComponents(ComponentRegistry& componentRegistry) {
 		const auto registerIfMissing = [&](auto typeTag) {
@@ -58,6 +60,7 @@ namespace Unnamed {
 		registerIfMissing(UiCanvasComponent{});
 		registerIfMissing(AudioSourceComponent{});
 		registerIfMissing(SequenceDirectorComponent{});
+		registerIfMissing(RotatorComponent{});
 	}
 }
 

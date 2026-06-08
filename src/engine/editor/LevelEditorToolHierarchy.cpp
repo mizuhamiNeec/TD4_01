@@ -40,9 +40,7 @@ namespace Unnamed {
 		bool IsValidComponentStableNameForMenu(
 			const std::string_view stableName
 		) {
-			if (stableName.empty()) {
-				return false;
-			}
+			if (stableName.empty()) { return false; }
 			if (stableName.front() == '.' || stableName.back() == '.') {
 				return false;
 			}
@@ -63,9 +61,7 @@ namespace Unnamed {
 				size_t begin = 0;
 				while (begin < lastDot) {
 					const size_t end = info.stableName.find('.', begin);
-					if (end == std::string::npos || end > lastDot) {
-						break;
-					}
+					if (end == std::string::npos || end > lastDot) { break; }
 
 					const size_t len = end - begin;
 					if (len > 0) {
@@ -115,9 +111,7 @@ namespace Unnamed {
 			bool added = false;
 
 			for (const auto& [scopeName, childNode] : node.children) {
-				if (scopeName.empty()) {
-					continue;
-				}
+				if (scopeName.empty()) { continue; }
 
 				if (ImGuiWidgets::BeginMenuEx(
 					scopeName.c_str(),
@@ -153,9 +147,7 @@ namespace Unnamed {
 				} else {
 					if (auto component = ComponentRegistry::Get().Create(
 						info.stableName
-					)) {
-						componentIcon = component->GetIcon();
-					}
+					)) { componentIcon = component->GetIcon(); }
 					sComponentIconCache.emplace(info.stableName, componentIcon);
 				}
 
@@ -168,9 +160,7 @@ namespace Unnamed {
 					auto component = ComponentRegistry::Get().Create(
 						info.stableName
 					);
-					if (!component) {
-						continue;
-					}
+					if (!component) { continue; }
 					entity.AddComponentInstance(std::move(component));
 					added = true;
 				}
@@ -190,9 +180,7 @@ namespace Unnamed {
 				if (len > 0) {
 					parts.emplace_back(folderPath.substr(begin, len));
 				}
-				if (end == std::string_view::npos) {
-					break;
-				}
+				if (end == std::string_view::npos) { break; }
 				begin = end + 1;
 			}
 			return parts;
@@ -204,21 +192,15 @@ namespace Unnamed {
 			while (!path.empty() && path.front() == '/') {
 				path.erase(path.begin());
 			}
-			while (!path.empty() && path.back() == '/') {
-				path.pop_back();
-			}
+			while (!path.empty() && path.back() == '/') { path.pop_back(); }
 			return path;
 		}
 
 		std::string JoinFolderPath(
 			const std::string_view parent, const std::string_view child
 		) {
-			if (parent.empty()) {
-				return std::string(child);
-			}
-			if (child.empty()) {
-				return std::string(parent);
-			}
+			if (parent.empty()) { return std::string(child); }
+			if (child.empty()) { return std::string(parent); }
 			return std::string(parent) + "/" + std::string(child);
 		}
 
@@ -232,15 +214,9 @@ namespace Unnamed {
 		bool IsFolderEqualOrDescendant(
 			const std::string_view path, const std::string_view ancestor
 		) {
-			if (ancestor.empty()) {
-				return true;
-			}
-			if (path == ancestor) {
-				return true;
-			}
-			if (path.size() <= ancestor.size()) {
-				return false;
-			}
+			if (ancestor.empty()) { return true; }
+			if (path == ancestor) { return true; }
+			if (path.size() <= ancestor.size()) { return false; }
 			return path.starts_with(ancestor) &&
 			       path[ancestor.size()] == '/';
 		}
@@ -262,9 +238,7 @@ namespace Unnamed {
 				EnsureFolderNode(root, folder);
 			}
 			for (const auto& ePtr : scene.GetEntities()) {
-				if (!ePtr) {
-					continue;
-				}
+				if (!ePtr) { continue; }
 				Entity*             entity = ePtr.get();
 				OutlinerFolderNode* node   = EnsureFolderNode(
 					root, entity->GetFolderPath()
@@ -289,9 +263,7 @@ namespace Unnamed {
 				if (
 					std::ranges::find(scene.GetFolders(), candidatePath) ==
 					scene.GetFolders().end()
-				) {
-					return candidatePath;
-				}
+				) { return candidatePath; }
 				++suffix;
 			}
 		}
@@ -302,9 +274,7 @@ namespace Unnamed {
 		) {
 			const TransformComponent* current = node;
 			while (current) {
-				if (current == possibleAncestor) {
-					return true;
-				}
+				if (current == possibleAncestor) { return true; }
 				current = current->GetParent();
 			}
 			return false;
@@ -316,75 +286,72 @@ namespace Unnamed {
 			const std::string_view& entityName
 		) {
 			for (const auto& entityPtr : scene.GetEntities()) {
-				if (!entityPtr) {
-					continue;
-				}
+				if (!entityPtr) { continue; }
 
 				if (
 					entityPtr->GetFolderPath() == folderPath &&
 					entityPtr->GetName() == entityName
-				) {
-					return true;
-				}
+				) { return true; }
 			}
 			return false;
 		}
 
 		[[nodiscard]] std::string BuildDuplicateEntityName(
-			const Scene& scene,
+			const Scene&  scene,
 			const Entity& source
 		) {
-			const std::string baseName =
-				std::string(source.GetName()) + " Copy";
-			if (
-				!IsEntityNameUsedInFolder(
-					scene, source.GetFolderPath(), baseName
-				)
-			) {
-				return baseName;
+			auto strName = std::string(source.GetName());
+
+			const auto list = StrUtil::ParseNumberList(strName);
+
+			uint32_t number;
+
+			if (!list.empty()) {
+				// 名前をパースして最後の数字を増やして適用
+				number = list.back();
+			} else {
+				number = 0; // 数字がない場合は0から始める
 			}
+
+			std::string name = StrUtil::RemoveTrailingNumber(strName);
+
+			name += std::string(std::to_string(number + 1));
+
+			if (
+				!IsEntityNameUsedInFolder(scene, source.GetFolderPath(), name)
+			) { return name; }
 
 			for (uint32_t i = 2; i < 100000; ++i) {
 				const std::string candidate =
-					std::format("{} {}", baseName, i);
+					std::format("{} {}", name, i);
 				if (
 					!IsEntityNameUsedInFolder(
 						scene, source.GetFolderPath(), candidate
 					)
-				) {
-					return candidate;
-				}
+				) { return candidate; }
 			}
 
-			return baseName;
+			return name;
 		}
 
 		[[nodiscard]] bool IsComponentGuidUsed(
-			const Scene& scene,
+			const Scene&   scene,
 			const uint64_t guid
 		) {
-			if (guid == 0) {
-				return true;
-			}
+			if (guid == 0) { return true; }
 
 			for (const auto& entityPtr : scene.GetEntities()) {
-				if (!entityPtr) {
-					continue;
-				}
+				if (!entityPtr) { continue; }
 
 				bool found = false;
 				entityPtr->ForEachComponent(
 					[&](const BaseComponent& component) {
-						if (component.GetGuid() != guid) {
-							return true;
-						}
+						if (component.GetGuid() != guid) { return true; }
 						found = true;
 						return false;
 					}
 				);
-				if (found) {
-					return true;
-				}
+				if (found) { return true; }
 			}
 
 			return false;
@@ -402,7 +369,7 @@ namespace Unnamed {
 		}
 
 		[[nodiscard]] Entity* DuplicateEntityInScene(
-			Scene& scene,
+			Scene&        scene,
 			const Entity& source
 		) {
 			const std::string duplicatedName = BuildDuplicateEntityName(
@@ -449,18 +416,21 @@ namespace Unnamed {
 							"DuplicateEntity: failed to allocate component GUID for '{}'",
 							sourceComponent.GetStableName()
 						);
-					} else {
-						newComponent->SetGuid(duplicatedComponentGuid);
-					}
+					} else { newComponent->SetGuid(duplicatedComponentGuid); }
 
 					duplicated.AddComponentInstance(std::move(newComponent));
 				}
 			);
 
-			const auto* sourceTransform = source.GetComponent<TransformComponent>();
-			auto* duplicatedTransform = duplicated.GetComponent<TransformComponent>();
-			if (sourceTransform && duplicatedTransform && sourceTransform->GetParent()) {
-				duplicatedTransform->SetParent(sourceTransform->GetParent(), false);
+			const auto* sourceTransform = source.GetComponent<
+				TransformComponent>();
+			auto* duplicatedTransform = duplicated.GetComponent<
+				TransformComponent>();
+			if (sourceTransform && duplicatedTransform && sourceTransform->
+			    GetParent()) {
+				duplicatedTransform->SetParent(
+					sourceTransform->GetParent(), false
+				);
 			}
 
 			return &duplicated;
@@ -469,9 +439,7 @@ namespace Unnamed {
 
 	void LevelEditorTool::DrawSceneOutliner() {
 		Scene* scene = GetOutlinerScene();
-		if (!scene) {
-			return;
-		}
+		if (!scene) { return; }
 
 		if (!ImGui::Begin("Outliner")) {
 			ImGui::End();
@@ -536,12 +504,8 @@ namespace Unnamed {
 			ImGuiPopupFlags_MouseButtonRight |
 			ImGuiPopupFlags_NoOpenOverItems
 		)) {
-			if (ImGui::MenuItem("Add Entity")) {
-				createEntity("");
-			}
-			if (ImGui::MenuItem("Add Folder")) {
-				createFolder("");
-			}
+			if (ImGui::MenuItem("Add Entity")) { createEntity(""); }
+			if (ImGui::MenuItem("Add Folder")) { createFolder(""); }
 			ImGui::EndPopup();
 		}
 
@@ -559,16 +523,10 @@ namespace Unnamed {
 				addButtonSize,
 				iconScale
 			)
-		) {
-			ImGui::OpenPopup("OutlinerAddPopup");
-		}
+		) { ImGui::OpenPopup("OutlinerAddPopup"); }
 		if (ImGui::BeginPopup("OutlinerAddPopup")) {
-			if (ImGui::MenuItem("Add Entity")) {
-				createEntity("");
-			}
-			if (ImGui::MenuItem("Add Folder")) {
-				createFolder("");
-			}
+			if (ImGui::MenuItem("Add Entity")) { createEntity(""); }
+			if (ImGui::MenuItem("Add Folder")) { createFolder(""); }
 			ImGui::EndPopup();
 		}
 
@@ -584,7 +542,7 @@ namespace Unnamed {
 
 			OutlinerFolderNode root = {};
 			BuildOutlinerTree(root, *scene);
-			uint64_t    pendingDeleteEntityId = 0;
+			uint64_t    pendingDeleteEntityId    = 0;
 			uint64_t    pendingDuplicateEntityId = 0;
 			std::string pendingDeleteFolderPath;
 			bool        pendingCreateEntity = false;
@@ -599,9 +557,7 @@ namespace Unnamed {
 			std::unordered_map<uint64_t, std::vector<Entity*>>
 				childEntitiesByParent;
 			for (const auto& entityPtr : scene->GetEntities()) {
-				if (!entityPtr) {
-					continue;
-				}
+				if (!entityPtr) { continue; }
 				Entity*     entity    = entityPtr.get();
 				const auto* transform = entity->GetComponent<
 					TransformComponent>();
@@ -609,9 +565,7 @@ namespace Unnamed {
 					!transform ||
 					!transform->GetParent() ||
 					!transform->GetParent()->GetOwner()
-				) {
-					continue;
-				}
+				) { continue; }
 				childEntitiesByParent[
 					transform->GetParent()->GetOwner()->GetGuid()
 				].emplace_back(entity);
@@ -619,9 +573,7 @@ namespace Unnamed {
 
 			std::function<void(Entity*)> drawEntityNode;
 			drawEntityNode = [&](Entity* entity) {
-				if (!entity) {
-					return;
-				}
+				if (!entity) { return; }
 				std::vector<Entity*> childrenInSameFolder;
 				if (const auto it = childEntitiesByParent.
 						find(entity->GetGuid());
@@ -631,9 +583,7 @@ namespace Unnamed {
 							child &&
 							std::string(child->GetFolderPath()) ==
 							std::string(entity->GetFolderPath())
-						) {
-							childrenInSameFolder.emplace_back(child);
-						}
+						) { childrenInSameFolder.emplace_back(child); }
 					}
 				}
 
@@ -740,9 +690,7 @@ namespace Unnamed {
 						).c_str(),
 						fontSize
 					)
-				) {
-					entity->SetVisible(!visible);
-				}
+				) { entity->SetVisible(!visible); }
 
 				ImGui::TableNextColumn();
 				const bool active = entity->IsActive();
@@ -753,9 +701,7 @@ namespace Unnamed {
 						).c_str(),
 						fontSize
 					)
-				) {
-					entity->SetActive(!active);
-				}
+				) { entity->SetActive(!active); }
 
 				if (opened && hasChildren) {
 					for (Entity* child : childrenInSameFolder) {
@@ -846,9 +792,7 @@ namespace Unnamed {
 						}
 						ImGui::TableNextColumn();
 						ImGui::TableNextColumn();
-						if (!opened) {
-							return;
-						}
+						if (!opened) { return; }
 					}
 
 					for (const auto& [childName, childNode] : node.children) {
@@ -873,15 +817,11 @@ namespace Unnamed {
 							parentEntity &&
 							std::string(parentEntity->GetFolderPath()) ==
 							std::string(entity->GetFolderPath())
-						) {
-							continue;
-						}
+						) { continue; }
 						drawEntityNode(entity);
 					}
 
-					if (!folderPath.empty()) {
-						ImGui::TreePop();
-					}
+					if (!folderPath.empty()) { ImGui::TreePop(); }
 				};
 
 			ImGui::TableNextRow();
@@ -931,19 +871,16 @@ namespace Unnamed {
 
 			ImGui::EndTable();
 
-			if (pendingCreateEntity) {
-				createEntity(pendingCreateFolderPath);
-			}
+			if (pendingCreateEntity) { createEntity(pendingCreateFolderPath); }
 			if (pendingDuplicateEntityId != 0) {
-				if (Entity* sourceEntity = scene->FindEntity(pendingDuplicateEntityId)) {
-					if (Entity* duplicated = DuplicateEntityInScene(*scene, *sourceEntity)) {
-						mSelectedEntityId = duplicated->GetGuid();
-					}
+				if (Entity* sourceEntity = scene->
+					FindEntity(pendingDuplicateEntityId)) {
+					if (Entity* duplicated = DuplicateEntityInScene(
+						*scene, *sourceEntity
+					)) { mSelectedEntityId = duplicated->GetGuid(); }
 				}
 			}
-			if (pendingCreateFolder) {
-				createFolder(pendingCreateFolderPath);
-			}
+			if (pendingCreateFolder) { createFolder(pendingCreateFolderPath); }
 			if (pendingMoveEntityId != 0) {
 				if (Entity* entity = scene->FindEntity(pendingMoveEntityId)) {
 					entity->SetFolderPath(pendingMoveEntityFolderPath);
@@ -1080,9 +1017,7 @@ namespace Unnamed {
 				kIconAdd, "AddComponent", ImVec2(0.0f, 0.0f), 1.5f,
 				ImGuiDir_Right
 			)
-		) {
-			ImGui::OpenPopup("InspectorAddComponentPopup");
-		}
+		) { ImGui::OpenPopup("InspectorAddComponentPopup"); }
 
 		ImGui::PushStyleVar(
 			ImGuiStyleVar_WindowPadding,
@@ -1110,9 +1045,7 @@ namespace Unnamed {
 				DrawComponentAddMenuRecursive(
 					addComponentRoot, *entity, existingStableNames
 				)
-			) {
-				ImGui::CloseCurrentPopup();
-			}
+			) { ImGui::CloseCurrentPopup(); }
 
 			ImGui::EndPopup();
 		}
@@ -1129,9 +1062,7 @@ namespace Unnamed {
 		ImGui::TextUnformatted("Tags");
 		std::string tagToRemove;
 		const auto& tags = entity->GetTags();
-		if (tags.empty()) {
-			ImGui::TextDisabled("(no tags)");
-		} else {
+		if (tags.empty()) { ImGui::TextDisabled("(no tags)"); } else {
 			for (size_t tagIndex = 0; tagIndex < tags.size(); ++tagIndex) {
 				ImGui::PushID(static_cast<int>(tagIndex));
 				ImGui::BulletText("%s", tags[tagIndex].c_str());
@@ -1156,9 +1087,7 @@ namespace Unnamed {
 				std::ranges::fill(tagInputBuffer, '\0');
 			}
 		}
-		if (!tagToRemove.empty()) {
-			(void)entity->RemoveTag(tagToRemove);
-		}
+		if (!tagToRemove.empty()) { (void)entity->RemoveTag(tagToRemove); }
 
 		ImGui::Separator();
 
@@ -1175,9 +1104,7 @@ namespace Unnamed {
 
 		for (size_t index = 0; index < orderedComponents.size(); ++index) {
 			BaseComponent* component = orderedComponents[index];
-			if (!component) {
-				continue;
-			}
+			if (!component) { continue; }
 
 			const bool isTransform =
 				component->GetStableName() == "Transform";
@@ -1207,9 +1134,7 @@ namespace Unnamed {
 			if (componentActive != component->IsActive()) {
 				component->SetActive(componentActive);
 			}
-			if (open) {
-				component->DrawInspectorImGui();
-			}
+			if (open) { component->DrawInspectorImGui(); }
 			ImGui::Separator();
 
 			if (
@@ -1248,9 +1173,7 @@ namespace Unnamed {
 				if (
 					type != ASSET_TYPE::SEQUENCE ||
 					!mSequenceEditorController
-				) {
-					return;
-				}
+				) { return; }
 				(void)mSequenceEditorController->OpenDocument(path);
 			}
 		);

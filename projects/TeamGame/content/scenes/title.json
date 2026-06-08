@@ -224,13 +224,13 @@
                             512.0
                         ]
                     },
-                    "guid": 0,
+                    "guid": 11481836641814959967,
                     "type": "engine.Transform"
                 },
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "projects/TeamGame/content/materials/instances/fish.matinst.json",
+                        "materialInstancePath": "",
                         "materialSlots": [
                             {
                                 "materialInstancePath": "projects/TeamGame/content/materials/instances/fish.matinst.json",
@@ -239,14 +239,14 @@
                         ],
                         "meshPath": "projects/TeamGame/content/models/fullflat.obj"
                     },
-                    "guid": 0,
+                    "guid": 18327053510604005271,
                     "type": "engine.StaticMeshRenderer"
                 }
             ],
-            "folderPath": "",
+            "folderPath": "Environment",
             "guid": 5,
             "isEditorOnly": false,
-            "name": "Entity",
+            "name": "Sea",
             "tags": [],
             "visible": true
         }

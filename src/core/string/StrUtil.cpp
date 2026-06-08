@@ -6,18 +6,14 @@
 
 namespace Unnamed::StrUtil {
 	std::string ToString(const std::wstring& string) {
-		if (string.empty()) {
-			return {};
-		}
+		if (string.empty()) { return {}; }
 
 		const auto sizeNeeded = WideCharToMultiByte(
 			CP_UTF8, 0, string.data(), static_cast<int>(string.size()), nullptr,
 			0,
 			nullptr, nullptr
 		);
-		if (sizeNeeded == 0) {
-			return {};
-		}
+		if (sizeNeeded == 0) { return {}; }
 		std::string result(sizeNeeded, 0);
 		WideCharToMultiByte(
 			CP_UTF8, 0, string.data(), static_cast<int>(string.size()),
@@ -34,34 +30,25 @@ namespace Unnamed::StrUtil {
 			CP_UTF8, 0, string, -1, nullptr, 0,
 			nullptr, nullptr
 		);
-		if (bufferSize == 0) {
-			return {};
-		}
+		if (bufferSize == 0) { return {}; }
 		std::string ret(bufferSize, 0);
 		WideCharToMultiByte(
 			CP_UTF8, 0, string, -1, ret.data(), bufferSize,
 			nullptr,
 			nullptr
 		);
-		if (!ret.empty()) {
-			ret.pop_back();
-		}
+		if (!ret.empty()) { ret.pop_back(); }
 		return ret;
 	}
 
-
 	std::wstring ToWString(const std::string& string) {
-		if (string.empty()) {
-			return {};
-		}
+		if (string.empty()) { return {}; }
 
 		const int sizeNeeded = MultiByteToWideChar(
 			CP_UTF8, 0, string.data(), static_cast<int>(string.size()), nullptr,
 			0
 		);
-		if (sizeNeeded == 0) {
-			return {};
-		}
+		if (sizeNeeded == 0) { return {}; }
 		std::wstring result(sizeNeeded, 0);
 		const int    written = MultiByteToWideChar(
 			CP_UTF8, 0, string.data(), static_cast<int>(string.size()),
@@ -87,17 +74,11 @@ namespace Unnamed::StrUtil {
 		const std::vector<std::string>& args,
 		const char*                     delimiter
 	) {
-		if (args.empty()) {
-			return "";
-		}
+		if (args.empty()) { return ""; }
 
 		std::string result;
-		for (const auto& arg : args) {
-			result += arg + delimiter;
-		}
-		if (!result.empty()) {
-			result.pop_back();
-		}
+		for (const auto& arg : args) { result += arg + delimiter; }
+		if (!result.empty()) { result.pop_back(); }
 		return result;
 	}
 
@@ -153,9 +134,7 @@ namespace Unnamed::StrUtil {
 	}
 
 	bool HasExtension(std::string_view path, std::string_view ext) {
-		if (path.size() < ext.size()) {
-			return false;
-		}
+		if (path.size() < ext.size()) { return false; }
 		const auto tail = path.substr(path.size() - ext.size(), ext.size());
 		const auto lowerTail = ToLowerCase(std::string(tail));
 		return lowerTail == ext;
@@ -173,11 +152,7 @@ namespace Unnamed::StrUtil {
 	std::string RemoveDoubleQuotes(const std::string_view& str) {
 		std::string result;
 		result.reserve(str.size());
-		for (const char c : str) {
-			if (c != '"') {
-				result += c;
-			}
-		}
+		for (const char c : str) { if (c != '"') { result += c; } }
 		return result;
 	}
 
@@ -185,9 +160,7 @@ namespace Unnamed::StrUtil {
 		try {
 			[[maybe_unused]] auto d = std::stof(str);
 			return true;
-		} catch (...) {
-			return false;
-		}
+		} catch (...) { return false; }
 	}
 
 	std::vector<std::string> SplitCommands(const std::string_view& command) {
@@ -201,14 +174,10 @@ namespace Unnamed::StrUtil {
 			} else if (ch == ';' && !inQuotes) {
 				result.emplace_back(current);
 				current.clear();
-			} else {
-				current += ch;
-			}
+			} else { current += ch; }
 		}
 
-		if (!current.empty()) {
-			result.emplace_back(current);
-		}
+		if (!current.empty()) { result.emplace_back(current); }
 
 		return result;
 	}
@@ -218,9 +187,7 @@ namespace Unnamed::StrUtil {
 		std::vector<std::string> tokens;
 		std::string              token;
 
-		while (stream >> token) {
-			tokens.emplace_back(token);
-		}
+		while (stream >> token) { tokens.emplace_back(token); }
 
 		return tokens;
 	}
@@ -236,9 +203,7 @@ namespace Unnamed::StrUtil {
 
 	bool ReadFileToString(const std::string& path, std::string& outString) {
 		const std::ifstream ifs(path, std::ios::binary);
-		if (!ifs) {
-			return false;
-		}
+		if (!ifs) { return false; }
 		std::stringstream ss;
 		ss << ifs.rdbuf();
 		outString = ss.str();
@@ -246,11 +211,7 @@ namespace Unnamed::StrUtil {
 	}
 
 	std::string NormalizePath(std::string path) {
-		for (auto& c : path) {
-			if (c == '\\') {
-				c = '/';
-			}
-		}
+		for (auto& c : path) { if (c == '\\') { c = '/'; } }
 		return path;
 	}
 
@@ -303,13 +264,9 @@ namespace Unnamed::StrUtil {
 				std::size_t j = i;
 				while (j < size && !IsSpace(
 					       static_cast<unsigned char>(line[j])
-				       )) {
-					++j;
-				}
+				       )) { ++j; }
 				// 末尾の句読点などを削る
-				while (j > span.begin && IsTrailingPunct(line[j - 1])) {
-					--j;
-				}
+				while (j > span.begin && IsTrailingPunct(line[j - 1])) { --j; }
 				if (j > span.begin) {
 					span.end = j;
 					matched  = true;
@@ -324,12 +281,8 @@ namespace Unnamed::StrUtil {
 				std::size_t j = i;
 				while (j < size && !IsSpace(
 					       static_cast<unsigned char>(line[j])
-				       )) {
-					++j;
-				}
-				while (j > span.begin && IsTrailingPunct(line[j - 1])) {
-					--j;
-				}
+				       )) { ++j; }
+				while (j > span.begin && IsTrailingPunct(line[j - 1])) { --j; }
 				if (j > span.begin + 3) {
 					span.end = j;
 					matched  = true;
@@ -343,12 +296,8 @@ namespace Unnamed::StrUtil {
 				std::size_t j = i;
 				while (j < size && !IsSpace(
 					       static_cast<unsigned char>(line[j])
-				       )) {
-					++j;
-				}
-				while (j > span.begin && IsTrailingPunct(line[j - 1])) {
-					--j;
-				}
+				       )) { ++j; }
+				while (j > span.begin && IsTrailingPunct(line[j - 1])) { --j; }
 				if (j > span.begin + 2) {
 					span.end = j;
 					matched  = true;
@@ -363,6 +312,38 @@ namespace Unnamed::StrUtil {
 			}
 		}
 
+		return result;
+	}
+
+	std::vector<uint32_t> ParseNumberList(const std::string& str) {
+		std::vector<uint32_t> result;
+		std::string           current;
+		for (const char c : str) {
+			if (std::isdigit(static_cast<unsigned char>(c))) {
+				current += c;
+			} else {
+				if (!current.empty()) {
+					result.emplace_back(
+						static_cast<uint32_t>(
+							std::stoul(current)
+						)
+					);
+					current.clear();
+				}
+			}
+		}
+		if (!current.empty()) {
+			result.emplace_back(static_cast<uint32_t>(std::stoul(current)));
+		}
+		return result;
+	}
+
+	std::string RemoveTrailingNumber(const std::string& str) {
+		std::string result = str;
+		while (!result.empty() &&
+		       std::isdigit(static_cast<unsigned char>(result.back()))) {
+			result.pop_back();
+		}
 		return result;
 	}
 }

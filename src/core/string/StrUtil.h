@@ -115,4 +115,16 @@ namespace Unnamed::StrUtil {
 	/// @param line 入力行文字列
 	/// @return リンクのスパン配列
 	std::vector<LinkSpan> ParseLinksFromLine(std::string_view line);
+
+	/// @brief 文字列内に含まれる数字のまとまりを解析します。
+	/// @param str 入力文字列
+	/// @details 例えば、"abc123def45"という文字列が与えられた場合、"123"と"45"の2つの数字のまとまりが解析され、それぞれがuint32_tに変換されてベクターに格納されます。
+	/// @return 文字列内の数字のまとまりを表すuint32_tのベクター
+	std::vector<uint32_t> ParseNumberList(const std::string& str);
+	
+	/// @brief 文字列の最後に現れた数字を除いた文字列を返します。
+	/// @param str 入力文字列
+	/// @details 例えば、"Level42"という文字列が与えられた場合、最後に現れた数字のまとまりである"42"を除いた"Level"という文字列が返されます。
+	/// @return 文字列の最後に現れた数字を除いた文字列
+	std::string RemoveTrailingNumber(const std::string& str);
 }

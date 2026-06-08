@@ -1,70 +1,85 @@
 ﻿#include "RotatorComponent.h"
 
-#include <engine/ImGui/ImGuiWidgets.h>
-
-#include "TransformComponent.h"
-
-#include "../entity/Entity.h"
+#include <imgui.h>
 
 #include "core/ComponentRegistry.h"
 #include "core/io/json/JsonReader.h"
 #include "core/io/json/JsonWriter.h"
+#include "core/math/Quaternion.h"
 
-#include "engine/unnamed/subsystem/console/Log.h"
-
-#include "core/ComponentRegistry.h"
+#include "engine/ImGui/Icons.h"
+#include "engine/unnamed/framework/components/TransformComponent.h"
+#include "engine/unnamed/framework/entity/Entity.h"
 
 namespace Unnamed {
-	RotatorComponent::~RotatorComponent() = default;
-
-	void RotatorComponent::OnAttached() {
-		mTransform = GetOwner()->GetComponent<TransformComponent>();
-	}
-
 	void RotatorComponent::OnTick(const float deltaTime) {
-		if (!mTransform) {
-			Error(GetComponentName(), "TransformComponent is null.");
+		if (!mRotationEnabled) {
+			return;
+		}
+		auto* transform = GetTransform();
+		if (!transform) {
 			return;
 		}
 
-		Quaternion current = mTransform->GetRotation();
-
-		current = current * Quaternion::EulerDegrees(mRotationSpeed * deltaTime);
-		mTransform->SetRotation(current);
+		const Quaternion deltaRotation = Quaternion::EulerDegrees(
+			mRotationRate * deltaTime
+		);
+		transform->SetRotation(transform->GetRotation() * deltaRotation);
 	}
-	
+
 	BaseComponent::TICK_GROUP RotatorComponent::GetTickGroup() const {
-		return BaseComponent::GetTickGroup();
+		return TICK_GROUP::EARLY;
 	}
 
 	std::string_view RotatorComponent::GetStableName() const {
 		return "engine.Rotator";
 	}
-
 	std::string_view RotatorComponent::GetComponentName() const {
 		return "Rotator";
 	}
 
-	void RotatorComponent::Deserialize(const JsonReader& reader) {		
-		mRotationSpeed   = reader["rotationSpeed"].GetVec3(mRotationSpeed);
+	void RotatorComponent::Deserialize(const JsonReader& reader) {
+		const JsonReader rotationRate = reader["rotationRate"];
+		if (rotationRate.Valid() && rotationRate.Size() >= 3) {
+			mRotationRate = Vec3(
+				rotationRate[0].GetFloat(),
+				rotationRate[1].GetFloat(),
+				rotationRate[2].GetFloat()
+			);
+		}
+		const JsonReader enabled = reader["enabled"];
+		if (enabled.Valid()) {
+			mRotationEnabled = enabled.GetBool();
+		}
 	}
 
 	void RotatorComponent::Serialize(JsonWriter& writer) const {
-		writer.Key("rotationSpeed");
+		writer.Key("rotationRate");
 		writer.BeginArray();
-		writer.Write(mRotationSpeed.x);
-		writer.Write(mRotationSpeed.y);
-		writer.Write(mRotationSpeed.z);
+		writer.Write(mRotationRate.x);
+		writer.Write(mRotationRate.y);
+		writer.Write(mRotationRate.z);
 		writer.EndArray();
+		writer.Key("enabled");
+		writer.Write(mRotationEnabled);
 	}
 
 	uint32_t RotatorComponent::GetIcon() const {
-		return BaseComponent::GetIcon();
+		return kIcon3DRotation;
 	}
 
+#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
 	void RotatorComponent::DrawInspectorImGui() {
-		ImGuiWidgets::DragVec3("RotationSpeed", mRotationSpeed,Vec3::zero,0.25f,"%.2f [deg/s]");
+		ImGui::Checkbox("Enabled", &mRotationEnabled);
+		ImGui::DragFloat3("RotationRate", &mRotationRate.x, 0.1f);
 	}
-	
+#endif
+
+	TransformComponent* RotatorComponent::GetTransform() const {
+		Entity* owner = GetOwner();
+		return owner ? owner->GetComponent<TransformComponent>() : nullptr;
+	}
+
 	REGISTER_COMPONENT(RotatorComponent);
 }
+

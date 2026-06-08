@@ -182,13 +182,14 @@
                 {
                     "active": true,
                     "data": {
-                        "rotationSpeed": [
+                        "enabled": true,
+                        "rotationRate": [
                             0.0,
-                            0.0,
+                            8.0,
                             0.0
                         ]
                     },
-                    "guid": 0,
+                    "guid": 12241202934885037448,
                     "type": "engine.Rotator"
                 }
             ],

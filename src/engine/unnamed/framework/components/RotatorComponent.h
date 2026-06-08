@@ -1,38 +1,37 @@
 ﻿#pragma once
-#include "base/BaseComponent.h"
+
+#include "engine/unnamed/framework/components/base/BaseComponent.h"
 
 #include "core/math/Vec3.h"
 
 namespace Unnamed {
+	class JsonReader;
+	class JsonWriter;
 	class TransformComponent;
 
-	class RotatorComponent : public BaseComponent {
+	class RotatorComponent final : public BaseComponent {
 	public:
-		~RotatorComponent() override;
-		
-		//---------------------------------------------------------------------
-		// BaseComponent↓ 
-		//---------------------------------------------------------------------
-		void                           OnAttached() override;
-		void                           OnTick(float deltaTime) override;
-		
-		[[nodiscard]] TICK_GROUP       GetTickGroup() const override;
-		
+		void OnTick(float deltaTime) override;
+		[[nodiscard]] TICK_GROUP GetTickGroup() const override;
+
 		[[nodiscard]] std::string_view GetStableName() const override;
+
 		[[nodiscard]] std::string_view GetComponentName() const override;
-		
-		void                           Deserialize(const JsonReader& reader) override;
-		void                           Serialize(JsonWriter& writer) const override;
-		
-		[[nodiscard]] uint32_t         GetIcon() const override;
-		
-#ifdef _DEBUG
-		void                           DrawInspectorImGui() override;
+
+#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
+		void DrawInspectorImGui() override;
 #endif
-		
+
+		void Deserialize(const JsonReader& reader) override;
+		void Serialize(JsonWriter& writer) const override;
+
+		[[nodiscard]] uint32_t GetIcon() const override;
+
 	private:
-		TransformComponent* mTransform = nullptr;
-		
-		Vec3 mRotationSpeed = Vec3::zero; // [度/秒]
+		[[nodiscard]] TransformComponent* GetTransform() const;
+
+		Vec3 mRotationRate    = Vec3::zero;
+		bool mRotationEnabled = true;
 	};
 }
+

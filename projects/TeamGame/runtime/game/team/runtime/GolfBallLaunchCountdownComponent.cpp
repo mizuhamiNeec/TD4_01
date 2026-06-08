@@ -256,9 +256,54 @@ Unnamed::Gui::UiWidget* MyGame::GolfBallLaunchCountdownComponent::FindWidgetByNa
 }
 
 void MyGame::GolfBallLaunchCountdownComponent::ResetCountdown() {
+	// NOTE: 初期時間へ戻して、次のインゲーム開始で再発射できる状態にする。
 	_countdownTimer = std::max(0.0f, _countdownDuration);
 	_bHasLaunched = false;
 	UpdateCountdownUi();
+}
+
+void MyGame::GolfBallLaunchCountdownComponent::StartCountdown(float seconds) {
+	// NOTE: ルール管理側から指定秒数でカウントダウンを開始できるようにする。
+	_countdownDuration = std::max(0.0f, seconds);
+	_countdownTimer = _countdownDuration;
+	_bHasLaunched = false;
+	_launchOnStart = true;
+	UpdateCountdownUi();
+}
+
+void MyGame::GolfBallLaunchCountdownComponent::StartCountdown() {
+	// NOTE: 停止していたカウントダウンを現在の残り時間から再開する。
+	_bHasLaunched = false;
+	_launchOnStart = true;
+	UpdateCountdownUi();
+}
+
+void MyGame::GolfBallLaunchCountdownComponent::StopCountdown() {
+	// NOTE: 残り時間は保持したままカウントだけ止める。
+	_launchOnStart = false;
+	UpdateCountdownUi();
+}
+
+bool MyGame::GolfBallLaunchCountdownComponent::IsCountingDown() const {
+	// NOTE: 発射前かつ残り時間がある状態をカウント中として扱う。
+	return _launchOnStart && !_bHasLaunched && _countdownTimer > 0.0f;
+}
+
+bool MyGame::GolfBallLaunchCountdownComponent::HasLaunched() const {
+	return _bHasLaunched;
+}
+
+float MyGame::GolfBallLaunchCountdownComponent::GetRemainingTime() const {
+	return _countdownTimer;
+}
+
+float MyGame::GolfBallLaunchCountdownComponent::GetProgress01() const {
+	// NOTE: 初期時間が0の場合は即発射扱いで0を返す。
+	if (_countdownDuration <= 0.0f) {
+		return 0.0f;
+	}
+
+	return std::clamp(_countdownTimer / _countdownDuration, 0.0f, 1.0f);
 }
 
 namespace MyGame {

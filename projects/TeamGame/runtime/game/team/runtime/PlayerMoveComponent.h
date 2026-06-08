@@ -106,6 +106,15 @@ namespace MyGame {
 		/// 移動速度（単位: units/sec）
 		float _moveSpeed = 5.0f;
 
+		/// 現在の水平速度
+		Vec3 _horizontalVelocity = Vec3::zero;
+
+		/// 入力方向へ追従する加速度
+		float _acceleration = 24.0f;
+
+		/// 入力を離した時の減速度
+		float _deceleration = 18.0f;
+
 		/// 重力加速度
 		float _gravity = 9.81f;
 

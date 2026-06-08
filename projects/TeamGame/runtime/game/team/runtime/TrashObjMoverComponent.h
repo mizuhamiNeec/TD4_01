@@ -139,6 +139,12 @@ namespace MyGame {
 		/// 停止判定の速度閾値
 		float _stopVelocityThreshold = 0.01f;
 
+		/// 接地中に水平速度を落とす強さ
+		float _groundLinearDamping = 6.0f;
+
+		/// この速度以下なら完全停止させる
+		float _sleepVelocityThreshold = 0.08f;
+
 		/// 速度上限クランプ値
 		float _maxSpeedClamp = 50.0f;
 
@@ -251,6 +257,9 @@ namespace MyGame {
 
 		/// 地表摩擦を適用
 		void ApplyFriction();
+
+		/// 接地中に自然停止へ近づける
+		void ApplyGroundDamping(float deltaTime);
 
 		/// 空中での回転を更新（移動方向に傾く）
 		void UpdateAirRotation(float deltaTime);

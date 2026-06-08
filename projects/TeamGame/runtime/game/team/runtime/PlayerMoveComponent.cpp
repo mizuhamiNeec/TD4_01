@@ -1,6 +1,8 @@
 #include "PlayerMoveComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "./core/ComponentRegistry.h"
+#include <algorithm>
+#include <cmath>
 #include <core/math/Vec2.h>
 #include <core/math/Vec3.h>
 
@@ -18,6 +20,7 @@ namespace MyGame {
 	void PlayerMoveComponent::OnAttached() {
 		// NOTE: コンポーネントがアタッチされたときに初期化
 		_moveDirection = Vec2(0.0f, 0.0f);
+		_horizontalVelocity = Vec3::zero;
 		_verticalVelocity = 0.0f;
 		_bIsGrounded = true;
 	}
@@ -38,9 +41,22 @@ namespace MyGame {
 		Vec3 currentPos = transform->GetPosition();
 
 		// 水平移動の計算
-		// NOTE: Transform の Forward と Right を利用して移動方向を計算
+		// 入力を直接位置に反映すると急停止になるため、速度を介して加減速させる。
 		Vec3 moveDirection = transform->Forward() * _moveDirection.y + transform->Right() * _moveDirection.x;
-		Vec3 horizontalMovement = moveDirection * _moveSpeed * deltaTime;
+		moveDirection.y = 0.0f;
+		if (!moveDirection.IsZero(0.0001f)) {
+			moveDirection = moveDirection.Normalized();
+		}
+
+		const Vec3 desiredHorizontalVelocity = moveDirection * _moveSpeed;
+		const float response = moveDirection.IsZero(0.0001f) ? _deceleration : _acceleration;
+		const float velocityAlpha = 1.0f - std::exp(-std::max(0.0f, response) * deltaTime);
+		_horizontalVelocity = _horizontalVelocity + (desiredHorizontalVelocity - _horizontalVelocity) * velocityAlpha;
+		if (_horizontalVelocity.Length() < 0.001f && moveDirection.IsZero(0.0001f)) {
+			_horizontalVelocity = Vec3::zero;
+		}
+
+		Vec3 horizontalMovement = _horizontalVelocity * deltaTime;
 
 		// 垂直移動の計算（重力）
 		if (!_bIsGrounded) {
@@ -89,7 +105,7 @@ namespace MyGame {
 	}
 
 	void PlayerMoveComponent::SetMoveSpeed(float speed) {
-		_moveSpeed = speed;
+		_moveSpeed = std::max(0.0f, speed);
 	}
 
 	float PlayerMoveComponent::GetMoveSpeed() const {
@@ -201,6 +217,8 @@ namespace MyGame {
 
 		// 移動速度スライダー
 		ImGui::SliderFloat("Move Speed", &_moveSpeed, 0.0f, 20.0f);
+		ImGui::SliderFloat("Acceleration", &_acceleration, 0.0f, 80.0f);
+		ImGui::SliderFloat("Deceleration", &_deceleration, 0.0f, 80.0f);
 
 		ImGui::Separator();
 		ImGui::Text("Jump Parameters");
@@ -235,7 +253,13 @@ namespace MyGame {
 		// NOTE: JSONから値を読み込む
 		// Read() は std::optional<T> を返すため、value_or() で既定値を指定
 		if (auto val = reader.Read<float>("moveSpeed")) {
-			_moveSpeed = val.value();
+			_moveSpeed = std::max(0.0f, val.value());
+		}
+		if (auto val = reader.Read<float>("acceleration")) {
+			_acceleration = std::max(0.0f, val.value());
+		}
+		if (auto val = reader.Read<float>("deceleration")) {
+			_deceleration = std::max(0.0f, val.value());
 		}
 		if (auto val = reader.Read<float>("jumpForce")) {
 			_jumpForce = val.value();
@@ -265,6 +289,10 @@ namespace MyGame {
 		// key, value の順序で Write() を呼び出す
 		writer.Key("moveSpeed");
 		writer.Write(_moveSpeed);
+		writer.Key("acceleration");
+		writer.Write(_acceleration);
+		writer.Key("deceleration");
+		writer.Write(_deceleration);
 		writer.Key("jumpForce");
 		writer.Write(_jumpForce);
 		writer.Key("gravity");

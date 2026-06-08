@@ -33,7 +33,7 @@ namespace MyGame {
 		_currentMoveInput    = Vec2::zero;
 
 		// NOTE: PlayerMoveComponent をキャッシュ
-		GetOrCachePlayerMoveComponent();
+		(void)GetOrCachePlayerMoveComponent();
 
 		// NOTE: InputSystem からキーバインディングを設定
 		SetupInputBindings();

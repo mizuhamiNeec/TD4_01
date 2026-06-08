@@ -98,7 +98,11 @@ namespace MyGame {
 		// 落下中・衝突中による回転更新
 		// -----------------------------------------------------------------------
 		bool bWasGrounded = _bIsGrounded;
-		_bIsGrounded = (_velocity.y >= -_stopVelocityThreshold && _velocity.y <= _stopVelocityThreshold);
+		const float groundContactY = _groundLevel + _halfSize.y + 0.05f;
+		_bIsGrounded =
+			_position.y <= groundContactY &&
+			std::abs(_velocity.y) <= _stopVelocityThreshold;
+		ApplyGroundDamping(deltaTime);
 		if (_bIsShockSpinActive) {
 			UpdateShockSpin(deltaTime);
 		} else if (!_bIsGrounded) {
@@ -120,7 +124,6 @@ namespace MyGame {
 		if (_transform) {
 			_transform->SetPosition(_position);
 			_transform->SetRotation(_currentRotation);
-			_transform->RequestInterpolationResync();
 		}
 	}
 
@@ -285,6 +288,8 @@ namespace MyGame {
 		ImGui::SliderFloat("Max Speed Clamp", &_maxSpeedClamp, 0.0f, 100.0f, "%.2f");
 		ImGui::SliderFloat("Bounce Damping", &_bounceDamping, 0.0f, 1.0f, "%.3f");
 		ImGui::SliderFloat("Friction Coefficient", &_frictionCoefficient, 0.0f, 1.0f, "%.3f");
+		ImGui::SliderFloat("Ground Linear Damping", &_groundLinearDamping, 0.0f, 30.0f, "%.2f");
+		ImGui::SliderFloat("Sleep Velocity Threshold", &_sleepVelocityThreshold, 0.0f, 2.0f, "%.3f");
 
 		ImGui::Separator();
 
@@ -360,6 +365,12 @@ namespace MyGame {
 		if (auto val = reader.Read<float>("maxSpeedClamp")) {
 			_maxSpeedClamp = val.value();
 		}
+		if (auto val = reader.Read<float>("groundLinearDamping")) {
+			_groundLinearDamping = std::max(0.0f, val.value());
+		}
+		if (auto val = reader.Read<float>("sleepVelocityThreshold")) {
+			_sleepVelocityThreshold = std::max(0.0f, val.value());
+		}
 
 		// ボックスサイズ
 		float halfSizeX = _halfSize.x;
@@ -433,6 +444,10 @@ namespace MyGame {
 
 		writer.Key("maxSpeedClamp");
 		writer.Write(_maxSpeedClamp);
+		writer.Key("groundLinearDamping");
+		writer.Write(_groundLinearDamping);
+		writer.Key("sleepVelocityThreshold");
+		writer.Write(_sleepVelocityThreshold);
 
 		writer.Key("halfSizeX");
 		writer.Write(_halfSize.x);
@@ -502,6 +517,32 @@ namespace MyGame {
 	void TrashObjMoverComponent::ApplyFriction() {
 		// NOTE: このメソッドは現在使用されていません
 		// SlideMove() が衝突処理をすべて担当します
+	}
+
+	void TrashObjMoverComponent::ApplyGroundDamping(float deltaTime) {
+		if (!_bIsGrounded || _bIsBeingSucked) {
+			return;
+		}
+
+		Vec3 horizontalVelocity = _velocity;
+		horizontalVelocity.y = 0.0f;
+		const float horizontalSpeed = horizontalVelocity.Length();
+
+		if (horizontalSpeed <= _sleepVelocityThreshold) {
+			// 低速域の微小な揺れは物体が止まらない原因になるため、明示的に寝かせる。
+			_velocity.x = 0.0f;
+			_velocity.z = 0.0f;
+			_velocity.y = 0.0f;
+			_bIsFalling = false;
+			_bIsShockSpinActive = false;
+			_bIsResetingRotation = true;
+			return;
+		}
+
+		const float damping =
+			std::exp(-std::max(0.0f, _groundLinearDamping) * deltaTime);
+		_velocity.x *= damping;
+		_velocity.z *= damping;
 	}
 
 	void TrashObjMoverComponent::UpdateAirRotation(float deltaTime) {

@@ -71,6 +71,15 @@ namespace MyGame {
 		/// @brief カウントダウンUIの数値を更新する
 		void UpdateCountdownUi() const;
 
+		/// @brief カウントダウン中/発射後のUI表示を切り替える
+		void UpdateUiVisibility() const;
+
+		/// @brief GUIDまたは名前からUI用Entityを探す
+		[[nodiscard]] Unnamed::Entity* ResolveUiEntity(
+			uint64_t entityGuid,
+			const std::string& entityName
+		) const;
+
 		/// @brief カウントダウン表示用のDigitStripを取得する
 		[[nodiscard]] Unnamed::Gui::UiDigitStripComponent*
 		ResolveCountdownDigitStrip() const;
@@ -108,5 +117,20 @@ namespace MyGame {
 
 		/// @brief カウントダウン値を流し込むDigitStrip付きWidget名
 		std::string _countdownDigitWidgetName = "number_UI";
+
+		/// @brief カウントダウン表示EntityのGUID。0なら名前で探す
+		uint64_t _countdownUiEntityGuid = 0;
+
+		/// @brief カウントダウン表示Entity名
+		std::string _countdownUiEntityName = "Countdown_UI";
+
+		/// @brief 発射後に表示する距離UI EntityのGUID。0なら名前で探す
+		uint64_t _distanceUiEntityGuid = 0;
+
+		/// @brief 発射後に表示する距離UI Entity名
+		std::string _distanceUiEntityName = "Player2GolfBall_UI";
+
+		/// @brief trueの場合、発射までは距離UIを隠し発射後に表示する
+		bool _switchToDistanceUiOnLaunch = true;
 	};
 }

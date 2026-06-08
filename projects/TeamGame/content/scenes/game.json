@@ -232,7 +232,12 @@
                         "ballTag": "Ball",
                         "countdownDigitWidgetName": "number_UI",
                         "countdownDuration": 15.0,
+                        "countdownUiEntityGuid": 12087284352773638141,
+                        "countdownUiEntityName": "Countdown_UI",
                         "countdownUiAssetPath": "projects/TeamGame/content/ui/countdown.ui.json",
+                        "distanceUiEntityGuid": 10271558206346713449,
+                        "distanceUiEntityName": "Player2GolfBall_UI",
+                        "switchToDistanceUiOnLaunch": true,
                         "launchOnStart": true
                     },
                     "guid": 0,
@@ -1814,7 +1819,7 @@
             "isEditorOnly": false,
             "name": "Player2GolfBall_UI",
             "tags": [],
-            "visible": true
+            "visible": false
         },
         {
             "active": true,

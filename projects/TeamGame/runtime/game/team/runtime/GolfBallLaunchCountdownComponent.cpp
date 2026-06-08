@@ -42,6 +42,7 @@ void MyGame::GolfBallLaunchCountdownComponent::OnTick(float deltaTime) {
 
 	_bHasLaunched = true;
 	golfBall->Launch();
+	UpdateUiVisibility();
 }
 
 void MyGame::GolfBallLaunchCountdownComponent::OnDetached() {}
@@ -75,6 +76,12 @@ void MyGame::GolfBallLaunchCountdownComponent::DrawInspectorImGui() {
 	if (ImGui::Button("カウントダウンをリセット##golf_launch_countdown_reset")) {
 		ResetCountdown();
 	}
+
+	ImGui::Separator();
+	ImGui::Checkbox(
+		"発射後に距離UIへ切り替え##golf_launch_countdown_ui_switch",
+		&_switchToDistanceUiOnLaunch
+	);
 }
 #endif
 
@@ -106,6 +113,23 @@ void MyGame::GolfBallLaunchCountdownComponent::Deserialize(
 			_countdownDigitWidgetName
 		);
 	}
+	if (reader.Has("countdownUiEntityGuid")) {
+		_countdownUiEntityGuid = reader["countdownUiEntityGuid"].GetUint64();
+	}
+	if (reader.Has("countdownUiEntityName")) {
+		_countdownUiEntityName =
+			reader["countdownUiEntityName"].GetString(_countdownUiEntityName);
+	}
+	if (reader.Has("distanceUiEntityGuid")) {
+		_distanceUiEntityGuid = reader["distanceUiEntityGuid"].GetUint64();
+	}
+	if (reader.Has("distanceUiEntityName")) {
+		_distanceUiEntityName =
+			reader["distanceUiEntityName"].GetString(_distanceUiEntityName);
+	}
+	if (auto val = reader.Read<bool>("switchToDistanceUiOnLaunch")) {
+		_switchToDistanceUiOnLaunch = val.value();
+	}
 }
 
 void MyGame::GolfBallLaunchCountdownComponent::Serialize(
@@ -131,6 +155,21 @@ void MyGame::GolfBallLaunchCountdownComponent::Serialize(
 
 	writer.Key("countdownDigitWidgetName");
 	writer.Write(_countdownDigitWidgetName);
+
+	writer.Key("countdownUiEntityGuid");
+	writer.Write(_countdownUiEntityGuid);
+
+	writer.Key("countdownUiEntityName");
+	writer.Write(_countdownUiEntityName);
+
+	writer.Key("distanceUiEntityGuid");
+	writer.Write(_distanceUiEntityGuid);
+
+	writer.Key("distanceUiEntityName");
+	writer.Write(_distanceUiEntityName);
+
+	writer.Key("switchToDistanceUiOnLaunch");
+	writer.Write(_switchToDistanceUiOnLaunch);
 }
 
 MyGame::GolfBallComponent*
@@ -193,6 +232,57 @@ void MyGame::GolfBallLaunchCountdownComponent::UpdateCountdownUi() const {
 		99
 	);
 	digitStrip->SetValue(displaySeconds);
+}
+
+void MyGame::GolfBallLaunchCountdownComponent::UpdateUiVisibility() const {
+	if (!_switchToDistanceUiOnLaunch) {
+		return;
+	}
+
+	const bool showDistanceUi = _bHasLaunched;
+	if (auto* countdownUi = ResolveUiEntity(
+		_countdownUiEntityGuid,
+		_countdownUiEntityName
+	)) {
+		countdownUi->SetVisible(!showDistanceUi);
+	}
+	if (auto* distanceUi = ResolveUiEntity(
+		_distanceUiEntityGuid,
+		_distanceUiEntityName
+	)) {
+		// 距離UI側は非表示中も値を更新させたいので、ActiveではなくVisibleだけ切り替える。
+		distanceUi->SetVisible(showDistanceUi);
+	}
+}
+
+Unnamed::Entity* MyGame::GolfBallLaunchCountdownComponent::ResolveUiEntity(
+	const uint64_t entityGuid,
+	const std::string& entityName
+) const {
+	auto* scene = GetScene();
+	if (!scene) {
+		return nullptr;
+	}
+
+	if (entityGuid != 0) {
+		if (auto* entity = scene->FindEntity(entityGuid)) {
+			return entity;
+		}
+	}
+
+	if (entityName.empty()) {
+		return nullptr;
+	}
+
+	for (const auto& entityPtr : scene->GetEntities()) {
+		if (!entityPtr || !entityPtr->IsActive()) {
+			continue;
+		}
+		if (entityPtr->GetName() == entityName) {
+			return entityPtr.get();
+		}
+	}
+	return nullptr;
 }
 
 Unnamed::Gui::UiDigitStripComponent*
@@ -260,6 +350,7 @@ void MyGame::GolfBallLaunchCountdownComponent::ResetCountdown() {
 	_countdownTimer = std::max(0.0f, _countdownDuration);
 	_bHasLaunched = false;
 	UpdateCountdownUi();
+	UpdateUiVisibility();
 }
 
 void MyGame::GolfBallLaunchCountdownComponent::StartCountdown(float seconds) {
@@ -269,6 +360,7 @@ void MyGame::GolfBallLaunchCountdownComponent::StartCountdown(float seconds) {
 	_bHasLaunched = false;
 	_launchOnStart = true;
 	UpdateCountdownUi();
+	UpdateUiVisibility();
 }
 
 void MyGame::GolfBallLaunchCountdownComponent::StartCountdown() {
@@ -276,12 +368,14 @@ void MyGame::GolfBallLaunchCountdownComponent::StartCountdown() {
 	_bHasLaunched = false;
 	_launchOnStart = true;
 	UpdateCountdownUi();
+	UpdateUiVisibility();
 }
 
 void MyGame::GolfBallLaunchCountdownComponent::StopCountdown() {
 	// NOTE: 残り時間は保持したままカウントだけ止める。
 	_launchOnStart = false;
 	UpdateCountdownUi();
+	UpdateUiVisibility();
 }
 
 bool MyGame::GolfBallLaunchCountdownComponent::IsCountingDown() const {

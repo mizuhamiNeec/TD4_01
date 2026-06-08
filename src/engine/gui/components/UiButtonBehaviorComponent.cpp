@@ -206,4 +206,8 @@ namespace Unnamed::Gui {
 			}
 		}
 	}
+
+	std::vector<std::string>& UiButtonBehaviorComponent::GetOnClickCommands() {
+		return mOnClickCommands;
+	}
 }

@@ -214,7 +214,7 @@
                                 1.0
                             ],
                             "rotationRad": 0.0,
-                            "texturePath": "content/core/textures/dev_measure.png",
+                            "texturePath": "projects/TeamGame/content/textures/UI/dosomething.png",
                             "uvMax": [
                                 1.0,
                                 1.0

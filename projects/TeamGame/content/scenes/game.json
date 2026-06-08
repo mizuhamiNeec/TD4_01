@@ -1869,6 +1869,72 @@
             "name": "Countdown_UI",
             "tags": [],
             "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "ballCatchScore": 10000,
+                        "directHoleInOneScore": 20000,
+                        "holeInOneScore": 10000,
+                        "obPenaltyScore": -1000,
+                        "score": 0,
+                        "trashIntoHoleScore": 100,
+                        "trashToSeaScore": 100
+                    },
+                    "guid": 0,
+                    "type": "mygame.GameScoreComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "afterHitTrashWaveCount": 15,
+                        "afterHitTrashWaveDelay": 6.5,
+                        "autoStartCountdown": true,
+                        "ballHitTrashWaveCount": 15,
+                        "countdownSeconds": 15.0,
+                        "countdownTrashWaveCount": 10,
+                        "launchBallOnPlayingStart": false,
+                        "maxBallFlightSeconds": 20.0,
+                        "minBallFlightSeconds": 5.0,
+                        "seaOutHeight": -10.0
+                    },
+                    "guid": 0,
+                    "type": "mygame.GameRuleSystemComponent"
+                }
+            ],
+            "folderPath": "UserInterface",
+            "guid": 10271558206346713450,
+            "isEditorOnly": false,
+            "name": "GameRuleManager",
+            "tags": [],
+            "visible": true
         }
     ],
     "folders": [

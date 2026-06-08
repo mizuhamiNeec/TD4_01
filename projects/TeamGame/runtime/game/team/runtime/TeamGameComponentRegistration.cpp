@@ -18,7 +18,6 @@
 #include "VoiceUiComponent.h"
 #include "GolfBallUiComponent.h"
 #include "Player2BallRangeUIComponent.h"
-#include "GameCountDownComponent.h"
 #include "GameRuleSystemComponent.h"
 #include "GameScoreComponent.h"
 
@@ -82,9 +81,6 @@ namespace Unnamed {
 		RegisterComponentIfMissing<MyGame::Player2BallRangeUIComponent>(
 			componentRegistry, "mygame.Player2BallRangeUIComponent",
 			"Player To Ball Range UI Component");
-		RegisterComponentIfMissing<MyGame::GameCountDownComponent>(
-			componentRegistry, "mygame.GameCountDownComponent",
-			"Game Count Down Component");
 		RegisterComponentIfMissing<MyGame::GameRuleSystemComponent>(
 			componentRegistry, "mygame.GameRuleSystemComponent",
 			"Game Rule System Component");

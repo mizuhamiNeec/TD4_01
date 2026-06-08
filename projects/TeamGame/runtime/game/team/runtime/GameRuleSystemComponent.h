@@ -15,8 +15,8 @@ namespace Unnamed {
 
 namespace MyGame {
 
-	// カウントダウンコンポーネント
-	class GameCountDownComponent;
+	// ゴルフボール発射カウントダウンコンポーネント
+	class GolfBallLaunchCountdownComponent;
 	// ゴルフボールコンポーネント
 	class GolfBallComponent;
 	// プレイヤーの穴コンポーネント
@@ -138,8 +138,8 @@ namespace MyGame {
 		int _afterHitTrashWaveCount = 15;
 		// 3回目のゴミ出現までの待ち時間
 		float _afterHitTrashWaveDelay = 6.5f;
-		// カウントダウンコンポーネントのキャッシュ
-		GameCountDownComponent* _countDownComponent = nullptr;
+		// ゴルフボール発射カウントダウンコンポーネントのキャッシュ
+		GolfBallLaunchCountdownComponent* _launchCountdownComponent = nullptr;
 		// スコアコンポーネントのキャッシュ
 		GameScoreComponent* _scoreComponent = nullptr;
 		// プレイヤー穴コンポーネントのキャッシュ

@@ -1,7 +1,7 @@
 #include "GameRuleSystemComponent.h"
-#include "GameCountDownComponent.h"
 #include "GameScoreComponent.h"
 #include "GolfBallComponent.h"
+#include "GolfBallLaunchCountdownComponent.h"
 #include "PlayerHoleComponent.h"
 #include "TrashObjMoverComponent.h"
 #include "engine/scene/Scene.h"
@@ -36,7 +36,7 @@ void MyGame::GameRuleSystemComponent::OnRenderTick(float renderDeltaTime, float 
 void MyGame::GameRuleSystemComponent::OnDetached()
 {
 	// NOTE: シーン終了時に他コンポーネントへのキャッシュを破棄する。
-	_countDownComponent = nullptr;
+	_launchCountdownComponent = nullptr;
 	_scoreComponent = nullptr;
 	_playerHoleComponent = nullptr;
 	_golfBallComponent = nullptr;
@@ -178,8 +178,8 @@ void MyGame::GameRuleSystemComponent::StartCountdown()
 	if (_scoreComponent) {
 		_scoreComponent->ResetScore();
 	}
-	if (_countDownComponent) {
-		_countDownComponent->Start(_countdownSeconds);
+	if (_launchCountdownComponent) {
+		_launchCountdownComponent->StartCountdown(_countdownSeconds);
 	}
 }
 
@@ -194,11 +194,15 @@ void MyGame::GameRuleSystemComponent::StartPlaying()
 	_ballFlightElapsedTime = 0.0f;
 	_hasBallLaunched = false;
 
-	if (_countDownComponent) {
-		_countDownComponent->Stop();
+	if (_launchCountdownComponent) {
+		_launchCountdownComponent->StopCountdown();
 	}
-	if (_golfBallComponent && _launchBallOnPlayingStart) {
+	if (!_launchCountdownComponent && _golfBallComponent && _launchBallOnPlayingStart) {
+		// NOTE: 発射カウントダウンが無いシーンだけ、ルール管理側から直接発射する。
 		_golfBallComponent->Launch();
+		_hasBallLaunched = _golfBallComponent->IsInFlight();
+	} else if (_golfBallComponent) {
+		// NOTE: 発射カウントダウン側がLaunch済みのボール状態を引き継ぐ。
 		_hasBallLaunched = _golfBallComponent->IsInFlight();
 	}
 }
@@ -208,8 +212,8 @@ void MyGame::GameRuleSystemComponent::FinishGame()
 	// NOTE: ボール停止・海落下・キャッチ後はリザルトへ移行する。
 	_phase = GamePhase::Result;
 	_isGameEnded = true;
-	if (_countDownComponent) {
-		_countDownComponent->Stop();
+	if (_launchCountdownComponent) {
+		_launchCountdownComponent->StopCountdown();
 	}
 }
 
@@ -229,8 +233,8 @@ void MyGame::GameRuleSystemComponent::ResetGame()
 	_hasTriggeredBallHitTrashWave = false;
 	_hasTriggeredAfterHitTrashWave = false;
 
-	if (_countDownComponent) {
-		_countDownComponent->Reset();
+	if (_launchCountdownComponent) {
+		_launchCountdownComponent->ResetCountdown();
 	}
 	if (_scoreComponent) {
 		_scoreComponent->ResetScore();
@@ -250,7 +254,7 @@ bool MyGame::GameRuleSystemComponent::IsResult() const
 void MyGame::GameRuleSystemComponent::ResolveRuntimeReferences()
 {
 	// NOTE: 既に必要な参照が揃っている場合は再検索を省略する。
-	if (_countDownComponent && _scoreComponent && _playerHoleComponent && _golfBallComponent) {
+	if (_launchCountdownComponent && _scoreComponent && _playerHoleComponent && _golfBallComponent) {
 		return;
 	}
 
@@ -269,8 +273,8 @@ void MyGame::GameRuleSystemComponent::ResolveRuntimeReferences()
 		}
 
 		auto* entity = entityPtr.get();
-		if (!_countDownComponent) {
-			_countDownComponent = entity->GetComponent<GameCountDownComponent>();
+		if (!_launchCountdownComponent) {
+			_launchCountdownComponent = entity->GetComponent<GolfBallLaunchCountdownComponent>();
 		}
 		if (!_scoreComponent) {
 			_scoreComponent = entity->GetComponent<GameScoreComponent>();
@@ -305,7 +309,8 @@ void MyGame::GameRuleSystemComponent::UpdateCountdownPhase()
 	}
 
 	// NOTE: カウントダウンが終わったらボールを打つフェーズへ進む。
-	if (!_countDownComponent || _countDownComponent->IsFinished()) {
+	if ((_launchCountdownComponent && _launchCountdownComponent->HasLaunched()) ||
+		(!_launchCountdownComponent && _golfBallComponent && _golfBallComponent->IsInFlight())) {
 		StartPlaying();
 	}
 }

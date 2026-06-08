@@ -214,7 +214,7 @@
                                 1.0
                             ],
                             "rotationRad": 0.0,
-                            "texturePath": "projects/TeamGame/content/textures/UI/dosomething.png",
+                            "texturePath": "content/core/textures/sun.png",
                             "uvMax": [
                                 1.0,
                                 1.0

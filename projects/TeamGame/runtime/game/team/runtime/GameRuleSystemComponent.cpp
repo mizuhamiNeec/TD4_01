@@ -79,6 +79,16 @@ void MyGame::GameRuleSystemComponent::DrawInspectorImGui()
 	ImGui::DragInt("After Hit Trash Wave Count", &_afterHitTrashWaveCount, 1, 0, 999);
 	ImGui::DragFloat("After Hit Trash Wave Delay", &_afterHitTrashWaveDelay, 0.1f, 0.0f, 999.0f, "%.2f sec");
 	ImGui::Text("Score: %d", _scoreComponent ? _scoreComponent->GetScore() : 0);
+	if (_scoreComponent) {
+		ImGui::Separator();
+		ImGui::Text("Score Breakdown");
+		ImGui::Text("Trash Into Hole: %d", _scoreComponent->GetTrashIntoHoleTotal());
+		ImGui::Text("Trash To Sea: %d", _scoreComponent->GetTrashToSeaTotal());
+		ImGui::Text("Ball Catch: %d", _scoreComponent->GetBallCatchTotal());
+		ImGui::Text("Hole In One: %d", _scoreComponent->GetHoleInOneTotal());
+		ImGui::Text("Ace: %d", _scoreComponent->GetDirectHoleInOneTotal());
+		ImGui::Text("OB Penalty: %d", _scoreComponent->GetOutOfBoundsPenaltyTotal());
+	}
 
 	if (ImGui::Button("Start Countdown")) {
 		StartCountdown();
@@ -337,11 +347,11 @@ void MyGame::GameRuleSystemComponent::UpdateTrashScore()
 				_scoreComponent->AddTrashIntoHoleScore(GetEntityGuid(entity));
 			}
 
-			if (entity->GetComponent<GolfBallComponent>()) {
+			if (auto* golfBall = entity->GetComponent<GolfBallComponent>()) {
 				// NOTE: ボールを穴でキャッチできたら大型ボーナスを加算してリザルトへ進める。
 				_scoreComponent->AddBallCatchScore();
 				_isHoleInOne = true;
-				if (_ballFlightElapsedTime <= _minBallFlightSeconds) {
+				if (!golfBall->HasBounced()) {
 					_isDirectHoleInOne = true;
 					_scoreComponent->AddDirectHoleInOneBonus();
 				} else {

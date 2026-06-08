@@ -29,6 +29,7 @@ namespace MyGame {
 		_position = _startPoint;
 		_velocity = Vec3(0.0f, 0.0f, 0.0f);
 		_elapsedTime = 0.0f;
+		_bounceCount = 0;
 		_bIsInFlight = false;
 		_bIsExternalMotion = false;
 		_bIsBeingSucked = false;
@@ -308,6 +309,7 @@ namespace MyGame {
 
 		// NOTE: フライト開始
 		_elapsedTime = 0.0f;
+		_bounceCount = 0;
 		_bIsInFlight = true;
 		_bIsExternalMotion = false;
 	}
@@ -324,6 +326,9 @@ namespace MyGame {
 		velocityDelta.y = std::clamp(velocityDelta.y, -_maxExternalUpwardVelocity, _maxExternalUpwardVelocity);
 
 		_velocity += velocityDelta;
+		if (!_bIsInFlight) {
+			_bounceCount = 0;
+		}
 		_bIsInFlight = true;
 		_bIsExternalMotion = true;
 		_bIsGrounded = false;
@@ -336,6 +341,9 @@ namespace MyGame {
 		_holeSuckPosition = holePosition;
 		_holeSuckPower = std::clamp(suckPower, 0.0f, 1.0f);
 		_bIsBeingSucked = true;
+		if (!_bIsInFlight) {
+			_bounceCount = 0;
+		}
 		_bIsInFlight = true;
 		_bIsExternalMotion = true;
 	}
@@ -364,6 +372,14 @@ namespace MyGame {
 
 	float GolfBallComponent::GetElapsedTime() const {
 		return _elapsedTime;
+	}
+
+	int GolfBallComponent::GetBounceCount() const {
+		return _bounceCount;
+	}
+
+	bool GolfBallComponent::HasBounced() const {
+		return _bounceCount > 0;
 	}
 
 	void GolfBallComponent::ResolveSavedEntityReferences() {
@@ -749,6 +765,7 @@ namespace MyGame {
 		// 理由：Y座標が地面レベル以下に到達したら、衝突と判定して反射を計算
 		
 		if (_position.y <= _groundLevel) {
+			const bool wasGrounded = _bIsGrounded;
 			// -----------------------------------------------------------------------
 			// 地面に到達した場合の処理
 			// -----------------------------------------------------------------------
@@ -759,6 +776,10 @@ namespace MyGame {
 			// NOTE: 縦方向（Y）の速度を反転して反発係数を適用
 			// 理由：完全な弾性衝突ではなく、エネルギー損失を伴わせる
 			// 反発係数が低いほど、バウンドは小さくなる
+			if (!wasGrounded && _velocity.y < -_stopVelocityThreshold) {
+				// エース判定に使うため、発射後に地面へ当たった事実だけを記録する。
+				++_bounceCount;
+			}
 			_velocity.y = -_velocity.y * _bounceDamping;
 
 			// NOTE: 地面接触フラグを有効化

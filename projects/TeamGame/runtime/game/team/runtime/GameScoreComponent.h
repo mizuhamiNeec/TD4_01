@@ -78,6 +78,13 @@ namespace MyGame {
 		/// 現在の合計スコアを取得
 		[[nodiscard]] int GetScore() const;
 
+		[[nodiscard]] int GetTrashToSeaTotal() const;
+		[[nodiscard]] int GetTrashIntoHoleTotal() const;
+		[[nodiscard]] int GetBallCatchTotal() const;
+		[[nodiscard]] int GetHoleInOneTotal() const;
+		[[nodiscard]] int GetDirectHoleInOneTotal() const;
+		[[nodiscard]] int GetOutOfBoundsPenaltyTotal() const;
+
 	private:
 		// スコア
 		int _score = 0;
@@ -93,6 +100,14 @@ namespace MyGame {
 		int _directHoleInOneScore = 20000;
 		// OBのペナルティスコア
 		int _obPenaltyScore = -1000;
+
+		// スコア内訳
+		int _trashToSeaTotal = 0;
+		int _trashIntoHoleTotal = 0;
+		int _ballCatchTotal = 0;
+		int _holeInOneTotal = 0;
+		int _directHoleInOneTotal = 0;
+		int _outOfBoundsPenaltyTotal = 0;
 		// ボールキャッチスコアを加算済みかどうか
 		bool _hasAddedBallCatchScore = false;
 		// ホールインワンスコアを加算済みかどうか

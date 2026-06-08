@@ -93,6 +93,12 @@ public:
 	/// @brief 経過時間を取得
 	[[nodiscard]] float GetElapsedTime() const;
 
+	/// @brief 発射後に地面へバウンドした回数を取得
+	[[nodiscard]] int GetBounceCount() const;
+
+	/// @brief 発射後に一度でもバウンドしたかを取得
+	[[nodiscard]] bool HasBounced() const;
+
 	// -----------------------------------------------------------------------
 	// BaseComponent override
 	// -----------------------------------------------------------------------
@@ -264,6 +270,9 @@ private:
 
 	/// 経過時間（フライト開始からの時間）
 	float _elapsedTime = 0.0f;
+
+	/// 発射後に地面へバウンドした回数
+	int _bounceCount = 0;
 
 	/// フライト状態フラグ
 	bool _bIsInFlight = false;

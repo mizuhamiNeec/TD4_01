@@ -34,6 +34,14 @@ void MyGame::GameScoreComponent::DrawInspectorImGui() {
 	ImGui::DragInt("Hole In One Score", &_holeInOneScore, 1, -99999, 99999);
 	ImGui::DragInt("Direct Hole In One Score", &_directHoleInOneScore, 1, -99999, 99999);
 	ImGui::DragInt("OB Penalty Score", &_obPenaltyScore, 1, -99999, 99999);
+	ImGui::Separator();
+	ImGui::Text("Breakdown");
+	ImGui::Text("Trash To Sea: %d", _trashToSeaTotal);
+	ImGui::Text("Trash Into Hole: %d", _trashIntoHoleTotal);
+	ImGui::Text("Ball Catch: %d", _ballCatchTotal);
+	ImGui::Text("Hole In One: %d", _holeInOneTotal);
+	ImGui::Text("Ace: %d", _directHoleInOneTotal);
+	ImGui::Text("OB Penalty: %d", _outOfBoundsPenaltyTotal);
 	ImGui::Text("Trash To Sea Count: %zu", _scoredTrashToSeaGuids.size());
 	ImGui::Text("Trash Into Hole Count: %zu", _scoredTrashIntoHoleGuids.size());
 
@@ -89,6 +97,12 @@ void MyGame::GameScoreComponent::Serialize(Unnamed::JsonWriter& writer) const {
 void MyGame::GameScoreComponent::ResetScore() {
 	// NOTE: 合計点と一度だけ加算するための記録をまとめて初期化する。
 	_score = 0;
+	_trashToSeaTotal = 0;
+	_trashIntoHoleTotal = 0;
+	_ballCatchTotal = 0;
+	_holeInOneTotal = 0;
+	_directHoleInOneTotal = 0;
+	_outOfBoundsPenaltyTotal = 0;
 	_hasAddedBallCatchScore = false;
 	_hasAddedHoleInOneScore = false;
 	_hasAddedDirectHoleInOneScore = false;
@@ -109,6 +123,7 @@ bool MyGame::GameScoreComponent::AddTrashToSeaScore(uint64_t trashGuid) {
 	}
 
 	_scoredTrashToSeaGuids.insert(trashGuid);
+	_trashToSeaTotal += _trashToSeaScore;
 	AddScore(_trashToSeaScore);
 	return true;
 }
@@ -120,6 +135,7 @@ bool MyGame::GameScoreComponent::AddTrashIntoHoleScore(uint64_t trashGuid) {
 	}
 
 	_scoredTrashIntoHoleGuids.insert(trashGuid);
+	_trashIntoHoleTotal += _trashIntoHoleScore;
 	AddScore(_trashIntoHoleScore);
 	return true;
 }
@@ -131,6 +147,7 @@ bool MyGame::GameScoreComponent::AddBallCatchScore() {
 	}
 
 	_hasAddedBallCatchScore = true;
+	_ballCatchTotal += _ballCatchScore;
 	AddScore(_ballCatchScore);
 	return true;
 }
@@ -142,6 +159,7 @@ bool MyGame::GameScoreComponent::AddHoleInOneBonus() {
 	}
 
 	_hasAddedHoleInOneScore = true;
+	_holeInOneTotal += _holeInOneScore;
 	AddScore(_holeInOneScore);
 	return true;
 }
@@ -153,6 +171,7 @@ bool MyGame::GameScoreComponent::AddDirectHoleInOneBonus() {
 	}
 
 	_hasAddedDirectHoleInOneScore = true;
+	_directHoleInOneTotal += _directHoleInOneScore;
 	AddScore(_directHoleInOneScore);
 	return true;
 }
@@ -164,10 +183,35 @@ bool MyGame::GameScoreComponent::AddOutOfBoundsPenalty() {
 	}
 
 	_hasAddedOutOfBoundsPenalty = true;
+	_outOfBoundsPenaltyTotal += _obPenaltyScore;
 	AddScore(_obPenaltyScore);
 	return true;
 }
 
 int MyGame::GameScoreComponent::GetScore() const {
 	return _score;
+}
+
+int MyGame::GameScoreComponent::GetTrashToSeaTotal() const {
+	return _trashToSeaTotal;
+}
+
+int MyGame::GameScoreComponent::GetTrashIntoHoleTotal() const {
+	return _trashIntoHoleTotal;
+}
+
+int MyGame::GameScoreComponent::GetBallCatchTotal() const {
+	return _ballCatchTotal;
+}
+
+int MyGame::GameScoreComponent::GetHoleInOneTotal() const {
+	return _holeInOneTotal;
+}
+
+int MyGame::GameScoreComponent::GetDirectHoleInOneTotal() const {
+	return _directHoleInOneTotal;
+}
+
+int MyGame::GameScoreComponent::GetOutOfBoundsPenaltyTotal() const {
+	return _outOfBoundsPenaltyTotal;
 }

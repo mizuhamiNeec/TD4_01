@@ -235,6 +235,10 @@ namespace MyGame {
 	//  BaseComponent の必須オーバーライド
 	// ===================================================================
 
+	int TrashObjMoverComponent::GetScore() const {
+		return _scoreValue;
+	}
+
 	std::string_view TrashObjMoverComponent::GetStableName() const {
 		return "mygame.TrashObjMoverComponent";
 	}

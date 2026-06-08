@@ -80,7 +80,7 @@ namespace MyGame {
 	void PlayerMoveComponent::SetMoveDirection(const Vec2& direction) {
 		// NOTE: 移動方向をクランプして保存
 		Vec2 clamped = direction;
-		clamped.Clamp(Vec2(-1.0f, -1.0f), Vec2(1.0f, 1.0f));
+		clamped.ClampLength(0.0f,1.0f);
 		_moveDirection = clamped;
 	}
 

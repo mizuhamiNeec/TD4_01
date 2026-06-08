@@ -4,6 +4,9 @@
 #include "core/io/json/JsonWriter.h"
 
 #include "engine/gui/UiWidget.h"
+#include "engine/unnamed/subsystem/console/ConsoleSystem.h"
+#include "engine/unnamed/subsystem/console/Log.h"
+#include "engine/unnamed/subsystem/interface/ServiceLocator.h"
 
 namespace Unnamed::Gui {
 	namespace {
@@ -17,9 +20,7 @@ namespace Unnamed::Gui {
 		}
 
 		Color ReadColor(const JsonReader& reader, const Color& fallback) {
-			if (!reader.Valid() || reader.Size() < 4) {
-				return fallback;
-			}
+			if (!reader.Valid() || reader.Size() < 4) { return fallback; }
 			return {
 				.r = reader[0].GetFloat(),
 				.g = reader[1].GetFloat(),
@@ -39,9 +40,7 @@ namespace Unnamed::Gui {
 
 	void UiButtonBehaviorComponent::SetOnClick(
 		const std::function<void()>& callback
-	) {
-		mOnClick = callback;
-	}
+	) { mOnClick = callback; }
 
 	void UiButtonBehaviorComponent::SetColors(
 		const Color& normal,
@@ -93,32 +92,25 @@ namespace Unnamed::Gui {
 		mFontSize = size;
 	}
 
-	float UiButtonBehaviorComponent::GetFontSize() const {
-		return mFontSize;
-	}
+	float UiButtonBehaviorComponent::GetFontSize() const { return mFontSize; }
 
 	void UiButtonBehaviorComponent::BuildDrawCommands(
-		const UiWidget& owner,
+		const UiWidget&             owner,
 		std::vector<UiDrawCommand>& out
 	) const {
-		if (!owner.IsVisible()) {
-			return;
-		}
+		if (!owner.IsVisible()) { return; }
 
 		Color background = mColorNormal;
-		if (owner.IsPressed()) {
-			background = mColorPressed;
-		} else if (owner.IsHovered()) {
-			background = mColorHovered;
-		}
+		if (owner.IsPressed()) { background = mColorPressed; } else if (owner.
+			IsHovered()) { background = mColorHovered; }
 
 		const Rect& rect = owner.GetGlobalRect();
 
-		UiDrawCommand rectCommand = {};
-		rectCommand.type          = UI_DRAW_COMMAND_TYPE::RECT;
-		rectCommand.rect.rect     = rect;
-		rectCommand.rect.fillColor = background;
-		rectCommand.rect.cornerRadius = mCornerRadius;
+		UiDrawCommand rectCommand        = {};
+		rectCommand.type                 = UI_DRAW_COMMAND_TYPE::RECT;
+		rectCommand.rect.rect            = rect;
+		rectCommand.rect.fillColor       = background;
+		rectCommand.rect.cornerRadius    = mCornerRadius;
 		rectCommand.rect.borderThickness = 1.0f;
 		rectCommand.rect.borderColor     = mBorderColor;
 		out.emplace_back(rectCommand);
@@ -139,8 +131,21 @@ namespace Unnamed::Gui {
 
 	void UiButtonBehaviorComponent::OnClick(UiWidget& owner) {
 		(void)owner;
-		if (mOnClick) {
-			mOnClick();
+		if (mOnClick) { mOnClick(); }
+
+		if (!mOnClickCommands.empty()) {
+			ConsoleSystem* console = ServiceLocator::Get<ConsoleSystem>();
+			if (!console) {
+				Warning(
+					GetTypeName(),
+					"{} command execution skipped: ConsoleSystem is not available.",
+					"OnClick"
+				);
+			}
+
+			for (const auto& cmd : mOnClickCommands) {
+				console->ExecuteCommand(cmd, EXEC_FLAG::FROM_ENGINE);
+			}
 		}
 	}
 
@@ -161,12 +166,16 @@ namespace Unnamed::Gui {
 		writer.Write(mCornerRadius);
 		writer.Key("fontSize");
 		writer.Write(mFontSize);
+		writer.Key("onClickCommands");
+		writer.BeginArray();
+		for (const auto& cmd : mOnClickCommands) {
+			writer.Write(cmd);
+		}
+		writer.EndArray();
 	}
 
 	void UiButtonBehaviorComponent::Deserialize(const JsonReader& reader) {
-		if (reader.Has("text")) {
-			mText = reader["text"].GetString();
-		}
+		if (reader.Has("text")) { mText = reader["text"].GetString(); }
 		if (reader.Has("normalColor")) {
 			mColorNormal = ReadColor(reader["normalColor"], mColorNormal);
 		}
@@ -188,5 +197,17 @@ namespace Unnamed::Gui {
 		if (reader.Has("fontSize")) {
 			mFontSize = reader["fontSize"].GetFloat();
 		}
+		
+		if (reader.Has("onClickCommands")) {
+			const JsonReader commands = reader["onClickCommands"].GetArray();
+			mOnClickCommands.clear();
+			for (size_t i = 0; i < commands.Size(); ++i) {
+				mOnClickCommands.emplace_back(commands[i].GetString());
+			}
+		}
+	}
+
+	std::vector<std::string>& UiButtonBehaviorComponent::GetOnClickCommands() {
+		return mOnClickCommands;
 	}
 }

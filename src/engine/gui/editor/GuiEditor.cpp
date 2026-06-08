@@ -613,6 +613,20 @@ namespace Unnamed::Gui {
 
 		ImGui::End();
 	}
+	
+	template <size_t N>
+	bool EditCommandInput(const char* label, std::string& value) {
+		std::array<char, N> buffer = {};
+		const size_t copyLen = std::min(value.size(), buffer.size() - 1);
+		if (copyLen > 0) {
+			std::memcpy(buffer.data(), value.data(), copyLen);
+		}
+		if (!ImGui::InputText(label, buffer.data(),buffer.size())) {
+			return false;
+		}
+		value =buffer.data();
+		return true;
+	}
 
 	void DrawUiInspectorWindow(GuiEditorContext& context) {
 		if (!ImGui::Begin("Ui Inspector")) {
@@ -913,6 +927,35 @@ namespace Unnamed::Gui {
 					)) {
 						button->SetFontSize(fontSize);
 						changed = true;
+					}
+					
+					{
+						auto& commands = button->GetOnClickCommands();
+						
+						if (ImGui::Button("Add Command")) {
+							commands.emplace_back();
+							changed = true;
+						}
+						
+						ImGui::SameLine();
+						if (ImGui::Button("Clear Commands")) {
+							commands.clear();
+							changed = true;
+						}
+						
+						for (size_t j = 0; j < commands.size(); ++j) {
+							std::string& command = commands[j];
+							ImGui::PushID(static_cast<int>(j));
+							EditCommandInput<512>("##Command", command);
+							ImGui::SameLine();
+							if (ImGui::Button("Remove")) {
+								commands.erase(commands.begin() + static_cast<ptrdiff_t>(j));
+								ImGui::PopID();
+								break;
+							}
+							
+							ImGui::PopID();
+						}
 					}
 				} else if (
 					auto* texture = dynamic_cast<UiTextureComponent*>(component)

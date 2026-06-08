@@ -64,9 +64,6 @@ namespace MyGame {
 		/// 移動軸の名前
 		std::string _moveAxisName = "MoveAxis";
 
-		/// ジャンプアクションの名前
-		std::string _jumpActionName = "Jump";
-
 		/// 現在の移動入力（キャッシュ）
 		Vec2 _currentMoveInput = Vec2::zero;
 

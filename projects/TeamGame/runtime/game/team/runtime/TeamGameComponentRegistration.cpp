@@ -4,6 +4,7 @@
 #include "core/ComponentRegistry.h"
 #include "engine/unnamed/subsystem/console/Log.h"
 #include "MicComponent.h"
+#include "PlayerFollowCameraComponent.h"
 #include "PlayerMoveComponent.h"
 #include "PlayerControlComponent.h"
 #include "GolfBallComponent.h"
@@ -50,6 +51,9 @@ namespace Unnamed {
 	void RegisterTeamGameComponents(ComponentRegistry &componentRegistry) {
 		RegisterComponentIfMissing<MyGame::MicComponent>(
 			componentRegistry, "mygame.MicComponent", "Mic Component");
+		RegisterComponentIfMissing<MyGame::PlayerFollowCameraComponent>(
+			componentRegistry, "mygame.PlayerFollowCameraComponent",
+			"Player Follow Camera Component");
 		RegisterComponentIfMissing<MyGame::PlayerMoveComponent>(
 			componentRegistry, "mygame.PlayerMoveComponent", "Player Move Component");
 		RegisterComponentIfMissing<MyGame::PlayerControlComponent>(

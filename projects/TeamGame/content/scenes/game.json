@@ -992,6 +992,33 @@
                     },
                     "guid": 15077986507653592252,
                     "type": "game.Camera"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "lookAheadSharpness": 8.0,
+                        "lookAheadTime": 0.22,
+                        "lookAtOffset": [
+                            0.0,
+                            1.2,
+                            0.0
+                        ],
+                        "maxLookAheadDistance": 2.5,
+                        "offset": [
+                            0.0,
+                            4.0,
+                            -6.0
+                        ],
+                        "positionSharpness": 7.5,
+                        "rotationSharpness": 10.0,
+                        "snapDistance": 18.0,
+                        "targetEntityGuid": 42,
+                        "targetName": "Player",
+                        "targetTag": "",
+                        "useTargetYaw": true
+                    },
+                    "guid": 0,
+                    "type": "mygame.PlayerFollowCameraComponent"
                 }
             ],
             "folderPath": "",

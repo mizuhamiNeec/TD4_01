@@ -6,6 +6,9 @@
 
 #include <engine/physics/core/Physics.h>
 
+#include <string>
+#include <string_view>
+
 namespace Unnamed {
 	class BaseKinematicCollisionResolver;
 }
@@ -192,9 +195,6 @@ private:
 	/// 外力で一度に増える上向き速度の上限
 	float _maxExternalUpwardVelocity = 8.0f;
 
-	/// 起動時に自動で発射するか
-	bool _bLaunchOnStart = true;
-	
 	// -----------------------------------------------------------------------
 	// 放物運動パラメータ
 	// -----------------------------------------------------------------------
@@ -289,9 +289,6 @@ private:
 
 	/// 起動後の初期設定反映が完了したか
 	bool _bInitialSetupApplied = false;
-
-	/// 起動時自動発射を実行済みか
-	bool _bHasAutoLaunched = false;
 
 	// -----------------------------------------------------------------------
 	// エンティティ参照

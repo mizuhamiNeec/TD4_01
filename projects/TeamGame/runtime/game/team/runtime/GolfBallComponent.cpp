@@ -10,7 +10,6 @@
 #include <cstdint>
 #include <cstdlib>
 
-#include <engine/ImGui/ImGuiWidgets.h>
 #include <engine/world/World.h>
 #include <engine/scene/Scene.h>
 
@@ -18,10 +17,6 @@
 
 #include "GolfBallStartPosComponent.h"
 #include "GolfBallEndPosComponent.h"
-
-#ifdef _DEBUG
-#include "imgui.h"
-#endif
 
 namespace MyGame {
 
@@ -39,7 +34,6 @@ namespace MyGame {
 		_bIsBeingSucked = false;
 		_bIsInsideHole = false;
 		_bInitialSetupApplied = false;
-		_bHasAutoLaunched = false;
 
 		// 物理エンジンをワールドから取得
 		_physicsEngine = GetWorld() ? &GetWorld()->GetPhysicsEngine() : nullptr;
@@ -57,11 +51,6 @@ namespace MyGame {
 			SyncSetupFromReferencedEntities();
 			SetStartPoint(_startPoint);
 			_bInitialSetupApplied = true;
-
-			if (_bLaunchOnStart && !_bHasAutoLaunched) {
-				Launch();
-				_bHasAutoLaunched = true;
-			}
 		}
 
 		// -----------------------------------------------------------------------
@@ -174,10 +163,12 @@ namespace MyGame {
 		// -----------------------------------------------------------------------
 		if (!_bIsInsideHole) {
 			auto* sphereKCR = dynamic_cast<Unnamed::SphereKinematicCollisionResolver*>(mCollisionResolver.get());
-			// ↓衝突応答の責任者
-			sphereKCR->SlideMove(
-				_position, _velocity, deltaTime
-			);
+			if (sphereKCR) {
+				// ↓衝突応答の責任者
+				sphereKCR->SlideMove(
+					_position, _velocity, deltaTime
+				);
+			}
 		} else {
 			_position += _velocity * deltaTime;
 		}
@@ -191,16 +182,16 @@ namespace MyGame {
 			transform->SetPosition(_position);
 			// NOTE: 瞬間的な位置変更なので補間をリセット
 			transform->RequestInterpolationResync();
-		}
 
-		// デバッグ描画
-		GetWorld()->GetDebugDraw().DrawSphere(
-			transform->GetPosition(),
-			transform->GetRotation(),
-			_radius, 
-			Vec4::cyan,
-			16
-		);
+			// Transformと同期できた位置だけを可視化する。
+			GetWorld()->GetDebugDraw().DrawSphere(
+				transform->GetPosition(),
+				transform->GetRotation(),
+				_radius, 
+				Vec4::cyan,
+				16
+			);
+		}
 	}
 
 	void GolfBallComponent::OnDetached() {
@@ -457,277 +448,6 @@ namespace MyGame {
 		return "Golf Ball";
 	}
 
-#ifdef _DEBUG
-	void GolfBallComponent::DrawInspectorImGui() {
-		ImGui::Text("=== ゴルフボール設定 ===");
-		if (ImGui::DragFloat("半径##golf_radius", &_radius, 0.25f, 0.1f, 100.0f, "%.2f")) {
-			ApplyPositionToRuntime();
-		}
-		ImGui::SliderFloat("重さ##golf_mass", &_mass, 0.1f, 30.0f, "%.2f kg");
-		ImGui::SliderFloat("外力の上向き速度上限##golf_external_up_limit", &_maxExternalUpwardVelocity, 0.0f, 30.0f, "%.2f");
-		ImGui::Checkbox("起動時に自動発射##golf_launch_on_start", &_bLaunchOnStart);
-		
-		if (ImGuiWidgets::DragVec3("速度を直接上書き##golf_velocity_override", _velocity, Vec3::zero, 0.1f, "%.2f[m/s]")) {
-			// NOTE: デバッグ用に速度を直接編集可能にする
-			_bIsInFlight = true; // 直接編集したらフライト状態にする
-		}
-		
-		ImGui::Text("=== 飛行状態 ===");
-		ImGui::Separator();
-
-		// -----------------------------------------------------------------------
-		// フライト状態表示
-		// -----------------------------------------------------------------------
-		ImGui::Text("状態: %s", _bIsInFlight ? "飛行中" : "停止中");
-		ImGui::Text("経過時間: %.2f 秒", _elapsedTime);
-		ImGui::ProgressBar(_elapsedTime / std::max(0.001f, _flightTime), ImVec2(0, 0), "進行度");
-
-		ImGui::Separator();
-
-		// -----------------------------------------------------------------------
-		// 位置・速度表示
-		// -----------------------------------------------------------------------
-		ImGui::Text("現在位置: (%.2f, %.2f, %.2f)", _position.x, _position.y, _position.z);
-		ImGui::Text("現在速度: (%.2f, %.2f, %.2f)", _velocity.x, _velocity.y, _velocity.z);
-		float speed = _velocity.Length();
-		ImGui::Text("速度の大きさ: %.2f units/sec", speed);
-
-		ImGui::Separator();
-
-		// -----------------------------------------------------------------------
-		// 発射地点設定セクション
-		// -----------------------------------------------------------------------
-		ImGui::Text("=== 発射位置設定 ===");
-		
-		if (ImGuiWidgets::DragVec3("発射位置##golf_start_point", _startPoint, Vec3::zero, 0.1f, "%.2f")) {
-			_startPosEntity = nullptr;
-			_startPosEntityGuid = "";
-			if (!_bIsInFlight && !_bIsBeingSucked) {
-				SetStartPoint(_startPoint);
-			}
-		}
-		
-		if (ImGui::Button("発射位置へボールを移動##golf_apply_start", ImVec2(190, 0))) {
-			SetStartPoint(_startPoint);
-		}
-		ImGui::SameLine();
-		if (ImGui::Button("現在位置を発射位置にする##golf_start_from_current", ImVec2(210, 0))) {
-			// NOTE: 現在位置を発射地点として設定
-			_startPosEntity = nullptr;
-			_startPosEntityGuid = "";
-			_startPoint = _position;
-		}
-
-		ImGui::Text("保存される発射位置: (%.2f, %.2f, %.2f)", _startPoint.x, _startPoint.y, _startPoint.z);
-
-		// -----------------------------------------------------------------------
-		// エンティティ参照による発射地点設定
-		// -----------------------------------------------------------------------
-		ImGui::Separator();
-		ImGui::Text("--- マーカーから設定（GolfBallStartPosComponent） ---");
-		ImGui::TextDisabled("発射位置マーカーを選ぶと、そのエンティティの位置を実行時に参照します");
-
-		// NOTE: 世界中から GolfBallStartPosComponent を持つエンティティを検索
-		std::vector<Unnamed::Entity*> startPosEntities;
-		int startPosEntityIndex = -1;
-		
-		auto* world = GetWorld();
-		if (world) {
-			auto* scene = world->GetScenePtr();
-			if (scene) {
-				const auto& allEntities = scene->GetEntities();
-				for (const auto& entity : allEntities) {
-					if (entity && entity->GetComponent<GolfBallStartPosComponent>()) {
-						startPosEntities.push_back(entity.get());
-						// 既に設定済みならそのインデックスを保存
-						if (entity.get() == _startPosEntity) {
-							startPosEntityIndex = static_cast<int>(startPosEntities.size()) - 1;
-						}
-					}
-				}
-			}
-		}
-
-		// NOTE: 現在設定されているエンティティを表示
-		if (_startPosEntity) {
-			ImGui::Text("設定中のマーカー: %.*s", (int)_startPosEntity->GetName().size(), _startPosEntity->GetName().data());
-			ImGui::SameLine();
-			if (ImGui::Button("解除##start_entity", ImVec2(60, 0))) {
-				_startPosEntity = nullptr;
-				_startPosEntityGuid = "";
-			}
-		} else {
-			ImGui::Text("設定中のマーカー: なし");
-		}
-
-		// NOTE: コンボボックスでエンティティ選択
-		if (!startPosEntities.empty()) {
-			std::vector<const char*> items;
-			for (const auto* entity : startPosEntities) {
-				items.push_back(entity->GetName().data());
-			}
-
-			if (ImGui::Combo("発射位置マーカー##combo_start", &startPosEntityIndex, items.data(), static_cast<int>(items.size()))) {
-				// NOTE: コンボボックスから選択されたら即座に設定
-				if (startPosEntityIndex >= 0 && startPosEntityIndex < static_cast<int>(startPosEntities.size())) {
-					SetStartPosEntity(startPosEntities[startPosEntityIndex]);
-				}
-			}
-		} else {
-			ImGui::TextDisabled("発射位置マーカーがシーン内にありません");
-		}
-
-		ImGui::Separator();
-
-		// -----------------------------------------------------------------------
-		// 着弾地点設定セクション
-		// -----------------------------------------------------------------------
-		ImGui::Text("=== 着弾位置設定 ===");
-		
-		if (ImGuiWidgets::DragVec3("着弾基準位置##golf_target_point", _targetBase, Vec3::zero, 0.1f, "%.2f")) {
-			_targetPosEntity = nullptr;
-			_targetPosEntityGuid = "";
-		}
-
-		if (ImGui::Button("ランダム着地点を再計算##golf_refresh_target_offset", ImVec2(220, 0))) {
-			// NOTE: ランダムオフセットを再計算（同じターゲットで別の着地点を試す）
-			RefreshTargetRandomOffset();
-		}
-
-		ImGui::Text("着弾基準位置: (%.2f, %.2f, %.2f)", _targetBase.x, _targetBase.y, _targetBase.z);
-		ImGui::Text("ランダム補正: (%.2f, %.2f, %.2f)", _targetRandomOffset.x, _targetRandomOffset.y, _targetRandomOffset.z);
-		Vec3 finalTarget = _targetBase + _targetRandomOffset;
-		ImGui::Text("最終着地点: (%.2f, %.2f, %.2f)", finalTarget.x, finalTarget.y, finalTarget.z);
-
-		// -----------------------------------------------------------------------
-		// エンティティ参照による着弾地点設定
-		// -----------------------------------------------------------------------
-		ImGui::Separator();
-		ImGui::Text("--- マーカーから設定（GolfBallEndPosComponent） ---");
-		ImGui::TextDisabled("着弾位置マーカーを選ぶと、そのエンティティの位置を実行時に参照します");
-
-		// NOTE: 世界中から GolfBallEndPosComponent を持つエンティティを検索
-		std::vector<Unnamed::Entity*> endPosEntities;
-		int endPosEntityIndex = -1;
-		
-		if (world) {
-			auto* scene = world->GetScenePtr();
-			if (scene) {
-				const auto& allEntities = scene->GetEntities();
-				for (const auto& entity : allEntities) {
-					if (entity && entity->GetComponent<GolfBallEndPosComponent>()) {
-						endPosEntities.push_back(entity.get());
-						// 既に設定済みならそのインデックスを保存
-						if (entity.get() == _targetPosEntity) {
-							endPosEntityIndex = static_cast<int>(endPosEntities.size()) - 1;
-						}
-					}
-				}
-			}
-		}
-
-		// NOTE: 現在設定されているエンティティを表示
-		if (_targetPosEntity) {
-			ImGui::Text("設定中のマーカー: %.*s", (int)_targetPosEntity->GetName().size(), _targetPosEntity->GetName().data());
-			ImGui::SameLine();
-			if (ImGui::Button("解除##target_entity", ImVec2(60, 0))) {
-				_targetPosEntity = nullptr;
-				_targetPosEntityGuid = "";
-			}
-		} else {
-			ImGui::Text("設定中のマーカー: なし");
-		}
-
-		// NOTE: コンボボックスでエンティティ選択
-		if (!endPosEntities.empty()) {
-			std::vector<const char*> items;
-			for (const auto* entity : endPosEntities) {
-				items.push_back(entity->GetName().data());
-			}
-
-			if (ImGui::Combo("着弾位置マーカー##combo_end", &endPosEntityIndex, items.data(), static_cast<int>(items.size()))) {
-				// NOTE: コンボボックスから選択されたら即座に設定
-				if (endPosEntityIndex >= 0 && endPosEntityIndex < static_cast<int>(endPosEntities.size())) {
-					SetTargetPosEntity(endPosEntities[endPosEntityIndex]);
-				}
-			}
-		} else {
-			ImGui::TextDisabled("着弾位置マーカーがシーン内にありません");
-		}
-
-		ImGui::Separator();
-
-		// -----------------------------------------------------------------------
-		// パラメータ調整
-		// -----------------------------------------------------------------------
-		ImGui::Text("=== 物理パラメータ ===");
-		ImGui::SliderFloat("重力##golf_gravity", &_gravity, 0.0f, 20.0f, "%.2f");
-		ImGui::SliderFloat("到達時間##golf_flight_time", &_flightTime, 0.1f, 10.0f, "%.2f");
-		ImGui::SliderFloat("着地点ランダム半径##golf_random_radius", &_randomRadius, 0.0f, 10.0f, "%.2f");
-		ImGui::SliderFloat("最大速度##golf_max_speed", &_maxSpeedClamp, 0.0f, 100.0f, "%.2f");
-
-		ImGui::Separator();
-
-		// -----------------------------------------------------------------------
-		// 風パラメータ
-		// -----------------------------------------------------------------------
-		ImGui::Text("=== 風パラメータ ===");
-		ImGui::SliderFloat("風 X##golf_wind_x", &_wind.x, -10.0f, 10.0f, "%.2f");
-		ImGui::SliderFloat("風 Y##golf_wind_y", &_wind.y, -10.0f, 10.0f, "%.2f");
-		ImGui::SliderFloat("風 Z##golf_wind_z", &_wind.z, -10.0f, 10.0f, "%.2f");
-
-		ImGui::Separator();
-
-		// -----------------------------------------------------------------------
-		// ホーミングパラメータ
-		// -----------------------------------------------------------------------
-		ImGui::Text("=== ホーミングパラメータ ===");
-		ImGui::SliderFloat("ホーミング強度##golf_homing_strength", &_homingStrength, 0.0f, 5.0f, "%.2f");
-		ImGui::SliderFloat("ホーミング開始時間##golf_homing_start", &_homingStartTime, 0.0f, _flightTime, "%.2f");
-		ImGui::SliderFloat("ホーミング終了時間##golf_homing_end", &_homingEndTime, _homingStartTime, _flightTime, "%.2f");
-
-		ImGui::Separator();
-
-		// -----------------------------------------------------------------------
-		// バウンス・摩擦パラメータ
-		// -----------------------------------------------------------------------
-		ImGui::Text("=== バウンド・摩擦パラメータ ===");
-		ImGui::SliderFloat("反発係数##golf_bounce", &_bounceDamping, 0.0f, 1.0f, "%.3f");
-		ImGui::SliderFloat("摩擦係数##golf_friction", &_frictionCoefficient, 0.0f, 1.0f, "%.3f");
-		ImGui::SliderFloat("地面の高さ##golf_ground_level", &_groundLevel, -10.0f, 10.0f, "%.2f");
-		ImGui::SliderFloat("停止判定速度##golf_stop_threshold", &_stopVelocityThreshold, 0.001f, 0.1f, "%.4f");
-
-		// NOTE: パラメータ説明
-		ImGui::TextDisabled("反発: 0=跳ねない、1=エネルギー維持 / 摩擦: 0=すぐ止まる、1=減速しない");
-		ImGui::Checkbox("接地中##golf_grounded", &_bIsGrounded);
-
-		ImGui::Separator();
-
-		// -----------------------------------------------------------------------
-		// コントロールボタン
-		// -----------------------------------------------------------------------
-		ImGui::Text("=== 操作 ===");
-		
-		if (ImGui::Button("発射##golf_launch", ImVec2(100, 30))) {
-			// NOTE: 現在設定されている発射地点とターゲット地点で発射
-			Launch();
-		}
-		ImGui::SameLine();
-		if (ImGui::Button("リセット##golf_reset", ImVec2(100, 30))) {
-			// NOTE: 状態をリセット
-			_bIsInFlight = false;
-			_elapsedTime = 0.0f;
-			_velocity = Vec3(0.0f, 0.0f, 0.0f);
-			SetStartPoint(_startPoint);
-		}
-		ImGui::SameLine();
-		if (ImGui::Button("停止##golf_stop", ImVec2(100, 30))) {
-			// NOTE: 即座に着地させる
-			_bIsInFlight = false;
-		}
-	}
-#endif
-
 	void GolfBallComponent::Deserialize(const Unnamed::JsonReader& reader) {
 		// NOTE: JSON から パラメータを読み込む
 		// Read() は std::optional<T> を返すため、value() で値を取得
@@ -739,9 +459,6 @@ namespace MyGame {
 		}
 		if (auto val = reader.Read<float>("maxExternalUpwardVelocity")) {
 			_maxExternalUpwardVelocity = std::max(0.0f, val.value());
-		}
-		if (auto val = reader.Read<bool>("launchOnStart")) {
-			_bLaunchOnStart = val.value();
 		}
 		if (auto val = reader.Read<float>("startPointX")) {
 			_startPoint.x = val.value();
@@ -825,8 +542,6 @@ namespace MyGame {
 		writer.Write(_mass);
 		writer.Key("maxExternalUpwardVelocity");
 		writer.Write(_maxExternalUpwardVelocity);
-		writer.Key("launchOnStart");
-		writer.Write(_bLaunchOnStart);
 		writer.Key("startPointX");
 		writer.Write(_startPoint.x);
 		writer.Key("startPointY");

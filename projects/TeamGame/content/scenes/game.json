@@ -196,14 +196,13 @@
                     "active": true,
                     "data": {
                         "bounceDamping": 0.5,
-                        "flightTime": 10.0,
+                        "flightTime": 15.0,
                         "frictionCoefficient": 0.20000000298023224,
                         "gravity": 9.8100004196167,
                         "groundLevel": 0.0,
                         "homingEndTime": 1.5,
                         "homingStartTime": 0.5,
                         "homingStrength": 1.0,
-                        "launchOnStart": true,
                         "mass": 4.0,
                         "maxExternalUpwardVelocity": 8.0,
                         "maxSpeedClamp": 50.0,
@@ -224,6 +223,20 @@
                     },
                     "guid": 16452083266744588109,
                     "type": "mygame.GolfBall"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "ballEntityGuid": 0,
+                        "ballName": "Ball",
+                        "ballTag": "Ball",
+                        "countdownDigitWidgetName": "number_UI",
+                        "countdownDuration": 15.0,
+                        "countdownUiAssetPath": "projects/TeamGame/content/ui/countdown.ui.json",
+                        "launchOnStart": true
+                    },
+                    "guid": 0,
+                    "type": "mygame.GolfBallLaunchCountdownComponent"
                 },
                 {
                     "active": true,
@@ -979,6 +992,33 @@
                     },
                     "guid": 15077986507653592252,
                     "type": "game.Camera"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "lookAheadSharpness": 8.0,
+                        "lookAheadTime": 0.22,
+                        "lookAtOffset": [
+                            0.0,
+                            1.2,
+                            0.0
+                        ],
+                        "maxLookAheadDistance": 2.5,
+                        "offset": [
+                            0.0,
+                            4.0,
+                            -6.0
+                        ],
+                        "positionSharpness": 7.5,
+                        "rotationSharpness": 10.0,
+                        "snapDistance": 18.0,
+                        "targetEntityGuid": 42,
+                        "targetName": "Player",
+                        "targetTag": "",
+                        "useTargetYaw": true
+                    },
+                    "guid": 0,
+                    "type": "mygame.PlayerFollowCameraComponent"
                 }
             ],
             "folderPath": "",
@@ -1773,6 +1813,126 @@
             "guid": 10271558206346713449,
             "isEditorOnly": false,
             "name": "Player2GolfBall_UI",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "billboardDepthMode": "DepthTest",
+                        "pixelSize": [
+                            1920.0,
+                            1080.0
+                        ],
+                        "receiveInput": false,
+                        "sortKey": 10,
+                        "spaceMode": "Screen",
+                        "uiAssetPath": "projects/TeamGame/content/ui/countdown.ui.json",
+                        "worldSize": [
+                            2.0,
+                            1.125
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.UiCanvas"
+                }
+            ],
+            "folderPath": "UserInterface",
+            "guid": 12087284352773638141,
+            "isEditorOnly": false,
+            "name": "Countdown_UI",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "ballCatchScore": 10000,
+                        "directHoleInOneScore": 20000,
+                        "holeInOneScore": 10000,
+                        "obPenaltyScore": -1000,
+                        "score": 0,
+                        "trashIntoHoleScore": 100,
+                        "trashToSeaScore": 100
+                    },
+                    "guid": 0,
+                    "type": "mygame.GameScoreComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "afterHitTrashWaveCount": 15,
+                        "afterHitTrashWaveDelay": 6.5,
+                        "autoStartCountdown": true,
+                        "ballHitTrashWaveCount": 15,
+                        "countdownSeconds": 15.0,
+                        "countdownTrashWaveCount": 10,
+                        "launchBallOnPlayingStart": false,
+                        "maxBallFlightSeconds": 20.0,
+                        "minBallFlightSeconds": 5.0,
+                        "seaOutHeight": -10.0
+                    },
+                    "guid": 0,
+                    "type": "mygame.GameRuleSystemComponent"
+                }
+            ],
+            "folderPath": "UserInterface",
+            "guid": 10271558206346713450,
+            "isEditorOnly": false,
+            "name": "GameRuleManager",
             "tags": [],
             "visible": true
         }

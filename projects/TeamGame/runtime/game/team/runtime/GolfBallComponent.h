@@ -94,6 +94,9 @@ public:
 	/// @brief ボールが飛行中かを取得
 	[[nodiscard]] bool IsInFlight() const;
 
+	/// @brief 穴への吸い込み処理中かを取得
+	[[nodiscard]] bool IsBeingSucked() const;
+
 	/// @brief 経過時間を取得
 	[[nodiscard]] float GetElapsedTime() const;
 

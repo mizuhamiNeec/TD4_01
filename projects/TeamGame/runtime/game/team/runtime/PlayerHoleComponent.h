@@ -165,6 +165,12 @@ namespace MyGame {
 		/// エンティティが穴の範囲内にいるかを判定
 		[[nodiscard]] bool IsEntityInHoleRange(Unnamed::Entity* entity) const;
 
+		/// ボールが穴へ入れる高さまで来ているかを判定
+		[[nodiscard]] bool IsGolfBallLowEnoughForHole(
+			const GolfBallComponent& golfBall,
+			const Vec3& holeWorldPos
+		) const;
+
 		/// ゴミを落下状態に移行させる
 		void MakeTrashFall(Unnamed::Entity* trashEntity);
 

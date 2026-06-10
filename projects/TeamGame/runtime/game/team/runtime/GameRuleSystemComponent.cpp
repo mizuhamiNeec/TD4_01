@@ -533,13 +533,11 @@ void MyGame::GameRuleSystemComponent::TriggerTrashWave(int trashCount)
 
 bool MyGame::GameRuleSystemComponent::TryScoreBallCatch(GolfBallComponent& golfBall)
 {
-	const bool hasLaunchedBall =
-		_hasBallLaunched || golfBall.IsInFlight() || golfBall.HasEnteredHole();
-	if (!hasLaunchedBall) {
+	if (!golfBall.HasEnteredHole()) {
 		return false;
 	}
 
-	// NOTE: 成功結果は「穴に入った」事実で確定し、バウンド履歴だけで直接/バウンド後を分ける。
+	// NOTE: 穴に重なっただけでなく、落下状態が確定した後だけホールインワンとして扱う。
 	_hasBallLaunched = true;
 	// NOTE: ボールキャッチ自体には加点せず、直接/バウンド後のホールインワンボーナスだけを採点対象にする。
 	_isHoleInOne = true;
@@ -587,6 +585,9 @@ bool MyGame::GameRuleSystemComponent::IsBallStoppedForResult() const
 	if (_golfBallComponent->HasEnteredHole()) {
 		return false;
 	}
+	if (_golfBallComponent->IsBeingSucked()) {
+		return false;
+	}
 	if (!_golfBallComponent->IsInFlight()) {
 		return true;
 	}
@@ -601,7 +602,7 @@ bool MyGame::GameRuleSystemComponent::IsBallStoppedForResult() const
 		std::abs(velocity.y) <= _ballStopResultVelocityThreshold &&
 		position.y > _seaOutHeight;
 
-	// NOTE: 吸い込みや外力でフライト状態が残っても、実速度が止まっていれば失敗として確定する。
+	// NOTE: 吸い込み中は穴への移行処理なので、速度が低くても停止失敗として扱わない。
 	return isNearlyResting;
 }
 

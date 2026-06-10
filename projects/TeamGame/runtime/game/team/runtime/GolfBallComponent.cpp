@@ -394,6 +394,10 @@ namespace MyGame {
 		return _bIsInFlight;
 	}
 
+	bool GolfBallComponent::IsBeingSucked() const {
+		return _bIsBeingSucked;
+	}
+
 	float GolfBallComponent::GetElapsedTime() const {
 		return _elapsedTime;
 	}

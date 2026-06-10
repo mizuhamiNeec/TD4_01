@@ -493,7 +493,7 @@ bool MyGame::GameRuleSystemComponent::TryScoreBallCatch(GolfBallComponent& golfB
 
 	// NOTE: 成功結果は「穴に入った」事実で確定し、バウンド履歴だけで直接/バウンド後を分ける。
 	_hasBallLaunched = true;
-	_scoreComponent->AddBallCatchScore();
+	// NOTE: ボールキャッチ自体には加点せず、直接/バウンド後のホールインワンボーナスだけを採点対象にする。
 	_isHoleInOne = true;
 	if (!golfBall.HasBounced()) {
 		_isDirectHoleInOne = true;

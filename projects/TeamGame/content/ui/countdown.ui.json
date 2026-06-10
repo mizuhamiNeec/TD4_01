@@ -32,7 +32,7 @@
                             ],
                             "rect": [
                                 32.0,
-                                32.0,
+                                128.0,
                                 200.0,
                                 150.0
                             ],
@@ -61,6 +61,77 @@
                 ],
                 "enabled": true,
                 "name": "number_UI",
+                "visible": true
+            },
+            {
+                "children": [],
+                "components": [
+                    {
+                        "data": {
+                            "anchors": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "constraints": {
+                                "maxHeight": 3.4028234663852886e+38,
+                                "maxWidth": 3.4028234663852886e+38,
+                                "minHeight": 0.0,
+                                "minWidth": 0.0
+                            },
+                            "layoutWeight": 1.0,
+                            "margins": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "pivot": [
+                                0.0,
+                                0.0
+                            ],
+                            "rect": [
+                                16.0,
+                                32.0,
+                                560.0,
+                                64.0
+                            ],
+                            "sizePolicy": [
+                                "Fixed",
+                                "Fixed"
+                            ]
+                        },
+                        "type": "Transform"
+                    },
+                    {
+                        "data": {
+                            "anchor": [
+                                0.0,
+                                0.0
+                            ],
+                            "color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "rotationRad": 0.0,
+                            "texturePath": "projects/TeamGame/content/textures/UI/text_UI/number_UI_countdownText.png",
+                            "uvMax": [
+                                1.0,
+                                1.0
+                            ],
+                            "uvMin": [
+                                0.0,
+                                0.0
+                            ]
+                        },
+                        "type": "Texture"
+                    }
+                ],
+                "enabled": true,
+                "name": "Widget",
                 "visible": true
             }
         ],

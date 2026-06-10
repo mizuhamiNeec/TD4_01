@@ -321,6 +321,7 @@
                 {
                     "active": true,
                     "data": {
+                        "holeDespawnDepth": 8.0,
                         "holeOffsetX": 0.0,
                         "holeOffsetY": 0.0,
                         "holeOffsetZ": 0.0,

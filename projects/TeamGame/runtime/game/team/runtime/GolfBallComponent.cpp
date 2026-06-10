@@ -34,6 +34,7 @@ namespace MyGame {
 		_bIsExternalMotion = false;
 		_bIsBeingSucked = false;
 		_bIsInsideHole = false;
+		_bHasEnteredHole = false;
 		_bInitialSetupApplied = false;
 
 		// 物理エンジンをワールドから取得
@@ -92,6 +93,9 @@ namespace MyGame {
 		if (_bIsBeingSucked) {
 			Vec3 directionToHole = _holeSuckPosition - _position;
 			_bIsInsideHole = (directionToHole.Length() < 1.5f);
+			if (_bHasEnteredHole) {
+				_bIsInsideHole = true;
+			}
 		} else {
 			_bIsInsideHole = false;
 		}
@@ -122,7 +126,7 @@ namespace MyGame {
 		// -----------------------------------------------------------------------
 		// 理由：地面に衝突したときの反射を計算し、リアルな物理挙動を実現
 		if (!_bIsInsideHole) {
-			HandleGroundCollision();
+			HandleGroundCollision(deltaTime);
 		} else {
 			_bIsGrounded = false;
 		}
@@ -165,10 +169,12 @@ namespace MyGame {
 		if (!_bIsInsideHole) {
 			auto* sphereKCR = dynamic_cast<Unnamed::SphereKinematicCollisionResolver*>(mCollisionResolver.get());
 			if (sphereKCR) {
+				const Vec3 velocityBeforeSlide = _velocity;
 				// ↓衝突応答の責任者
 				sphereKCR->SlideMove(
 					_position, _velocity, deltaTime
 				);
+				HandlePostSlideGroundImpact(velocityBeforeSlide);
 			}
 		} else {
 			_position += _velocity * deltaTime;
@@ -208,6 +214,7 @@ namespace MyGame {
 		_startPoint = startPos;
 		_position = startPos;
 		_elapsedTime = 0.0f;
+		_bHasEnteredHole = false;
 		ApplyPositionToRuntime();
 	}
 
@@ -312,6 +319,9 @@ namespace MyGame {
 		_bounceCount = 0;
 		_bIsInFlight = true;
 		_bIsExternalMotion = false;
+		_bIsBeingSucked = false;
+		_bIsInsideHole = false;
+		_bHasEnteredHole = false;
 	}
 
 	// -----------------------------------------------------------------------
@@ -332,6 +342,9 @@ namespace MyGame {
 		_bIsInFlight = true;
 		_bIsExternalMotion = true;
 		_bIsGrounded = false;
+		_bIsBeingSucked = false;
+		_bIsInsideHole = false;
+		_bHasEnteredHole = false;
 		
 		// NOTE: 速度上限を適用して不自然な加速を防止
 		ClampVelocity();
@@ -349,6 +362,9 @@ namespace MyGame {
 	}
 
 	void GolfBallComponent::ClearHoleSuckPosition() {
+		if (_bHasEnteredHole) {
+			return;
+		}
 		_holeSuckPower = 0.0f;
 		_bIsBeingSucked = false;
 		_bIsInsideHole = false;
@@ -750,6 +766,22 @@ namespace MyGame {
 			return;
 		}
 
+		if (_bIsInsideHole || _bHasEnteredHole) {
+			_bHasEnteredHole = true;
+			_bIsInsideHole = true;
+
+			const float kHoleHorizontalDamping = 12.0f;
+			const float kHoleFallGravity = 28.0f;
+			const float kHoleMinFallSpeed = 4.0f;
+			const float damping = std::exp(-kHoleHorizontalDamping * deltaTime);
+			_velocity.x *= damping;
+			_velocity.z *= damping;
+			_velocity.y -= kHoleFallGravity * deltaTime;
+			_velocity.y = std::min(_velocity.y, -kHoleMinFallSpeed);
+			_bIsGrounded = false;
+			return;
+		}
+
 		Vec3 directionToHole = _holeSuckPosition - _position;
 		float distanceToHole = directionToHole.Length();
 		if (distanceToHole < 0.01f) {
@@ -757,10 +789,9 @@ namespace MyGame {
 		}
 
 		Vec3 directionNormalized = directionToHole.Normalized();
-		float suckMultiplier = _bIsInsideHole ? 0.3f : 1.0f;
 
 		const float kBaseSuckAcceleration = 60.0f;
-		Vec3 suckAcceleration = directionNormalized * kBaseSuckAcceleration * _holeSuckPower * suckMultiplier;
+		Vec3 suckAcceleration = directionNormalized * kBaseSuckAcceleration * _holeSuckPower;
 		_velocity += suckAcceleration * deltaTime;
 	}
 
@@ -768,13 +799,18 @@ namespace MyGame {
 	// 状態管理（内部実装）
 	// -----------------------------------------------------------------------
 
-	void GolfBallComponent::HandleGroundCollision() {
+	void GolfBallComponent::HandleGroundCollision(const float deltaTime) {
 		// -----------------------------------------------------------------------
 		// 地面衝突判定
 		// -----------------------------------------------------------------------
 		// 理由：Y座標が地面レベル以下に到達したら、衝突と判定して反射を計算
 		
-		if (_position.y <= _groundLevel) {
+		const bool reachesGroundThisFrame =
+			_velocity.y < 0.0f &&
+			_position.y + _velocity.y * deltaTime <= _groundLevel;
+		const bool restsOrFallsOnGround =
+			_position.y <= _groundLevel && _velocity.y <= 0.0f;
+		if (restsOrFallsOnGround || reachesGroundThisFrame) {
 			const bool wasGrounded = _bIsGrounded;
 			// -----------------------------------------------------------------------
 			// 地面に到達した場合の処理
@@ -783,35 +819,65 @@ namespace MyGame {
 			// NOTE: 位置を地面にクリップ（貫通を防止）
 			_position.y = _groundLevel;
 
-			// NOTE: 縦方向（Y）の速度を反転して反発係数を適用
-			// 理由：完全な弾性衝突ではなく、エネルギー損失を伴わせる
-			// 反発係数が低いほど、バウンドは小さくなる
 			const float impactSpeed = std::max(0.0f, -_velocity.y);
-			if (!wasGrounded && impactSpeed > _stopVelocityThreshold) {
-				// エース判定では、跳ね返りが小さくても地面に触れた事実を使う。
-				++_bounceCount;
-			}
-			if (impactSpeed >= _minBounceVerticalSpeed) {
-				_velocity.y = impactSpeed * _bounceDamping;
-			} else {
-				_velocity.y = 0.0f;
-			}
-
-			// NOTE: 地面接触フラグを有効化
-			_bIsGrounded = true;
-
-			// -----------------------------------------------------------------------
-			// 横方向速度の減衰（衝突時のエネルギー損失）
-			// -----------------------------------------------------------------------
-			// 理由：地面との衝突によって、横方向速度も一定程度失われる
-			_velocity.x *= _groundCollisionDamping;
-			_velocity.z *= _groundCollisionDamping;
+			ResolveGroundImpact(impactSpeed, wasGrounded);
 		} else {
 			// -----------------------------------------------------------------------
 			// 空中にいる場合
 			// -----------------------------------------------------------------------
 			_bIsGrounded = false;
 		}
+	}
+
+	void GolfBallComponent::ResolveGroundImpact(const float impactSpeed, const bool wasGrounded) {
+		if (!wasGrounded && impactSpeed > _stopVelocityThreshold) {
+			// エース判定では、跳ね返りが小さくても地面に触れた事実を使う。
+			++_bounceCount;
+		}
+
+		// NOTE: 縦方向（Y）の速度を反転して反発係数を適用
+		// 理由：完全な弾性衝突ではなく、エネルギー損失を伴わせる
+		const bool shouldBounce = impactSpeed >= _minBounceVerticalSpeed;
+		if (shouldBounce) {
+			_velocity.y = impactSpeed * _bounceDamping;
+		} else {
+			_velocity.y = 0.0f;
+		}
+
+		// 反発したフレームを接地扱いにすると摩擦と停止判定が跳ね返りを潰す。
+		_bIsGrounded = !shouldBounce;
+
+		// NOTE: 接地衝撃で横方向速度も少し落とし、跳ねながら滑りすぎる挙動を抑える。
+		_velocity.x *= _groundCollisionDamping;
+		_velocity.z *= _groundCollisionDamping;
+	}
+
+	void GolfBallComponent::HandlePostSlideGroundImpact(const Vec3& velocityBeforeSlide) {
+		if (_bIsInsideHole || _bIsBeingSucked) {
+			return;
+		}
+		if (velocityBeforeSlide.y >= -_minBounceVerticalSpeed) {
+			return;
+		}
+		if (_velocity.y < -0.001f) {
+			return;
+		}
+
+		auto* sphereKCR = dynamic_cast<Unnamed::SphereKinematicCollisionResolver*>(mCollisionResolver.get());
+		if (!sphereKCR) {
+			return;
+		}
+
+		Unnamed::Physics::Hit hit{};
+		const float probeDistance = std::max(_radius + 0.05f, 0.25f);
+		if (!sphereKCR->ProbeGround(_position + Vec3::up * 0.02f, probeDistance, &hit)) {
+			return;
+		}
+		if (hit.normal.y < 0.6f) {
+			return;
+		}
+
+		ResolveGroundImpact(-velocityBeforeSlide.y, _bIsGrounded);
 	}
 
 	void GolfBallComponent::ApplyFriction() {

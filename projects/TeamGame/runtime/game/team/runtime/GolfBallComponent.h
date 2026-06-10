@@ -167,7 +167,15 @@ private:
 
 	/// @brief 地面衝突判定と反射を処理
 	/// @reason ボールが地面に到達したときの物理的な反射を計算
-	void HandleGroundCollision();
+	void HandleGroundCollision(float deltaTime);
+
+	/// @brief 接地衝撃を反発速度へ変換
+	/// @reason 座標地面と物理オブジェクト上面の衝突で反発処理を共通化する
+	void ResolveGroundImpact(float impactSpeed, bool wasGrounded);
+
+	/// @brief 物理衝突解決後にオブジェクト上面への着地を補正
+	/// @reason SlideMove が下向き速度を潰した場合でも、着地時の反発を残す
+	void HandlePostSlideGroundImpact(const Vec3& velocityBeforeSlide);
 
 	/// @brief 地表摩擦を適用
 	/// @reason 地面上での速度減衰を計算
@@ -303,6 +311,10 @@ private:
 
 	/// 穴の内側に位置しているフラグ（地面衝突判定をスキップするため）
 	bool _bIsInsideHole = false;
+
+	/// 穴へ入った後の落下演出を継続するためのフラグ
+	/// 理由：穴範囲から外れても ClearHoleSuckPosition() で落下を止めない
+	bool _bHasEnteredHole = false;
 
 	/// 起動後の初期設定反映が完了したか
 	bool _bInitialSetupApplied = false;

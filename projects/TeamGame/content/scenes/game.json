@@ -8,9 +8,9 @@
                     "data": {
                         "parentEntityGuid": 0,
                         "position": [
-                            0.7765448093414307,
-                            1.7690939903259277,
-                            -8.472517013549805
+                            0.0,
+                            0.0,
+                            0.0
                         ],
                         "rotation": [
                             0.0,
@@ -72,7 +72,7 @@
                         "parentEntityGuid": 0,
                         "position": [
                             0.0,
-                            0.0,
+                            -0.5,
                             0.0
                         ],
                         "rotation": [
@@ -82,9 +82,9 @@
                             1.0
                         ],
                         "scale": [
+                            10.0,
                             1.0,
-                            1.0,
-                            1.0
+                            10.0
                         ]
                     },
                     "guid": 13408206209332577459,
@@ -108,7 +108,7 @@
                                 "slotIndex": 2
                             }
                         ],
-                        "meshPath": "projects/TeamGame/content/models/fullflat.obj"
+                        "meshPath": "projects/TeamGame/content/models/HoleIsland/HoleIsland.obj"
                     },
                     "guid": 15170849770376363326,
                     "type": "engine.StaticMeshRenderer"
@@ -127,41 +127,6 @@
             "guid": 3,
             "isEditorOnly": false,
             "name": "Ground",
-            "tags": [],
-            "visible": true
-        },
-        {
-            "active": true,
-            "components": [
-                {
-                    "active": true,
-                    "data": {
-                        "parentEntityGuid": 0,
-                        "position": [
-                            0.0,
-                            0.0,
-                            0.0
-                        ],
-                        "rotation": [
-                            0.0,
-                            0.0,
-                            0.0,
-                            1.0
-                        ],
-                        "scale": [
-                            1.0,
-                            1.0,
-                            1.0
-                        ]
-                    },
-                    "guid": 13339722074811050496,
-                    "type": "engine.Transform"
-                }
-            ],
-            "folderPath": "Env",
-            "guid": 4,
-            "isEditorOnly": false,
-            "name": "Entity",
             "tags": [],
             "visible": true
         },
@@ -278,576 +243,9 @@
                     "data": {
                         "parentEntityGuid": 0,
                         "position": [
-                            0.29903602600097656,
-                            4.542592525482178,
-                            31.675682067871094
-                        ],
-                        "rotation": [
                             0.0,
                             0.0,
-                            0.0,
-                            1.0
-                        ],
-                        "scale": [
-                            1.0,
-                            1.0,
-                            1.0
-                        ]
-                    },
-                    "guid": 15428523935284711812,
-                    "type": "engine.Transform"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "materialInstancePath": "",
-                        "materialSlots": [
-                            {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
-                                "slotIndex": 0
-                            },
-                            {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
-                                "slotIndex": 1
-                            }
-                        ],
-                        "meshPath": "projects/TeamGame/content/models/tree.obj"
-                    },
-                    "guid": 14416737966621461999,
-                    "type": "engine.StaticMeshRenderer"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "dynamic": false,
-                        "enabled": true
-                    },
-                    "guid": 11219648376249295003,
-                    "type": "engine.StaticMeshCollider"
-                }
-            ],
-            "folderPath": "Env",
-            "guid": 30,
-            "isEditorOnly": false,
-            "name": "Tree Copy",
-            "tags": [],
-            "visible": true
-        },
-        {
-            "active": true,
-            "components": [
-                {
-                    "active": true,
-                    "data": {
-                        "parentEntityGuid": 0,
-                        "position": [
-                            1.4882042407989502,
-                            3.2109601497650146,
-                            23.79271125793457
-                        ],
-                        "rotation": [
-                            0.0,
-                            0.0,
-                            0.0,
-                            1.0
-                        ],
-                        "scale": [
-                            1.0,
-                            1.0,
-                            1.0
-                        ]
-                    },
-                    "guid": 17753789513734744237,
-                    "type": "engine.Transform"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "materialInstancePath": "",
-                        "materialSlots": [
-                            {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
-                                "slotIndex": 0
-                            },
-                            {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
-                                "slotIndex": 1
-                            }
-                        ],
-                        "meshPath": "projects/TeamGame/content/models/tree.obj"
-                    },
-                    "guid": 10265569626785095990,
-                    "type": "engine.StaticMeshRenderer"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "dynamic": false,
-                        "enabled": true
-                    },
-                    "guid": 14955331177903299327,
-                    "type": "engine.StaticMeshCollider"
-                }
-            ],
-            "folderPath": "Env",
-            "guid": 31,
-            "isEditorOnly": false,
-            "name": "Tree Copy Copy",
-            "tags": [],
-            "visible": true
-        },
-        {
-            "active": true,
-            "components": [
-                {
-                    "active": true,
-                    "data": {
-                        "parentEntityGuid": 0,
-                        "position": [
-                            -12.77429485321045,
-                            2.1638455390930176,
-                            31.555559158325195
-                        ],
-                        "rotation": [
-                            0.0,
-                            0.0,
-                            0.0,
-                            1.0
-                        ],
-                        "scale": [
-                            1.0,
-                            1.0,
-                            1.0
-                        ]
-                    },
-                    "guid": 10435510944851526771,
-                    "type": "engine.Transform"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "materialInstancePath": "",
-                        "materialSlots": [
-                            {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
-                                "slotIndex": 0
-                            },
-                            {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
-                                "slotIndex": 1
-                            }
-                        ],
-                        "meshPath": "projects/TeamGame/content/models/tree.obj"
-                    },
-                    "guid": 9323228683331624828,
-                    "type": "engine.StaticMeshRenderer"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "dynamic": false,
-                        "enabled": true
-                    },
-                    "guid": 9306180272929422536,
-                    "type": "engine.StaticMeshCollider"
-                }
-            ],
-            "folderPath": "Env",
-            "guid": 32,
-            "isEditorOnly": false,
-            "name": "Tree Copy Copy Copy",
-            "tags": [],
-            "visible": true
-        },
-        {
-            "active": true,
-            "components": [
-                {
-                    "active": true,
-                    "data": {
-                        "parentEntityGuid": 0,
-                        "position": [
-                            3.7607598304748535,
-                            2.4806551933288574,
-                            15.985489845275879
-                        ],
-                        "rotation": [
-                            0.0,
-                            0.0,
-                            0.0,
-                            1.0
-                        ],
-                        "scale": [
-                            1.0,
-                            1.0,
-                            1.0
-                        ]
-                    },
-                    "guid": 12224931550376866483,
-                    "type": "engine.Transform"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "materialInstancePath": "",
-                        "materialSlots": [
-                            {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
-                                "slotIndex": 0
-                            },
-                            {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
-                                "slotIndex": 1
-                            }
-                        ],
-                        "meshPath": "projects/TeamGame/content/models/tree.obj"
-                    },
-                    "guid": 10465461403004640553,
-                    "type": "engine.StaticMeshRenderer"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "dynamic": false,
-                        "enabled": true
-                    },
-                    "guid": 14855360813031915444,
-                    "type": "engine.StaticMeshCollider"
-                }
-            ],
-            "folderPath": "Env",
-            "guid": 33,
-            "isEditorOnly": false,
-            "name": "Tree Copy Copy Copy Copy",
-            "tags": [],
-            "visible": true
-        },
-        {
-            "active": true,
-            "components": [
-                {
-                    "active": true,
-                    "data": {
-                        "parentEntityGuid": 0,
-                        "position": [
-                            10.705204010009766,
-                            2.794067859649658,
-                            13.167596817016602
-                        ],
-                        "rotation": [
-                            0.0,
-                            0.0,
-                            0.0,
-                            1.0
-                        ],
-                        "scale": [
-                            1.0,
-                            1.0,
-                            1.0
-                        ]
-                    },
-                    "guid": 15287422553708276910,
-                    "type": "engine.Transform"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "materialInstancePath": "",
-                        "materialSlots": [
-                            {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
-                                "slotIndex": 0
-                            },
-                            {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
-                                "slotIndex": 1
-                            }
-                        ],
-                        "meshPath": "projects/TeamGame/content/models/tree.obj"
-                    },
-                    "guid": 12409584022540232471,
-                    "type": "engine.StaticMeshRenderer"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "dynamic": false,
-                        "enabled": true
-                    },
-                    "guid": 16923127886709764734,
-                    "type": "engine.StaticMeshCollider"
-                }
-            ],
-            "folderPath": "Env",
-            "guid": 34,
-            "isEditorOnly": false,
-            "name": "Tree Copy Copy Copy Copy Copy",
-            "tags": [],
-            "visible": true
-        },
-        {
-            "active": true,
-            "components": [
-                {
-                    "active": true,
-                    "data": {
-                        "parentEntityGuid": 0,
-                        "position": [
-                            -20.943557739257813,
-                            0.19025874137878418,
-                            -5.046061992645264
-                        ],
-                        "rotation": [
-                            0.0,
-                            0.0,
-                            0.0,
-                            1.0
-                        ],
-                        "scale": [
-                            1.0,
-                            1.0,
-                            1.0
-                        ]
-                    },
-                    "guid": 12571897448775500463,
-                    "type": "engine.Transform"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "materialInstancePath": "",
-                        "materialSlots": [
-                            {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
-                                "slotIndex": 0
-                            },
-                            {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
-                                "slotIndex": 1
-                            }
-                        ],
-                        "meshPath": "projects/TeamGame/content/models/tree.obj"
-                    },
-                    "guid": 15199996983915659141,
-                    "type": "engine.StaticMeshRenderer"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "dynamic": false,
-                        "enabled": true
-                    },
-                    "guid": 14336763124041211967,
-                    "type": "engine.StaticMeshCollider"
-                }
-            ],
-            "folderPath": "Env",
-            "guid": 35,
-            "isEditorOnly": false,
-            "name": "Tree Copy Copy Copy Copy Copy Copy",
-            "tags": [],
-            "visible": true
-        },
-        {
-            "active": true,
-            "components": [
-                {
-                    "active": true,
-                    "data": {
-                        "parentEntityGuid": 0,
-                        "position": [
-                            8.481850624084473,
-                            2.5378353595733643,
-                            -3.2747087478637695
-                        ],
-                        "rotation": [
-                            0.0,
-                            0.0,
-                            0.0,
-                            1.0
-                        ],
-                        "scale": [
-                            1.0,
-                            1.0,
-                            1.0
-                        ]
-                    },
-                    "guid": 16850927168243679354,
-                    "type": "engine.Transform"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "materialInstancePath": "",
-                        "materialSlots": [
-                            {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
-                                "slotIndex": 0
-                            },
-                            {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
-                                "slotIndex": 1
-                            }
-                        ],
-                        "meshPath": "projects/TeamGame/content/models/tree.obj"
-                    },
-                    "guid": 14708521464802207173,
-                    "type": "engine.StaticMeshRenderer"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "dynamic": false,
-                        "enabled": true
-                    },
-                    "guid": 15152694154359330876,
-                    "type": "engine.StaticMeshCollider"
-                }
-            ],
-            "folderPath": "Env",
-            "guid": 36,
-            "isEditorOnly": false,
-            "name": "Tree Copy Copy Copy Copy Copy Copy Copy",
-            "tags": [],
-            "visible": true
-        },
-        {
-            "active": true,
-            "components": [
-                {
-                    "active": true,
-                    "data": {
-                        "parentEntityGuid": 0,
-                        "position": [
-                            8.968249320983887,
-                            2.7327170372009277,
-                            -6.5618791580200195
-                        ],
-                        "rotation": [
-                            0.0,
-                            0.0,
-                            0.0,
-                            1.0
-                        ],
-                        "scale": [
-                            1.0,
-                            1.0,
-                            1.0
-                        ]
-                    },
-                    "guid": 16833798842193306417,
-                    "type": "engine.Transform"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "materialInstancePath": "",
-                        "materialSlots": [
-                            {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
-                                "slotIndex": 0
-                            },
-                            {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
-                                "slotIndex": 1
-                            }
-                        ],
-                        "meshPath": "projects/TeamGame/content/models/tree.obj"
-                    },
-                    "guid": 11804997644175538663,
-                    "type": "engine.StaticMeshRenderer"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "dynamic": false,
-                        "enabled": true
-                    },
-                    "guid": 13136596471099505985,
-                    "type": "engine.StaticMeshCollider"
-                }
-            ],
-            "folderPath": "Env",
-            "guid": 37,
-            "isEditorOnly": false,
-            "name": "Tree Copy Copy Copy Copy Copy Copy Copy Copy",
-            "tags": [],
-            "visible": true
-        },
-        {
-            "active": true,
-            "components": [
-                {
-                    "active": true,
-                    "data": {
-                        "parentEntityGuid": 0,
-                        "position": [
-                            -5.0422210693359375,
-                            1.0953364372253418,
-                            -6.902397155761719
-                        ],
-                        "rotation": [
-                            0.0,
-                            0.0,
-                            0.0,
-                            1.0
-                        ],
-                        "scale": [
-                            1.0,
-                            1.0,
-                            1.0
-                        ]
-                    },
-                    "guid": 18176610886178863094,
-                    "type": "engine.Transform"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "materialInstancePath": "",
-                        "materialSlots": [
-                            {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
-                                "slotIndex": 0
-                            },
-                            {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
-                                "slotIndex": 1
-                            }
-                        ],
-                        "meshPath": "projects/TeamGame/content/models/tree.obj"
-                    },
-                    "guid": 12666257550810377840,
-                    "type": "engine.StaticMeshRenderer"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "dynamic": false,
-                        "enabled": true
-                    },
-                    "guid": 11104194757378588284,
-                    "type": "engine.StaticMeshCollider"
-                }
-            ],
-            "folderPath": "Env",
-            "guid": 38,
-            "isEditorOnly": false,
-            "name": "Tree Copy Copy Copy Copy Copy Copy Copy Copy Copy",
-            "tags": [],
-            "visible": true
-        },
-        {
-            "active": true,
-            "components": [
-                {
-                    "active": true,
-                    "data": {
-                        "parentEntityGuid": 0,
-                        "position": [
-                            0.0,
-                            0.0,
-                            -30.0
+                            0.0
                         ],
                         "rotation": [
                             0.0,
@@ -1988,12 +1386,12 @@
                             -1.0
                         ],
                         "randomYaw": true,
-                        "scaleMax": 1.15,
-                        "scaleMin": 0.85,
+                        "scaleMax": 1.149999976158142,
+                        "scaleMin": 0.8500000238418579,
                         "spawnCenter": [
                             0.0,
                             10.0,
-                            10.0
+                            0.0
                         ],
                         "spawnEnabled": true,
                         "spawnHalfExtent": [
@@ -2044,13 +1442,13 @@
                             1.0
                         ]
                     },
-                    "guid": 0,
+                    "guid": 17100880870657676337,
                     "type": "engine.Transform"
                 },
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "projects/TeamGame/content/materials/instances/skydome.matinst.json",
+                        "materialInstancePath": "",
                         "materialSlots": [
                             {
                                 "materialInstancePath": "projects/TeamGame/content/materials/instances/skydome.matinst.json",
@@ -2059,7 +1457,7 @@
                         ],
                         "meshPath": "projects/TeamGame/content/models/skydome/skydome.obj"
                     },
-                    "guid": 0,
+                    "guid": 17687565402355399319,
                     "type": "engine.StaticMeshRenderer"
                 }
             ],

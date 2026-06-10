@@ -136,6 +136,9 @@ namespace MyGame {
 		/// 1.0=線形 / 2.0=二乗（急に増加） / 0.5=ルート（ゆっくり増加）
 		float _suckIntensityCurve = 1.0f;
 
+		/// 穴中心よりこの深さまで落ちたEntityを破棄する
+		float _holeDespawnDepth = 8.0f;
+
 		// -----------------------------------------------------------------------
 		// 内部状態
 		// -----------------------------------------------------------------------
@@ -173,6 +176,9 @@ namespace MyGame {
 
 		/// 穴に入ったゴミに吸い込み力を適用
 		void ApplySuckForceToTrash(float deltaTime);
+
+		/// 穴の奥まで落ちたEntityを破棄予約する
+		void DestroyEntitiesDeepInHole();
 	};
 
 }

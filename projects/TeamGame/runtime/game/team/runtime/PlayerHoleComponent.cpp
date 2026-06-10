@@ -48,6 +48,9 @@ namespace MyGame {
 
 		// NOTE: 穴に入っているゴミ（すべてのゴミ）に吸い込み処理を適用
 		ApplySuckForceToTrash(deltaTime);
+
+		// NOTE: 穴の奥まで落ちたEntityは描画・物理・スコア監視対象から解放する。
+		DestroyEntitiesDeepInHole();
 	}
 
 	void PlayerHoleComponent::OnDetached() {
@@ -189,6 +192,7 @@ namespace MyGame {
 	ImGui::TextWrapped("  1.0 = Linear (even increase)");
 	ImGui::TextWrapped("  2.0 = Squared (rapid increase)");
 	ImGui::TextWrapped("  0.5 = Square root (slow increase)");
+	ImGui::SliderFloat("穴落下後の破棄深度", &_holeDespawnDepth, 0.0f, 100.0f, "%.2f");
 
 		ImGui::Separator();
 		ImGui::Text("Hole Status");
@@ -264,6 +268,9 @@ namespace MyGame {
 	if (auto val = reader.Read<float>("suckIntensityCurve")) {
 		_suckIntensityCurve = val.value();
 	}
+	if (auto val = reader.Read<float>("holeDespawnDepth")) {
+		_holeDespawnDepth = std::max(0.0f, val.value());
+	}
 	}
 
 	void PlayerHoleComponent::Serialize(Unnamed::JsonWriter& writer) const {
@@ -293,6 +300,8 @@ namespace MyGame {
 	writer.Write(_suckEffectDistance);
 	writer.Key("suckIntensityCurve");
 	writer.Write(_suckIntensityCurve);
+	writer.Key("holeDespawnDepth");
+	writer.Write(_holeDespawnDepth);
 	}
 
 	// ===================================================================
@@ -366,11 +375,12 @@ namespace MyGame {
 		// NOTE: エンティティの位置を取得
 		Vec3 entityPos = transform->GetPosition();
 
-		// NOTE: 穴の中心からの距離を計算
+		// NOTE: 穴は地面上の円として扱うため、高さ差ではなく水平距離だけで判定する。
 		Vec3 diff = entityPos - holeWorldPos;
+		diff.y = 0.0f;
 		float distance = diff.Length();
 
-		// NOTE: 距離が穴の半径より小さいか判定
+		// NOTE: 水平距離が穴の半径より小さいか判定
 		return distance < _holeRadius;
 	}
 
@@ -399,6 +409,12 @@ namespace MyGame {
 			if (it == _previousTrashInHole.end()) {
 				// NOTE: 新規に穴に入ったゴミ
 				MakeTrashFall(trashEntity);
+				if (auto* trashComponent = trashEntity->GetComponent<TrashObjMoverComponent>()) {
+					trashComponent->EnterHoleFall(GetHoleWorldPosition());
+				}
+				if (auto* golfBallComponent = trashEntity->GetComponent<GolfBallComponent>()) {
+					golfBallComponent->SetHoleSuckPosition(GetHoleWorldPosition(), 1.0f);
+				}
 			}
 		}
 
@@ -466,7 +482,10 @@ namespace MyGame {
 
 			Vec3 trashPos = transform->GetPosition();
 			Vec3 diffToHole = holeWorldPos - trashPos;
-			float distanceToHole = diffToHole.Length();
+			Vec3 horizontalDiffToHole = diffToHole;
+			horizontalDiffToHole.y = 0.0f;
+			// NOTE: 吸い込み開始範囲も穴の円を基準にするため、高さ差は距離から除外する。
+			float distanceToHole = horizontalDiffToHole.Length();
 
 			// NOTE: 吸い込み範囲外のゴミはクリア
 			if (distanceToHole >= suckRangeOuter) {
@@ -510,6 +529,45 @@ namespace MyGame {
 					golfBallComponent->ClearHoleSuckPosition();
 				}
 			}
+		}
+	}
+
+	void PlayerHoleComponent::DestroyEntitiesDeepInHole() {
+		if (_holeDespawnDepth <= 0.0f || !GetOwner()) {
+			return;
+		}
+
+		auto* scene = GetOwner()->GetScene();
+		if (!scene) {
+			return;
+		}
+
+		const Vec3 holeWorldPos = GetHoleWorldPosition();
+		const float destroyHeight = holeWorldPos.y - _holeDespawnDepth;
+		for (auto* entity : _trashInHole) {
+			if (!entity || entity->IsPendingDestroy()) {
+				continue;
+			}
+
+			const auto* transform =
+				entity->GetComponent<Unnamed::TransformComponent>();
+			if (!transform || transform->GetPosition().y > destroyHeight) {
+				continue;
+			}
+
+			const auto* trashComponent =
+				entity->GetComponent<TrashObjMoverComponent>();
+			const auto* golfBallComponent =
+				entity->GetComponent<GolfBallComponent>();
+			const bool hasEnteredHole =
+				(trashComponent && trashComponent->HasEnteredHole()) ||
+				(golfBallComponent && golfBallComponent->HasEnteredHole());
+			if (!hasEnteredHole) {
+				continue;
+			}
+
+			// NOTE: DestroyEntityは破棄予約なので、同一フレーム中のスコア確定処理を壊さない。
+			scene->DestroyEntity(entity->GetGuid());
 		}
 	}
 

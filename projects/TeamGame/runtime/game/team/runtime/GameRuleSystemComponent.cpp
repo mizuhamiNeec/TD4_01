@@ -3,6 +3,7 @@
 #include "GolfBallComponent.h"
 #include "GolfBallLaunchCountdownComponent.h"
 #include "PlayerHoleComponent.h"
+#include "TeamGameResultScore.h"
 #include "TrashObjMoverComponent.h"
 #include "engine/scene/Scene.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
@@ -220,6 +221,21 @@ void MyGame::GameRuleSystemComponent::StartPlaying()
 void MyGame::GameRuleSystemComponent::FinishGame()
 {
 	// NOTE: ボール停止・海落下・キャッチ後はリザルトへ移行する。
+	ResolveRuntimeReferences();
+	if (_scoreComponent) {
+		StoreTeamGameResultScore(
+			{
+				.total = _scoreComponent->GetScore(),
+				.trashToSea = _scoreComponent->GetTrashToSeaTotal(),
+				.trashIntoHole = _scoreComponent->GetTrashIntoHoleTotal(),
+				.ballCatch = _scoreComponent->GetBallCatchTotal(),
+				.holeInOne = _scoreComponent->GetHoleInOneTotal(),
+				.directHoleInOne = _scoreComponent->GetDirectHoleInOneTotal(),
+				.outOfBoundsPenalty =
+					_scoreComponent->GetOutOfBoundsPenaltyTotal(),
+			}
+		);
+	}
 	_phase = GamePhase::Result;
 	_isGameEnded = true;
 	if (_launchCountdownComponent) {

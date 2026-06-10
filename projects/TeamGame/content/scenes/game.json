@@ -207,13 +207,13 @@
                         "mass": 4.0,
                         "maxExternalUpwardVelocity": 8.0,
                         "maxSpeedClamp": 50.0,
+                        "minBounceVerticalSpeed": 0.3499999940395355,
                         "radius": 0.25,
                         "randomRadius": 1.0,
                         "startPointX": 0.0,
                         "startPointY": 2.0,
                         "startPointZ": 30.0,
                         "startPosEntityGuid": "",
-                        "minBounceVerticalSpeed": 0.3499999940395355,
                         "stopVelocityThreshold": 0.07999999821186066,
                         "targetBaseX": 0.0,
                         "targetBaseY": 0.0,
@@ -234,15 +234,15 @@
                         "ballTag": "Ball",
                         "countdownDigitWidgetName": "number_UI",
                         "countdownDuration": 15.0,
+                        "countdownUiAssetPath": "projects/TeamGame/content/ui/countdown.ui.json",
                         "countdownUiEntityGuid": 12087284352773638141,
                         "countdownUiEntityName": "Countdown_UI",
-                        "countdownUiAssetPath": "projects/TeamGame/content/ui/countdown.ui.json",
                         "distanceUiEntityGuid": 10271558206346713449,
                         "distanceUiEntityName": "Player2GolfBall_UI",
-                        "switchToDistanceUiOnLaunch": true,
-                        "launchOnStart": true
+                        "launchOnStart": true,
+                        "switchToDistanceUiOnLaunch": true
                     },
-                    "guid": 0,
+                    "guid": 15100050786134854392,
                     "type": "mygame.GolfBallLaunchCountdownComponent"
                 },
                 {
@@ -915,7 +915,6 @@
                 {
                     "active": true,
                     "data": {
-                        "jumpActionName": "Jump",
                         "moveAxisName": "MoveAxis"
                     },
                     "guid": 14637999987159216151,
@@ -1005,27 +1004,38 @@
                 {
                     "active": true,
                     "data": {
+                        "gamepadLookDeadZone": 0.11999999731779099,
+                        "gamepadPitchSensitivity": 135.0,
+                        "gamepadYawSensitivity": 180.0,
+                        "invertPitch": false,
+                        "invertYaw": false,
+                        "lockMouseCursor": true,
                         "lookAheadSharpness": 4.0,
-                        "lookAheadTime": 0.08,
+                        "lookAheadTime": 0.07999999821186066,
                         "lookAtOffset": [
                             0.0,
-                            1.2,
+                            1.2000000476837158,
                             0.0
                         ],
-                        "maxLookAheadDistance": 0.7,
+                        "lookAtSharpness": 7.0,
+                        "lookAxisName": "CameraLook",
+                        "maxLookAheadDistance": 0.699999988079071,
+                        "maxPitchDegrees": 60.0,
+                        "minPitchDegrees": -35.0,
+                        "mousePitchSensitivity": 0.07999999821186066,
+                        "mouseYawSensitivity": 0.07999999821186066,
                         "offset": [
                             0.0,
                             4.0,
                             -6.0
                         ],
-                        "lookAtSharpness": 7.0,
                         "orbitSharpness": 12.0,
                         "positionSharpness": 4.5,
                         "rotationSharpness": 6.0,
                         "snapDistance": 18.0,
-                        "targetSharpness": 8.0,
                         "targetEntityGuid": 42,
                         "targetName": "Player",
+                        "targetSharpness": 8.0,
                         "targetTag": "",
                         "useTargetYaw": true,
                         "voiceCameraEffectEnabled": true,
@@ -1037,7 +1047,7 @@
                         "voiceRiseSharpness": 4.5,
                         "yawSharpness": 7.0
                     },
-                    "guid": 0,
+                    "guid": 14822961484023577915,
                     "type": "mygame.PlayerFollowCameraComponent"
                 }
             ],
@@ -1078,24 +1088,25 @@
                 {
                     "active": true,
                     "data": {
+                        "ScoreValue": 10,
                         "airRotationSpeed": 360.0,
                         "bounceDamping": 0.699999988079071,
                         "frictionCoefficient": 0.949999988079071,
                         "gravity": 9.8100004196167,
+                        "groundLinearDamping": 6.0,
                         "halfSizeX": 0.5,
                         "halfSizeY": 0.5,
                         "halfSizeZ": 0.5,
                         "isFalling": false,
                         "mass": 1.0,
                         "maxSpeedClamp": 50.0,
-                        "groundLinearDamping": 6.0,
                         "rotationResetSpeed": 5.0,
-                        "sleepVelocityThreshold": 0.08,
                         "shockSpinDuration": 1.100000023841858,
                         "shockSpinMaxSpeedDeg": 2160.0,
                         "shockSpinSpeedMultiplier": 85.0,
                         "shockSpinWobbleDeg": 18.0,
                         "shockSpinWobbleSpeed": 18.0,
+                        "sleepVelocityThreshold": 0.07999999821186066,
                         "tiltLerpSpeed": 0.15000000596046448,
                         "tiltTowardMovementStrength": 0.800000011920929
                     },
@@ -1210,24 +1221,25 @@
                 {
                     "active": true,
                     "data": {
+                        "ScoreValue": 10,
                         "airRotationSpeed": 360.0,
                         "bounceDamping": 0.699999988079071,
                         "frictionCoefficient": 0.949999988079071,
                         "gravity": 9.8100004196167,
+                        "groundLinearDamping": 6.0,
                         "halfSizeX": 0.5,
                         "halfSizeY": 0.5,
                         "halfSizeZ": 0.5,
                         "isFalling": false,
                         "mass": 1.0,
                         "maxSpeedClamp": 50.0,
-                        "groundLinearDamping": 6.0,
                         "rotationResetSpeed": 5.0,
-                        "sleepVelocityThreshold": 0.08,
                         "shockSpinDuration": 1.100000023841858,
                         "shockSpinMaxSpeedDeg": 2160.0,
                         "shockSpinSpeedMultiplier": 85.0,
                         "shockSpinWobbleDeg": 18.0,
                         "shockSpinWobbleSpeed": 18.0,
+                        "sleepVelocityThreshold": 0.07999999821186066,
                         "tiltLerpSpeed": 0.15000000596046448,
                         "tiltTowardMovementStrength": 0.800000011920929
                     },
@@ -1287,24 +1299,25 @@
                 {
                     "active": true,
                     "data": {
+                        "ScoreValue": 10,
                         "airRotationSpeed": 360.0,
                         "bounceDamping": 0.699999988079071,
                         "frictionCoefficient": 0.949999988079071,
                         "gravity": 9.8100004196167,
+                        "groundLinearDamping": 6.0,
                         "halfSizeX": 0.5,
                         "halfSizeY": 0.5,
                         "halfSizeZ": 0.5,
                         "isFalling": false,
                         "mass": 1.0,
                         "maxSpeedClamp": 50.0,
-                        "groundLinearDamping": 6.0,
                         "rotationResetSpeed": 5.0,
-                        "sleepVelocityThreshold": 0.08,
                         "shockSpinDuration": 1.100000023841858,
                         "shockSpinMaxSpeedDeg": 2160.0,
                         "shockSpinSpeedMultiplier": 85.0,
                         "shockSpinWobbleDeg": 18.0,
                         "shockSpinWobbleSpeed": 18.0,
+                        "sleepVelocityThreshold": 0.07999999821186066,
                         "tiltLerpSpeed": 0.15000000596046448,
                         "tiltTowardMovementStrength": 0.800000011920929
                     },
@@ -1655,7 +1668,7 @@
                             1.0
                         ]
                     },
-                    "guid": 0,
+                    "guid": 10040856987596773299,
                     "type": "engine.Transform"
                 },
                 {
@@ -1683,7 +1696,7 @@
                         "targetTag": "Ball",
                         "texturePath": "projects/TeamGame/content/textures/UI/golfball_Loupe/golfball_Loupe.png"
                     },
-                    "guid": 0,
+                    "guid": 11025578947586553444,
                     "type": "mygame.GolfBallUiComponent"
                 }
             ],
@@ -1718,7 +1731,7 @@
                             1.0
                         ]
                     },
-                    "guid": 0,
+                    "guid": 12381266503965693376,
                     "type": "engine.Transform"
                 },
                 {
@@ -1759,7 +1772,7 @@
                         ],
                         "sortKey": 1000
                     },
-                    "guid": 0,
+                    "guid": 15224188249451339822,
                     "type": "mygame.VoiceUiComponent"
                 }
             ],
@@ -1794,7 +1807,7 @@
                             1.0
                         ]
                     },
-                    "guid": 0,
+                    "guid": 11302806165823602632,
                     "type": "engine.Transform"
                 },
                 {
@@ -1814,7 +1827,7 @@
                             1.125
                         ]
                     },
-                    "guid": 0,
+                    "guid": 13137794116162739067,
                     "type": "engine.UiCanvas"
                 },
                 {
@@ -1831,7 +1844,7 @@
                         "playerTag": "",
                         "uiAssetPath": "projects/TeamGame/content/ui/number_UI_distanceText.ui.json"
                     },
-                    "guid": 0,
+                    "guid": 15194134828017489121,
                     "type": "mygame.Player2BallRangeUIComponent"
                 }
             ],
@@ -1857,7 +1870,8 @@
                         "rotation": [
                             0.0,
                             0.0,
-                            0.0
+                            0.0,
+                            1.0
                         ],
                         "scale": [
                             1.0,
@@ -1865,7 +1879,7 @@
                             1.0
                         ]
                     },
-                    "guid": 0,
+                    "guid": 9585590221510042760,
                     "type": "engine.Transform"
                 },
                 {
@@ -1885,7 +1899,7 @@
                             1.125
                         ]
                     },
-                    "guid": 0,
+                    "guid": 15528117214222139399,
                     "type": "engine.UiCanvas"
                 }
             ],
@@ -1920,7 +1934,7 @@
                             1.0
                         ]
                     },
-                    "guid": 0,
+                    "guid": 11268153665201657077,
                     "type": "engine.Transform"
                 },
                 {
@@ -1934,7 +1948,7 @@
                         "trashIntoHoleScore": 100,
                         "trashToSeaScore": 100
                     },
-                    "guid": 0,
+                    "guid": 16212875245880023528,
                     "type": "mygame.GameScoreComponent"
                 },
                 {
@@ -1951,7 +1965,7 @@
                         "minBallFlightSeconds": 5.0,
                         "seaOutHeight": -10.0
                     },
-                    "guid": 0,
+                    "guid": 14837334651500250962,
                     "type": "mygame.GameRuleSystemComponent"
                 }
             ],
@@ -1959,6 +1973,56 @@
             "guid": 10271558206346713450,
             "isEditorOnly": false,
             "name": "GameRuleManager",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "projects/TeamGame/content/materials/instances/skydome.matinst.json",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/skydome.matinst.json",
+                                "slotIndex": 0
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/skydome/skydome.obj"
+                    },
+                    "guid": 0,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 12087284352773638142,
+            "isEditorOnly": false,
+            "name": "Skydome",
             "tags": [],
             "visible": true
         }

@@ -93,6 +93,7 @@ namespace MyGame {
 		float _gamepadLookDeadZone = 0.12f;
 		float _minPitchDegrees = -35.0f;
 		float _maxPitchDegrees = 60.0f;
+		bool _invertYaw = false;
 		bool _invertPitch = false;
 		bool _lockMouseCursor = true;
 

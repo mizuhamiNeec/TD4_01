@@ -216,6 +216,7 @@ namespace MyGame {
 		ImGui::DragFloat("ゲームパッド視点デッドゾーン", &_gamepadLookDeadZone, 0.005f, 0.0f, 0.95f);
 		ImGui::DragFloat("最小ピッチ角", &_minPitchDegrees, 0.5f, -89.0f, 89.0f);
 		ImGui::DragFloat("最大ピッチ角", &_maxPitchDegrees, 0.5f, -89.0f, 89.0f);
+		ImGui::Checkbox("左右操作を反転", &_invertYaw);
 		ImGui::Checkbox("上下操作を反転", &_invertPitch);
 		ImGui::Checkbox("マウスカーソルをロック", &_lockMouseCursor);
 		ImGui::Text("回転量: 左右 %.2f / 上下 %.2f", _orbitYawDegrees, _orbitPitchDegrees);
@@ -337,6 +338,9 @@ namespace MyGame {
 		if (auto val = reader.Read<float>("maxPitchDegrees")) {
 			_maxPitchDegrees = std::clamp(val.value(), -89.0f, 89.0f);
 		}
+		if (auto val = reader.Read<bool>("invertYaw")) {
+			_invertYaw = val.value();
+		}
 		if (auto val = reader.Read<bool>("invertPitch")) {
 			_invertPitch = val.value();
 		}
@@ -439,6 +443,8 @@ namespace MyGame {
 		writer.Write(_minPitchDegrees);
 		writer.Key("maxPitchDegrees");
 		writer.Write(_maxPitchDegrees);
+		writer.Key("invertYaw");
+		writer.Write(_invertYaw);
 		writer.Key("invertPitch");
 		writer.Write(_invertPitch);
 		writer.Key("lockMouseCursor");
@@ -635,11 +641,14 @@ namespace MyGame {
 			gamepadLook = Vec2::zero;
 		}
 
+		const float yawSign = _invertYaw ? 1.0f : -1.0f;
 		const float mousePitchSign = _invertPitch ? 1.0f : -1.0f;
 		const float gamepadPitchSign = _invertPitch ? -1.0f : 1.0f;
 		_orbitYawDegrees +=
-			-mouseLook.x * _mouseYawSensitivity -
-			gamepadLook.x * _gamepadYawSensitivity * deltaTime;
+			yawSign * (
+				mouseLook.x * _mouseYawSensitivity +
+				gamepadLook.x * _gamepadYawSensitivity * deltaTime
+			);
 		_orbitPitchDegrees +=
 			mousePitchSign * mouseLook.y * _mousePitchSensitivity +
 			gamepadPitchSign *

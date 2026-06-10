@@ -23,6 +23,7 @@ namespace MyGame {
 		_horizontalVelocity = Vec3::zero;
 		_verticalVelocity = 0.0f;
 		_bIsGrounded = true;
+		ClearMoveBasis();
 	}
 
 	void PlayerMoveComponent::OnTick(float deltaTime) {
@@ -42,7 +43,12 @@ namespace MyGame {
 
 		// 水平移動の計算
 		// 入力を直接位置に反映すると急停止になるため、速度を介して加減速させる。
-		Vec3 moveDirection = transform->Forward() * _moveDirection.y + transform->Right() * _moveDirection.x;
+		const Vec3 basisForward =
+			_hasMoveBasis ? _moveBasisForward : transform->Forward();
+		const Vec3 basisRight =
+			_hasMoveBasis ? _moveBasisRight : transform->Right();
+		Vec3 moveDirection =
+			basisForward * _moveDirection.y + basisRight * _moveDirection.x;
 		moveDirection.y = 0.0f;
 		if (!moveDirection.IsZero(0.0001f)) {
 			moveDirection = moveDirection.Normalized();
@@ -98,6 +104,32 @@ namespace MyGame {
 		Vec2 clamped = direction;
 		clamped.ClampLength(0.0f,1.0f);
 		_moveDirection = clamped;
+	}
+
+	void PlayerMoveComponent::SetMoveBasis(
+		const Vec3& forward,
+		const Vec3& right
+	) {
+		Vec3 planarForward = forward;
+		Vec3 planarRight = right;
+		planarForward.y = 0.0f;
+		planarRight.y = 0.0f;
+
+		if (planarForward.SqrLength() <= 0.0001f ||
+		    planarRight.SqrLength() <= 0.0001f) {
+			ClearMoveBasis();
+			return;
+		}
+
+		_moveBasisForward = planarForward.Normalized();
+		_moveBasisRight = planarRight.Normalized();
+		_hasMoveBasis = true;
+	}
+
+	void PlayerMoveComponent::ClearMoveBasis() {
+		_hasMoveBasis = false;
+		_moveBasisForward = Vec3::forward;
+		_moveBasisRight = Vec3::right;
 	}
 
 	Vec2 PlayerMoveComponent::GetMoveDirection() const {

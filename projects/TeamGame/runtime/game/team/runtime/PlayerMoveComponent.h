@@ -41,6 +41,12 @@ namespace MyGame {
 		/// @param direction 移動方向 (x=水平, z=前後)
 		void SetMoveDirection(const Vec2& direction);
 
+		/// @brief 移動入力を解釈する水平基準方向を設定
+		void SetMoveBasis(const Vec3& forward, const Vec3& right);
+
+		/// @brief 移動基準方向をプレイヤー自身の向きへ戻す
+		void ClearMoveBasis();
+
 		/// @brief 現在の移動方向を取得
 		[[nodiscard]] Vec2 GetMoveDirection() const;
 
@@ -108,6 +114,15 @@ namespace MyGame {
 
 		/// 現在の水平速度
 		Vec3 _horizontalVelocity = Vec3::zero;
+
+		/// カメラ基準移動の水平前方向
+		Vec3 _moveBasisForward = Vec3::forward;
+
+		/// カメラ基準移動の水平右方向
+		Vec3 _moveBasisRight = Vec3::right;
+
+		/// 外部から移動基準方向が指定されているか
+		bool _hasMoveBasis = false;
 
 		/// 入力方向へ追従する加速度
 		float _acceleration = 24.0f;

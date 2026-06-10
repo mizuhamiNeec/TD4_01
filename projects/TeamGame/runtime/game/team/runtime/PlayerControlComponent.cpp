@@ -1,5 +1,7 @@
 #include "PlayerControlComponent.h"
+#include "PlayerFollowCameraComponent.h"
 #include "PlayerMoveComponent.h"
+#include "engine/scene/Scene.h"
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/unnamed/subsystem/input/InputSystem.h"
 #include "engine/unnamed/subsystem/input/KeyNameTable.h"
@@ -30,6 +32,7 @@ namespace MyGame {
 	void PlayerControlComponent::OnAttached() {
 		// NOTE: コンポーネントがアタッチされたときに初期化
 		_playerMoveComponent = nullptr;
+		_followCameraComponent = nullptr;
 		_currentMoveInput    = Vec2::zero;
 
 		// NOTE: PlayerMoveComponent をキャッシュ
@@ -77,6 +80,7 @@ namespace MyGame {
 	void PlayerControlComponent::OnDetached() {
 		// NOTE: クリーンアップ処理
 		_playerMoveComponent = nullptr;
+		_followCameraComponent = nullptr;
 	}
 
 	// -----------------------------------------------------------------------
@@ -165,6 +169,31 @@ namespace MyGame {
 		return _playerMoveComponent;
 	}
 
+	PlayerFollowCameraComponent*
+	PlayerControlComponent::GetOrCachePlayerFollowCameraComponent() {
+		if (_followCameraComponent) {
+			return _followCameraComponent;
+		}
+
+		auto* scene = GetScene();
+		if (!scene) {
+			return nullptr;
+		}
+
+		const auto& entities = scene->GetEntities();
+		for (const auto& entity : entities) {
+			if (!entity) {
+				continue;
+			}
+			if (auto* followCamera =
+			    entity->GetComponent<PlayerFollowCameraComponent>()) {
+				_followCameraComponent = followCamera;
+				return _followCameraComponent;
+			}
+		}
+		return nullptr;
+	}
+
 	void PlayerControlComponent::ProcessInput() {
 		// NOTE: PlayerMoveComponent が見つからない場合は何もしない
 		auto* moveComponent = GetOrCachePlayerMoveComponent();
@@ -207,6 +236,14 @@ namespace MyGame {
 		}
 
 		// NOTE: PlayerMoveComponent に移動方向を設定
+		if (auto* followCamera = GetOrCachePlayerFollowCameraComponent()) {
+			moveComponent->SetMoveBasis(
+				followCamera->GetPlanarForward(),
+				followCamera->GetPlanarRight()
+			);
+		} else {
+			moveComponent->ClearMoveBasis();
+		}
 		moveComponent->SetMoveDirection(_currentMoveInput);
 
 		// NOTE: ジャンプアクションをチェック

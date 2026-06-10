@@ -8,6 +8,7 @@
 namespace MyGame {
 
 	class PlayerMoveComponent;
+	class PlayerFollowCameraComponent;
 
 	/// @brief プレイヤーの入力を受け付けるコントローラーコンポーネント
 	/// InputSystemから入力を取得して、PlayerMoveComponentに指令を送る
@@ -74,8 +75,15 @@ namespace MyGame {
 		/// PlayerMoveComponent へのポインタをキャッシュ
 		PlayerMoveComponent* _playerMoveComponent = nullptr;
 
+		/// カメラ基準移動に使うフォローカメラ
+		PlayerFollowCameraComponent* _followCameraComponent = nullptr;
+
 		/// @brief PlayerMoveComponent を取得・キャッシュする
 		[[nodiscard]] PlayerMoveComponent* GetOrCachePlayerMoveComponent();
+
+		/// @brief シーン内のフォローカメラを取得・キャッシュする
+		[[nodiscard]] PlayerFollowCameraComponent*
+		GetOrCachePlayerFollowCameraComponent();
 
 		/// @brief InputSystem からキーバインディングを設定
 		/// WASD で移動、Space でジャンプ

@@ -1005,26 +1005,37 @@
                 {
                     "active": true,
                     "data": {
-                        "lookAheadSharpness": 8.0,
-                        "lookAheadTime": 0.22,
+                        "lookAheadSharpness": 4.0,
+                        "lookAheadTime": 0.08,
                         "lookAtOffset": [
                             0.0,
                             1.2,
                             0.0
                         ],
-                        "maxLookAheadDistance": 2.5,
+                        "maxLookAheadDistance": 0.7,
                         "offset": [
                             0.0,
                             4.0,
                             -6.0
                         ],
-                        "positionSharpness": 7.5,
-                        "rotationSharpness": 10.0,
+                        "lookAtSharpness": 7.0,
+                        "orbitSharpness": 12.0,
+                        "positionSharpness": 4.5,
+                        "rotationSharpness": 6.0,
                         "snapDistance": 18.0,
+                        "targetSharpness": 8.0,
                         "targetEntityGuid": 42,
                         "targetName": "Player",
                         "targetTag": "",
-                        "useTargetYaw": true
+                        "useTargetYaw": true,
+                        "voiceCameraEffectEnabled": true,
+                        "voiceDeadZone": 0.03999999910593033,
+                        "voiceDistanceAddMax": 0.800000011920929,
+                        "voiceFallSharpness": 2.0,
+                        "voiceFovAddMax": 4.0,
+                        "voiceMaxVolume": 0.550000011920929,
+                        "voiceRiseSharpness": 4.5,
+                        "yawSharpness": 7.0
                     },
                     "guid": 0,
                     "type": "mygame.PlayerFollowCameraComponent"

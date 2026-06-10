@@ -1,7 +1,7 @@
 #include "GolfBallLaunchCountdownComponent.h"
 
-#include "collision/base/BaseKinematicCollisionResolver.h"
 #include "GolfBallComponent.h"
+#include "collision/base/BaseKinematicCollisionResolver.h"
 
 #include <algorithm>
 #include <cmath>
@@ -35,7 +35,7 @@ void MyGame::GolfBallLaunchCountdownComponent::OnTick(float deltaTime) {
 		return;
 	}
 
-	auto* golfBall = ResolveGolfBall();
+	auto *golfBall = ResolveGolfBall();
 	if (!golfBall) {
 		return;
 	}
@@ -45,14 +45,15 @@ void MyGame::GolfBallLaunchCountdownComponent::OnTick(float deltaTime) {
 	UpdateUiVisibility();
 }
 
-void MyGame::GolfBallLaunchCountdownComponent::OnDetached() {}
+void MyGame::GolfBallLaunchCountdownComponent::OnDetached() {
+}
 
 std::string_view MyGame::GolfBallLaunchCountdownComponent::GetStableName() const {
 	return "mygame.GolfBallLaunchCountdownComponent";
 }
 
 std::string_view MyGame::GolfBallLaunchCountdownComponent::GetComponentName()
-const {
+	const {
 	return "Golf Ball Launch Countdown Component";
 }
 
@@ -80,14 +81,12 @@ void MyGame::GolfBallLaunchCountdownComponent::DrawInspectorImGui() {
 	ImGui::Separator();
 	ImGui::Checkbox(
 		"発射後に距離UIへ切り替え##golf_launch_countdown_ui_switch",
-		&_switchToDistanceUiOnLaunch
-	);
+		&_switchToDistanceUiOnLaunch);
 }
 #endif
 
 void MyGame::GolfBallLaunchCountdownComponent::Deserialize(
-	const Unnamed::JsonReader& reader
-) {
+	const Unnamed::JsonReader &reader) {
 	if (auto val = reader.Read<bool>("launchOnStart")) {
 		_launchOnStart = val.value();
 	}
@@ -110,8 +109,7 @@ void MyGame::GolfBallLaunchCountdownComponent::Deserialize(
 	}
 	if (reader.Has("countdownDigitWidgetName")) {
 		_countdownDigitWidgetName = reader["countdownDigitWidgetName"].GetString(
-			_countdownDigitWidgetName
-		);
+			_countdownDigitWidgetName);
 	}
 	if (reader.Has("countdownUiEntityGuid")) {
 		_countdownUiEntityGuid = reader["countdownUiEntityGuid"].GetUint64();
@@ -133,8 +131,7 @@ void MyGame::GolfBallLaunchCountdownComponent::Deserialize(
 }
 
 void MyGame::GolfBallLaunchCountdownComponent::Serialize(
-	Unnamed::JsonWriter& writer
-) const {
+	Unnamed::JsonWriter &writer) const {
 	writer.Key("launchOnStart");
 	writer.Write(_launchOnStart);
 
@@ -172,42 +169,42 @@ void MyGame::GolfBallLaunchCountdownComponent::Serialize(
 	writer.Write(_switchToDistanceUiOnLaunch);
 }
 
-MyGame::GolfBallComponent*
+MyGame::GolfBallComponent *
 MyGame::GolfBallLaunchCountdownComponent::ResolveGolfBall() const {
-	if (auto* owner = GetOwner()) {
-		if (auto* golfBall = owner->GetComponent<GolfBallComponent>()) {
+	if (auto *owner = GetOwner()) {
+		if (auto *golfBall = owner->GetComponent<GolfBallComponent>()) {
 			return golfBall;
 		}
 	}
 
-	auto* entity = ResolveEntity();
+	auto *entity = ResolveEntity();
 	if (!entity) {
 		return nullptr;
 	}
 	return entity->GetComponent<GolfBallComponent>();
 }
 
-Unnamed::Entity* MyGame::GolfBallLaunchCountdownComponent::ResolveEntity()
-const {
-	auto* scene = GetScene();
+Unnamed::Entity *MyGame::GolfBallLaunchCountdownComponent::ResolveEntity()
+	const {
+	auto *scene = GetScene();
 	if (!scene) {
 		return nullptr;
 	}
 
 	if (_ballEntityGuid != 0) {
-		if (auto* entity = scene->FindEntity(_ballEntityGuid)) {
+		if (auto *entity = scene->FindEntity(_ballEntityGuid)) {
 			return entity;
 		}
 	}
 
 	if (!_ballTag.empty()) {
-		if (auto* entity = scene->FindFirstEntityByTag(_ballTag)) {
+		if (auto *entity = scene->FindFirstEntityByTag(_ballTag)) {
 			return entity;
 		}
 	}
 
 	if (!_ballName.empty()) {
-		for (const auto& entityPtr : scene->GetEntities()) {
+		for (const auto &entityPtr : scene->GetEntities()) {
 			if (!entityPtr || !entityPtr->IsActive()) {
 				continue;
 			}
@@ -221,7 +218,7 @@ const {
 }
 
 void MyGame::GolfBallLaunchCountdownComponent::UpdateCountdownUi() const {
-	auto* digitStrip = ResolveCountdownDigitStrip();
+	auto *digitStrip = ResolveCountdownDigitStrip();
 	if (!digitStrip) {
 		return;
 	}
@@ -229,8 +226,7 @@ void MyGame::GolfBallLaunchCountdownComponent::UpdateCountdownUi() const {
 	const int32_t displaySeconds = std::clamp(
 		static_cast<int32_t>(std::ceil(std::max(0.0f, _countdownTimer))),
 		0,
-		99
-	);
+		99);
 	digitStrip->SetValue(displaySeconds);
 }
 
@@ -240,32 +236,29 @@ void MyGame::GolfBallLaunchCountdownComponent::UpdateUiVisibility() const {
 	}
 
 	const bool showDistanceUi = _bHasLaunched;
-	if (auto* countdownUi = ResolveUiEntity(
-		_countdownUiEntityGuid,
-		_countdownUiEntityName
-	)) {
+	if (auto *countdownUi = ResolveUiEntity(
+			_countdownUiEntityGuid,
+			_countdownUiEntityName)) {
 		countdownUi->SetVisible(!showDistanceUi);
 	}
-	if (auto* distanceUi = ResolveUiEntity(
-		_distanceUiEntityGuid,
-		_distanceUiEntityName
-	)) {
+	if (auto *distanceUi = ResolveUiEntity(
+			_distanceUiEntityGuid,
+			_distanceUiEntityName)) {
 		// 距離UI側は非表示中も値を更新させたいので、ActiveではなくVisibleだけ切り替える。
 		distanceUi->SetVisible(showDistanceUi);
 	}
 }
 
-Unnamed::Entity* MyGame::GolfBallLaunchCountdownComponent::ResolveUiEntity(
+Unnamed::Entity *MyGame::GolfBallLaunchCountdownComponent::ResolveUiEntity(
 	const uint64_t entityGuid,
-	const std::string& entityName
-) const {
-	auto* scene = GetScene();
+	const std::string &entityName) const {
+	auto *scene = GetScene();
 	if (!scene) {
 		return nullptr;
 	}
 
 	if (entityGuid != 0) {
-		if (auto* entity = scene->FindEntity(entityGuid)) {
+		if (auto *entity = scene->FindEntity(entityGuid)) {
 			return entity;
 		}
 	}
@@ -274,7 +267,7 @@ Unnamed::Entity* MyGame::GolfBallLaunchCountdownComponent::ResolveUiEntity(
 		return nullptr;
 	}
 
-	for (const auto& entityPtr : scene->GetEntities()) {
+	for (const auto &entityPtr : scene->GetEntities()) {
 		if (!entityPtr || !entityPtr->IsActive()) {
 			continue;
 		}
@@ -285,19 +278,19 @@ Unnamed::Entity* MyGame::GolfBallLaunchCountdownComponent::ResolveUiEntity(
 	return nullptr;
 }
 
-Unnamed::Gui::UiDigitStripComponent*
+Unnamed::Gui::UiDigitStripComponent *
 MyGame::GolfBallLaunchCountdownComponent::ResolveCountdownDigitStrip() const {
-	auto* scene = GetScene();
+	auto *scene = GetScene();
 	if (!scene || _countdownUiAssetPath.empty()) {
 		return nullptr;
 	}
 
-	for (const auto& entityPtr : scene->GetEntities()) {
+	for (const auto &entityPtr : scene->GetEntities()) {
 		if (!entityPtr || !entityPtr->IsActive()) {
 			continue;
 		}
 
-		auto* canvas = entityPtr->GetComponent<Unnamed::UiCanvasComponent>();
+		auto *canvas = entityPtr->GetComponent<Unnamed::UiCanvasComponent>();
 		if (!canvas || canvas->GetUiAssetPath() != _countdownUiAssetPath) {
 			continue;
 		}
@@ -306,15 +299,14 @@ MyGame::GolfBallLaunchCountdownComponent::ResolveCountdownDigitStrip() const {
 			return nullptr;
 		}
 
-		auto* root = canvas->GetRuntimeRoot();
+		auto *root = canvas->GetRuntimeRoot();
 		if (!root) {
 			return nullptr;
 		}
 
-		auto* widget = FindWidgetByName(
+		auto *widget = FindWidgetByName(
 			root->GetRootWidget(),
-			_countdownDigitWidgetName
-		);
+			_countdownDigitWidgetName);
 		if (!widget) {
 			return nullptr;
 		}
@@ -324,10 +316,9 @@ MyGame::GolfBallLaunchCountdownComponent::ResolveCountdownDigitStrip() const {
 	return nullptr;
 }
 
-Unnamed::Gui::UiWidget* MyGame::GolfBallLaunchCountdownComponent::FindWidgetByName(
-	Unnamed::Gui::UiWidget* widget,
-	const std::string_view name
-) const {
+Unnamed::Gui::UiWidget *MyGame::GolfBallLaunchCountdownComponent::FindWidgetByName(
+	Unnamed::Gui::UiWidget *widget,
+	const std::string_view name) const {
 	if (!widget) {
 		return nullptr;
 	}
@@ -336,8 +327,8 @@ Unnamed::Gui::UiWidget* MyGame::GolfBallLaunchCountdownComponent::FindWidgetByNa
 		return widget;
 	}
 
-	for (const auto& child : widget->GetChildren()) {
-		if (auto* found = FindWidgetByName(child.get(), name)) {
+	for (const auto &child : widget->GetChildren()) {
+		if (auto *found = FindWidgetByName(child.get(), name)) {
 			return found;
 		}
 	}

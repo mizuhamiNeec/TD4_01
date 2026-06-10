@@ -1,0 +1,123 @@
+{
+    "entities": [
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 14985960408723527913,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "cameraActive": true,
+                        "exposureEv": 3.0,
+                        "farZ": 10000.0,
+                        "fovYDegrees": 90.0,
+                        "nearZ": 0.009999999776482582
+                    },
+                    "guid": 14167268361227688040,
+                    "type": "game.Camera"
+                }
+            ],
+            "folderPath": "",
+            "guid": 1,
+            "isEditorOnly": false,
+            "name": "Camera",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 10303249388396532983,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "billboardDepthMode": "DepthTest",
+                        "pixelSize": [
+                            1920.0,
+                            1080.0
+                        ],
+                        "receiveInput": true,
+                        "sortKey": 0,
+                        "spaceMode": "Screen",
+                        "uiAssetPath": "projects/TeamGame/content/ui/result.ui.json",
+                        "worldSize": [
+                            2.0,
+                            1.125
+                        ]
+                    },
+                    "guid": 11809736336545703906,
+                    "type": "engine.UiCanvas"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "ballCatchWidgetName": "score_ball_catch",
+                        "directHoleInOneWidgetName": "score_direct_hole_in_one",
+                        "holeInOneWidgetName": "score_hole_in_one",
+                        "outOfBoundsPenaltyWidgetName": "score_ob_penalty",
+                        "totalWidgetName": "score_total",
+                        "trashIntoHoleWidgetName": "score_trash_into_hole",
+                        "trashToSeaWidgetName": "score_trash_to_sea",
+                        "uiAssetPath": "projects/TeamGame/content/ui/result.ui.json"
+                    },
+                    "guid": 16241656459174500665,
+                    "type": "mygame.ResultScoreUiComponent"
+                }
+            ],
+            "folderPath": "",
+            "guid": 2,
+            "isEditorOnly": false,
+            "name": "UI",
+            "tags": [],
+            "visible": true
+        }
+    ],
+    "folders": [],
+    "version": 1
+}

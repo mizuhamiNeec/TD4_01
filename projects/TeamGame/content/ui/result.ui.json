@@ -1,0 +1,1742 @@
+{
+    "name": "ui/result.ui.json",
+    "root": {
+        "children": [
+            {
+                "children": [
+                    {
+                        "children": [
+                            {
+                                "children": [
+                                    {
+                                        "children": [],
+                                        "components": [
+                                            {
+                                                "data": {
+                                                    "anchors": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "constraints": {
+                                                        "maxHeight": 3.4028234663852886e+38,
+                                                        "maxWidth": 3.4028234663852886e+38,
+                                                        "minHeight": 0.0,
+                                                        "minWidth": 0.0
+                                                    },
+                                                    "layoutWeight": 1.0,
+                                                    "margins": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "pivot": [
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "rect": [
+                                                        0.0,
+                                                        0.0,
+                                                        482.0,
+                                                        83.5
+                                                    ],
+                                                    "sizePolicy": [
+                                                        "Expand",
+                                                        "Fixed"
+                                                    ]
+                                                },
+                                                "type": "Transform"
+                                            },
+                                            {
+                                                "data": {
+                                                    "anchor": [
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "color": [
+                                                        1.0,
+                                                        1.0,
+                                                        1.0,
+                                                        1.0
+                                                    ],
+                                                    "rotationRad": 0.0,
+                                                    "texturePath": "projects/TeamGame/content/textures/UI/result/result_score_total.png",
+                                                    "uvMax": [
+                                                        1.0,
+                                                        1.0
+                                                    ],
+                                                    "uvMin": [
+                                                        0.0,
+                                                        0.0
+                                                    ]
+                                                },
+                                                "type": "Texture"
+                                            }
+                                        ],
+                                        "enabled": true,
+                                        "name": "label_score_total",
+                                        "visible": true
+                                    },
+                                    {
+                                        "children": [],
+                                        "components": [
+                                            {
+                                                "data": {
+                                                    "anchors": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "constraints": {
+                                                        "maxHeight": 3.4028234663852886e+38,
+                                                        "maxWidth": 3.4028234663852886e+38,
+                                                        "minHeight": 0.0,
+                                                        "minWidth": 0.0
+                                                    },
+                                                    "layoutWeight": 1.0,
+                                                    "margins": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "pivot": [
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "rect": [
+                                                        530.0,
+                                                        0.0,
+                                                        482.0,
+                                                        83.5
+                                                    ],
+                                                    "sizePolicy": [
+                                                        "Expand",
+                                                        "Fixed"
+                                                    ]
+                                                },
+                                                "type": "Transform"
+                                            },
+                                            {
+                                                "data": {
+                                                    "color": [
+                                                        1.0,
+                                                        1.0,
+                                                        1.0,
+                                                        1.0
+                                                    ],
+                                                    "digitSpacing": 2.0,
+                                                    "minDigits": 5,
+                                                    "stripTexturePath": "projects/TeamGame/content/textures/UI/number_UI/number_UI_x128y160.png",
+                                                    "value": 0
+                                                },
+                                                "type": "DigitStrip"
+                                            }
+                                        ],
+                                        "enabled": true,
+                                        "name": "score_total",
+                                        "visible": true
+                                    }
+                                ],
+                                "components": [
+                                    {
+                                        "data": {
+                                            "anchors": [
+                                                0.0,
+                                                0.0,
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "constraints": {
+                                                "maxHeight": 3.4028234663852886e+38,
+                                                "maxWidth": 3.4028234663852886e+38,
+                                                "minHeight": 0.0,
+                                                "minWidth": 0.0
+                                            },
+                                            "layoutWeight": 1.0,
+                                            "margins": [
+                                                0.0,
+                                                0.0,
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "pivot": [
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "rect": [
+                                                0.0,
+                                                0.0,
+                                                1012.0,
+                                                83.5
+                                            ],
+                                            "sizePolicy": [
+                                                "Fixed",
+                                                "Expand"
+                                            ]
+                                        },
+                                        "type": "Transform"
+                                    },
+                                    {
+                                        "data": {
+                                            "padding": [
+                                                0.0,
+                                                0.0,
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "spacing": 48.0
+                                        },
+                                        "type": "HorizontalLayout"
+                                    }
+                                ],
+                                "enabled": true,
+                                "name": "スコア:トータル",
+                                "visible": true
+                            },
+                            {
+                                "children": [
+                                    {
+                                        "children": [],
+                                        "components": [
+                                            {
+                                                "data": {
+                                                    "anchors": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "constraints": {
+                                                        "maxHeight": 3.4028234663852886e+38,
+                                                        "maxWidth": 3.4028234663852886e+38,
+                                                        "minHeight": 0.0,
+                                                        "minWidth": 0.0
+                                                    },
+                                                    "layoutWeight": 1.0,
+                                                    "margins": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "pivot": [
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "rect": [
+                                                        0.0,
+                                                        0.0,
+                                                        482.0,
+                                                        83.5
+                                                    ],
+                                                    "sizePolicy": [
+                                                        "Expand",
+                                                        "Fixed"
+                                                    ]
+                                                },
+                                                "type": "Transform"
+                                            },
+                                            {
+                                                "data": {
+                                                    "anchor": [
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "color": [
+                                                        1.0,
+                                                        1.0,
+                                                        1.0,
+                                                        1.0
+                                                    ],
+                                                    "rotationRad": 0.0,
+                                                    "texturePath": "projects/TeamGame/content/textures/UI/result/result_score_trash_to_sea.png",
+                                                    "uvMax": [
+                                                        1.0,
+                                                        1.0
+                                                    ],
+                                                    "uvMin": [
+                                                        0.0,
+                                                        0.0
+                                                    ]
+                                                },
+                                                "type": "Texture"
+                                            }
+                                        ],
+                                        "enabled": true,
+                                        "name": "label_score_trash_to_sea",
+                                        "visible": true
+                                    },
+                                    {
+                                        "children": [],
+                                        "components": [
+                                            {
+                                                "data": {
+                                                    "anchors": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "constraints": {
+                                                        "maxHeight": 3.4028234663852886e+38,
+                                                        "maxWidth": 3.4028234663852886e+38,
+                                                        "minHeight": 0.0,
+                                                        "minWidth": 0.0
+                                                    },
+                                                    "layoutWeight": 1.0,
+                                                    "margins": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "pivot": [
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "rect": [
+                                                        530.0,
+                                                        0.0,
+                                                        482.0,
+                                                        83.5
+                                                    ],
+                                                    "sizePolicy": [
+                                                        "Expand",
+                                                        "Fixed"
+                                                    ]
+                                                },
+                                                "type": "Transform"
+                                            },
+                                            {
+                                                "data": {
+                                                    "color": [
+                                                        1.0,
+                                                        1.0,
+                                                        1.0,
+                                                        1.0
+                                                    ],
+                                                    "digitSpacing": 2.0,
+                                                    "minDigits": 5,
+                                                    "stripTexturePath": "projects/TeamGame/content/textures/UI/number_UI/number_UI_x128y160.png",
+                                                    "value": 0
+                                                },
+                                                "type": "DigitStrip"
+                                            }
+                                        ],
+                                        "enabled": true,
+                                        "name": "score_trash_to_sea",
+                                        "visible": true
+                                    }
+                                ],
+                                "components": [
+                                    {
+                                        "data": {
+                                            "anchors": [
+                                                0.0,
+                                                0.0,
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "constraints": {
+                                                "maxHeight": 3.4028234663852886e+38,
+                                                "maxWidth": 3.4028234663852886e+38,
+                                                "minHeight": 0.0,
+                                                "minWidth": 0.0
+                                            },
+                                            "layoutWeight": 1.0,
+                                            "margins": [
+                                                0.0,
+                                                0.0,
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "pivot": [
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "rect": [
+                                                0.0,
+                                                91.5,
+                                                1012.0,
+                                                83.5
+                                            ],
+                                            "sizePolicy": [
+                                                "Fixed",
+                                                "Expand"
+                                            ]
+                                        },
+                                        "type": "Transform"
+                                    },
+                                    {
+                                        "data": {
+                                            "padding": [
+                                                0.0,
+                                                0.0,
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "spacing": 48.0
+                                        },
+                                        "type": "HorizontalLayout"
+                                    }
+                                ],
+                                "enabled": true,
+                                "name": "スコア:ゴミを海に捨てた",
+                                "visible": true
+                            },
+                            {
+                                "children": [
+                                    {
+                                        "children": [],
+                                        "components": [
+                                            {
+                                                "data": {
+                                                    "anchors": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "constraints": {
+                                                        "maxHeight": 3.4028234663852886e+38,
+                                                        "maxWidth": 3.4028234663852886e+38,
+                                                        "minHeight": 0.0,
+                                                        "minWidth": 0.0
+                                                    },
+                                                    "layoutWeight": 1.0,
+                                                    "margins": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "pivot": [
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "rect": [
+                                                        0.0,
+                                                        0.0,
+                                                        482.0,
+                                                        83.5
+                                                    ],
+                                                    "sizePolicy": [
+                                                        "Expand",
+                                                        "Fixed"
+                                                    ]
+                                                },
+                                                "type": "Transform"
+                                            },
+                                            {
+                                                "data": {
+                                                    "anchor": [
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "color": [
+                                                        1.0,
+                                                        1.0,
+                                                        1.0,
+                                                        1.0
+                                                    ],
+                                                    "rotationRad": 0.0,
+                                                    "texturePath": "projects/TeamGame/content/textures/UI/result/result_score_trash_into_hole.png",
+                                                    "uvMax": [
+                                                        1.0,
+                                                        1.0
+                                                    ],
+                                                    "uvMin": [
+                                                        0.0,
+                                                        0.0
+                                                    ]
+                                                },
+                                                "type": "Texture"
+                                            }
+                                        ],
+                                        "enabled": true,
+                                        "name": "label_score_trash_into_hole",
+                                        "visible": true
+                                    },
+                                    {
+                                        "children": [],
+                                        "components": [
+                                            {
+                                                "data": {
+                                                    "anchors": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "constraints": {
+                                                        "maxHeight": 3.4028234663852886e+38,
+                                                        "maxWidth": 3.4028234663852886e+38,
+                                                        "minHeight": 0.0,
+                                                        "minWidth": 0.0
+                                                    },
+                                                    "layoutWeight": 1.0,
+                                                    "margins": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "pivot": [
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "rect": [
+                                                        530.0,
+                                                        0.0,
+                                                        482.0,
+                                                        83.5
+                                                    ],
+                                                    "sizePolicy": [
+                                                        "Expand",
+                                                        "Fixed"
+                                                    ]
+                                                },
+                                                "type": "Transform"
+                                            },
+                                            {
+                                                "data": {
+                                                    "color": [
+                                                        1.0,
+                                                        1.0,
+                                                        1.0,
+                                                        1.0
+                                                    ],
+                                                    "digitSpacing": 2.0,
+                                                    "minDigits": 5,
+                                                    "stripTexturePath": "projects/TeamGame/content/textures/UI/number_UI/number_UI_x128y160.png",
+                                                    "value": 0
+                                                },
+                                                "type": "DigitStrip"
+                                            }
+                                        ],
+                                        "enabled": true,
+                                        "name": "score_trash_into_hole",
+                                        "visible": true
+                                    }
+                                ],
+                                "components": [
+                                    {
+                                        "data": {
+                                            "anchors": [
+                                                0.0,
+                                                0.0,
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "constraints": {
+                                                "maxHeight": 3.4028234663852886e+38,
+                                                "maxWidth": 3.4028234663852886e+38,
+                                                "minHeight": 0.0,
+                                                "minWidth": 0.0
+                                            },
+                                            "layoutWeight": 1.0,
+                                            "margins": [
+                                                0.0,
+                                                0.0,
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "pivot": [
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "rect": [
+                                                0.0,
+                                                183.0,
+                                                1012.0,
+                                                83.5
+                                            ],
+                                            "sizePolicy": [
+                                                "Fixed",
+                                                "Expand"
+                                            ]
+                                        },
+                                        "type": "Transform"
+                                    },
+                                    {
+                                        "data": {
+                                            "padding": [
+                                                0.0,
+                                                0.0,
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "spacing": 48.0
+                                        },
+                                        "type": "HorizontalLayout"
+                                    }
+                                ],
+                                "enabled": true,
+                                "name": "スコア:ゴミを吸い込んだ",
+                                "visible": true
+                            },
+                            {
+                                "children": [
+                                    {
+                                        "children": [],
+                                        "components": [
+                                            {
+                                                "data": {
+                                                    "anchors": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "constraints": {
+                                                        "maxHeight": 3.4028234663852886e+38,
+                                                        "maxWidth": 3.4028234663852886e+38,
+                                                        "minHeight": 0.0,
+                                                        "minWidth": 0.0
+                                                    },
+                                                    "layoutWeight": 1.0,
+                                                    "margins": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "pivot": [
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "rect": [
+                                                        0.0,
+                                                        0.0,
+                                                        482.0,
+                                                        83.5
+                                                    ],
+                                                    "sizePolicy": [
+                                                        "Expand",
+                                                        "Fixed"
+                                                    ]
+                                                },
+                                                "type": "Transform"
+                                            },
+                                            {
+                                                "data": {
+                                                    "anchor": [
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "color": [
+                                                        1.0,
+                                                        1.0,
+                                                        1.0,
+                                                        1.0
+                                                    ],
+                                                    "rotationRad": 0.0,
+                                                    "texturePath": "projects/TeamGame/content/textures/UI/result/result_score_ball_catch.png",
+                                                    "uvMax": [
+                                                        1.0,
+                                                        1.0
+                                                    ],
+                                                    "uvMin": [
+                                                        0.0,
+                                                        0.0
+                                                    ]
+                                                },
+                                                "type": "Texture"
+                                            }
+                                        ],
+                                        "enabled": true,
+                                        "name": "label_score_ball_catch",
+                                        "visible": true
+                                    },
+                                    {
+                                        "children": [],
+                                        "components": [
+                                            {
+                                                "data": {
+                                                    "anchors": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "constraints": {
+                                                        "maxHeight": 3.4028234663852886e+38,
+                                                        "maxWidth": 3.4028234663852886e+38,
+                                                        "minHeight": 0.0,
+                                                        "minWidth": 0.0
+                                                    },
+                                                    "layoutWeight": 1.0,
+                                                    "margins": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "pivot": [
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "rect": [
+                                                        530.0,
+                                                        0.0,
+                                                        482.0,
+                                                        83.5
+                                                    ],
+                                                    "sizePolicy": [
+                                                        "Expand",
+                                                        "Fixed"
+                                                    ]
+                                                },
+                                                "type": "Transform"
+                                            },
+                                            {
+                                                "data": {
+                                                    "color": [
+                                                        1.0,
+                                                        1.0,
+                                                        1.0,
+                                                        1.0
+                                                    ],
+                                                    "digitSpacing": 2.0,
+                                                    "minDigits": 5,
+                                                    "stripTexturePath": "projects/TeamGame/content/textures/UI/number_UI/number_UI_x128y160.png",
+                                                    "value": 0
+                                                },
+                                                "type": "DigitStrip"
+                                            }
+                                        ],
+                                        "enabled": true,
+                                        "name": "score_ball_catch",
+                                        "visible": true
+                                    }
+                                ],
+                                "components": [
+                                    {
+                                        "data": {
+                                            "anchors": [
+                                                0.0,
+                                                0.0,
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "constraints": {
+                                                "maxHeight": 3.4028234663852886e+38,
+                                                "maxWidth": 3.4028234663852886e+38,
+                                                "minHeight": 0.0,
+                                                "minWidth": 0.0
+                                            },
+                                            "layoutWeight": 1.0,
+                                            "margins": [
+                                                0.0,
+                                                0.0,
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "pivot": [
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "rect": [
+                                                0.0,
+                                                274.5,
+                                                1012.0,
+                                                83.5
+                                            ],
+                                            "sizePolicy": [
+                                                "Fixed",
+                                                "Expand"
+                                            ]
+                                        },
+                                        "type": "Transform"
+                                    },
+                                    {
+                                        "data": {
+                                            "padding": [
+                                                0.0,
+                                                0.0,
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "spacing": 48.0
+                                        },
+                                        "type": "HorizontalLayout"
+                                    }
+                                ],
+                                "enabled": true,
+                                "name": "スコア:ボールをキャッチした",
+                                "visible": true
+                            },
+                            {
+                                "children": [
+                                    {
+                                        "children": [],
+                                        "components": [
+                                            {
+                                                "data": {
+                                                    "anchors": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "constraints": {
+                                                        "maxHeight": 3.4028234663852886e+38,
+                                                        "maxWidth": 3.4028234663852886e+38,
+                                                        "minHeight": 0.0,
+                                                        "minWidth": 0.0
+                                                    },
+                                                    "layoutWeight": 1.0,
+                                                    "margins": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "pivot": [
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "rect": [
+                                                        0.0,
+                                                        0.0,
+                                                        482.0,
+                                                        83.5
+                                                    ],
+                                                    "sizePolicy": [
+                                                        "Expand",
+                                                        "Fixed"
+                                                    ]
+                                                },
+                                                "type": "Transform"
+                                            },
+                                            {
+                                                "data": {
+                                                    "anchor": [
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "color": [
+                                                        1.0,
+                                                        1.0,
+                                                        1.0,
+                                                        1.0
+                                                    ],
+                                                    "rotationRad": 0.0,
+                                                    "texturePath": "projects/TeamGame/content/textures/UI/result/result_score_hole_in_one.png",
+                                                    "uvMax": [
+                                                        1.0,
+                                                        1.0
+                                                    ],
+                                                    "uvMin": [
+                                                        0.0,
+                                                        0.0
+                                                    ]
+                                                },
+                                                "type": "Texture"
+                                            }
+                                        ],
+                                        "enabled": true,
+                                        "name": "label_score_hole_in_one",
+                                        "visible": true
+                                    },
+                                    {
+                                        "children": [],
+                                        "components": [
+                                            {
+                                                "data": {
+                                                    "anchors": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "constraints": {
+                                                        "maxHeight": 3.4028234663852886e+38,
+                                                        "maxWidth": 3.4028234663852886e+38,
+                                                        "minHeight": 0.0,
+                                                        "minWidth": 0.0
+                                                    },
+                                                    "layoutWeight": 1.0,
+                                                    "margins": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "pivot": [
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "rect": [
+                                                        530.0,
+                                                        0.0,
+                                                        482.0,
+                                                        83.5
+                                                    ],
+                                                    "sizePolicy": [
+                                                        "Expand",
+                                                        "Fixed"
+                                                    ]
+                                                },
+                                                "type": "Transform"
+                                            },
+                                            {
+                                                "data": {
+                                                    "color": [
+                                                        1.0,
+                                                        1.0,
+                                                        1.0,
+                                                        1.0
+                                                    ],
+                                                    "digitSpacing": 2.0,
+                                                    "minDigits": 5,
+                                                    "stripTexturePath": "projects/TeamGame/content/textures/UI/number_UI/number_UI_x128y160.png",
+                                                    "value": 0
+                                                },
+                                                "type": "DigitStrip"
+                                            }
+                                        ],
+                                        "enabled": true,
+                                        "name": "score_hole_in_one",
+                                        "visible": true
+                                    }
+                                ],
+                                "components": [
+                                    {
+                                        "data": {
+                                            "anchors": [
+                                                0.0,
+                                                0.0,
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "constraints": {
+                                                "maxHeight": 3.4028234663852886e+38,
+                                                "maxWidth": 3.4028234663852886e+38,
+                                                "minHeight": 0.0,
+                                                "minWidth": 0.0
+                                            },
+                                            "layoutWeight": 1.0,
+                                            "margins": [
+                                                0.0,
+                                                0.0,
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "pivot": [
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "rect": [
+                                                0.0,
+                                                366.0,
+                                                1012.0,
+                                                83.5
+                                            ],
+                                            "sizePolicy": [
+                                                "Fixed",
+                                                "Expand"
+                                            ]
+                                        },
+                                        "type": "Transform"
+                                    },
+                                    {
+                                        "data": {
+                                            "padding": [
+                                                0.0,
+                                                0.0,
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "spacing": 48.0
+                                        },
+                                        "type": "HorizontalLayout"
+                                    }
+                                ],
+                                "enabled": true,
+                                "name": "スコア:ホールインワン",
+                                "visible": true
+                            },
+                            {
+                                "children": [
+                                    {
+                                        "children": [],
+                                        "components": [
+                                            {
+                                                "data": {
+                                                    "anchors": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "constraints": {
+                                                        "maxHeight": 3.4028234663852886e+38,
+                                                        "maxWidth": 3.4028234663852886e+38,
+                                                        "minHeight": 0.0,
+                                                        "minWidth": 0.0
+                                                    },
+                                                    "layoutWeight": 1.0,
+                                                    "margins": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "pivot": [
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "rect": [
+                                                        0.0,
+                                                        0.0,
+                                                        482.0,
+                                                        83.5
+                                                    ],
+                                                    "sizePolicy": [
+                                                        "Expand",
+                                                        "Fixed"
+                                                    ]
+                                                },
+                                                "type": "Transform"
+                                            },
+                                            {
+                                                "data": {
+                                                    "anchor": [
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "color": [
+                                                        1.0,
+                                                        1.0,
+                                                        1.0,
+                                                        1.0
+                                                    ],
+                                                    "rotationRad": 0.0,
+                                                    "texturePath": "projects/TeamGame/content/textures/UI/result/result_score_direct_hole_in_one.png",
+                                                    "uvMax": [
+                                                        1.0,
+                                                        1.0
+                                                    ],
+                                                    "uvMin": [
+                                                        0.0,
+                                                        0.0
+                                                    ]
+                                                },
+                                                "type": "Texture"
+                                            }
+                                        ],
+                                        "enabled": true,
+                                        "name": "label_score_direct_hole_in_one",
+                                        "visible": true
+                                    },
+                                    {
+                                        "children": [],
+                                        "components": [
+                                            {
+                                                "data": {
+                                                    "anchors": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "constraints": {
+                                                        "maxHeight": 3.4028234663852886e+38,
+                                                        "maxWidth": 3.4028234663852886e+38,
+                                                        "minHeight": 0.0,
+                                                        "minWidth": 0.0
+                                                    },
+                                                    "layoutWeight": 1.0,
+                                                    "margins": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "pivot": [
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "rect": [
+                                                        530.0,
+                                                        0.0,
+                                                        482.0,
+                                                        83.5
+                                                    ],
+                                                    "sizePolicy": [
+                                                        "Expand",
+                                                        "Fixed"
+                                                    ]
+                                                },
+                                                "type": "Transform"
+                                            },
+                                            {
+                                                "data": {
+                                                    "color": [
+                                                        1.0,
+                                                        1.0,
+                                                        1.0,
+                                                        1.0
+                                                    ],
+                                                    "digitSpacing": 2.0,
+                                                    "minDigits": 5,
+                                                    "stripTexturePath": "projects/TeamGame/content/textures/UI/number_UI/number_UI_x128y160.png",
+                                                    "value": 0
+                                                },
+                                                "type": "DigitStrip"
+                                            }
+                                        ],
+                                        "enabled": true,
+                                        "name": "score_direct_hole_in_one",
+                                        "visible": true
+                                    }
+                                ],
+                                "components": [
+                                    {
+                                        "data": {
+                                            "anchors": [
+                                                0.0,
+                                                0.0,
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "constraints": {
+                                                "maxHeight": 3.4028234663852886e+38,
+                                                "maxWidth": 3.4028234663852886e+38,
+                                                "minHeight": 0.0,
+                                                "minWidth": 0.0
+                                            },
+                                            "layoutWeight": 1.0,
+                                            "margins": [
+                                                0.0,
+                                                0.0,
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "pivot": [
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "rect": [
+                                                0.0,
+                                                457.5,
+                                                1012.0,
+                                                83.5
+                                            ],
+                                            "sizePolicy": [
+                                                "Fixed",
+                                                "Expand"
+                                            ]
+                                        },
+                                        "type": "Transform"
+                                    },
+                                    {
+                                        "data": {
+                                            "padding": [
+                                                0.0,
+                                                0.0,
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "spacing": 48.0
+                                        },
+                                        "type": "HorizontalLayout"
+                                    }
+                                ],
+                                "enabled": true,
+                                "name": "スコア:直接ホールインワン",
+                                "visible": true
+                            },
+                            {
+                                "children": [
+                                    {
+                                        "children": [],
+                                        "components": [
+                                            {
+                                                "data": {
+                                                    "anchors": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "constraints": {
+                                                        "maxHeight": 3.4028234663852886e+38,
+                                                        "maxWidth": 3.4028234663852886e+38,
+                                                        "minHeight": 0.0,
+                                                        "minWidth": 0.0
+                                                    },
+                                                    "layoutWeight": 1.0,
+                                                    "margins": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "pivot": [
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "rect": [
+                                                        0.0,
+                                                        0.0,
+                                                        482.0,
+                                                        83.5
+                                                    ],
+                                                    "sizePolicy": [
+                                                        "Expand",
+                                                        "Fixed"
+                                                    ]
+                                                },
+                                                "type": "Transform"
+                                            },
+                                            {
+                                                "data": {
+                                                    "anchor": [
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "color": [
+                                                        1.0,
+                                                        1.0,
+                                                        1.0,
+                                                        1.0
+                                                    ],
+                                                    "rotationRad": 0.0,
+                                                    "texturePath": "projects/TeamGame/content/textures/UI/result/result_score_ob_penalty.png",
+                                                    "uvMax": [
+                                                        1.0,
+                                                        1.0
+                                                    ],
+                                                    "uvMin": [
+                                                        0.0,
+                                                        0.0
+                                                    ]
+                                                },
+                                                "type": "Texture"
+                                            }
+                                        ],
+                                        "enabled": true,
+                                        "name": "label_score_ob_penalty",
+                                        "visible": true
+                                    },
+                                    {
+                                        "children": [],
+                                        "components": [
+                                            {
+                                                "data": {
+                                                    "anchors": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "constraints": {
+                                                        "maxHeight": 3.4028234663852886e+38,
+                                                        "maxWidth": 3.4028234663852886e+38,
+                                                        "minHeight": 0.0,
+                                                        "minWidth": 0.0
+                                                    },
+                                                    "layoutWeight": 1.0,
+                                                    "margins": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "pivot": [
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "rect": [
+                                                        530.0,
+                                                        0.0,
+                                                        482.0,
+                                                        83.5
+                                                    ],
+                                                    "sizePolicy": [
+                                                        "Expand",
+                                                        "Fixed"
+                                                    ]
+                                                },
+                                                "type": "Transform"
+                                            },
+                                            {
+                                                "data": {
+                                                    "color": [
+                                                        1.0,
+                                                        1.0,
+                                                        1.0,
+                                                        1.0
+                                                    ],
+                                                    "digitSpacing": 2.0,
+                                                    "minDigits": 5,
+                                                    "stripTexturePath": "projects/TeamGame/content/textures/UI/number_UI/number_UI_x128y160.png",
+                                                    "value": 0
+                                                },
+                                                "type": "DigitStrip"
+                                            }
+                                        ],
+                                        "enabled": true,
+                                        "name": "score_ob_penalty",
+                                        "visible": true
+                                    }
+                                ],
+                                "components": [
+                                    {
+                                        "data": {
+                                            "anchors": [
+                                                0.0,
+                                                0.0,
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "constraints": {
+                                                "maxHeight": 3.4028234663852886e+38,
+                                                "maxWidth": 3.4028234663852886e+38,
+                                                "minHeight": 0.0,
+                                                "minWidth": 0.0
+                                            },
+                                            "layoutWeight": 1.0,
+                                            "margins": [
+                                                0.0,
+                                                0.0,
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "pivot": [
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "rect": [
+                                                0.0,
+                                                549.0,
+                                                1012.0,
+                                                83.5
+                                            ],
+                                            "sizePolicy": [
+                                                "Fixed",
+                                                "Expand"
+                                            ]
+                                        },
+                                        "type": "Transform"
+                                    },
+                                    {
+                                        "data": {
+                                            "padding": [
+                                                0.0,
+                                                0.0,
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "spacing": 48.0
+                                        },
+                                        "type": "HorizontalLayout"
+                                    }
+                                ],
+                                "enabled": true,
+                                "name": "スコア:OBペナルティ",
+                                "visible": true
+                            },
+                            {
+                                "children": [
+                                    {
+                                        "children": [],
+                                        "components": [
+                                            {
+                                                "data": {
+                                                    "anchors": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "constraints": {
+                                                        "maxHeight": 3.4028234663852886e+38,
+                                                        "maxWidth": 3.4028234663852886e+38,
+                                                        "minHeight": 0.0,
+                                                        "minWidth": 0.0
+                                                    },
+                                                    "layoutWeight": 1.0,
+                                                    "margins": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "pivot": [
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "rect": [
+                                                        0.0,
+                                                        0.0,
+                                                        482.0,
+                                                        83.5
+                                                    ],
+                                                    "sizePolicy": [
+                                                        "Expand",
+                                                        "Fixed"
+                                                    ]
+                                                },
+                                                "type": "Transform"
+                                            },
+                                            {
+                                                "data": {
+                                                    "anchor": [
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "color": [
+                                                        1.0,
+                                                        1.0,
+                                                        1.0,
+                                                        1.0
+                                                    ],
+                                                    "rotationRad": 0.0,
+                                                    "texturePath": "projects/TeamGame/content/textures/UI/result/backtotitle.png",
+                                                    "uvMax": [
+                                                        1.0,
+                                                        1.0
+                                                    ],
+                                                    "uvMin": [
+                                                        0.0,
+                                                        0.0
+                                                    ]
+                                                },
+                                                "type": "Texture"
+                                            }
+                                        ],
+                                        "enabled": true,
+                                        "name": "Widget",
+                                        "visible": true
+                                    },
+                                    {
+                                        "children": [],
+                                        "components": [
+                                            {
+                                                "data": {
+                                                    "anchors": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "constraints": {
+                                                        "maxHeight": 3.4028234663852886e+38,
+                                                        "maxWidth": 3.4028234663852886e+38,
+                                                        "minHeight": 0.0,
+                                                        "minWidth": 0.0
+                                                    },
+                                                    "layoutWeight": 1.0,
+                                                    "margins": [
+                                                        0.0,
+                                                        0.0,
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "pivot": [
+                                                        0.0,
+                                                        0.0
+                                                    ],
+                                                    "rect": [
+                                                        530.0,
+                                                        0.0,
+                                                        482.0,
+                                                        83.5
+                                                    ],
+                                                    "sizePolicy": [
+                                                        "Expand",
+                                                        "Expand"
+                                                    ]
+                                                },
+                                                "type": "Transform"
+                                            },
+                                            {
+                                                "data": {
+                                                    "borderColor": [
+                                                        0.05098039284348488,
+                                                        0.05098039284348488,
+                                                        0.07058823853731155,
+                                                        0.0
+                                                    ],
+                                                    "cornerRadius": 0.0,
+                                                    "fontSize": 1.0,
+                                                    "hoveredColor": [
+                                                        0.3607843220233917,
+                                                        0.3607843220233917,
+                                                        0.3607843220233917,
+                                                        1.0
+                                                    ],
+                                                    "normalColor": [
+                                                        0.501960813999176,
+                                                        0.501960813999176,
+                                                        0.501960813999176,
+                                                        1.0
+                                                    ],
+                                                    "onClickCommands": [
+                                                        "map projects/TeamGame/content/scenes/title.json"
+                                                    ],
+                                                    "pressedColor": [
+                                                        0.18039216101169586,
+                                                        0.18039216101169586,
+                                                        0.250980406999588,
+                                                        1.0
+                                                    ],
+                                                    "text": "Button",
+                                                    "textColor": [
+                                                        1.0,
+                                                        1.0,
+                                                        1.0,
+                                                        0.0
+                                                    ]
+                                                },
+                                                "type": "ButtonBehavior"
+                                            }
+                                        ],
+                                        "enabled": true,
+                                        "name": "タイトルに戻るボタン",
+                                        "visible": true
+                                    }
+                                ],
+                                "components": [
+                                    {
+                                        "data": {
+                                            "anchors": [
+                                                0.0,
+                                                0.0,
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "constraints": {
+                                                "maxHeight": 3.4028234663852886e+38,
+                                                "maxWidth": 3.4028234663852886e+38,
+                                                "minHeight": 0.0,
+                                                "minWidth": 0.0
+                                            },
+                                            "layoutWeight": 1.0,
+                                            "margins": [
+                                                0.0,
+                                                0.0,
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "pivot": [
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "rect": [
+                                                0.0,
+                                                640.5,
+                                                1012.0,
+                                                83.5
+                                            ],
+                                            "sizePolicy": [
+                                                "Expand",
+                                                "Expand"
+                                            ]
+                                        },
+                                        "type": "Transform"
+                                    },
+                                    {
+                                        "data": {
+                                            "padding": [
+                                                0.0,
+                                                0.0,
+                                                0.0,
+                                                0.0
+                                            ],
+                                            "spacing": 48.0
+                                        },
+                                        "type": "HorizontalLayout"
+                                    }
+                                ],
+                                "enabled": true,
+                                "name": "ボタン:タイトルに戻る",
+                                "visible": true
+                            }
+                        ],
+                        "components": [
+                            {
+                                "data": {
+                                    "anchors": [
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "constraints": {
+                                        "maxHeight": 3.4028234663852886e+38,
+                                        "maxWidth": 3.4028234663852886e+38,
+                                        "minHeight": 0.0,
+                                        "minWidth": 0.0
+                                    },
+                                    "layoutWeight": 1.0,
+                                    "margins": [
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "pivot": [
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "rect": [
+                                        70.0,
+                                        70.0,
+                                        1012.0,
+                                        724.0
+                                    ],
+                                    "sizePolicy": [
+                                        "Expand",
+                                        "Expand"
+                                    ]
+                                },
+                                "type": "Transform"
+                            },
+                            {
+                                "data": {
+                                    "padding": [
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                    ],
+                                    "spacing": 8.0
+                                },
+                                "type": "VerticalLayout"
+                            }
+                        ],
+                        "enabled": true,
+                        "name": "score_rows",
+                        "visible": true
+                    }
+                ],
+                "components": [
+                    {
+                        "data": {
+                            "anchors": [
+                                0.20000000298023224,
+                                0.10000000149011612,
+                                0.800000011920929,
+                                0.8999999761581421
+                            ],
+                            "constraints": {
+                                "maxHeight": 3.4028234663852886e+38,
+                                "maxWidth": 3.4028234663852886e+38,
+                                "minHeight": 0.0,
+                                "minWidth": 0.0
+                            },
+                            "layoutWeight": 1.0,
+                            "margins": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "pivot": [
+                                0.5,
+                                0.5
+                            ],
+                            "rect": [
+                                549.0,
+                                0.0,
+                                1280.0,
+                                800.0
+                            ],
+                            "sizePolicy": [
+                                "Expand",
+                                "Fixed"
+                            ]
+                        },
+                        "type": "Transform"
+                    },
+                    {
+                        "data": {
+                            "borderColor": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                1.0
+                            ],
+                            "borderThickness": 0.0,
+                            "cornerRadius": 4.0,
+                            "fillColor": [
+                                0.15000000596046448,
+                                0.15000000596046448,
+                                0.18000000715255737,
+                                1.0
+                            ]
+                        },
+                        "type": "PanelStyle"
+                    },
+                    {
+                        "data": {
+                            "padding": [
+                                70.0,
+                                70.0,
+                                70.0,
+                                70.0
+                            ],
+                            "spacing": 38.599998474121094
+                        },
+                        "type": "VerticalLayout"
+                    }
+                ],
+                "enabled": true,
+                "name": "result_panel",
+                "visible": true
+            }
+        ],
+        "components": [
+            {
+                "data": {
+                    "anchors": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "constraints": {
+                        "maxHeight": 3.4028234663852886e+38,
+                        "maxWidth": 3.4028234663852886e+38,
+                        "minHeight": 0.0,
+                        "minWidth": 0.0
+                    },
+                    "layoutWeight": 1.0,
+                    "margins": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "pivot": [
+                        0.0,
+                        0.0
+                    ],
+                    "rect": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "sizePolicy": [
+                        "Fixed",
+                        "Fixed"
+                    ]
+                },
+                "type": "Transform"
+            }
+        ],
+        "enabled": true,
+        "name": "RootLayout",
+        "visible": true
+    },
+    "version": 2
+}

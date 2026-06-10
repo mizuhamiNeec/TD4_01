@@ -137,7 +137,7 @@
                                 0.0
                             ],
                             "onClickCommands": [
-                                "map projects/TeamGame/content/scenes/title.json"
+                                "map projects/TeamGame/content/scenes/result.json"
                             ],
                             "pressedColor": [
                                 0.18039216101169586,
@@ -157,7 +157,7 @@
                     }
                 ],
                 "enabled": true,
-                "name": "押したらタイトルに戻るボタン",
+                "name": "押したらリザルトに行くボタン",
                 "visible": true
             }
         ],

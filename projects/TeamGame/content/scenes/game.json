@@ -590,7 +590,7 @@
             "isEditorOnly": false,
             "name": "Clear_UI",
             "tags": [],
-            "visible": true
+            "visible": false
         },
         {
             "active": true,
@@ -1363,11 +1363,16 @@
                         "afterHitTrashWaveDelay": 6.5,
                         "autoStartCountdown": true,
                         "ballHitTrashWaveCount": 15,
+                        "ballStopResultVelocityThreshold": 0.08,
+                        "clearUiEntityName": "Clear_UI",
                         "countdownSeconds": 15.0,
                         "countdownTrashWaveCount": 10,
+                        "directHoleInOneUiAssetPath": "projects/TeamGame/content/ui/directHoleinone.ui.json",
+                        "holeInOneUiAssetPath": "projects/TeamGame/content/ui/holeinone.ui.json",
                         "launchBallOnPlayingStart": false,
                         "maxBallFlightSeconds": 20.0,
                         "minBallFlightSeconds": 5.0,
+                        "notHoleInOneUiAssetPath": "projects/TeamGame/content/ui/notHoleInone.ui.json",
                         "seaOutHeight": -10.0
                     },
                     "guid": 14837334651500250962,

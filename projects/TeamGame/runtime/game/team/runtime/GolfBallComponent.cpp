@@ -357,6 +357,18 @@ namespace MyGame {
 		_bIsExternalMotion = true;
 	}
 
+	void GolfBallComponent::EnterHoleFall(const Vec3& holePosition) {
+		_holeSuckPosition = holePosition;
+		_holeSuckPower = 1.0f;
+		// NOTE: 穴の内側に入った事実をこのフレームで確定し、GameRuleの成功判定を待たせない。
+		_bIsBeingSucked = true;
+		_bIsInsideHole = true;
+		_bHasEnteredHole = true;
+		_bIsInFlight = true;
+		_bIsExternalMotion = true;
+		_bIsGrounded = false;
+	}
+
 	void GolfBallComponent::ClearHoleSuckPosition() {
 		if (_bHasEnteredHole) {
 			return;
@@ -811,6 +823,23 @@ namespace MyGame {
 		const bool restsOrFallsOnGround =
 			_position.y <= _groundLevel && _velocity.y <= 0.0f;
 		if (restsOrFallsOnGround || reachesGroundThisFrame) {
+			auto* sphereKCR = dynamic_cast<Unnamed::SphereKinematicCollisionResolver*>(
+				mCollisionResolver.get()
+			);
+			if (sphereKCR && _physicsEngine) {
+				Unnamed::Physics::Hit groundHit{};
+				const float probeDistance =
+					std::max(_radius + 0.25f, std::abs(_position.y - _groundLevel) + _radius + 0.25f);
+				const bool hasSupportGround = sphereKCR->ProbeGround(
+					_position + Vec3::up * 0.05f, probeDistance, &groundHit
+				) && groundHit.normal.y >= 0.6f;
+				if (!hasSupportGround) {
+					// NOTE: 足元に地面コライダーが無い場所では、海へ落下できるようYクリップを行わない。
+					_bIsGrounded = false;
+					return;
+				}
+			}
+
 			const bool wasGrounded = _bIsGrounded;
 			// -----------------------------------------------------------------------
 			// 地面に到達した場合の処理

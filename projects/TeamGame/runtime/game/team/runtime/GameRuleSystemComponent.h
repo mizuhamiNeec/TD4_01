@@ -11,6 +11,7 @@
 
 namespace Unnamed {
 	class Entity;
+	class UiCanvasComponent;
 }
 
 namespace MyGame {
@@ -118,6 +119,8 @@ namespace MyGame {
 		float _maxBallFlightSeconds = 20.0f;
 		// ボールやゴミがこの高さ以下なら海へ落ちた扱い
 		float _seaOutHeight = -10.0f;
+		// ボール停止失敗を判定する速度閾値
+		float _ballStopResultVelocityThreshold = 0.08f;
 		// プレイ中の経過時間
 		float _playingElapsedTime = 0.0f;
 		// ボールが打たれてからの経過時間
@@ -140,6 +143,14 @@ namespace MyGame {
 		int _afterHitTrashWaveCount = 15;
 		// 3回目のゴミ出現までの待ち時間
 		float _afterHitTrashWaveDelay = 6.5f;
+		// 通常ホールインワン時に表示するUI
+		std::string _holeInOneUiAssetPath = "projects/TeamGame/content/ui/holeinone.ui.json";
+		// ダイレクトホールインワン時に表示するUI
+		std::string _directHoleInOneUiAssetPath = "projects/TeamGame/content/ui/directHoleinone.ui.json";
+		// ボール停止・海落下など、ホールインワン失敗時に表示するUI
+		std::string _notHoleInOneUiAssetPath = "projects/TeamGame/content/ui/notHoleInone.ui.json";
+		// 終了表示を書き換える対象UIエンティティ名
+		std::string _clearUiEntityName = "Clear_UI";
 		// ゴルフボール発射カウントダウンコンポーネントのキャッシュ
 		GolfBallLaunchCountdownComponent* _launchCountdownComponent = nullptr;
 		// スコアコンポーネントのキャッシュ
@@ -177,6 +188,15 @@ namespace MyGame {
 
 		/// ボールキャッチ成立時のスコアとリザルト状態を確定
 		bool TryScoreBallCatch(GolfBallComponent& golfBall);
+
+		/// 現在の結果に合わせてクリア表示UIを差し替える
+		void ApplyClearUiForResult();
+
+		/// ボールが停止失敗として扱えるかを判定
+		[[nodiscard]] bool IsBallStoppedForResult() const;
+
+		/// クリア表示用のUIキャンバスを検索
+		[[nodiscard]] Unnamed::UiCanvasComponent* ResolveClearUiCanvas() const;
 
 		/// 対象エンティティのGUIDを取得
 		[[nodiscard]] uint64_t GetEntityGuid(Unnamed::Entity* entity) const;

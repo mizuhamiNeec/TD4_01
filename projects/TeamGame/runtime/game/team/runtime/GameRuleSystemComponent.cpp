@@ -8,8 +8,11 @@
 #include "TrashObjSpawnerComponent.h"
 #include "engine/scene/Scene.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
+#include "engine/unnamed/framework/components/ui/UiCanvasComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
 #include <algorithm>
+#include <array>
+#include <cmath>
 
 #ifdef _DEBUG
 #include "imgui.h"
@@ -77,10 +80,25 @@ void MyGame::GameRuleSystemComponent::DrawInspectorImGui()
 	ImGui::DragFloat("Min Ball Flight Seconds", &_minBallFlightSeconds, 0.1f, 0.0f, 999.0f, "%.2f sec");
 	ImGui::DragFloat("Max Ball Flight Seconds", &_maxBallFlightSeconds, 0.1f, 0.0f, 999.0f, "%.2f sec");
 	ImGui::DragFloat("Sea Out Height", &_seaOutHeight, 0.1f, -999.0f, 999.0f, "%.2f");
+	ImGui::DragFloat(
+		"Ball Stop Result Velocity", &_ballStopResultVelocityThreshold, 0.01f, 0.0f, 10.0f, "%.3f"
+	);
 	ImGui::DragInt("Countdown Trash Wave Count", &_countdownTrashWaveCount, 1, 0, 999);
 	ImGui::DragInt("Ball Hit Trash Wave Count", &_ballHitTrashWaveCount, 1, 0, 999);
 	ImGui::DragInt("After Hit Trash Wave Count", &_afterHitTrashWaveCount, 1, 0, 999);
 	ImGui::DragFloat("After Hit Trash Wave Delay", &_afterHitTrashWaveDelay, 0.1f, 0.0f, 999.0f, "%.2f sec");
+	auto inputString = [](const char* label, std::string& value) {
+		std::array<char, 256> buffer{};
+		const size_t copyLength = std::min(value.size(), buffer.size() - 1);
+		std::copy_n(value.data(), copyLength, buffer.data());
+		if (ImGui::InputText(label, buffer.data(), buffer.size())) {
+			value = buffer.data();
+		}
+	};
+	inputString("Clear UI Entity Name", _clearUiEntityName);
+	inputString("Hole In One UI", _holeInOneUiAssetPath);
+	inputString("Direct Hole In One UI", _directHoleInOneUiAssetPath);
+	inputString("Not Hole In One UI", _notHoleInOneUiAssetPath);
 	ImGui::Text("Score: %d", _scoreComponent ? _scoreComponent->GetScore() : 0);
 	if (_scoreComponent) {
 		ImGui::Separator();
@@ -129,6 +147,9 @@ void MyGame::GameRuleSystemComponent::Deserialize(const Unnamed::JsonReader & re
 	if (auto val = reader.Read<float>("seaOutHeight")) {
 		_seaOutHeight = val.value();
 	}
+	if (auto val = reader.Read<float>("ballStopResultVelocityThreshold")) {
+		_ballStopResultVelocityThreshold = std::max(0.0f, val.value());
+	}
 	if (auto val = reader.Read<bool>("launchBallOnPlayingStart")) {
 		_launchBallOnPlayingStart = val.value();
 	}
@@ -143,6 +164,20 @@ void MyGame::GameRuleSystemComponent::Deserialize(const Unnamed::JsonReader & re
 	}
 	if (auto val = reader.Read<float>("afterHitTrashWaveDelay")) {
 		_afterHitTrashWaveDelay = std::max(0.0f, val.value());
+	}
+	if (reader.Has("clearUiEntityName")) {
+		_clearUiEntityName = reader["clearUiEntityName"].GetString(_clearUiEntityName);
+	}
+	if (reader.Has("holeInOneUiAssetPath")) {
+		_holeInOneUiAssetPath = reader["holeInOneUiAssetPath"].GetString(_holeInOneUiAssetPath);
+	}
+	if (reader.Has("directHoleInOneUiAssetPath")) {
+		_directHoleInOneUiAssetPath =
+			reader["directHoleInOneUiAssetPath"].GetString(_directHoleInOneUiAssetPath);
+	}
+	if (reader.Has("notHoleInOneUiAssetPath")) {
+		_notHoleInOneUiAssetPath =
+			reader["notHoleInOneUiAssetPath"].GetString(_notHoleInOneUiAssetPath);
 	}
 }
 
@@ -159,6 +194,8 @@ void MyGame::GameRuleSystemComponent::Serialize(Unnamed::JsonWriter & writer) co
 	writer.Write(_maxBallFlightSeconds);
 	writer.Key("seaOutHeight");
 	writer.Write(_seaOutHeight);
+	writer.Key("ballStopResultVelocityThreshold");
+	writer.Write(_ballStopResultVelocityThreshold);
 	writer.Key("launchBallOnPlayingStart");
 	writer.Write(_launchBallOnPlayingStart);
 	writer.Key("countdownTrashWaveCount");
@@ -169,6 +206,14 @@ void MyGame::GameRuleSystemComponent::Serialize(Unnamed::JsonWriter & writer) co
 	writer.Write(_afterHitTrashWaveCount);
 	writer.Key("afterHitTrashWaveDelay");
 	writer.Write(_afterHitTrashWaveDelay);
+	writer.Key("clearUiEntityName");
+	writer.Write(_clearUiEntityName);
+	writer.Key("holeInOneUiAssetPath");
+	writer.Write(_holeInOneUiAssetPath);
+	writer.Key("directHoleInOneUiAssetPath");
+	writer.Write(_directHoleInOneUiAssetPath);
+	writer.Key("notHoleInOneUiAssetPath");
+	writer.Write(_notHoleInOneUiAssetPath);
 }
 
 void MyGame::GameRuleSystemComponent::StartCountdown()
@@ -238,6 +283,7 @@ void MyGame::GameRuleSystemComponent::FinishGame()
 			}
 		);
 	}
+	ApplyClearUiForResult();
 	_phase = GamePhase::Result;
 	_isGameEnded = true;
 	if (_launchCountdownComponent) {
@@ -266,6 +312,12 @@ void MyGame::GameRuleSystemComponent::ResetGame()
 	}
 	if (_scoreComponent) {
 		_scoreComponent->ResetScore();
+	}
+	if (auto* clearUiCanvas = ResolveClearUiCanvas()) {
+		if (auto* clearUiEntity = clearUiCanvas->GetOwner()) {
+			// NOTE: 結果が確定するまでクリア文言を表示しないため、再開始時に非表示へ戻す。
+			clearUiEntity->SetVisible(false);
+		}
 	}
 }
 
@@ -441,7 +493,7 @@ void MyGame::GameRuleSystemComponent::UpdateBallResult(float deltaTime)
 		return;
 	}
 
-	if (_hasBallLaunched && !_golfBallComponent->IsInFlight()) {
+	if (_hasBallLaunched && IsBallStoppedForResult()) {
 		// NOTE: ホールインワンのルールなので、止まった時点で失敗として終了する。
 		FinishGame();
 		return;
@@ -481,10 +533,6 @@ void MyGame::GameRuleSystemComponent::TriggerTrashWave(int trashCount)
 
 bool MyGame::GameRuleSystemComponent::TryScoreBallCatch(GolfBallComponent& golfBall)
 {
-	if (!_scoreComponent) {
-		return false;
-	}
-
 	const bool hasLaunchedBall =
 		_hasBallLaunched || golfBall.IsInFlight() || golfBall.HasEnteredHole();
 	if (!hasLaunchedBall) {
@@ -497,11 +545,95 @@ bool MyGame::GameRuleSystemComponent::TryScoreBallCatch(GolfBallComponent& golfB
 	_isHoleInOne = true;
 	if (!golfBall.HasBounced()) {
 		_isDirectHoleInOne = true;
-		_scoreComponent->AddDirectHoleInOneBonus();
+		if (_scoreComponent) {
+			_scoreComponent->AddDirectHoleInOneBonus();
+		}
 	} else {
-		_scoreComponent->AddHoleInOneBonus();
+		if (_scoreComponent) {
+			_scoreComponent->AddHoleInOneBonus();
+		}
 	}
 	return true;
+}
+
+void MyGame::GameRuleSystemComponent::ApplyClearUiForResult()
+{
+	auto* canvas = ResolveClearUiCanvas();
+	if (!canvas) {
+		return;
+	}
+	if (auto* clearUiEntity = canvas->GetOwner()) {
+		// NOTE: ゲーム終了理由が確定した後だけ、選択済みのクリア文言を表示する。
+		clearUiEntity->SetVisible(true);
+	}
+
+	const std::string* uiAssetPath = &_notHoleInOneUiAssetPath;
+	if (_isDirectHoleInOne) {
+		uiAssetPath = &_directHoleInOneUiAssetPath;
+	} else if (_isHoleInOne) {
+		uiAssetPath = &_holeInOneUiAssetPath;
+	}
+
+	// NOTE: UI自体はシーン上のClear_UIを使い回し、結果テキストだけをJSON差し替えで選ぶ。
+	canvas->SetUiAssetPath(*uiAssetPath);
+	canvas->EnsureRuntimeLoaded();
+}
+
+bool MyGame::GameRuleSystemComponent::IsBallStoppedForResult() const
+{
+	if (!_golfBallComponent) {
+		return false;
+	}
+	if (_golfBallComponent->HasEnteredHole()) {
+		return false;
+	}
+	if (!_golfBallComponent->IsInFlight()) {
+		return true;
+	}
+
+	const Vec3 velocity = _golfBallComponent->GetCurrentVelocity();
+	const Vec3 position = _golfBallComponent->GetCurrentPosition();
+	const float horizontalSpeedSq = velocity.x * velocity.x + velocity.z * velocity.z;
+	const float stopSpeedSq =
+		_ballStopResultVelocityThreshold * _ballStopResultVelocityThreshold;
+	const bool isNearlyResting =
+		horizontalSpeedSq <= stopSpeedSq &&
+		std::abs(velocity.y) <= _ballStopResultVelocityThreshold &&
+		position.y > _seaOutHeight;
+
+	// NOTE: 吸い込みや外力でフライト状態が残っても、実速度が止まっていれば失敗として確定する。
+	return isNearlyResting;
+}
+
+Unnamed::UiCanvasComponent* MyGame::GameRuleSystemComponent::ResolveClearUiCanvas() const
+{
+	auto* scene = GetScene();
+	if (!scene && GetOwner()) {
+		scene = GetOwner()->GetScene();
+	}
+	if (!scene) {
+		return nullptr;
+	}
+
+	for (const auto& entityPtr : scene->GetEntities()) {
+		if (!entityPtr) {
+			continue;
+		}
+
+		auto* entity = entityPtr.get();
+		auto* canvas = entity->GetComponent<Unnamed::UiCanvasComponent>();
+		if (!canvas) {
+			continue;
+		}
+
+		if (!_clearUiEntityName.empty() && entity->GetName() != _clearUiEntityName) {
+			continue;
+		}
+
+		return canvas;
+	}
+
+	return nullptr;
 }
 
 uint64_t MyGame::GameRuleSystemComponent::GetEntityGuid(Unnamed::Entity* entity) const

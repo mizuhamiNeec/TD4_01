@@ -372,16 +372,16 @@ namespace MyGame {
 		// NOTE: 穴の世界座標を取得
 		Vec3 holeWorldPos = GetHoleWorldPosition();
 
-		// NOTE: エンティティの位置を取得
-		Vec3 entityPos = transform->GetPosition();
+		// NOTE: ボールはTransformよりGolfBallComponent内部位置の方が最新なので、穴判定には実移動位置を使う。
+		Vec3 entityPos = golfBallComponent ? golfBallComponent->GetCurrentPosition() : transform->GetPosition();
 
 		// NOTE: 穴は地面上の円として扱うため、高さ差ではなく水平距離だけで判定する。
 		Vec3 diff = entityPos - holeWorldPos;
 		diff.y = 0.0f;
 		float distance = diff.Length();
 
-		// NOTE: 水平距離が穴の半径より小さいか判定
-		return distance < _holeRadius;
+		// NOTE: 境界に触れた瞬間も穴入りとして扱い、フレーム境界での取りこぼしを避ける。
+		return distance <= _holeRadius;
 	}
 
 	void PlayerHoleComponent::MakeTrashFall(Unnamed::Entity* trashEntity) {
@@ -413,7 +413,7 @@ namespace MyGame {
 					trashComponent->EnterHoleFall(GetHoleWorldPosition());
 				}
 				if (auto* golfBallComponent = trashEntity->GetComponent<GolfBallComponent>()) {
-					golfBallComponent->SetHoleSuckPosition(GetHoleWorldPosition(), 1.0f);
+					golfBallComponent->EnterHoleFall(GetHoleWorldPosition());
 				}
 			}
 		}
@@ -480,7 +480,8 @@ namespace MyGame {
 				continue;
 			}
 
-			Vec3 trashPos = transform->GetPosition();
+			// NOTE: ボールはTransform同期順に依存せず、現在の物理位置から吸い込み距離を測る。
+			Vec3 trashPos = golfBallComponent ? golfBallComponent->GetCurrentPosition() : transform->GetPosition();
 			Vec3 diffToHole = holeWorldPos - trashPos;
 			Vec3 horizontalDiffToHole = diffToHole;
 			horizontalDiffToHole.y = 0.0f;
@@ -515,6 +516,11 @@ namespace MyGame {
 
 			// NOTE: すべてのゴミに吸い込み力を適用
 			if (suckPower > 0.0f) {
+				if (golfBallComponent && distanceToHole <= _holeRadius) {
+					// NOTE: 吸い込み中に穴半径へ入った瞬間も、同フレームで成功状態を確定する。
+					golfBallComponent->EnterHoleFall(holeWorldPos);
+					continue;
+				}
 				if (trashComponent) {
 					trashComponent->SetHoleSuckPosition(holeWorldPos, suckPower);
 				}

@@ -44,6 +44,9 @@ namespace MyGame {
 		[[nodiscard]] Vec3 GetPlanarForward() const;
 		[[nodiscard]] Vec3 GetPlanarRight() const;
 
+		/// ステージ紹介用の俯瞰カメラへ切り替える
+		void SetStageIntroMode(bool enabled);
+
 	private:
 		[[nodiscard]] Unnamed::TransformComponent* GetCameraTransform() const;
 		[[nodiscard]] Unnamed::CameraComponent* GetCameraComponent() const;
@@ -76,6 +79,11 @@ namespace MyGame {
 		void UpdateVoiceCameraEffect(float deltaTime);
 		void ApplyVoiceFov(Unnamed::CameraComponent& cameraComponent);
 		void ResetState(const Vec3& targetPosition, const Mat4& targetWorld);
+		void ApplyStageIntroCamera(
+			Unnamed::TransformComponent& cameraTransform,
+			const Vec3& targetPosition,
+			float deltaTime
+		);
 		[[nodiscard]] float DampFactor(float sharpness, float deltaTime) const;
 
 		uint64_t _targetEntityGuid = 42;
@@ -116,6 +124,13 @@ namespace MyGame {
 		float _voiceDistanceAddMax = 0.8f;
 		float _voiceRiseSharpness = 4.5f;
 		float _voiceFallSharpness = 2.0f;
+
+		Vec3 _stageIntroOffset = Vec3(0.0f, 14.0f, -18.0f);
+		Vec3 _stageIntroLookAtOffset = Vec3(0.0f, 0.0f, 8.0f);
+		float _stageIntroOrbitSpeedDegrees = 12.0f;
+		float _stageIntroPositionSharpness = 2.5f;
+		float _stageIntroElapsedTime = 0.0f;
+		bool _bStageIntroMode = false;
 
 		Vec3 _smoothedPosition = Vec3::zero;
 		Vec3 _smoothedTargetPosition = Vec3::zero;

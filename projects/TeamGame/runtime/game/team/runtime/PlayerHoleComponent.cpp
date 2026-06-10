@@ -136,6 +136,21 @@ namespace MyGame {
 		return _trashInHole;
 	}
 
+	bool PlayerHoleComponent::TryEnterGolfBall(GolfBallComponent& golfBall) {
+		auto* ballEntity = golfBall.GetOwner();
+		if (!_isHoleActive || !ballEntity) {
+			return golfBall.HasEnteredHole();
+		}
+
+		if (!IsEntityInHoleRange(ballEntity)) {
+			return golfBall.HasEnteredHole();
+		}
+
+		// NOTE: GameRule側の更新順に依存せず、このフレームで動く穴への入球を確定する。
+		golfBall.EnterHoleFall(GetHoleWorldPosition());
+		return true;
+	}
+
 	// ===================================================================
 	// BaseComponent の必須オーバーライド
 	// ===================================================================
@@ -395,10 +410,11 @@ namespace MyGame {
 		const Vec3 ballVelocity = golfBall.GetCurrentVelocity();
 		const float verticalDistance = ballPosition.y - holeWorldPos.y;
 		const float allowedHeight = std::max(0.5f, _holeRadius * 0.75f);
+		const float allowedUpwardVelocity = 2.0f;
 
-		// NOTE: 空中の落下予定地点だけで吸い込むと軌道が止まるため、穴の高さ付近か落下確定後だけ許可する。
+		// NOTE: 空中の落下予定地点だけでは吸わず、低いバウンドの上昇中だけは穴入りとして許可する。
 		return golfBall.HasEnteredHole() ||
-			(verticalDistance <= allowedHeight && ballVelocity.y <= 0.5f);
+			(verticalDistance <= allowedHeight && ballVelocity.y <= allowedUpwardVelocity);
 	}
 
 	void PlayerHoleComponent::MakeTrashFall(Unnamed::Entity* trashEntity) {

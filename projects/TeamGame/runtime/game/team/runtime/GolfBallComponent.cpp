@@ -153,17 +153,6 @@ namespace MyGame {
 		_elapsedTime += deltaTime;
 
 		// -----------------------------------------------------------------------
-		// 7️⃣ 停止判定（完全に停止したか確認）
-		// -----------------------------------------------------------------------
-		// 理由：速度が十分に小さくなったら、フライトを終了する
-		float speed = _velocity.Length();
-		if (!_bIsBeingSucked && _bIsGrounded && speed < _stopVelocityThreshold) {
-			_bIsInFlight = false;
-			_bIsExternalMotion = false;
-			_velocity = Vec3(0.0f, 0.0f, 0.0f);  // 完全に停止
-		}
-
-		// -----------------------------------------------------------------------
 		// 8️⃣ 衝突応答 & 速度クリップ
 		// -----------------------------------------------------------------------
 		if (!_bIsInsideHole) {
@@ -178,6 +167,14 @@ namespace MyGame {
 			}
 		} else {
 			_position += _velocity * deltaTime;
+		}
+
+		const float speed = _velocity.Length();
+		if (!_bIsBeingSucked && _bIsGrounded && speed < _stopVelocityThreshold) {
+			// NOTE: 衝突応答後の最終速度で止め、バウンド直前にフライト終了しないようにする。
+			_bIsInFlight = false;
+			_bIsExternalMotion = false;
+			_velocity = Vec3(0.0f, 0.0f, 0.0f);
 		}
 		
 		// -----------------------------------------------------------------------

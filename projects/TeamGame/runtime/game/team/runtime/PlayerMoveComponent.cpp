@@ -28,6 +28,11 @@ namespace MyGame {
 
 	void PlayerMoveComponent::OnTick(float deltaTime) {
 		// NOTE: 毎フレーム更新 - Transform の位置を更新する
+		if (!_bMovementEnabled) {
+			// NOTE: ステージ紹介などの演出中は、入力だけでなく直前の慣性も残さない。
+			StopMovement();
+			return;
+		}
 
 		// TransformComponent を取得
 		if (!GetOwner()) {
@@ -100,6 +105,11 @@ namespace MyGame {
 	// -----------------------------------------------------------------------
 
 	void PlayerMoveComponent::SetMoveDirection(const Vec2& direction) {
+		if (!_bMovementEnabled) {
+			_moveDirection = Vec2(0.0f, 0.0f);
+			return;
+		}
+
 		// NOTE: 移動方向をクランプして保存
 		Vec2 clamped = direction;
 		clamped.ClampLength(0.0f,1.0f);
@@ -140,11 +150,27 @@ namespace MyGame {
 		_moveSpeed = std::max(0.0f, speed);
 	}
 
+	void PlayerMoveComponent::SetMovementEnabled(bool enabled) {
+		_bMovementEnabled = enabled;
+		if (!_bMovementEnabled) {
+			StopMovement();
+		}
+	}
+
+	void PlayerMoveComponent::StopMovement() {
+		_moveDirection = Vec2(0.0f, 0.0f);
+		_horizontalVelocity = Vec3::zero;
+	}
+
 	float PlayerMoveComponent::GetMoveSpeed() const {
 		return _moveSpeed;
 	}
 
 	void PlayerMoveComponent::Jump() {
+		if (!_bMovementEnabled) {
+			return;
+		}
+
 		// NOTE: 地面に接触しているときのみジャンプ可能
 		if (_bIsGrounded) {
 			// ジャンプ初速度を設定

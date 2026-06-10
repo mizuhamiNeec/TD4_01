@@ -90,6 +90,12 @@ namespace MyGame {
 		if (!_initialized) {
 			ResetState(targetPosition, targetWorld);
 		}
+
+		if (_bStageIntroMode) {
+			ApplyStageIntroCamera(*cameraTransform, targetPosition, safeDeltaTime);
+			return;
+		}
+
 		UpdateSmoothedBaseYaw(targetWorld, safeDeltaTime);
 
 		const Vec3 targetVelocity =
@@ -383,6 +389,19 @@ namespace MyGame {
 		if (auto val = reader.Read<bool>("voiceCameraEffectEnabled")) {
 			_voiceCameraEffectEnabled = val.value();
 		}
+		if (reader.Has("stageIntroOffset")) {
+			_stageIntroOffset = reader["stageIntroOffset"].GetVec3(_stageIntroOffset);
+		}
+		if (reader.Has("stageIntroLookAtOffset")) {
+			_stageIntroLookAtOffset =
+				reader["stageIntroLookAtOffset"].GetVec3(_stageIntroLookAtOffset);
+		}
+		if (auto val = reader.Read<float>("stageIntroOrbitSpeedDegrees")) {
+			_stageIntroOrbitSpeedDegrees = val.value();
+		}
+		if (auto val = reader.Read<float>("stageIntroPositionSharpness")) {
+			_stageIntroPositionSharpness = std::max(0.0f, val.value());
+		}
 		if (auto val = reader.Read<float>("voiceDeadZone")) {
 			_voiceDeadZone = std::clamp(val.value(), 0.0f, 1.0f);
 		}
@@ -473,6 +492,22 @@ namespace MyGame {
 		writer.Write(_useTargetYaw);
 		writer.Key("voiceCameraEffectEnabled");
 		writer.Write(_voiceCameraEffectEnabled);
+		writer.Key("stageIntroOffset");
+		writer.BeginArray();
+		writer.Write(_stageIntroOffset.x);
+		writer.Write(_stageIntroOffset.y);
+		writer.Write(_stageIntroOffset.z);
+		writer.EndArray();
+		writer.Key("stageIntroLookAtOffset");
+		writer.BeginArray();
+		writer.Write(_stageIntroLookAtOffset.x);
+		writer.Write(_stageIntroLookAtOffset.y);
+		writer.Write(_stageIntroLookAtOffset.z);
+		writer.EndArray();
+		writer.Key("stageIntroOrbitSpeedDegrees");
+		writer.Write(_stageIntroOrbitSpeedDegrees);
+		writer.Key("stageIntroPositionSharpness");
+		writer.Write(_stageIntroPositionSharpness);
 		writer.Key("voiceDeadZone");
 		writer.Write(_voiceDeadZone);
 		writer.Key("voiceMaxVolume");
@@ -781,6 +816,16 @@ namespace MyGame {
 		return right.Normalized();
 	}
 
+	void PlayerFollowCameraComponent::SetStageIntroMode(bool enabled) {
+		if (_bStageIntroMode == enabled) {
+			return;
+		}
+
+		_bStageIntroMode = enabled;
+		_stageIntroElapsedTime = 0.0f;
+		_initialized = false;
+	}
+
 	void PlayerFollowCameraComponent::ApplyWorldPose(
 		Unnamed::TransformComponent& cameraTransform,
 		const Vec3& worldPosition,
@@ -811,6 +856,42 @@ namespace MyGame {
 
 		cameraTransform.SetPosition(world.GetTranslate());
 		cameraTransform.SetRotation(world.ToQuaternion().Normalized());
+	}
+
+	void PlayerFollowCameraComponent::ApplyStageIntroCamera(
+		Unnamed::TransformComponent& cameraTransform,
+		const Vec3& targetPosition,
+		const float deltaTime
+	) {
+		_stageIntroElapsedTime += deltaTime;
+
+		const float yawRad =
+			_stageIntroElapsedTime * _stageIntroOrbitSpeedDegrees * Math::deg2Rad;
+		const Quaternion yawRotation = Quaternion::AxisAngle(Vec3::up, yawRad);
+		const Vec3 desiredPosition =
+			targetPosition + yawRotation.RotateVector(_stageIntroOffset);
+		const Vec3 desiredLookAtPosition = targetPosition + _stageIntroLookAtOffset;
+
+		const float positionAlpha =
+			DampFactor(_stageIntroPositionSharpness, deltaTime);
+		_smoothedPosition = Math::Lerp(
+			_smoothedPosition,
+			desiredPosition,
+			positionAlpha
+		);
+		_smoothedLookAtPosition = Math::Lerp(
+			_smoothedLookAtPosition,
+			desiredLookAtPosition,
+			positionAlpha
+		);
+
+		// NOTE: 紹介中は通常追従の先読みや入力回転を使わず、ステージ全体を見せる固定演出にする。
+		ApplyWorldPose(
+			cameraTransform,
+			_smoothedPosition,
+			_smoothedLookAtPosition,
+			deltaTime
+		);
 	}
 
 	void PlayerFollowCameraComponent::UpdateVoiceCameraEffect(

@@ -3,6 +3,8 @@
 #include "GolfBallComponent.h"
 #include "GolfBallLaunchCountdownComponent.h"
 #include "PlayerHoleComponent.h"
+#include "PlayerMoveComponent.h"
+#include "PlayerFollowCameraComponent.h"
 #include "TeamGameResultScore.h"
 #include "TrashObjMoverComponent.h"
 #include "TrashObjSpawnerComponent.h"
@@ -24,7 +26,11 @@ void MyGame::GameRuleSystemComponent::OnAttached()
 	ResolveRuntimeReferences();
 	ResetGame();
 	if (_autoStartCountdown) {
-		StartCountdown();
+		if (_bUseStageIntro && _stageIntroSeconds > 0.0f) {
+			StartStageIntro();
+		} else {
+			StartCountdown();
+		}
 	}
 }
 
@@ -46,6 +52,8 @@ void MyGame::GameRuleSystemComponent::OnDetached()
 	_playerHoleComponent = nullptr;
 	_golfBallComponent = nullptr;
 	_trashObjSpawnerComponent = nullptr;
+	_playerMoveComponent = nullptr;
+	_playerFollowCameraComponent = nullptr;
 }
 
 std::string_view MyGame::GameRuleSystemComponent::GetStableName() const {
@@ -61,7 +69,9 @@ void MyGame::GameRuleSystemComponent::DrawInspectorImGui()
 {
 	// NOTE: デバッグ中にゲーム進行とPDF上のタイミング設定を確認できるようにする。
 	const char* phaseName = "Ready";
-	if (_phase == GamePhase::Countdown) {
+	if (_phase == GamePhase::StageIntro) {
+		phaseName = "StageIntro";
+	} else if (_phase == GamePhase::Countdown) {
 		phaseName = "Countdown";
 	} else if (_phase == GamePhase::Playing) {
 		phaseName = "Playing";
@@ -76,6 +86,8 @@ void MyGame::GameRuleSystemComponent::DrawInspectorImGui()
 	ImGui::Text("Playing Time: %.2f", _playingElapsedTime);
 	ImGui::Text("Ball Flight Time: %.2f", _ballFlightElapsedTime);
 	ImGui::Checkbox("Auto Start Countdown", &_autoStartCountdown);
+	ImGui::Checkbox("Use Stage Intro", &_bUseStageIntro);
+	ImGui::DragFloat("Stage Intro Seconds", &_stageIntroSeconds, 0.1f, 0.0f, 60.0f, "%.2f sec");
 	ImGui::DragFloat("Countdown Seconds", &_countdownSeconds, 0.1f, 0.0f, 999.0f, "%.2f sec");
 	ImGui::DragFloat("Min Ball Flight Seconds", &_minBallFlightSeconds, 0.1f, 0.0f, 999.0f, "%.2f sec");
 	ImGui::DragFloat("Max Ball Flight Seconds", &_maxBallFlightSeconds, 0.1f, 0.0f, 999.0f, "%.2f sec");
@@ -96,6 +108,8 @@ void MyGame::GameRuleSystemComponent::DrawInspectorImGui()
 		}
 	};
 	inputString("Clear UI Entity Name", _clearUiEntityName);
+	inputString("Stage Intro UI Entity Name", _stageIntroUiEntityName);
+	inputString("Stage Intro UI", _stageIntroUiAssetPath);
 	inputString("Hole In One UI", _holeInOneUiAssetPath);
 	inputString("Direct Hole In One UI", _directHoleInOneUiAssetPath);
 	inputString("Not Hole In One UI", _notHoleInOneUiAssetPath);
@@ -135,6 +149,12 @@ void MyGame::GameRuleSystemComponent::Deserialize(const Unnamed::JsonReader & re
 	if (auto val = reader.Read<bool>("autoStartCountdown")) {
 		_autoStartCountdown = val.value();
 	}
+	if (auto val = reader.Read<bool>("useStageIntro")) {
+		_bUseStageIntro = val.value();
+	}
+	if (auto val = reader.Read<float>("stageIntroSeconds")) {
+		_stageIntroSeconds = std::max(0.0f, val.value());
+	}
 	if (auto val = reader.Read<float>("countdownSeconds")) {
 		_countdownSeconds = std::max(0.0f, val.value());
 	}
@@ -168,6 +188,14 @@ void MyGame::GameRuleSystemComponent::Deserialize(const Unnamed::JsonReader & re
 	if (reader.Has("clearUiEntityName")) {
 		_clearUiEntityName = reader["clearUiEntityName"].GetString(_clearUiEntityName);
 	}
+	if (reader.Has("stageIntroUiEntityName")) {
+		_stageIntroUiEntityName =
+			reader["stageIntroUiEntityName"].GetString(_stageIntroUiEntityName);
+	}
+	if (reader.Has("stageIntroUiAssetPath")) {
+		_stageIntroUiAssetPath =
+			reader["stageIntroUiAssetPath"].GetString(_stageIntroUiAssetPath);
+	}
 	if (reader.Has("holeInOneUiAssetPath")) {
 		_holeInOneUiAssetPath = reader["holeInOneUiAssetPath"].GetString(_holeInOneUiAssetPath);
 	}
@@ -186,6 +214,10 @@ void MyGame::GameRuleSystemComponent::Serialize(Unnamed::JsonWriter & writer) co
 	// NOTE: インゲーム進行の調整値をJSONへ保存する。
 	writer.Key("autoStartCountdown");
 	writer.Write(_autoStartCountdown);
+	writer.Key("useStageIntro");
+	writer.Write(_bUseStageIntro);
+	writer.Key("stageIntroSeconds");
+	writer.Write(_stageIntroSeconds);
 	writer.Key("countdownSeconds");
 	writer.Write(_countdownSeconds);
 	writer.Key("minBallFlightSeconds");
@@ -208,12 +240,45 @@ void MyGame::GameRuleSystemComponent::Serialize(Unnamed::JsonWriter & writer) co
 	writer.Write(_afterHitTrashWaveDelay);
 	writer.Key("clearUiEntityName");
 	writer.Write(_clearUiEntityName);
+	writer.Key("stageIntroUiEntityName");
+	writer.Write(_stageIntroUiEntityName);
+	writer.Key("stageIntroUiAssetPath");
+	writer.Write(_stageIntroUiAssetPath);
 	writer.Key("holeInOneUiAssetPath");
 	writer.Write(_holeInOneUiAssetPath);
 	writer.Key("directHoleInOneUiAssetPath");
 	writer.Write(_directHoleInOneUiAssetPath);
 	writer.Key("notHoleInOneUiAssetPath");
 	writer.Write(_notHoleInOneUiAssetPath);
+}
+
+void MyGame::GameRuleSystemComponent::StartStageIntro()
+{
+	// NOTE: 開始前にステージと目標を見せるため、通常カウントダウンの前に専用フェーズへ入る。
+	ResolveRuntimeReferences();
+	_phase = GamePhase::StageIntro;
+	_isGameStarted = false;
+	_isGameEnded = false;
+	_isOutOfBounds = false;
+	_isHoleInOne = false;
+	_isDirectHoleInOne = false;
+	_stageIntroElapsedTime = 0.0f;
+	_playingElapsedTime = 0.0f;
+	_ballFlightElapsedTime = 0.0f;
+	_hasBallLaunched = false;
+	_hasTriggeredCountdownTrashWave = false;
+	_hasTriggeredBallHitTrashWave = false;
+	_hasTriggeredAfterHitTrashWave = false;
+
+	if (_scoreComponent) {
+		_scoreComponent->ResetScore();
+	}
+	if (_launchCountdownComponent) {
+		_launchCountdownComponent->ResetCountdown();
+	}
+	ApplyStageIntroControlState(true);
+	SetStageIntroHudHidden(true);
+	SetStageIntroUiVisible(true);
 }
 
 void MyGame::GameRuleSystemComponent::StartCountdown()
@@ -236,6 +301,9 @@ void MyGame::GameRuleSystemComponent::StartCountdown()
 	if (_scoreComponent) {
 		_scoreComponent->ResetScore();
 	}
+	SetStageIntroHudHidden(false);
+	ApplyStageIntroControlState(false);
+	SetStageIntroUiVisible(false);
 	if (_launchCountdownComponent) {
 		_launchCountdownComponent->StartCountdown(_countdownSeconds);
 	}
@@ -251,6 +319,7 @@ void MyGame::GameRuleSystemComponent::StartPlaying()
 	_playingElapsedTime = 0.0f;
 	_ballFlightElapsedTime = 0.0f;
 	_hasBallLaunched = false;
+	ApplyStageIntroControlState(false);
 
 	if (_launchCountdownComponent) {
 		_launchCountdownComponent->StopCountdown();
@@ -269,6 +338,10 @@ void MyGame::GameRuleSystemComponent::FinishGame()
 {
 	// NOTE: ボール停止・海落下・キャッチ後はリザルトへ移行する。
 	ResolveRuntimeReferences();
+	if (_phase == GamePhase::Result && _isGameEnded) {
+		return;
+	}
+	SetStageIntroHudHidden(false);
 	if (_scoreComponent) {
 		StoreTeamGameResultScore(
 			{
@@ -283,7 +356,12 @@ void MyGame::GameRuleSystemComponent::FinishGame()
 			}
 		);
 	}
-	ApplyClearUiForResult();
+	(void)ApplyClearUiForResult();
+	ApplyStageIntroControlState(false);
+	SetStageIntroUiVisible(false);
+	if (_playerMoveComponent) {
+		_playerMoveComponent->SetMovementEnabled(false);
+	}
 	_phase = GamePhase::Result;
 	_isGameEnded = true;
 	if (_launchCountdownComponent) {
@@ -306,6 +384,7 @@ void MyGame::GameRuleSystemComponent::ResetGame()
 	_hasTriggeredCountdownTrashWave = false;
 	_hasTriggeredBallHitTrashWave = false;
 	_hasTriggeredAfterHitTrashWave = false;
+	_stageIntroElapsedTime = 0.0f;
 
 	if (_launchCountdownComponent) {
 		_launchCountdownComponent->ResetCountdown();
@@ -313,6 +392,9 @@ void MyGame::GameRuleSystemComponent::ResetGame()
 	if (_scoreComponent) {
 		_scoreComponent->ResetScore();
 	}
+	SetStageIntroHudHidden(false);
+	ApplyStageIntroControlState(false);
+	SetStageIntroUiVisible(false);
 	if (auto* clearUiCanvas = ResolveClearUiCanvas()) {
 		if (auto* clearUiEntity = clearUiCanvas->GetOwner()) {
 			// NOTE: 結果が確定するまでクリア文言を表示しないため、再開始時に非表示へ戻す。
@@ -335,7 +417,8 @@ void MyGame::GameRuleSystemComponent::ResolveRuntimeReferences()
 {
 	// NOTE: 既に必要な参照が揃っている場合は再検索を省略する。
 	if (_launchCountdownComponent && _scoreComponent && _playerHoleComponent &&
-		_golfBallComponent && _trashObjSpawnerComponent) {
+		_golfBallComponent && _trashObjSpawnerComponent && _playerMoveComponent &&
+		_playerFollowCameraComponent) {
 		return;
 	}
 
@@ -369,18 +452,37 @@ void MyGame::GameRuleSystemComponent::ResolveRuntimeReferences()
 		if (!_trashObjSpawnerComponent) {
 			_trashObjSpawnerComponent = entity->GetComponent<TrashObjSpawnerComponent>();
 		}
+		if (!_playerMoveComponent) {
+			_playerMoveComponent = entity->GetComponent<PlayerMoveComponent>();
+		}
+		if (!_playerFollowCameraComponent) {
+			_playerFollowCameraComponent = entity->GetComponent<PlayerFollowCameraComponent>();
+		}
 	}
 }
 
 void MyGame::GameRuleSystemComponent::UpdateGamePhase(float deltaTime)
 {
 	// NOTE: フェーズごとにPDFのインゲーム進行を分岐する。
+	if (_phase == GamePhase::StageIntro) {
+		UpdateStageIntroPhase(deltaTime);
+		return;
+	}
 	if (_phase == GamePhase::Countdown) {
 		UpdateCountdownPhase();
 		return;
 	}
 	if (_phase == GamePhase::Playing) {
 		UpdatePlayingPhase(deltaTime);
+	}
+}
+
+void MyGame::GameRuleSystemComponent::UpdateStageIntroPhase(float deltaTime)
+{
+	ApplyStageIntroControlState(true);
+	_stageIntroElapsedTime += std::max(0.0f, deltaTime);
+	if (_stageIntroElapsedTime >= _stageIntroSeconds) {
+		StartCountdown();
 	}
 }
 
@@ -397,6 +499,89 @@ void MyGame::GameRuleSystemComponent::UpdateCountdownPhase()
 		(!_launchCountdownComponent && _golfBallComponent && _golfBallComponent->IsInFlight())) {
 		StartPlaying();
 	}
+}
+
+void MyGame::GameRuleSystemComponent::ApplyStageIntroControlState(bool isStageIntro)
+{
+	if (_playerMoveComponent) {
+		_playerMoveComponent->SetMovementEnabled(!isStageIntro);
+		if (isStageIntro) {
+			_playerMoveComponent->StopMovement();
+		}
+	}
+	if (_playerFollowCameraComponent) {
+		_playerFollowCameraComponent->SetStageIntroMode(isStageIntro);
+	}
+}
+
+void MyGame::GameRuleSystemComponent::SetStageIntroUiVisible(bool visible)
+{
+	auto* canvas = ResolveStageIntroUiCanvas();
+	if (!canvas) {
+		return;
+	}
+
+	if (auto* entity = canvas->GetOwner()) {
+		// NOTE: 紹介フェーズ以外では目標表示が通常HUDやリザルト表示と重ならないよう隠す。
+		entity->SetVisible(visible);
+	}
+	if (visible && !_stageIntroUiAssetPath.empty()) {
+		canvas->SetUiAssetPath(_stageIntroUiAssetPath);
+		canvas->EnsureRuntimeLoaded();
+	}
+}
+
+void MyGame::GameRuleSystemComponent::SetStageIntroHudHidden(bool hidden)
+{
+	auto* scene = GetScene();
+	if (!scene && GetOwner()) {
+		scene = GetOwner()->GetScene();
+	}
+	if (!scene) {
+		return;
+	}
+
+	if (hidden) {
+		if (!_stageIntroUiVisibility.empty()) {
+			return;
+		}
+
+		for (const auto& entityPtr : scene->GetEntities()) {
+			if (!entityPtr) {
+				continue;
+			}
+
+			auto* entity = entityPtr.get();
+			if (!_stageIntroUiEntityName.empty() &&
+				entity->GetName() == _stageIntroUiEntityName) {
+				continue;
+			}
+			if (!entity->GetComponent<Unnamed::UiCanvasComponent>()) {
+				continue;
+			}
+
+			// NOTE: 紹介演出中は通常HUDを隠すが、個別UIの初期表示状態は後で復元する。
+			_stageIntroUiVisibility.emplace(GetEntityGuid(entity), entity->IsVisible());
+			entity->SetVisible(false);
+		}
+		return;
+	}
+
+	for (const auto& entityPtr : scene->GetEntities()) {
+		if (!entityPtr) {
+			continue;
+		}
+
+		auto* entity = entityPtr.get();
+		const auto visibilityIt = _stageIntroUiVisibility.find(GetEntityGuid(entity));
+		if (visibilityIt == _stageIntroUiVisibility.end()) {
+			continue;
+		}
+
+		// NOTE: 紹介前の状態へ戻すことで、元から非表示のUIを誤って表示しない。
+		entity->SetVisible(visibilityIt->second);
+	}
+	_stageIntroUiVisibility.clear();
 }
 
 void MyGame::GameRuleSystemComponent::UpdatePlayingPhase(float deltaTime)
@@ -474,6 +659,13 @@ void MyGame::GameRuleSystemComponent::UpdateBallResult(float deltaTime)
 		_ballFlightElapsedTime += deltaTime;
 	}
 
+	if (_playerHoleComponent && _playerHoleComponent->TryEnterGolfBall(*_golfBallComponent)) {
+		// NOTE: PlayerHoleComponentのTick順に依存せず、動く穴に入った事実を最優先で成功扱いにする。
+		(void)TryScoreBallCatch(*_golfBallComponent);
+		FinishGame();
+		return;
+	}
+
 	if (_golfBallComponent->HasEnteredHole()) {
 		// NOTE: 穴へ入ったボールは落下演出で海高さを下回るため、OB/停止より先に成功扱いで確定する。
 		(void)TryScoreBallCatch(*_golfBallComponent);
@@ -536,6 +728,9 @@ bool MyGame::GameRuleSystemComponent::TryScoreBallCatch(GolfBallComponent& golfB
 	if (!golfBall.HasEnteredHole()) {
 		return false;
 	}
+	if (_isHoleInOne) {
+		return true;
+	}
 
 	// NOTE: 穴に重なっただけでなく、落下状態が確定した後だけホールインワンとして扱う。
 	_hasBallLaunched = true;
@@ -554,17 +749,12 @@ bool MyGame::GameRuleSystemComponent::TryScoreBallCatch(GolfBallComponent& golfB
 	return true;
 }
 
-void MyGame::GameRuleSystemComponent::ApplyClearUiForResult()
+bool MyGame::GameRuleSystemComponent::ApplyClearUiForResult()
 {
 	auto* canvas = ResolveClearUiCanvas();
 	if (!canvas) {
-		return;
+		return false;
 	}
-	if (auto* clearUiEntity = canvas->GetOwner()) {
-		// NOTE: ゲーム終了理由が確定した後だけ、選択済みのクリア文言を表示する。
-		clearUiEntity->SetVisible(true);
-	}
-
 	const std::string* uiAssetPath = &_notHoleInOneUiAssetPath;
 	if (_isDirectHoleInOne) {
 		uiAssetPath = &_directHoleInOneUiAssetPath;
@@ -575,6 +765,13 @@ void MyGame::GameRuleSystemComponent::ApplyClearUiForResult()
 	// NOTE: UI自体はシーン上のClear_UIを使い回し、結果テキストだけをJSON差し替えで選ぶ。
 	canvas->SetUiAssetPath(*uiAssetPath);
 	canvas->EnsureRuntimeLoaded();
+	if (auto* clearUiEntity = canvas->GetOwner()) {
+		// NOTE: 差し替え後に表示し、古い結果UIが一瞬見える可能性を避ける。
+		clearUiEntity->SetVisible(true);
+	} else {
+		return false;
+	}
+	return true;
 }
 
 bool MyGame::GameRuleSystemComponent::IsBallStoppedForResult() const
@@ -628,6 +825,38 @@ Unnamed::UiCanvasComponent* MyGame::GameRuleSystemComponent::ResolveClearUiCanva
 		}
 
 		if (!_clearUiEntityName.empty() && entity->GetName() != _clearUiEntityName) {
+			continue;
+		}
+
+		return canvas;
+	}
+
+	return nullptr;
+}
+
+Unnamed::UiCanvasComponent* MyGame::GameRuleSystemComponent::ResolveStageIntroUiCanvas() const
+{
+	auto* scene = GetScene();
+	if (!scene && GetOwner()) {
+		scene = GetOwner()->GetScene();
+	}
+	if (!scene) {
+		return nullptr;
+	}
+
+	for (const auto& entityPtr : scene->GetEntities()) {
+		if (!entityPtr) {
+			continue;
+		}
+
+		auto* entity = entityPtr.get();
+		auto* canvas = entity->GetComponent<Unnamed::UiCanvasComponent>();
+		if (!canvas) {
+			continue;
+		}
+
+		if (!_stageIntroUiEntityName.empty() &&
+			entity->GetName() != _stageIntroUiEntityName) {
 			continue;
 		}
 

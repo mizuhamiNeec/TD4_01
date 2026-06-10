@@ -85,6 +85,9 @@ namespace MyGame {
 		/// 穴の範囲内にいるゴミのリストを取得
 		[[nodiscard]] const std::vector<Unnamed::Entity*>& GetTrashInHole() const;
 
+		/// ボールが現在の動く穴に入った場合、落下状態を確定する
+		[[nodiscard]] bool TryEnterGolfBall(GolfBallComponent& golfBall);
+
 		// -----------------------------------------------------------------------
 		// BaseComponent override
 		// -----------------------------------------------------------------------

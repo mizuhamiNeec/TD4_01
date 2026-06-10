@@ -438,6 +438,18 @@
                         "targetTag": "",
                         "useTargetYaw": true,
                         "voiceCameraEffectEnabled": true,
+                        "stageIntroOffset": [
+                            0.0,
+                            14.0,
+                            -18.0
+                        ],
+                        "stageIntroLookAtOffset": [
+                            0.0,
+                            0.0,
+                            8.0
+                        ],
+                        "stageIntroOrbitSpeedDegrees": 12.0,
+                        "stageIntroPositionSharpness": 2.5,
                         "voiceDeadZone": 0.03999999910593033,
                         "voiceDistanceAddMax": 0.800000011920929,
                         "voiceFallSharpness": 2.0,
@@ -1284,6 +1296,61 @@
                             1.0
                         ]
                     },
+                    "guid": 10271558206346713452,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "billboardDepthMode": "DepthTest",
+                        "pixelSize": [
+                            1920.0,
+                            1080.0
+                        ],
+                        "receiveInput": false,
+                        "sortKey": 20,
+                        "spaceMode": "Screen",
+                        "uiAssetPath": "projects/TeamGame/content/ui/stageIntro.ui.json",
+                        "worldSize": [
+                            2.0,
+                            1.125
+                        ]
+                    },
+                    "guid": 10271558206346713453,
+                    "type": "engine.UiCanvas"
+                }
+            ],
+            "folderPath": "UserInterface",
+            "guid": 10271558206346713451,
+            "isEditorOnly": false,
+            "name": "StageIntro_UI",
+            "tags": [],
+            "visible": false
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
                     "guid": 9585590221510042760,
                     "type": "engine.Transform"
                 },
@@ -1373,7 +1440,11 @@
                         "maxBallFlightSeconds": 20.0,
                         "minBallFlightSeconds": 5.0,
                         "notHoleInOneUiAssetPath": "projects/TeamGame/content/ui/notHoleInone.ui.json",
-                        "seaOutHeight": -10.0
+                        "seaOutHeight": -10.0,
+                        "stageIntroUiAssetPath": "projects/TeamGame/content/ui/stageIntro.ui.json",
+                        "stageIntroUiEntityName": "StageIntro_UI",
+                        "stageIntroSeconds": 5.0,
+                        "useStageIntro": true
                     },
                     "guid": 14837334651500250962,
                     "type": "mygame.GameRuleSystemComponent"

@@ -25,6 +25,8 @@ namespace MyGame {
 	class GameScoreComponent;
 	// ゴミ移動コンポーネント
 	class TrashObjMoverComponent;
+	// ゴミ自動生成コンポーネント
+	class TrashObjSpawnerComponent;
 
 	// ゲームルール管理コンポーネント
 	class GameRuleSystemComponent : public Unnamed::BaseComponent {
@@ -146,6 +148,8 @@ namespace MyGame {
 		PlayerHoleComponent* _playerHoleComponent = nullptr;
 		// ゴルフボールコンポーネントのキャッシュ
 		GolfBallComponent* _golfBallComponent = nullptr;
+		// ゴミ自動生成コンポーネントのキャッシュ
+		TrashObjSpawnerComponent* _trashObjSpawnerComponent = nullptr;
 
 		/// シーン内の必要なコンポーネント参照を検索
 		void ResolveRuntimeReferences();

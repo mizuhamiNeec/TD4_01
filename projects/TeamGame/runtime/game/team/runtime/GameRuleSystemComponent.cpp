@@ -4,6 +4,7 @@
 #include "GolfBallLaunchCountdownComponent.h"
 #include "PlayerHoleComponent.h"
 #include "TrashObjMoverComponent.h"
+#include "TrashObjSpawnerComponent.h"
 #include "engine/scene/Scene.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
@@ -40,6 +41,7 @@ void MyGame::GameRuleSystemComponent::OnDetached()
 	_scoreComponent = nullptr;
 	_playerHoleComponent = nullptr;
 	_golfBallComponent = nullptr;
+	_trashObjSpawnerComponent = nullptr;
 }
 
 std::string_view MyGame::GameRuleSystemComponent::GetStableName() const {
@@ -264,7 +266,8 @@ bool MyGame::GameRuleSystemComponent::IsResult() const
 void MyGame::GameRuleSystemComponent::ResolveRuntimeReferences()
 {
 	// NOTE: 既に必要な参照が揃っている場合は再検索を省略する。
-	if (_launchCountdownComponent && _scoreComponent && _playerHoleComponent && _golfBallComponent) {
+	if (_launchCountdownComponent && _scoreComponent && _playerHoleComponent &&
+		_golfBallComponent && _trashObjSpawnerComponent) {
 		return;
 	}
 
@@ -294,6 +297,9 @@ void MyGame::GameRuleSystemComponent::ResolveRuntimeReferences()
 		}
 		if (!_golfBallComponent) {
 			_golfBallComponent = entity->GetComponent<GolfBallComponent>();
+		}
+		if (!_trashObjSpawnerComponent) {
+			_trashObjSpawnerComponent = entity->GetComponent<TrashObjSpawnerComponent>();
 		}
 	}
 }
@@ -452,8 +458,13 @@ void MyGame::GameRuleSystemComponent::UpdateTrashWaveTiming()
 
 void MyGame::GameRuleSystemComponent::TriggerTrashWave(int trashCount)
 {
-	// NOTE: ゴミ生成コンポーネントが追加されたら、この入口から指定数をスポーンさせる。
-	(void)trashCount;
+	// NOTE: 進行タイミングはGameRule、配置と種類選択はSpawnerへ分けて調整箇所を明確にする。
+	if (!_trashObjSpawnerComponent) {
+		ResolveRuntimeReferences();
+	}
+	if (_trashObjSpawnerComponent) {
+		_trashObjSpawnerComponent->SpawnWave(trashCount);
+	}
 }
 
 uint64_t MyGame::GameRuleSystemComponent::GetEntityGuid(Unnamed::Entity* entity) const

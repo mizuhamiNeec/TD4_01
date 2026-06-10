@@ -1133,7 +1133,9 @@
             "guid": 44,
             "isEditorOnly": false,
             "name": "Trash",
-            "tags": [],
+            "tags": [
+                "Trash"
+            ],
             "visible": true
         },
         {
@@ -1266,7 +1268,9 @@
             "guid": 64,
             "isEditorOnly": false,
             "name": "Fish",
-            "tags": [],
+            "tags": [
+                "Trash"
+            ],
             "visible": true
         },
         {
@@ -1348,7 +1352,9 @@
             "guid": 65,
             "isEditorOnly": false,
             "name": "ColorCone",
-            "tags": [],
+            "tags": [
+                "Trash"
+            ],
             "visible": true
         },
         {
@@ -1967,6 +1973,44 @@
                     },
                     "guid": 14837334651500250962,
                     "type": "mygame.GameRuleSystemComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "initialVelocityMax": [
+                            1.0,
+                            0.0,
+                            1.0
+                        ],
+                        "initialVelocityMin": [
+                            -1.0,
+                            -1.0,
+                            -1.0
+                        ],
+                        "randomYaw": true,
+                        "scaleMax": 1.15,
+                        "scaleMin": 0.85,
+                        "spawnCenter": [
+                            0.0,
+                            10.0,
+                            10.0
+                        ],
+                        "spawnEnabled": true,
+                        "spawnHalfExtent": [
+                            10.0,
+                            0.0,
+                            8.0
+                        ],
+                        "spawnHeightMax": 14.0,
+                        "spawnHeightMin": 8.0,
+                        "spawnedFolderPath": "Generated/Trash",
+                        "spawnedNamePrefix": "AutoTrash",
+                        "spawnedTrashTag": "Trash",
+                        "templateEntityGuids": [],
+                        "templateTag": "Trash"
+                    },
+                    "guid": 12659974696736316802,
+                    "type": "mygame.TrashObjSpawnerComponent"
                 }
             ],
             "folderPath": "UserInterface",

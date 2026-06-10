@@ -13,6 +13,7 @@
 #include "GolfBallEndPosComponent.h"
 #include "FakeShadowComponent.h"
 #include "TrashObjMoverComponent.h"
+#include "TrashObjSpawnerComponent.h"
 #include "PlayerHoleComponent.h"
 #include "VoiceShockWaveComponent.h"
 #include "VoiceUiComponent.h"
@@ -70,6 +71,8 @@ namespace Unnamed {
 			componentRegistry, "mygame.FakeShadow", "Fake Shadow");
 		RegisterComponentIfMissing<MyGame::TrashObjMoverComponent>(
 			componentRegistry, "mygame.TrashObjMoverComponent", "Trash Obj");
+		RegisterComponentIfMissing<MyGame::TrashObjSpawnerComponent>(
+			componentRegistry, "mygame.TrashObjSpawnerComponent", "Trash Obj Spawner");
 		RegisterComponentIfMissing<MyGame::PlayerHoleComponent>(
 			componentRegistry, "mygame.PlayerHoleComponent", "Player Hole Component");
 		RegisterComponentIfMissing<MyGame::VoiceShockWaveComponent>(

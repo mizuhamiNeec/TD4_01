@@ -99,6 +99,9 @@ public:
 	/// @brief 発射後に一度でもバウンドしたかを取得
 	[[nodiscard]] bool HasBounced() const;
 
+	/// @brief 一度でも穴の内側に入ったかを取得
+	[[nodiscard]] bool HasEnteredHole() const;
+
 	// -----------------------------------------------------------------------
 	// BaseComponent override
 	// -----------------------------------------------------------------------

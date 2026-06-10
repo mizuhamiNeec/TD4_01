@@ -175,6 +175,9 @@ namespace MyGame {
 		/// ゴミ出現タイミングを発火したときの入口
 		void TriggerTrashWave(int trashCount);
 
+		/// ボールキャッチ成立時のスコアとリザルト状態を確定
+		bool TryScoreBallCatch(GolfBallComponent& golfBall);
+
 		/// 対象エンティティのGUIDを取得
 		[[nodiscard]] uint64_t GetEntityGuid(Unnamed::Entity* entity) const;
 	};

@@ -122,6 +122,11 @@ bool MyGame::GameScoreComponent::AddTrashToSeaScore(uint64_t trashGuid) {
 		return false;
 	}
 
+	// NOTE: 穴へ入った後の落下演出で海の高さを下回っても、海へ飛ばした扱いにはしない。
+	if (_scoredTrashIntoHoleGuids.find(trashGuid) != _scoredTrashIntoHoleGuids.end()) {
+		return false;
+	}
+
 	_scoredTrashToSeaGuids.insert(trashGuid);
 	_trashToSeaTotal += _trashToSeaScore;
 	AddScore(_trashToSeaScore);

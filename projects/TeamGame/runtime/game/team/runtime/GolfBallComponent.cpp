@@ -336,9 +336,7 @@ namespace MyGame {
 		velocityDelta.y = std::clamp(velocityDelta.y, -_maxExternalUpwardVelocity, _maxExternalUpwardVelocity);
 
 		_velocity += velocityDelta;
-		if (!_bIsInFlight) {
-			_bounceCount = 0;
-		}
+		// NOTE: 発射後のバウンド履歴はスコア判定に使うため、外力で再始動しても保持する。
 		_bIsInFlight = true;
 		_bIsExternalMotion = true;
 		_bIsGrounded = false;
@@ -354,9 +352,7 @@ namespace MyGame {
 		_holeSuckPosition = holePosition;
 		_holeSuckPower = std::clamp(suckPower, 0.0f, 1.0f);
 		_bIsBeingSucked = true;
-		if (!_bIsInFlight) {
-			_bounceCount = 0;
-		}
+		// NOTE: 吸い込みはキャッチ演出であり、直接/バウンド後の判定履歴をリセットしない。
 		_bIsInFlight = true;
 		_bIsExternalMotion = true;
 	}
@@ -396,6 +392,10 @@ namespace MyGame {
 
 	bool GolfBallComponent::HasBounced() const {
 		return _bounceCount > 0;
+	}
+
+	bool GolfBallComponent::HasEnteredHole() const {
+		return _bHasEnteredHole;
 	}
 
 	void GolfBallComponent::ResolveSavedEntityReferences() {

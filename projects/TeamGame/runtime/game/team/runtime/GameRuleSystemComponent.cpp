@@ -370,20 +370,9 @@ void MyGame::GameRuleSystemComponent::UpdateTrashScore()
 			}
 
 			if (auto* golfBall = entity->GetComponent<GolfBallComponent>()) {
-				if (!golfBall->IsInFlight()) {
-					continue;
+				if (TryScoreBallCatch(*golfBall)) {
+					FinishGame();
 				}
-
-				// NOTE: ボールを穴でキャッチできたら大型ボーナスを加算してリザルトへ進める。
-				_scoreComponent->AddBallCatchScore();
-				_isHoleInOne = true;
-				if (!golfBall->HasBounced()) {
-					_isDirectHoleInOne = true;
-					_scoreComponent->AddDirectHoleInOneBonus();
-				} else {
-					_scoreComponent->AddHoleInOneBonus();
-				}
-				FinishGame();
 			}
 		}
 	}
@@ -431,6 +420,13 @@ void MyGame::GameRuleSystemComponent::UpdateBallResult(float deltaTime)
 	}
 	if (_hasBallLaunched) {
 		_ballFlightElapsedTime += deltaTime;
+	}
+
+	if (_golfBallComponent->HasEnteredHole()) {
+		// NOTE: 穴へ入ったボールは落下演出で海高さを下回るため、OB/停止より先に成功扱いで確定する。
+		(void)TryScoreBallCatch(*_golfBallComponent);
+		FinishGame();
+		return;
 	}
 
 	auto* ballEntity = _golfBallComponent->GetOwner();
@@ -481,6 +477,31 @@ void MyGame::GameRuleSystemComponent::TriggerTrashWave(int trashCount)
 	if (_trashObjSpawnerComponent) {
 		_trashObjSpawnerComponent->SpawnWave(trashCount);
 	}
+}
+
+bool MyGame::GameRuleSystemComponent::TryScoreBallCatch(GolfBallComponent& golfBall)
+{
+	if (!_scoreComponent) {
+		return false;
+	}
+
+	const bool hasLaunchedBall =
+		_hasBallLaunched || golfBall.IsInFlight() || golfBall.HasEnteredHole();
+	if (!hasLaunchedBall) {
+		return false;
+	}
+
+	// NOTE: 成功結果は「穴に入った」事実で確定し、バウンド履歴だけで直接/バウンド後を分ける。
+	_hasBallLaunched = true;
+	_scoreComponent->AddBallCatchScore();
+	_isHoleInOne = true;
+	if (!golfBall.HasBounced()) {
+		_isDirectHoleInOne = true;
+		_scoreComponent->AddDirectHoleInOneBonus();
+	} else {
+		_scoreComponent->AddHoleInOneBonus();
+	}
+	return true;
 }
 
 uint64_t MyGame::GameRuleSystemComponent::GetEntityGuid(Unnamed::Entity* entity) const

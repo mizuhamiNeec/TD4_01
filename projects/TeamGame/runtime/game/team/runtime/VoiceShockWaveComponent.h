@@ -204,11 +204,17 @@ namespace MyGame {
 		/// スパーク（弾ける粒）エミッタのエンティティGUID
 		uint64_t _sparksEmitterEntityGuid = 73;
 
+		/// 砂埃（吹き飛んだ障害物から出る）エミッタのエンティティGUID
+		uint64_t _dustEmitterEntityGuid = 74;
+
 		/// 解決済みのリングエミッタ（キャッシュ）
 		Unnamed::ParticleEmitterComponent* _ringEmitter = nullptr;
 
 		/// 解決済みのスパークエミッタ（キャッシュ）
 		Unnamed::ParticleEmitterComponent* _sparksEmitter = nullptr;
+
+		/// 解決済みの砂埃エミッタ（キャッシュ）
+		Unnamed::ParticleEmitterComponent* _dustEmitter = nullptr;
 
 		/// MagVoiceBridge のシングルトンインスタンス
 		static MagVoiceBridge* _voiceBridgeInstance;

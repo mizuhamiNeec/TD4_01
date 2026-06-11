@@ -50,6 +50,11 @@ namespace Unnamed {
 		/// @brief いま即座に1バースト（count個）発生させます。autoPlay/repeatに依存せず単発で使えます。
 		void FireBurst();
 
+		/// @brief 指定したワールド座標で1バースト発生させます。
+		/// @details 所有エンティティのTransformに依存せず、任意の位置（吹き飛んだ障害物の位置など）で出せます。
+		///          ワールド空間プリセット（useLocalSpace:false）前提です。
+		void FireBurstAt(const Vec3& worldPosition);
+
 		/// @brief リングなどの最終的な広がり半径をワールド単位で指定します（scaleSpeed を逆算）。
 		void SetRadius(float worldRadius);
 

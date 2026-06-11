@@ -580,6 +580,17 @@ namespace Unnamed {
 		mEmitter.SpawnParticles();
 	}
 
+	void ParticleEmitterComponent::FireBurstAt(const Vec3& worldPosition) {
+		if (!EnsurePresetLoaded()) {
+			return;
+		}
+		// 所有エンティティのTransformではなく、指定座標を発生原点にする。
+		// 同フレーム内で位置を変えながら複数回呼んでも、ワールド空間の粒子は
+		// それぞれの発生位置に残るため、複数の障害物に同時に出せる。
+		mEmitter.SetTransform(Mat4::Translate(worldPosition));
+		mEmitter.SpawnParticles();
+	}
+
 	void ParticleEmitterComponent::SetRadius(const float worldRadius) {
 		if (mMutablePreset == nullptr) {
 			return;

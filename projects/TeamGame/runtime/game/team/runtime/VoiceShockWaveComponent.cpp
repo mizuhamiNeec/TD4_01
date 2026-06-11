@@ -268,6 +268,9 @@ namespace MyGame {
 		if (auto val = reader.ReadUint64("sparksEmitterEntityGuid")) {
 			_sparksEmitterEntityGuid = val.value();
 		}
+		if (auto val = reader.ReadUint64("dustEmitterEntityGuid")) {
+			_dustEmitterEntityGuid = val.value();
+		}
 
 		#ifdef _DEBUG
 		char buffer[256];
@@ -305,6 +308,8 @@ namespace MyGame {
 		writer.Write(_ringEmitterEntityGuid);
 		writer.Key("sparksEmitterEntityGuid");
 		writer.Write(_sparksEmitterEntityGuid);
+		writer.Key("dustEmitterEntityGuid");
+		writer.Write(_dustEmitterEntityGuid);
 	}
 
 	// =========================================================================
@@ -452,6 +457,9 @@ namespace MyGame {
 			return;
 		}
 
+		// NOTE: 砂埃エミッタ等の参照を解決（未解決ならここで取得）
+		ResolveShockWaveEmitters();
+
 		const auto& allEntities = scene->GetEntities();
 
 		// NOTE: 各エンティティをチェック
@@ -511,7 +519,12 @@ namespace MyGame {
 				// NOTE: 新しい速度を設定
 				trashMover->SetVelocity(newVelocity);
 				trashMover->StartShockWaveSpin(forceVector);
-				
+
+				// NOTE: 吹き飛んだ障害物の位置から砂埃を発生させる
+				if (_dustEmitter) {
+					_dustEmitter->FireBurstAt(targetPos);
+				}
+
 				#ifdef _DEBUG
 				static int shockCount = 0;
 				shockCount++;
@@ -552,8 +565,8 @@ namespace MyGame {
 	}
 
 	void VoiceShockWaveComponent::ResolveShockWaveEmitters() {
-		// NOTE: 既に両方解決済みなら何もしない
-		if (_ringEmitter && _sparksEmitter) {
+		// NOTE: 既に全て解決済みなら何もしない
+		if (_ringEmitter && _sparksEmitter && _dustEmitter) {
 			return;
 		}
 
@@ -582,6 +595,9 @@ namespace MyGame {
 		}
 		if (!_sparksEmitter) {
 			_sparksEmitter = resolve(_sparksEmitterEntityGuid);
+		}
+		if (!_dustEmitter) {
+			_dustEmitter = resolve(_dustEmitterEntityGuid);
 		}
 	}
 

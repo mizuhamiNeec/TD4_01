@@ -275,5 +275,18 @@ namespace Unnamed {
 		std::vector<Render::ScreenSpriteInput> mDebugScreenSprites;
 		std::unordered_map<std::string, AssetID> mUiTextureAssetIdByPath;
 		WorldServices                    mServices;
+
+		enum class FadeState {
+			None,
+			FadeOut,
+			Loading,
+			FadeIn
+		};
+
+		FadeState                        mFadeState = FadeState::None;
+		float                            mFadeTimer = 0.0f;
+		float                            mFadeDuration = 0.5f;
+		std::string                      mFadePendingPath;
+		bool                             mEnableFade = false;
 	};
 }

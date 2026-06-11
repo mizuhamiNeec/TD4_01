@@ -333,6 +333,24 @@ namespace Unnamed {
 	) {
 		mTime.renderDeltaTime = std::max(0.0f, renderDeltaTime);
 		mTime.renderUnscaledDeltaTime = std::max(0.0f, renderDeltaTime);
+
+		if (mEnableFade && mFadeState != FadeState::None) {
+			mFadeTimer += renderDeltaTime;
+			if (mFadeState == FadeState::FadeOut) {
+				if (mFadeTimer >= mFadeDuration) {
+					mFadeState = FadeState::Loading;
+					mFadeTimer = 0.0f;
+					mPendingSceneTransitionPath = mFadePendingPath;
+					Msg(kChannel, "Fade out complete. Requesting scene load for: {}", mPendingSceneTransitionPath);
+				}
+			} else if (mFadeState == FadeState::FadeIn) {
+				if (mFadeTimer >= mFadeDuration) {
+					mFadeState = FadeState::None;
+					mFadeTimer = 0.0f;
+					Msg(kChannel, "Fade in complete.");
+				}
+			}
+		}
 		ConsoleSystem* console = mServices.console;
 		const bool     interpolationEnabled =
 			console ?
@@ -491,13 +509,25 @@ namespace Unnamed {
 			return;
 		}
 
-		// 実行中のシーン更新中に即時ロードしないため、次の安全地点まで保留します。
-		mPendingSceneTransitionPath = normalizedPath;
-		Msg(
-			kChannel,
-			"Queued scene transition to: {}",
-			mPendingSceneTransitionPath
-		);
+		if (mEnableFade) {
+			if (mFadeState == FadeState::None) {
+				mFadeState       = FadeState::FadeOut;
+				mFadeTimer       = 0.0f;
+				mFadePendingPath = normalizedPath;
+				Msg(kChannel, "Starting scene transition fade out to: {}", mFadePendingPath);
+			} else {
+				mFadePendingPath = normalizedPath;
+				Msg(kChannel, "Updating pending scene transition path to: {}", mFadePendingPath);
+			}
+		} else {
+			// 実行中のシーン更新中に即時ロードしないため、次の安全地点まで保留します。
+			mPendingSceneTransitionPath = normalizedPath;
+			Msg(
+				kChannel,
+				"Queued scene transition to: {}",
+				mPendingSceneTransitionPath
+			);
+		}
 	}
 
 	void World::ProcessPendingSceneTransition() {
@@ -510,6 +540,11 @@ namespace Unnamed {
 		mPendingSceneTransitionPath.clear();
 
 		if (LoadSceneFromFile(requestedPath.c_str())) {
+			if (mEnableFade && mFadeState == FadeState::Loading) {
+				mFadeState = FadeState::FadeIn;
+				mFadeTimer = 0.0f;
+				mFadePendingPath.clear();
+			}
 			return;
 		}
 
@@ -518,6 +553,11 @@ namespace Unnamed {
 			"Scene transition failed: {}",
 			requestedPath
 		);
+
+		if (mEnableFade) {
+			mFadeState = FadeState::None;
+			mFadePendingPath.clear();
+		}
 	}
 
 	void World::UnloadScene() {
@@ -1127,6 +1167,39 @@ namespace Unnamed {
 				sceneView.screenSprites.emplace_back(std::move(sprite));
 			}
 			mDebugScreenSprites.clear();
+		}
+
+		if (mFadeState != FadeState::None) {
+			float w = 1920.0f;
+			float h = 1080.0f;
+			if (const auto inputSys = GetInputSystem()) {
+				const Vec2 vpSize = inputSys->GetMouseClientViewportSize();
+				if (vpSize.x > 0.0f && vpSize.y > 0.0f) {
+					w = vpSize.x;
+					h = vpSize.y;
+				}
+			}
+
+			Render::ScreenSpriteInput fadeSprite = {};
+			fadeSprite.texture.source = Render::SPRITE_TEXTURE_SOURCE::ASSET;
+			fadeSprite.texture.textureAssetId = kInvalidAssetID;
+			fadeSprite.positionPx = Vec2::zero;
+			fadeSprite.sizePx = Vec2(w, h);
+			fadeSprite.anchor = Vec2(0.0f, 0.0f);
+			fadeSprite.rotationRad = 0.0f;
+
+			float alpha = 0.0f;
+			if (mFadeState == FadeState::FadeOut) {
+				alpha = std::clamp(mFadeTimer / mFadeDuration, 0.0f, 1.0f);
+			} else if (mFadeState == FadeState::Loading) {
+				alpha = 1.0f;
+			} else if (mFadeState == FadeState::FadeIn) {
+				alpha = 1.0f - std::clamp(mFadeTimer / mFadeDuration, 0.0f, 1.0f);
+			}
+			fadeSprite.color = Vec4(0.0f, 0.0f, 0.0f, alpha);
+			fadeSprite.sortKey = 999999;
+
+			sceneView.screenSprites.emplace_back(std::move(fadeSprite));
 		}
 
 		inputs.views.emplace_back(std::move(sceneView));

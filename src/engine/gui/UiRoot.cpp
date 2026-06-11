@@ -84,6 +84,13 @@ namespace Unnamed::Gui {
 		if (mRootWidget) {
 			hitWidget = mRootWidget->HitTest(mouseX, mouseY);
 		}
+		const Vec2 mousePosition(mouseX, mouseY);
+		if (hitWidget) {
+			hitWidget->SetMousePosition(mousePosition);
+		}
+		if (mPressedWidget) {
+			mPressedWidget->SetMousePosition(mousePosition);
+		}
 
 		// Hover 状態の更新
 		if (hitWidget != mHoveredWidget) {
@@ -99,12 +106,19 @@ namespace Unnamed::Gui {
 		// マウス押下の開始
 		if (leftPressed && hitWidget) {
 			mPressedWidget = hitWidget;
+			mPressedWidget->SetMousePosition(mousePosition);
 			mPressedWidget->OnMouseDown();
+		}
+
+		if (leftDown && mPressedWidget) {
+			mPressedWidget->SetMousePosition(mousePosition);
+			mPressedWidget->OnMouseDrag();
 		}
 
 		// マウスボタンが離された
 		if (leftReleased) {
 			if (mPressedWidget) {
+				mPressedWidget->SetMousePosition(mousePosition);
 				mPressedWidget->OnMouseUp();
 
 				// 押し始めたウィジェットの上で離されたら Click
@@ -115,8 +129,5 @@ namespace Unnamed::Gui {
 			mPressedWidget = nullptr;
 		}
 
-		// もしドラッグ中などでボタンが押されっぱなしで
-		// ウィジェットの外に出ても特別な処理がしたければここに追加
-		(void)leftDown;
 	}
 }

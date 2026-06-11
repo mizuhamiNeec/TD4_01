@@ -253,6 +253,10 @@ namespace Unnamed::Gui {
 		/// @brief マウスが押されているかどうかを取得します。
 		/// @return 押されている場合はtrue、押されていない場合はfalse
 		[[nodiscard]] bool IsPressed() const;
+		/// @brief 最後に処理したマウス座標を取得します。
+		[[nodiscard]] Vec2 GetMousePosition() const;
+		/// @brief 最後に処理したマウス座標を設定します。
+		void SetMousePosition(const Vec2& position);
 
 		/// @brief マウスがウィジェットに入ったときに呼び出されます。
 		virtual void OnMouseEnter();
@@ -260,6 +264,8 @@ namespace Unnamed::Gui {
 		virtual void OnMouseLeave();
 		/// @brief マウスボタンが押されたときに呼び出されます。
 		virtual void OnMouseDown();
+		/// @brief マウスボタン押下中に呼び出されます。
+		virtual void OnMouseDrag();
 		/// @brief マウスボタンが離されたときに呼び出されます。
 		virtual void OnMouseUp();
 		/// @brief クリックされたときに呼び出されます。
@@ -307,6 +313,7 @@ namespace Unnamed::Gui {
 
 		bool mHovered = false;
 		bool mPressed = false;
+		Vec2 mMousePosition = Vec2::zero;
 
 		UiSizePolicy      mSizePolicy;
 		UiSizeConstraints mSizeConstraints;

@@ -1745,6 +1745,7 @@
                         "countdownSeconds": 15.0,
                         "countdownTrashWaveCount": 10,
                         "directHoleInOneUiAssetPath": "projects/TeamGame/content/ui/directHoleinone.ui.json",
+                        "goalConfettiEntityNamePrefix": "ParticleEmitter_GoalConfetti",
                         "holeInOneUiAssetPath": "projects/TeamGame/content/ui/holeinone.ui.json",
                         "launchBallOnPlayingStart": false,
                         "maxBallFlightSeconds": 20.0,
@@ -1809,6 +1810,15 @@
                     },
                     "guid": 12659974696736316802,
                     "type": "mygame.TrashObjSpawnerComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "pauseCanvasGuid": 0,
+                        "settingsCanvasGuid": 0
+                    },
+                    "guid": 16107000954763779820,
+                    "type": "mygame.GamePause"
                 }
             ],
             "folderPath": "UserInterface",
@@ -2230,6 +2240,77 @@
             "guid": 15552413904281614223,
             "isEditorOnly": false,
             "name": "buttonhint",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 42,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            2.75,
+                            2.75,
+                            2.75
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "projects/TeamGame/content/materials/instances/player.matinst.json",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/player.matinst.json",
+                                "slotIndex": 0
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/player/Player_Hole.gltf"
+                    },
+                    "guid": 0,
+                    "type": "engine.SkeletalMeshRenderer"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "clipName": "",
+                        "layers": [
+                            {
+                                "clipName": "",
+                                "loop": true,
+                                "playOnStart": true,
+                                "speed": 1.0,
+                                "weight": 1.0
+                            }
+                        ],
+                        "loop": true,
+                        "playOnStart": true,
+                        "speed": 1.0,
+                        "stateMap": []
+                    },
+                    "guid": 0,
+                    "type": "engine.SkeletalAnimation"
+                }
+            ],
+            "folderPath": "",
+            "guid": 15552413904281614224,
+            "isEditorOnly": false,
+            "name": "Visual",
             "tags": [],
             "visible": true
         }

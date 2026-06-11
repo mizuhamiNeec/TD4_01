@@ -2233,6 +2233,504 @@
             "name": "buttonhint",
             "tags": [],
             "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            -10.039684295654297,
+                            0.0,
+                            -6.23861837387085
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            0.4000000059604645,
+                            0.4000000059604645,
+                            0.4000000059604645
+                        ]
+                    },
+                    "guid": 11156118265060993132,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "ScoreValue": 10,
+                        "airRotationSpeed": 360.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "groundLinearDamping": 6.0,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
+                        "mass": 100.0,
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
+                        "sleepVelocityThreshold": 0.07999999821186066,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
+                    },
+                    "guid": 14284581239842585299,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/fish.matinst.json",
+                                "slotIndex": 0
+                            },
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/skydome.matinst.json",
+                                "slotIndex": 1
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/windmill/windmill.obj"
+                    },
+                    "guid": 15086022157805464131,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 15552413904281614226,
+            "isEditorOnly": false,
+            "name": "Windmill",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            11.687749862670898,
+                            0.0,
+                            -6.23861837387085
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            0.4000000059604645,
+                            0.4000000059604645,
+                            0.4000000059604645
+                        ]
+                    },
+                    "guid": 13730758795285369094,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "ScoreValue": 10,
+                        "airRotationSpeed": 360.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "groundLinearDamping": 6.0,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
+                        "mass": 100.0,
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
+                        "sleepVelocityThreshold": 0.07999999821186066,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
+                    },
+                    "guid": 16803478603888408982,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/fish.matinst.json",
+                                "slotIndex": 0
+                            },
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/skydome.matinst.json",
+                                "slotIndex": 1
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/windmill/windmill.obj"
+                    },
+                    "guid": 14217636834398763102,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 15552413904281614227,
+            "isEditorOnly": false,
+            "name": "Windmill1",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            -2.29124116897583,
+                            7.064138003443077e-07,
+                            -13.902116775512695
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            0.4000000059604645,
+                            0.4000000059604645,
+                            0.4000000059604645
+                        ]
+                    },
+                    "guid": 18026632267206294604,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "ScoreValue": 10,
+                        "airRotationSpeed": 360.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "groundLinearDamping": 6.0,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
+                        "mass": 100.0,
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
+                        "sleepVelocityThreshold": 0.07999999821186066,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
+                    },
+                    "guid": 12688452755694071700,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/fish.matinst.json",
+                                "slotIndex": 0
+                            },
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/skydome.matinst.json",
+                                "slotIndex": 1
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/windmill/windmill.obj"
+                    },
+                    "guid": 14208570797762637671,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 15552413904281614228,
+            "isEditorOnly": false,
+            "name": "Windmill2",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            6.824544429779053,
+                            0.0,
+                            4.317931652069092
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            0.5,
+                            0.5,
+                            0.5
+                        ]
+                    },
+                    "guid": 15312864182679374482,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "ScoreValue": 10,
+                        "airRotationSpeed": 360.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "groundLinearDamping": 6.0,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
+                        "mass": 1.0,
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
+                        "sleepVelocityThreshold": 0.07999999821186066,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
+                    },
+                    "guid": 11239949350356565870,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/golfcart.matinst.json",
+                                "slotIndex": 0
+                            },
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/golfcart.matinst.json",
+                                "slotIndex": 1
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/golfcart/Golfcart.obj"
+                    },
+                    "guid": 10789070491086296869,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 15552413904281614229,
+            "isEditorOnly": false,
+            "name": "GolfCart",
+            "tags": [
+                "Trash"
+            ],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            -8.158731460571289,
+                            0.0,
+                            6.809144020080566
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            0.5,
+                            0.5,
+                            0.5
+                        ]
+                    },
+                    "guid": 13929282843559311145,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "ScoreValue": 10,
+                        "airRotationSpeed": 360.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "groundLinearDamping": 6.0,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
+                        "mass": 1.0,
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
+                        "sleepVelocityThreshold": 0.07999999821186066,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
+                    },
+                    "guid": 11749901756592896181,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/mushroom.matinst.json",
+                                "slotIndex": 0
+                            },
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/mushroom.matinst.json",
+                                "slotIndex": 1
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/mushroom/Mushroom.obj"
+                    },
+                    "guid": 16891837415755827105,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 15552413904281614230,
+            "isEditorOnly": false,
+            "name": "Mushroom",
+            "tags": [
+                "Trash"
+            ],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            -5.3875579833984375,
+                            -9.5367431640625e-07,
+                            -1.245589256286621
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 12027269641899695496,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "ScoreValue": 10,
+                        "airRotationSpeed": 360.0,
+                        "bounceDamping": 0.699999988079071,
+                        "frictionCoefficient": 0.949999988079071,
+                        "gravity": 9.8100004196167,
+                        "groundLinearDamping": 6.0,
+                        "halfSizeX": 0.5,
+                        "halfSizeY": 0.5,
+                        "halfSizeZ": 0.5,
+                        "isFalling": false,
+                        "mass": 1.0,
+                        "maxSpeedClamp": 50.0,
+                        "rotationResetSpeed": 5.0,
+                        "shockSpinDuration": 1.100000023841858,
+                        "shockSpinMaxSpeedDeg": 2160.0,
+                        "shockSpinSpeedMultiplier": 85.0,
+                        "shockSpinWobbleDeg": 18.0,
+                        "shockSpinWobbleSpeed": 18.0,
+                        "sleepVelocityThreshold": 0.07999999821186066,
+                        "tiltLerpSpeed": 0.15000000596046448,
+                        "tiltTowardMovementStrength": 0.800000011920929
+                    },
+                    "guid": 10295248261166443919,
+                    "type": "mygame.TrashObjMoverComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                                "slotIndex": 0
+                            },
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
+                                "slotIndex": 1
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/wooden_log/wooden_log.obj"
+                    },
+                    "guid": 12650425942797124842,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "",
+            "guid": 15552413904281614231,
+            "isEditorOnly": false,
+            "name": "wooden_log",
+            "tags": [
+                "Trash"
+            ],
+            "visible": true
         }
     ],
     "folders": [

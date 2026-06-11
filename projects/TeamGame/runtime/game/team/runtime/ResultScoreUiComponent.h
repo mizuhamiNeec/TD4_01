@@ -32,7 +32,8 @@ namespace MyGame {
 
 	private:
 		/// @brief Applies the latest stored score snapshot to the result UI.
-		void UpdateScoreUi() const;
+		/// @param progress Count-up progress in [0, 1]; 1 shows the final score.
+		void UpdateScoreUi(float progress) const;
 
 		/// @brief Finds a DigitStrip component by widget name inside the owner's UI canvas.
 		[[nodiscard]] Unnamed::Gui::UiDigitStripComponent* ResolveDigitStrip(
@@ -56,5 +57,10 @@ namespace MyGame {
 		std::string _holeInOneWidgetName = "score_hole_in_one";
 		std::string _directHoleInOneWidgetName = "score_direct_hole_in_one";
 		std::string _outOfBoundsPenaltyWidgetName = "score_ob_penalty";
+
+		/// @brief Seconds the score count-up animation takes to reach the final value.
+		float _countUpDuration = 2.0f;
+		/// @brief Seconds elapsed since the result UI was attached.
+		float _elapsed = 0.0f;
 	};
 }

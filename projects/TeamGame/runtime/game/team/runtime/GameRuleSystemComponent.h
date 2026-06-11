@@ -9,10 +9,12 @@
 #include <cstdint>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace Unnamed {
 	class Entity;
 	class UiCanvasComponent;
+	class ParticleEmitterComponent;
 }
 
 namespace MyGame {
@@ -151,6 +153,8 @@ namespace MyGame {
 		bool _hasTriggeredBallHitTrashWave = false;
 		// PDF上のゴミ出現タイミング3を発火済みかどうか
 		bool _hasTriggeredAfterHitTrashWave = false;
+		// ゴール（ホールインワン成功）時の紙吹雪を発火済みかどうか
+		bool _hasTriggeredGoalConfetti = false;
 		// カウントダウン開始後に落とす想定のゴミ数
 		int _countdownTrashWaveCount = 10;
 		// ボールが打たれてから落とす想定のゴミ数
@@ -171,6 +175,8 @@ namespace MyGame {
 		std::string _stageIntroUiEntityName = "StageIntro_UI";
 		// ステージ紹介中に表示する目標UI
 		std::string _stageIntroUiAssetPath = "projects/TeamGame/content/ui/stageIntro.ui.json";
+		// ゴール（ホールインワン成功）時に再生する紙吹雪エミッターのエンティティ名に含まれる文字列
+		std::string _goalConfettiEntityNamePrefix = "ParticleEmitter_GoalConfetti";
 		// ステージ紹介中だけ隠す通常UIの復元用キャッシュ
 		std::unordered_map<uint64_t, bool> _stageIntroUiVisibility;
 		// ゴルフボール発射カウントダウンコンポーネントのキャッシュ
@@ -244,6 +250,16 @@ namespace MyGame {
 
 		/// ボールキャッチ成立時のスコアとリザルト状態を確定
 		bool TryScoreBallCatch(GolfBallComponent& golfBall);
+
+		/// ゴール紙吹雪エミッターをシーンから収集
+		[[nodiscard]] std::vector<Unnamed::ParticleEmitterComponent*>
+			CollectGoalConfettiEmitters() const;
+
+		/// ゴール（ホールインワン成功）時の紙吹雪を一度だけ再生
+		void StartGoalConfetti();
+
+		/// ゴール紙吹雪の再生を止め、発火フラグを戻す
+		void StopGoalConfetti();
 
 		/// 現在の結果に合わせてクリア表示UIを差し替える
 		[[nodiscard]] bool ApplyClearUiForResult();

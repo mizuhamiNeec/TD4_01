@@ -25,6 +25,7 @@
 #include "ResultScoreUiComponent.h"
 #include "GameRuleSystemComponent.h"
 #include "GameScoreComponent.h"
+#include "TitleController.h"
 
 namespace Unnamed {
 	namespace {
@@ -102,6 +103,9 @@ namespace Unnamed {
 		RegisterComponentIfMissing<MyGame::GameScoreComponent>(
 			componentRegistry, "mygame.GameScoreComponent",
 			"Game Score Component");
+		RegisterComponentIfMissing<TitleController>(
+			componentRegistry, "mygame.TitleController", "Title Controller"
+		);
 
 	}
 }

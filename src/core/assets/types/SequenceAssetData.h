@@ -12,6 +12,7 @@ namespace Unnamed {
 		MODE_STEP   = 0,
 		MODE_LINEAR = 1,
 		MODE_CUBIC  = 2,
+		MODE_SPLINE = 3,
 	};
 
 	/// @brief シーケンスのブレンド方式です。

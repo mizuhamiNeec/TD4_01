@@ -1,12 +1,14 @@
 #include "SequenceRuntime.h"
 
 #include <algorithm>
+#include <iterator>
 #include <limits>
 
 #include "core/assets/AssetManager.h"
 #include "core/assets/types/SequenceAssetData.h"
 
 #include "engine/scene/Scene.h"
+#include "engine/sequence/SequenceCurveEvaluation.h"
 #include "engine/sequence/SequencePlayer.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/framework/components/mesh/SkeletalAnimationComponent.h"
@@ -18,64 +20,6 @@
 
 namespace Unnamed {
 	namespace {
-		[[nodiscard]] float EvaluateRichCurve(
-			const SequenceRichCurveAssetData& curve,
-			const float                       frame,
-			const float                       fallback = 0.0f
-		) {
-			if (curve.keys.empty()) {
-				return fallback;
-			}
-			if (curve.keys.size() == 1) {
-				return curve.keys.front().value;
-			}
-
-			if (frame <= static_cast<float>(curve.keys.front().frame)) {
-				return curve.keys.front().value;
-			}
-			if (frame >= static_cast<float>(curve.keys.back().frame)) {
-				return curve.keys.back().value;
-			}
-
-			for (size_t i = 0; i + 1 < curve.keys.size(); ++i) {
-				const SequenceFloatKeyAssetData& lhs = curve.keys[i];
-				const SequenceFloatKeyAssetData& rhs = curve.keys[i + 1];
-				const float lhsFrame = static_cast<float>(lhs.frame);
-				const float rhsFrame = static_cast<float>(rhs.frame);
-				if (frame < lhsFrame || frame > rhsFrame) {
-					continue;
-				}
-
-				const float segmentFrames = std::max(1.0f, rhsFrame - lhsFrame);
-				const float t             = std::clamp(
-					(frame - lhsFrame) / segmentFrames, 0.0f, 1.0f
-				);
-
-				switch (lhs.interpolation) {
-					case SEQUENCE_INTERPOLATION_MODE::MODE_STEP: return lhs.
-							value;
-					case SEQUENCE_INTERPOLATION_MODE::MODE_LINEAR: return
-							lhs.value + (rhs.value - lhs.value) * t;
-					case SEQUENCE_INTERPOLATION_MODE::MODE_CUBIC: {
-						// Hermite曲線で接線付き補間します。
-						const float t2  = t * t;
-						const float t3  = t2 * t;
-						const float h00 = 2.0f * t3 - 3.0f * t2 + 1.0f;
-						const float h10 = t3 - 2.0f * t2 + t;
-						const float h01 = -2.0f * t3 + 3.0f * t2;
-						const float h11 = t3 - t2;
-						return
-							h00 * lhs.value +
-							h10 * lhs.leaveTangent * segmentFrames +
-							h01 * rhs.value +
-							h11 * rhs.arriveTangent * segmentFrames;
-					}
-				}
-			}
-
-			return curve.keys.back().value;
-		}
-
 		[[nodiscard]] bool EvaluateBoolKeys(
 			const std::vector<SequenceBoolKeyAssetData>& keys,
 			const float                                  frame,
@@ -93,6 +37,147 @@ namespace Unnamed {
 				value = key.value;
 			}
 			return value;
+		}
+
+		void AppendRotationKeyFrames(
+			std::vector<int64_t>& outFrames,
+			const SequenceRichCurveAssetData& curve
+		) {
+			for (const SequenceFloatKeyAssetData& key : curve.keys) {
+				outFrames.emplace_back(key.frame);
+			}
+		}
+
+		[[nodiscard]] bool HasRotationKeys(
+			const SequenceSectionAssetData& section
+		) {
+			return
+				!section.transformRotX.keys.empty() ||
+				!section.transformRotY.keys.empty() ||
+				!section.transformRotZ.keys.empty() ||
+				!section.transformRotW.keys.empty();
+		}
+
+		[[nodiscard]] SEQUENCE_INTERPOLATION_MODE FindRotationInterpolation(
+			const SequenceSectionAssetData& section,
+			const int64_t frame
+		) {
+			const auto findMode =
+				[frame](const SequenceRichCurveAssetData& curve) {
+					for (const SequenceFloatKeyAssetData& key : curve.keys) {
+						if (key.frame == frame) {
+							return key.interpolation;
+						}
+					}
+					return SEQUENCE_INTERPOLATION_MODE::MODE_LINEAR;
+				};
+
+			for (const SequenceRichCurveAssetData* curve : {
+				     &section.transformRotX,
+				     &section.transformRotY,
+				     &section.transformRotZ,
+				     &section.transformRotW
+			     }) {
+				for (const SequenceFloatKeyAssetData& key : curve->keys) {
+					if (key.frame == frame) {
+						return findMode(*curve);
+					}
+				}
+			}
+			return SEQUENCE_INTERPOLATION_MODE::MODE_LINEAR;
+		}
+
+		[[nodiscard]] Quaternion EvaluateRotationKeyFrame(
+			const SequenceSectionAssetData& section,
+			const int64_t frame
+		) {
+			const float sampleFrame = static_cast<float>(frame);
+			return Quaternion(
+				EvaluateSequenceRichCurve(
+					section.transformRotX, sampleFrame, 0.0f
+				),
+				EvaluateSequenceRichCurve(
+					section.transformRotY, sampleFrame, 0.0f
+				),
+				EvaluateSequenceRichCurve(
+					section.transformRotZ, sampleFrame, 0.0f
+				),
+				EvaluateSequenceRichCurve(
+					section.transformRotW, sampleFrame, 1.0f
+				)
+			).Normalized();
+		}
+
+		[[nodiscard]] Quaternion SlerpShortest(
+			const Quaternion& from,
+			const Quaternion& to,
+			const float t
+		) {
+			Quaternion adjustedTo = to;
+			const float dot =
+				from.x * to.x + from.y * to.y + from.z * to.z + from.w * to.w;
+			if (dot < 0.0f) {
+				adjustedTo.x = -adjustedTo.x;
+				adjustedTo.y = -adjustedTo.y;
+				adjustedTo.z = -adjustedTo.z;
+				adjustedTo.w = -adjustedTo.w;
+			}
+			return Quaternion::Slerp(from, adjustedTo, t);
+		}
+
+		[[nodiscard]] Quaternion EvaluateRotationCurve(
+			const SequenceSectionAssetData& section,
+			const float frame
+		) {
+			std::vector<int64_t> frames = {};
+			AppendRotationKeyFrames(frames, section.transformRotX);
+			AppendRotationKeyFrames(frames, section.transformRotY);
+			AppendRotationKeyFrames(frames, section.transformRotZ);
+			AppendRotationKeyFrames(frames, section.transformRotW);
+			if (frames.empty()) {
+				return Quaternion::identity;
+			}
+
+			std::ranges::sort(frames);
+			frames.erase(std::ranges::unique(frames).begin(), frames.end());
+
+			if (
+				frames.size() == 1 ||
+				frame <= static_cast<float>(frames.front())
+			) {
+				return EvaluateRotationKeyFrame(section, frames.front());
+			}
+			if (frame >= static_cast<float>(frames.back())) {
+				return EvaluateRotationKeyFrame(section, frames.back());
+			}
+
+			const auto rhsIt = std::ranges::upper_bound(frames, frame);
+			if (rhsIt == frames.begin() || rhsIt == frames.end()) {
+				return EvaluateRotationKeyFrame(section, frames.back());
+			}
+
+			const auto lhsIt = std::prev(rhsIt);
+			const int64_t lhsFrame = *lhsIt;
+			const int64_t rhsFrame = *rhsIt;
+			const Quaternion lhs = EvaluateRotationKeyFrame(section, lhsFrame);
+			const Quaternion rhs = EvaluateRotationKeyFrame(section, rhsFrame);
+			if (
+				FindRotationInterpolation(section, lhsFrame) ==
+				SEQUENCE_INTERPOLATION_MODE::MODE_STEP
+			) {
+				return lhs;
+			}
+
+			const float segmentFrames = std::max(
+				1.0f,
+				static_cast<float>(rhsFrame - lhsFrame)
+			);
+			const float t = std::clamp(
+				(frame - static_cast<float>(lhsFrame)) / segmentFrames,
+				0.0f,
+				1.0f
+			);
+			return SlerpShortest(lhs, rhs, t);
 		}
 
 		[[nodiscard]] uint64_t EvaluateCameraCut(
@@ -663,37 +748,26 @@ namespace Unnamed {
 				contribution.hasPosition = true;
 				contribution.position    =
 					Vec3(
-						EvaluateRichCurve(
+						EvaluateSequenceRichCurve(
 							section.transformPosX,
 							currentFrame, 0.0f
 						),
-						EvaluateRichCurve(
+						EvaluateSequenceRichCurve(
 							section.transformPosY,
 							currentFrame, 0.0f
 						),
-						EvaluateRichCurve(
+						EvaluateSequenceRichCurve(
 							section.transformPosZ,
 							currentFrame, 0.0f
 						)
 					) * playerWeight;
 			}
-			if (!section.transformRotX.keys.empty() ||
-			    !section.transformRotY.keys.empty() ||
-			    !section.transformRotZ.keys.empty() ||
-			    !section.transformRotW.keys.empty()) {
+			if (HasRotationKeys(section)) {
 				contribution.hasRotation = true;
-				contribution.rotation    = Quaternion(
-					EvaluateRichCurve(
-						section.transformRotX, currentFrame, 0.0f
-					),
-					EvaluateRichCurve(
-						section.transformRotY, currentFrame, 0.0f
-					),
-					EvaluateRichCurve(
-						section.transformRotZ, currentFrame, 0.0f
-					),
-					EvaluateRichCurve(section.transformRotW, currentFrame, 1.0f)
-				).Normalized();
+				contribution.rotation = EvaluateRotationCurve(
+					section,
+					currentFrame
+				);
 			}
 			if (!section.transformScaleX.keys.empty() ||
 			    !section.transformScaleY.keys.empty() ||
@@ -701,15 +775,15 @@ namespace Unnamed {
 				contribution.hasScale = true;
 				contribution.scale    =
 					Vec3(
-						EvaluateRichCurve(
+						EvaluateSequenceRichCurve(
 							section.transformScaleX,
 							currentFrame, 0.0f
 						),
-						EvaluateRichCurve(
+						EvaluateSequenceRichCurve(
 							section.transformScaleY,
 							currentFrame, 0.0f
 						),
-						EvaluateRichCurve(
+						EvaluateSequenceRichCurve(
 							section.transformScaleZ,
 							currentFrame, 0.0f
 						)
@@ -739,7 +813,7 @@ namespace Unnamed {
 			contribution.entityGuid          = binding->entityGuid;
 			contribution.componentStableName = binding->componentStableName;
 			contribution.propertyPath        = binding->propertyPath;
-			contribution.value               = EvaluateRichCurve(
+			contribution.value               = EvaluateSequenceRichCurve(
 				                     section.floatCurve,
 				                     currentFrame
 			                     ) * playerWeight;
@@ -812,15 +886,15 @@ namespace Unnamed {
 			contribution.componentStableName = binding->componentStableName;
 			contribution.propertyPath        = binding->propertyPath;
 			contribution.value               = Vec3(
-				                     EvaluateRichCurve(
+				                     EvaluateSequenceRichCurve(
 					                     section.vec3XCurve,
 					                     currentFrame, 0.0f
 				                     ),
-				                     EvaluateRichCurve(
+				                     EvaluateSequenceRichCurve(
 					                     section.vec3YCurve,
 					                     currentFrame, 0.0f
 				                     ),
-				                     EvaluateRichCurve(
+				                     EvaluateSequenceRichCurve(
 					                     section.vec3ZCurve,
 					                     currentFrame, 0.0f
 				                     )
@@ -855,21 +929,21 @@ namespace Unnamed {
 
 			if (!section.skeletal.weightCurve.keys.empty()) {
 				contribution.hasWeight = true;
-				contribution.weight    = EvaluateRichCurve(
+				contribution.weight    = EvaluateSequenceRichCurve(
 					section.skeletal.weightCurve,
 					currentFrame
 				);
 			}
 			if (!section.skeletal.playbackCurve.keys.empty()) {
 				contribution.hasPlayback  = true;
-				contribution.playbackTime = EvaluateRichCurve(
+				contribution.playbackTime = EvaluateSequenceRichCurve(
 					section.skeletal.playbackCurve,
 					currentFrame
 				);
 			}
 			if (!section.skeletal.speedCurve.keys.empty()) {
 				contribution.hasSpeed = true;
-				contribution.speed    = EvaluateRichCurve(
+				contribution.speed    = EvaluateSequenceRichCurve(
 					section.skeletal.speedCurve,
 					currentFrame,
 					1.0f

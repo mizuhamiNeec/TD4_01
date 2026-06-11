@@ -1988,8 +1988,8 @@
                             -1.0
                         ],
                         "randomYaw": true,
-                        "scaleMax": 1.15,
-                        "scaleMin": 0.85,
+                        "scaleMax": 1.149999976158142,
+                        "scaleMin": 0.8500000238418579,
                         "spawnCenter": [
                             0.0,
                             10.0,
@@ -2044,13 +2044,13 @@
                             1.0
                         ]
                     },
-                    "guid": 0,
+                    "guid": 10988998080161373014,
                     "type": "engine.Transform"
                 },
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "projects/TeamGame/content/materials/instances/skydome.matinst.json",
+                        "materialInstancePath": "",
                         "materialSlots": [
                             {
                                 "materialInstancePath": "projects/TeamGame/content/materials/instances/skydome.matinst.json",
@@ -2059,7 +2059,7 @@
                         ],
                         "meshPath": "projects/TeamGame/content/models/skydome/skydome.obj"
                     },
-                    "guid": 0,
+                    "guid": 9811836312391905740,
                     "type": "engine.StaticMeshRenderer"
                 }
             ],
@@ -2067,6 +2067,41 @@
             "guid": 12087284352773638142,
             "isEditorOnly": false,
             "name": "Skydome",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 17195658822289241621,
+                    "type": "engine.Transform"
+                }
+            ],
+            "folderPath": "",
+            "guid": 12087284352773638143,
+            "isEditorOnly": false,
+            "name": "Entity",
             "tags": [],
             "visible": true
         }

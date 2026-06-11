@@ -187,12 +187,6 @@ namespace Unnamed {
 		mConsoleSystem = services.console;
 		mInputSystem   = services.inputSystem;
 		mEditorWorld.Initialize();
-		mSequenceEditorController =
-			std::make_unique<SequenceEditorController>();
-		mSequenceEditorController->Initialize(
-			mEditorWorld.GetRuntimeSceneWorld(),
-			services.assetManager
-		);
 
 		auto guizmoConfig = mConsoleSystem->GetConVarAs<ConVar<std::string>>(
 			"im_guizmoconfigpath"
@@ -221,10 +215,6 @@ namespace Unnamed {
 		if (!mInitialized) {
 			return;
 		}
-		if (mSequenceEditorController) {
-			mSequenceEditorController->Shutdown();
-		}
-		mSequenceEditorController.reset();
 		mEditorWorld.Shutdown();
 		mConsoleSystem = nullptr;
 		mInputSystem   = nullptr;
@@ -241,13 +231,7 @@ namespace Unnamed {
 	}
 
 	void LevelEditorTool::Tick(const EditorToolFrameContext& frameContext) {
-		if (!mSequenceEditorController) {
-			return;
-		}
-		mSequenceEditorController->SetWorld(
-			mEditorWorld.GetRuntimeSceneWorld()
-		);
-		mSequenceEditorController->Tick(frameContext.unscaledDeltaTime);
+		(void)frameContext;
 	}
 
 	void LevelEditorTool::BuildUi(const EditorToolFrameContext& frameContext) {
@@ -292,7 +276,8 @@ namespace Unnamed {
 			ImGui::DockBuilderDockWindow("Outliner", dockLeft);
 			ImGui::DockBuilderDockWindow("Inspector", dockRight);
 			ImGui::DockBuilderDockWindow("Profiler", dockBottom);
-			ImGui::DockBuilderDockWindow("Content Browser", dockBottom);
+
+			//ImGui::DockBuilderDockWindow("Content Browser", dockBottom);
 
 			ImGui::DockBuilderFinish(dockSpaceId);
 
@@ -365,8 +350,6 @@ namespace Unnamed {
 			DrawSceneOutliner();
 			ImGui::SetNextWindowDockID(dockSpaceId, ImGuiCond_FirstUseEver);
 			DrawInspector();
-			ImGui::SetNextWindowDockID(dockSpaceId, ImGuiCond_FirstUseEver);
-			DrawContentBrowser();
 			ImGui::SetNextWindowDockID(dockSpaceId, ImGuiCond_FirstUseEver);
 		} else {
 			SyncPresentationState();
@@ -748,6 +731,12 @@ namespace Unnamed {
 
 	void LevelEditorTool::StopPlayInEditor() const {
 		mEditorWorld.StopPlayInEditor();
+	}
+
+	void LevelEditorTool::SetSequenceEditorController(
+		SequenceEditorController* controller
+	) {
+		mSequenceEditorController = controller;
 	}
 
 	bool LevelEditorTool::IsProfilerWindowOpen() const {

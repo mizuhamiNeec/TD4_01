@@ -127,6 +127,9 @@ namespace Unnamed {
 		/// @brief アクティブドキュメントのプレビューアセットを再生成して適用します。
 		void RefreshPreviewAsset();
 
+		/// @brief 現在の再生ヘッド位置でプレビューを評価します。
+		void SeekPreviewToPlayhead();
+
 		/// @brief 対象Entity向けのTransformトラックを解決または作成します。
 		void ResolveOrCreateTransformTrackForEntity(
 			SequenceAuthoringData& ioData,

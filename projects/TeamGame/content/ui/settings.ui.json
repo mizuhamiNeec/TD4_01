@@ -1,0 +1,779 @@
+{
+    "name": "ui/countdown.ui.json",
+    "root": {
+        "children": [
+            {
+                "children": [],
+                "components": [
+                    {
+                        "data": {
+                            "anchors": [
+                                0.800000011920929,
+                                0.800000011920929,
+                                0.20000000298023224,
+                                0.20000000298023224
+                            ],
+                            "constraints": {
+                                "maxHeight": 3.4028234663852886e+38,
+                                "maxWidth": 3.4028234663852886e+38,
+                                "minHeight": 0.0,
+                                "minWidth": 0.0
+                            },
+                            "layoutWeight": 1.0,
+                            "margins": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "pivot": [
+                                0.0,
+                                0.0
+                            ],
+                            "rect": [
+                                0.0,
+                                0.0,
+                                240.0,
+                                120.0
+                            ],
+                            "sizePolicy": [
+                                "Fixed",
+                                "Fixed"
+                            ]
+                        },
+                        "type": "Transform"
+                    },
+                    {
+                        "data": {
+                            "borderColor": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                1.0
+                            ],
+                            "borderThickness": 0.0,
+                            "cornerRadius": 4.0,
+                            "fillColor": [
+                                0.33446604013442993,
+                                0.4636015295982361,
+                                0.25933265686035156,
+                                0.8823529481887817
+                            ]
+                        },
+                        "type": "PanelStyle"
+                    }
+                ],
+                "enabled": true,
+                "name": "背景",
+                "visible": true
+            },
+            {
+                "children": [],
+                "components": [
+                    {
+                        "data": {
+                            "anchors": [
+                                0.6499999761581421,
+                                0.3499999940395355,
+                                0.6499999761581421,
+                                0.3499999940395355
+                            ],
+                            "constraints": {
+                                "maxHeight": 3.4028234663852886e+38,
+                                "maxWidth": 3.4028234663852886e+38,
+                                "minHeight": 0.0,
+                                "minWidth": 0.0
+                            },
+                            "layoutWeight": 1.0,
+                            "margins": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "pivot": [
+                                0.5,
+                                0.5
+                            ],
+                            "rect": [
+                                0.0,
+                                0.0,
+                                48.0,
+                                48.0
+                            ],
+                            "sizePolicy": [
+                                "Fixed",
+                                "Fixed"
+                            ]
+                        },
+                        "type": "Transform"
+                    },
+                    {
+                        "data": {
+                            "checkedColor": [
+                                0.6000000238418579,
+                                0.800000011920929,
+                                0.6000000238418579,
+                                1.0
+                            ],
+                            "conVarName": "invertY",
+                            "hoveredColor": [
+                                0.3199999928474426,
+                                0.3199999928474426,
+                                0.3799999952316284,
+                                1.0
+                            ],
+                            "normalColor": [
+                                0.25,
+                                0.25,
+                                0.30000001192092896,
+                                1.0
+                            ],
+                            "onChangedCommands": [],
+                            "pressedColor": [
+                                0.18000000715255737,
+                                0.18000000715255737,
+                                0.25,
+                                1.0
+                            ]
+                        },
+                        "type": "ConVarBoolCheckboxBehavior"
+                    }
+                ],
+                "enabled": true,
+                "name": "Y軸反転",
+                "visible": true
+            },
+            {
+                "children": [],
+                "components": [
+                    {
+                        "data": {
+                            "anchors": [
+                                0.6499999761581421,
+                                0.44999998807907104,
+                                0.6499999761581421,
+                                0.44999998807907104
+                            ],
+                            "constraints": {
+                                "maxHeight": 3.4028234663852886e+38,
+                                "maxWidth": 3.4028234663852886e+38,
+                                "minHeight": 0.0,
+                                "minWidth": 0.0
+                            },
+                            "layoutWeight": 1.0,
+                            "margins": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "pivot": [
+                                0.5,
+                                0.5
+                            ],
+                            "rect": [
+                                0.0,
+                                0.0,
+                                256.0,
+                                64.0
+                            ],
+                            "sizePolicy": [
+                                "Fixed",
+                                "Fixed"
+                            ]
+                        },
+                        "type": "Transform"
+                    },
+                    {
+                        "data": {
+                            "conVarName": "snd_master",
+                            "fillColor": [
+                                0.6000000238418579,
+                                0.6000000238418579,
+                                0.699999988079071,
+                                1.0
+                            ],
+                            "knobColor": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "knobHeight": 28.0,
+                            "knobWidth": 18.0,
+                            "maxValue": 1.0,
+                            "minValue": 0.0,
+                            "normalColor": [
+                                0.25,
+                                0.25,
+                                0.30000001192092896,
+                                1.0
+                            ],
+                            "onChangedCommands": [],
+                            "step": 0.0,
+                            "trackHeight": 10.0
+                        },
+                        "type": "ConVarFloatSliderBehavior"
+                    }
+                ],
+                "enabled": true,
+                "name": "マスター",
+                "visible": true
+            },
+            {
+                "children": [],
+                "components": [
+                    {
+                        "data": {
+                            "anchors": [
+                                0.6499999761581421,
+                                0.550000011920929,
+                                0.6499999761581421,
+                                0.550000011920929
+                            ],
+                            "constraints": {
+                                "maxHeight": 3.4028234663852886e+38,
+                                "maxWidth": 3.4028234663852886e+38,
+                                "minHeight": 0.0,
+                                "minWidth": 0.0
+                            },
+                            "layoutWeight": 1.0,
+                            "margins": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "pivot": [
+                                0.5,
+                                0.5
+                            ],
+                            "rect": [
+                                0.0,
+                                0.0,
+                                256.0,
+                                64.0
+                            ],
+                            "sizePolicy": [
+                                "Fixed",
+                                "Fixed"
+                            ]
+                        },
+                        "type": "Transform"
+                    },
+                    {
+                        "data": {
+                            "conVarName": "snd_music",
+                            "fillColor": [
+                                0.6000000238418579,
+                                0.6000000238418579,
+                                0.699999988079071,
+                                1.0
+                            ],
+                            "knobColor": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "knobHeight": 28.0,
+                            "knobWidth": 18.0,
+                            "maxValue": 1.0,
+                            "minValue": 0.0,
+                            "normalColor": [
+                                0.25,
+                                0.25,
+                                0.30000001192092896,
+                                1.0
+                            ],
+                            "onChangedCommands": [],
+                            "step": 0.0,
+                            "trackHeight": 10.0
+                        },
+                        "type": "ConVarFloatSliderBehavior"
+                    }
+                ],
+                "enabled": true,
+                "name": "BGM",
+                "visible": true
+            },
+            {
+                "children": [],
+                "components": [
+                    {
+                        "data": {
+                            "anchors": [
+                                0.6499999761581421,
+                                0.6499999761581421,
+                                0.6499999761581421,
+                                0.6499999761581421
+                            ],
+                            "constraints": {
+                                "maxHeight": 3.4028234663852886e+38,
+                                "maxWidth": 3.4028234663852886e+38,
+                                "minHeight": 0.0,
+                                "minWidth": 0.0
+                            },
+                            "layoutWeight": 1.0,
+                            "margins": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "pivot": [
+                                0.5,
+                                0.5
+                            ],
+                            "rect": [
+                                0.0,
+                                0.0,
+                                256.0,
+                                64.0
+                            ],
+                            "sizePolicy": [
+                                "Fixed",
+                                "Fixed"
+                            ]
+                        },
+                        "type": "Transform"
+                    },
+                    {
+                        "data": {
+                            "conVarName": "snd_sfx",
+                            "fillColor": [
+                                0.6000000238418579,
+                                0.6000000238418579,
+                                0.699999988079071,
+                                1.0
+                            ],
+                            "knobColor": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "knobHeight": 28.0,
+                            "knobWidth": 18.0,
+                            "maxValue": 1.0,
+                            "minValue": 0.0,
+                            "normalColor": [
+                                0.25,
+                                0.25,
+                                0.30000001192092896,
+                                1.0
+                            ],
+                            "onChangedCommands": [],
+                            "step": 0.0,
+                            "trackHeight": 10.0
+                        },
+                        "type": "ConVarFloatSliderBehavior"
+                    }
+                ],
+                "enabled": true,
+                "name": "SE",
+                "visible": true
+            },
+            {
+                "children": [],
+                "components": [
+                    {
+                        "data": {
+                            "anchors": [
+                                0.3499999940395355,
+                                0.3499999940395355,
+                                0.3499999940395355,
+                                0.3499999940395355
+                            ],
+                            "constraints": {
+                                "maxHeight": 3.4028234663852886e+38,
+                                "maxWidth": 3.4028234663852886e+38,
+                                "minHeight": 0.0,
+                                "minWidth": 0.0
+                            },
+                            "layoutWeight": 1.0,
+                            "margins": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "pivot": [
+                                0.5,
+                                0.5
+                            ],
+                            "rect": [
+                                0.0,
+                                0.0,
+                                256.0,
+                                64.0
+                            ],
+                            "sizePolicy": [
+                                "Fixed",
+                                "Fixed"
+                            ]
+                        },
+                        "type": "Transform"
+                    },
+                    {
+                        "data": {
+                            "anchor": [
+                                0.0,
+                                0.0
+                            ],
+                            "color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "rotationRad": 0.0,
+                            "texturePath": "projects/TeamGame/content/textures/UI/settings/inverty.png",
+                            "uvMax": [
+                                1.0,
+                                1.0
+                            ],
+                            "uvMin": [
+                                0.0,
+                                0.0
+                            ]
+                        },
+                        "type": "Texture"
+                    }
+                ],
+                "enabled": true,
+                "name": "Widget",
+                "visible": true
+            },
+            {
+                "children": [],
+                "components": [
+                    {
+                        "data": {
+                            "anchors": [
+                                0.3499999940395355,
+                                0.44999998807907104,
+                                0.3499999940395355,
+                                0.44999998807907104
+                            ],
+                            "constraints": {
+                                "maxHeight": 3.4028234663852886e+38,
+                                "maxWidth": 3.4028234663852886e+38,
+                                "minHeight": 0.0,
+                                "minWidth": 0.0
+                            },
+                            "layoutWeight": 1.0,
+                            "margins": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "pivot": [
+                                0.5,
+                                0.5
+                            ],
+                            "rect": [
+                                0.0,
+                                0.0,
+                                256.0,
+                                64.0
+                            ],
+                            "sizePolicy": [
+                                "Fixed",
+                                "Fixed"
+                            ]
+                        },
+                        "type": "Transform"
+                    },
+                    {
+                        "data": {
+                            "anchor": [
+                                0.0,
+                                0.0
+                            ],
+                            "color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "rotationRad": 0.0,
+                            "texturePath": "projects/TeamGame/content/textures/UI/settings/master.png",
+                            "uvMax": [
+                                1.0,
+                                1.0
+                            ],
+                            "uvMin": [
+                                0.0,
+                                0.0
+                            ]
+                        },
+                        "type": "Texture"
+                    }
+                ],
+                "enabled": true,
+                "name": "Widget",
+                "visible": true
+            },
+            {
+                "children": [],
+                "components": [
+                    {
+                        "data": {
+                            "anchors": [
+                                0.3499999940395355,
+                                0.550000011920929,
+                                0.3499999940395355,
+                                0.550000011920929
+                            ],
+                            "constraints": {
+                                "maxHeight": 3.4028234663852886e+38,
+                                "maxWidth": 3.4028234663852886e+38,
+                                "minHeight": 0.0,
+                                "minWidth": 0.0
+                            },
+                            "layoutWeight": 1.0,
+                            "margins": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "pivot": [
+                                0.5,
+                                0.5
+                            ],
+                            "rect": [
+                                0.0,
+                                0.0,
+                                256.0,
+                                64.0
+                            ],
+                            "sizePolicy": [
+                                "Fixed",
+                                "Fixed"
+                            ]
+                        },
+                        "type": "Transform"
+                    },
+                    {
+                        "data": {
+                            "anchor": [
+                                0.0,
+                                0.0
+                            ],
+                            "color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "rotationRad": 0.0,
+                            "texturePath": "projects/TeamGame/content/textures/UI/settings/bgm.png",
+                            "uvMax": [
+                                1.0,
+                                1.0
+                            ],
+                            "uvMin": [
+                                0.0,
+                                0.0
+                            ]
+                        },
+                        "type": "Texture"
+                    }
+                ],
+                "enabled": true,
+                "name": "Widget",
+                "visible": true
+            },
+            {
+                "children": [],
+                "components": [
+                    {
+                        "data": {
+                            "anchors": [
+                                0.3499999940395355,
+                                0.6499999761581421,
+                                0.3499999940395355,
+                                0.6499999761581421
+                            ],
+                            "constraints": {
+                                "maxHeight": 3.4028234663852886e+38,
+                                "maxWidth": 3.4028234663852886e+38,
+                                "minHeight": 0.0,
+                                "minWidth": 0.0
+                            },
+                            "layoutWeight": 1.0,
+                            "margins": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "pivot": [
+                                0.5,
+                                0.5
+                            ],
+                            "rect": [
+                                0.0,
+                                0.0,
+                                256.0,
+                                64.0
+                            ],
+                            "sizePolicy": [
+                                "Fixed",
+                                "Fixed"
+                            ]
+                        },
+                        "type": "Transform"
+                    },
+                    {
+                        "data": {
+                            "anchor": [
+                                0.0,
+                                0.0
+                            ],
+                            "color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "rotationRad": 0.0,
+                            "texturePath": "projects/TeamGame/content/textures/UI/settings/se.png",
+                            "uvMax": [
+                                1.0,
+                                1.0
+                            ],
+                            "uvMin": [
+                                0.0,
+                                0.0
+                            ]
+                        },
+                        "type": "Texture"
+                    }
+                ],
+                "enabled": true,
+                "name": "Widget",
+                "visible": true
+            },
+            {
+                "children": [],
+                "components": [
+                    {
+                        "data": {
+                            "anchors": [
+                                0.5,
+                                0.25,
+                                0.5,
+                                0.25
+                            ],
+                            "constraints": {
+                                "maxHeight": 3.4028234663852886e+38,
+                                "maxWidth": 3.4028234663852886e+38,
+                                "minHeight": 0.0,
+                                "minWidth": 0.0
+                            },
+                            "layoutWeight": 1.0,
+                            "margins": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "pivot": [
+                                0.5,
+                                0.5
+                            ],
+                            "rect": [
+                                0.0,
+                                0.0,
+                                256.0,
+                                64.0
+                            ],
+                            "sizePolicy": [
+                                "Fixed",
+                                "Fixed"
+                            ]
+                        },
+                        "type": "Transform"
+                    },
+                    {
+                        "data": {
+                            "anchor": [
+                                0.0,
+                                0.0
+                            ],
+                            "color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "rotationRad": 0.0,
+                            "texturePath": "projects/TeamGame/content/textures/UI/settings/settings.png",
+                            "uvMax": [
+                                1.0,
+                                1.0
+                            ],
+                            "uvMin": [
+                                0.0,
+                                0.0
+                            ]
+                        },
+                        "type": "Texture"
+                    }
+                ],
+                "enabled": true,
+                "name": "Widget",
+                "visible": true
+            }
+        ],
+        "components": [
+            {
+                "data": {
+                    "anchors": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "constraints": {
+                        "maxHeight": 3.4028234663852886e+38,
+                        "maxWidth": 3.4028234663852886e+38,
+                        "minHeight": 0.0,
+                        "minWidth": 0.0
+                    },
+                    "layoutWeight": 1.0,
+                    "margins": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "pivot": [
+                        0.0,
+                        0.0
+                    ],
+                    "rect": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "sizePolicy": [
+                        "Fixed",
+                        "Fixed"
+                    ]
+                },
+                "type": "Transform"
+            }
+        ],
+        "enabled": true,
+        "name": "RootLayout",
+        "visible": true
+    },
+    "version": 2
+}

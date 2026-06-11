@@ -1,0 +1,158 @@
+{
+    "entities": [
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 9539539694668690619,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "billboardDepthMode": "DepthTest",
+                        "pixelSize": [
+                            1920.0,
+                            1080.0
+                        ],
+                        "receiveInput": true,
+                        "sortKey": 0,
+                        "spaceMode": "Screen",
+                        "uiAssetPath": "projects/TeamGame/content/ui/settings.ui.json",
+                        "worldSize": [
+                            2.0,
+                            1.125
+                        ]
+                    },
+                    "guid": 11384499848964147458,
+                    "type": "engine.UiCanvas"
+                }
+            ],
+            "folderPath": "UserInterface",
+            "guid": 1,
+            "isEditorOnly": false,
+            "name": "TitleUI",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 4,
+                        "position": [
+                            0.0,
+                            128.0,
+                            -200.0
+                        ],
+                        "rotation": [
+                            0.3420201539993286,
+                            0.0,
+                            0.0,
+                            0.9396926760673523
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 16113344809480500619,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "cameraActive": true,
+                        "exposureEv": 3.0,
+                        "farZ": 10000.0,
+                        "fovYDegrees": 90.0,
+                        "nearZ": 0.009999999776482582
+                    },
+                    "guid": 10208822162515783466,
+                    "type": "game.Camera"
+                }
+            ],
+            "folderPath": "",
+            "guid": 2,
+            "isEditorOnly": false,
+            "name": "Camera",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 13309069979542578761,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "enabled": true,
+                        "rotationRate": [
+                            0.0,
+                            8.0,
+                            0.0
+                        ]
+                    },
+                    "guid": 12241202934885037448,
+                    "type": "engine.Rotator"
+                }
+            ],
+            "folderPath": "",
+            "guid": 4,
+            "isEditorOnly": false,
+            "name": "Entity",
+            "tags": [],
+            "visible": true
+        }
+    ],
+    "folders": [
+        "UserInterface"
+    ],
+    "version": 1
+}

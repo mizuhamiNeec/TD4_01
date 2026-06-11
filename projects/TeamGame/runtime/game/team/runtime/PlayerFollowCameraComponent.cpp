@@ -4,6 +4,9 @@
 #include <cmath>
 #include <cstdio>
 
+#include <engine/unnamed/subsystem/console/ConsoleSystem.h>
+#include <engine/unnamed/subsystem/console/concommand/ConVar.h>
+
 #include "core/ComponentRegistry.h"
 #include "core/io/json/JsonReader.h"
 #include "core/io/json/JsonWriter.h"
@@ -28,7 +31,7 @@
 
 namespace MyGame {
 	namespace {
-		constexpr float kMinDeltaTime = 0.000001f;
+		constexpr float kMinDeltaTime      = 0.000001f;
 		constexpr float kMinLookDistanceSq = 0.0001f;
 
 		Vec3 ClampLength(Vec3 value, const float maxLength) {
@@ -36,7 +39,7 @@ namespace MyGame {
 				return Vec3::zero;
 			}
 
-			const float lengthSq = value.SqrLength();
+			const float lengthSq    = value.SqrLength();
 			const float maxLengthSq = maxLength * maxLength;
 			if (lengthSq <= maxLengthSq) {
 				return value;
@@ -51,8 +54,8 @@ namespace MyGame {
 	}
 
 	void PlayerFollowCameraComponent::OnAttached() {
-		_initialized = false;
-		_baseFovCaptured = false;
+		_initialized             = false;
+		_baseFovCaptured         = false;
 		_voiceShockWaveComponent = nullptr;
 		SetupInputBindings();
 	}
@@ -85,14 +88,16 @@ namespace MyGame {
 			ApplyVoiceFov(*cameraComponent);
 		}
 
-		const Mat4 targetWorld = targetTransform->RenderWorldMat();
+		const Mat4 targetWorld    = targetTransform->RenderWorldMat();
 		const Vec3 targetPosition = GetWorldPosition(*targetTransform);
 		if (!_initialized) {
 			ResetState(targetPosition, targetWorld);
 		}
 
 		if (_bStageIntroMode) {
-			ApplyStageIntroCamera(*cameraTransform, targetPosition, safeDeltaTime);
+			ApplyStageIntroCamera(
+				*cameraTransform, targetPosition, safeDeltaTime
+			);
 			return;
 		}
 
@@ -100,7 +105,7 @@ namespace MyGame {
 
 		const Vec3 targetVelocity =
 			(targetPosition - _lastTargetPosition) / safeDeltaTime;
-		_lastTargetPosition = targetPosition;
+		_lastTargetPosition     = targetPosition;
 		const float targetAlpha = DampFactor(_targetSharpness, safeDeltaTime);
 		_smoothedTargetPosition = Math::Lerp(
 			_smoothedTargetPosition,
@@ -113,8 +118,8 @@ namespace MyGame {
 			targetAlpha
 		);
 
-		Vec3 horizontalVelocity = _smoothedTargetVelocity;
-		horizontalVelocity.y = 0.0f;
+		Vec3 horizontalVelocity     = _smoothedTargetVelocity;
+		horizontalVelocity.y        = 0.0f;
 		const Vec3 desiredLookAhead = ClampLength(
 			horizontalVelocity * _lookAheadTime,
 			_maxLookAheadDistance
@@ -134,7 +139,8 @@ namespace MyGame {
 
 		const float distanceSq =
 			(desiredPosition - _smoothedPosition).SqrLength();
-		if (_snapDistance > 0.0f && distanceSq > _snapDistance * _snapDistance) {
+		if (_snapDistance > 0.0f && distanceSq > _snapDistance *
+		    _snapDistance) {
 			// 大きく離れた状態で補間を続けると操作感が重くなるため、復帰時は即座に寄せる。
 			_smoothedPosition = desiredPosition;
 		} else {
@@ -160,6 +166,15 @@ namespace MyGame {
 			_smoothedLookAtPosition,
 			safeDeltaTime
 		);
+
+		// ConVarから上下反転の値を取得
+		const auto* convar = GetConsoleSystem()->GetConVarAs<Unnamed::ConVar<bool>>(
+			"invertY"
+		);
+		
+		if (convar) {
+			_invertPitch = convar->GetValue();
+		}
 	}
 
 	Unnamed::BaseComponent::TICK_GROUP
@@ -188,7 +203,9 @@ namespace MyGame {
 			&_targetEntityGuid
 		);
 		char targetName[128] = {};
-		std::snprintf(targetName, sizeof(targetName), "%s", _targetName.c_str());
+		std::snprintf(
+			targetName, sizeof(targetName), "%s", _targetName.c_str()
+		);
 		if (ImGui::InputText("ターゲット名", targetName, sizeof(targetName))) {
 			_targetName = targetName;
 		}
@@ -216,16 +233,26 @@ namespace MyGame {
 			_lookAxisName = lookAxisName;
 		}
 		ImGui::DragFloat("マウス左右感度", &_mouseYawSensitivity, 0.005f, 0.0f, 2.0f);
-		ImGui::DragFloat("マウス上下感度", &_mousePitchSensitivity, 0.005f, 0.0f, 2.0f);
-		ImGui::DragFloat("ゲームパッド左右感度", &_gamepadYawSensitivity, 1.0f, 0.0f, 720.0f);
-		ImGui::DragFloat("ゲームパッド上下感度", &_gamepadPitchSensitivity, 1.0f, 0.0f, 720.0f);
-		ImGui::DragFloat("ゲームパッド視点デッドゾーン", &_gamepadLookDeadZone, 0.005f, 0.0f, 0.95f);
+		ImGui::DragFloat(
+			"マウス上下感度", &_mousePitchSensitivity, 0.005f, 0.0f, 2.0f
+		);
+		ImGui::DragFloat(
+			"ゲームパッド左右感度", &_gamepadYawSensitivity, 1.0f, 0.0f, 720.0f
+		);
+		ImGui::DragFloat(
+			"ゲームパッド上下感度", &_gamepadPitchSensitivity, 1.0f, 0.0f, 720.0f
+		);
+		ImGui::DragFloat(
+			"ゲームパッド視点デッドゾーン", &_gamepadLookDeadZone, 0.005f, 0.0f, 0.95f
+		);
 		ImGui::DragFloat("最小ピッチ角", &_minPitchDegrees, 0.5f, -89.0f, 89.0f);
 		ImGui::DragFloat("最大ピッチ角", &_maxPitchDegrees, 0.5f, -89.0f, 89.0f);
 		ImGui::Checkbox("左右操作を反転", &_invertYaw);
-		ImGui::Checkbox("上下操作を反転", &_invertPitch);
+		// ImGui::Checkbox("上下操作を反転", &_invertPitch); // ConVar制御
 		ImGui::Checkbox("マウスカーソルをロック", &_lockMouseCursor);
-		ImGui::Text("回転量: 左右 %.2f / 上下 %.2f", _orbitYawDegrees, _orbitPitchDegrees);
+		ImGui::Text(
+			"回転量: 左右 %.2f / 上下 %.2f", _orbitYawDegrees, _orbitPitchDegrees
+		);
 
 		ImGui::Separator();
 		ImGui::DragFloat(
@@ -294,7 +321,9 @@ namespace MyGame {
 		ImGui::DragFloat("最大音量基準", &_voiceMaxVolume, 0.005f, 0.01f, 1.0f);
 		ImGui::DragFloat("最大FOV加算", &_voiceFovAddMax, 0.1f, 0.0f, 30.0f);
 		ImGui::DragFloat("最大距離加算", &_voiceDistanceAddMax, 0.05f, 0.0f, 10.0f);
-		ImGui::DragFloat("立ち上がり追従の速さ", &_voiceRiseSharpness, 0.05f, 0.0f, 40.0f);
+		ImGui::DragFloat(
+			"立ち上がり追従の速さ", &_voiceRiseSharpness, 0.05f, 0.0f, 40.0f
+		);
 		ImGui::DragFloat("戻り追従の速さ", &_voiceFallSharpness, 0.05f, 0.0f, 40.0f);
 		ImGui::Text("ボイス強度: %.3f", _voiceCameraIntensity);
 
@@ -317,7 +346,7 @@ namespace MyGame {
 			_targetTag = reader["targetTag"].GetString(_targetTag);
 		}
 
-		_offset = reader["offset"].GetVec3(_offset);
+		_offset       = reader["offset"].GetVec3(_offset);
 		_lookAtOffset = reader["lookAtOffset"].GetVec3(_lookAtOffset);
 
 		if (auto val = reader.Read<std::string>("lookAxisName")) {
@@ -390,11 +419,15 @@ namespace MyGame {
 			_voiceCameraEffectEnabled = val.value();
 		}
 		if (reader.Has("stageIntroOffset")) {
-			_stageIntroOffset = reader["stageIntroOffset"].GetVec3(_stageIntroOffset);
+			_stageIntroOffset = reader["stageIntroOffset"].GetVec3(
+				_stageIntroOffset
+			);
 		}
 		if (reader.Has("stageIntroLookAtOffset")) {
 			_stageIntroLookAtOffset =
-				reader["stageIntroLookAtOffset"].GetVec3(_stageIntroLookAtOffset);
+				reader["stageIntroLookAtOffset"].GetVec3(
+					_stageIntroLookAtOffset
+				);
 		}
 		if (auto val = reader.Read<float>("stageIntroOrbitSpeedDegrees")) {
 			_stageIntroOrbitSpeedDegrees = val.value();
@@ -421,7 +454,7 @@ namespace MyGame {
 			_voiceFallSharpness = std::max(0.0f, val.value());
 		}
 
-		_initialized = false;
+		_initialized     = false;
 		_baseFovCaptured = false;
 	}
 
@@ -525,15 +558,17 @@ namespace MyGame {
 	Unnamed::TransformComponent*
 	PlayerFollowCameraComponent::GetCameraTransform() const {
 		Unnamed::Entity* owner = GetOwner();
-		return owner ? owner->GetComponent<Unnamed::TransformComponent>() :
-			nullptr;
+		return owner ?
+			       owner->GetComponent<Unnamed::TransformComponent>() :
+			       nullptr;
 	}
 
 	Unnamed::CameraComponent*
 	PlayerFollowCameraComponent::GetCameraComponent() const {
 		Unnamed::Entity* owner = GetOwner();
-		return owner ? owner->GetComponent<Unnamed::CameraComponent>() :
-			nullptr;
+		return owner ?
+			       owner->GetComponent<Unnamed::CameraComponent>() :
+			       nullptr;
 	}
 
 	Unnamed::TransformComponent*
@@ -619,7 +654,8 @@ namespace MyGame {
 		}
 
 		return baseOffset +
-			distanceDirection * (_voiceDistanceAddMax * _voiceCameraIntensity);
+		       distanceDirection * (
+			       _voiceDistanceAddMax * _voiceCameraIntensity);
 	}
 
 	void PlayerFollowCameraComponent::SetupInputBindings() {
@@ -633,13 +669,13 @@ namespace MyGame {
 		const std::string mouseAxis = _lookAxisName + ".Mouse";
 		inputSystem->BindAxis2D(
 			mouseAxis,
-			{ .device = InputDeviceType::MOUSE, .code = VM_X },
+			{.device = InputDeviceType::MOUSE, .code = VM_X},
 			INPUT_AXIS::X,
 			1.0f
 		);
 		inputSystem->BindAxis2D(
 			mouseAxis,
-			{ .device = InputDeviceType::MOUSE, .code = VM_Y },
+			{.device = InputDeviceType::MOUSE, .code = VM_Y},
 			INPUT_AXIS::Y,
 			1.0f
 		);
@@ -647,13 +683,13 @@ namespace MyGame {
 		const std::string gamepadAxis = _lookAxisName + ".Gamepad";
 		inputSystem->BindAxis2D(
 			gamepadAxis,
-			{ .device = InputDeviceType::GAMEPAD, .code = VG_RX },
+			{.device = InputDeviceType::GAMEPAD, .code = VG_RX},
 			INPUT_AXIS::X,
 			1.0f
 		);
 		inputSystem->BindAxis2D(
 			gamepadAxis,
-			{ .device = InputDeviceType::GAMEPAD, .code = VG_RY },
+			{.device = InputDeviceType::GAMEPAD, .code = VG_RY},
 			INPUT_AXIS::Y,
 			1.0f
 		);
@@ -672,14 +708,15 @@ namespace MyGame {
 
 		const Vec2 mouseLook = inputSystem->Axis2D(_lookAxisName + ".Mouse");
 		Vec2 gamepadLook = inputSystem->Axis2D(_lookAxisName + ".Gamepad");
-		if (gamepadLook.SqrLength() < _gamepadLookDeadZone * _gamepadLookDeadZone) {
+		if (gamepadLook.SqrLength() < _gamepadLookDeadZone *
+		    _gamepadLookDeadZone) {
 			gamepadLook = Vec2::zero;
 		}
 
-		const float yawSign = _invertYaw ? 1.0f : -1.0f;
-		const float mousePitchSign = _invertPitch ? 1.0f : -1.0f;
+		const float yawSign          = _invertYaw ? 1.0f : -1.0f;
+		const float mousePitchSign   = _invertPitch ? 1.0f : -1.0f;
 		const float gamepadPitchSign = _invertPitch ? -1.0f : 1.0f;
-		_orbitYawDegrees +=
+		_orbitYawDegrees             +=
 			yawSign * (
 				mouseLook.x * _mouseYawSensitivity +
 				gamepadLook.x * _gamepadYawSensitivity * deltaTime
@@ -697,7 +734,7 @@ namespace MyGame {
 
 		const float minPitch = std::min(_minPitchDegrees, _maxPitchDegrees);
 		const float maxPitch = std::max(_minPitchDegrees, _maxPitchDegrees);
-		_orbitPitchDegrees = std::clamp(
+		_orbitPitchDegrees   = std::clamp(
 			_orbitPitchDegrees,
 			minPitch,
 			maxPitch
@@ -730,7 +767,7 @@ namespace MyGame {
 		}
 
 		const float targetYawDegrees = GetTargetYawDegrees(targetWorld);
-		_smoothedBaseYawDegrees = DampAngleDegrees(
+		_smoothedBaseYawDegrees      = DampAngleDegrees(
 			_smoothedBaseYawDegrees,
 			targetYawDegrees,
 			_yawSharpness,
@@ -747,16 +784,18 @@ namespace MyGame {
 		}
 
 		(void)targetWorld;
-		const float baseYawDegrees = _useTargetYaw ? _smoothedBaseYawDegrees : 0.0f;
+		const float baseYawDegrees = _useTargetYaw ?
+			                             _smoothedBaseYawDegrees :
+			                             0.0f;
 		const float yawRad =
 			(baseYawDegrees + _smoothedOrbitYawDegrees) * Math::deg2Rad;
-		const float pitchRad = _smoothedOrbitPitchDegrees * Math::deg2Rad;
+		const float      pitchRad = _smoothedOrbitPitchDegrees * Math::deg2Rad;
 		const Quaternion yawRotation = Quaternion::AxisAngle(Vec3::up, yawRad);
 
 		const Vec3 rotatedHorizontal =
 			yawRotation.RotateVector(horizontalOffset) * std::cos(pitchRad);
 		const float horizontalLength = horizontalOffset.Length();
-		const float verticalOffset =
+		const float verticalOffset   =
 			_offset.y + std::sin(pitchRad) * horizontalLength;
 
 		return rotatedHorizontal + Vec3::up * verticalOffset;
@@ -766,7 +805,7 @@ namespace MyGame {
 		const Mat4& targetWorld
 	) const {
 		Vec3 forward = targetWorld.GetForward();
-		forward.y = 0.0f;
+		forward.y    = 0.0f;
 		if (forward.SqrLength() <= kMinLookDistanceSq) {
 			return 0.0f;
 		}
@@ -795,7 +834,7 @@ namespace MyGame {
 		}
 
 		Vec3 forward = cameraTransform->RenderWorldMat().GetForward();
-		forward.y = 0.0f;
+		forward.y    = 0.0f;
 		if (forward.SqrLength() <= kMinLookDistanceSq) {
 			return Vec3::forward;
 		}
@@ -809,7 +848,7 @@ namespace MyGame {
 		}
 
 		Vec3 right = cameraTransform->RenderWorldMat().GetRight();
-		right.y = 0.0f;
+		right.y    = 0.0f;
 		if (right.SqrLength() <= kMinLookDistanceSq) {
 			return Vec3::right;
 		}
@@ -821,16 +860,16 @@ namespace MyGame {
 			return;
 		}
 
-		_bStageIntroMode = enabled;
+		_bStageIntroMode       = enabled;
 		_stageIntroElapsedTime = 0.0f;
-		_initialized = false;
+		_initialized           = false;
 	}
 
 	void PlayerFollowCameraComponent::ApplyWorldPose(
 		Unnamed::TransformComponent& cameraTransform,
-		const Vec3& worldPosition,
-		const Vec3& lookAtPosition,
-		const float deltaTime
+		const Vec3&                  worldPosition,
+		const Vec3&                  lookAtPosition,
+		const float                  deltaTime
 	) const {
 		Vec3 forward = lookAtPosition - worldPosition;
 		if (forward.SqrLength() <= kMinLookDistanceSq) {
@@ -860,17 +899,19 @@ namespace MyGame {
 
 	void PlayerFollowCameraComponent::ApplyStageIntroCamera(
 		Unnamed::TransformComponent& cameraTransform,
-		const Vec3& targetPosition,
-		const float deltaTime
+		const Vec3&                  targetPosition,
+		const float                  deltaTime
 	) {
 		_stageIntroElapsedTime += deltaTime;
 
 		const float yawRad =
-			_stageIntroElapsedTime * _stageIntroOrbitSpeedDegrees * Math::deg2Rad;
+			_stageIntroElapsedTime * _stageIntroOrbitSpeedDegrees *
+			Math::deg2Rad;
 		const Quaternion yawRotation = Quaternion::AxisAngle(Vec3::up, yawRad);
-		const Vec3 desiredPosition =
+		const Vec3       desiredPosition =
 			targetPosition + yawRotation.RotateVector(_stageIntroOffset);
-		const Vec3 desiredLookAtPosition = targetPosition + _stageIntroLookAtOffset;
+		const Vec3 desiredLookAtPosition =
+			targetPosition + _stageIntroLookAtOffset;
 
 		const float positionAlpha =
 			DampFactor(_stageIntroPositionSharpness, deltaTime);
@@ -900,9 +941,15 @@ namespace MyGame {
 		float targetIntensity = 0.0f;
 		if (_voiceCameraEffectEnabled) {
 			if (auto* voice = ResolveVoiceShockWaveComponent()) {
-				const float rawVolume = std::clamp(voice->GetLastVolume(), 0.0f, 1.0f);
-				const float range = std::max(0.001f, _voiceMaxVolume - _voiceDeadZone);
-				targetIntensity = std::clamp((rawVolume - _voiceDeadZone) / range, 0.0f, 1.0f);
+				const float rawVolume = std::clamp(
+					voice->GetLastVolume(), 0.0f, 1.0f
+				);
+				const float range = std::max(
+					0.001f, _voiceMaxVolume - _voiceDeadZone
+				);
+				targetIntensity = std::clamp(
+					(rawVolume - _voiceDeadZone) / range, 0.0f, 1.0f
+				);
 				// 大声の瞬間だけ過敏に跳ねないよう、体感を少し寝かせる。
 				targetIntensity = targetIntensity * targetIntensity;
 			}
@@ -910,8 +957,8 @@ namespace MyGame {
 
 		const float sharpness =
 			targetIntensity > _voiceCameraIntensity ?
-			_voiceRiseSharpness :
-			_voiceFallSharpness;
+				_voiceRiseSharpness :
+				_voiceFallSharpness;
 		_voiceCameraIntensity = Math::Lerp(
 			_voiceCameraIntensity,
 			targetIntensity,
@@ -929,8 +976,8 @@ namespace MyGame {
 
 		const float fovAdd =
 			_voiceCameraEffectEnabled ?
-			_voiceFovAddMax * _voiceCameraIntensity :
-			0.0f;
+				_voiceFovAddMax * _voiceCameraIntensity :
+				0.0f;
 		cameraComponent.SetFovYDegrees(_baseFovYDegrees + fovAdd);
 	}
 
@@ -942,14 +989,16 @@ namespace MyGame {
 		_smoothedTargetVelocity = Vec3::zero;
 		_smoothedBaseYawDegrees =
 			_useTargetYaw ? GetTargetYawDegrees(targetWorld) : 0.0f;
-		_smoothedOrbitYawDegrees = _orbitYawDegrees;
+		_smoothedOrbitYawDegrees   = _orbitYawDegrees;
 		_smoothedOrbitPitchDegrees = _orbitPitchDegrees;
-		_smoothedPosition =
-			targetPosition + BuildVoiceReactiveOffset(BuildOrbitOffset(targetWorld));
+		_smoothedPosition          =
+			targetPosition + BuildVoiceReactiveOffset(
+				BuildOrbitOffset(targetWorld)
+			);
 		_smoothedLookAtPosition = targetPosition + _lookAtOffset;
-		_smoothedLookAhead = Vec3::zero;
-		_lastTargetPosition = targetPosition;
-		_initialized = true;
+		_smoothedLookAhead      = Vec3::zero;
+		_lastTargetPosition     = targetPosition;
+		_initialized            = true;
 	}
 
 	float PlayerFollowCameraComponent::DampFactor(

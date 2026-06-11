@@ -16,6 +16,9 @@
 #include "engine/unnamed/subsystem/console/ConsoleSystem.h"
 #include "engine/unnamed/subsystem/editorluasystem/EditorLuaSystem.h"
 
+#include "sequence/SequenceEditorController.h"
+#include "sequence/SequenceEditorTool.h"
+
 namespace Unnamed {
 	static constexpr std::string_view kChannel = "EdTlHost";
 
@@ -44,10 +47,21 @@ namespace Unnamed {
 			);
 		}
 
-		RegisterTool(
-			std::make_unique<LevelEditorTool>(mWindowManager, mImGuiLayer)
+		mSequenceEditorController =
+			std::make_unique<SequenceEditorController>();
+
+		auto levelTool = std::make_unique<LevelEditorTool>(
+			mWindowManager,
+			mImGuiLayer
 		);
+		levelTool->SetSequenceEditorController(
+			mSequenceEditorController.get()
+		);
+		RegisterTool(std::move(levelTool));
 		RegisterTool(std::make_unique<GuiEditorTool>(mImGuiLayer));
+		auto sequenceTool = std::make_unique<SequenceEditorTool>();
+		sequenceTool->SetController(mSequenceEditorController.get());
+		RegisterTool(std::move(sequenceTool));
 	}
 
 	EditorToolHost::~EditorToolHost() {
@@ -55,6 +69,10 @@ namespace Unnamed {
 	}
 
 	void EditorToolHost::Initialize() {
+		if (mSequenceEditorController) {
+			mSequenceEditorController->Initialize(nullptr, mAssetManager);
+		}
+
 		const EditorToolServices services = {
 			.windowManager    = &mWindowManager,
 			.renderModule     = &mRenderModule,
@@ -71,6 +89,11 @@ namespace Unnamed {
 				continue;
 			}
 			tool->Initialize(services);
+		}
+		if (mSequenceEditorController && mLevelTool) {
+			mSequenceEditorController->SetWorld(
+				mLevelTool->GetRuntimeWorld()
+			);
 		}
 
 		mEditorLuaSystem = std::make_unique<EditorLuaSystem>();
@@ -97,6 +120,10 @@ namespace Unnamed {
 	}
 
 	void EditorToolHost::Shutdown() {
+		if (mSequenceEditorController) {
+			mSequenceEditorController->Shutdown();
+		}
+
 		for (auto& tool : mOwnedTools) {
 			if (!tool) {
 				continue;
@@ -104,7 +131,9 @@ namespace Unnamed {
 			tool->Shutdown();
 		}
 
-		mEditorLuaSystem->Shutdown();
+		if (mEditorLuaSystem) {
+			mEditorLuaSystem->Shutdown();
+		}
 
 		mMainDockInitialized = false;
 	}
@@ -121,6 +150,16 @@ namespace Unnamed {
 	void EditorToolHost::Tick(
 		const EditorToolFrameContext& frameContext
 	) const {
+		World* const runtimeWorld =
+			mLevelTool ? mLevelTool->GetRuntimeWorld() : nullptr;
+		if (mSequenceEditorController) {
+			mSequenceEditorController->SetWorld(runtimeWorld);
+			mSequenceEditorController->Tick(frameContext.unscaledDeltaTime);
+		}
+		if (mSequenceTool) {
+			mSequenceTool->SetRuntimeWorld(runtimeWorld);
+		}
+
 		for (auto& tool : mOwnedTools) {
 			if (!tool || !tool->IsOpen()) {
 				continue;
@@ -321,16 +360,24 @@ namespace Unnamed {
 					);
 					ImGui::DockBuilderSetNodeSize(dockSpaceId, dockNodeSize);
 
-					ImGuiID dockMain  = dockSpaceId;
-					ImGuiID dockRight = ImGui::DockBuilderSplitNode(
+					ImGuiID dockMain = dockSpaceId;
+					// ImGuiID dockRight = ImGui::DockBuilderSplitNode(
+					// 	dockMain,
+					// 	ImGuiDir_Right,
+					// 	0.4f,
+					// 	nullptr,
+					// 	&dockMain
+					// );
+					ImGuiID dockBottom = ImGui::DockBuilderSplitNode(
 						dockMain,
-						ImGuiDir_Right,
-						0.4f,
+						ImGuiDir_Down,
+						0.25f,
 						nullptr,
 						&dockMain
 					);
 					ImGui::DockBuilderDockWindow("Level Editor", dockMain);
-					ImGui::DockBuilderDockWindow("GUI Editor", dockRight);
+					ImGui::DockBuilderDockWindow("GUI Editor", dockMain); // 全画面で展開
+					ImGui::DockBuilderDockWindow("Sequence Editor", dockBottom); // 下部に展開
 					ImGui::DockBuilderFinish(dockSpaceId);
 					mMainDockInitialized = true;
 				}
@@ -422,6 +469,9 @@ namespace Unnamed {
 
 		if (auto* levelTool = dynamic_cast<LevelEditorTool*>(tool.get())) {
 			mLevelTool = levelTool;
+		}
+		if (auto* sequenceTool = dynamic_cast<SequenceEditorTool*>(tool.get())) {
+			mSequenceTool = sequenceTool;
 		}
 
 		mOwnedTools.emplace_back(std::move(tool));

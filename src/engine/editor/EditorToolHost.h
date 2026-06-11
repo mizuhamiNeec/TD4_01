@@ -1,5 +1,4 @@
 #pragma once
-#pragma once
 #ifdef _DEBUG
 
 #include <memory>
@@ -17,6 +16,8 @@ namespace Unnamed {
 	class Profiler;
 	class WindowManager;
 	class ImGuiLayer;
+	class SequenceEditorController;
+	class SequenceEditorTool;
 
 	namespace Render {
 		class RenderModule;
@@ -71,6 +72,8 @@ namespace Unnamed {
 
 		std::vector<std::unique_ptr<IEditorTool>> mOwnedTools;
 		LevelEditorTool*                          mLevelTool = nullptr;
+		SequenceEditorTool*                       mSequenceTool = nullptr;
+		std::unique_ptr<SequenceEditorController> mSequenceEditorController;
 
 		std::unique_ptr<class EditorNotification>   mNotification;
 		std::unique_ptr<class EditorLuaSystem>      mEditorLuaSystem;

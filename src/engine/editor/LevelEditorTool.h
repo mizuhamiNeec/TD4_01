@@ -86,6 +86,10 @@ namespace Unnamed {
 		[[nodiscard]] bool IsPlaying() const;
 		void               StartPlayInEditor() const;
 		void               StopPlayInEditor() const;
+		/// @brief Sequence Editor共有コントローラを設定します。
+		void               SetSequenceEditorController(
+			SequenceEditorController* controller
+		);
 		[[nodiscard]] bool IsProfilerWindowOpen() const;
 		void               SetProfilerWindowOpen(bool open);
 
@@ -185,7 +189,8 @@ namespace Unnamed {
 		bool                  mViewportLookActive = false;
 
 		EditorContentBrowser::BrowserViewState    mContentBrowserState = {};
-		std::unique_ptr<SequenceEditorController> mSequenceEditorController;
+		SequenceEditorController*                 mSequenceEditorController =
+			nullptr;
 	};
 }
 

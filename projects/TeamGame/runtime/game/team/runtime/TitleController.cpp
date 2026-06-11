@@ -1,5 +1,8 @@
 ﻿#include "TitleController.h"
 
+#include <core/io/json/JsonReader.h>
+#include <core/io/json/JsonWriter.h>
+
 #include <engine/unnamed/subsystem/console/ConsoleSystem.h>
 #include <engine/unnamed/subsystem/input/InputSystem.h>
 
@@ -12,11 +15,12 @@ std::string_view TitleController::GetComponentName() const {
 }
 
 void TitleController::Deserialize(const Unnamed::JsonReader& reader) {
-	(void)reader;
+	mCommand = reader.Read<std::string>("command").value_or(mCommand);
 }
 
 void TitleController::Serialize(Unnamed::JsonWriter& writer) const {
-	(void)writer;
+	writer.Key("command");
+	writer.Write(mCommand);
 }
 
 void TitleController::OnAttached() {
@@ -25,7 +29,7 @@ void TitleController::OnAttached() {
 
 void TitleController::OnTick(const float deltaTime) {
 	if (GetInputSystem()->IsPressed("gamestart")) {
-		GetConsoleSystem()->ExecuteCommand("map ./projects/TeamGame/content/scenes/game.json");
+		GetConsoleSystem()->ExecuteCommand(mCommand);
 	}
 }
 

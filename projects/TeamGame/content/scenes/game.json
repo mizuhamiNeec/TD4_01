@@ -553,6 +553,14 @@
                     },
                     "guid": 12990290697736916220,
                     "type": "engine.UiCanvas"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "command": "map ./projects/TeamGame/content/scenes/result.json"
+                    },
+                    "guid": 16538618416917538004,
+                    "type": "mygame.TitleController"
                 }
             ],
             "folderPath": "UserInterface",
@@ -1998,7 +2006,7 @@
                             1.0
                         ]
                     },
-                    "guid": 0,
+                    "guid": 10157699442848860369,
                     "type": "engine.Transform"
                 },
                 {
@@ -2018,7 +2026,7 @@
                             1.125
                         ]
                     },
-                    "guid": 0,
+                    "guid": 16888721921430443487,
                     "type": "engine.UiCanvas"
                 }
             ],

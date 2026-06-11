@@ -262,6 +262,49 @@
             "name": "BGM",
             "tags": [],
             "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "command": "map ./projects/TeamGame/content/scenes/title.json"
+                    },
+                    "guid": 0,
+                    "type": "mygame.TitleController"
+                }
+            ],
+            "folderPath": "",
+            "guid": 13,
+            "isEditorOnly": false,
+            "name": "Entity",
+            "tags": [],
+            "visible": true
         }
     ],
     "folders": [],

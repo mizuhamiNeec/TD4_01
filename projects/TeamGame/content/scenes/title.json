@@ -377,8 +377,10 @@
                 },
                 {
                     "active": true,
-                    "data": {},
-                    "guid": 0,
+                    "data": {
+                        "command": "map ./projects/TeamGame/content/scenes/game.json"
+                    },
+                    "guid": 10095399674472640301,
                     "type": "mygame.TitleController"
                 }
             ],

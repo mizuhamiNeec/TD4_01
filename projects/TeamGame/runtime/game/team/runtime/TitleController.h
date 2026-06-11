@@ -1,4 +1,6 @@
 ﻿#pragma once 
+#include <string>
+
 #include <engine/unnamed/framework/components/base/BaseComponent.h>
 
 class TitleController : public Unnamed::BaseComponent {
@@ -10,4 +12,7 @@ public:
 	void OnAttached() override;
 	void OnTick(float deltaTime) override;
 	[[nodiscard]] TICK_GROUP GetTickGroup() const override;
+	
+private:
+	std::string mCommand;
 };

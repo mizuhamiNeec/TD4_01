@@ -9,69 +9,6 @@
                         "parentEntityGuid": 0,
                         "position": [
                             0.0,
-                            0.0,
-                            0.0
-                        ],
-                        "rotation": [
-                            0.0,
-                            0.0,
-                            0.0,
-                            1.0
-                        ],
-                        "scale": [
-                            1.0,
-                            1.0,
-                            1.0
-                        ]
-                    },
-                    "guid": 11638828710782267634,
-                    "type": "engine.Transform"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "materialInstancePath": "",
-                        "materialSlots": [
-                            {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
-                                "slotIndex": 0
-                            },
-                            {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/tree.matinst.json",
-                                "slotIndex": 1
-                            }
-                        ],
-                        "meshPath": "projects/TeamGame/content/models/tree.obj"
-                    },
-                    "guid": 13664694443208456791,
-                    "type": "engine.StaticMeshRenderer"
-                },
-                {
-                    "active": true,
-                    "data": {
-                        "dynamic": false,
-                        "enabled": true
-                    },
-                    "guid": 13651839670896592955,
-                    "type": "engine.StaticMeshCollider"
-                }
-            ],
-            "folderPath": "Env",
-            "guid": 1,
-            "isEditorOnly": false,
-            "name": "Tree",
-            "tags": [],
-            "visible": true
-        },
-        {
-            "active": true,
-            "components": [
-                {
-                    "active": true,
-                    "data": {
-                        "parentEntityGuid": 0,
-                        "position": [
-                            0.0,
                             -0.5,
                             0.0
                         ],
@@ -164,6 +101,9 @@
                         "flightTime": 15.0,
                         "frictionCoefficient": 0.9700000286102295,
                         "gravity": 9.8100004196167,
+                        "groundAreaCenterX": 0.0,
+                        "groundAreaCenterZ": 0.0,
+                        "groundAreaRadius": 40.0,
                         "groundCollisionDamping": 0.9200000166893005,
                         "groundLevel": 0.0,
                         "homingEndTime": 1.5,
@@ -173,7 +113,7 @@
                         "maxExternalUpwardVelocity": 8.0,
                         "maxSpeedClamp": 50.0,
                         "minBounceVerticalSpeed": 0.18000000715255737,
-                        "radius": 0.25,
+                        "radius": 1.0,
                         "randomRadius": 1.0,
                         "startPointX": 0.0,
                         "startPointY": 2.0,
@@ -184,6 +124,7 @@
                         "targetBaseY": 0.0,
                         "targetBaseZ": -30.0,
                         "targetPosEntityGuid": "",
+                        "useCircularGroundArea": true,
                         "windX": 0.0,
                         "windY": 0.0,
                         "windZ": 0.0
@@ -287,7 +228,7 @@
                         ],
                         "exitDeactivateEntityGuids": [],
                         "height": 2.0,
-                        "radius": 1.0,
+                        "radius": 3.0,
                         "targetTag": "Ball"
                     },
                     "guid": 16476393568158639363,
@@ -1544,7 +1485,7 @@
             "isEditorOnly": false,
             "name": "Countdown_UI",
             "tags": [],
-            "visible": false
+            "visible": true
         },
         {
             "active": true,
@@ -2007,13 +1948,13 @@
                             1.0
                         ]
                     },
-                    "guid": 0,
+                    "guid": 15005700538423977728,
                     "type": "engine.Transform"
                 },
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "projects/TeamGame/content/materials/instances/ocean.matinst.json",
+                        "materialInstancePath": "",
                         "materialSlots": [
                             {
                                 "materialInstancePath": "projects/TeamGame/content/materials/instances/ocean.matinst.json",
@@ -2022,7 +1963,7 @@
                         ],
                         "meshPath": "projects/TeamGame/content/models/ocean/ocean.obj"
                     },
-                    "guid": 0,
+                    "guid": 14508415313257020188,
                     "type": "engine.StaticMeshRenderer"
                 }
             ],

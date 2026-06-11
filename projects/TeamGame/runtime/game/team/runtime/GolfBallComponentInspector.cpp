@@ -136,6 +136,17 @@ namespace MyGame {
 		ImGui::SliderFloat("衝突時横減衰##golf_ground_collision_damping", &_groundCollisionDamping, 0.0f, 1.0f, "%.3f");
 		ImGui::SliderFloat("摩擦係数##golf_friction", &_frictionCoefficient, 0.0f, 1.0f, "%.3f");
 		ImGui::SliderFloat("地面の高さ##golf_ground_level", &_groundLevel, -10.0f, 10.0f, "%.2f");
+		ImGui::Checkbox("円形地面エリアを使う##golf_use_circular_ground_area", &_useCircularGroundArea);
+		float groundAreaCenter[2] = { _groundAreaCenter.x, _groundAreaCenter.z };
+		if (ImGui::DragFloat2("地面エリア中心 XZ##golf_ground_area_center", groundAreaCenter, 0.1f, -999.0f, 999.0f, "%.2f")) {
+			// NOTE: 地面高さは _groundLevel が担当するため、エリア調整では X/Z だけを更新する。
+			_groundAreaCenter.x = groundAreaCenter[0];
+			_groundAreaCenter.z = groundAreaCenter[1];
+		}
+		if (ImGui::DragFloat("地面エリア半径##golf_ground_area_radius", &_groundAreaRadius, 0.1f, 0.0f, 999.0f, "%.2f")) {
+			// NOTE: 負の半径は円外判定を破綻させるため、保存前に下限で丸める。
+			_groundAreaRadius = std::max(0.0f, _groundAreaRadius);
+		}
 		ImGui::SliderFloat("停止判定速度##golf_stop_threshold", &_stopVelocityThreshold, 0.001f, 0.1f, "%.4f");
 		ImGui::Checkbox("接地中##golf_grounded", &_bIsGrounded);
 

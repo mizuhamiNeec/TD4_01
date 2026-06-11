@@ -142,15 +142,11 @@ namespace MyGame {
 			return golfBall.HasEnteredHole();
 		}
 
-		if (!golfBall.HasEnteredHole() && !golfBall.IsInFlight()) {
-			return false;
-		}
-
 		if (!IsGolfBallCollidingWithHole(golfBall)) {
 			return golfBall.HasEnteredHole();
 		}
 
-		// NOTE: 配置が重なっただけではなく、発射後のボールが穴範囲へ入った瞬間だけ入球を確定する。
+		// NOTE: 発射済みかどうかはGameRule側で管理し、ここでは穴に入った事実だけを確定する。
 		golfBall.EnterHoleFall(GetHoleWorldPosition());
 		return true;
 	}
@@ -430,11 +426,24 @@ namespace MyGame {
 			return true;
 		}
 
-		// NOTE: 穴側に置いた球体とボール球の接触で判定し、水平位置だけの重なりで誤判定しない。
-		const Vec3 diff = golfBall.GetCurrentPosition() - GetBallHoleCollisionCenter();
+		Vec3 ballPosition = golfBall.GetCurrentPosition();
+		if (const auto* ballEntity = golfBall.GetOwner()) {
+			if (const auto* transform =
+					ballEntity->GetComponent<Unnamed::TransformComponent>()) {
+				ballPosition = transform->GetPosition();
+			}
+		}
+
+		const Vec3 diff = ballPosition - GetBallHoleCollisionCenter();
 		const float collisionRadius =
-			_ballHoleCollisionRadius + std::max(0.0f, golfBall.GetRadius());
-		return diff.SqrLength() <= collisionRadius * collisionRadius;
+			std::max(_holeRadius, _ballHoleCollisionRadius) +
+			std::max(0.0f, golfBall.GetRadius());
+		const float horizontalDistanceSq = diff.x * diff.x + diff.z * diff.z;
+		const float verticalDistance = std::abs(diff.y);
+
+		// NOTE: 見た目のTransform位置を優先し、球同士の3D距離で縁の入球を取りこぼさない。
+		return horizontalDistanceSq <= collisionRadius * collisionRadius &&
+			verticalDistance <= collisionRadius;
 	}
 
 	void PlayerHoleComponent::MakeTrashFall(Unnamed::Entity* trashEntity) {
@@ -520,14 +529,11 @@ namespace MyGame {
 			// NOTE: ゴミまたはゴルフボールの移動コンポーネントを取得
 			auto* trashComponent = entity->GetComponent<TrashObjMoverComponent>();
 			auto* golfBallComponent = entity->GetComponent<GolfBallComponent>();
-			if (!trashComponent) {
-				if (golfBallComponent) {
-					golfBallComponent->ClearHoleSuckPosition();
-				}
+			if (!trashComponent && !golfBallComponent) {
 				continue;
 			}
 
-			// NOTE: ゴミのTransformを取得
+			// NOTE: 吸い込み位置は見た目と物理の同期点なので、Transformの現在位置を基準にする。
 			auto* transform = entity->GetComponent<Unnamed::TransformComponent>();
 			if (!transform) {
 				continue;
@@ -571,9 +577,19 @@ namespace MyGame {
 				if (trashComponent) {
 					trashComponent->SetHoleSuckPosition(holeWorldPos, suckPower);
 				}
+				if (golfBallComponent &&
+					(golfBallComponent->IsInFlight() ||
+						golfBallComponent->HasBounced() ||
+						golfBallComponent->HasEnteredHole())) {
+					// NOTE: 未発射の初期配置では吸わず、発射後/バウンド後のボールだけ穴へ落とす。
+					golfBallComponent->SetHoleSuckPosition(holeWorldPos, suckPower);
+				}
 			} else {
 				if (trashComponent) {
 					trashComponent->ClearHoleSuckPosition();
+				}
+				if (golfBallComponent) {
+					golfBallComponent->ClearHoleSuckPosition();
 				}
 			}
 		}

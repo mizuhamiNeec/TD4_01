@@ -139,6 +139,8 @@ namespace MyGame {
 		float _ballFlightElapsedTime = 0.0f;
 		// ボールが一度でも飛行状態になったかどうか
 		bool _hasBallLaunched = false;
+		// 発射後に一度でもバウンドしたかどうか
+		bool _hasBallBounced = false;
 		// ボール発射Cueを発火済みかどうか
 		bool _hasPublishedBallShootCue = false;
 		// ホールインワン失敗Cueを発火済みかどうか
@@ -235,6 +237,9 @@ namespace MyGame {
 
 		/// ボールのキャッチ・停止・OBを判定
 		void UpdateBallResult(float deltaTime);
+
+		/// ボール結果監視を開始できる状態かを判定
+		[[nodiscard]] bool ShouldMonitorBallResult() const;
 
 		/// PDFに書かれたゴミ出現タイミングを状態として発火
 		void UpdateTrashWaveTiming();

@@ -40,6 +40,11 @@ void MyGame::GameRuleSystemComponent::OnTick(float deltaTime)
 	// NOTE: シーン編集や遅延生成に対応するため、参照は毎フレーム補完する。
 	ResolveRuntimeReferences();
 	UpdateGamePhase(deltaTime);
+	if (_phase != GamePhase::Playing && _phase != GamePhase::Result &&
+		ShouldMonitorBallResult()) {
+		// NOTE: フェーズ遷移の取りこぼしがあっても、発射後の穴入り/海落下は必ず結果へ進める。
+		UpdateBallResult(0.0f);
+	}
 }
 
 void MyGame::GameRuleSystemComponent::OnRenderTick(float renderDeltaTime, float interpolationAlpha)
@@ -273,6 +278,7 @@ void MyGame::GameRuleSystemComponent::StartStageIntro()
 	_playingElapsedTime = 0.0f;
 	_ballFlightElapsedTime = 0.0f;
 	_hasBallLaunched = false;
+	_hasBallBounced = false;
 	_hasTriggeredCountdownTrashWave = false;
 	_hasTriggeredBallHitTrashWave = false;
 	_hasTriggeredAfterHitTrashWave = false;
@@ -301,6 +307,7 @@ void MyGame::GameRuleSystemComponent::StartCountdown()
 	_playingElapsedTime = 0.0f;
 	_ballFlightElapsedTime = 0.0f;
 	_hasBallLaunched = false;
+	_hasBallBounced = false;
 	_hasPublishedBallShootCue = false;
 	_hasPublishedNotHoleInOneCue = false;
 	_hasTriggeredCountdownTrashWave = false;
@@ -328,6 +335,7 @@ void MyGame::GameRuleSystemComponent::StartPlaying()
 	_playingElapsedTime = 0.0f;
 	_ballFlightElapsedTime = 0.0f;
 	_hasBallLaunched = false;
+	_hasBallBounced = false;
 	_hasPublishedBallShootCue = false;
 	_hasPublishedNotHoleInOneCue = false;
 	ApplyStageIntroControlState(false);
@@ -359,6 +367,8 @@ void MyGame::GameRuleSystemComponent::FinishGame()
 		return;
 	}
 	SetStageIntroHudHidden(false);
+	ApplyStageIntroControlState(false);
+	SetStageIntroUiVisible(false);
 	if (_scoreComponent) {
 		StoreTeamGameResultScore(
 			{
@@ -377,8 +387,6 @@ void MyGame::GameRuleSystemComponent::FinishGame()
 		PublishNotHoleInOnePresentationCue();
 	}
 	(void)ApplyClearUiForResult();
-	ApplyStageIntroControlState(false);
-	SetStageIntroUiVisible(false);
 	_phase = GamePhase::Result;
 	_isGameEnded = true;
 	if (_launchCountdownComponent) {
@@ -398,6 +406,7 @@ void MyGame::GameRuleSystemComponent::ResetGame()
 	_playingElapsedTime = 0.0f;
 	_ballFlightElapsedTime = 0.0f;
 	_hasBallLaunched = false;
+	_hasBallBounced = false;
 	_hasPublishedBallShootCue = false;
 	_hasPublishedNotHoleInOneCue = false;
 	_hasTriggeredCountdownTrashWave = false;
@@ -720,13 +729,14 @@ void MyGame::GameRuleSystemComponent::UpdateBallResult(float deltaTime)
 {
 	// NOTE: ボールが無いシーンでは最大プレイ時間だけでリザルトへ進める。
 	if (!_golfBallComponent) {
-		if (_playingElapsedTime >= _maxBallFlightSeconds) {
+		if (_phase == GamePhase::Playing && _playingElapsedTime >= _maxBallFlightSeconds) {
 			FinishGame();
 		}
 		return;
 	}
 
-	if (_golfBallComponent->IsInFlight()) {
+	if ((_launchCountdownComponent && _launchCountdownComponent->HasLaunched()) ||
+		_golfBallComponent->IsInFlight() || _golfBallComponent->HasEnteredHole()) {
 		if (!_hasBallLaunched) {
 			PublishBallShootPresentationCue();
 		}
@@ -735,8 +745,13 @@ void MyGame::GameRuleSystemComponent::UpdateBallResult(float deltaTime)
 	if (_hasBallLaunched) {
 		_ballFlightElapsedTime += deltaTime;
 	}
+	if (_golfBallComponent->HasBounced()) {
+		// NOTE: 入球演出や外力でボール状態が変わっても、バウンド後扱いを結果確定まで保持する。
+		_hasBallBounced = true;
+	}
 
-	if (_playerHoleComponent && _playerHoleComponent->TryEnterGolfBall(*_golfBallComponent)) {
+	if (_hasBallLaunched && _playerHoleComponent &&
+		_playerHoleComponent->TryEnterGolfBall(*_golfBallComponent)) {
 		// NOTE: PlayerHoleComponentのTick順に依存せず、動く穴に入った事実を最優先で成功扱いにする。
 		(void)TryScoreBallCatch(*_golfBallComponent);
 		FinishGame();
@@ -752,6 +767,19 @@ void MyGame::GameRuleSystemComponent::UpdateBallResult(float deltaTime)
 
 	auto* ballEntity = _golfBallComponent->GetOwner();
 	auto* transform = ballEntity ? ballEntity->GetComponent<Unnamed::TransformComponent>() : nullptr;
+	const Vec3 ballPosition = _golfBallComponent->GetCurrentPosition();
+	if (_hasBallLaunched &&
+		!_golfBallComponent->IsInsideGroundArea() &&
+		ballPosition.y <= _golfBallComponent->GetGroundLevel()) {
+		// NOTE: 円形地面エリア外は海扱いなので、-100まで待たずにNotホールインワンを確定する。
+		_isOutOfBounds = true;
+		if (_scoreComponent) {
+			_scoreComponent->AddOutOfBoundsPenalty();
+		}
+		FinishGame();
+		return;
+	}
+
 	if (transform && transform->GetPosition().y <= _ballSeaOutHeight) {
 		// NOTE: 海面付近の一時的な沈み込みではなく、十分に落下した時点でNotホールインワンを確定する。
 		_isOutOfBounds = true;
@@ -772,6 +800,32 @@ void MyGame::GameRuleSystemComponent::UpdateBallResult(float deltaTime)
 		// NOTE: 15〜20秒想定を超えたら、止まりきらない場合でもリザルトへ進める。
 		FinishGame();
 	}
+}
+
+bool MyGame::GameRuleSystemComponent::ShouldMonitorBallResult() const
+{
+	if (_isGameEnded || !_golfBallComponent) {
+		return false;
+	}
+
+	if (_golfBallComponent->HasEnteredHole() || _golfBallComponent->IsInFlight()) {
+		return true;
+	}
+
+	if (_launchCountdownComponent && _launchCountdownComponent->HasLaunched()) {
+		return true;
+	}
+
+	if (_hasBallLaunched && !_golfBallComponent->IsInsideGroundArea()) {
+		// NOTE: 地面範囲外へ落ちた後、飛行状態が止まってもリザルト監視を継続する。
+		return true;
+	}
+
+	const auto* ballEntity = _golfBallComponent->GetOwner();
+	const auto* transform =
+		ballEntity ? ballEntity->GetComponent<Unnamed::TransformComponent>() : nullptr;
+	// NOTE: 海落下はフェーズに依存せず、ボール座標が閾値を下回った時点で失敗結果へ進める。
+	return transform && transform->GetPosition().y <= _ballSeaOutHeight;
 }
 
 void MyGame::GameRuleSystemComponent::UpdateTrashWaveTiming()
@@ -809,12 +863,18 @@ bool MyGame::GameRuleSystemComponent::TryScoreBallCatch(GolfBallComponent& golfB
 		return true;
 	}
 
+	if (golfBall.HasBounced()) {
+		// NOTE: Tick順の差で UpdateBallResult より先に確定しても、地面接触後はNORMAL扱いを保持する。
+		_hasBallBounced = true;
+	}
+
 	// NOTE: 穴に重なっただけでなく、落下状態が確定した後だけホールインワンとして扱う。
 	_hasBallLaunched = true;
 	// NOTE: ボールキャッチ自体には加点せず、直接/バウンド後のホールインワンボーナスだけを採点対象にする。
 	_isHoleInOne = true;
 	
-	if (!golfBall.HasBounced()) {
+	const bool isDirectHoleInOne = !_hasBallBounced;
+	if (isDirectHoleInOne) {
 		_isDirectHoleInOne = true;
 		if (_scoreComponent) {
 			_scoreComponent->AddDirectHoleInOneBonus();
@@ -843,15 +903,17 @@ bool MyGame::GameRuleSystemComponent::ApplyClearUiForResult()
 	}
 
 	// NOTE: UI自体はシーン上のClear_UIを使い回し、結果テキストだけをJSON差し替えで選ぶ。
+	canvas->SetSortKey(10000);
+	canvas->SetReceiveInput(true);
 	canvas->SetUiAssetPath(*uiAssetPath);
-	canvas->EnsureRuntimeLoaded();
+	const bool isRuntimeLoaded = canvas->EnsureRuntimeLoaded();
 	if (auto* clearUiEntity = canvas->GetOwner()) {
-		// NOTE: 差し替え後に表示し、古い結果UIが一瞬見える可能性を避ける。
+		// NOTE: リザルト表示は通常HUDより前面に出し、海落下時のNot表示を見落とさないようにする。
 		clearUiEntity->SetVisible(true);
 	} else {
 		return false;
 	}
-	return true;
+	return isRuntimeLoaded;
 }
 
 bool MyGame::GameRuleSystemComponent::IsBallStoppedForResult() const

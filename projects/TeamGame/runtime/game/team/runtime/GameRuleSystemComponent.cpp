@@ -364,6 +364,10 @@ void MyGame::GameRuleSystemComponent::FinishGame()
 	// NOTE: ボール停止・海落下・キャッチ後はリザルトへ移行する。
 	ResolveRuntimeReferences();
 	if (_phase == GamePhase::Result && _isGameEnded) {
+		if (!_isHoleInOne) {
+			// NOTE: 既に失敗結果へ入っている場合でも、海落下UIの表示漏れだけは再補正する。
+			(void)ApplyNotHoleInOneUiForResult();
+		}
 		return;
 	}
 	SetStageIntroHudHidden(false);
@@ -772,21 +776,14 @@ void MyGame::GameRuleSystemComponent::UpdateBallResult(float deltaTime)
 		!_golfBallComponent->IsInsideGroundArea() &&
 		ballPosition.y <= _golfBallComponent->GetGroundLevel()) {
 		// NOTE: 円形地面エリア外は海扱いなので、-100まで待たずにNotホールインワンを確定する。
-		_isOutOfBounds = true;
-		if (_scoreComponent) {
-			_scoreComponent->AddOutOfBoundsPenalty();
-		}
-		FinishGame();
+		FinishBallAsNotHoleInOne();
 		return;
 	}
 
-	if (transform && transform->GetPosition().y <= _ballSeaOutHeight) {
-		// NOTE: 海面付近の一時的な沈み込みではなく、十分に落下した時点でNotホールインワンを確定する。
-		_isOutOfBounds = true;
-		if (_scoreComponent) {
-			_scoreComponent->AddOutOfBoundsPenalty();
-		}
-		FinishGame();
+	const float ballSeaResultHeight = std::max(_ballSeaOutHeight, _seaOutHeight);
+	if (transform && transform->GetPosition().y <= ballSeaResultHeight) {
+		// NOTE: ボールが海高さへ入った時点でNotホールインワンを確定し、リザルトUIへ進める。
+		FinishBallAsNotHoleInOne();
 		return;
 	}
 
@@ -824,8 +821,24 @@ bool MyGame::GameRuleSystemComponent::ShouldMonitorBallResult() const
 	const auto* ballEntity = _golfBallComponent->GetOwner();
 	const auto* transform =
 		ballEntity ? ballEntity->GetComponent<Unnamed::TransformComponent>() : nullptr;
+	const float ballSeaResultHeight = std::max(_ballSeaOutHeight, _seaOutHeight);
 	// NOTE: 海落下はフェーズに依存せず、ボール座標が閾値を下回った時点で失敗結果へ進める。
-	return transform && transform->GetPosition().y <= _ballSeaOutHeight;
+	return transform && transform->GetPosition().y <= ballSeaResultHeight;
+}
+
+void MyGame::GameRuleSystemComponent::FinishBallAsNotHoleInOne()
+{
+	// NOTE: 海落下はホールインワン失敗として扱い、FinishGame側でNotHoleInOne UIとCueを発火させる。
+	_isOutOfBounds = true;
+	_isHoleInOne = false;
+	_isDirectHoleInOne = false;
+	if (_scoreComponent) {
+		_scoreComponent->AddOutOfBoundsPenalty();
+	}
+	PublishNotHoleInOnePresentationCue();
+	(void)ApplyNotHoleInOneUiForResult();
+	FinishGame();
+	(void)ApplyNotHoleInOneUiForResult();
 }
 
 void MyGame::GameRuleSystemComponent::UpdateTrashWaveTiming()
@@ -891,15 +904,17 @@ bool MyGame::GameRuleSystemComponent::TryScoreBallCatch(GolfBallComponent& golfB
 
 bool MyGame::GameRuleSystemComponent::ApplyClearUiForResult()
 {
+	if (!_isHoleInOne) {
+		return ApplyNotHoleInOneUiForResult();
+	}
+
 	auto* canvas = ResolveClearUiCanvas();
 	if (!canvas) {
 		return false;
 	}
-	const std::string* uiAssetPath = &_notHoleInOneUiAssetPath;
+	const std::string* uiAssetPath = &_holeInOneUiAssetPath;
 	if (_isDirectHoleInOne) {
 		uiAssetPath = &_directHoleInOneUiAssetPath;
-	} else if (_isHoleInOne) {
-		uiAssetPath = &_holeInOneUiAssetPath;
 	}
 
 	// NOTE: UI自体はシーン上のClear_UIを使い回し、結果テキストだけをJSON差し替えで選ぶ。
@@ -909,6 +924,26 @@ bool MyGame::GameRuleSystemComponent::ApplyClearUiForResult()
 	const bool isRuntimeLoaded = canvas->EnsureRuntimeLoaded();
 	if (auto* clearUiEntity = canvas->GetOwner()) {
 		// NOTE: リザルト表示は通常HUDより前面に出し、海落下時のNot表示を見落とさないようにする。
+		clearUiEntity->SetVisible(true);
+	} else {
+		return false;
+	}
+	return isRuntimeLoaded;
+}
+
+bool MyGame::GameRuleSystemComponent::ApplyNotHoleInOneUiForResult()
+{
+	auto* canvas = ResolveClearUiCanvas();
+	if (!canvas) {
+		return false;
+	}
+
+	// NOTE: 失敗UIはCue音とは別責務なので、海落下確定時に明示的に前面表示へ固定する。
+	canvas->SetSortKey(10000);
+	canvas->SetReceiveInput(true);
+	canvas->SetUiAssetPath(_notHoleInOneUiAssetPath);
+	const bool isRuntimeLoaded = canvas->EnsureRuntimeLoaded();
+	if (auto* clearUiEntity = canvas->GetOwner()) {
 		clearUiEntity->SetVisible(true);
 	} else {
 		return false;

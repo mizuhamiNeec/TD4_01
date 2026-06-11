@@ -241,6 +241,10 @@ namespace MyGame {
 		/// ボール結果監視を開始できる状態かを判定
 		[[nodiscard]] bool ShouldMonitorBallResult() const;
 
+		/// ボールをNotホールインワンとして確定
+		/// @reason 海落下と地面範囲外落下の終了処理を同じ副作用にそろえる
+		void FinishBallAsNotHoleInOne();
+
 		/// PDFに書かれたゴミ出現タイミングを状態として発火
 		void UpdateTrashWaveTiming();
 
@@ -252,6 +256,10 @@ namespace MyGame {
 
 		/// 現在の結果に合わせてクリア表示UIを差し替える
 		[[nodiscard]] bool ApplyClearUiForResult();
+
+		/// Notホールインワン表示UIを直接表示
+		/// @reason 音Cueとは独立して、海落下時に必ず失敗UIを出すため
+		[[nodiscard]] bool ApplyNotHoleInOneUiForResult();
 
 		/// ボールが停止失敗として扱えるかを判定
 		[[nodiscard]] bool IsBallStoppedForResult() const;

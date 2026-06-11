@@ -97,19 +97,19 @@ namespace Unnamed {
 
 		// サウンド
 		static ConVar volume(
-			"volume", 1.0f, FCVAR::ARCHIVE,
+			"snd_master", 0.75f, FCVAR::ARCHIVE,
 			"master volume (0.0 - 1.0)",
 			true, 0.0f, true, 1.0f
 		);
 
 		static ConVar snd_music(
-			"snd_music", 1.0f, FCVAR::ARCHIVE,
+			"snd_music", 0.75f, FCVAR::ARCHIVE,
 			"music volume (0.0 - 1.0)",
 			true, 0.0f, true, 1.0f
 		);
 
 		static ConVar snd_sfx(
-			"snd_sfx", 1.0f, FCVAR::ARCHIVE,
+			"snd_sfx", 0.75f, FCVAR::ARCHIVE,
 			"sfx volume (0.0 - 1.0)",
 			true, 0.0f, true, 1.0f
 		);

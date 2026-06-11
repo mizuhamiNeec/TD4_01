@@ -274,19 +274,20 @@
                             1.0
                         ]
                     },
-                    "guid": 0,
+                    "guid": 17402831146102813435,
                     "type": "engine.Transform"
                 },
                 {
                     "active": true,
                     "data": {
+                        "bus": "bgm",
                         "loop": false,
                         "pitch": 1.0,
                         "playOnStart": true,
                         "soundPath": "projects/TeamGame/content/sounds/BGM/Title_BGM.wav",
                         "volume": 1.0
                     },
-                    "guid": 0,
+                    "guid": 15158337198310329073,
                     "type": "engine.AudioSource"
                 }
             ],

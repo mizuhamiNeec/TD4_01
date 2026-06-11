@@ -74,7 +74,12 @@ namespace Unnamed {
 		}
 
 		void SetValue(const T& value) {
-			mValue = value;
+			if (mValue != value) {
+				mValue = value;
+				if (onChangeCallback) {
+					onChangeCallback(mValue);
+				}
+			}
 		}
 
 		[[nodiscard]] T GetDefaultValue() const {

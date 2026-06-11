@@ -5,6 +5,7 @@
 
 #include "core/assets/AssetID.h"
 #include "engine/unnamed/framework/components/base/BaseComponent.h"
+#include "engine/unnamed/subsystem/audio/AudioSystem.h"
 
 namespace Unnamed {
 	class AssetManager;
@@ -44,6 +45,11 @@ namespace Unnamed {
 		void                SetVolume(float volume) noexcept;
 		[[nodiscard]] float GetVolume() const noexcept;
 
+		/// @brief サウンドカテゴリを設定します。
+		void SetBus(AudioBus bus) noexcept;
+		/// @brief サウンドカテゴリを取得します。
+		[[nodiscard]] AudioBus GetBus() const noexcept;
+
 		void                SetPitch(float pitch) noexcept;
 		[[nodiscard]] float GetPitch() const noexcept;
 
@@ -56,6 +62,8 @@ namespace Unnamed {
 	private:
 		bool EnsureVoiceReady(bool preservePlayback);
 		void InvalidateVoice();
+		/// @brief 個別音量とカテゴリ音量を現在のボイスに反映します。
+		void ApplyVoiceVolume() const noexcept;
 
 		std::string mSoundPath;
 		AssetID     mSoundAssetId       = kInvalidAssetID;
@@ -65,6 +73,7 @@ namespace Unnamed {
 		bool  mLoop             = false;
 		float mVolume           = 1.0f;
 		float mPitch            = 1.0f;
+		AudioBus mBus           = AudioBus::Sfx;
 		bool  mAutoPlayConsumed = false;
 		bool  mLoggedError      = false;
 

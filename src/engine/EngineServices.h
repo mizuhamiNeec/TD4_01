@@ -7,6 +7,7 @@ namespace Unnamed {
 	class Profiler;
 	class WindowManager;
 	class IDemoService;
+	class AudioSystem;
 
 	/// @brief ゲームモジュール初期化時に渡す Engine サービス群です。
 	struct EngineServices {
@@ -16,5 +17,6 @@ namespace Unnamed {
 		Profiler*      profiler = nullptr;
 		WindowManager* windowManager = nullptr;
 		IDemoService*  demoService = nullptr;
+		AudioSystem*   audioSystem = nullptr;
 	};
 }

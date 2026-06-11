@@ -4,6 +4,8 @@
 
 #include <xaudio2.h>
 
+#include "engine/unnamed/subsystem/audio/AudioSystem.h"
+
 namespace Unnamed {
 	struct SoundAssetData;
 
@@ -24,16 +26,27 @@ namespace Unnamed {
 		void Resume();
 		void SetVolume(float volume) const;
 		void SetPitch(float pitch) const;
+		/// @brief このボイスが属するサウンドカテゴリを設定します。
+		void SetBus(AudioBus bus) noexcept;
+		/// @brief カテゴリ音量を設定し、実効音量へ反映します。
+		void SetBusVolume(float volume) noexcept;
 
 		[[nodiscard]] bool IsPlaying() const;
 		[[nodiscard]] bool IsPaused() const noexcept;
+		/// @brief このボイスが属するサウンドカテゴリを取得します。
+		[[nodiscard]] AudioBus GetBus() const noexcept;
 
 	private:
 		void DestroyVoice();
+		/// @brief 個別音量とカテゴリ音量を SourceVoice に適用します。
+		void ApplyEffectiveVolume() const;
 
 		IXAudio2SourceVoice* mSourceVoice = nullptr;
 		XAUDIO2_BUFFER       mAudioBuffer = {};
 		std::vector<uint8_t> mOwnedPcmData;
 		bool                 mIsPaused = false;
+		mutable float        mVolume   = 1.0f;
+		float                mBusVolume = 1.0f;
+		AudioBus             mBus       = AudioBus::Sfx;
 	};
 }

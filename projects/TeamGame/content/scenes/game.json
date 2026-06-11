@@ -1753,6 +1753,7 @@
                 {
                     "active": true,
                     "data": {
+                        "bus": "bgm",
                         "loop": false,
                         "pitch": 1.0,
                         "playOnStart": true,
@@ -1800,6 +1801,7 @@
                 {
                     "active": true,
                     "data": {
+                        "bus": "sfx",
                         "loop": false,
                         "pitch": 1.0,
                         "playOnStart": false,
@@ -1812,6 +1814,7 @@
                 {
                     "active": true,
                     "data": {
+                        "bus": "sfx",
                         "loop": false,
                         "pitch": 1.0,
                         "playOnStart": false,
@@ -1824,6 +1827,7 @@
                 {
                     "active": true,
                     "data": {
+                        "bus": "sfx",
                         "loop": false,
                         "pitch": 1.0,
                         "playOnStart": false,
@@ -1836,6 +1840,7 @@
                 {
                     "active": true,
                     "data": {
+                        "bus": "sfx",
                         "loop": false,
                         "pitch": 1.0570988655090332,
                         "playOnStart": false,
@@ -1848,6 +1853,7 @@
                 {
                     "active": true,
                     "data": {
+                        "bus": "sfx",
                         "loop": false,
                         "pitch": 1.0,
                         "playOnStart": false,
@@ -1860,6 +1866,7 @@
                 {
                     "active": true,
                     "data": {
+                        "bus": "sfx",
                         "loop": false,
                         "pitch": 1.0,
                         "playOnStart": false,
@@ -1872,6 +1879,7 @@
                 {
                     "active": true,
                     "data": {
+                        "bus": "sfx",
                         "loop": false,
                         "pitch": 1.0,
                         "playOnStart": false,
@@ -1884,6 +1892,7 @@
                 {
                     "active": true,
                     "data": {
+                        "bus": "sfx",
                         "loop": false,
                         "pitch": 1.0,
                         "playOnStart": false,

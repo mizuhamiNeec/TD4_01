@@ -10,6 +10,7 @@
 #include "TrashObjSpawnerComponent.h"
 #include "engine/scene/Scene.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
+#include "engine/unnamed/framework/components/particle/ParticleEmitterComponent.h"
 #include "engine/unnamed/framework/components/ui/UiCanvasComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/world/World.h"
@@ -406,6 +407,7 @@ void MyGame::GameRuleSystemComponent::ResetGame()
 	SetStageIntroHudHidden(false);
 	ApplyStageIntroControlState(false);
 	SetStageIntroUiVisible(false);
+	StopGoalConfetti();
 	if (auto* clearUiCanvas = ResolveClearUiCanvas()) {
 		if (auto* clearUiEntity = clearUiCanvas->GetOwner()) {
 			// NOTE: 結果が確定するまでクリア文言を表示しないため、再開始時に非表示へ戻す。
@@ -766,7 +768,10 @@ bool MyGame::GameRuleSystemComponent::TryScoreBallCatch(GolfBallComponent& golfB
 	_hasBallLaunched = true;
 	// NOTE: ボールキャッチ自体には加点せず、直接/バウンド後のホールインワンボーナスだけを採点対象にする。
 	_isHoleInOne = true;
-	
+
+	// NOTE: ゴール成立はこの分岐で一度きりなので、ここで画面全体の紙吹雪を発火する。
+	FireGoalConfetti();
+
 	// ホールインワン時のファンファーレ
 	Unnamed::GameplayCue cue = {};
 	cue.id = "game.holeinonefanfare";
@@ -794,6 +799,53 @@ bool MyGame::GameRuleSystemComponent::TryScoreBallCatch(GolfBallComponent& golfB
 		}
 	}
 	return true;
+}
+
+void MyGame::GameRuleSystemComponent::FireGoalConfetti()
+{
+	// NOTE: タグ "goal_confetti" を付けたエミッター（カメラ子）を画面全体演出として再生する。
+	auto* scene = GetScene();
+	if (!scene && GetOwner()) {
+		scene = GetOwner()->GetScene();
+	}
+	if (!scene) {
+		return;
+	}
+
+	for (const auto& entityPtr : scene->GetEntities()) {
+		auto* entity = entityPtr.get();
+		if (!entity || !entity->HasTag("goal_confetti")) {
+			continue;
+		}
+
+		if (auto* emitter = entity->GetComponent<Unnamed::ParticleEmitterComponent>()) {
+			// NOTE: 即時の一発と継続発生を両方かけ、ゴール直後から紙吹雪が舞い続けるようにする。
+			emitter->FireBurst();
+			emitter->Play();
+		}
+	}
+}
+
+void MyGame::GameRuleSystemComponent::StopGoalConfetti()
+{
+	auto* scene = GetScene();
+	if (!scene && GetOwner()) {
+		scene = GetOwner()->GetScene();
+	}
+	if (!scene) {
+		return;
+	}
+
+	for (const auto& entityPtr : scene->GetEntities()) {
+		auto* entity = entityPtr.get();
+		if (!entity || !entity->HasTag("goal_confetti")) {
+			continue;
+		}
+
+		if (auto* emitter = entity->GetComponent<Unnamed::ParticleEmitterComponent>()) {
+			emitter->Stop();
+		}
+	}
 }
 
 bool MyGame::GameRuleSystemComponent::ApplyClearUiForResult()

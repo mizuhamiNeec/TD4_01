@@ -229,6 +229,12 @@ namespace MyGame {
 		/// ボールキャッチ成立時のスコアとリザルト状態を確定
 		bool TryScoreBallCatch(GolfBallComponent& golfBall);
 
+		/// ゴール（ホールイン）時に画面全体へ紙吹雪エミッターを発火する
+		void FireGoalConfetti();
+
+		/// ゴール紙吹雪の再生を停止する（再挑戦時のクリーンアップ用）
+		void StopGoalConfetti();
+
 		/// 現在の結果に合わせてクリア表示UIを差し替える
 		[[nodiscard]] bool ApplyClearUiForResult();
 

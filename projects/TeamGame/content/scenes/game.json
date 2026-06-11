@@ -341,8 +341,8 @@
                     "data": {
                         "coolTime": 0.10000000149011612,
                         "forceMultiplier": 0.009999999776482582,
-                        "maxShockWaveRadius": 10.0,
-                        "minShockWaveRadius": 5.0,
+                        "maxShockWaveRadius": 22.0,
+                        "minShockWaveRadius": 8.0,
                         "upwardForceMultiplier": 5.0,
                         "voiceGateDuration": 0.07999999821186066,
                         "voiceMinDB": -35.0,
@@ -923,6 +923,153 @@
             "guid": 71,
             "isEditorOnly": false,
             "name": "ParticleEmitter_ClearBurst",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 42,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 7200000000000000010,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "autoPlay": false,
+                        "depthTest": false,
+                        "drawEmitterShape": true,
+                        "presetName": "",
+                        "presetPath": "projects/TeamGame/content/particles/voice_shockwave.json",
+                        "sortKeyBias": 0,
+                        "timeScale": 1.0
+                    },
+                    "guid": 7200000000000000011,
+                    "type": "engine.ParticleEmitter"
+                }
+            ],
+            "folderPath": "",
+            "guid": 72,
+            "isEditorOnly": false,
+            "name": "ParticleEmitter_VoiceShockwave",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 42,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 7300000000000000010,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "autoPlay": false,
+                        "depthTest": true,
+                        "drawEmitterShape": true,
+                        "presetName": "",
+                        "presetPath": "projects/TeamGame/content/particles/voice_shockwave_sparks.json",
+                        "sortKeyBias": 0,
+                        "timeScale": 1.0
+                    },
+                    "guid": 7300000000000000011,
+                    "type": "engine.ParticleEmitter"
+                }
+            ],
+            "folderPath": "",
+            "guid": 73,
+            "isEditorOnly": false,
+            "name": "ParticleEmitter_VoiceShockwaveSparks",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 42,
+                        "position": [
+                            3.0,
+                            0.3,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 7400000000000000010,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "autoPlay": false,
+                        "depthTest": true,
+                        "drawEmitterShape": true,
+                        "presetName": "",
+                        "presetPath": "projects/TeamGame/content/particles/obstacle_dust.json",
+                        "sortKeyBias": 0,
+                        "timeScale": 1.0
+                    },
+                    "guid": 7400000000000000011,
+                    "type": "engine.ParticleEmitter"
+                }
+            ],
+            "folderPath": "",
+            "guid": 74,
+            "isEditorOnly": false,
+            "name": "ParticleEmitter_ObstacleDust",
             "tags": [],
             "visible": true
         },

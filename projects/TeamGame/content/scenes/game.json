@@ -326,6 +326,8 @@
                         "holeOffsetY": 0.0,
                         "holeOffsetZ": 0.0,
                         "holeRadius": 2.0,
+                        "ballHoleCollisionRadius": 2.0,
+                        "ballHoleCollisionOffsetY": 0.0,
                         "holeSizeChangeSpeed": 1.0,
                         "isHoleActive": true,
                         "suckEffectDistance": 2.0,

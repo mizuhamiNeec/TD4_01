@@ -191,6 +191,10 @@ namespace MyGame {
 		if (ImGui::SliderFloat("Size Change Speed", &_holeSizeChangeSpeed, 0.01f, 10.0f, "%.2f")) {
 			_holeSizeChangeSpeed = std::max(0.01f, _holeSizeChangeSpeed);
 		}
+		if (ImGui::SliderFloat("Ball Hole Collision Radius", &_ballHoleCollisionRadius, 0.1f, 20.0f, "%.2f")) {
+			_ballHoleCollisionRadius = std::max(0.1f, _ballHoleCollisionRadius);
+		}
+		ImGui::DragFloat("Ball Hole Collision Offset Y", &_ballHoleCollisionOffsetY, 0.05f, -20.0f, 20.0f, "%.2f");
 
 	ImGui::Separator();
 	ImGui::Text("Suck Force Parameters");
@@ -290,6 +294,12 @@ namespace MyGame {
 	if (auto val = reader.Read<float>("holeDespawnDepth")) {
 		_holeDespawnDepth = std::max(0.0f, val.value());
 	}
+	if (auto val = reader.Read<float>("ballHoleCollisionRadius")) {
+		_ballHoleCollisionRadius = std::max(0.1f, val.value());
+	}
+	if (auto val = reader.Read<float>("ballHoleCollisionOffsetY")) {
+		_ballHoleCollisionOffsetY = val.value();
+	}
 	}
 
 	void PlayerHoleComponent::Serialize(Unnamed::JsonWriter& writer) const {
@@ -321,6 +331,10 @@ namespace MyGame {
 	writer.Write(_suckIntensityCurve);
 	writer.Key("holeDespawnDepth");
 	writer.Write(_holeDespawnDepth);
+	writer.Key("ballHoleCollisionRadius");
+	writer.Write(_ballHoleCollisionRadius);
+	writer.Key("ballHoleCollisionOffsetY");
+	writer.Write(_ballHoleCollisionOffsetY);
 	}
 
 	// ===================================================================
@@ -336,6 +350,13 @@ namespace MyGame {
 		// NOTE: プレイヤーの位置にオフセットを加算
 		Vec3 playerPos = _ownerTransform->GetPosition();
 		return playerPos + _holeOffset;
+	}
+
+	Vec3 PlayerHoleComponent::GetBallHoleCollisionCenter() const {
+		Vec3 center = GetHoleWorldPosition();
+		// NOTE: 判定球だけ上下に調整できるようにし、見た目の穴位置と当たり判定の調整を分ける。
+		center.y += _ballHoleCollisionOffsetY;
+		return center;
 	}
 
 	void PlayerHoleComponent::DetectTrashInHole() {
@@ -409,11 +430,11 @@ namespace MyGame {
 			return true;
 		}
 
-		// NOTE: ボールはTransform同期順に依存せず、物理更新後の内部位置で穴との接触を判定する。
-		const Vec3 holeWorldPos = GetHoleWorldPosition();
-		Vec3 diff = golfBall.GetCurrentPosition() - holeWorldPos;
-		diff.y = 0.0f;
-		return diff.Length() <= _holeRadius;
+		// NOTE: 穴側に置いた球体とボール球の接触で判定し、水平位置だけの重なりで誤判定しない。
+		const Vec3 diff = golfBall.GetCurrentPosition() - GetBallHoleCollisionCenter();
+		const float collisionRadius =
+			_ballHoleCollisionRadius + std::max(0.0f, golfBall.GetRadius());
+		return diff.SqrLength() <= collisionRadius * collisionRadius;
 	}
 
 	void PlayerHoleComponent::MakeTrashFall(Unnamed::Entity* trashEntity) {

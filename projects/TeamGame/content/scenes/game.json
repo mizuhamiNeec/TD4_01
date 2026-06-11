@@ -1657,7 +1657,7 @@
                     "type": "engine.StaticMeshRenderer"
                 }
             ],
-            "folderPath": "",
+            "folderPath": "Env",
             "guid": 12087284352773638142,
             "isEditorOnly": false,
             "name": "Skydome",
@@ -1971,6 +1971,61 @@
             "guid": 15552413904281614222,
             "isEditorOnly": false,
             "name": "Entity",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "billboardDepthMode": "DepthTest",
+                        "pixelSize": [
+                            1920.0,
+                            1080.0
+                        ],
+                        "receiveInput": true,
+                        "sortKey": 0,
+                        "spaceMode": "Screen",
+                        "uiAssetPath": "projects/TeamGame/content/ui/buttonHint.ui.json",
+                        "worldSize": [
+                            2.0,
+                            1.125
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.UiCanvas"
+                }
+            ],
+            "folderPath": "UserInterface",
+            "guid": 15552413904281614223,
+            "isEditorOnly": false,
+            "name": "buttonhint",
             "tags": [],
             "visible": true
         }

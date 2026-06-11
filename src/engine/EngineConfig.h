@@ -21,7 +21,7 @@ namespace Unnamed {
 		RUN_MODE mode;
 
 		struct Window {
-			std::string title     = "Unnamed Engine";
+			std::string title     = "4107_スポッと! 接待ゴルフ! Shout !";
 			int32_t     width     = 1280;
 			int32_t     height    = 720;
 			WINDOW_MODE mode      = WINDOW_MODE::WINDOWED;

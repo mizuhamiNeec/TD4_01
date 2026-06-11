@@ -1,5 +1,5 @@
 {
-    "name": "ui/title.ui.json",
+    "name": "ui/countdown.ui.json",
     "root": {
         "children": [
             {
@@ -8,10 +8,10 @@
                     {
                         "data": {
                             "anchors": [
-                                0.5,
-                                0.4000000059604645,
-                                0.5,
-                                0.4000000059604645
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0
                             ],
                             "constraints": {
                                 "maxHeight": 3.4028234663852886e+38,
@@ -27,14 +27,14 @@
                                 0.0
                             ],
                             "pivot": [
-                                0.5,
-                                0.5
+                                1.0,
+                                1.0
                             ],
                             "rect": [
-                                0.0,
-                                0.0,
-                                1024.0,
-                                512.0
+                                -64.0,
+                                -64.0,
+                                480.0,
+                                400.0
                             ],
                             "sizePolicy": [
                                 "Fixed",
@@ -56,7 +56,7 @@
                                 1.0
                             ],
                             "rotationRad": 0.0,
-                            "texturePath": "projects/TeamGame/content/textures/hole.png",
+                            "texturePath": "projects/TeamGame/content/textures/UI/operation_UI.png",
                             "uvMax": [
                                 1.0,
                                 1.0
@@ -67,83 +67,6 @@
                             ]
                         },
                         "type": "Texture"
-                    }
-                ],
-                "enabled": true,
-                "name": "Widget",
-                "visible": true
-            },
-            {
-                "children": [],
-                "components": [
-                    {
-                        "data": {
-                            "anchors": [
-                                0.0,
-                                0.0,
-                                0.0,
-                                0.0
-                            ],
-                            "constraints": {
-                                "maxHeight": 3.4028234663852886e+38,
-                                "maxWidth": 3.4028234663852886e+38,
-                                "minHeight": 0.0,
-                                "minWidth": 0.0
-                            },
-                            "layoutWeight": 1.0,
-                            "margins": [
-                                0.0,
-                                0.0,
-                                0.0,
-                                0.0
-                            ],
-                            "pivot": [
-                                0.0,
-                                0.0
-                            ],
-                            "rect": [
-                                0.0,
-                                0.0,
-                                594.0,
-                                225.0
-                            ],
-                            "sizePolicy": [
-                                "Fixed",
-                                "Fixed"
-                            ]
-                        },
-                        "type": "Transform"
-                    },
-                    {
-                        "data": {
-                            "conVarName": "",
-                            "fillColor": [
-                                0.6000000238418579,
-                                0.6000000238418579,
-                                0.699999988079071,
-                                1.0
-                            ],
-                            "knobColor": [
-                                1.0,
-                                1.0,
-                                1.0,
-                                1.0
-                            ],
-                            "knobHeight": 28.0,
-                            "knobWidth": 18.0,
-                            "maxValue": 1.0,
-                            "minValue": 0.0,
-                            "normalColor": [
-                                0.25,
-                                0.25,
-                                0.30000001192092896,
-                                1.0
-                            ],
-                            "onChangedCommands": [],
-                            "step": 0.0,
-                            "trackHeight": 10.0
-                        },
-                        "type": "ConVarFloatSliderBehavior"
                     }
                 ],
                 "enabled": true,

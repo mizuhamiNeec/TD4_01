@@ -29,6 +29,7 @@ namespace Unnamed::Gui {
 		virtual void OnMouseEnter(UiWidget& owner);
 		virtual void OnMouseLeave(UiWidget& owner);
 		virtual void OnMouseDown(UiWidget& owner);
+		virtual void OnMouseDrag(UiWidget& owner);
 		virtual void OnMouseUp(UiWidget& owner);
 		virtual void OnClick(UiWidget& owner);
 

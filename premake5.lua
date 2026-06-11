@@ -180,8 +180,6 @@ project "UnnamedEngineRuntime"
 		"src/engine/ui/ImGuiLayer.cpp",
 		"src/engine/world/EditorWorld.h",
 		"src/engine/world/EditorWorld.cpp",
-		"src/engine/world/GameWorld.h",
-		"src/engine/world/GameWorld.cpp",
 		"src/app/**",
 	}
 

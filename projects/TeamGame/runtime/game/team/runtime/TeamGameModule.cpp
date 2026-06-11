@@ -14,6 +14,7 @@
 #include "engine/scene/Scene.h"
 #include "engine/unnamed/subsystem/audio/AudioSystem.h"
 #include "engine/world/World.h"
+#include "engine/world/GameWorld.h"
 
 namespace Unnamed {
 	namespace {
@@ -56,7 +57,7 @@ namespace Unnamed {
 	std::unique_ptr<World> TeamGameModule::CreateRuntimeWorld(
 		const WorldServices& services
 	) {
-		auto world = std::make_unique<World>();
+		auto world = std::make_unique<GameWorld>();
 		world->SetServices(services);
 		return world;
 	}
@@ -64,7 +65,7 @@ namespace Unnamed {
 	std::unique_ptr<World> TeamGameModule::CreatePlayWorld(
 		const WorldServices& services
 	) {
-		auto world = std::make_unique<World>();
+		auto world = std::make_unique<GameWorld>();
 		world->SetServices(services);
 		return world;
 	}

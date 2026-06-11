@@ -219,7 +219,7 @@ namespace Unnamed {
 		mConfig = {
 			.mode   = resolvedRunMode,
 			.window = {
-				.title     = "Unnamed Engine",
+				.title     = "4107_スポッと! 接待ゴルフ! Shout !",
 				.width     = 1280,
 				.height    = 720,
 				.mode      = WINDOW_MODE::WINDOWED,

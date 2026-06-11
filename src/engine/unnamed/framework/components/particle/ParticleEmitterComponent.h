@@ -37,6 +37,36 @@ namespace Unnamed {
 		/// @brief 現在の粒子をRender入力へ変換して追加します。
 		void GatherWorldParticles(std::vector<Render::WorldParticleInput>& outParticles);
 
+		// -----------------------------------------------------------------------
+		// 実行時制御（ゲームプレイ側から駆動するためのAPI）
+		// -----------------------------------------------------------------------
+
+		/// @brief 自動発生（ループ）を開始します。
+		void Play();
+
+		/// @brief 自動発生を停止します（既存粒子はそのまま寿命まで残ります）。
+		void Stop();
+
+		/// @brief いま即座に1バースト（count個）発生させます。autoPlay/repeatに依存せず単発で使えます。
+		void FireBurst();
+
+		/// @brief 指定したワールド座標で1バースト発生させます。
+		/// @details 所有エンティティのTransformに依存せず、任意の位置（吹き飛んだ障害物の位置など）で出せます。
+		///          ワールド空間プリセット（useLocalSpace:false）前提です。
+		void FireBurstAt(const Vec3& worldPosition);
+
+		/// @brief リングなどの最終的な広がり半径をワールド単位で指定します（scaleSpeed を逆算）。
+		void SetRadius(float worldRadius);
+
+		/// @brief 色の明るさ/濃さを 0〜1 の強度で指定します（colorCurve の定数倍率として適用）。
+		void SetIntensity(float intensity01);
+
+		/// @brief 発生数を、ロード時の基準 count に対する倍率で指定します（最低1個）。
+		void SetCountScale(float scale);
+
+		/// @brief 自動発生中かどうかを取得します。
+		[[nodiscard]] bool IsPlaying() const;
+
 	private:
 		[[nodiscard]] bool EnsurePresetLoaded();
 		[[nodiscard]] std::string ResolvePresetFilePath() const;
@@ -63,6 +93,8 @@ namespace Unnamed {
 		ParticlePresetLibrary   mPresetLibrary;
 		ParticleEmitterInstance mEmitter;
 		const ParticlePreset*   mPreset = nullptr;
+		ParticlePreset*         mMutablePreset = nullptr; // mPresetLibrary 内の可変実体（実行時の値上書き用）
+		uint32_t                mBaseSpawnCount = 0;       // ロード時点の基準 count（SetCountScale の基準）
 		bool                    mHasWarnedLoadFailure = false;
 
 		std::string mCachedTexturePath;

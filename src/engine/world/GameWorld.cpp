@@ -19,6 +19,8 @@ namespace Unnamed {
 		World::Initialize();
 		const auto worldInitEnd = std::chrono::steady_clock::now();
 
+		mEnableFade = true;
+
 		Msg(
 			"GameWorld",
 			"Initialize timing: worldInit={}ms",

@@ -13,6 +13,7 @@
 #include "engine/gui/UiWidget.h"
 #include "engine/game/IGameModule.h"
 #include "engine/gui/components/UiButtonBehaviorComponent.h"
+#include "engine/gui/components/UiConVarBehaviorComponents.h"
 #include "engine/gui/components/UiDigitStripComponent.h"
 #include "engine/gui/components/UiLayoutComponents.h"
 #include "engine/gui/components/UiPanelStyleComponent.h"
@@ -628,6 +629,40 @@ namespace Unnamed::Gui {
 		return true;
 	}
 
+	bool DrawCommandListEditor(
+		const char*                label,
+		std::vector<std::string>& commands
+	) {
+		bool changed = false;
+		ImGui::SeparatorText(label);
+		if (ImGui::Button("Add Command")) {
+			commands.emplace_back();
+			changed = true;
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Clear Commands")) {
+			commands.clear();
+			changed = true;
+		}
+
+		for (size_t i = 0; i < commands.size(); ++i) {
+			std::string& command = commands[i];
+			ImGui::PushID(static_cast<int>(i));
+			if (EditCommandInput<512>("##Command", command)) {
+				changed = true;
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Remove")) {
+				commands.erase(commands.begin() + static_cast<ptrdiff_t>(i));
+				changed = true;
+				ImGui::PopID();
+				break;
+			}
+			ImGui::PopID();
+		}
+		return changed;
+	}
+
 	void DrawUiInspectorWindow(GuiEditorContext& context) {
 		if (!ImGui::Begin("Ui Inspector")) {
 			ImGui::End();
@@ -956,6 +991,133 @@ namespace Unnamed::Gui {
 							
 							ImGui::PopID();
 						}
+					}
+				} else if (auto* slider = dynamic_cast<
+					UiConVarFloatSliderBehaviorComponent*>(component)
+				) {
+					char conVarNameBuffer[128] = {};
+					CopyStringToBuffer(
+						slider->GetConVarName(),
+						conVarNameBuffer,
+						sizeof(conVarNameBuffer)
+					);
+					if (ImGui::InputText(
+						"ConVar Name",
+						conVarNameBuffer,
+						sizeof(conVarNameBuffer)
+					)) {
+						slider->SetConVarName(conVarNameBuffer);
+						changed = true;
+					}
+
+					float range[2] = {
+						slider->GetMinValue(),
+						slider->GetMaxValue(),
+					};
+					if (ImGui::DragFloat2("Range", range, 0.01f)) {
+						slider->SetRange(range[0], range[1]);
+						changed = true;
+					}
+
+					float trackHeight = slider->GetTrackHeight();
+					if (ImGui::DragFloat(
+						"Track Height",
+						&trackHeight,
+						0.1f,
+						0.0f,
+						512.0f
+					)) {
+						slider->SetTrackHeight(trackHeight);
+						changed = true;
+					}
+
+					float knobSize[2] = {
+						slider->GetKnobWidth(),
+						slider->GetKnobHeight(),
+					};
+					if (ImGui::DragFloat2(
+						"Knob Size",
+						knobSize,
+						0.1f,
+						0.0f,
+						512.0f
+					)) {
+						slider->SetKnobSize(knobSize[0], knobSize[1]);
+						changed = true;
+					}
+
+					float step = slider->GetStep();
+					if (ImGui::DragFloat("Step", &step, 0.01f, 0.0f, 100.0f)) {
+						slider->SetStep(step);
+						changed = true;
+					}
+
+					Color normal = slider->GetNormalColor();
+					Color fill   = slider->GetFillColor();
+					Color knob   = slider->GetKnobColor();
+					if (DrawColor4("Normal", normal)) {
+						slider->SetColors(normal, fill, knob);
+						changed = true;
+					}
+					if (DrawColor4("Fill", fill)) {
+						slider->SetColors(normal, fill, knob);
+						changed = true;
+					}
+					if (DrawColor4("Knob", knob)) {
+						slider->SetColors(normal, fill, knob);
+						changed = true;
+					}
+
+					if (DrawCommandListEditor(
+						"On Changed Commands",
+						slider->GetOnChangedCommands()
+					)) {
+						changed = true;
+					}
+				} else if (auto* checkbox = dynamic_cast<
+					UiConVarBoolCheckboxBehaviorComponent*>(component)
+				) {
+					char conVarNameBuffer[128] = {};
+					CopyStringToBuffer(
+						checkbox->GetConVarName(),
+						conVarNameBuffer,
+						sizeof(conVarNameBuffer)
+					);
+					if (ImGui::InputText(
+						"ConVar Name",
+						conVarNameBuffer,
+						sizeof(conVarNameBuffer)
+					)) {
+						checkbox->SetConVarName(conVarNameBuffer);
+						changed = true;
+					}
+
+					Color normal  = checkbox->GetNormalColor();
+					Color checked = checkbox->GetCheckedColor();
+					Color hovered = checkbox->GetHoveredColor();
+					Color pressed = checkbox->GetPressedColor();
+					if (DrawColor4("Normal", normal)) {
+						checkbox->SetColors(normal, checked, hovered, pressed);
+						changed = true;
+					}
+					if (DrawColor4("Checked", checked)) {
+						checkbox->SetColors(normal, checked, hovered, pressed);
+						changed = true;
+					}
+					if (DrawColor4("Hovered", hovered)) {
+						checkbox->SetColors(normal, checked, hovered, pressed);
+						changed = true;
+					}
+					if (DrawColor4("Pressed", pressed)) {
+						checkbox->SetColors(normal, checked, hovered, pressed);
+						changed = true;
+					}
+
+					if (DrawCommandListEditor(
+						"On Changed Commands",
+						checkbox->GetOnChangedCommands()
+					)) {
+						changed = true;
 					}
 				} else if (
 					auto* texture = dynamic_cast<UiTextureComponent*>(component)

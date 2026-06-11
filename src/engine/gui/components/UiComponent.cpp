@@ -45,6 +45,10 @@ namespace Unnamed::Gui {
 		(void)owner;
 	}
 
+	void UiComponent::OnMouseDrag(UiWidget& owner) {
+		(void)owner;
+	}
+
 	void UiComponent::OnMouseUp(UiWidget& owner) {
 		(void)owner;
 	}

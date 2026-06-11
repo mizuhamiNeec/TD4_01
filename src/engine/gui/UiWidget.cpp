@@ -10,6 +10,7 @@
 
 #include "UiSerializationHelpers.h"
 #include "components/UiButtonBehaviorComponent.h"
+#include "components/UiConVarBehaviorComponents.h"
 #include "components/UiDigitStripComponent.h"
 #include "components/UiLayoutComponents.h"
 #include "components/UiPanelStyleComponent.h"
@@ -156,6 +157,12 @@ namespace Unnamed::Gui {
 		if (typeName == "ButtonBehavior") {
 			return std::make_unique<UiButtonBehaviorComponent>();
 		}
+		if (typeName == "ConVarFloatSliderBehavior") {
+			return std::make_unique<UiConVarFloatSliderBehaviorComponent>();
+		}
+		if (typeName == "ConVarBoolCheckboxBehavior") {
+			return std::make_unique<UiConVarBoolCheckboxBehaviorComponent>();
+		}
 		if (typeName == "Texture") {
 			return std::make_unique<UiTextureComponent>();
 		}
@@ -172,6 +179,8 @@ namespace Unnamed::Gui {
 			"HorizontalLayout",
 			"PanelStyle",
 			"ButtonBehavior",
+			"ConVarFloatSliderBehavior",
+			"ConVarBoolCheckboxBehavior",
 			"Texture",
 			"DigitStrip",
 		};
@@ -553,6 +562,14 @@ namespace Unnamed::Gui {
 		return mPressed;
 	}
 
+	Vec2 UiWidget::GetMousePosition() const {
+		return mMousePosition;
+	}
+
+	void UiWidget::SetMousePosition(const Vec2& position) {
+		mMousePosition = position;
+	}
+
 	void UiWidget::OnMouseEnter() {
 		mHovered = true;
 		for (auto& component : mComponents) {
@@ -576,6 +593,14 @@ namespace Unnamed::Gui {
 		for (auto& component : mComponents) {
 			if (component) {
 				component->OnMouseDown(*this);
+			}
+		}
+	}
+
+	void UiWidget::OnMouseDrag() {
+		for (auto& component : mComponents) {
+			if (component) {
+				component->OnMouseDrag(*this);
 			}
 		}
 	}

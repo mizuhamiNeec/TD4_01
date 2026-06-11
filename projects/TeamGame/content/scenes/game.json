@@ -1982,6 +1982,56 @@
             "name": "SE",
             "tags": [],
             "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            -2.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "projects/TeamGame/content/materials/instances/ocean.matinst.json",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/ocean.matinst.json",
+                                "slotIndex": 0
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/ocean/ocean.obj"
+                    },
+                    "guid": 0,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "Env",
+            "guid": 15552413904281614222,
+            "isEditorOnly": false,
+            "name": "Entity",
+            "tags": [],
+            "visible": true
         }
     ],
     "folders": [

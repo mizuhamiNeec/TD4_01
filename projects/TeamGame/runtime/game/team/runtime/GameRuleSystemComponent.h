@@ -139,6 +139,10 @@ namespace MyGame {
 		float _ballFlightElapsedTime = 0.0f;
 		// ボールが一度でも飛行状態になったかどうか
 		bool _hasBallLaunched = false;
+		// ボール発射Cueを発火済みかどうか
+		bool _hasPublishedBallShootCue = false;
+		// ホールインワン失敗Cueを発火済みかどうか
+		bool _hasPublishedNotHoleInOneCue = false;
 		// プレイ開始時にボールをLaunchするかどうか
 		bool _launchBallOnPlayingStart = true;
 		// PDF上のゴミ出現タイミング1を発火済みかどうか
@@ -214,8 +218,20 @@ namespace MyGame {
 		/// 穴や海に入ったゴミをスコアへ反映
 		void UpdateTrashScore();
 
+		/// @brief Presentation Cue を GameRuleSystemComponent の Owner から発火
+		void PublishPresentationCue(std::string_view cueId, float value = 1.0f, float value2 = 1.0f) const;
+
+		/// @brief ボール発射 Presentation Cue を一度だけ発火
+		void PublishBallShootPresentationCue();
+
 		/// @brief ゴミが穴へ入ったときの Presentation Cue を発火
 		void PublishTrashIntoHolePresentationCue(Unnamed::Entity& trashEntity) const;
+
+		/// @brief ゴミが海へ落ちたときの Presentation Cue を発火
+		void PublishTrashToSeaPresentationCue(Unnamed::Entity& trashEntity) const;
+
+		/// @brief ホールインワン失敗 Presentation Cue を一度だけ発火
+		void PublishNotHoleInOnePresentationCue();
 
 		/// ボールのキャッチ・停止・OBを判定
 		void UpdateBallResult(float deltaTime);

@@ -56,7 +56,7 @@
                     "conditionMin": -3.4028234663852886e+38,
                     "constant": 0.0,
                     "cooldownSec": 0.0,
-                    "cueId": "trash.into_hole",
+                    "cueId": "trash.holein",
                     "debugText": "",
                     "execInPinId": 0,
                     "execOutPinId": 1,
@@ -245,7 +245,7 @@
                     "conditionMin": -3.4028234663852886e+38,
                     "constant": 0.0,
                     "cooldownSec": 0.0,
-                    "cueId": "",
+                    "cueId": "game.holeinonefanfare",
                     "debugText": "",
                     "execInPinId": 21,
                     "execOutPinId": 22,
@@ -760,8 +760,8 @@
                 }
             ],
             "view": {
-                "panX": 237.62344360351563,
-                "panY": 83.30177307128906,
+                "panX": 247.62347412109375,
+                "panY": -50.03158950805664,
                 "zoom": 0.5999999046325684
             }
         }
@@ -817,7 +817,7 @@
                 }
             ],
             "cooldownSec": 0.0,
-            "cueId": "trash.into_hole"
+            "cueId": "trash.holein"
         },
         {
             "actions": [

@@ -335,6 +335,13 @@ void MyGame::GameRuleSystemComponent::StartPlaying()
 		// NOTE: 発射カウントダウンが無いシーンだけ、ルール管理側から直接発射する。
 		_golfBallComponent->Launch();
 		_hasBallLaunched = _golfBallComponent->IsInFlight();
+		
+		Unnamed::GameplayCue cue = {};
+		cue.id = "uncle.ballshoot";
+		cue.sourceEntityGuid = GetOwner()->GetGuid();
+		cue.value = 1.0f;
+		cue.value2 = 1.0f;
+		GetWorld()->GetGameplayCueBus().Publish(cue); // ボールを打った瞬間のCueを発火して、演出やサウンドを鳴らす。
 	} else if (_golfBallComponent) {
 		// NOTE: 発射カウントダウン側がLaunch済みのボール状態を引き継ぐ。
 		_hasBallLaunched = _golfBallComponent->IsInFlight();
@@ -658,13 +665,10 @@ void MyGame::GameRuleSystemComponent::PublishTrashIntoHolePresentationCue(
 	}
 
 	Unnamed::GameplayCue cue = {};
-	cue.id = "trash.into_hole";
+	cue.id = "trash.holein";
 	cue.sourceEntityGuid = owner->GetGuid();
 	cue.value = 1.0f;
-	cue.value2 = static_cast<float>(
-		_scoreComponent ? _scoreComponent->GetTrashIntoHoleTotal() : 0
-	);
-	cue.SetEntityId("trash_guid", GetEntityGuid(&trashEntity));
+	cue.value2 = 1.0f;
 	world->GetGameplayCueBus().Publish(cue);
 }
 
@@ -762,11 +766,28 @@ bool MyGame::GameRuleSystemComponent::TryScoreBallCatch(GolfBallComponent& golfB
 	_hasBallLaunched = true;
 	// NOTE: ボールキャッチ自体には加点せず、直接/バウンド後のホールインワンボーナスだけを採点対象にする。
 	_isHoleInOne = true;
+	
+	// ホールインワン時のファンファーレ
+	Unnamed::GameplayCue cue = {};
+	cue.id = "game.holeinonefanfare";
+	cue.sourceEntityGuid = GetOwner()->GetGuid();
+	cue.value = 1.0f;
+	cue.value2 = 1.0f;
+	GetWorld()->GetGameplayCueBus().Publish(cue);
+	
 	if (!golfBall.HasBounced()) {
 		_isDirectHoleInOne = true;
 		if (_scoreComponent) {
 			_scoreComponent->AddDirectHoleInOneBonus();
 		}
+		
+		// ダイレクトホールインワン時の演出
+		cue = {};
+		cue.id = "game.directholeinone";
+		cue.sourceEntityGuid = GetOwner()->GetGuid();
+		cue.value = 1.0f;
+		cue.value2 = 1.0f;
+		GetWorld()->GetGameplayCueBus().Publish(cue);
 	} else {
 		if (_scoreComponent) {
 			_scoreComponent->AddHoleInOneBonus();

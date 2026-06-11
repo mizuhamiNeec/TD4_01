@@ -108,7 +108,7 @@ namespace Unnamed {
 
 		std::unique_ptr<World> mWorld;
 
-#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
+#if defined(_DEBUG) 
 		std::unique_ptr<ImGuiLayer>    mUImGuiLayer;
 		std::unique_ptr<EditorRuntime> mUEditorRuntime;
 #endif

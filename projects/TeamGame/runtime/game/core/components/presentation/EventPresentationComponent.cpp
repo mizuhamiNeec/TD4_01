@@ -109,7 +109,7 @@ namespace Unnamed {
 	}
 
 	void EventPresentationComponent::OnAttached() {
-#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
+#if defined(_DEBUG) 
 		if (!mGraphEditorState) {
 			mGraphEditorState = std::make_unique<
 				EventPresentationGraphEditorState>();
@@ -131,7 +131,7 @@ namespace Unnamed {
 		mAudioFx   = nullptr;
 		mCameraFx  = nullptr;
 		mAnimation = nullptr;
-#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
+#if defined(_DEBUG) 
 		if (mGraphEditorState) {
 			mGraphEditorState->needsRebuild = true;
 		}
@@ -643,7 +643,7 @@ namespace Unnamed {
 		mLoadedAssetVersion = 0;
 		mLoadedAssetName.clear();
 		mTriggers.clear();
-#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
+#if defined(_DEBUG) 
 		if (mGraphEditorState) {
 			mGraphEditorState->needsRebuild = true;
 		}
@@ -657,7 +657,7 @@ namespace Unnamed {
 		mLoadedAssetName.clear();
 
 		if (mAssetPath.empty()) {
-#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
+#if defined(_DEBUG) 
 			if (mGraphEditorState) {
 				mGraphEditorState->needsRebuild = true;
 			}
@@ -678,7 +678,7 @@ namespace Unnamed {
 			Warning(
 				kChannel, "Failed to load event presentation '{}'.", mAssetPath
 			);
-#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
+#if defined(_DEBUG) 
 			if (mGraphEditorState) {
 				mGraphEditorState->needsRebuild = true;
 			}
@@ -695,7 +695,7 @@ namespace Unnamed {
 				"Asset '{}' is not EventPresentationAssetData.",
 				mAssetPath
 			);
-#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
+#if defined(_DEBUG) 
 			if (mGraphEditorState) {
 				mGraphEditorState->needsRebuild = true;
 			}
@@ -769,7 +769,7 @@ namespace Unnamed {
 				static_cast<int>(mTriggers.size())
 			);
 		}
-#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
+#if defined(_DEBUG) 
 		if (mGraphEditorState) {
 			mGraphEditorState->needsRebuild = true;
 		}
@@ -893,7 +893,7 @@ namespace Unnamed {
 			if (!EventPresentationExecutor::EvaluateCondition(
 				trigger.condition, cue
 			)) {
-#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
+#if defined(_DEBUG) 
 				if (mGraphEditorState && mGraphEditorState->ui) {
 					mGraphEditorState->ui->NotifyTriggerConditionFailed(
 						mGraphEditorState->graph, trigger.cueId
@@ -923,7 +923,7 @@ namespace Unnamed {
 				}
 				continue;
 			}
-#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
+#if defined(_DEBUG) 
 			if (mGraphEditorState && mGraphEditorState->ui) {
 				mGraphEditorState->ui->NotifyTriggerExecuted(
 					mGraphEditorState->graph, trigger.cueId
@@ -946,7 +946,7 @@ namespace Unnamed {
 				.audioTargetEntityGuid     = ResolveAudioTargetEntityGuid(),
 				.cameraTargetEntityGuid    = ResolveCameraFxTargetEntityGuid(),
 				.animationTargetEntityGuid = ResolveAnimationTargetEntityGuid(),
-#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
+#if defined(_DEBUG) 
 				.actionTraceCallback =
 				[this, triggerCueId = std::string(trigger.cueId)](
 				const size_t                                       actionIndex,

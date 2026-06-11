@@ -44,11 +44,31 @@ void ParticleEmitterInstance::Initialize(const PMPreset* preset)
 {
 	preset_ = preset;
 	particles_.clear();
-	emitTimer_ = 0.0f;
+	emitTimer_ = InitialEmitTimer();
 	playing_ = true;
 
 	// プリセットを差し替えたタイミングでモジュール列を構築する
 	BuildModules();
+}
+
+float ParticleEmitterInstance::InitialEmitTimer() const
+{
+	if (!preset_) { return 0.0f; }
+	const float frequency = preset_->emitterSpawn.frequency;
+	// 毎フレーム発生モードでは発火位相の概念がない
+	if (frequency <= 0.0f) { return 0.0f; }
+
+	// インスタンス上書きがあれば優先（負ならプリセット値）
+	float delay = (startDelayOverride_ >= 0.0f)
+		? startDelayOverride_
+		: preset_->emitterSpawn.startDelay;
+	// startDelay は [0, frequency] にクランプ（負や周期超過を防ぐ）
+	if (delay < 0.0f) { delay = 0.0f; }
+	if (delay > frequency) { delay = frequency; }
+
+	// 初回発生を delay 秒後にしたいので、タイマーを frequency - delay から開始する。
+	// （delay=0 なら frequency 始まり＝ほぼ即発生、delay=frequency なら 0 始まり＝1周期後）
+	return frequency - delay;
 }
 
 void ParticleEmitterInstance::SetTransform(const Mat4& t)
@@ -59,7 +79,7 @@ void ParticleEmitterInstance::SetTransform(const Mat4& t)
 void ParticleEmitterInstance::Play()
 {
 	playing_ = true;
-	emitTimer_ = 0.0f;
+	emitTimer_ = InitialEmitTimer();
 }
 
 void ParticleEmitterInstance::Stop()
@@ -70,7 +90,7 @@ void ParticleEmitterInstance::Stop()
 void ParticleEmitterInstance::Reset()
 {
 	particles_.clear();
-	emitTimer_ = 0.0f;
+	emitTimer_ = InitialEmitTimer();
 }
 
 void ParticleEmitterInstance::Update(float dt)

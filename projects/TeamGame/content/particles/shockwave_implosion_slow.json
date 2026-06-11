@@ -1,0 +1,121 @@
+{
+    "name": "shockwave_implosion_slow",
+    "emitterSettings": {
+        "vertexType": 0,
+        "textureFilePath": "projects/TeamGame/content/textures/impact.png",
+        "blendMode": 2
+    },
+    "emitterSpawn": {
+        "count": 1,
+        "frequency": 2.4,
+        "startDelay": 0.0,
+        "repeat": true,
+        "useRandomPosition": false,
+        "useLocalSpace": true,
+        "emitShape": 0,
+        "boxHalfSize": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "sphereRadius": 0.0
+    },
+    "particleSpawn": {
+        "initialScale": [
+            9.5,
+            9.5,
+            9.5
+        ],
+        "initialRotate": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "initialOffset": [
+            0.0,
+            0.0,
+            0.0
+        ]
+    },
+    "particleUpdate": {
+        "lifeTime": 0.95,
+        "velocity": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "rotationSpeed": [
+            0.0,
+            0.0,
+            1.2
+        ],
+        "scaleSpeed": [
+            -10.0,
+            -10.0,
+            -10.0
+        ],
+        "useGravity": false
+    },
+    "render": {
+        "color": [
+            0.6,
+            0.85,
+            1.0,
+            1.0
+        ],
+        "useBillboard": false,
+        "flipY": false,
+        "colorGradient": {
+            "enabled": true,
+            "keys": [
+                [
+                    0.0,
+                    0.5,
+                    0.8,
+                    1.0,
+                    0.0
+                ],
+                [
+                    0.25,
+                    0.55,
+                    0.85,
+                    1.0,
+                    0.5
+                ],
+                [
+                    0.75,
+                    0.8,
+                    0.92,
+                    1.0,
+                    0.85
+                ],
+                [
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    0.0
+                ]
+            ]
+        }
+    },
+    "trail": {
+        "enabled": false,
+        "maxPoints": 12,
+        "recordInterval": 0.02,
+        "widthHead": 1.0,
+        "widthTail": 0.0,
+        "colorHead": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+        ],
+        "colorTail": [
+            1.0,
+            1.0,
+            1.0,
+            0.0
+        ]
+    }
+}

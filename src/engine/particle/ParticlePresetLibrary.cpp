@@ -169,6 +169,13 @@ namespace {
 			params["velocity"]       = WriteVec3(p.particleUpdate.velocity);
 			params["velocityRandom"] = WriteRandom3(p.particleUpdate.velocityRandom);
 			params["useGravity"]     = p.particleUpdate.useGravity;
+			params["inwardAccel"]    = p.particleUpdate.inwardAccel;
+		}
+		else if (type == "CurlNoise") {
+			params["enabled"]   = p.curlNoise.enabled;
+			params["strength"]  = p.curlNoise.strength;
+			params["frequency"] = p.curlNoise.frequency;
+			params["speed"]     = p.curlNoise.speed;
 		}
 		else if (type == "Rotation") {
 			params["initialRotate"]       = WriteVec3(p.particleSpawn.initialRotate);
@@ -251,6 +258,13 @@ namespace {
 					ReadRandom3(params["velocityRandom"], p.particleUpdate.velocityRandom);
 			}
 			p.particleUpdate.useGravity = params.value("useGravity", p.particleUpdate.useGravity);
+			p.particleUpdate.inwardAccel = params.value("inwardAccel", p.particleUpdate.inwardAccel);
+		}
+		else if (type == "CurlNoise") {
+			p.curlNoise.enabled   = params.value("enabled",   p.curlNoise.enabled);
+			p.curlNoise.strength  = params.value("strength",  p.curlNoise.strength);
+			p.curlNoise.frequency = params.value("frequency", p.curlNoise.frequency);
+			p.curlNoise.speed     = params.value("speed",     p.curlNoise.speed);
 		}
 		else if (type == "Rotation") {
 			if (params.contains("initialRotate")) {
@@ -371,6 +385,7 @@ namespace {
 			const auto& es = j["emitterSpawn"];
 			p.emitterSpawn.count = es.value("count", 10u);
 			p.emitterSpawn.frequency = es.value("frequency", 1.0f);
+			p.emitterSpawn.startDelay = es.value("startDelay", p.emitterSpawn.startDelay);
 			p.emitterSpawn.repeat = es.value("repeat", false);
 			p.emitterSpawn.useRandomPosition = es.value("useRandomPosition", false);
 			p.emitterSpawn.useLocalSpace = es.value("useLocalSpace", false);
@@ -400,6 +415,7 @@ namespace {
 		else {
 			p.emitterSpawn.count = j.value("count", 10u);
 			p.emitterSpawn.frequency = j.value("frequency", 1.0f);
+			p.emitterSpawn.startDelay = j.value("startDelay", p.emitterSpawn.startDelay);
 			p.emitterSpawn.repeat = j.value("repeat", false);
 			p.emitterSpawn.useRandomPosition = j.value("useRandomPosition", false);
 			p.emitterSpawn.useLocalSpace = j.value("useLocalSpace", false);
@@ -491,6 +507,7 @@ namespace {
 			p.particleUpdate.rotationSpeed = read3("rotationSpeed", { 0,0,0 });
 			p.particleUpdate.scaleSpeed = read3("scaleSpeed", { 0,0,0 });
 			p.particleUpdate.useGravity = pu.value("useGravity", false);
+			p.particleUpdate.inwardAccel = pu.value("inwardAccel", p.particleUpdate.inwardAccel);
 
 			auto readRandom3 = [&pu](const char* key, const RandomRange3& def) {
 				RandomRange3 r = def;
@@ -524,6 +541,7 @@ namespace {
 			p.particleUpdate.rotationSpeed = readVec3("rotationSpeed", { 0,0,0 });
 			p.particleUpdate.scaleSpeed = readVec3("scaleSpeed", { 0,0,0 });
 			p.particleUpdate.useGravity = j.value("useGravity", false);
+			p.particleUpdate.inwardAccel = j.value("inwardAccel", p.particleUpdate.inwardAccel);
 
 			p.particleUpdate.velocityRandom = RandomRange3{};
 			p.particleUpdate.rotationRandom = RandomRange3{};
@@ -588,6 +606,15 @@ namespace {
 			p.trail.colorHead = read4(tr, "colorHead", p.trail.colorHead);
 			p.trail.colorTail = read4(tr, "colorTail", p.trail.colorTail);
 		}
+
+		// ========= curlNoise（旧形式ファイルには通常無い。あれば読む） =========
+		if (j.contains("curlNoise") && j["curlNoise"].is_object()) {
+			const auto& cn = j["curlNoise"];
+			p.curlNoise.enabled   = cn.value("enabled", p.curlNoise.enabled);
+			p.curlNoise.strength  = cn.value("strength", p.curlNoise.strength);
+			p.curlNoise.frequency = cn.value("frequency", p.curlNoise.frequency);
+			p.curlNoise.speed     = cn.value("speed", p.curlNoise.speed);
+		}
 	}
 
 } // namespace
@@ -614,6 +641,7 @@ void to_json(json& j, const ParticlePreset& p)
 	j["emitterSpawn"] = {
 		{ "count",         p.emitterSpawn.count },
 		{ "frequency",     p.emitterSpawn.frequency },
+		{ "startDelay",    p.emitterSpawn.startDelay },
 		{ "repeat",        p.emitterSpawn.repeat },
 		{ "useLocalSpace", p.emitterSpawn.useLocalSpace },
 	};
@@ -677,6 +705,7 @@ void from_json(const json& j, ParticlePreset& p)
 		const auto& sp = j["emitterSpawn"];
 		p.emitterSpawn.count = sp.value("count", 10u);
 		p.emitterSpawn.frequency = sp.value("frequency", 1.0f);
+		p.emitterSpawn.startDelay = sp.value("startDelay", p.emitterSpawn.startDelay);
 		p.emitterSpawn.repeat = sp.value("repeat", false);
 		p.emitterSpawn.useLocalSpace = sp.value("useLocalSpace", false);
 	}

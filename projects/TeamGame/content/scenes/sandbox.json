@@ -1627,7 +1627,7 @@
                             1.0
                         ]
                     },
-                    "guid": 14390700056023624600,
+                    "guid": 14390700056023624411,
                     "type": "engine.Transform"
                 },
                 {
@@ -1636,20 +1636,20 @@
                         "autoPlay": true,
                         "depthTest": true,
                         "drawEmitterShape": false,
-                        "presetName": "voice_core",
-                        "presetPath": "projects/TeamGame/content/particles/voice_core.json",
+                        "presetName": "shockwave_ring",
+                        "presetPath": "projects/TeamGame/content/particles/shockwave_ring.json",
                         "sortKeyBias": 0,
-                        "startDelay": 0.0,
+                        "startDelay": -1.0,
                         "timeScale": 1.0
                     },
-                    "guid": 12264589234032906800,
+                    "guid": 12264589234032906621,
                     "type": "engine.ParticleEmitter"
                 }
             ],
             "folderPath": "",
-            "guid": 90,
+            "guid": 75,
             "isEditorOnly": false,
-            "name": "Voice_Core",
+            "name": "Shockwave_Ring",
             "tags": [],
             "visible": true
         },
@@ -1677,7 +1677,7 @@
                             1.0
                         ]
                     },
-                    "guid": 14390700056023624601,
+                    "guid": 14390700056023624412,
                     "type": "engine.Transform"
                 },
                 {
@@ -1686,20 +1686,20 @@
                         "autoPlay": true,
                         "depthTest": true,
                         "drawEmitterShape": false,
-                        "presetName": "voice_wave",
-                        "presetPath": "projects/TeamGame/content/particles/voice_wave.json",
-                        "sortKeyBias": 0,
-                        "startDelay": 0.0,
+                        "presetName": "shockwave_explosion",
+                        "presetPath": "projects/TeamGame/content/particles/shockwave_explosion.json",
+                        "sortKeyBias": 1,
+                        "startDelay": -1.0,
                         "timeScale": 1.0
                     },
-                    "guid": 12264589234032906801,
+                    "guid": 12264589234032906622,
                     "type": "engine.ParticleEmitter"
                 }
             ],
             "folderPath": "",
-            "guid": 91,
+            "guid": 76,
             "isEditorOnly": false,
-            "name": "Voice_Wave",
+            "name": "Shockwave_Explosion",
             "tags": [],
             "visible": true
         },
@@ -1727,7 +1727,7 @@
                             1.0
                         ]
                     },
-                    "guid": 14390700056023624602,
+                    "guid": 14390700056023624413,
                     "type": "engine.Transform"
                 },
                 {
@@ -1736,20 +1736,570 @@
                         "autoPlay": true,
                         "depthTest": true,
                         "drawEmitterShape": false,
-                        "presetName": "voice_ring",
-                        "presetPath": "projects/TeamGame/content/particles/voice_ring.json",
+                        "presetName": "shockwave_sparks",
+                        "presetPath": "projects/TeamGame/content/particles/shockwave_sparks.json",
                         "sortKeyBias": 0,
-                        "startDelay": 0.0,
+                        "startDelay": -1.0,
                         "timeScale": 1.0
                     },
-                    "guid": 12264589234032906802,
+                    "guid": 12264589234032906623,
                     "type": "engine.ParticleEmitter"
                 }
             ],
             "folderPath": "",
-            "guid": 92,
+            "guid": 77,
             "isEditorOnly": false,
-            "name": "Voice_Ring",
+            "name": "Shockwave_Sparks",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 74,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.7071068286895752,
+                            0.0,
+                            0.0,
+                            0.7071068286895752
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 14390700056023624414,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "autoPlay": true,
+                        "depthTest": true,
+                        "drawEmitterShape": false,
+                        "presetName": "shockwave_ring_angled",
+                        "presetPath": "projects/TeamGame/content/particles/shockwave_ring_angled.json",
+                        "sortKeyBias": 0,
+                        "startDelay": -1.0,
+                        "timeScale": 1.0
+                    },
+                    "guid": 12264589234032906624,
+                    "type": "engine.ParticleEmitter"
+                }
+            ],
+            "folderPath": "",
+            "guid": 78,
+            "isEditorOnly": false,
+            "name": "Shockwave_Ring_Flat",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 74,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.7071068286895752,
+                            0.0,
+                            0.7071068286895752
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 14390700056023624415,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "autoPlay": true,
+                        "depthTest": true,
+                        "drawEmitterShape": false,
+                        "presetName": "shockwave_ring_angled_slow",
+                        "presetPath": "projects/TeamGame/content/particles/shockwave_ring_angled_slow.json",
+                        "sortKeyBias": 0,
+                        "startDelay": -1.0,
+                        "timeScale": 1.0
+                    },
+                    "guid": 12264589234032906625,
+                    "type": "engine.ParticleEmitter"
+                }
+            ],
+            "folderPath": "",
+            "guid": 79,
+            "isEditorOnly": false,
+            "name": "Shockwave_Ring_Side",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 74,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.3826833963394165,
+                            0.0,
+                            0.0,
+                            0.9238795042037964
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 14390700056023624416,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "autoPlay": true,
+                        "depthTest": true,
+                        "drawEmitterShape": false,
+                        "presetName": "shockwave_ring_angled_slow",
+                        "presetPath": "projects/TeamGame/content/particles/shockwave_ring_angled_slow.json",
+                        "sortKeyBias": 0,
+                        "startDelay": -1.0,
+                        "timeScale": 1.0
+                    },
+                    "guid": 12264589234032906626,
+                    "type": "engine.ParticleEmitter"
+                }
+            ],
+            "folderPath": "",
+            "guid": 80,
+            "isEditorOnly": false,
+            "name": "Shockwave_Ring_Diag1",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 74,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.3826833963394165,
+                            0.0,
+                            0.9238795042037964
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 14390700056023624417,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "autoPlay": true,
+                        "depthTest": true,
+                        "drawEmitterShape": false,
+                        "presetName": "shockwave_ring_angled",
+                        "presetPath": "projects/TeamGame/content/particles/shockwave_ring_angled.json",
+                        "sortKeyBias": 0,
+                        "startDelay": -1.0,
+                        "timeScale": 1.0
+                    },
+                    "guid": 12264589234032906627,
+                    "type": "engine.ParticleEmitter"
+                }
+            ],
+            "folderPath": "",
+            "guid": 81,
+            "isEditorOnly": false,
+            "name": "Shockwave_Ring_Diag2",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 74,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 14390700056023624418,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "autoPlay": true,
+                        "depthTest": true,
+                        "drawEmitterShape": false,
+                        "presetName": "shockwave_debris",
+                        "presetPath": "projects/TeamGame/content/particles/shockwave_debris.json",
+                        "sortKeyBias": 0,
+                        "startDelay": -1.0,
+                        "timeScale": 1.0
+                    },
+                    "guid": 12264589234032906628,
+                    "type": "engine.ParticleEmitter"
+                }
+            ],
+            "folderPath": "",
+            "guid": 82,
+            "isEditorOnly": false,
+            "name": "Shockwave_Debris",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 74,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 14390700056023624419,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "autoPlay": true,
+                        "depthTest": true,
+                        "drawEmitterShape": false,
+                        "presetName": "shockwave_implosion_slow",
+                        "presetPath": "projects/TeamGame/content/particles/shockwave_implosion_slow.json",
+                        "sortKeyBias": -1,
+                        "startDelay": 0.0,
+                        "timeScale": 1.0
+                    },
+                    "guid": 12264589234032906629,
+                    "type": "engine.ParticleEmitter"
+                }
+            ],
+            "folderPath": "",
+            "guid": 83,
+            "isEditorOnly": false,
+            "name": "Shockwave_Implosion_Front",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 74,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.7071068286895752,
+                            0.0,
+                            0.0,
+                            0.7071068286895752
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 14390700056023624420,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "autoPlay": true,
+                        "depthTest": true,
+                        "drawEmitterShape": false,
+                        "presetName": "shockwave_implosion_slow",
+                        "presetPath": "projects/TeamGame/content/particles/shockwave_implosion_slow.json",
+                        "sortKeyBias": -1,
+                        "startDelay": 0.15000000596046448,
+                        "timeScale": 1.0
+                    },
+                    "guid": 12264589234032906630,
+                    "type": "engine.ParticleEmitter"
+                }
+            ],
+            "folderPath": "",
+            "guid": 84,
+            "isEditorOnly": false,
+            "name": "Shockwave_Implosion_Flat",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 74,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.7071068286895752,
+                            0.0,
+                            0.7071068286895752
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 14390700056023624421,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "autoPlay": true,
+                        "depthTest": true,
+                        "drawEmitterShape": false,
+                        "presetName": "shockwave_implosion_slow",
+                        "presetPath": "projects/TeamGame/content/particles/shockwave_implosion_slow.json",
+                        "sortKeyBias": -1,
+                        "startDelay": 0.30000001192092896,
+                        "timeScale": 1.0
+                    },
+                    "guid": 12264589234032906631,
+                    "type": "engine.ParticleEmitter"
+                }
+            ],
+            "folderPath": "",
+            "guid": 85,
+            "isEditorOnly": false,
+            "name": "Shockwave_Implosion_Side",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 74,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.3826833963394165,
+                            0.0,
+                            0.0,
+                            0.9238795042037964
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 14390700056023624422,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "autoPlay": true,
+                        "depthTest": true,
+                        "drawEmitterShape": false,
+                        "presetName": "shockwave_implosion_slow",
+                        "presetPath": "projects/TeamGame/content/particles/shockwave_implosion_slow.json",
+                        "sortKeyBias": -1,
+                        "startDelay": 0.44999998807907104,
+                        "timeScale": 1.0
+                    },
+                    "guid": 12264589234032906632,
+                    "type": "engine.ParticleEmitter"
+                }
+            ],
+            "folderPath": "",
+            "guid": 86,
+            "isEditorOnly": false,
+            "name": "Shockwave_Implosion_Diag1",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 74,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.3826833963394165,
+                            0.0,
+                            0.9238795042037964
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 14390700056023624423,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "autoPlay": true,
+                        "depthTest": true,
+                        "drawEmitterShape": false,
+                        "presetName": "shockwave_implosion_slow",
+                        "presetPath": "projects/TeamGame/content/particles/shockwave_implosion_slow.json",
+                        "sortKeyBias": -1,
+                        "startDelay": 0.6000000238418579,
+                        "timeScale": 1.0
+                    },
+                    "guid": 12264589234032906633,
+                    "type": "engine.ParticleEmitter"
+                }
+            ],
+            "folderPath": "",
+            "guid": 87,
+            "isEditorOnly": false,
+            "name": "Shockwave_Implosion_Diag2",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 74,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 14390700056023624424,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "autoPlay": true,
+                        "depthTest": true,
+                        "drawEmitterShape": false,
+                        "presetName": "shockwave_suck_particles",
+                        "presetPath": "projects/TeamGame/content/particles/shockwave_suck_particles.json",
+                        "sortKeyBias": 0,
+                        "startDelay": 0.0,
+                        "timeScale": 1.0
+                    },
+                    "guid": 12264589234032906634,
+                    "type": "engine.ParticleEmitter"
+                }
+            ],
+            "folderPath": "",
+            "guid": 88,
+            "isEditorOnly": false,
+            "name": "Shockwave_Suck_Particles",
             "tags": [],
             "visible": true
         },

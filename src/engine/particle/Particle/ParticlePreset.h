@@ -123,6 +123,7 @@ struct EmitterSettingsModule {
 struct EmitterSpawnModule {
 	uint32_t count = 10;            // 発生数
 	float    frequency = 1.0f;      // 発生間隔(秒)
+	float    startDelay = 0.0f;     // 初回発生までの遅延(秒)。エミッタ間で発火位相をずらす用
 	bool     repeat = false;        // 繰り返し
 	bool     useRandomPosition = false; // ランダム発生
 	bool     useLocalSpace = false;     // ローカル空間モード（trueならエミッタ基準の相対座標）
@@ -162,8 +163,23 @@ struct ParticleUpdateModule {
 	RandomRange3 scaleRandom;
 	bool    useGravity = false;              // 重力
 
+	// 中心（エミッタ原点）への引き寄せ加速度。
+	// 正の値で粒子が発生中心へ吸い込まれる（吸い込み演出用）。0 で無効。
+	float   inwardAccel = 0.0f;
+
 	// スケール倍率カーブ（NormalizedAge に対する multiplier）
 	Curve1D scaleCurve;
+};
+
+// --- CurlNoise モジュール ---
+// curl(ノイズポテンシャル) による発散ゼロ(divergence-free)の流れ場で、
+// 粒子を滑らかに揺らす。発散ゼロなので一点に溜まったり湧き出したりせず、
+// 渦を巻きながら煙・塵のように流れる。
+struct CurlNoiseModuleSettings {
+	bool  enabled   = false;  // カールノイズを適用するか（既定オフ＝既存プリセットは無影響）
+	float strength  = 0.0f;   // 流れの強さ（位置に加える移流量のスケール）
+	float frequency = 1.0f;   // 空間スケール（大きいほど細かい渦）
+	float speed     = 0.5f;   // 場が時間で流れる速さ（アニメーション）
 };
 
 // --- Render モジュール ---
@@ -221,6 +237,7 @@ struct ParticlePreset {
 	EmitterSpawnModule    emitterSpawn;
 	ParticleSpawnModule   particleSpawn;
 	ParticleUpdateModule  particleUpdate;
+	CurlNoiseModuleSettings curlNoise;
 	RenderModule          render;
 	TrailModuleSettings   trail;
 

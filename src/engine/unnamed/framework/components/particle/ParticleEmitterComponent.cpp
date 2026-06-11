@@ -253,6 +253,9 @@ namespace Unnamed {
 		ImGui::Checkbox("Draw Emitter Shape", &mDrawEmitterShape);
 		ImGui::DragInt("Sort Key Bias", &mSortKeyBias, 1.0f, -100000, 100000);
 		ImGui::DragFloat("Time Scale", &mTimeScale, 0.01f, 0.0f, 100.0f, "%.2f");
+		if (ImGui::DragFloat("Start Delay", &mStartDelay, 0.01f, -1.0f, 100.0f, "%.2f")) {
+			mEmitter.SetStartDelayOverride(mStartDelay);
+		}
 		ImGui::Text("Live Particles: %zu", mEmitter.GetParticles().size());
 	}
 #endif
@@ -265,6 +268,7 @@ namespace Unnamed {
 		mDrawEmitterShape = reader["drawEmitterShape"].GetBool(mDrawEmitterShape);
 		mSortKeyBias = reader["sortKeyBias"].GetInt(mSortKeyBias);
 		mTimeScale = reader["timeScale"].GetFloat(mTimeScale);
+		mStartDelay = reader["startDelay"].GetFloat(mStartDelay);
 		mPreset = nullptr;
 		mHasWarnedLoadFailure = false;
 		mLoadedPresetPath.clear();
@@ -287,6 +291,8 @@ namespace Unnamed {
 		writer.Write(mSortKeyBias);
 		writer.Key("timeScale");
 		writer.Write(mTimeScale);
+		writer.Key("startDelay");
+		writer.Write(mStartDelay);
 	}
 
 	void ParticleEmitterComponent::GatherWorldParticles(
@@ -538,6 +544,7 @@ namespace Unnamed {
 		auto* transform = owner ? owner->GetComponent<TransformComponent>() : nullptr;
 		const Mat4 emitterTransform = transform ? transform->RenderWorldMat() : Mat4::identity;
 
+		mEmitter.SetStartDelayOverride(mStartDelay);
 		mEmitter.Initialize(mPreset);
 		mEmitter.SetTransform(emitterTransform);
 		if (mAutoPlay) {

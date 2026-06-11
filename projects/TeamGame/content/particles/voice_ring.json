@@ -1,0 +1,104 @@
+{
+    "name": "voice_ring",
+    "emitterSettings": {
+        "vertexType": 0,
+        "textureFilePath": "projects/TeamGame/content/textures/texture_Ring.png",
+        "blendMode": 2
+    },
+    "emitterSpawn": {
+        "count": 1,
+        "frequency": 0.45,
+        "startDelay": 0.0,
+        "repeat": true,
+        "useRandomPosition": false,
+        "useLocalSpace": false,
+        "emitShape": 0,
+        "sphereRadius": 0.0
+    },
+    "particleSpawn": {
+        "initialScale": [
+            0.5,
+            0.5,
+            0.5
+        ],
+        "initialRotate": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "initialOffset": [
+            0.0,
+            0.0,
+            0.0
+        ]
+    },
+    "particleUpdate": {
+        "lifeTime": 0.75,
+        "velocity": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "scaleSpeed": [
+            18.0,
+            18.0,
+            18.0
+        ],
+        "useGravity": false
+    },
+    "render": {
+        "color": [
+            0.9,
+            0.97,
+            1.0,
+            1.0
+        ],
+        "useBillboard": true,
+        "flipY": false,
+        "colorGradient": {
+            "enabled": true,
+            "keys": [
+                [
+                    0.0,
+                    0.95,
+                    0.98,
+                    1.0,
+                    1.0
+                ],
+                [
+                    0.5,
+                    0.7,
+                    0.88,
+                    1.0,
+                    0.5
+                ],
+                [
+                    1.0,
+                    0.5,
+                    0.75,
+                    1.0,
+                    0.0
+                ]
+            ]
+        }
+    },
+    "trail": {
+        "enabled": false,
+        "maxPoints": 8,
+        "recordInterval": 0.02,
+        "widthHead": 1.0,
+        "widthTail": 0.0,
+        "colorHead": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+        ],
+        "colorTail": [
+            1.0,
+            1.0,
+            1.0,
+            0.0
+        ]
+    }
+}

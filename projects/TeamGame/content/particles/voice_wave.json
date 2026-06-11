@@ -1,0 +1,133 @@
+{
+    "name": "voice_wave",
+    "emitterSettings": {
+        "vertexType": 0,
+        "textureFilePath": "projects/TeamGame/content/textures/circle.png",
+        "blendMode": 2
+    },
+    "emitterSpawn": {
+        "count": 60,
+        "frequency": 0.45,
+        "startDelay": 0.0,
+        "repeat": true,
+        "useRandomPosition": true,
+        "useLocalSpace": false,
+        "emitShape": 1,
+        "sphereRadius": 0.3
+    },
+    "particleSpawn": {
+        "initialScale": [
+            0.5,
+            0.5,
+            0.5
+        ],
+        "initialScaleRandom": {
+            "useRandom": true,
+            "min": [
+                0.3,
+                0.3,
+                0.3
+            ],
+            "max": [
+                0.65,
+                0.65,
+                0.65
+            ]
+        },
+        "initialOffset": [
+            0.0,
+            0.0,
+            0.0
+        ]
+    },
+    "particleUpdate": {
+        "lifeTime": 0.75,
+        "velocity": [
+            0.0,
+            1.0,
+            0.0
+        ],
+        "velocityRandom": {
+            "useRandom": true,
+            "min": [
+                -0.5,
+                -0.5,
+                -0.5
+            ],
+            "max": [
+                0.5,
+                0.5,
+                0.5
+            ]
+        },
+        "scaleSpeed": [
+            -0.35,
+            -0.35,
+            -0.35
+        ],
+        "useGravity": false,
+        "inwardAccel": -22.0
+    },
+    "render": {
+        "color": [
+            0.8,
+            0.95,
+            1.0,
+            1.0
+        ],
+        "useBillboard": true,
+        "flipY": false,
+        "colorGradient": {
+            "enabled": true,
+            "keys": [
+                [
+                    0.0,
+                    0.85,
+                    0.97,
+                    1.0,
+                    0.0
+                ],
+                [
+                    0.15,
+                    0.75,
+                    0.92,
+                    1.0,
+                    1.0
+                ],
+                [
+                    0.7,
+                    0.5,
+                    0.8,
+                    1.0,
+                    0.6
+                ],
+                [
+                    1.0,
+                    0.3,
+                    0.6,
+                    1.0,
+                    0.0
+                ]
+            ]
+        }
+    },
+    "trail": {
+        "enabled": false,
+        "maxPoints": 8,
+        "recordInterval": 0.02,
+        "widthHead": 0.4,
+        "widthTail": 0.0,
+        "colorHead": [
+            0.8,
+            0.95,
+            1.0,
+            1.0
+        ],
+        "colorTail": [
+            0.5,
+            0.8,
+            1.0,
+            0.0
+        ]
+    }
+}

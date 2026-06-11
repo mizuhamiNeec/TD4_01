@@ -1,0 +1,138 @@
+{
+    "name": "curl_demo",
+    "emitterSettings": {
+        "vertexType": 0,
+        "textureFilePath": "projects/TeamGame/content/textures/circle.png",
+        "blendMode": 2
+    },
+    "emitterSpawn": {
+        "count": 50,
+        "frequency": 1.0,
+        "repeat": true,
+        "useRandomPosition": true,
+        "useLocalSpace": false,
+        "emitShape": 1,
+        "sphereRadius": 2.5
+    },
+    "particleSpawn": {
+        "initialScale": [
+            0.12,
+            0.12,
+            0.12
+        ],
+        "initialScaleRandom": {
+            "useRandom": true,
+            "min": [
+                0.4,
+                0.4,
+                0.4
+            ],
+            "max": [
+                0.8,
+                0.8,
+                0.8
+            ]
+        },
+        "initialOffset": [
+            0.0,
+            0.0,
+            0.0
+        ]
+    },
+    "particleUpdate": {
+        "lifeTime": 2.5,
+        "velocity": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "velocityRandom": {
+            "useRandom": true,
+            "min": [
+                -0.3,
+                -0.3,
+                -0.3
+            ],
+            "max": [
+                0.3,
+                0.3,
+                0.3
+            ]
+        },
+        "scaleSpeed": [
+            -0.15,
+            -0.15,
+            -0.15
+        ],
+        "useGravity": false,
+        "inwardAccel": 9.0
+    },
+    "render": {
+        "color": [
+            0.3,
+            0.8,
+            1.0,
+            1.0
+        ],
+        "useBillboard": true,
+        "flipY": false,
+        "colorGradient": {
+            "enabled": true,
+            "keys": [
+                [
+                    0.0,
+                    0.4,
+                    0.9,
+                    1.0,
+                    0.0
+                ],
+                [
+                    0.15,
+                    0.3,
+                    0.8,
+                    1.0,
+                    1.0
+                ],
+                [
+                    0.6,
+                    0.5,
+                    0.4,
+                    1.0,
+                    0.9
+                ],
+                [
+                    1.0,
+                    0.9,
+                    0.3,
+                    0.6,
+                    0.0
+                ]
+            ]
+        }
+    },
+    "trail": {
+        "enabled": true,
+        "maxPoints": 8,
+        "recordInterval": 0.016,
+        "widthHead": 0.3,
+        "widthTail": 0.0,
+        "colorHead": [
+            0.4,
+            0.85,
+            1.0,
+            0.9
+        ],
+        "colorTail": [
+            0.3,
+            0.4,
+            1.0,
+            0.0
+        ]
+    },
+    "curlNoise": {
+        "enabled": true,
+        "strength": 6.5,
+        "frequency": 0.9,
+        "speed": 0.7
+    }
+}

@@ -31,6 +31,11 @@ public:
 	void Reset();     // 全粒子クリア
 	bool IsPlaying() const { return playing_; }
 
+	// インスタンス単位の startDelay 上書き。
+	// 0 以上ならプリセットの startDelay より優先される（負なら無効＝プリセット値を使う）。
+	// 同じプリセットを使う複数エミッタの発火タイミングを個別にずらすのに使う。
+	void SetStartDelayOverride(float delaySeconds) { startDelayOverride_ = delaySeconds; }
+
 	// ==============================
 	// 毎フレーム更新（シミュレーションだけ）
 	// ==============================
@@ -70,6 +75,11 @@ private:
 	// 標準モジュール列を生成して modules_ に詰める
 	void BuildModules();
 
+	// emitTimer_ の初期値を計算する。
+	// startDelay の分だけ初回発生を遅らせる（= frequency - startDelay）。
+	// frequency <= 0（毎フレーム発生）のときは位相の概念がないので 0。
+	float InitialEmitTimer() const;
+
 private:
 	// Niagara の「モジュール」情報（定数データ）
 	const PMPreset* preset_ = nullptr;
@@ -87,4 +97,7 @@ private:
 	// Emit 制御用
 	float emitTimer_ = 0.0f;
 	bool  playing_ = true;
+
+	// インスタンス単位の startDelay 上書き（負ならプリセット値を使う）
+	float startDelayOverride_ = -1.0f;
 };

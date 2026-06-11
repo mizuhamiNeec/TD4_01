@@ -9,6 +9,7 @@
 #include "LifetimeModule.h"
 #include "LocationModule.h"
 #include "VelocityModule.h"
+#include "CurlNoiseModule.h"
 #include "RotationModule.h"
 #include "SizeModule.h"
 #include "ColorModule.h"

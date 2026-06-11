@@ -59,6 +59,7 @@ namespace Unnamed {
 		bool        mDrawEmitterShape = true; // 発生形状のデバッグ描画
 		int32_t     mSortKeyBias      = 0;
 		float       mTimeScale        = 1.0f;
+		float       mStartDelay       = -1.0f; // 負ならプリセットの startDelay を使う
 
 		ParticlePresetLibrary   mPresetLibrary;
 		ParticleEmitterInstance mEmitter;

@@ -15,6 +15,7 @@ ParticleModuleRegistry::ParticleModuleRegistry()
 	Register("Lifetime", [] { return std::make_unique<LifetimeModule>(); });
 	Register("Location", [] { return std::make_unique<LocationModule>(); });
 	Register("Velocity", [] { return std::make_unique<VelocityModule>(); });
+	Register("CurlNoise", [] { return std::make_unique<CurlNoiseModule>(); });
 	Register("Rotation", [] { return std::make_unique<RotationModule>(); });
 	Register("Size",     [] { return std::make_unique<SizeModule>(); });
 	Register("Color",    [] { return std::make_unique<ColorModule>(); });
@@ -23,7 +24,8 @@ ParticleModuleRegistry::ParticleModuleRegistry()
 	// 既定スタック順（従来の固定順と同じ。Lifetime を先頭に置く）
 	// Trail は Velocity で位置が確定した後に履歴を記録するため末尾に置く。
 	defaultOrder_ = {
-		"Lifetime", "Location", "Velocity", "Rotation", "Size", "Color", "Trail"
+		// CurlNoise は Velocity で位置が動いた後・Trail の前に置く（揺らいだ位置を軌跡に乗せる）
+		"Lifetime", "Location", "Velocity", "CurlNoise", "Rotation", "Size", "Color", "Trail"
 	};
 }
 

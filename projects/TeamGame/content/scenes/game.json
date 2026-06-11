@@ -341,8 +341,8 @@
                     "data": {
                         "coolTime": 0.10000000149011612,
                         "forceMultiplier": 0.009999999776482582,
-                        "maxShockWaveRadius": 10.0,
-                        "minShockWaveRadius": 5.0,
+                        "maxShockWaveRadius": 22.0,
+                        "minShockWaveRadius": 8.0,
                         "upwardForceMultiplier": 5.0,
                         "voiceGateDuration": 0.07999999821186066,
                         "voiceMinDB": -35.0,

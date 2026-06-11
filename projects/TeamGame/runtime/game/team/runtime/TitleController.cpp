@@ -27,7 +27,7 @@ void TitleController::OnAttached() {
 	BaseComponent::OnAttached();
 }
 
-void TitleController::OnTick(const float deltaTime) {
+void TitleController::OnFrameInputTick(const float deltaTime) {
 	if (GetInputSystem()->IsPressed("gamestart")) {
 		GetConsoleSystem()->ExecuteCommand(mCommand);
 	}

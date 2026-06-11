@@ -10,7 +10,7 @@ public:
 	void                           Deserialize(const Unnamed::JsonReader& reader) override;
 	void                           Serialize(Unnamed::JsonWriter& writer) const override;
 	void OnAttached() override;
-	void OnTick(float deltaTime) override;
+	void OnFrameInputTick(float deltaTime) override;
 	[[nodiscard]] TICK_GROUP GetTickGroup() const override;
 	
 private:

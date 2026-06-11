@@ -12,7 +12,7 @@ namespace Unnamed {
 	class TeamGameModule final : public IGameModule {
 	public:
 		~TeamGameModule() override;
-
+		
 		/// @brief モジュールを初期化します。
 		void Initialize(EngineServices& services) override;
 		/// @brief Standalone 向けランタイムワールドを生成します。
@@ -40,6 +40,9 @@ namespace Unnamed {
 
 		/// @brief グローバルな MagVoiceBridge インスタンスを設定
 		void SetGlobalMagVoiceBridge(MagVoiceBridge* bridge);
+		
+		/// @brief 使用するコンソール変数を登録します。
+		void RegisterTeamGameConVars();
 
 		/// @brief VoiceShockWaveComponent と共有する音声入力の所有権
 		std::unique_ptr<MagVoiceBridge> voiceBridge_;

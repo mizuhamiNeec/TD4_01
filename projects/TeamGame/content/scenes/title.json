@@ -322,13 +322,13 @@
                             1.0
                         ]
                     },
-                    "guid": 0,
+                    "guid": 12443306838322136945,
                     "type": "engine.Transform"
                 },
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "projects/TeamGame/content/materials/instances/skydome.matinst.json",
+                        "materialInstancePath": "",
                         "materialSlots": [
                             {
                                 "materialInstancePath": "projects/TeamGame/content/materials/instances/skydome.matinst.json",
@@ -337,7 +337,7 @@
                         ],
                         "meshPath": "projects/TeamGame/content/models/skydome/skydome.obj"
                     },
-                    "guid": 0,
+                    "guid": 14371790217663186054,
                     "type": "engine.StaticMeshRenderer"
                 }
             ],
@@ -345,6 +345,47 @@
             "guid": 7,
             "isEditorOnly": false,
             "name": "Skydome",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 17791264336607419634,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {},
+                    "guid": 0,
+                    "type": "mygame.TitleController"
+                }
+            ],
+            "folderPath": "",
+            "guid": 8,
+            "isEditorOnly": false,
+            "name": "TitleController",
             "tags": [],
             "visible": true
         }

@@ -384,7 +384,8 @@ namespace Unnamed {
 			.assetManager  = mAssetManager.get(),
 			.profiler      = mProfiler.get(),
 			.windowManager = mWindowManager.get(),
-			.demoService   = mDemoService.get()
+			.demoService   = mDemoService.get(),
+			.audioSystem   = mAudioSystem.get()
 		};
 		mGameModule.Initialize(engineServices);
 		RegisterEngineComponents(ComponentRegistry::Get());

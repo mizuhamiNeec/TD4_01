@@ -12,6 +12,7 @@
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/framework/components/ui/UiCanvasComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
+#include "engine/world/World.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -606,7 +607,9 @@ void MyGame::GameRuleSystemComponent::UpdateTrashScore()
 			}
 
 			if (entity->GetComponent<TrashObjMoverComponent>()) {
-				_scoreComponent->AddTrashIntoHoleScore(GetEntityGuid(entity));
+				if (_scoreComponent->AddTrashIntoHoleScore(GetEntityGuid(entity))) {
+					PublishTrashIntoHolePresentationCue(*entity);
+				}
 			}
 
 			if (auto* golfBall = entity->GetComponent<GolfBallComponent>()) {
@@ -643,6 +646,26 @@ void MyGame::GameRuleSystemComponent::UpdateTrashScore()
 
 		_scoreComponent->AddTrashToSeaScore(GetEntityGuid(entity));
 	}
+}
+
+void MyGame::GameRuleSystemComponent::PublishTrashIntoHolePresentationCue(
+	Unnamed::Entity& trashEntity
+) const {
+	Unnamed::World* world = GetWorld();
+	const Unnamed::Entity* owner = GetOwner();
+	if (!world || !owner) {
+		return;
+	}
+
+	Unnamed::GameplayCue cue = {};
+	cue.id = "trash.into_hole";
+	cue.sourceEntityGuid = owner->GetGuid();
+	cue.value = 1.0f;
+	cue.value2 = static_cast<float>(
+		_scoreComponent ? _scoreComponent->GetTrashIntoHoleTotal() : 0
+	);
+	cue.SetEntityId("trash_guid", GetEntityGuid(&trashEntity));
+	world->GetGameplayCueBus().Publish(cue);
 }
 
 void MyGame::GameRuleSystemComponent::UpdateBallResult(float deltaTime)

@@ -214,6 +214,9 @@ namespace MyGame {
 		/// 穴や海に入ったゴミをスコアへ反映
 		void UpdateTrashScore();
 
+		/// @brief ゴミが穴へ入ったときの Presentation Cue を発火
+		void PublishTrashIntoHolePresentationCue(Unnamed::Entity& trashEntity) const;
+
 		/// ボールのキャッチ・停止・OBを判定
 		void UpdateBallResult(float deltaTime);
 

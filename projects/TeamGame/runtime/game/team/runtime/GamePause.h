@@ -11,7 +11,9 @@ namespace Unnamed {
 		void Serialize(JsonWriter& writer) const override;
 		void OnAttached() override;
 		void OnFrameInputTick(float frameDeltaTime) override;
+#ifdef _DEBUG
 		void DrawInspectorImGui() override;
+#endif
 		[[nodiscard]] TICK_GROUP GetTickGroup() const override;
 
 	private:

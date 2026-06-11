@@ -64,9 +64,11 @@ namespace Unnamed {
 		}
 	}
 
+#ifdef _DEBUG
 	void GamePause::DrawInspectorImGui() {
 		BaseComponent::DrawInspectorImGui();
 	}
+#endif
 
 	BaseComponent::TICK_GROUP GamePause::GetTickGroup() const {
 		return TICK_GROUP::EARLY;

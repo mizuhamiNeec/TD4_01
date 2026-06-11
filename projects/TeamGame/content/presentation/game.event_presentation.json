@@ -126,7 +126,7 @@
                     "y": 128.0
                 },
                 {
-                    "actionId": "",
+                    "actionId": "se_ballshoot",
                     "actionType": "sound.play",
                     "clampEnabled": false,
                     "clampMax": 3.4028234663852886e+38,
@@ -147,7 +147,7 @@
                     "kind": "action",
                     "multiply": 1.0,
                     "payloadName": "",
-                    "title": "Action",
+                    "title": "ボールを打ったときの音",
                     "valueSource": "cue.value",
                     "x": 384.0,
                     "y": 128.0
@@ -201,7 +201,7 @@
                     "kind": "action",
                     "multiply": 1.0,
                     "payloadName": "",
-                    "title": "Action",
+                    "title": "ダイレクトホールインワンしたときのファンファーレ",
                     "valueSource": "cue.value",
                     "x": 384.0,
                     "y": 320.0
@@ -245,7 +245,7 @@
                     "conditionMin": -3.4028234663852886e+38,
                     "constant": 0.0,
                     "cooldownSec": 0.0,
-                    "cueId": "game.holeinonefanfare",
+                    "cueId": "",
                     "debugText": "",
                     "execInPinId": 21,
                     "execOutPinId": 22,
@@ -363,7 +363,7 @@
                     "kind": "action",
                     "multiply": 1.0,
                     "payloadName": "",
-                    "title": "ゴミが着地したときの音",
+                    "title": "ゴミが海に落ちたときの音",
                     "valueSource": "cue.value",
                     "x": 384.0,
                     "y": 1088.0
@@ -760,17 +760,18 @@
                 }
             ],
             "view": {
-                "panX": 247.62347412109375,
-                "panY": -50.03158950805664,
+                "panX": 595.9564819335938,
+                "panY": 155.96864318847656,
                 "zoom": 0.5999999046325684
             }
         }
     },
-    "name": "teamgame.trash_into_hole",
+    "name": "teamgame.game",
     "triggers": [
         {
             "actions": [
                 {
+                    "id": "se_ballshoot",
                     "type": "sound.play",
                     "value": {
                         "source": "cue.value"

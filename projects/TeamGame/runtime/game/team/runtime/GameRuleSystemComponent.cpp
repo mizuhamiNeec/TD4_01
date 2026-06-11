@@ -13,6 +13,7 @@
 #include "engine/unnamed/framework/components/particle/ParticleEmitterComponent.h"
 #include "engine/unnamed/framework/components/ui/UiCanvasComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
+#include "engine/unnamed/subsystem/console/ConsoleSystem.h"
 #include "engine/world/World.h"
 #include <algorithm>
 #include <array>
@@ -40,6 +41,15 @@ void MyGame::GameRuleSystemComponent::OnTick(float deltaTime)
 {
 	// NOTE: シーン編集や遅延生成に対応するため、参照は毎フレーム補完する。
 	ResolveRuntimeReferences();
+	if (UpdatePendingResultSceneTransition(deltaTime)) {
+		return;
+	}
+	if (_phase != GamePhase::Result && !_isGameEnded && IsGolfBallSeaFallResult()) {
+		// NOTE: 海落下音が鳴る状態なら、ゲーム進行フラグの取りこぼしに関係なくNot結果を確定する。
+		// NOTE: 穴入り成功とは別経路にすることで、海落下がホールインワン成功へ誤変換されるのを避ける。
+		FinishBallAsNotHoleInOne();
+		return;
+	}
 	UpdateGamePhase(deltaTime);
 	if (_phase != GamePhase::Playing && _phase != GamePhase::Result &&
 		ShouldMonitorBallResult()) {
@@ -101,7 +111,12 @@ void MyGame::GameRuleSystemComponent::DrawInspectorImGui()
 	ImGui::DragFloat("Sea Out Height", &_seaOutHeight, 0.1f, -999.0f, 999.0f, "%.2f");
 	ImGui::DragFloat("Ball Sea Out Height", &_ballSeaOutHeight, 0.1f, -999.0f, 999.0f, "%.2f");
 	ImGui::DragFloat(
-		"Ball Stop Result Velocity", &_ballStopResultVelocityThreshold, 0.01f, 0.0f, 10.0f, "%.3f"
+		"Not Hole In One Result Delay",
+		&_notHoleInOneResultTransitionDelay,
+		0.1f,
+		0.0f,
+		10.0f,
+		"%.2f sec"
 	);
 	ImGui::DragInt("Countdown Trash Wave Count", &_countdownTrashWaveCount, 1, 0, 999);
 	ImGui::DragInt("Ball Hit Trash Wave Count", &_ballHitTrashWaveCount, 1, 0, 999);
@@ -149,6 +164,88 @@ void MyGame::GameRuleSystemComponent::DrawInspectorImGui()
 	if (ImGui::Button("Reset")) {
 		ResetGame();
 	}
+
+	ImGui::Separator();
+	ImGui::Text("Clear Debug");
+	if (ImGui::Button("Show Not Hole In One UI + Result")) {
+		DebugTriggerNotHoleInOne();
+	}
+	if (ImGui::Button("Direct Hole In One")) {
+		DebugTriggerDirectHoleInOne();
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Normal Hole In One")) {
+		DebugTriggerNormalHoleInOne();
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Not Hole In One")) {
+		DebugTriggerNotHoleInOne();
+	}
+	ImGui::TextDisabled(
+		"Direct: game.directholeinone / Normal: game.holeinone / Not: game.notholeinone"
+	);
+}
+
+void MyGame::GameRuleSystemComponent::PrepareDebugClearTrigger()
+{
+	// NOTE: Inspector検証ではResult済みから再発火するため、FinishGameの早期return条件を解除する。
+	ResolveRuntimeReferences();
+	SetStageIntroHudHidden(false);
+	ApplyStageIntroControlState(false);
+	SetStageIntroUiVisible(false);
+	StopGoalConfetti();
+	_phase = GamePhase::Playing;
+	_isGameStarted = true;
+	_isGameEnded = false;
+	_hasBallLaunched = true;
+	_ballFlightElapsedTime = 0.0f;
+}
+
+void MyGame::GameRuleSystemComponent::DebugTriggerDirectHoleInOne()
+{
+	// NOTE: Direct成功の確認ではバウンド状態を消し、実入球時と同じCue/UI/リザルト経路へ流す。
+	PrepareDebugClearTrigger();
+	_isOutOfBounds = false;
+	_isHoleInOne = true;
+	_isDirectHoleInOne = true;
+	_hasBallBounced = false;
+	_hasPublishedNotHoleInOneCue = false;
+	if (_scoreComponent) {
+		_scoreComponent->AddDirectHoleInOneBonus();
+	}
+	PublishPresentationCue("game.directholeinone");
+	StartGoalConfetti();
+	FinishGame();
+	(void)ApplyClearUiForResult();
+}
+
+void MyGame::GameRuleSystemComponent::DebugTriggerNormalHoleInOne()
+{
+	// NOTE: 通常成功の確認ではバウンド後扱いを明示し、Directとは別UIになることを検証する。
+	PrepareDebugClearTrigger();
+	_isOutOfBounds = false;
+	_isHoleInOne = true;
+	_isDirectHoleInOne = false;
+	_hasBallBounced = true;
+	_hasPublishedNotHoleInOneCue = false;
+	if (_scoreComponent) {
+		_scoreComponent->AddHoleInOneBonus();
+	}
+	PublishPresentationCue("game.holeinone");
+	StartGoalConfetti();
+	FinishGame();
+	(void)ApplyClearUiForResult();
+}
+
+void MyGame::GameRuleSystemComponent::DebugTriggerNotHoleInOne()
+{
+	// NOTE: 失敗確認ではNotHoleInOneの一度だけ発火ガードを戻し、海落下と同じ終了処理を通す。
+	PrepareDebugClearTrigger();
+	_isHoleInOne = false;
+	_isDirectHoleInOne = false;
+	_hasPublishedNotHoleInOneCue = false;
+	FinishBallAsNotHoleInOne();
+	(void)ApplyNotHoleInOneUiForResult();
 }
 #endif
 
@@ -179,8 +276,8 @@ void MyGame::GameRuleSystemComponent::Deserialize(const Unnamed::JsonReader & re
 	if (auto val = reader.Read<float>("ballSeaOutHeight")) {
 		_ballSeaOutHeight = val.value();
 	}
-	if (auto val = reader.Read<float>("ballStopResultVelocityThreshold")) {
-		_ballStopResultVelocityThreshold = std::max(0.0f, val.value());
+	if (auto val = reader.Read<float>("notHoleInOneResultTransitionDelay")) {
+		_notHoleInOneResultTransitionDelay = std::max(0.0f, val.value());
 	}
 	if (auto val = reader.Read<bool>("launchBallOnPlayingStart")) {
 		_launchBallOnPlayingStart = val.value();
@@ -244,8 +341,8 @@ void MyGame::GameRuleSystemComponent::Serialize(Unnamed::JsonWriter & writer) co
 	writer.Write(_seaOutHeight);
 	writer.Key("ballSeaOutHeight");
 	writer.Write(_ballSeaOutHeight);
-	writer.Key("ballStopResultVelocityThreshold");
-	writer.Write(_ballStopResultVelocityThreshold);
+	writer.Key("notHoleInOneResultTransitionDelay");
+	writer.Write(_notHoleInOneResultTransitionDelay);
 	writer.Key("launchBallOnPlayingStart");
 	writer.Write(_launchBallOnPlayingStart);
 	writer.Key("countdownTrashWaveCount");
@@ -287,6 +384,8 @@ void MyGame::GameRuleSystemComponent::StartStageIntro()
 	_ballFlightElapsedTime = 0.0f;
 	_hasBallLaunched = false;
 	_hasBallBounced = false;
+	_pendingNotHoleInOneResultTransition = false;
+	_notHoleInOneResultTransitionElapsed = 0.0f;
 	_hasTriggeredCountdownTrashWave = false;
 	_hasTriggeredBallHitTrashWave = false;
 	_hasTriggeredAfterHitTrashWave = false;
@@ -318,6 +417,8 @@ void MyGame::GameRuleSystemComponent::StartCountdown()
 	_hasBallBounced = false;
 	_hasPublishedBallShootCue = false;
 	_hasPublishedNotHoleInOneCue = false;
+	_pendingNotHoleInOneResultTransition = false;
+	_notHoleInOneResultTransitionElapsed = 0.0f;
 	_hasTriggeredCountdownTrashWave = false;
 	_hasTriggeredBallHitTrashWave = false;
 	_hasTriggeredAfterHitTrashWave = false;
@@ -347,6 +448,8 @@ void MyGame::GameRuleSystemComponent::StartPlaying()
 	_hasBallBounced = false;
 	_hasPublishedBallShootCue = false;
 	_hasPublishedNotHoleInOneCue = false;
+	_pendingNotHoleInOneResultTransition = false;
+	_notHoleInOneResultTransitionElapsed = 0.0f;
 	ApplyStageIntroControlState(false);
 
 	if (_launchCountdownComponent) {
@@ -400,6 +503,10 @@ void MyGame::GameRuleSystemComponent::FinishGame()
 		PublishNotHoleInOnePresentationCue();
 	}
 	(void)ApplyClearUiForResult();
+	if (!_isHoleInOne) {
+		// NOTE: Not結果は透明ボタン入力に依存せず、必ずResultシーンへ進める。
+		QueueNotHoleInOneResultTransition();
+	}
 	_phase = GamePhase::Result;
 	_isGameEnded = true;
 	if (_launchCountdownComponent) {
@@ -426,6 +533,8 @@ void MyGame::GameRuleSystemComponent::ResetGame()
 	_hasTriggeredBallHitTrashWave = false;
 	_hasTriggeredAfterHitTrashWave = false;
 	_stageIntroElapsedTime = 0.0f;
+	_pendingNotHoleInOneResultTransition = false;
+	_notHoleInOneResultTransitionElapsed = 0.0f;
 	StopGoalConfetti();
 
 	if (_launchCountdownComponent) {
@@ -766,47 +875,30 @@ void MyGame::GameRuleSystemComponent::UpdateBallResult(float deltaTime)
 
 	if (_hasBallLaunched && _playerHoleComponent &&
 		_playerHoleComponent->TryEnterGolfBall(*_golfBallComponent)) {
-		// NOTE: PlayerHoleComponentのTick順に依存せず、動く穴に入った事実を最優先で成功扱いにする。
+		// NOTE: 穴入り成功は「ボール停止による失敗判定」より必ず先に確定する。
+		// NOTE: PlayerHoleComponentのTick順に依存すると、穴に入った直後の低速状態を停止失敗と誤判定するため。
 		(void)TryScoreBallCatch(*_golfBallComponent);
 		FinishGame();
 		return;
 	}
 
 	if (_golfBallComponent->HasEnteredHole()) {
-		// NOTE: 穴へ入ったボールは落下演出で海高さを下回るため、OB/停止より先に成功扱いで確定する。
+		// NOTE: HasEnteredHoleが立った時点では、穴の中でボールが止まる/落下する途中でも成功扱いを固定する。
+		// NOTE: ここを停止判定や海落下判定より後にすると、穴の中の低速・低高度状態がNotHoleInOneへ流れてしまう。
 		(void)TryScoreBallCatch(*_golfBallComponent);
 		FinishGame();
 		return;
 	}
 
-	auto* ballEntity = _golfBallComponent->GetOwner();
-	auto* transform = ballEntity ? ballEntity->GetComponent<Unnamed::TransformComponent>() : nullptr;
-	const Vec3 ballPosition = _golfBallComponent->GetCurrentPosition();
-	if (_hasBallLaunched &&
-		!_golfBallComponent->IsInsideGroundArea() &&
-		ballPosition.y <= _golfBallComponent->GetGroundLevel()) {
-		// NOTE: 円形地面エリア外は海扱いなので、-100まで待たずにNotホールインワンを確定する。
+	if (IsGolfBallSeaFallResult()) {
+		// NOTE: 海落下は穴接触として偽装しない。HasEnteredHoleを立てると成功結果へ流れるため。
+		// NOTE: 代わりに、穴接触と同じ強さの確定イベントとしてNotHoleInOne UIとResultを直接発火する。
 		FinishBallAsNotHoleInOne();
 		return;
 	}
 
-	const float ballSeaResultHeight = std::max(_ballSeaOutHeight, _seaOutHeight);
-	if (transform && transform->GetPosition().y <= ballSeaResultHeight) {
-		// NOTE: ボールが海高さへ入った時点でNotホールインワンを確定し、リザルトUIへ進める。
-		FinishBallAsNotHoleInOne();
-		return;
-	}
-
-	if (_hasBallLaunched && IsBallStoppedForResult()) {
-		// NOTE: ホールインワンのルールなので、止まった時点で失敗として終了する。
-		FinishGame();
-		return;
-	}
-
-	if (_hasBallLaunched && _ballFlightElapsedTime >= _maxBallFlightSeconds) {
-		// NOTE: 15〜20秒想定を超えたら、止まりきらない場合でもリザルトへ進める。
-		FinishGame();
-	}
+	// NOTE: 停止や時間経過だけではNotHoleInOneにしない。
+	// NOTE: Not結果は海落下など、明確に失敗エリアへ入った場合だけ確定する。
 }
 
 bool MyGame::GameRuleSystemComponent::ShouldMonitorBallResult() const
@@ -828,20 +920,51 @@ bool MyGame::GameRuleSystemComponent::ShouldMonitorBallResult() const
 		return true;
 	}
 
+	return IsGolfBallSeaFallResult();
+}
+
+bool MyGame::GameRuleSystemComponent::IsGolfBallSeaFallResult() const
+{
+	if (!_golfBallComponent || _golfBallComponent->HasEnteredHole()) {
+		return false;
+	}
+
 	const auto* ballEntity = _golfBallComponent->GetOwner();
 	const auto* transform =
 		ballEntity ? ballEntity->GetComponent<Unnamed::TransformComponent>() : nullptr;
+	const Vec3 ballPosition = _golfBallComponent->GetCurrentPosition();
+	const float ballY = transform ? transform->GetPosition().y : ballPosition.y;
+
+	const bool isOutsideGroundSea =
+		!_golfBallComponent->IsInsideGroundArea() &&
+		ballY <= _golfBallComponent->GetGroundLevel();
 	const float ballSeaResultHeight = std::max(_ballSeaOutHeight, _seaOutHeight);
-	// NOTE: 海落下はフェーズに依存せず、ボール座標が閾値を下回った時点で失敗結果へ進める。
-	return transform && transform->GetPosition().y <= ballSeaResultHeight;
+	const bool isBelowSeaHeight =
+		ballY <= ballSeaResultHeight ||
+		ballPosition.y <= ballSeaResultHeight;
+
+	// NOTE: 地面範囲外で地面高さ以下、または海判定高さ以下ならNot結果を強制する。
+	// NOTE: Transformと内部位置の同期ずれがあっても拾えるよう、両方のY座標を確認する。
+	return isOutsideGroundSea || isBelowSeaHeight;
 }
 
 void MyGame::GameRuleSystemComponent::FinishBallAsNotHoleInOne()
 {
-	// NOTE: 海落下はホールインワン失敗として扱い、FinishGame側でNotHoleInOne UIとCueを発火させる。
+	// NOTE: 海落下は穴入り成功フラグを立てず、ホールインワン失敗として直接Resultへ進める。
+	ResolveRuntimeReferences();
+	if (_phase == GamePhase::Result && _isGameEnded) {
+		if (!_isHoleInOne) {
+			// NOTE: 既に失敗結果ならスコアを増やさず、UI表示漏れだけを再補正する。
+			PublishNotHoleInOnePresentationCue();
+			(void)ApplyNotHoleInOneUiForResult();
+		}
+		return;
+	}
+
 	_isOutOfBounds = true;
 	_isHoleInOne = false;
 	_isDirectHoleInOne = false;
+	_hasBallLaunched = true;
 	if (_scoreComponent) {
 		_scoreComponent->AddOutOfBoundsPenalty();
 	}
@@ -849,6 +972,33 @@ void MyGame::GameRuleSystemComponent::FinishBallAsNotHoleInOne()
 	(void)ApplyNotHoleInOneUiForResult();
 	FinishGame();
 	(void)ApplyNotHoleInOneUiForResult();
+}
+
+void MyGame::GameRuleSystemComponent::QueueNotHoleInOneResultTransition()
+{
+	// NOTE: Not UIの透明ボタンが他UIに遮られてもResultへ進めるよう、コード側で遷移を予約する。
+	_pendingNotHoleInOneResultTransition = true;
+	_notHoleInOneResultTransitionElapsed = 0.0f;
+}
+
+bool MyGame::GameRuleSystemComponent::UpdatePendingResultSceneTransition(float deltaTime)
+{
+	if (!_pendingNotHoleInOneResultTransition) {
+		return false;
+	}
+
+	// NOTE: notHoleInone.ui.jsonを最低限見せるため、即mapではなく短い猶予を置く。
+	_notHoleInOneResultTransitionElapsed += std::max(0.0f, deltaTime);
+	if (_notHoleInOneResultTransitionElapsed < _notHoleInOneResultTransitionDelay) {
+		return false;
+	}
+
+	_pendingNotHoleInOneResultTransition = false;
+	if (auto* console = GetConsoleSystem()) {
+		console->ExecuteCommand(_resultSceneCommand);
+		return true;
+	}
+	return false;
 }
 
 void MyGame::GameRuleSystemComponent::UpdateTrashWaveTiming()
@@ -1015,35 +1165,6 @@ bool MyGame::GameRuleSystemComponent::ApplyNotHoleInOneUiForResult()
 		return false;
 	}
 	return isRuntimeLoaded;
-}
-
-bool MyGame::GameRuleSystemComponent::IsBallStoppedForResult() const
-{
-	if (!_golfBallComponent) {
-		return false;
-	}
-	if (_golfBallComponent->HasEnteredHole()) {
-		return false;
-	}
-	if (_golfBallComponent->IsBeingSucked()) {
-		return false;
-	}
-	if (!_golfBallComponent->IsInFlight()) {
-		return true;
-	}
-
-	const Vec3 velocity = _golfBallComponent->GetCurrentVelocity();
-	const Vec3 position = _golfBallComponent->GetCurrentPosition();
-	const float horizontalSpeedSq = velocity.x * velocity.x + velocity.z * velocity.z;
-	const float stopSpeedSq =
-		_ballStopResultVelocityThreshold * _ballStopResultVelocityThreshold;
-	const bool isNearlyResting =
-		horizontalSpeedSq <= stopSpeedSq &&
-		std::abs(velocity.y) <= _ballStopResultVelocityThreshold &&
-		position.y > _ballSeaOutHeight;
-
-	// NOTE: 吸い込み中は穴への移行処理なので、速度が低くても停止失敗として扱わない。
-	return isNearlyResting;
 }
 
 Unnamed::UiCanvasComponent* MyGame::GameRuleSystemComponent::ResolveClearUiCanvas() const

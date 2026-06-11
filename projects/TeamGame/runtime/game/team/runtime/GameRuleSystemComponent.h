@@ -133,8 +133,6 @@ namespace MyGame {
 		float _seaOutHeight = -10.0f;
 		// ボールがこの高さ以下ならホールインワン失敗としてリザルトへ進める
 		float _ballSeaOutHeight = -100.0f;
-		// ボール停止失敗を判定する速度閾値
-		float _ballStopResultVelocityThreshold = 0.08f;
 		// プレイ中の経過時間
 		float _playingElapsedTime = 0.0f;
 		// ボールが打たれてからの経過時間
@@ -171,6 +169,8 @@ namespace MyGame {
 		std::string _directHoleInOneUiAssetPath = "projects/TeamGame/content/ui/directHoleinone.ui.json";
 		// ボール停止・海落下など、ホールインワン失敗時に表示するUI
 		std::string _notHoleInOneUiAssetPath = "projects/TeamGame/content/ui/notHoleInone.ui.json";
+		// Notホールインワン確定後に遷移するリザルトシーンコマンド
+		std::string _resultSceneCommand = "map projects/TeamGame/content/scenes/result.json";
 		// 終了表示を書き換える対象UIエンティティ名
 		std::string _clearUiEntityName = "Clear_UI";
 		// ステージ紹介中に表示する目標UIエンティティ名
@@ -182,6 +182,12 @@ namespace MyGame {
 		std::string _stageIntroUiAssetPath = "projects/TeamGame/content/ui/gameshow.ui.json";
 		// ステージ紹介中だけ隠す通常UIの復元用キャッシュ
 		std::unordered_map<uint64_t, bool> _stageIntroUiVisibility;
+		// NotホールインワンUIを見せてからリザルトへ遷移するまでの猶予
+		float _notHoleInOneResultTransitionDelay = 2.0f;
+		// Notホールインワン後のリザルト遷移予約
+		bool _pendingNotHoleInOneResultTransition = false;
+		// リザルト遷移予約後の経過時間
+		float _notHoleInOneResultTransitionElapsed = 0.0f;
 		// ゴルフボール発射カウントダウンコンポーネントのキャッシュ
 		GolfBallLaunchCountdownComponent* _launchCountdownComponent = nullptr;
 		// スコアコンポーネントのキャッシュ
@@ -248,9 +254,39 @@ namespace MyGame {
 		/// ボール結果監視を開始できる状態かを判定
 		[[nodiscard]] bool ShouldMonitorBallResult() const;
 
+		/// ボールが海落下としてNot結果へ進める状態かを判定
+		/// @reason 穴入り成功フラグを立てずに、海落下だけを強制失敗として扱うため
+		[[nodiscard]] bool IsGolfBallSeaFallResult() const;
+
 		/// ボールをNotホールインワンとして確定
 		/// @reason 海落下と地面範囲外落下の終了処理を同じ副作用にそろえる
 		void FinishBallAsNotHoleInOne();
+
+		/// NotホールインワンUI表示後のリザルト遷移を予約
+		/// @reason UIボタン入力が拾えない状態でも、失敗結果を必ずResultシーンへ進めるため
+		void QueueNotHoleInOneResultTransition();
+
+		/// 予約済みのリザルト遷移を更新
+		/// @reason Not表示を短時間見せてからmapコマンドを実行するため
+		[[nodiscard]] bool UpdatePendingResultSceneTransition(float deltaTime);
+
+#ifdef _DEBUG
+		/// InspectorからDirectホールインワンを手動発火
+		/// @reason 実際の入球条件に依存せず、Cue・UI・リザルト遷移を単体確認するため
+		void DebugTriggerDirectHoleInOne();
+
+		/// Inspectorから通常ホールインワンを手動発火
+		/// @reason バウンド後成功のCue・UI・リザルト遷移を単体確認するため
+		void DebugTriggerNormalHoleInOne();
+
+		/// InspectorからNotホールインワンを手動発火
+		/// @reason 海落下や場外失敗のCue・UI・リザルト遷移を単体確認するため
+		void DebugTriggerNotHoleInOne();
+
+		/// Debug発火前にリザルト早期returnを解除
+		/// @reason Result済み状態からでも各クリア条件を繰り返し検証できるようにするため
+		void PrepareDebugClearTrigger();
+#endif
 
 		/// PDFに書かれたゴミ出現タイミングを状態として発火
 		void UpdateTrashWaveTiming();
@@ -277,9 +313,6 @@ namespace MyGame {
 		/// Notホールインワン表示UIを直接表示
 		/// @reason 音Cueとは独立して、海落下時に必ず失敗UIを出すため
 		[[nodiscard]] bool ApplyNotHoleInOneUiForResult();
-
-		/// ボールが停止失敗として扱えるかを判定
-		[[nodiscard]] bool IsBallStoppedForResult() const;
 
 		/// クリア表示用のUIキャンバスを検索
 		[[nodiscard]] Unnamed::UiCanvasComponent* ResolveClearUiCanvas() const;

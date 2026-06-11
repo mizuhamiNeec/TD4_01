@@ -2295,11 +2295,11 @@
                         "materialInstancePath": "",
                         "materialSlots": [
                             {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/fish.matinst.json",
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/windmill.matinst.json",
                                 "slotIndex": 0
                             },
                             {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/skydome.matinst.json",
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/windmill.matinst.json",
                                 "slotIndex": 1
                             }
                         ],
@@ -2377,11 +2377,11 @@
                         "materialInstancePath": "",
                         "materialSlots": [
                             {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/fish.matinst.json",
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/windmill.matinst.json",
                                 "slotIndex": 0
                             },
                             {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/skydome.matinst.json",
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/windmill.matinst.json",
                                 "slotIndex": 1
                             }
                         ],
@@ -2459,11 +2459,11 @@
                         "materialInstancePath": "",
                         "materialSlots": [
                             {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/fish.matinst.json",
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/windmill.matinst.json",
                                 "slotIndex": 0
                             },
                             {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/skydome.matinst.json",
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/windmill.matinst.json",
                                 "slotIndex": 1
                             }
                         ],
@@ -2756,13 +2756,13 @@
                             2.75
                         ]
                     },
-                    "guid": 0,
+                    "guid": 11562859588824229011,
                     "type": "engine.Transform"
                 },
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "projects/TeamGame/content/materials/instances/player.matinst.json",
+                        "materialInstancePath": "",
                         "materialSlots": [
                             {
                                 "materialInstancePath": "projects/TeamGame/content/materials/instances/player.matinst.json",
@@ -2771,7 +2771,7 @@
                         ],
                         "meshPath": "projects/TeamGame/content/models/player/Player_Hole.gltf"
                     },
-                    "guid": 0,
+                    "guid": 13186617026700287554,
                     "type": "engine.SkeletalMeshRenderer"
                 },
                 {
@@ -2792,7 +2792,7 @@
                         "speed": 1.0,
                         "stateMap": []
                     },
-                    "guid": 0,
+                    "guid": 17822039369409182563,
                     "type": "engine.SkeletalAnimation"
                 }
             ],

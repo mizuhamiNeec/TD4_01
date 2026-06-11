@@ -1716,7 +1716,7 @@
                     "type": "engine.StaticMeshRenderer"
                 }
             ],
-            "folderPath": "",
+            "folderPath": "Env",
             "guid": 12087284352773638142,
             "isEditorOnly": false,
             "name": "Skydome",
@@ -2007,13 +2007,13 @@
                             1.0
                         ]
                     },
-                    "guid": 0,
+                    "guid": 14965740394424759415,
                     "type": "engine.Transform"
                 },
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "projects/TeamGame/content/materials/instances/ocean.matinst.json",
+                        "materialInstancePath": "",
                         "materialSlots": [
                             {
                                 "materialInstancePath": "projects/TeamGame/content/materials/instances/ocean.matinst.json",
@@ -2022,7 +2022,7 @@
                         ],
                         "meshPath": "projects/TeamGame/content/models/ocean/ocean.obj"
                     },
-                    "guid": 0,
+                    "guid": 13370444909291144881,
                     "type": "engine.StaticMeshRenderer"
                 }
             ],

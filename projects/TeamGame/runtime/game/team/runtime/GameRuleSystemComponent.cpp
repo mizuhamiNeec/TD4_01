@@ -92,6 +92,7 @@ void MyGame::GameRuleSystemComponent::DrawInspectorImGui()
 	ImGui::DragFloat("Min Ball Flight Seconds", &_minBallFlightSeconds, 0.1f, 0.0f, 999.0f, "%.2f sec");
 	ImGui::DragFloat("Max Ball Flight Seconds", &_maxBallFlightSeconds, 0.1f, 0.0f, 999.0f, "%.2f sec");
 	ImGui::DragFloat("Sea Out Height", &_seaOutHeight, 0.1f, -999.0f, 999.0f, "%.2f");
+	ImGui::DragFloat("Ball Sea Out Height", &_ballSeaOutHeight, 0.1f, -999.0f, 999.0f, "%.2f");
 	ImGui::DragFloat(
 		"Ball Stop Result Velocity", &_ballStopResultVelocityThreshold, 0.01f, 0.0f, 10.0f, "%.3f"
 	);
@@ -167,6 +168,9 @@ void MyGame::GameRuleSystemComponent::Deserialize(const Unnamed::JsonReader & re
 	if (auto val = reader.Read<float>("seaOutHeight")) {
 		_seaOutHeight = val.value();
 	}
+	if (auto val = reader.Read<float>("ballSeaOutHeight")) {
+		_ballSeaOutHeight = val.value();
+	}
 	if (auto val = reader.Read<float>("ballStopResultVelocityThreshold")) {
 		_ballStopResultVelocityThreshold = std::max(0.0f, val.value());
 	}
@@ -226,6 +230,8 @@ void MyGame::GameRuleSystemComponent::Serialize(Unnamed::JsonWriter & writer) co
 	writer.Write(_maxBallFlightSeconds);
 	writer.Key("seaOutHeight");
 	writer.Write(_seaOutHeight);
+	writer.Key("ballSeaOutHeight");
+	writer.Write(_ballSeaOutHeight);
 	writer.Key("ballStopResultVelocityThreshold");
 	writer.Write(_ballStopResultVelocityThreshold);
 	writer.Key("launchBallOnPlayingStart");
@@ -359,9 +365,6 @@ void MyGame::GameRuleSystemComponent::FinishGame()
 	(void)ApplyClearUiForResult();
 	ApplyStageIntroControlState(false);
 	SetStageIntroUiVisible(false);
-	if (_playerMoveComponent) {
-		_playerMoveComponent->SetMovementEnabled(false);
-	}
 	_phase = GamePhase::Result;
 	_isGameEnded = true;
 	if (_launchCountdownComponent) {
@@ -675,8 +678,8 @@ void MyGame::GameRuleSystemComponent::UpdateBallResult(float deltaTime)
 
 	auto* ballEntity = _golfBallComponent->GetOwner();
 	auto* transform = ballEntity ? ballEntity->GetComponent<Unnamed::TransformComponent>() : nullptr;
-	if (transform && transform->GetPosition().y <= _seaOutHeight) {
-		// NOTE: ボールが海へ落ちたらOB扱いで終了する。
+	if (transform && transform->GetPosition().y <= _ballSeaOutHeight) {
+		// NOTE: 海面付近の一時的な沈み込みではなく、十分に落下した時点でNotホールインワンを確定する。
 		_isOutOfBounds = true;
 		if (_scoreComponent) {
 			_scoreComponent->AddOutOfBoundsPenalty();
@@ -797,7 +800,7 @@ bool MyGame::GameRuleSystemComponent::IsBallStoppedForResult() const
 	const bool isNearlyResting =
 		horizontalSpeedSq <= stopSpeedSq &&
 		std::abs(velocity.y) <= _ballStopResultVelocityThreshold &&
-		position.y > _seaOutHeight;
+		position.y > _ballSeaOutHeight;
 
 	// NOTE: 吸い込み中は穴への移行処理なので、速度が低くても停止失敗として扱わない。
 	return isNearlyResting;

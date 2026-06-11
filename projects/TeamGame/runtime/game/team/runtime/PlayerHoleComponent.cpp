@@ -142,11 +142,15 @@ namespace MyGame {
 			return golfBall.HasEnteredHole();
 		}
 
-		if (!IsEntityInHoleRange(ballEntity)) {
+		if (!golfBall.HasEnteredHole() && !golfBall.IsInFlight()) {
+			return false;
+		}
+
+		if (!IsGolfBallCollidingWithHole(golfBall)) {
 			return golfBall.HasEnteredHole();
 		}
 
-		// NOTE: GameRule側の更新順に依存せず、このフレームで動く穴への入球を確定する。
+		// NOTE: 配置が重なっただけではなく、発射後のボールが穴範囲へ入った瞬間だけ入球を確定する。
 		golfBall.EnterHoleFall(GetHoleWorldPosition());
 		return true;
 	}
@@ -374,7 +378,7 @@ namespace MyGame {
 		// NOTE: TrashObjMoverComponent または GolfBallComponent を持つかチェック
 		auto* trashComponent = entity->GetComponent<TrashObjMoverComponent>();
 		auto* golfBallComponent = entity->GetComponent<GolfBallComponent>();
-		if (!trashComponent && !golfBallComponent) {
+		if (!trashComponent || golfBallComponent) {
 			return false;
 		}
 
@@ -387,11 +391,7 @@ namespace MyGame {
 		// NOTE: 穴の世界座標を取得
 		Vec3 holeWorldPos = GetHoleWorldPosition();
 
-		// NOTE: ボールはTransformよりGolfBallComponent内部位置の方が最新なので、穴判定には実移動位置を使う。
-		Vec3 entityPos = golfBallComponent ? golfBallComponent->GetCurrentPosition() : transform->GetPosition();
-		if (golfBallComponent && !IsGolfBallLowEnoughForHole(*golfBallComponent, holeWorldPos)) {
-			return false;
-		}
+		Vec3 entityPos = transform->GetPosition();
 
 		// NOTE: 穴は地面上の円として扱うため、高さ差ではなく水平距離だけで判定する。
 		Vec3 diff = entityPos - holeWorldPos;
@@ -402,19 +402,18 @@ namespace MyGame {
 		return distance <= _holeRadius;
 	}
 
-	bool PlayerHoleComponent::IsGolfBallLowEnoughForHole(
-		const GolfBallComponent& golfBall,
-		const Vec3& holeWorldPos
+	bool PlayerHoleComponent::IsGolfBallCollidingWithHole(
+		const GolfBallComponent& golfBall
 	) const {
-		const Vec3 ballPosition = golfBall.GetCurrentPosition();
-		const Vec3 ballVelocity = golfBall.GetCurrentVelocity();
-		const float verticalDistance = ballPosition.y - holeWorldPos.y;
-		const float allowedHeight = std::max(0.5f, _holeRadius * 0.75f);
-		const float allowedUpwardVelocity = 2.0f;
+		if (golfBall.HasEnteredHole()) {
+			return true;
+		}
 
-		// NOTE: 空中の落下予定地点だけでは吸わず、低いバウンドの上昇中だけは穴入りとして許可する。
-		return golfBall.HasEnteredHole() ||
-			(verticalDistance <= allowedHeight && ballVelocity.y <= allowedUpwardVelocity);
+		// NOTE: ボールはTransform同期順に依存せず、物理更新後の内部位置で穴との接触を判定する。
+		const Vec3 holeWorldPos = GetHoleWorldPosition();
+		Vec3 diff = golfBall.GetCurrentPosition() - holeWorldPos;
+		diff.y = 0.0f;
+		return diff.Length() <= _holeRadius;
 	}
 
 	void PlayerHoleComponent::MakeTrashFall(Unnamed::Entity* trashEntity) {
@@ -444,9 +443,6 @@ namespace MyGame {
 				MakeTrashFall(trashEntity);
 				if (auto* trashComponent = trashEntity->GetComponent<TrashObjMoverComponent>()) {
 					trashComponent->EnterHoleFall(GetHoleWorldPosition());
-				}
-				if (auto* golfBallComponent = trashEntity->GetComponent<GolfBallComponent>()) {
-					golfBallComponent->EnterHoleFall(GetHoleWorldPosition());
 				}
 			}
 		}
@@ -503,7 +499,10 @@ namespace MyGame {
 			// NOTE: ゴミまたはゴルフボールの移動コンポーネントを取得
 			auto* trashComponent = entity->GetComponent<TrashObjMoverComponent>();
 			auto* golfBallComponent = entity->GetComponent<GolfBallComponent>();
-			if (!trashComponent && !golfBallComponent) {
+			if (!trashComponent) {
+				if (golfBallComponent) {
+					golfBallComponent->ClearHoleSuckPosition();
+				}
 				continue;
 			}
 
@@ -513,15 +512,7 @@ namespace MyGame {
 				continue;
 			}
 
-			// NOTE: ボールはTransform同期順に依存せず、現在の物理位置から吸い込み距離を測る。
-			Vec3 trashPos = golfBallComponent ? golfBallComponent->GetCurrentPosition() : transform->GetPosition();
-			const bool canGolfBallUseHole =
-				!golfBallComponent || IsGolfBallLowEnoughForHole(*golfBallComponent, holeWorldPos);
-			if (golfBallComponent && !canGolfBallUseHole) {
-				golfBallComponent->ClearHoleSuckPosition();
-				continue;
-			}
-
+			Vec3 trashPos = transform->GetPosition();
 			Vec3 diffToHole = holeWorldPos - trashPos;
 			Vec3 horizontalDiffToHole = diffToHole;
 			horizontalDiffToHole.y = 0.0f;
@@ -556,23 +547,12 @@ namespace MyGame {
 
 			// NOTE: すべてのゴミに吸い込み力を適用
 			if (suckPower > 0.0f) {
-				if (golfBallComponent && canGolfBallUseHole && distanceToHole <= _holeRadius) {
-					// NOTE: 実際に穴の高さまで来ているときだけ、同フレームで成功状態を確定する。
-					golfBallComponent->EnterHoleFall(holeWorldPos);
-					continue;
-				}
 				if (trashComponent) {
 					trashComponent->SetHoleSuckPosition(holeWorldPos, suckPower);
-				}
-				if (golfBallComponent) {
-					golfBallComponent->SetHoleSuckPosition(holeWorldPos, suckPower);
 				}
 			} else {
 				if (trashComponent) {
 					trashComponent->ClearHoleSuckPosition();
-				}
-				if (golfBallComponent) {
-					golfBallComponent->ClearHoleSuckPosition();
 				}
 			}
 		}

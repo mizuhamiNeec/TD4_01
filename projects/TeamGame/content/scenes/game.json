@@ -1440,6 +1440,7 @@
                         "maxBallFlightSeconds": 20.0,
                         "minBallFlightSeconds": 5.0,
                         "notHoleInOneUiAssetPath": "projects/TeamGame/content/ui/notHoleInone.ui.json",
+                        "ballSeaOutHeight": -100.0,
                         "seaOutHeight": -10.0,
                         "stageIntroUiAssetPath": "projects/TeamGame/content/ui/stageIntro.ui.json",
                         "stageIntroUiEntityName": "StageIntro_UI",

@@ -161,7 +161,8 @@ namespace MyGame {
 		Vec3 _moveLimitCenter = Vec3(0.0f, 0.0f, 0.0f);
 
 		/// 移動制限の半径（XZ平面）
-		float _moveLimitRadius = 20.0f;
+		/// 理由：地面円形エリア外へプレイヤーが出ないよう、シーン未設定時も地面範囲に合わせる
+		float _moveLimitRadius = 40.0f;
 	};
 
 }

@@ -118,9 +118,6 @@ void MyGame::GameRuleSystemComponent::DrawInspectorImGui()
 		10.0f,
 		"%.2f sec"
 	);
-	ImGui::DragFloat(
-		"Ball Stop Result Velocity", &_ballStopResultVelocityThreshold, 0.01f, 0.0f, 10.0f, "%.3f"
-	);
 	ImGui::DragInt("Countdown Trash Wave Count", &_countdownTrashWaveCount, 1, 0, 999);
 	ImGui::DragInt("Ball Hit Trash Wave Count", &_ballHitTrashWaveCount, 1, 0, 999);
 	ImGui::DragInt("After Hit Trash Wave Count", &_afterHitTrashWaveCount, 1, 0, 999);
@@ -282,9 +279,6 @@ void MyGame::GameRuleSystemComponent::Deserialize(const Unnamed::JsonReader & re
 	if (auto val = reader.Read<float>("notHoleInOneResultTransitionDelay")) {
 		_notHoleInOneResultTransitionDelay = std::max(0.0f, val.value());
 	}
-	if (auto val = reader.Read<float>("ballStopResultVelocityThreshold")) {
-		_ballStopResultVelocityThreshold = std::max(0.0f, val.value());
-	}
 	if (auto val = reader.Read<bool>("launchBallOnPlayingStart")) {
 		_launchBallOnPlayingStart = val.value();
 	}
@@ -349,8 +343,6 @@ void MyGame::GameRuleSystemComponent::Serialize(Unnamed::JsonWriter & writer) co
 	writer.Write(_ballSeaOutHeight);
 	writer.Key("notHoleInOneResultTransitionDelay");
 	writer.Write(_notHoleInOneResultTransitionDelay);
-	writer.Key("ballStopResultVelocityThreshold");
-	writer.Write(_ballStopResultVelocityThreshold);
 	writer.Key("launchBallOnPlayingStart");
 	writer.Write(_launchBallOnPlayingStart);
 	writer.Key("countdownTrashWaveCount");
@@ -905,18 +897,8 @@ void MyGame::GameRuleSystemComponent::UpdateBallResult(float deltaTime)
 		return;
 	}
 
-	if (_hasBallLaunched && IsBallStoppedForResult()) {
-		// NOTE: ここに来るのは「まだ穴入りが確定していないボール」だけ。
-		// NOTE: ホールインワンルールでは、穴外で止まった時点で失敗としてFinishGameへ進める。
-		// NOTE: _isHoleInOneがfalseのままFinishGameへ入るため、ApplyClearUiForResult経由でNotHoleInOne UIになる。
-		FinishGame();
-		return;
-	}
-
-	if (_hasBallLaunched && _ballFlightElapsedTime >= _maxBallFlightSeconds) {
-		// NOTE: 15〜20秒想定を超えたら、止まりきらない場合でもリザルトへ進める。
-		FinishGame();
-	}
+	// NOTE: 停止や時間経過だけではNotHoleInOneにしない。
+	// NOTE: Not結果は海落下など、明確に失敗エリアへ入った場合だけ確定する。
 }
 
 bool MyGame::GameRuleSystemComponent::ShouldMonitorBallResult() const
@@ -1183,42 +1165,6 @@ bool MyGame::GameRuleSystemComponent::ApplyNotHoleInOneUiForResult()
 		return false;
 	}
 	return isRuntimeLoaded;
-}
-
-bool MyGame::GameRuleSystemComponent::IsBallStoppedForResult() const
-{
-	if (!_golfBallComponent) {
-		return false;
-	}
-	if (_golfBallComponent->HasEnteredHole()) {
-		// NOTE: 穴入り済みのボールは、穴の中で速度が落ちても失敗扱いにしない。
-		// NOTE: 成功結果はUpdateBallResult側で先にFinishGameへ流すため、この関数では停止失敗から除外する。
-		return false;
-	}
-	if (_golfBallComponent->IsBeingSucked()) {
-		// NOTE: 吸い込み中は「穴へ入る演出途中」なので、停止に近い速度でもNotHoleInOneへ落とさない。
-		// NOTE: ここで失敗にすると、吸い込み演出中の一時的な減速が成功判定を潰してしまう。
-		return false;
-	}
-	if (!_golfBallComponent->IsInFlight()) {
-		// NOTE: 飛行状態が終わったのに穴入りしていない場合は、穴外で止まった失敗として扱う。
-		// NOTE: この戻り値trueがUpdateBallResultのFinishGameにつながり、NotHoleInOne UI表示の入口になる。
-		return true;
-	}
-
-	const Vec3 velocity = _golfBallComponent->GetCurrentVelocity();
-	const Vec3 position = _golfBallComponent->GetCurrentPosition();
-	const float horizontalSpeedSq = velocity.x * velocity.x + velocity.z * velocity.z;
-	const float stopSpeedSq =
-		_ballStopResultVelocityThreshold * _ballStopResultVelocityThreshold;
-	const bool isNearlyResting =
-		horizontalSpeedSq <= stopSpeedSq &&
-		std::abs(velocity.y) <= _ballStopResultVelocityThreshold &&
-		position.y > _ballSeaOutHeight;
-
-	// NOTE: 飛行中でも水平・垂直速度が十分小さければ、穴外で止まった失敗として扱う。
-	// NOTE: 穴入り済み/吸い込み中は上で除外済みなので、ここでtrueになっても成功直前のボールはNotにならない。
-	return isNearlyResting;
 }
 
 Unnamed::UiCanvasComponent* MyGame::GameRuleSystemComponent::ResolveClearUiCanvas() const

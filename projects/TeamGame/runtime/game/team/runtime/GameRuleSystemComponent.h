@@ -133,8 +133,6 @@ namespace MyGame {
 		float _seaOutHeight = -10.0f;
 		// ボールがこの高さ以下ならホールインワン失敗としてリザルトへ進める
 		float _ballSeaOutHeight = -100.0f;
-		// ボール停止失敗を判定する速度閾値
-		float _ballStopResultVelocityThreshold = 0.08f;
 		// プレイ中の経過時間
 		float _playingElapsedTime = 0.0f;
 		// ボールが打たれてからの経過時間
@@ -315,9 +313,6 @@ namespace MyGame {
 		/// Notホールインワン表示UIを直接表示
 		/// @reason 音Cueとは独立して、海落下時に必ず失敗UIを出すため
 		[[nodiscard]] bool ApplyNotHoleInOneUiForResult();
-
-		/// ボールが停止失敗として扱えるかを判定
-		[[nodiscard]] bool IsBallStoppedForResult() const;
 
 		/// クリア表示用のUIキャンバスを検索
 		[[nodiscard]] Unnamed::UiCanvasComponent* ResolveClearUiCanvas() const;

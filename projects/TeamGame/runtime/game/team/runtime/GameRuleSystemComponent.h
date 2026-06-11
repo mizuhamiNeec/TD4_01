@@ -185,7 +185,7 @@ namespace MyGame {
 		// ステージ紹介中だけ隠す通常UIの復元用キャッシュ
 		std::unordered_map<uint64_t, bool> _stageIntroUiVisibility;
 		// NotホールインワンUIを見せてからリザルトへ遷移するまでの猶予
-		float _notHoleInOneResultTransitionDelay = 1.0f;
+		float _notHoleInOneResultTransitionDelay = 2.0f;
 		// Notホールインワン後のリザルト遷移予約
 		bool _pendingNotHoleInOneResultTransition = false;
 		// リザルト遷移予約後の経過時間

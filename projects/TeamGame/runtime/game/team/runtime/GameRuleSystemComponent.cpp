@@ -111,6 +111,14 @@ void MyGame::GameRuleSystemComponent::DrawInspectorImGui()
 	ImGui::DragFloat("Sea Out Height", &_seaOutHeight, 0.1f, -999.0f, 999.0f, "%.2f");
 	ImGui::DragFloat("Ball Sea Out Height", &_ballSeaOutHeight, 0.1f, -999.0f, 999.0f, "%.2f");
 	ImGui::DragFloat(
+		"Not Hole In One Result Delay",
+		&_notHoleInOneResultTransitionDelay,
+		0.1f,
+		0.0f,
+		10.0f,
+		"%.2f sec"
+	);
+	ImGui::DragFloat(
 		"Ball Stop Result Velocity", &_ballStopResultVelocityThreshold, 0.01f, 0.0f, 10.0f, "%.3f"
 	);
 	ImGui::DragInt("Countdown Trash Wave Count", &_countdownTrashWaveCount, 1, 0, 999);
@@ -271,6 +279,9 @@ void MyGame::GameRuleSystemComponent::Deserialize(const Unnamed::JsonReader & re
 	if (auto val = reader.Read<float>("ballSeaOutHeight")) {
 		_ballSeaOutHeight = val.value();
 	}
+	if (auto val = reader.Read<float>("notHoleInOneResultTransitionDelay")) {
+		_notHoleInOneResultTransitionDelay = std::max(0.0f, val.value());
+	}
 	if (auto val = reader.Read<float>("ballStopResultVelocityThreshold")) {
 		_ballStopResultVelocityThreshold = std::max(0.0f, val.value());
 	}
@@ -336,6 +347,8 @@ void MyGame::GameRuleSystemComponent::Serialize(Unnamed::JsonWriter & writer) co
 	writer.Write(_seaOutHeight);
 	writer.Key("ballSeaOutHeight");
 	writer.Write(_ballSeaOutHeight);
+	writer.Key("notHoleInOneResultTransitionDelay");
+	writer.Write(_notHoleInOneResultTransitionDelay);
 	writer.Key("ballStopResultVelocityThreshold");
 	writer.Write(_ballStopResultVelocityThreshold);
 	writer.Key("launchBallOnPlayingStart");

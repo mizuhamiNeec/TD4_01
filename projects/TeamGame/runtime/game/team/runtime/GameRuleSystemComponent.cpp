@@ -301,6 +301,8 @@ void MyGame::GameRuleSystemComponent::StartCountdown()
 	_playingElapsedTime = 0.0f;
 	_ballFlightElapsedTime = 0.0f;
 	_hasBallLaunched = false;
+	_hasPublishedBallShootCue = false;
+	_hasPublishedNotHoleInOneCue = false;
 	_hasTriggeredCountdownTrashWave = false;
 	_hasTriggeredBallHitTrashWave = false;
 	_hasTriggeredAfterHitTrashWave = false;
@@ -326,6 +328,8 @@ void MyGame::GameRuleSystemComponent::StartPlaying()
 	_playingElapsedTime = 0.0f;
 	_ballFlightElapsedTime = 0.0f;
 	_hasBallLaunched = false;
+	_hasPublishedBallShootCue = false;
+	_hasPublishedNotHoleInOneCue = false;
 	ApplyStageIntroControlState(false);
 
 	if (_launchCountdownComponent) {
@@ -335,16 +339,15 @@ void MyGame::GameRuleSystemComponent::StartPlaying()
 		// NOTE: 発射カウントダウンが無いシーンだけ、ルール管理側から直接発射する。
 		_golfBallComponent->Launch();
 		_hasBallLaunched = _golfBallComponent->IsInFlight();
-		
-		Unnamed::GameplayCue cue = {};
-		cue.id = "uncle.ballshoot";
-		cue.sourceEntityGuid = GetOwner()->GetGuid();
-		cue.value = 1.0f;
-		cue.value2 = 1.0f;
-		GetWorld()->GetGameplayCueBus().Publish(cue); // ボールを打った瞬間のCueを発火して、演出やサウンドを鳴らす。
+		if (_hasBallLaunched) {
+			PublishBallShootPresentationCue();
+		}
 	} else if (_golfBallComponent) {
 		// NOTE: 発射カウントダウン側がLaunch済みのボール状態を引き継ぐ。
 		_hasBallLaunched = _golfBallComponent->IsInFlight();
+		if (_hasBallLaunched) {
+			PublishBallShootPresentationCue();
+		}
 	}
 }
 
@@ -370,6 +373,9 @@ void MyGame::GameRuleSystemComponent::FinishGame()
 			}
 		);
 	}
+	if (!_isHoleInOne) {
+		PublishNotHoleInOnePresentationCue();
+	}
 	(void)ApplyClearUiForResult();
 	ApplyStageIntroControlState(false);
 	SetStageIntroUiVisible(false);
@@ -392,6 +398,8 @@ void MyGame::GameRuleSystemComponent::ResetGame()
 	_playingElapsedTime = 0.0f;
 	_ballFlightElapsedTime = 0.0f;
 	_hasBallLaunched = false;
+	_hasPublishedBallShootCue = false;
+	_hasPublishedNotHoleInOneCue = false;
 	_hasTriggeredCountdownTrashWave = false;
 	_hasTriggeredBallHitTrashWave = false;
 	_hasTriggeredAfterHitTrashWave = false;
@@ -651,25 +659,61 @@ void MyGame::GameRuleSystemComponent::UpdateTrashScore()
 			continue;
 		}
 
-		_scoreComponent->AddTrashToSeaScore(GetEntityGuid(entity));
+		if (_scoreComponent->AddTrashToSeaScore(GetEntityGuid(entity))) {
+			PublishTrashToSeaPresentationCue(*entity);
+		}
 	}
+}
+
+void MyGame::GameRuleSystemComponent::PublishPresentationCue(
+	const std::string_view cueId,
+	const float value,
+	const float value2
+) const {
+	Unnamed::World* world = GetWorld();
+	const Unnamed::Entity* owner = GetOwner();
+	if (!world || !owner || cueId.empty()) {
+		return;
+	}
+
+	Unnamed::GameplayCue cue = {};
+	cue.id = cueId;
+	cue.sourceEntityGuid = owner->GetGuid();
+	cue.value = value;
+	cue.value2 = value2;
+	world->GetGameplayCueBus().Publish(cue);
+}
+
+void MyGame::GameRuleSystemComponent::PublishBallShootPresentationCue()
+{
+	if (_hasPublishedBallShootCue) {
+		return;
+	}
+	_hasPublishedBallShootCue = true;
+	PublishPresentationCue("uncle.ballshoot");
 }
 
 void MyGame::GameRuleSystemComponent::PublishTrashIntoHolePresentationCue(
 	Unnamed::Entity& trashEntity
 ) const {
-	Unnamed::World* world = GetWorld();
-	const Unnamed::Entity* owner = GetOwner();
-	if (!world || !owner) {
+	(void)trashEntity;
+	PublishPresentationCue("trash.holein");
+}
+
+void MyGame::GameRuleSystemComponent::PublishTrashToSeaPresentationCue(
+	Unnamed::Entity& trashEntity
+) const {
+	(void)trashEntity;
+	PublishPresentationCue("trash.insea");
+}
+
+void MyGame::GameRuleSystemComponent::PublishNotHoleInOnePresentationCue()
+{
+	if (_hasPublishedNotHoleInOneCue) {
 		return;
 	}
-
-	Unnamed::GameplayCue cue = {};
-	cue.id = "trash.holein";
-	cue.sourceEntityGuid = owner->GetGuid();
-	cue.value = 1.0f;
-	cue.value2 = 1.0f;
-	world->GetGameplayCueBus().Publish(cue);
+	_hasPublishedNotHoleInOneCue = true;
+	PublishPresentationCue("game.notholeinone");
 }
 
 void MyGame::GameRuleSystemComponent::UpdateBallResult(float deltaTime)
@@ -683,6 +727,9 @@ void MyGame::GameRuleSystemComponent::UpdateBallResult(float deltaTime)
 	}
 
 	if (_golfBallComponent->IsInFlight()) {
+		if (!_hasBallLaunched) {
+			PublishBallShootPresentationCue();
+		}
 		_hasBallLaunched = true;
 	}
 	if (_hasBallLaunched) {
@@ -767,31 +814,17 @@ bool MyGame::GameRuleSystemComponent::TryScoreBallCatch(GolfBallComponent& golfB
 	// NOTE: ボールキャッチ自体には加点せず、直接/バウンド後のホールインワンボーナスだけを採点対象にする。
 	_isHoleInOne = true;
 	
-	// ホールインワン時のファンファーレ
-	Unnamed::GameplayCue cue = {};
-	cue.id = "game.holeinonefanfare";
-	cue.sourceEntityGuid = GetOwner()->GetGuid();
-	cue.value = 1.0f;
-	cue.value2 = 1.0f;
-	GetWorld()->GetGameplayCueBus().Publish(cue);
-	
 	if (!golfBall.HasBounced()) {
 		_isDirectHoleInOne = true;
 		if (_scoreComponent) {
 			_scoreComponent->AddDirectHoleInOneBonus();
 		}
-		
-		// ダイレクトホールインワン時の演出
-		cue = {};
-		cue.id = "game.directholeinone";
-		cue.sourceEntityGuid = GetOwner()->GetGuid();
-		cue.value = 1.0f;
-		cue.value2 = 1.0f;
-		GetWorld()->GetGameplayCueBus().Publish(cue);
+		PublishPresentationCue("game.directholeinone");
 	} else {
 		if (_scoreComponent) {
 			_scoreComponent->AddHoleInOneBonus();
 		}
+		PublishPresentationCue("game.holeinone");
 	}
 	return true;
 }

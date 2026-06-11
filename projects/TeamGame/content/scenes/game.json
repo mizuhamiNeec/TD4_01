@@ -321,6 +321,8 @@
                 {
                     "active": true,
                     "data": {
+                        "ballHoleCollisionOffsetY": 0.0,
+                        "ballHoleCollisionRadius": 2.0,
                         "holeDespawnDepth": 8.0,
                         "holeOffsetX": 0.0,
                         "holeOffsetY": 0.0,
@@ -340,9 +342,12 @@
                     "active": true,
                     "data": {
                         "coolTime": 0.10000000149011612,
+                        "dustEmitterEntityGuid": 74,
                         "forceMultiplier": 0.009999999776482582,
-                        "maxShockWaveRadius": 10.0,
-                        "minShockWaveRadius": 5.0,
+                        "maxShockWaveRadius": 22.0,
+                        "minShockWaveRadius": 8.0,
+                        "ringEmitterEntityGuid": 72,
+                        "sparksEmitterEntityGuid": 73,
                         "upwardForceMultiplier": 5.0,
                         "voiceGateDuration": 0.07999999821186066,
                         "voiceMinDB": -35.0,
@@ -460,6 +465,18 @@
                     },
                     "guid": 14822961484023577915,
                     "type": "mygame.PlayerFollowCameraComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "cameraEntityGuid": 0,
+                        "fovPresets": [],
+                        "rotationPresets": [],
+                        "shakeEntityGuid": 0,
+                        "shakePresets": []
+                    },
+                    "guid": 15205979938949374862,
+                    "type": "game.CameraFxController"
                 }
             ],
             "folderPath": "",
@@ -932,6 +949,153 @@
                 {
                     "active": true,
                     "data": {
+                        "parentEntityGuid": 42,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 7200000000000000010,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "autoPlay": false,
+                        "depthTest": false,
+                        "drawEmitterShape": true,
+                        "presetName": "voice_shockwave",
+                        "presetPath": "projects/TeamGame/content/particles/voice_shockwave.json",
+                        "sortKeyBias": 0,
+                        "timeScale": 1.0
+                    },
+                    "guid": 7200000000000000011,
+                    "type": "engine.ParticleEmitter"
+                }
+            ],
+            "folderPath": "",
+            "guid": 72,
+            "isEditorOnly": false,
+            "name": "ParticleEmitter_VoiceShockwave",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 42,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 7300000000000000010,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "autoPlay": false,
+                        "depthTest": true,
+                        "drawEmitterShape": true,
+                        "presetName": "voice_shockwave_sparks",
+                        "presetPath": "projects/TeamGame/content/particles/voice_shockwave_sparks.json",
+                        "sortKeyBias": 0,
+                        "timeScale": 1.0
+                    },
+                    "guid": 7300000000000000011,
+                    "type": "engine.ParticleEmitter"
+                }
+            ],
+            "folderPath": "",
+            "guid": 73,
+            "isEditorOnly": false,
+            "name": "ParticleEmitter_VoiceShockwaveSparks",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 42,
+                        "position": [
+                            3.0,
+                            0.30000001192092896,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 7400000000000000010,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "autoPlay": false,
+                        "depthTest": true,
+                        "drawEmitterShape": true,
+                        "presetName": "obstacle_dust",
+                        "presetPath": "projects/TeamGame/content/particles/obstacle_dust.json",
+                        "sortKeyBias": 0,
+                        "timeScale": 1.0
+                    },
+                    "guid": 7400000000000000011,
+                    "type": "engine.ParticleEmitter"
+                }
+            ],
+            "folderPath": "",
+            "guid": 74,
+            "isEditorOnly": false,
+            "name": "ParticleEmitter_ObstacleDust",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
                         "parentEntityGuid": 5,
                         "position": [
                             0.0,
@@ -969,7 +1133,7 @@
                 }
             ],
             "folderPath": "",
-            "guid": 72,
+            "guid": 15552413904281614219,
             "isEditorOnly": false,
             "name": "golf_ball_trail",
             "tags": [],
@@ -1430,6 +1594,7 @@
                         "afterHitTrashWaveDelay": 6.5,
                         "autoStartCountdown": true,
                         "ballHitTrashWaveCount": 15,
+                        "ballSeaOutHeight": -100.0,
                         "ballStopResultVelocityThreshold": 0.07999999821186066,
                         "clearUiEntityName": "Clear_UI",
                         "countdownSeconds": 15.0,
@@ -1448,6 +1613,19 @@
                     },
                     "guid": 14837334651500250962,
                     "type": "mygame.GameRuleSystemComponent"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "animationEntityGuid": 0,
+                        "assetPath": "projects/TeamGame/content/presentation/game.event_presentation.json",
+                        "audioFxEntityGuid": 15552413904281614221,
+                        "cameraFxEntityGuid": 0,
+                        "cueSourceEntityGuid": 0,
+                        "verboseLog": true
+                    },
+                    "guid": 17673195521661469239,
+                    "type": "game.EventPresentation"
                 },
                 {
                     "active": true,
@@ -1554,7 +1732,7 @@
                         "parentEntityGuid": 0,
                         "position": [
                             0.0,
-                            -10.0,
+                            0.0,
                             0.0
                         ],
                         "rotation": [
@@ -1569,29 +1747,230 @@
                             1.0
                         ]
                     },
-                    "guid": 18068261005827836373,
+                    "guid": 10137370298849686044,
                     "type": "engine.Transform"
                 },
                 {
                     "active": true,
                     "data": {
-                        "materialInstancePath": "projects/TeamGame/content/materials/instances/ocean.matinst.json",
-                        "materialSlots": [
-                            {
-                                "materialInstancePath": "projects/TeamGame/content/materials/instances/ocean.matinst.json",
-                                "slotIndex": 0
-                            }
-                        ],
-                        "meshPath": "projects/TeamGame/content/models/ocean/ocean.obj"
+                        "loop": false,
+                        "pitch": 1.0,
+                        "playOnStart": true,
+                        "soundPath": "projects/TeamGame/content/sounds/BGM/InGame_BGM.wav",
+                        "volume": 0.10000000149011612
                     },
-                    "guid": 9410598352238743794,
-                    "type": "engine.StaticMeshRenderer"
+                    "guid": 11978848494332616911,
+                    "type": "engine.AudioSource"
                 }
             ],
             "folderPath": "Env",
-            "guid": 12087284352773638143,
+            "guid": 15552413904281614220,
             "isEditorOnly": false,
-            "name": "Ocean",
+            "name": "BGM",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 10141563216841160887,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "loop": false,
+                        "pitch": 1.0,
+                        "playOnStart": false,
+                        "soundPath": "projects/TeamGame/content/sounds/SE/BallShoot.wav",
+                        "volume": 1.0
+                    },
+                    "guid": 10588256141075075081,
+                    "type": "engine.AudioSource"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "loop": false,
+                        "pitch": 1.0,
+                        "playOnStart": false,
+                        "soundPath": "projects/TeamGame/content/sounds/SE/DirectHoleinone_Fanfare.wav",
+                        "volume": 1.0
+                    },
+                    "guid": 13065550475754784684,
+                    "type": "engine.AudioSource"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "loop": false,
+                        "pitch": 1.0,
+                        "playOnStart": false,
+                        "soundPath": "projects/TeamGame/content/sounds/SE/HitFly.wav",
+                        "volume": 1.0
+                    },
+                    "guid": 10755055933192472588,
+                    "type": "engine.AudioSource"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "loop": false,
+                        "pitch": 1.0570988655090332,
+                        "playOnStart": false,
+                        "soundPath": "projects/TeamGame/content/sounds/SE/Holein.wav",
+                        "volume": 1.0
+                    },
+                    "guid": 14488243616062297354,
+                    "type": "engine.AudioSource"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "loop": false,
+                        "pitch": 1.0,
+                        "playOnStart": false,
+                        "soundPath": "projects/TeamGame/content/sounds/SE/Holeinone_Fanfare.wav",
+                        "volume": 1.0
+                    },
+                    "guid": 10318448884730479318,
+                    "type": "engine.AudioSource"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "loop": false,
+                        "pitch": 1.0,
+                        "playOnStart": false,
+                        "soundPath": "projects/TeamGame/content/sounds/SE/InSea.wav",
+                        "volume": 1.0
+                    },
+                    "guid": 75871401870145338,
+                    "type": "engine.AudioSource"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "loop": false,
+                        "pitch": 1.0,
+                        "playOnStart": false,
+                        "soundPath": "projects/TeamGame/content/sounds/SE/Landing.wav",
+                        "volume": 1.0
+                    },
+                    "guid": 11579138824095005488,
+                    "type": "engine.AudioSource"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "loop": false,
+                        "pitch": 1.0,
+                        "playOnStart": false,
+                        "soundPath": "projects/TeamGame/content/sounds/SE/NotHoleinone.wav",
+                        "volume": 1.0
+                    },
+                    "guid": 12605963053307907218,
+                    "type": "engine.AudioSource"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "oneShotPresets": [
+                            {
+                                "id": "se_ballshoot",
+                                "pitchMax": 1.0,
+                                "pitchMin": 1.0,
+                                "sourceComponentGuid": 10588256141075075081,
+                                "sourceEntityGuid": 0,
+                                "volume": 1.0
+                            },
+                            {
+                                "id": "se_directholeinonefanfare",
+                                "pitchMax": 1.0,
+                                "pitchMin": 1.0,
+                                "sourceComponentGuid": 13065550475754784684,
+                                "sourceEntityGuid": 0,
+                                "volume": 1.0
+                            },
+                            {
+                                "id": "se_hitfly",
+                                "pitchMax": 1.0,
+                                "pitchMin": 1.0,
+                                "sourceComponentGuid": 10755055933192472588,
+                                "sourceEntityGuid": 0,
+                                "volume": 1.0
+                            },
+                            {
+                                "id": "se_holein",
+                                "pitchMax": 1.2000000476837158,
+                                "pitchMin": 0.800000011920929,
+                                "sourceComponentGuid": 14488243616062297354,
+                                "sourceEntityGuid": 0,
+                                "volume": 1.0
+                            },
+                            {
+                                "id": "se_holeinonefanfare",
+                                "pitchMax": 1.0,
+                                "pitchMin": 1.0,
+                                "sourceComponentGuid": 10318448884730479318,
+                                "sourceEntityGuid": 0,
+                                "volume": 1.0
+                            },
+                            {
+                                "id": "se_insea",
+                                "pitchMax": 1.0,
+                                "pitchMin": 1.0,
+                                "sourceComponentGuid": 75871401870145338,
+                                "sourceEntityGuid": 0,
+                                "volume": 1.0
+                            },
+                            {
+                                "id": "se_landing",
+                                "pitchMax": 1.0,
+                                "pitchMin": 1.0,
+                                "sourceComponentGuid": 11579138824095005488,
+                                "sourceEntityGuid": 0,
+                                "volume": 1.0
+                            },
+                            {
+                                "id": "se_notholeinone",
+                                "pitchMax": 1.0,
+                                "pitchMin": 1.0,
+                                "sourceComponentGuid": 12605963053307907218,
+                                "sourceEntityGuid": 0,
+                                "volume": 1.0
+                            }
+                        ]
+                    },
+                    "guid": 17967960164157196626,
+                    "type": "game.AudioFxController"
+                }
+            ],
+            "folderPath": "Env",
+            "guid": 15552413904281614221,
+            "isEditorOnly": false,
+            "name": "SE",
             "tags": [],
             "visible": true
         }

@@ -129,6 +129,8 @@ namespace MyGame {
 		float _maxBallFlightSeconds = 20.0f;
 		// ボールやゴミがこの高さ以下なら海へ落ちた扱い
 		float _seaOutHeight = -10.0f;
+		// ボールがこの高さ以下ならホールインワン失敗としてリザルトへ進める
+		float _ballSeaOutHeight = -100.0f;
 		// ボール停止失敗を判定する速度閾値
 		float _ballStopResultVelocityThreshold = 0.08f;
 		// プレイ中の経過時間
@@ -211,6 +213,9 @@ namespace MyGame {
 
 		/// 穴や海に入ったゴミをスコアへ反映
 		void UpdateTrashScore();
+
+		/// @brief ゴミが穴へ入ったときの Presentation Cue を発火
+		void PublishTrashIntoHolePresentationCue(Unnamed::Entity& trashEntity) const;
 
 		/// ボールのキャッチ・停止・OBを判定
 		void UpdateBallResult(float deltaTime);

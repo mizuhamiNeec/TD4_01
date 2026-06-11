@@ -1,4 +1,8 @@
 #include "TeamGameModule.h"
+
+#include <engine/unnamed/subsystem/console/concommand/ConVar.h>
+#include <engine/unnamed/subsystem/interface/ServiceLocator.h>
+
 #include "TeamGameComponentRegistration.h"
 #include "MagVoiceBridge.h"
 #include "VoiceShockWaveComponent.h"
@@ -21,44 +25,54 @@ namespace Unnamed {
 		// NOTE: ゲーム開始時に MagVoiceBridge を初期化・起動
 		// これにより、すべてのシーンでマイクからの音声入力が有効になる
 		InitializeMagVoiceBridge();
+
+		RegisterTeamGameConVars();
 	}
 
 	void TeamGameModule::InitializeMagVoiceBridge() {
-		if (voiceBridge_) {
-			return;
-		}
+		if (voiceBridge_) { return; }
 
 		// NOTE: VoiceShockWaveComponent の静的メンバを初期化
 		// VoiceShockWaveComponent が使用する _voiceBridgeInstance を作成
 		auto voiceBridge = std::make_unique<MagVoiceBridge>();
-		
+
 		if (voiceBridge) {
 			bool initSuccess = voiceBridge->Initialize();
 			if (initSuccess) {
 				// NOTE: 音声感度を大幅に調整（敏感に反応するように）
-				voiceBridge->SetSmoothingFactor(0.2f);  // より反応的（0.4 → 0.2）
-				voiceBridge->SetNoiseFloor(-80.0f);     // ノイズフロアを下げる（-50dB → -80dB）
-				voiceBridge->SetVolumeRange(-80.0f, 0.0f);  // 音量範囲を拡大
+				voiceBridge->SetSmoothingFactor(0.2f); // より反応的（0.4 → 0.2）
+				voiceBridge->SetNoiseFloor(-80.0f); // ノイズフロアを下げる（-50dB → -80dB）
+				voiceBridge->SetVolumeRange(-80.0f, 0.0f); // 音量範囲を拡大
 
 				bool startSuccess = voiceBridge->Start();
 				if (startSuccess) {
-					#ifdef _DEBUG
-					OutputDebugStringA("[TeamGameModule] ✓ MagVoiceBridge initialized and started successfully\n");
-					OutputDebugStringA("[TeamGameModule] Audio sensitivity: HIGH (SmoothingFactor=0.2, NoiseFloor=-80dB)\n");
-					OutputDebugStringA("[TeamGameModule] Audio capture is now active\n");
-					#endif
+#ifdef _DEBUG
+					OutputDebugStringA(
+						"[TeamGameModule] ✓ MagVoiceBridge initialized and started successfully\n"
+					);
+					OutputDebugStringA(
+						"[TeamGameModule] Audio sensitivity: HIGH (SmoothingFactor=0.2, NoiseFloor=-80dB)\n"
+					);
+					OutputDebugStringA(
+						"[TeamGameModule] Audio capture is now active\n"
+					);
+#endif
 					// NOTE: VoiceShockWaveComponent に MagVoiceBridge を設定
 					SetGlobalMagVoiceBridge(voiceBridge.get());
 					voiceBridge_ = std::move(voiceBridge);
 				} else {
-					#ifdef _DEBUG
-					OutputDebugStringA("[TeamGameModule] ✗ ERROR: Failed to start MagVoiceBridge\n");
-					#endif
+#ifdef _DEBUG
+					OutputDebugStringA(
+						"[TeamGameModule] ✗ ERROR: Failed to start MagVoiceBridge\n"
+					);
+#endif
 				}
 			} else {
-				#ifdef _DEBUG
-				OutputDebugStringA("[TeamGameModule] ✗ ERROR: Failed to initialize MagVoiceBridge\n");
-				#endif
+#ifdef _DEBUG
+				OutputDebugStringA(
+					"[TeamGameModule] ✗ ERROR: Failed to initialize MagVoiceBridge\n"
+				);
+#endif
 			}
 		}
 	}
@@ -66,10 +80,39 @@ namespace Unnamed {
 	void TeamGameModule::SetGlobalMagVoiceBridge(MagVoiceBridge* bridge) {
 		// NOTE: VoiceShockWaveComponent の静的メンバを設定
 		MyGame::VoiceShockWaveComponent::SetVoiceBridgeInstance(bridge);
-		
-		#ifdef _DEBUG
-		OutputDebugStringA("[TeamGameModule] MagVoiceBridge set to VoiceShockWaveComponent\n");
-		#endif
+
+#ifdef _DEBUG
+		OutputDebugStringA(
+			"[TeamGameModule] MagVoiceBridge set to VoiceShockWaveComponent\n"
+		);
+#endif
+	}
+
+	void TeamGameModule::RegisterTeamGameConVars() {
+		// 操作
+		static ConVar invertY(
+			"invertY", false, FCVAR::ARCHIVE,
+			"invert Y-axis for camera control (0 or 1)"
+		);
+
+		// サウンド
+		static ConVar volume(
+			"volume", 1.0f, FCVAR::ARCHIVE,
+			"master volume (0.0 - 1.0)",
+			true, 0.0f, true, 1.0f
+		);
+
+		static ConVar snd_music(
+			"snd_music", 1.0f, FCVAR::ARCHIVE,
+			"music volume (0.0 - 1.0)",
+			true, 0.0f, true, 1.0f
+		);
+
+		static ConVar snd_sfx(
+			"snd_sfx", 1.0f, FCVAR::ARCHIVE,
+			"sfx volume (0.0 - 1.0)",
+			true, 0.0f, true, 1.0f
+		);
 	}
 
 	std::unique_ptr<World> TeamGameModule::CreateRuntimeWorld(
@@ -94,9 +137,7 @@ namespace Unnamed {
 
 	void TeamGameModule::RegisterGameComponents(
 		ComponentRegistry& componentRegistry
-	) {
-		RegisterTeamGameComponents(componentRegistry);
-	}
+	) { RegisterTeamGameComponents(componentRegistry); }
 
 	GameModulePaths TeamGameModule::GetGameModulePaths() const {
 		return {
@@ -112,9 +153,7 @@ namespace Unnamed {
 		return GetGameModulePaths().defaultStartupScene;
 	}
 
-	std::string TeamGameModule::GetDefaultUiDocumentPath() const {
-		return {};
-	}
+	std::string TeamGameModule::GetDefaultUiDocumentPath() const { return {}; }
 
 	std::unique_ptr<IGameModule> CreateTeamGameModule() {
 		return std::make_unique<TeamGameModule>();

@@ -91,6 +91,11 @@ namespace Unnamed {
 			return;
 		}
 
+		if (mWorld && mPreviewPlayer && mPreviewRegistered) {
+			mWorld->GetSequenceRuntime().UnregisterPlayer(
+				mPreviewPlayer->GetPlayerId()
+			);
+		}
 		mWorld = world;
 		mPreviewRegistered = false;
 		if (mWorld && mPreviewPlayer && !mPreviewRegistered) {
@@ -100,6 +105,11 @@ namespace Unnamed {
 	}
 
 	void SequenceEditorController::Shutdown() {
+		if (mWorld && mPreviewPlayer && mPreviewRegistered) {
+			mWorld->GetSequenceRuntime().UnregisterPlayer(
+				mPreviewPlayer->GetPlayerId()
+			);
+		}
 		mPreviewRegistered = false;
 		mPreviewPlayer.reset();
 		mDocuments.clear();
@@ -117,6 +127,7 @@ namespace Unnamed {
 		if (!mPreviewPlayer) {
 			return;
 		}
+		EnsurePreviewPlayer();
 		if (mPreviewPlayer->GetState() == SEQUENCE_PLAYER_STATE::PLAYING) {
 			mPlayheadFrame = mPreviewPlayer->GetCurrentFrame();
 		}
@@ -233,6 +244,9 @@ namespace Unnamed {
 		if (index < 0 || index >= static_cast<int32_t>(mDocuments.size())) {
 			return;
 		}
+		if (index == mActiveDocumentIndex) {
+			return;
+		}
 		mActiveDocumentIndex = index;
 		mSelection           = {};
 		mPlayheadFrame       = 0.0f;
@@ -275,13 +289,7 @@ namespace Unnamed {
 			return;
 		}
 
-		mPreviewPlayer->SetSeekEventPolicy(
-			mScrubFireEvents ?
-				SEQUENCE_SEEK_EVENT_POLICY::FIRE_IN_RANGE :
-				SEQUENCE_SEEK_EVENT_POLICY::SUPPRESS
-		);
-		mPreviewPlayer->SeekFrames(mPlayheadFrame);
-		mWorld->GetSequenceRuntime().EditorTick(0.0f);
+		SeekPreviewToPlayhead();
 	}
 
 	void SequenceEditorController::PlayPreview() {
@@ -453,7 +461,7 @@ namespace Unnamed {
 			mPreviewPlayer->SetPlayRate(1.0f);
 			mPreviewPlayer->SetPlaybackDirection(SEQUENCE_PLAYBACK_DIRECTION::FORWARD);
 		}
-		if (mWorld && !mPreviewRegistered) {
+		if (mWorld) {
 			mWorld->GetSequenceRuntime().RegisterPlayer(mPreviewPlayer);
 			mPreviewRegistered = true;
 		}
@@ -484,10 +492,28 @@ namespace Unnamed {
 				SEQUENCE_SEEK_EVENT_POLICY::FIRE_IN_RANGE :
 				SEQUENCE_SEEK_EVENT_POLICY::SUPPRESS
 		);
-		mPreviewPlayer->SeekFrames(mPlayheadFrame);
-		if (mWorld) {
-			mWorld->GetSequenceRuntime().EditorTick(0.0f);
+		SeekPreviewToPlayhead();
+	}
+
+	void SequenceEditorController::SeekPreviewToPlayhead() {
+		if (!mPreviewPlayer || !mWorld) {
+			return;
 		}
+
+		const bool wasPlaying =
+			mPreviewPlayer->GetState() == SEQUENCE_PLAYER_STATE::PLAYING;
+		if (!wasPlaying) {
+			mPreviewPlayer->Play();
+			mPreviewPlayer->Pause();
+		}
+
+		mPreviewPlayer->SetSeekEventPolicy(
+			mScrubFireEvents ?
+				SEQUENCE_SEEK_EVENT_POLICY::FIRE_IN_RANGE :
+				SEQUENCE_SEEK_EVENT_POLICY::SUPPRESS
+		);
+		mPreviewPlayer->SeekFrames(mPlayheadFrame);
+		mWorld->GetSequenceRuntime().EditorTick(0.0f);
 	}
 
 	void SequenceEditorController::ResolveOrCreateTransformTrackForEntity(

@@ -3,6 +3,7 @@
 #include "../Particle.h"
 #include "../ParticleEmitterInstance.h"
 #include "../ParticlePreset.h"
+#include "../ParticleRandom.h"
 
 #include <algorithm>
 
@@ -12,7 +13,16 @@ void ColorModule::ApplySpawn(ParticleEmitterInstance& emitter, Particle& p)
 	if (!preset) { return; }
 
 	// カラー初期値（カーブ適用前の基準色も控える）
-	p.color = preset->render.color;
+	// colorPalette が指定されていればパーティクルごとにランダムで1色選ぶ。
+	const auto& palette = preset->render.colorPalette;
+	if (!palette.empty()) {
+		const int count = static_cast<int>(palette.size());
+		int index = static_cast<int>(ParticleRandom::Range(0.0f, static_cast<float>(count)));
+		index = std::clamp(index, 0, count - 1);
+		p.color = palette[static_cast<size_t>(index)];
+	} else {
+		p.color = preset->render.color;
+	}
 	p.initialColor = p.color;
 }
 

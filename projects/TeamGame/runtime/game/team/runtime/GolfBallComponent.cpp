@@ -387,6 +387,10 @@ namespace MyGame {
 		return _velocity;
 	}
 
+	float GolfBallComponent::GetRadius() const {
+		return _radius;
+	}
+
 	bool GolfBallComponent::IsInFlight() const {
 		return _bIsInFlight;
 	}

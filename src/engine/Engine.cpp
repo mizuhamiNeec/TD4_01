@@ -59,7 +59,7 @@
 #include <engine/unnamed/subsystem/time/TimeSystem.h>
 #include <engine/world/World.h>
 
-#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
+#if defined(_DEBUG) 
 #include <engine/editor/EditorRuntime.h>
 #include <engine/world/EditorWorld.h>
 #endif
@@ -189,7 +189,7 @@ namespace Unnamed {
 	}
 
 	void Engine::ToggleEditorScreenMode() const {
-#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
+#if defined(_DEBUG) 
 		if (mUEditorRuntime && mIsEditorMode) {
 			mUEditorRuntime->TogglePresentMode();
 		}
@@ -205,7 +205,7 @@ namespace Unnamed {
 		ServiceLocator::Register<IGameModule>(&mGameModule);
 
 		RUN_MODE resolvedRunMode = mRequestedRunMode;
-#if !(defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR))
+#if !(defined(_DEBUG) )
 		if (resolvedRunMode == RUN_MODE::EDITOR) {
 			Warning(
 				"Engine",
@@ -432,7 +432,7 @@ namespace Unnamed {
 			);
 		}
 
-#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
+#if defined(_DEBUG) 
 		auto& dx     = dynamic_cast<Rhi::D3D12Device&>(*mRhiDevice);
 		mUImGuiLayer = std::make_unique<ImGuiLayer>(
 			hwnd,
@@ -458,7 +458,7 @@ namespace Unnamed {
 		RegisterConsoleCommandsAndVariables();
 
 		if (mConfig.mode == RUN_MODE::EDITOR) {
-#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
+#if defined(_DEBUG) 
 			mUEditorRuntime = std::make_unique<EditorRuntime>(
 				mConsoleSystem.get(),
 				mInputSystem.get(),
@@ -566,7 +566,7 @@ namespace Unnamed {
 			);
 		}
 
-#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
+#if defined(_DEBUG) 
 		// Update内でImGuiを使えるように更新前にフレーム開始
 		if (mUImGuiLayer) {
 			Profiler::ScopeTimer scope(mProfiler.get(), "ImGui.BeginFrame");
@@ -596,7 +596,7 @@ namespace Unnamed {
 		}
 
 		World* runtimeWorld = mWorld.get();
-#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
+#if defined(_DEBUG) 
 		if (mUEditorRuntime && mIsEditorMode) {
 			mUEditorRuntime->SyncPresentationState();
 			runtimeWorld = mUEditorRuntime->GetRuntimeWorld();
@@ -702,7 +702,7 @@ namespace Unnamed {
 			);
 		}
 
-#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
+#if defined(_DEBUG) 
 		if (mUImGuiLayer) {
 			if (mUEditorRuntime && mIsEditorMode) {
 				mUEditorRuntime->SyncViewOutputs();
@@ -756,7 +756,7 @@ namespace Unnamed {
 		mPostFxChainCommand.reset();
 		mPostFxChainReloadCommand.reset();
 		mSequenceRegressionRunCommand.reset();
-#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
+#if defined(_DEBUG) 
 		mToggleEditorCommand.reset();
 		mToggleFullscreenCommand.reset();
 #endif
@@ -773,7 +773,7 @@ namespace Unnamed {
 		}
 		mDemoService.reset();
 
-#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
+#if defined(_DEBUG) 
 		if (mRenderModule) {
 			mRenderModule->SetUiCallbacks({}, {});
 		}
@@ -949,7 +949,7 @@ namespace Unnamed {
 			"Run fixed-tick regression tests for sequence runtime."
 		);
 
-#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
+#if defined(_DEBUG) 
 		mToggleEditorCommand = std::make_unique<ConCommand>(
 			"toggleeditor",
 			[this](const std::vector<std::string>&) {
@@ -977,7 +977,7 @@ namespace Unnamed {
 	}
 
 	World* Engine::ResolveSceneTransitionTargetWorld(World* runtimeWorld) {
-#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
+#if defined(_DEBUG) 
 		if (auto* editorWorld = dynamic_cast<EditorWorld*>(runtimeWorld)) {
 			return editorWorld->GetRuntimeSceneWorld();
 		}
@@ -1026,7 +1026,7 @@ namespace Unnamed {
 	}
 
 	World* Engine::GetWorld() const {
-#if defined(_DEBUG) && defined(UNNAMED_WITH_EDITOR)
+#if defined(_DEBUG) 
 		if (mUEditorRuntime && mIsEditorMode) {
 			return mUEditorRuntime->GetRuntimeWorld();
 		}

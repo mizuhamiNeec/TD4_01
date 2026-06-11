@@ -91,6 +91,9 @@ public:
 	/// @brief 現在の速度を取得
 	[[nodiscard]] Vec3 GetCurrentVelocity() const;
 
+	/// @brief ボールの衝突半径を取得
+	[[nodiscard]] float GetRadius() const;
+
 	/// @brief ボールが飛行中かを取得
 	[[nodiscard]] bool IsInFlight() const;
 

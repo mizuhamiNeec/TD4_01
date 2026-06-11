@@ -178,6 +178,10 @@ struct RenderModule {
 	// 色そのものを変えるためのグラデーション
 	ColorGradient colorGradient;
 
+	// パーティクルごとにここからランダムに1色を選ぶ（空なら無効＝color/gradientを使う）。
+	// コンフェッティのような「色とりどり」を1エミッタで出すための機能。
+	std::vector<Vec4> colorPalette;
+
 	// 「何秒目でグラデーションのどの位置まで進むか」を決める時間カーブ
 	// age(0〜1) -> グラデーションの t(0〜1)
 	Curve1D gradientTimeCurve;

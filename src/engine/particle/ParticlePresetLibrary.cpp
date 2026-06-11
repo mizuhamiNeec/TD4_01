@@ -137,6 +137,34 @@ namespace {
 		return g;
 	}
 
+	// colorPalette -> [[r,g,b,a],...]
+	json WritePalette(const std::vector<Vec4>& palette)
+	{
+		json arr = json::array();
+		for (const auto& c : palette) {
+			arr.push_back(json::array({ c.x, c.y, c.z, c.w }));
+		}
+		return arr;
+	}
+
+	std::vector<Vec4> ReadPalette(const json& j)
+	{
+		std::vector<Vec4> out;
+		if (j.is_array()) {
+			for (const auto& elem : j) {
+				if (elem.is_array() && elem.size() == 4) {
+					Vec4 c{};
+					c.x = elem[0].get<float>();
+					c.y = elem[1].get<float>();
+					c.z = elem[2].get<float>();
+					c.w = elem[3].get<float>();
+					out.push_back(c);
+				}
+			}
+		}
+		return out;
+	}
+
 	// ------------------------------------------------------------------
 	//  モジュール種別ごとの params 変換
 	//
@@ -188,6 +216,7 @@ namespace {
 			params["colorCurve"]        = WriteCurve1D(p.render.colorCurve);
 			params["colorGradient"]     = WriteGradient(p.render.colorGradient);
 			params["gradientTimeCurve"] = WriteCurve1D(p.render.gradientTimeCurve);
+			params["colorPalette"]      = WritePalette(p.render.colorPalette);
 		}
 		else if (type == "Trail") {
 			params["enabled"]        = p.trail.enabled;
@@ -303,6 +332,9 @@ namespace {
 			}
 			if (params.contains("gradientTimeCurve")) {
 				p.render.gradientTimeCurve = ReadCurve1D(params["gradientTimeCurve"]);
+			}
+			if (params.contains("colorPalette")) {
+				p.render.colorPalette = ReadPalette(params["colorPalette"]);
 			}
 		}
 		else if (type == "Trail") {
@@ -556,6 +588,9 @@ namespace {
 			}
 			if (r.contains("gradientTimeCurve")) {
 				p.render.gradientTimeCurve = ReadCurve1D(r["gradientTimeCurve"]);
+			}
+			if (r.contains("colorPalette")) {
+				p.render.colorPalette = ReadPalette(r["colorPalette"]);
 			}
 		}
 		else {

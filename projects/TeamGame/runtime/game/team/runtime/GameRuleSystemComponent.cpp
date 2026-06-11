@@ -12,6 +12,7 @@
 #include "engine/unnamed/framework/components/TransformComponent.h"
 #include "engine/unnamed/framework/components/ui/UiCanvasComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
+#include "engine/world/World.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -92,6 +93,7 @@ void MyGame::GameRuleSystemComponent::DrawInspectorImGui()
 	ImGui::DragFloat("Min Ball Flight Seconds", &_minBallFlightSeconds, 0.1f, 0.0f, 999.0f, "%.2f sec");
 	ImGui::DragFloat("Max Ball Flight Seconds", &_maxBallFlightSeconds, 0.1f, 0.0f, 999.0f, "%.2f sec");
 	ImGui::DragFloat("Sea Out Height", &_seaOutHeight, 0.1f, -999.0f, 999.0f, "%.2f");
+	ImGui::DragFloat("Ball Sea Out Height", &_ballSeaOutHeight, 0.1f, -999.0f, 999.0f, "%.2f");
 	ImGui::DragFloat(
 		"Ball Stop Result Velocity", &_ballStopResultVelocityThreshold, 0.01f, 0.0f, 10.0f, "%.3f"
 	);
@@ -167,6 +169,9 @@ void MyGame::GameRuleSystemComponent::Deserialize(const Unnamed::JsonReader & re
 	if (auto val = reader.Read<float>("seaOutHeight")) {
 		_seaOutHeight = val.value();
 	}
+	if (auto val = reader.Read<float>("ballSeaOutHeight")) {
+		_ballSeaOutHeight = val.value();
+	}
 	if (auto val = reader.Read<float>("ballStopResultVelocityThreshold")) {
 		_ballStopResultVelocityThreshold = std::max(0.0f, val.value());
 	}
@@ -226,6 +231,8 @@ void MyGame::GameRuleSystemComponent::Serialize(Unnamed::JsonWriter & writer) co
 	writer.Write(_maxBallFlightSeconds);
 	writer.Key("seaOutHeight");
 	writer.Write(_seaOutHeight);
+	writer.Key("ballSeaOutHeight");
+	writer.Write(_ballSeaOutHeight);
 	writer.Key("ballStopResultVelocityThreshold");
 	writer.Write(_ballStopResultVelocityThreshold);
 	writer.Key("launchBallOnPlayingStart");
@@ -328,6 +335,13 @@ void MyGame::GameRuleSystemComponent::StartPlaying()
 		// NOTE: 発射カウントダウンが無いシーンだけ、ルール管理側から直接発射する。
 		_golfBallComponent->Launch();
 		_hasBallLaunched = _golfBallComponent->IsInFlight();
+		
+		Unnamed::GameplayCue cue = {};
+		cue.id = "uncle.ballshoot";
+		cue.sourceEntityGuid = GetOwner()->GetGuid();
+		cue.value = 1.0f;
+		cue.value2 = 1.0f;
+		GetWorld()->GetGameplayCueBus().Publish(cue); // ボールを打った瞬間のCueを発火して、演出やサウンドを鳴らす。
 	} else if (_golfBallComponent) {
 		// NOTE: 発射カウントダウン側がLaunch済みのボール状態を引き継ぐ。
 		_hasBallLaunched = _golfBallComponent->IsInFlight();
@@ -359,9 +373,6 @@ void MyGame::GameRuleSystemComponent::FinishGame()
 	(void)ApplyClearUiForResult();
 	ApplyStageIntroControlState(false);
 	SetStageIntroUiVisible(false);
-	if (_playerMoveComponent) {
-		_playerMoveComponent->SetMovementEnabled(false);
-	}
 	_phase = GamePhase::Result;
 	_isGameEnded = true;
 	if (_launchCountdownComponent) {
@@ -603,7 +614,9 @@ void MyGame::GameRuleSystemComponent::UpdateTrashScore()
 			}
 
 			if (entity->GetComponent<TrashObjMoverComponent>()) {
-				_scoreComponent->AddTrashIntoHoleScore(GetEntityGuid(entity));
+				if (_scoreComponent->AddTrashIntoHoleScore(GetEntityGuid(entity))) {
+					PublishTrashIntoHolePresentationCue(*entity);
+				}
 			}
 
 			if (auto* golfBall = entity->GetComponent<GolfBallComponent>()) {
@@ -642,6 +655,23 @@ void MyGame::GameRuleSystemComponent::UpdateTrashScore()
 	}
 }
 
+void MyGame::GameRuleSystemComponent::PublishTrashIntoHolePresentationCue(
+	Unnamed::Entity& trashEntity
+) const {
+	Unnamed::World* world = GetWorld();
+	const Unnamed::Entity* owner = GetOwner();
+	if (!world || !owner) {
+		return;
+	}
+
+	Unnamed::GameplayCue cue = {};
+	cue.id = "trash.holein";
+	cue.sourceEntityGuid = owner->GetGuid();
+	cue.value = 1.0f;
+	cue.value2 = 1.0f;
+	world->GetGameplayCueBus().Publish(cue);
+}
+
 void MyGame::GameRuleSystemComponent::UpdateBallResult(float deltaTime)
 {
 	// NOTE: ボールが無いシーンでは最大プレイ時間だけでリザルトへ進める。
@@ -675,8 +705,8 @@ void MyGame::GameRuleSystemComponent::UpdateBallResult(float deltaTime)
 
 	auto* ballEntity = _golfBallComponent->GetOwner();
 	auto* transform = ballEntity ? ballEntity->GetComponent<Unnamed::TransformComponent>() : nullptr;
-	if (transform && transform->GetPosition().y <= _seaOutHeight) {
-		// NOTE: ボールが海へ落ちたらOB扱いで終了する。
+	if (transform && transform->GetPosition().y <= _ballSeaOutHeight) {
+		// NOTE: 海面付近の一時的な沈み込みではなく、十分に落下した時点でNotホールインワンを確定する。
 		_isOutOfBounds = true;
 		if (_scoreComponent) {
 			_scoreComponent->AddOutOfBoundsPenalty();
@@ -736,11 +766,28 @@ bool MyGame::GameRuleSystemComponent::TryScoreBallCatch(GolfBallComponent& golfB
 	_hasBallLaunched = true;
 	// NOTE: ボールキャッチ自体には加点せず、直接/バウンド後のホールインワンボーナスだけを採点対象にする。
 	_isHoleInOne = true;
+	
+	// ホールインワン時のファンファーレ
+	Unnamed::GameplayCue cue = {};
+	cue.id = "game.holeinonefanfare";
+	cue.sourceEntityGuid = GetOwner()->GetGuid();
+	cue.value = 1.0f;
+	cue.value2 = 1.0f;
+	GetWorld()->GetGameplayCueBus().Publish(cue);
+	
 	if (!golfBall.HasBounced()) {
 		_isDirectHoleInOne = true;
 		if (_scoreComponent) {
 			_scoreComponent->AddDirectHoleInOneBonus();
 		}
+		
+		// ダイレクトホールインワン時の演出
+		cue = {};
+		cue.id = "game.directholeinone";
+		cue.sourceEntityGuid = GetOwner()->GetGuid();
+		cue.value = 1.0f;
+		cue.value2 = 1.0f;
+		GetWorld()->GetGameplayCueBus().Publish(cue);
 	} else {
 		if (_scoreComponent) {
 			_scoreComponent->AddHoleInOneBonus();
@@ -797,7 +844,7 @@ bool MyGame::GameRuleSystemComponent::IsBallStoppedForResult() const
 	const bool isNearlyResting =
 		horizontalSpeedSq <= stopSpeedSq &&
 		std::abs(velocity.y) <= _ballStopResultVelocityThreshold &&
-		position.y > _seaOutHeight;
+		position.y > _ballSeaOutHeight;
 
 	// NOTE: 吸い込み中は穴への移行処理なので、速度が低くても停止失敗として扱わない。
 	return isNearlyResting;

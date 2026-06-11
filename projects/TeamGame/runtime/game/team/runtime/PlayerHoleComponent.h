@@ -142,6 +142,12 @@ namespace MyGame {
 		/// 穴中心よりこの深さまで落ちたEntityを破棄する
 		float _holeDespawnDepth = 8.0f;
 
+		/// ボール入球用に穴側へ置く球体判定の半径
+		float _ballHoleCollisionRadius = 2.0f;
+
+		/// ボール入球用の球体判定中心を穴中心から上下にずらす量
+		float _ballHoleCollisionOffsetY = 0.0f;
+
 		// -----------------------------------------------------------------------
 		// 内部状態
 		// -----------------------------------------------------------------------
@@ -162,16 +168,18 @@ namespace MyGame {
 		/// 穴の世界座標を計算
 		[[nodiscard]] Vec3 GetHoleWorldPosition() const;
 
+		/// ボール入球用の穴側球体判定中心を計算
+		[[nodiscard]] Vec3 GetBallHoleCollisionCenter() const;
+
 		/// シーン内のすべてのゴミエンティティを検索
 		void DetectTrashInHole();
 
 		/// エンティティが穴の範囲内にいるかを判定
 		[[nodiscard]] bool IsEntityInHoleRange(Unnamed::Entity* entity) const;
 
-		/// ボールが穴へ入れる高さまで来ているかを判定
-		[[nodiscard]] bool IsGolfBallLowEnoughForHole(
-			const GolfBallComponent& golfBall,
-			const Vec3& holeWorldPos
+		/// ボールが発射後に穴側の球体判定へ接触したかを判定
+		[[nodiscard]] bool IsGolfBallCollidingWithHole(
+			const GolfBallComponent& golfBall
 		) const;
 
 		/// ゴミを落下状態に移行させる

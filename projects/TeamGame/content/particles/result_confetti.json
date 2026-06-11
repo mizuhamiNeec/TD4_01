@@ -1,0 +1,190 @@
+{
+    "name": "result_confetti",
+    "emitterSettings": {
+        "vertexType": 0,
+        "textureFilePath": "projects/TeamGame/content/textures/Confetti.png",
+        "blendMode": 1
+    },
+    "emitterSpawn": {
+        "count": 4,
+        "frequency": 0.16,
+        "repeat": true,
+        "useRandomPosition": true,
+        "useLocalSpace": false,
+        "emitShape": 1,
+        "boxHalfSize": [
+            0.3,
+            0.3,
+            0.3
+        ],
+        "sphereRadius": 0.3
+    },
+    "particleSpawn": {
+        "initialScale": [
+            0.18,
+            0.5,
+            1.0
+        ],
+        "initialScaleRandom": {
+            "useRandom": true,
+            "min": [
+                0.12,
+                0.35,
+                1.0
+            ],
+            "max": [
+                0.28,
+                0.72,
+                1.0
+            ]
+        },
+        "initialRotate": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "initialRotateRandom": {
+            "useRandom": true,
+            "min": [
+                0.0,
+                0.0,
+                -3.14159
+            ],
+            "max": [
+                0.0,
+                0.0,
+                3.14159
+            ]
+        },
+        "initialOffset": [
+            0.0,
+            0.0,
+            0.0
+        ]
+    },
+    "particleUpdate": {
+        "lifeTime": 3.6,
+        "velocity": [
+            0.0,
+            12.0,
+            0.0
+        ],
+        "velocityRandom": {
+            "useRandom": true,
+            "min": [
+                -6.0,
+                9.0,
+                -1.5
+            ],
+            "max": [
+                6.0,
+                15.0,
+                1.5
+            ]
+        },
+        "rotationSpeed": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "rotationRandom": {
+            "useRandom": true,
+            "min": [
+                0.0,
+                0.0,
+                -6.0
+            ],
+            "max": [
+                0.0,
+                0.0,
+                6.0
+            ]
+        },
+        "scaleSpeed": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "useGravity": true
+    },
+    "render": {
+        "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+        ],
+        "useBillboard": true,
+        "flipY": false,
+        "colorCurve": {
+            "enabled": true,
+            "keys": [
+                [
+                    0.0,
+                    1.0
+                ],
+                [
+                    0.9,
+                    1.0
+                ],
+                [
+                    1.0,
+                    0.0
+                ]
+            ]
+        },
+        "colorPalette": [
+            [
+                0.95,
+                0.2,
+                0.2,
+                1.0
+            ],
+            [
+                1.0,
+                0.55,
+                0.1,
+                1.0
+            ],
+            [
+                1.0,
+                0.9,
+                0.2,
+                1.0
+            ],
+            [
+                0.3,
+                0.85,
+                0.3,
+                1.0
+            ],
+            [
+                0.25,
+                0.85,
+                0.95,
+                1.0
+            ],
+            [
+                0.25,
+                0.45,
+                0.95,
+                1.0
+            ],
+            [
+                0.65,
+                0.3,
+                0.9,
+                1.0
+            ],
+            [
+                1.0,
+                0.45,
+                0.75,
+                1.0
+            ]
+        ]
+    },
+    "trail": {
+        "enabled": false
+    }
+}

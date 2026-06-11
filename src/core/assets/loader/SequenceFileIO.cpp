@@ -23,6 +23,9 @@ namespace Unnamed {
 				if (text == "cubic") {
 					return SEQUENCE_INTERPOLATION_MODE::MODE_CUBIC;
 				}
+				if (text == "spline") {
+					return SEQUENCE_INTERPOLATION_MODE::MODE_SPLINE;
+				}
 				return SEQUENCE_INTERPOLATION_MODE::MODE_LINEAR;
 			}
 			const int raw = value.is_number() ? value.get<int>() : 1;
@@ -31,6 +34,9 @@ namespace Unnamed {
 			}
 			if (raw == 2) {
 				return SEQUENCE_INTERPOLATION_MODE::MODE_CUBIC;
+			}
+			if (raw == 3) {
+				return SEQUENCE_INTERPOLATION_MODE::MODE_SPLINE;
 			}
 			return SEQUENCE_INTERPOLATION_MODE::MODE_LINEAR;
 		}
@@ -41,6 +47,7 @@ namespace Unnamed {
 			switch (mode) {
 				case SEQUENCE_INTERPOLATION_MODE::MODE_STEP: return "step";
 				case SEQUENCE_INTERPOLATION_MODE::MODE_CUBIC: return "cubic";
+				case SEQUENCE_INTERPOLATION_MODE::MODE_SPLINE: return "spline";
 				case SEQUENCE_INTERPOLATION_MODE::MODE_LINEAR:
 				default: return "linear";
 			}

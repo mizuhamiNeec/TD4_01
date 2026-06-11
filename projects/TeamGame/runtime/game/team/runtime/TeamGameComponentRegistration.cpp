@@ -3,6 +3,9 @@
 #include "collision/base/BaseKinematicCollisionResolver.h"
 #include "core/ComponentRegistry.h"
 #include "engine/unnamed/subsystem/console/Log.h"
+#include "game/core/components/AudioFxControllerComponent.h"
+#include "game/core/components/CameraFxControllerComponent.h"
+#include "game/core/components/presentation/EventPresentationComponent.h"
 #include "MicComponent.h"
 #include "PlayerFollowCameraComponent.h"
 #include "PlayerMoveComponent.h"
@@ -50,6 +53,11 @@ namespace Unnamed {
 	}
 
 	void RegisterTeamGameComponents(ComponentRegistry &componentRegistry) {
+		RegisterEventPresentationComponent(componentRegistry);
+		RegisterComponentIfMissing<Unnamed::AudioFxControllerComponent>(
+			componentRegistry, "game.AudioFxController", "AudioFxController");
+		RegisterComponentIfMissing<Unnamed::CameraFxControllerComponent>(
+			componentRegistry, "game.CameraFxController", "CameraFxController");
 		RegisterComponentIfMissing<MyGame::MicComponent>(
 			componentRegistry, "mygame.MicComponent", "Mic Component");
 		RegisterComponentIfMissing<MyGame::PlayerFollowCameraComponent>(

@@ -81,9 +81,45 @@ namespace Unnamed {
 				return false;
 			}
 
-			return std::filesystem::exists(path / "premake5.lua", ec) && !ec &&
-			       std::filesystem::exists(path / "src", ec) && !ec &&
-			       std::filesystem::exists(path / "projects", ec) && !ec;
+			if (std::filesystem::exists(path / "premake5.lua", ec) && !ec &&
+			    std::filesystem::exists(path / "src", ec) && !ec &&
+			    std::filesystem::exists(path / "projects", ec) && !ec) {
+				return true;
+			}
+
+			ec.clear();
+			const std::filesystem::path projectsRoot = path / "projects";
+			if (!std::filesystem::exists(path / "content", ec) || ec ||
+			    !std::filesystem::exists(projectsRoot, ec) || ec) {
+				return false;
+			}
+
+			for (std::filesystem::directory_iterator it(
+				     projectsRoot,
+				     std::filesystem::directory_options::skip_permission_denied,
+				     ec
+			     );
+			     it != std::filesystem::directory_iterator();
+			     it.increment(ec)) {
+				if (ec) {
+					ec.clear();
+					continue;
+				}
+				if (!it->is_directory(ec) || ec) {
+					ec.clear();
+					continue;
+				}
+				if (std::filesystem::exists(
+						it->path() / "config" / "game_profile.json",
+						ec
+					) &&
+				    !ec) {
+					return true;
+				}
+				ec.clear();
+			}
+
+			return false;
 		}
 
 		[[nodiscard]] std::optional<std::filesystem::path> TryFindRepositoryRoot(
@@ -263,6 +299,29 @@ namespace Unnamed {
 			return candidates.front();
 		}
 
+		void SetCurrentDirectoryToRepositoryRoot(
+			const RepositoryRootCandidate& repositoryRoot
+		) {
+			std::error_code ec;
+			std::filesystem::current_path(repositoryRoot.root, ec);
+			if (ec) {
+				Warning(
+					kChannel,
+					"failed to set current directory to repository root '{}' ({})",
+					repositoryRoot.root.generic_string(),
+					ec.message()
+				);
+				return;
+			}
+
+			DevMsg(
+				kChannel,
+				"current directory set to repository root '{}' ({})",
+				repositoryRoot.root.generic_string(),
+				repositoryRoot.reason
+			);
+		}
+
 		[[nodiscard]] bool RegisterProfile(
 			GameModuleRegistryState& state,
 			GameModulePaths          paths
@@ -329,6 +388,32 @@ namespace Unnamed {
 
 			outValue = it->get<int>();
 			return true;
+		}
+
+		[[nodiscard]] bool IsCurrentDirectoryRelativePath(
+			const std::string_view path
+		) {
+			return path.rfind("./", 0) == 0 || path.rfind("../", 0) == 0;
+		}
+
+		[[nodiscard]] std::string ResolveManifestRootPath(
+			const std::filesystem::path& repositoryRoot,
+			const std::string_view       path
+		) {
+			if (path.empty()) {
+				return {};
+			}
+
+			const std::filesystem::path fsPath(path);
+			if (fsPath.is_absolute()) {
+				return fsPath.lexically_normal().generic_string();
+			}
+
+			if (IsCurrentDirectoryRelativePath(path)) {
+				return (repositoryRoot / fsPath).lexically_normal().generic_string();
+			}
+
+			return std::string(path);
 		}
 
 		[[nodiscard]] ManifestLoadResult LoadGameProfileManifest(
@@ -413,6 +498,23 @@ namespace Unnamed {
 				)) {
 				result.failureReason = "missing required string field(s)";
 				return result;
+			}
+
+			const std::filesystem::path manifestFsPath{ std::string(manifestPath) };
+			if (const auto repositoryRoot = TryFindRepositoryRoot(manifestFsPath);
+				repositoryRoot.has_value()) {
+				profile.paths.gameRoot = ResolveManifestRootPath(
+					*repositoryRoot,
+					profile.paths.gameRoot
+				);
+				profile.paths.contentRoot = ResolveManifestRootPath(
+					*repositoryRoot,
+					profile.paths.contentRoot
+				);
+				profile.paths.configRoot = ResolveManifestRootPath(
+					*repositoryRoot,
+					profile.paths.configRoot
+				);
 			}
 
 			const auto aliasesIt = root.find("aliases");
@@ -506,6 +608,7 @@ namespace Unnamed {
 				);
 				return;
 			}
+			SetCurrentDirectoryToRepositoryRoot(*resolvedRepoRoot);
 
 			const std::filesystem::path projectsRoot =
 				resolvedRepoRoot->root / "projects";

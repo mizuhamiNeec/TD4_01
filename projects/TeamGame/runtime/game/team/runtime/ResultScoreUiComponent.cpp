@@ -3,6 +3,7 @@
 #include "TeamGameResultScore.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdlib>
 
 #include <core/ComponentRegistry.h>
@@ -18,19 +19,28 @@
 #endif
 
 void MyGame::ResultScoreUiComponent::OnAttached() {
+	_elapsed = 0.0f;
 	EnsureUiCanvasAsset();
-	UpdateScoreUi();
+	UpdateScoreUi(0.0f);
 }
 
 void MyGame::ResultScoreUiComponent::OnRenderTick(
 	float renderDeltaTime,
 	float interpolationAlpha
 ) {
-	(void)renderDeltaTime;
 	(void)interpolationAlpha;
 
+	_elapsed += renderDeltaTime;
+
+	// Normalized linear progress, then cubic ease-out so the digits snap into
+	// place near the end (fast start, gentle stop).
+	const float t = _countUpDuration > 0.0f
+		? std::clamp(_elapsed / _countUpDuration, 0.0f, 1.0f)
+		: 1.0f;
+	const float eased = 1.0f - std::pow(1.0f - t, 3.0f);
+
 	EnsureUiCanvasAsset();
-	UpdateScoreUi();
+	UpdateScoreUi(eased);
 }
 
 void MyGame::ResultScoreUiComponent::OnDetached() {}
@@ -47,6 +57,13 @@ std::string_view MyGame::ResultScoreUiComponent::GetComponentName() const {
 void MyGame::ResultScoreUiComponent::DrawInspectorImGui() {
 	ImGui::Text("=== Result Score UI Component ===");
 	ImGui::Text("UI Asset: %s", _uiAssetPath.c_str());
+
+	ImGui::SliderFloat("Count-Up Duration", &_countUpDuration, 0.0f, 5.0f, "%.2f s");
+	if (ImGui::Button("Replay Count-Up")) {
+		_elapsed = 0.0f;
+	}
+	ImGui::SameLine();
+	ImGui::Text("Elapsed: %.2f s", _elapsed);
 
 	const TeamGameResultScoreSnapshot snapshot = LoadTeamGameResultScore();
 	ImGui::Text("Total: %d", snapshot.total);
@@ -92,6 +109,9 @@ void MyGame::ResultScoreUiComponent::Deserialize(
 		_outOfBoundsPenaltyWidgetName = reader["outOfBoundsPenaltyWidgetName"]
 			.GetString(_outOfBoundsPenaltyWidgetName);
 	}
+	if (reader.Has("countUpDuration")) {
+		_countUpDuration = reader["countUpDuration"].GetFloat(_countUpDuration);
+	}
 }
 
 void MyGame::ResultScoreUiComponent::Serialize(
@@ -113,31 +133,41 @@ void MyGame::ResultScoreUiComponent::Serialize(
 	writer.Write(_directHoleInOneWidgetName);
 	writer.Key("outOfBoundsPenaltyWidgetName");
 	writer.Write(_outOfBoundsPenaltyWidgetName);
+	writer.Key("countUpDuration");
+	writer.Write(_countUpDuration);
 }
 
-void MyGame::ResultScoreUiComponent::UpdateScoreUi() const {
+void MyGame::ResultScoreUiComponent::UpdateScoreUi(const float progress) const {
 	const TeamGameResultScoreSnapshot snapshot = LoadTeamGameResultScore();
 
+	// Scales a final score by the count-up progress, rounding so the displayed
+	// digits climb from 0 and land exactly on the target when progress reaches 1.
+	const auto countUp = [progress](const int finalValue) {
+		return static_cast<int>(
+			std::lround(static_cast<float>(finalValue) * progress)
+		);
+	};
+
 	if (auto* strip = ResolveDigitStrip(_totalWidgetName)) {
-		strip->SetValue(std::max(0, snapshot.total));
+		strip->SetValue(countUp(std::max(0, snapshot.total)));
 	}
 	if (auto* strip = ResolveDigitStrip(_trashToSeaWidgetName)) {
-		strip->SetValue(std::max(0, snapshot.trashToSea));
+		strip->SetValue(countUp(std::max(0, snapshot.trashToSea)));
 	}
 	if (auto* strip = ResolveDigitStrip(_trashIntoHoleWidgetName)) {
-		strip->SetValue(std::max(0, snapshot.trashIntoHole));
+		strip->SetValue(countUp(std::max(0, snapshot.trashIntoHole)));
 	}
 	if (auto* strip = ResolveDigitStrip(_ballCatchWidgetName)) {
-		strip->SetValue(std::max(0, snapshot.ballCatch));
+		strip->SetValue(countUp(std::max(0, snapshot.ballCatch)));
 	}
 	if (auto* strip = ResolveDigitStrip(_holeInOneWidgetName)) {
-		strip->SetValue(std::max(0, snapshot.holeInOne));
+		strip->SetValue(countUp(std::max(0, snapshot.holeInOne)));
 	}
 	if (auto* strip = ResolveDigitStrip(_directHoleInOneWidgetName)) {
-		strip->SetValue(std::max(0, snapshot.directHoleInOne));
+		strip->SetValue(countUp(std::max(0, snapshot.directHoleInOne)));
 	}
 	if (auto* strip = ResolveDigitStrip(_outOfBoundsPenaltyWidgetName)) {
-		strip->SetValue(std::abs(snapshot.outOfBoundsPenalty));
+		strip->SetValue(countUp(std::abs(snapshot.outOfBoundsPenalty)));
 	}
 }
 

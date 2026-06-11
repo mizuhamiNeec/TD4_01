@@ -10,6 +10,7 @@
 #include "TrashObjSpawnerComponent.h"
 #include "engine/scene/Scene.h"
 #include "engine/unnamed/framework/components/TransformComponent.h"
+#include "engine/unnamed/framework/components/particle/ParticleEmitterComponent.h"
 #include "engine/unnamed/framework/components/ui/UiCanvasComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/world/World.h"
@@ -117,6 +118,7 @@ void MyGame::GameRuleSystemComponent::DrawInspectorImGui()
 	inputString("Clear UI Entity Name", _clearUiEntityName);
 	inputString("Stage Intro UI Entity Name", _stageIntroUiEntityName);
 	inputString("Stage Intro UI", _stageIntroUiAssetPath);
+	inputString("Goal Confetti Entity Name", _goalConfettiEntityNamePrefix);
 	inputString("Hole In One UI", _holeInOneUiAssetPath);
 	inputString("Direct Hole In One UI", _directHoleInOneUiAssetPath);
 	inputString("Not Hole In One UI", _notHoleInOneUiAssetPath);
@@ -206,6 +208,10 @@ void MyGame::GameRuleSystemComponent::Deserialize(const Unnamed::JsonReader & re
 		_stageIntroUiAssetPath =
 			reader["stageIntroUiAssetPath"].GetString(_stageIntroUiAssetPath);
 	}
+	if (reader.Has("goalConfettiEntityNamePrefix")) {
+		_goalConfettiEntityNamePrefix =
+			reader["goalConfettiEntityNamePrefix"].GetString(_goalConfettiEntityNamePrefix);
+	}
 	if (reader.Has("holeInOneUiAssetPath")) {
 		_holeInOneUiAssetPath = reader["holeInOneUiAssetPath"].GetString(_holeInOneUiAssetPath);
 	}
@@ -256,6 +262,8 @@ void MyGame::GameRuleSystemComponent::Serialize(Unnamed::JsonWriter & writer) co
 	writer.Write(_stageIntroUiEntityName);
 	writer.Key("stageIntroUiAssetPath");
 	writer.Write(_stageIntroUiAssetPath);
+	writer.Key("goalConfettiEntityNamePrefix");
+	writer.Write(_goalConfettiEntityNamePrefix);
 	writer.Key("holeInOneUiAssetPath");
 	writer.Write(_holeInOneUiAssetPath);
 	writer.Key("directHoleInOneUiAssetPath");
@@ -313,6 +321,7 @@ void MyGame::GameRuleSystemComponent::StartCountdown()
 	_hasTriggeredCountdownTrashWave = false;
 	_hasTriggeredBallHitTrashWave = false;
 	_hasTriggeredAfterHitTrashWave = false;
+	StopGoalConfetti();
 
 	if (_scoreComponent) {
 		_scoreComponent->ResetScore();
@@ -417,6 +426,7 @@ void MyGame::GameRuleSystemComponent::ResetGame()
 	_hasTriggeredBallHitTrashWave = false;
 	_hasTriggeredAfterHitTrashWave = false;
 	_stageIntroElapsedTime = 0.0f;
+	StopGoalConfetti();
 
 	if (_launchCountdownComponent) {
 		_launchCountdownComponent->ResetCountdown();
@@ -899,7 +909,63 @@ bool MyGame::GameRuleSystemComponent::TryScoreBallCatch(GolfBallComponent& golfB
 		}
 		PublishPresentationCue("game.holeinone");
 	}
+	// NOTE: ゴール（ホールインワン成立）の瞬間にカメラ前面の紙吹雪を画面全体へ一度だけ出す。
+	StartGoalConfetti();
 	return true;
+}
+
+std::vector<Unnamed::ParticleEmitterComponent*>
+MyGame::GameRuleSystemComponent::CollectGoalConfettiEmitters() const
+{
+	std::vector<Unnamed::ParticleEmitterComponent*> emitters;
+	if (_goalConfettiEntityNamePrefix.empty()) {
+		return emitters;
+	}
+
+	auto* scene = GetScene();
+	if (!scene && GetOwner()) {
+		scene = GetOwner()->GetScene();
+	}
+	if (!scene) {
+		return emitters;
+	}
+
+	// NOTE: ゴール紙吹雪はカメラ追従で画面全体を覆うため、名前一致するエミッターをまとめて扱う。
+	for (const auto& entityPtr : scene->GetEntities()) {
+		if (!entityPtr) {
+			continue;
+		}
+
+		auto* entity = entityPtr.get();
+		if (entity->GetName().find(_goalConfettiEntityNamePrefix) == std::string::npos) {
+			continue;
+		}
+		if (auto* emitter = entity->GetComponent<Unnamed::ParticleEmitterComponent>()) {
+			emitters.emplace_back(emitter);
+		}
+	}
+	return emitters;
+}
+
+void MyGame::GameRuleSystemComponent::StartGoalConfetti()
+{
+	// NOTE: ホールインワン成功（ゴール）の瞬間に一度だけ紙吹雪を出し、リザルト側では出さない。
+	if (_hasTriggeredGoalConfetti) {
+		return;
+	}
+	for (auto* emitter : CollectGoalConfettiEmitters()) {
+		emitter->Play();
+	}
+	_hasTriggeredGoalConfetti = true;
+}
+
+void MyGame::GameRuleSystemComponent::StopGoalConfetti()
+{
+	// NOTE: 再開始時に前回の紙吹雪が出続けないよう停止し、発火フラグも戻す。
+	for (auto* emitter : CollectGoalConfettiEmitters()) {
+		emitter->Stop();
+	}
+	_hasTriggeredGoalConfetti = false;
 }
 
 bool MyGame::GameRuleSystemComponent::ApplyClearUiForResult()

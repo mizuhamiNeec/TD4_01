@@ -898,6 +898,202 @@
                 {
                     "active": true,
                     "data": {
+                        "parentEntityGuid": 43,
+                        "position": [
+                            -18.0,
+                            -6.0,
+                            15.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 7500000000000000010,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "autoPlay": false,
+                        "depthTest": false,
+                        "drawEmitterShape": true,
+                        "presetName": "result_confetti",
+                        "presetPath": "projects/TeamGame/content/particles/result_confetti.json",
+                        "sortKeyBias": 0,
+                        "timeScale": 1.0
+                    },
+                    "guid": 7500000000000000011,
+                    "type": "engine.ParticleEmitter"
+                }
+            ],
+            "folderPath": "",
+            "guid": 75,
+            "isEditorOnly": false,
+            "name": "ParticleEmitter_GoalConfetti0",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 43,
+                        "position": [
+                            -6.0,
+                            -6.0,
+                            15.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 7600000000000000010,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "autoPlay": false,
+                        "depthTest": false,
+                        "drawEmitterShape": true,
+                        "presetName": "result_confetti",
+                        "presetPath": "projects/TeamGame/content/particles/result_confetti.json",
+                        "sortKeyBias": 0,
+                        "timeScale": 1.0
+                    },
+                    "guid": 7600000000000000011,
+                    "type": "engine.ParticleEmitter"
+                }
+            ],
+            "folderPath": "",
+            "guid": 76,
+            "isEditorOnly": false,
+            "name": "ParticleEmitter_GoalConfetti1",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 43,
+                        "position": [
+                            6.0,
+                            -6.0,
+                            15.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 7700000000000000010,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "autoPlay": false,
+                        "depthTest": false,
+                        "drawEmitterShape": true,
+                        "presetName": "result_confetti",
+                        "presetPath": "projects/TeamGame/content/particles/result_confetti.json",
+                        "sortKeyBias": 0,
+                        "timeScale": 1.0
+                    },
+                    "guid": 7700000000000000011,
+                    "type": "engine.ParticleEmitter"
+                }
+            ],
+            "folderPath": "",
+            "guid": 77,
+            "isEditorOnly": false,
+            "name": "ParticleEmitter_GoalConfetti2",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 43,
+                        "position": [
+                            18.0,
+                            -6.0,
+                            15.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 7800000000000000010,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "autoPlay": false,
+                        "depthTest": false,
+                        "drawEmitterShape": true,
+                        "presetName": "result_confetti",
+                        "presetPath": "projects/TeamGame/content/particles/result_confetti.json",
+                        "sortKeyBias": 0,
+                        "timeScale": 1.0
+                    },
+                    "guid": 7800000000000000011,
+                    "type": "engine.ParticleEmitter"
+                }
+            ],
+            "folderPath": "",
+            "guid": 78,
+            "isEditorOnly": false,
+            "name": "ParticleEmitter_GoalConfetti3",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
                         "parentEntityGuid": 42,
                         "position": [
                             0.0,

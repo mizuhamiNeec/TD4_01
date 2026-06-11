@@ -78,35 +78,35 @@ std::string_view MyGame::TrashObjSpawnerComponent::GetStableName() const
 
 std::string_view MyGame::TrashObjSpawnerComponent::GetComponentName() const
 {
-	return "Trash Object Spawner Component";
+	return "ゴミ自動生成コンポーネント";
 }
 
 #ifdef _DEBUG
 void MyGame::TrashObjSpawnerComponent::DrawInspectorImGui()
 {
 	// NOTE: ゴミ波の見た目と密度はプレイ調整が多いため、実行中にも確認できるようにする。
-	ImGui::Text("=== Trash Object Spawner Component ===");
-	ImGui::Checkbox("Spawn Enabled", &_spawnEnabled);
-	InputString("Template Tag", _templateTag);
-	InputString("Spawned Trash Tag", _spawnedTrashTag);
-	InputString("Spawned Name Prefix", _spawnedNamePrefix);
-	InputString("Spawned Folder Path", _spawnedFolderPath);
-	ImGui::DragFloat3("Spawn Center", &_spawnCenter.x, 0.1f);
-	ImGui::DragFloat3("Spawn Half Extent", &_spawnHalfExtent.x, 0.1f, 0.0f, 999.0f);
-	ImGui::DragFloat("Spawn Height Min", &_spawnHeightMin, 0.1f, -999.0f, 999.0f);
-	ImGui::DragFloat("Spawn Height Max", &_spawnHeightMax, 0.1f, -999.0f, 999.0f);
-	ImGui::DragFloat3("Initial Velocity Min", &_initialVelocityMin.x, 0.1f);
-	ImGui::DragFloat3("Initial Velocity Max", &_initialVelocityMax.x, 0.1f);
-	ImGui::DragFloat("Scale Min", &_scaleMin, 0.01f, 0.01f, 100.0f);
-	ImGui::DragFloat("Scale Max", &_scaleMax, 0.01f, 0.01f, 100.0f);
-	ImGui::Checkbox("Random Yaw", &_randomYaw);
-	ImGui::Text("Template GUID Count: %d", static_cast<int>(_templateEntityGuids.size()));
-	ImGui::Text("Spawned Total: %d", _spawnedTotal);
-	if (ImGui::Button("Spawn 1")) {
+	ImGui::Text("=== ゴミ自動生成コンポーネント ===");
+	ImGui::Checkbox("生成を有効にする", &_spawnEnabled);
+	InputString("テンプレート検索タグ", _templateTag);
+	InputString("生成ゴミタグ", _spawnedTrashTag);
+	InputString("生成名の接頭辞", _spawnedNamePrefix);
+	InputString("生成先フォルダ", _spawnedFolderPath);
+	ImGui::DragFloat3("生成中心位置", &_spawnCenter.x, 0.1f);
+	ImGui::DragFloat3("生成範囲(XZ)", &_spawnHalfExtent.x, 0.1f, 0.0f, 999.0f);
+	ImGui::DragFloat("落下開始高さ 最小", &_spawnHeightMin, 0.1f, -999.0f, 999.0f);
+	ImGui::DragFloat("落下開始高さ 最大", &_spawnHeightMax, 0.1f, -999.0f, 999.0f);
+	ImGui::DragFloat3("初速 最小", &_initialVelocityMin.x, 0.1f);
+	ImGui::DragFloat3("初速 最大", &_initialVelocityMax.x, 0.1f);
+	ImGui::DragFloat("スケール 最小", &_scaleMin, 0.01f, 0.01f, 100.0f);
+	ImGui::DragFloat("スケール 最大", &_scaleMax, 0.01f, 0.01f, 100.0f);
+	ImGui::Checkbox("Y軸回転をランダムにする", &_randomYaw);
+	ImGui::Text("テンプレートGUID数: %d", static_cast<int>(_templateEntityGuids.size()));
+	ImGui::Text("生成済み合計: %d", _spawnedTotal);
+	if (ImGui::Button("1個生成")) {
 		SpawnWave(1);
 	}
 	ImGui::SameLine();
-	if (ImGui::Button("Spawn 10")) {
+	if (ImGui::Button("10個生成")) {
 		SpawnWave(10);
 	}
 }

@@ -153,17 +153,6 @@ namespace MyGame {
 		_elapsedTime += deltaTime;
 
 		// -----------------------------------------------------------------------
-		// 7️⃣ 停止判定（完全に停止したか確認）
-		// -----------------------------------------------------------------------
-		// 理由：速度が十分に小さくなったら、フライトを終了する
-		float speed = _velocity.Length();
-		if (!_bIsBeingSucked && _bIsGrounded && speed < _stopVelocityThreshold) {
-			_bIsInFlight = false;
-			_bIsExternalMotion = false;
-			_velocity = Vec3(0.0f, 0.0f, 0.0f);  // 完全に停止
-		}
-
-		// -----------------------------------------------------------------------
 		// 8️⃣ 衝突応答 & 速度クリップ
 		// -----------------------------------------------------------------------
 		if (!_bIsInsideHole) {
@@ -178,6 +167,14 @@ namespace MyGame {
 			}
 		} else {
 			_position += _velocity * deltaTime;
+		}
+
+		const float speed = _velocity.Length();
+		if (!_bIsBeingSucked && _bIsGrounded && speed < _stopVelocityThreshold) {
+			// NOTE: 衝突応答後の最終速度で止め、バウンド直前にフライト終了しないようにする。
+			_bIsInFlight = false;
+			_bIsExternalMotion = false;
+			_velocity = Vec3(0.0f, 0.0f, 0.0f);
 		}
 		
 		// -----------------------------------------------------------------------
@@ -357,6 +354,18 @@ namespace MyGame {
 		_bIsExternalMotion = true;
 	}
 
+	void GolfBallComponent::EnterHoleFall(const Vec3& holePosition) {
+		_holeSuckPosition = holePosition;
+		_holeSuckPower = 1.0f;
+		// NOTE: 穴の内側に入った事実をこのフレームで確定し、GameRuleの成功判定を待たせない。
+		_bIsBeingSucked = true;
+		_bIsInsideHole = true;
+		_bHasEnteredHole = true;
+		_bIsInFlight = true;
+		_bIsExternalMotion = true;
+		_bIsGrounded = false;
+	}
+
 	void GolfBallComponent::ClearHoleSuckPosition() {
 		if (_bHasEnteredHole) {
 			return;
@@ -380,6 +389,10 @@ namespace MyGame {
 
 	bool GolfBallComponent::IsInFlight() const {
 		return _bIsInFlight;
+	}
+
+	bool GolfBallComponent::IsBeingSucked() const {
+		return _bIsBeingSucked;
 	}
 
 	float GolfBallComponent::GetElapsedTime() const {
@@ -811,6 +824,23 @@ namespace MyGame {
 		const bool restsOrFallsOnGround =
 			_position.y <= _groundLevel && _velocity.y <= 0.0f;
 		if (restsOrFallsOnGround || reachesGroundThisFrame) {
+			auto* sphereKCR = dynamic_cast<Unnamed::SphereKinematicCollisionResolver*>(
+				mCollisionResolver.get()
+			);
+			if (sphereKCR && _physicsEngine) {
+				Unnamed::Physics::Hit groundHit{};
+				const float probeDistance =
+					std::max(_radius + 0.25f, std::abs(_position.y - _groundLevel) + _radius + 0.25f);
+				const bool hasSupportGround = sphereKCR->ProbeGround(
+					_position + Vec3::up * 0.05f, probeDistance, &groundHit
+				) && groundHit.normal.y >= 0.6f;
+				if (!hasSupportGround) {
+					// NOTE: 足元に地面コライダーが無い場所では、海へ落下できるようYクリップを行わない。
+					_bIsGrounded = false;
+					return;
+				}
+			}
+
 			const bool wasGrounded = _bIsGrounded;
 			// -----------------------------------------------------------------------
 			// 地面に到達した場合の処理

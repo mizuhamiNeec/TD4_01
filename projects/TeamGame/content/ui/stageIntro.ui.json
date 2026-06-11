@@ -1,0 +1,221 @@
+{
+    "name": "ui/stageIntro.ui.json",
+    "root": {
+        "children": [
+            {
+                "children": [],
+                "components": [
+                    {
+                        "data": {
+                            "anchors": [
+                                0.5,
+                                0.0,
+                                0.5,
+                                0.0
+                            ],
+                            "constraints": {
+                                "maxHeight": 3.4028234663852886e+38,
+                                "maxWidth": 3.4028234663852886e+38,
+                                "minHeight": 0.0,
+                                "minWidth": 0.0
+                            },
+                            "layoutWeight": 1.0,
+                            "margins": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "pivot": [
+                                0.5,
+                                0.0
+                            ],
+                            "rect": [
+                                0.0,
+                                64.0,
+                                900.0,
+                                128.0
+                            ],
+                            "sizePolicy": [
+                                "Fixed",
+                                "Fixed"
+                            ]
+                        },
+                        "type": "Transform"
+                    },
+                    {
+                        "data": {
+                            "borderColor": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "cornerRadius": 0.0,
+                            "fontSize": 34.0,
+                            "hoveredColor": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "normalColor": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "onClickCommands": [],
+                            "pressedColor": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "text": "目標: ボールを一打で動く穴に入れろ",
+                            "textColor": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                1.0
+                            ]
+                        },
+                        "type": "ButtonBehavior"
+                    }
+                ],
+                "enabled": true,
+                "name": "GoalText",
+                "visible": true
+            },
+            {
+                "children": [],
+                "components": [
+                    {
+                        "data": {
+                            "anchors": [
+                                0.5,
+                                0.0,
+                                0.5,
+                                0.0
+                            ],
+                            "constraints": {
+                                "maxHeight": 3.4028234663852886e+38,
+                                "maxWidth": 3.4028234663852886e+38,
+                                "minHeight": 0.0,
+                                "minWidth": 0.0
+                            },
+                            "layoutWeight": 1.0,
+                            "margins": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "pivot": [
+                                0.5,
+                                0.0
+                            ],
+                            "rect": [
+                                0.0,
+                                128.0,
+                                760.0,
+                                96.0
+                            ],
+                            "sizePolicy": [
+                                "Fixed",
+                                "Fixed"
+                            ]
+                        },
+                        "type": "Transform"
+                    },
+                    {
+                        "data": {
+                            "borderColor": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "cornerRadius": 0.0,
+                            "fontSize": 24.0,
+                            "hoveredColor": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "normalColor": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "onClickCommands": [],
+                            "pressedColor": [
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "text": "ステージ確認後にカウントダウンが始まります",
+                            "textColor": [
+                                0.9,
+                                0.95,
+                                1.0,
+                                1.0
+                            ]
+                        },
+                        "type": "ButtonBehavior"
+                    }
+                ],
+                "enabled": true,
+                "name": "GuideText",
+                "visible": true
+            }
+        ],
+        "components": [
+            {
+                "data": {
+                    "anchors": [
+                        0.0,
+                        0.0,
+                        1.0,
+                        1.0
+                    ],
+                    "constraints": {
+                        "maxHeight": 3.4028234663852886e+38,
+                        "maxWidth": 3.4028234663852886e+38,
+                        "minHeight": 0.0,
+                        "minWidth": 0.0
+                    },
+                    "layoutWeight": 1.0,
+                    "margins": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "pivot": [
+                        0.0,
+                        0.0
+                    ],
+                    "rect": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "sizePolicy": [
+                        "Fixed",
+                        "Fixed"
+                    ]
+                },
+                "type": "Transform"
+            }
+        ],
+        "enabled": true,
+        "name": "RootLayout",
+        "visible": true
+    },
+    "version": 2
+}

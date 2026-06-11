@@ -53,6 +53,12 @@ namespace MyGame {
 		/// @brief 移動速度を設定（単位: units/sec）
 		void SetMoveSpeed(float speed);
 
+		/// @brief 外部演出からプレイヤー移動の有効/無効を切り替える
+		void SetMovementEnabled(bool enabled);
+
+		/// @brief 入力と水平慣性を止める
+		void StopMovement();
+
 		/// @brief 現在の移動速度を取得
 		[[nodiscard]] float GetMoveSpeed() const;
 
@@ -123,6 +129,9 @@ namespace MyGame {
 
 		/// 外部から移動基準方向が指定されているか
 		bool _hasMoveBasis = false;
+
+		/// 演出やリザルト中にプレイヤー入力を受け付けるか
+		bool _bMovementEnabled = true;
 
 		/// 入力方向へ追従する加速度
 		float _acceleration = 24.0f;

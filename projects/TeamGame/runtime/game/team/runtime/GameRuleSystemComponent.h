@@ -8,9 +8,11 @@
 
 #include <cstdint>
 #include <string>
+#include <unordered_map>
 
 namespace Unnamed {
 	class Entity;
+	class UiCanvasComponent;
 }
 
 namespace MyGame {
@@ -21,6 +23,8 @@ namespace MyGame {
 	class GolfBallComponent;
 	// プレイヤーの穴コンポーネント
 	class PlayerHoleComponent;
+	class PlayerMoveComponent;
+	class PlayerFollowCameraComponent;
 	// スコア管理コンポーネント
 	class GameScoreComponent;
 	// ゴミ移動コンポーネント
@@ -90,6 +94,7 @@ namespace MyGame {
 		// ゲームフェーズ
 		enum class GamePhase {
 			Ready,
+			StageIntro,
 			Countdown,
 			Playing,
 			Result
@@ -110,6 +115,12 @@ namespace MyGame {
 		bool _isDirectHoleInOne = false;
 		// 起動時に自動でカウントダウンを始めるかどうか
 		bool _autoStartCountdown = true;
+		// ゲーム開始前にステージ紹介を挟むかどうか
+		bool _bUseStageIntro = true;
+		// ステージ紹介に使う秒数
+		float _stageIntroSeconds = 5.0f;
+		// ステージ紹介の経過時間
+		float _stageIntroElapsedTime = 0.0f;
 		// カウントダウン秒数
 		float _countdownSeconds = 10.0f;
 		// 旧設定。現在はホールインワンのルールに合わせ、停止したら即失敗にする。
@@ -118,6 +129,8 @@ namespace MyGame {
 		float _maxBallFlightSeconds = 20.0f;
 		// ボールやゴミがこの高さ以下なら海へ落ちた扱い
 		float _seaOutHeight = -10.0f;
+		// ボール停止失敗を判定する速度閾値
+		float _ballStopResultVelocityThreshold = 0.08f;
 		// プレイ中の経過時間
 		float _playingElapsedTime = 0.0f;
 		// ボールが打たれてからの経過時間
@@ -140,6 +153,20 @@ namespace MyGame {
 		int _afterHitTrashWaveCount = 15;
 		// 3回目のゴミ出現までの待ち時間
 		float _afterHitTrashWaveDelay = 6.5f;
+		// 通常ホールインワン時に表示するUI
+		std::string _holeInOneUiAssetPath = "projects/TeamGame/content/ui/holeinone.ui.json";
+		// ダイレクトホールインワン時に表示するUI
+		std::string _directHoleInOneUiAssetPath = "projects/TeamGame/content/ui/directHoleinone.ui.json";
+		// ボール停止・海落下など、ホールインワン失敗時に表示するUI
+		std::string _notHoleInOneUiAssetPath = "projects/TeamGame/content/ui/notHoleInone.ui.json";
+		// 終了表示を書き換える対象UIエンティティ名
+		std::string _clearUiEntityName = "Clear_UI";
+		// ステージ紹介中に表示する目標UIエンティティ名
+		std::string _stageIntroUiEntityName = "StageIntro_UI";
+		// ステージ紹介中に表示する目標UI
+		std::string _stageIntroUiAssetPath = "projects/TeamGame/content/ui/stageIntro.ui.json";
+		// ステージ紹介中だけ隠す通常UIの復元用キャッシュ
+		std::unordered_map<uint64_t, bool> _stageIntroUiVisibility;
 		// ゴルフボール発射カウントダウンコンポーネントのキャッシュ
 		GolfBallLaunchCountdownComponent* _launchCountdownComponent = nullptr;
 		// スコアコンポーネントのキャッシュ
@@ -150,6 +177,10 @@ namespace MyGame {
 		GolfBallComponent* _golfBallComponent = nullptr;
 		// ゴミ自動生成コンポーネントのキャッシュ
 		TrashObjSpawnerComponent* _trashObjSpawnerComponent = nullptr;
+		// プレイヤー移動コンポーネントのキャッシュ
+		PlayerMoveComponent* _playerMoveComponent = nullptr;
+		// 追従カメラコンポーネントのキャッシュ
+		PlayerFollowCameraComponent* _playerFollowCameraComponent = nullptr;
 
 		/// シーン内の必要なコンポーネント参照を検索
 		void ResolveRuntimeReferences();
@@ -157,8 +188,23 @@ namespace MyGame {
 		/// 現在フェーズに応じたゲーム進行を更新
 		void UpdateGamePhase(float deltaTime);
 
+		/// ステージ紹介を開始
+		void StartStageIntro();
+
+		/// ステージ紹介中の処理を更新
+		void UpdateStageIntroPhase(float deltaTime);
+
 		/// カウントダウン中の処理を更新
 		void UpdateCountdownPhase();
+
+		/// 紹介演出中のプレイヤー操作とカメラ状態を切り替える
+		void ApplyStageIntroControlState(bool isStageIntro);
+
+		/// ステージ紹介UIの表示を切り替える
+		void SetStageIntroUiVisible(bool visible);
+
+		/// ステージ紹介中は通常HUDだけを隠す
+		void SetStageIntroHudHidden(bool hidden);
 
 		/// プレイ中の処理を更新
 		void UpdatePlayingPhase(float deltaTime);
@@ -177,6 +223,18 @@ namespace MyGame {
 
 		/// ボールキャッチ成立時のスコアとリザルト状態を確定
 		bool TryScoreBallCatch(GolfBallComponent& golfBall);
+
+		/// 現在の結果に合わせてクリア表示UIを差し替える
+		[[nodiscard]] bool ApplyClearUiForResult();
+
+		/// ボールが停止失敗として扱えるかを判定
+		[[nodiscard]] bool IsBallStoppedForResult() const;
+
+		/// クリア表示用のUIキャンバスを検索
+		[[nodiscard]] Unnamed::UiCanvasComponent* ResolveClearUiCanvas() const;
+
+		/// ステージ紹介表示用のUIキャンバスを検索
+		[[nodiscard]] Unnamed::UiCanvasComponent* ResolveStageIntroUiCanvas() const;
 
 		/// 対象エンティティのGUIDを取得
 		[[nodiscard]] uint64_t GetEntityGuid(Unnamed::Entity* entity) const;

@@ -74,6 +74,10 @@ public:
 	/// @param suckPower 吸い込み力（0.0～1.0、大きいほど強く）
 	void SetHoleSuckPosition(const Vec3& holePosition, float suckPower);
 
+	/// @brief 穴へ入ったことを確定し、落下演出へ移行
+	/// @param holePosition 穴の世界座標
+	void EnterHoleFall(const Vec3& holePosition);
+
 	/// @brief 穴への吸い込み処理を無効化
 	void ClearHoleSuckPosition();
 
@@ -89,6 +93,9 @@ public:
 
 	/// @brief ボールが飛行中かを取得
 	[[nodiscard]] bool IsInFlight() const;
+
+	/// @brief 穴への吸い込み処理中かを取得
+	[[nodiscard]] bool IsBeingSucked() const;
 
 	/// @brief 経過時間を取得
 	[[nodiscard]] float GetElapsedTime() const;

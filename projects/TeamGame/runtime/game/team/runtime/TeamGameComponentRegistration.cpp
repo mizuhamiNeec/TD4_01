@@ -73,7 +73,7 @@ namespace Unnamed {
 		RegisterComponentIfMissing<MyGame::TrashObjMoverComponent>(
 			componentRegistry, "mygame.TrashObjMoverComponent", "Trash Obj");
 		RegisterComponentIfMissing<MyGame::TrashObjSpawnerComponent>(
-			componentRegistry, "mygame.TrashObjSpawnerComponent", "Trash Obj Spawner");
+			componentRegistry, "mygame.TrashObjSpawnerComponent", "ゴミ自動生成");
 		RegisterComponentIfMissing<MyGame::PlayerHoleComponent>(
 			componentRegistry, "mygame.PlayerHoleComponent", "Player Hole Component");
 		RegisterComponentIfMissing<MyGame::VoiceShockWaveComponent>(

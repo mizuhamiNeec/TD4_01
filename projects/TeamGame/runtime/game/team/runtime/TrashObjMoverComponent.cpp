@@ -57,6 +57,9 @@ namespace MyGame {
 			float distanceToHole = directionToHole.Length();
 			// NOTE: 穴の半径より内側にいるかの判定（穴の半径を約1.5倍してバッファを持たせる）
 			_bIsInsideHole = (distanceToHole < 1.5f); // NOTE: 穴の標準半径は2.0なので、3.0以下で内側と判定
+			if (_bHasEnteredHole) {
+				_bIsInsideHole = true;
+			}
 		} else {
 			_bIsInsideHole = false;
 		}
@@ -229,9 +232,27 @@ namespace MyGame {
 
 	void TrashObjMoverComponent::ClearHoleSuckPosition() {
 		// NOTE: 穴への吸い込み処理を停止
+		if (_bHasEnteredHole) {
+			return;
+		}
 
 		_holeSuckPower = 0.0f;
 		_bIsBeingSucked = false;
+	}
+
+	void TrashObjMoverComponent::EnterHoleFall(const Vec3& holePosition) {
+		// NOTE: 穴に入った後は地面・海・範囲外クリアではなく、穴落下演出だけを継続する。
+		_holeSuckPosition = holePosition;
+		_holeSuckPower = 1.0f;
+		_bIsBeingSucked = true;
+		_bIsInsideHole = true;
+		_bHasEnteredHole = true;
+		_bIsGrounded = false;
+		_bIsFalling = true;
+	}
+
+	bool TrashObjMoverComponent::HasEnteredHole() const {
+		return _bHasEnteredHole;
 	}
 
 	// ===================================================================
@@ -649,6 +670,23 @@ namespace MyGame {
 	void TrashObjMoverComponent::UpdateHoleSuck(float deltaTime) {
 		// NOTE: 穴への吸い込み処理（落下状態・地上両方に対応）
 		if (!_bIsBeingSucked || _holeSuckPower <= 0.0f) {
+			return;
+		}
+
+		if (_bIsInsideHole || _bHasEnteredHole) {
+			// NOTE: 穴へ入った後は横方向を減衰させ、衝突せず下方向へ落とし続ける。
+			_bHasEnteredHole = true;
+			_bIsInsideHole = true;
+			const float kHoleHorizontalDamping = 12.0f;
+			const float kHoleFallGravity = 28.0f;
+			const float kHoleMinFallSpeed = 4.0f;
+			const float damping =
+				std::exp(-kHoleHorizontalDamping * deltaTime);
+			_velocity.x *= damping;
+			_velocity.z *= damping;
+			_velocity.y -= kHoleFallGravity * deltaTime;
+			_velocity.y = std::min(_velocity.y, -kHoleMinFallSpeed);
+			_bIsGrounded = false;
 			return;
 		}
 

@@ -909,6 +909,8 @@ bool MyGame::GameRuleSystemComponent::TryScoreBallCatch(GolfBallComponent& golfB
 		}
 		PublishPresentationCue("game.holeinone");
 	}
+	// NOTE: ゴール（ホールインワン成立）の瞬間にカメラ前面の紙吹雪を画面全体へ一度だけ出す。
+	StartGoalConfetti();
 	return true;
 }
 

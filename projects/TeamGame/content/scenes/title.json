@@ -249,6 +249,53 @@
             "name": "Sea",
             "tags": [],
             "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "loop": false,
+                        "pitch": 1.0,
+                        "playOnStart": true,
+                        "soundPath": "projects/TeamGame/content/sounds/BGM/Title_BGM.wav",
+                        "volume": 1.0
+                    },
+                    "guid": 0,
+                    "type": "engine.AudioSource"
+                }
+            ],
+            "folderPath": "Environment",
+            "guid": 6,
+            "isEditorOnly": false,
+            "name": "BGM",
+            "tags": [],
+            "visible": true
         }
     ],
     "folders": [

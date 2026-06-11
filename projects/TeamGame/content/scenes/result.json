@@ -150,7 +150,7 @@
                         "autoPlay": true,
                         "depthTest": true,
                         "drawEmitterShape": true,
-                        "presetName": "",
+                        "presetName": "result_confetti",
                         "presetPath": "projects/TeamGame/content/particles/result_confetti.json",
                         "sortKeyBias": 0,
                         "timeScale": 1.0
@@ -199,7 +199,7 @@
                         "autoPlay": true,
                         "depthTest": true,
                         "drawEmitterShape": true,
-                        "presetName": "",
+                        "presetName": "result_confetti",
                         "presetPath": "projects/TeamGame/content/particles/result_confetti.json",
                         "sortKeyBias": 0,
                         "timeScale": 1.0
@@ -212,6 +212,53 @@
             "guid": 11,
             "isEditorOnly": false,
             "name": "ParticleEmitter_ConfettiRight",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "loop": false,
+                        "pitch": 1.0,
+                        "playOnStart": true,
+                        "soundPath": "projects/TeamGame/content/sounds/BGM/Result_BGM.wav",
+                        "volume": 1.0
+                    },
+                    "guid": 0,
+                    "type": "engine.AudioSource"
+                }
+            ],
+            "folderPath": "",
+            "guid": 12,
+            "isEditorOnly": false,
+            "name": "BGM",
             "tags": [],
             "visible": true
         }

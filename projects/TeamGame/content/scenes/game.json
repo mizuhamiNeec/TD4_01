@@ -321,13 +321,13 @@
                 {
                     "active": true,
                     "data": {
+                        "ballHoleCollisionOffsetY": 0.0,
+                        "ballHoleCollisionRadius": 2.0,
                         "holeDespawnDepth": 8.0,
                         "holeOffsetX": 0.0,
                         "holeOffsetY": 0.0,
                         "holeOffsetZ": 0.0,
                         "holeRadius": 2.0,
-                        "ballHoleCollisionRadius": 2.0,
-                        "ballHoleCollisionOffsetY": 0.0,
                         "holeSizeChangeSpeed": 1.0,
                         "isHoleActive": true,
                         "suckEffectDistance": 2.0,
@@ -342,9 +342,12 @@
                     "active": true,
                     "data": {
                         "coolTime": 0.10000000149011612,
+                        "dustEmitterEntityGuid": 74,
                         "forceMultiplier": 0.009999999776482582,
                         "maxShockWaveRadius": 22.0,
                         "minShockWaveRadius": 8.0,
+                        "ringEmitterEntityGuid": 72,
+                        "sparksEmitterEntityGuid": 73,
                         "upwardForceMultiplier": 5.0,
                         "voiceGateDuration": 0.07999999821186066,
                         "voiceMinDB": -35.0,
@@ -434,24 +437,24 @@
                         "positionSharpness": 4.5,
                         "rotationSharpness": 6.0,
                         "snapDistance": 18.0,
+                        "stageIntroLookAtOffset": [
+                            0.0,
+                            0.0,
+                            8.0
+                        ],
+                        "stageIntroOffset": [
+                            0.0,
+                            14.0,
+                            -18.0
+                        ],
+                        "stageIntroOrbitSpeedDegrees": 12.0,
+                        "stageIntroPositionSharpness": 2.5,
                         "targetEntityGuid": 42,
                         "targetName": "Player",
                         "targetSharpness": 8.0,
                         "targetTag": "",
                         "useTargetYaw": true,
                         "voiceCameraEffectEnabled": true,
-                        "stageIntroOffset": [
-                            0.0,
-                            14.0,
-                            -18.0
-                        ],
-                        "stageIntroLookAtOffset": [
-                            0.0,
-                            0.0,
-                            8.0
-                        ],
-                        "stageIntroOrbitSpeedDegrees": 12.0,
-                        "stageIntroPositionSharpness": 2.5,
                         "voiceDeadZone": 0.03999999910593033,
                         "voiceDistanceAddMax": 0.800000011920929,
                         "voiceFallSharpness": 2.0,
@@ -961,7 +964,7 @@
                         "autoPlay": false,
                         "depthTest": false,
                         "drawEmitterShape": true,
-                        "presetName": "",
+                        "presetName": "voice_shockwave",
                         "presetPath": "projects/TeamGame/content/particles/voice_shockwave.json",
                         "sortKeyBias": 0,
                         "timeScale": 1.0
@@ -1010,7 +1013,7 @@
                         "autoPlay": false,
                         "depthTest": true,
                         "drawEmitterShape": true,
-                        "presetName": "",
+                        "presetName": "voice_shockwave_sparks",
                         "presetPath": "projects/TeamGame/content/particles/voice_shockwave_sparks.json",
                         "sortKeyBias": 0,
                         "timeScale": 1.0
@@ -1035,7 +1038,7 @@
                         "parentEntityGuid": 42,
                         "position": [
                             3.0,
-                            0.3,
+                            0.30000001192092896,
                             0.0
                         ],
                         "rotation": [
@@ -1059,7 +1062,7 @@
                         "autoPlay": false,
                         "depthTest": true,
                         "drawEmitterShape": true,
-                        "presetName": "",
+                        "presetName": "obstacle_dust",
                         "presetPath": "projects/TeamGame/content/particles/obstacle_dust.json",
                         "sortKeyBias": 0,
                         "timeScale": 1.0
@@ -1118,7 +1121,7 @@
                 }
             ],
             "folderPath": "",
-            "guid": 72,
+            "guid": 15552413904281614219,
             "isEditorOnly": false,
             "name": "golf_ball_trail",
             "tags": [],
@@ -1474,7 +1477,7 @@
             "isEditorOnly": false,
             "name": "StageIntro_UI",
             "tags": [],
-            "visible": false
+            "visible": true
         },
         {
             "active": true,
@@ -1529,7 +1532,7 @@
             "isEditorOnly": false,
             "name": "Countdown_UI",
             "tags": [],
-            "visible": true
+            "visible": false
         },
         {
             "active": true,
@@ -1579,7 +1582,8 @@
                         "afterHitTrashWaveDelay": 6.5,
                         "autoStartCountdown": true,
                         "ballHitTrashWaveCount": 15,
-                        "ballStopResultVelocityThreshold": 0.08,
+                        "ballSeaOutHeight": -100.0,
+                        "ballStopResultVelocityThreshold": 0.07999999821186066,
                         "clearUiEntityName": "Clear_UI",
                         "countdownSeconds": 15.0,
                         "countdownTrashWaveCount": 10,
@@ -1589,11 +1593,10 @@
                         "maxBallFlightSeconds": 20.0,
                         "minBallFlightSeconds": 5.0,
                         "notHoleInOneUiAssetPath": "projects/TeamGame/content/ui/notHoleInone.ui.json",
-                        "ballSeaOutHeight": -100.0,
                         "seaOutHeight": -10.0,
+                        "stageIntroSeconds": 5.0,
                         "stageIntroUiAssetPath": "projects/TeamGame/content/ui/stageIntro.ui.json",
                         "stageIntroUiEntityName": "StageIntro_UI",
-                        "stageIntroSeconds": 5.0,
                         "useStageIntro": true
                     },
                     "guid": 14837334651500250962,
@@ -1692,6 +1695,53 @@
             "guid": 12087284352773638142,
             "isEditorOnly": false,
             "name": "Skydome",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 0,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "loop": false,
+                        "pitch": 1.0,
+                        "playOnStart": true,
+                        "soundPath": "projects/TeamGame/content/sounds/BGM/InGame_BGM.wav",
+                        "volume": 1.0
+                    },
+                    "guid": 0,
+                    "type": "engine.AudioSource"
+                }
+            ],
+            "folderPath": "Env",
+            "guid": 15552413904281614220,
+            "isEditorOnly": false,
+            "name": "BGM",
             "tags": [],
             "visible": true
         }

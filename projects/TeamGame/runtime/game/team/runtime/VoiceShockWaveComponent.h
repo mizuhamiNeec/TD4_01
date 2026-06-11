@@ -18,9 +18,14 @@
 #include <core/math/Vec3.h>
 #include <string>
 #include <memory>
+#include <cstdint>
 
 // 前方宣言
 class MagVoiceBridge;
+
+namespace Unnamed {
+	class ParticleEmitterComponent;
+}
 
 namespace MyGame {
 
@@ -118,6 +123,14 @@ namespace MyGame {
 		/// @brief MagVoiceBridge のインスタンスを取得
 		MagVoiceBridge* GetVoiceBridge();
 
+		/// @brief 衝撃波パーティクル用エミッタの参照を解決してキャッシュする
+		void ResolveShockWaveEmitters();
+
+		/// @brief 音量・半径に応じて衝撃波パーティクルを1バースト発生させる
+		/// @param volume 声ゲートを通った音量(0.0～1.0)
+		/// @param dynamicRadius 実際に力が及ぶ円の半径（見た目をこれに一致させる）
+		void EmitShockWaveParticles(float volume, float dynamicRadius);
+
 		/// @brief テスト用：指定した音量で衝撃波を発火
 		/// @param testVolume テスト音量（0.0～1.0）
 		void FireTestShockWave(float testVolume);
@@ -182,6 +195,20 @@ namespace MyGame {
 
 		/// テスト用：現在のテスト音量値
 		float _testVolume = 0.5f;
+
+		// --- 衝撃波パーティクル連動 ---
+
+		/// リング（地面に広がる波）エミッタのエンティティGUID
+		uint64_t _ringEmitterEntityGuid = 72;
+
+		/// スパーク（弾ける粒）エミッタのエンティティGUID
+		uint64_t _sparksEmitterEntityGuid = 73;
+
+		/// 解決済みのリングエミッタ（キャッシュ）
+		Unnamed::ParticleEmitterComponent* _ringEmitter = nullptr;
+
+		/// 解決済みのスパークエミッタ（キャッシュ）
+		Unnamed::ParticleEmitterComponent* _sparksEmitter = nullptr;
 
 		/// MagVoiceBridge のシングルトンインスタンス
 		static MagVoiceBridge* _voiceBridgeInstance;

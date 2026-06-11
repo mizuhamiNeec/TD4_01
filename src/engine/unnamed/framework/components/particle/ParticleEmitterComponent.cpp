@@ -516,6 +516,8 @@ namespace Unnamed {
 		}
 
 		mPreset = preset;
+		mMutablePreset = preset; // 実行時の値上書き用（mPresetLibrary が実体を所有）
+		mBaseSpawnCount = preset->emitterSpawn.count;
 		mHasWarnedLoadFailure = false;
 		mLoadedPresetPath = resolvedPresetPath;
 		if (!mPresetPath.empty() && mPresetName.empty()) {
@@ -548,6 +550,72 @@ namespace Unnamed {
 
 		mCachedTexturePath.clear();
 		mCachedTextureAssetId = kInvalidAssetID;
+	}
+
+	void ParticleEmitterComponent::Play() {
+		if (!EnsurePresetLoaded()) {
+			return;
+		}
+		mEmitter.Play();
+	}
+
+	void ParticleEmitterComponent::Stop() {
+		mEmitter.Stop();
+	}
+
+	bool ParticleEmitterComponent::IsPlaying() const {
+		return mEmitter.IsPlaying();
+	}
+
+	void ParticleEmitterComponent::FireBurst() {
+		if (!EnsurePresetLoaded()) {
+			return;
+		}
+		// 発生位置を最新のワールド座標に合わせてから1バースト出す。
+		auto* owner = GetOwner();
+		auto* transform = owner ? owner->GetComponent<TransformComponent>() : nullptr;
+		if (transform) {
+			mEmitter.SetTransform(transform->RenderWorldMat());
+		}
+		mEmitter.SpawnParticles();
+	}
+
+	void ParticleEmitterComponent::SetRadius(const float worldRadius) {
+		if (mMutablePreset == nullptr) {
+			return;
+		}
+		// リングメッシュは外周半径=1.0 なので scale 値がそのままワールド半径になる。
+		// 最終半径 ≒ initialScale + scaleSpeed * lifeTime から scaleSpeed を逆算する。
+		const float initialRadius = mMutablePreset->particleSpawn.initialScale.x;
+		const float lifeTime = std::max(1e-3f, mMutablePreset->particleUpdate.lifeTime);
+		const float speed = std::max(0.0f, (worldRadius - initialRadius) / lifeTime);
+		mMutablePreset->particleUpdate.scaleSpeed.x = speed;
+		mMutablePreset->particleUpdate.scaleSpeed.y = speed;
+		// z はリングの厚み方向なので変更しない（0 のまま）。
+	}
+
+	void ParticleEmitterComponent::SetIntensity(const float intensity01) {
+		if (mMutablePreset == nullptr) {
+			return;
+		}
+		// 0〜1 を 0.6〜1.3 の明るさ倍率へ。加算ブレンドなので >1 でより強く光る。
+		const float t = std::clamp(intensity01, 0.0f, 1.0f);
+		const float brightness = 0.6f + 0.7f * t;
+		// ColorModule は colorGradient で決めた色に colorCurve を乗算する。
+		// 定数1キーのカーブにすることで全体の明るさ/αを倍率調整できる。
+		mMutablePreset->render.colorCurve.enabled = true;
+		mMutablePreset->render.colorCurve.keys = { CurveKey{ 0.0f, brightness } };
+	}
+
+	void ParticleEmitterComponent::SetCountScale(const float scale) {
+		if (mMutablePreset == nullptr) {
+			return;
+		}
+		const float clampedScale = std::max(0.0f, scale);
+		const uint32_t scaled = static_cast<uint32_t>(
+			std::lround(static_cast<float>(mBaseSpawnCount) * clampedScale)
+		);
+		mMutablePreset->emitterSpawn.count = std::max<uint32_t>(1u, scaled);
 	}
 
 	AssetID ParticleEmitterComponent::ResolveTextureAssetId() {

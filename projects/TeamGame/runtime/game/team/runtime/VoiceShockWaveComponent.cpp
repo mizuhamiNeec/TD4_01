@@ -11,6 +11,7 @@
 #include "GolfBallComponent.h"
 
 #include "engine/unnamed/framework/components/TransformComponent.h"
+#include "engine/unnamed/framework/components/particle/ParticleEmitterComponent.h"
 #include "engine/unnamed/framework/entity/Entity.h"
 #include "engine/world/World.h"
 #include "engine/scene/Scene.h"
@@ -261,6 +262,12 @@ namespace MyGame {
 		if (auto val = reader.Read<float>("coolTime")) {
 			_coolTime = val.value();
 		}
+		if (auto val = reader.ReadUint64("ringEmitterEntityGuid")) {
+			_ringEmitterEntityGuid = val.value();
+		}
+		if (auto val = reader.ReadUint64("sparksEmitterEntityGuid")) {
+			_sparksEmitterEntityGuid = val.value();
+		}
 
 		#ifdef _DEBUG
 		char buffer[256];
@@ -294,6 +301,10 @@ namespace MyGame {
 		writer.Write(_voiceGateDuration);
 		writer.Key("coolTime");
 		writer.Write(_coolTime);
+		writer.Key("ringEmitterEntityGuid");
+		writer.Write(_ringEmitterEntityGuid);
+		writer.Key("sparksEmitterEntityGuid");
+		writer.Write(_sparksEmitterEntityGuid);
 	}
 
 	// =========================================================================
@@ -413,6 +424,9 @@ namespace MyGame {
 
 		// NOTE: 衝撃波を発火（動的半径を使用）
 		ApplyForceToEntitiesInRange(shockWaveCenter, forceStrength, dynamicRadius);
+
+		// NOTE: 見た目の衝撃波パーティクルを、物理半径(dynamicRadius)と音量に合わせて発生
+		EmitShockWaveParticles(volume, dynamicRadius);
 
 		// NOTE: アクティブフラグを立てる（次フレームでリセット）
 		_bIsShockWaveActive = true;
@@ -535,6 +549,63 @@ namespace MyGame {
 
 	MagVoiceBridge* VoiceShockWaveComponent::GetVoiceBridge() {
 		return _voiceBridgeInstance;
+	}
+
+	void VoiceShockWaveComponent::ResolveShockWaveEmitters() {
+		// NOTE: 既に両方解決済みなら何もしない
+		if (_ringEmitter && _sparksEmitter) {
+			return;
+		}
+
+		auto* world = GetWorld();
+		if (!world) {
+			return;
+		}
+		auto* scene = world->GetScenePtr();
+		if (!scene) {
+			return;
+		}
+
+		auto resolve = [scene](uint64_t guid) -> Unnamed::ParticleEmitterComponent* {
+			if (guid == 0) {
+				return nullptr;
+			}
+			auto* entity = scene->FindEntity(guid);
+			if (!entity) {
+				return nullptr;
+			}
+			return entity->GetComponent<Unnamed::ParticleEmitterComponent>();
+		};
+
+		if (!_ringEmitter) {
+			_ringEmitter = resolve(_ringEmitterEntityGuid);
+		}
+		if (!_sparksEmitter) {
+			_sparksEmitter = resolve(_sparksEmitterEntityGuid);
+		}
+	}
+
+	void VoiceShockWaveComponent::EmitShockWaveParticles(float volume, float dynamicRadius) {
+		// NOTE: エンティティ生成順の都合で OnAttached 時点では見つからない場合があるため、
+		//       発火時に遅延解決してキャッシュする。
+		ResolveShockWaveEmitters();
+
+		const float clampedVolume = std::clamp(volume, 0.0f, 1.0f);
+
+		// リング：広がり半径を物理半径(dynamicRadius)に一致させ、明るさを音量で変える
+		if (_ringEmitter) {
+			_ringEmitter->SetRadius(dynamicRadius);
+			_ringEmitter->SetIntensity(clampedVolume);
+			_ringEmitter->FireBurst();
+		}
+
+		// スパーク：音量で明るさと粒の量を変える（大声ほど派手に）
+		if (_sparksEmitter) {
+			_sparksEmitter->SetIntensity(clampedVolume);
+			// 0.5～1.5 倍の範囲で粒数をスケール（小声でも最低限は出す）
+			_sparksEmitter->SetCountScale(0.5f + clampedVolume);
+			_sparksEmitter->FireBurst();
+		}
 	}
 
 	void VoiceShockWaveComponent::FireTestShockWave(float testVolume) {

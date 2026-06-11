@@ -141,6 +141,8 @@ namespace MyGame {
 		float _ballFlightElapsedTime = 0.0f;
 		// ボールが一度でも飛行状態になったかどうか
 		bool _hasBallLaunched = false;
+		// 発射後に一度でもバウンドしたかどうか
+		bool _hasBallBounced = false;
 		// ボール発射Cueを発火済みかどうか
 		bool _hasPublishedBallShootCue = false;
 		// ホールインワン失敗Cueを発火済みかどうか
@@ -174,9 +176,10 @@ namespace MyGame {
 		// ステージ紹介中に表示する目標UIエンティティ名
 		std::string _stageIntroUiEntityName = "StageIntro_UI";
 		// ステージ紹介中に表示する目標UI
-		std::string _stageIntroUiAssetPath = "projects/TeamGame/content/ui/stageIntro.ui.json";
+		//std::string _stageIntroUiAssetPath = "projects/TeamGame/content/ui/stageIntro.ui.json";
 		// ゴール（ホールインワン成功）時に再生する紙吹雪エミッターのエンティティ名に含まれる文字列
 		std::string _goalConfettiEntityNamePrefix = "ParticleEmitter_GoalConfetti";
+		std::string _stageIntroUiAssetPath = "projects/TeamGame/content/ui/gameshow.ui.json";
 		// ステージ紹介中だけ隠す通常UIの復元用キャッシュ
 		std::unordered_map<uint64_t, bool> _stageIntroUiVisibility;
 		// ゴルフボール発射カウントダウンコンポーネントのキャッシュ
@@ -242,6 +245,13 @@ namespace MyGame {
 		/// ボールのキャッチ・停止・OBを判定
 		void UpdateBallResult(float deltaTime);
 
+		/// ボール結果監視を開始できる状態かを判定
+		[[nodiscard]] bool ShouldMonitorBallResult() const;
+
+		/// ボールをNotホールインワンとして確定
+		/// @reason 海落下と地面範囲外落下の終了処理を同じ副作用にそろえる
+		void FinishBallAsNotHoleInOne();
+
 		/// PDFに書かれたゴミ出現タイミングを状態として発火
 		void UpdateTrashWaveTiming();
 
@@ -263,6 +273,10 @@ namespace MyGame {
 
 		/// 現在の結果に合わせてクリア表示UIを差し替える
 		[[nodiscard]] bool ApplyClearUiForResult();
+
+		/// Notホールインワン表示UIを直接表示
+		/// @reason 音Cueとは独立して、海落下時に必ず失敗UIを出すため
+		[[nodiscard]] bool ApplyNotHoleInOneUiForResult();
 
 		/// ボールが停止失敗として扱えるかを判定
 		[[nodiscard]] bool IsBallStoppedForResult() const;

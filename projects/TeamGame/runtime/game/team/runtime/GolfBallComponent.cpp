@@ -156,8 +156,10 @@ namespace MyGame {
 		// 8️⃣ 衝突応答 & 速度クリップ
 		// -----------------------------------------------------------------------
 		if (!_bIsInsideHole) {
-			auto* sphereKCR = dynamic_cast<Unnamed::SphereKinematicCollisionResolver*>(mCollisionResolver.get());
-			if (sphereKCR) {
+			if (!IsInsideGroundArea(_position)) {
+				// NOTE: 円外は海への落下を優先し、島コライダーによる押し戻しを受けない。
+				_position += _velocity * deltaTime;
+			} else if (auto* sphereKCR = dynamic_cast<Unnamed::SphereKinematicCollisionResolver*>(mCollisionResolver.get())) {
 				const Vec3 velocityBeforeSlide = _velocity;
 				// ↓衝突応答の責任者
 				sphereKCR->SlideMove(
@@ -399,6 +401,14 @@ namespace MyGame {
 		return _bIsBeingSucked;
 	}
 
+	bool GolfBallComponent::IsInsideGroundArea() const {
+		return IsInsideGroundArea(_position);
+	}
+
+	float GolfBallComponent::GetGroundLevel() const {
+		return _groundLevel;
+	}
+
 	float GolfBallComponent::GetElapsedTime() const {
 		return _elapsedTime;
 	}
@@ -572,6 +582,18 @@ namespace MyGame {
 		if (auto val = reader.Read<float>("groundLevel")) {
 			_groundLevel = val.value();
 		}
+		if (auto val = reader.Read<bool>("useCircularGroundArea")) {
+			_useCircularGroundArea = val.value();
+		}
+		if (auto val = reader.Read<float>("groundAreaCenterX")) {
+			_groundAreaCenter.x = val.value();
+		}
+		if (auto val = reader.Read<float>("groundAreaCenterZ")) {
+			_groundAreaCenter.z = val.value();
+		}
+		if (auto val = reader.Read<float>("groundAreaRadius")) {
+			_groundAreaRadius = std::max(0.0f, val.value());
+		}
 		if (auto val = reader.Read<float>("stopVelocityThreshold")) {
 			_stopVelocityThreshold = val.value();
 		}
@@ -639,6 +661,14 @@ namespace MyGame {
 		writer.Write(_frictionCoefficient);
 		writer.Key("groundLevel");
 		writer.Write(_groundLevel);
+		writer.Key("useCircularGroundArea");
+		writer.Write(_useCircularGroundArea);
+		writer.Key("groundAreaCenterX");
+		writer.Write(_groundAreaCenter.x);
+		writer.Key("groundAreaCenterZ");
+		writer.Write(_groundAreaCenter.z);
+		writer.Key("groundAreaRadius");
+		writer.Write(_groundAreaRadius);
 		writer.Key("stopVelocityThreshold");
 		writer.Write(_stopVelocityThreshold);
 
@@ -828,6 +858,12 @@ namespace MyGame {
 		const bool restsOrFallsOnGround =
 			_position.y <= _groundLevel && _velocity.y <= 0.0f;
 		if (restsOrFallsOnGround || reachesGroundThisFrame) {
+			if (!IsInsideGroundArea(_position)) {
+				// NOTE: 円外はゲーム上の地面が無い扱いにし、島コライダーがあっても海へ落とす。
+				_bIsGrounded = false;
+				return;
+			}
+
 			auto* sphereKCR = dynamic_cast<Unnamed::SphereKinematicCollisionResolver*>(
 				mCollisionResolver.get()
 			);
@@ -861,6 +897,17 @@ namespace MyGame {
 			// -----------------------------------------------------------------------
 			_bIsGrounded = false;
 		}
+	}
+
+	bool GolfBallComponent::IsInsideGroundArea(const Vec3& position) const {
+		if (!_useCircularGroundArea) {
+			return true;
+		}
+
+		const float radius = std::max(0.0f, _groundAreaRadius);
+		const float dx = position.x - _groundAreaCenter.x;
+		const float dz = position.z - _groundAreaCenter.z;
+		return dx * dx + dz * dz <= radius * radius;
 	}
 
 	void GolfBallComponent::ResolveGroundImpact(const float impactSpeed, const bool wasGrounded) {

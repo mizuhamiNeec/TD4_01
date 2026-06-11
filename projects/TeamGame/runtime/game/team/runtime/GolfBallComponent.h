@@ -100,6 +100,14 @@ public:
 	/// @brief 穴への吸い込み処理中かを取得
 	[[nodiscard]] bool IsBeingSucked() const;
 
+	/// @brief 現在位置が有効な地面エリア内かを取得
+	/// @reason ルール側で地面範囲外への落下をNotホールインワンとして確定するため
+	[[nodiscard]] bool IsInsideGroundArea() const;
+
+	/// @brief 地面判定に使う高さを取得
+	/// @reason ルール側で円外落下を海落下として扱う高さを共有するため
+	[[nodiscard]] float GetGroundLevel() const;
+
 	/// @brief 経過時間を取得
 	[[nodiscard]] float GetElapsedTime() const;
 
@@ -181,6 +189,10 @@ private:
 	/// @brief 地面衝突判定と反射を処理
 	/// @reason ボールが地面に到達したときの物理的な反射を計算
 	void HandleGroundCollision(float deltaTime);
+
+	/// @brief 円形の地面エリア内かを判定
+	/// @reason 島コライダーの形状に依存せず、円外を海への落下エリアとして扱う
+	[[nodiscard]] bool IsInsideGroundArea(const Vec3& position) const;
 
 	/// @brief 接地衝撃を反発速度へ変換
 	/// @reason 座標地面と物理オブジェクト上面の衝突で反発処理を共通化する
@@ -273,6 +285,18 @@ private:
 	/// 地面判定の高さ閾値（単位: units）
 	/// 理由：Y <= この値で地面衝突と判定
 	float _groundLevel = 0.0f;
+
+	/// 円形地面エリアを使うか
+	/// 理由：島モデルのコライダー範囲と、ゲーム上の有効地面範囲を分離する
+	bool _useCircularGroundArea = false;
+
+	/// 円形地面エリアの中心（X/Zのみ使用）
+	/// 理由：Yは地面高さで管理し、水平面のゲームエリアだけを調整可能にする
+	Vec3 _groundAreaCenter = Vec3(0.0f, 0.0f, 0.0f);
+
+	/// 円形地面エリアの半径
+	/// 理由：この外側を海への落下範囲として扱う
+	float _groundAreaRadius = 40.0f;
 
 	/// 停止判定の速度閾値（単位: units/sec）
 	/// 理由：速度がこれ以下で完全に停止と判定

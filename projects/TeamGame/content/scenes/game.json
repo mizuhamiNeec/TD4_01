@@ -432,24 +432,24 @@
                         "positionSharpness": 4.5,
                         "rotationSharpness": 6.0,
                         "snapDistance": 18.0,
+                        "stageIntroLookAtOffset": [
+                            0.0,
+                            0.0,
+                            8.0
+                        ],
+                        "stageIntroOffset": [
+                            0.0,
+                            14.0,
+                            -18.0
+                        ],
+                        "stageIntroOrbitSpeedDegrees": 12.0,
+                        "stageIntroPositionSharpness": 2.5,
                         "targetEntityGuid": 42,
                         "targetName": "Player",
                         "targetSharpness": 8.0,
                         "targetTag": "",
                         "useTargetYaw": true,
                         "voiceCameraEffectEnabled": true,
-                        "stageIntroOffset": [
-                            0.0,
-                            14.0,
-                            -18.0
-                        ],
-                        "stageIntroLookAtOffset": [
-                            0.0,
-                            0.0,
-                            8.0
-                        ],
-                        "stageIntroOrbitSpeedDegrees": 12.0,
-                        "stageIntroPositionSharpness": 2.5,
                         "voiceDeadZone": 0.03999999910593033,
                         "voiceDistanceAddMax": 0.800000011920929,
                         "voiceFallSharpness": 2.0,
@@ -1325,7 +1325,7 @@
             "isEditorOnly": false,
             "name": "StageIntro_UI",
             "tags": [],
-            "visible": false
+            "visible": true
         },
         {
             "active": true,
@@ -1380,7 +1380,7 @@
             "isEditorOnly": false,
             "name": "Countdown_UI",
             "tags": [],
-            "visible": true
+            "visible": false
         },
         {
             "active": true,
@@ -1430,7 +1430,7 @@
                         "afterHitTrashWaveDelay": 6.5,
                         "autoStartCountdown": true,
                         "ballHitTrashWaveCount": 15,
-                        "ballStopResultVelocityThreshold": 0.08,
+                        "ballStopResultVelocityThreshold": 0.07999999821186066,
                         "clearUiEntityName": "Clear_UI",
                         "countdownSeconds": 15.0,
                         "countdownTrashWaveCount": 10,
@@ -1441,9 +1441,9 @@
                         "minBallFlightSeconds": 5.0,
                         "notHoleInOneUiAssetPath": "projects/TeamGame/content/ui/notHoleInone.ui.json",
                         "seaOutHeight": -10.0,
+                        "stageIntroSeconds": 5.0,
                         "stageIntroUiAssetPath": "projects/TeamGame/content/ui/stageIntro.ui.json",
                         "stageIntroUiEntityName": "StageIntro_UI",
-                        "stageIntroSeconds": 5.0,
                         "useStageIntro": true
                     },
                     "guid": 14837334651500250962,
@@ -1542,6 +1542,56 @@
             "guid": 12087284352773638142,
             "isEditorOnly": false,
             "name": "Skydome",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            -10.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 18068261005827836373,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "projects/TeamGame/content/materials/instances/ocean.matinst.json",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/ocean.matinst.json",
+                                "slotIndex": 0
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/ocean/ocean.obj"
+                    },
+                    "guid": 9410598352238743794,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "Env",
+            "guid": 12087284352773638143,
+            "isEditorOnly": false,
+            "name": "Ocean",
             "tags": [],
             "visible": true
         }

@@ -29,6 +29,7 @@ namespace Unnamed {
 			mMasterVoice = nullptr;
 			return false;
 		}
+		mMasterVoice->SetVolume(mMasterVolume);
 
 		return true;
 	}
@@ -55,6 +56,7 @@ namespace Unnamed {
 		if (!voice->Init(mXAudio2.Get(), soundData)) {
 			return nullptr;
 		}
+		voice->SetBusVolume(GetBusVolume(voice->GetBus()));
 
 		CleanupExpiredVoices();
 		mVoices.emplace_back(voice);
@@ -74,10 +76,44 @@ namespace Unnamed {
 		return mXAudio2 != nullptr && mMasterVoice != nullptr;
 	}
 
+	void AudioSystem::SetMasterVolume(float volume) noexcept {
+		mMasterVolume = std::clamp(volume, 0.0f, 1.0f);
+		if (mMasterVoice) {
+			mMasterVoice->SetVolume(mMasterVolume);
+		}
+	}
+
+	void AudioSystem::SetBusVolume(const AudioBus bus, float volume) noexcept {
+		const auto index = static_cast<size_t>(bus);
+		if (index >= mBusVolumes.size()) {
+			return;
+		}
+		mBusVolumes[index] = std::clamp(volume, 0.0f, 1.0f);
+		ApplyBusVolume(bus);
+	}
+
+	float AudioSystem::GetBusVolume(const AudioBus bus) const noexcept {
+		const auto index = static_cast<size_t>(bus);
+		if (index >= mBusVolumes.size()) {
+			return 1.0f;
+		}
+		return mBusVolumes[index];
+	}
+
 	void AudioSystem::CleanupExpiredVoices() {
 		std::erase_if(
 			mVoices,
 			[](const std::weak_ptr<AudioVoice>& weak) { return weak.expired(); }
 		);
+	}
+
+	void AudioSystem::ApplyBusVolume(const AudioBus bus) {
+		CleanupExpiredVoices();
+		const float volume = GetBusVolume(bus);
+		for (const auto& weak : mVoices) {
+			if (auto voice = weak.lock(); voice && voice->GetBus() == bus) {
+				voice->SetBusVolume(volume);
+			}
+		}
 	}
 }

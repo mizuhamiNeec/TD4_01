@@ -8,6 +8,8 @@
 class MagVoiceBridge;
 
 namespace Unnamed {
+	class AudioSystem;
+
 	/// @brief TeamGame 向けの最小 GameModule 実装です。
 	class TeamGameModule final : public IGameModule {
 	public:
@@ -39,13 +41,13 @@ namespace Unnamed {
 		void InitializeMagVoiceBridge();
 
 		/// @brief グローバルな MagVoiceBridge インスタンスを設定
-		void SetGlobalMagVoiceBridge(MagVoiceBridge* bridge);
+		static void SetGlobalMagVoiceBridge(MagVoiceBridge* bridge);
 		
 		/// @brief 使用するコンソール変数を登録します。
-		void RegisterTeamGameConVars();
+		static void RegisterTeamGameConVars(AudioSystem* audioSystem);
 
 		/// @brief VoiceShockWaveComponent と共有する音声入力の所有権
-		std::unique_ptr<MagVoiceBridge> voiceBridge_;
+		std::unique_ptr<MagVoiceBridge> mVoiceBridge;
 	};
 
 	/// @brief TeamGame GameModule を生成します。

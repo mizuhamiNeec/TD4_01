@@ -1716,7 +1716,7 @@
                     "type": "engine.StaticMeshRenderer"
                 }
             ],
-            "folderPath": "",
+            "folderPath": "Env",
             "guid": 12087284352773638142,
             "isEditorOnly": false,
             "name": "Skydome",
@@ -1753,6 +1753,7 @@
                 {
                     "active": true,
                     "data": {
+                        "bus": "bgm",
                         "loop": false,
                         "pitch": 1.0,
                         "playOnStart": true,
@@ -1800,6 +1801,7 @@
                 {
                     "active": true,
                     "data": {
+                        "bus": "sfx",
                         "loop": false,
                         "pitch": 1.0,
                         "playOnStart": false,
@@ -1812,6 +1814,7 @@
                 {
                     "active": true,
                     "data": {
+                        "bus": "sfx",
                         "loop": false,
                         "pitch": 1.0,
                         "playOnStart": false,
@@ -1824,6 +1827,7 @@
                 {
                     "active": true,
                     "data": {
+                        "bus": "sfx",
                         "loop": false,
                         "pitch": 1.0,
                         "playOnStart": false,
@@ -1836,6 +1840,7 @@
                 {
                     "active": true,
                     "data": {
+                        "bus": "sfx",
                         "loop": false,
                         "pitch": 1.0570988655090332,
                         "playOnStart": false,
@@ -1848,6 +1853,7 @@
                 {
                     "active": true,
                     "data": {
+                        "bus": "sfx",
                         "loop": false,
                         "pitch": 1.0,
                         "playOnStart": false,
@@ -1860,6 +1866,7 @@
                 {
                     "active": true,
                     "data": {
+                        "bus": "sfx",
                         "loop": false,
                         "pitch": 1.0,
                         "playOnStart": false,
@@ -1872,6 +1879,7 @@
                 {
                     "active": true,
                     "data": {
+                        "bus": "sfx",
                         "loop": false,
                         "pitch": 1.0,
                         "playOnStart": false,
@@ -1884,6 +1892,7 @@
                 {
                     "active": true,
                     "data": {
+                        "bus": "sfx",
                         "loop": false,
                         "pitch": 1.0,
                         "playOnStart": false,
@@ -1971,6 +1980,56 @@
             "guid": 15552413904281614221,
             "isEditorOnly": false,
             "name": "SE",
+            "tags": [],
+            "visible": true
+        },
+        {
+            "active": true,
+            "components": [
+                {
+                    "active": true,
+                    "data": {
+                        "parentEntityGuid": 0,
+                        "position": [
+                            0.0,
+                            -2.0,
+                            0.0
+                        ],
+                        "rotation": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "guid": 14965740394424759415,
+                    "type": "engine.Transform"
+                },
+                {
+                    "active": true,
+                    "data": {
+                        "materialInstancePath": "",
+                        "materialSlots": [
+                            {
+                                "materialInstancePath": "projects/TeamGame/content/materials/instances/ocean.matinst.json",
+                                "slotIndex": 0
+                            }
+                        ],
+                        "meshPath": "projects/TeamGame/content/models/ocean/ocean.obj"
+                    },
+                    "guid": 13370444909291144881,
+                    "type": "engine.StaticMeshRenderer"
+                }
+            ],
+            "folderPath": "Env",
+            "guid": 15552413904281614222,
+            "isEditorOnly": false,
+            "name": "Entity",
             "tags": [],
             "visible": true
         }

@@ -86,11 +86,8 @@ namespace Unnamed {
 	}
 
 	void AudioVoice::SetVolume(float volume) const {
-		if (!mSourceVoice) {
-			return;
-		}
-		volume = std::clamp(volume, 0.0f, 4.0f);
-		mSourceVoice->SetVolume(volume);
+		mVolume = std::clamp(volume, 0.0f, 4.0f);
+		ApplyEffectiveVolume();
 	}
 
 	void AudioVoice::SetPitch(float pitch) const {
@@ -99,6 +96,15 @@ namespace Unnamed {
 		}
 		pitch = std::clamp(pitch, 0.01f, XAUDIO2_MAX_FREQ_RATIO);
 		mSourceVoice->SetFrequencyRatio(pitch);
+	}
+
+	void AudioVoice::SetBus(const AudioBus bus) noexcept {
+		mBus = bus;
+	}
+
+	void AudioVoice::SetBusVolume(float volume) noexcept {
+		mBusVolume = std::clamp(volume, 0.0f, 4.0f);
+		ApplyEffectiveVolume();
 	}
 
 	bool AudioVoice::IsPlaying() const {
@@ -115,6 +121,10 @@ namespace Unnamed {
 		return mIsPaused;
 	}
 
+	AudioBus AudioVoice::GetBus() const noexcept {
+		return mBus;
+	}
+
 	void AudioVoice::DestroyVoice() {
 		if (!mSourceVoice) {
 			return;
@@ -127,5 +137,12 @@ namespace Unnamed {
 		mAudioBuffer = {};
 		mOwnedPcmData.clear();
 		mIsPaused = false;
+	}
+
+	void AudioVoice::ApplyEffectiveVolume() const {
+		if (!mSourceVoice) {
+			return;
+		}
+		mSourceVoice->SetVolume(std::clamp(mVolume * mBusVolume, 0.0f, 4.0f));
 	}
 }

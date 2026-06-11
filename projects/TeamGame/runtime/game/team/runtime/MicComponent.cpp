@@ -194,8 +194,11 @@ namespace MyGame {
 			Unnamed::TransformComponent* transform = nullptr;
 			if (scaleTargetEntityGuid_ != 0) {
 				if (auto* scene = GetScene()) {
-					if (auto* targetEntity = scene->FindEntity(scaleTargetEntityGuid_)) {
-						transform = targetEntity->GetComponent<Unnamed::TransformComponent>();
+					if (auto* targetEntity = scene->FindEntity(
+						scaleTargetEntityGuid_
+					)) {
+						transform = targetEntity->GetComponent<
+							Unnamed::TransformComponent>();
 					}
 				}
 			}
@@ -203,7 +206,8 @@ namespace MyGame {
 			if (!transform) {
 				// 特に指定されていない場合は自分自身のTransformComponentを使用
 				if (auto* owner = GetOwner()) {
-					transform = owner->GetComponent<Unnamed::TransformComponent>();
+					transform = owner->GetComponent<
+						Unnamed::TransformComponent>();
 				}
 			}
 
@@ -214,7 +218,7 @@ namespace MyGame {
 			// TODO: とりあえずここで拡縮を変えているが、
 			// 複数に適用させたいときにVoiceBridgeインスタンスが増えて良くない
 			// ので修正予定(VoiceInputDancerコンポーネントみたいなやつにイベントを飛ばす感じにする)
-			
+
 			transform->SetScale(
 				Math::Lerp(
 					transform->GetScale(),
@@ -299,6 +303,7 @@ namespace MyGame {
 			ImGui::ProgressBar(stats.smoothedRMS, ImVec2(-1.0f, 0.0f));
 		}
 	}
+#endif
 
 	void MicComponent::Deserialize(const Unnamed::JsonReader& reader) {
 		if (reader.Has("scaleByVolumeEnabled")) {
@@ -306,10 +311,12 @@ namespace MyGame {
 				reader["scaleByVolumeEnabled"].GetBool(scaleByVolumeEnabled_);
 		}
 		if (reader.Has("scaleTargetEntityGuid")) {
-			scaleTargetEntityGuid_ = reader["scaleTargetEntityGuid"].GetUint64();
+			scaleTargetEntityGuid_ = reader["scaleTargetEntityGuid"].
+				GetUint64();
 		}
 		if (reader.Has("scaleMultiplier")) {
-			scaleMultiplier = reader["scaleMultiplier"].GetVec3(scaleMultiplier);
+			scaleMultiplier = reader["scaleMultiplier"].
+				GetVec3(scaleMultiplier);
 		}
 		if (reader.Has("scaleResponsiveness")) {
 			scaleResponsiveness_ =
@@ -334,7 +341,6 @@ namespace MyGame {
 		writer.Key("scaleResponsiveness");
 		writer.Write(scaleResponsiveness_);
 	}
-#endif
 
 	// 忘れると死ぬやつ
 	REGISTER_COMPONENT(MicComponent);

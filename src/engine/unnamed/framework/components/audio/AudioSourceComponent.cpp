@@ -22,6 +22,22 @@
 namespace Unnamed {
 	namespace {
 		static constexpr std::string_view kChannel = "AudioSourceComponent";
+
+		const char* ToAudioBusString(const AudioBus bus) noexcept {
+			switch (bus) {
+				case AudioBus::Bgm: return "bgm";
+				case AudioBus::Sfx: return "sfx";
+				default: return "sfx";
+			}
+		}
+
+		AudioBus ParseAudioBus(const std::string_view value) {
+			const std::string lower = StrUtil::ToLowerCase(std::string(value));
+			if (lower == "bgm" || lower == "music") {
+				return AudioBus::Bgm;
+			}
+			return AudioBus::Sfx;
+		}
 	}
 
 	std::string_view AudioSourceComponent::GetStableName() const {
@@ -67,6 +83,9 @@ namespace Unnamed {
 		if (reader.Has("volume")) {
 			SetVolume(reader["volume"].GetFloat());
 		}
+		if (reader.Has("bus")) {
+			SetBus(ParseAudioBus(reader["bus"].GetString()));
+		}
 		if (reader.Has("pitch")) {
 			SetPitch(reader["pitch"].GetFloat());
 		}
@@ -81,6 +100,8 @@ namespace Unnamed {
 		writer.Write(mLoop);
 		writer.Key("volume");
 		writer.Write(mVolume);
+		writer.Key("bus");
+		writer.Write(ToAudioBusString(mBus));
 		writer.Key("pitch");
 		writer.Write(mPitch);
 	}
@@ -102,6 +123,11 @@ namespace Unnamed {
 		ImGui::Checkbox("Loop", &mLoop);
 		if (ImGui::DragFloat("Volume", &mVolume, 0.01f, 0.0f, 4.0f, "%.2f")) {
 			SetVolume(mVolume);
+		}
+		const char* busItems[] = {"BGM", "SE"};
+		int         busIndex   = mBus == AudioBus::Bgm ? 0 : 1;
+		if (ImGui::Combo("Bus", &busIndex, busItems, 2)) {
+			SetBus(busIndex == 0 ? AudioBus::Bgm : AudioBus::Sfx);
 		}
 		if (ImGui::DragFloat("Pitch", &mPitch, 0.01f, 0.01f, 4.0f, "%.2f")) {
 			SetPitch(mPitch);
@@ -168,13 +194,23 @@ namespace Unnamed {
 
 	void AudioSourceComponent::SetVolume(float volume) noexcept {
 		mVolume = std::clamp(volume, 0.0f, 4.0f);
-		if (mVoice) {
-			mVoice->SetVolume(mVolume);
-		}
+		ApplyVoiceVolume();
 	}
 
 	float AudioSourceComponent::GetVolume() const noexcept {
 		return mVolume;
+	}
+
+	void AudioSourceComponent::SetBus(const AudioBus bus) noexcept {
+		mBus = bus == AudioBus::Bgm ? AudioBus::Bgm : AudioBus::Sfx;
+		if (mVoice) {
+			mVoice->SetBus(mBus);
+		}
+		ApplyVoiceVolume();
+	}
+
+	AudioBus AudioSourceComponent::GetBus() const noexcept {
+		return mBus;
 	}
 
 	void AudioSourceComponent::SetPitch(float pitch) noexcept {
@@ -287,7 +323,8 @@ namespace Unnamed {
 		}
 
 		mVoice = std::move(voice);
-		mVoice->SetVolume(mVolume);
+		mVoice->SetBus(mBus);
+		ApplyVoiceVolume();
 		mVoice->SetPitch(mPitch);
 		mLoadedAssetVersion = meta.version;
 		mLoggedError        = false;
@@ -302,6 +339,16 @@ namespace Unnamed {
 		mSoundAssetId       = kInvalidAssetID;
 		mLoadedAssetVersion = 0;
 		mVoice.reset();
+	}
+
+	void AudioSourceComponent::ApplyVoiceVolume() const noexcept {
+		if (!mVoice) {
+			return;
+		}
+		if (auto* audioSystem = GetAudioSystem()) {
+			mVoice->SetBusVolume(audioSystem->GetBusVolume(mBus));
+		}
+		mVoice->SetVolume(mVolume);
 	}
 
 	REGISTER_COMPONENT(AudioSourceComponent);

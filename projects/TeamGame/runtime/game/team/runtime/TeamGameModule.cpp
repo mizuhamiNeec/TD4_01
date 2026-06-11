@@ -1,118 +1,56 @@
 #include "TeamGameModule.h"
 
 #include <engine/unnamed/subsystem/console/concommand/ConVar.h>
-#include <engine/unnamed/subsystem/interface/ServiceLocator.h>
 
-#include "TeamGameComponentRegistration.h"
 #include "MagVoiceBridge.h"
+#include "TeamGameComponentRegistration.h"
 #include "VoiceShockWaveComponent.h"
 
+#include "engine/EngineServices.h"
 #include "engine/game/IDemoService.h"
+// ReSharper disable once CppUnusedIncludeDirective
 #include "engine/physics/core/Physics.h"
+// ReSharper disable once CppUnusedIncludeDirective
 #include "engine/scene/Scene.h"
+#include "engine/unnamed/subsystem/audio/AudioSystem.h"
 #include "engine/world/World.h"
 
 namespace Unnamed {
-	TeamGameModule::~TeamGameModule() {
-		// 静的参照が破棄済みインスタンスを指さないよう、所有側の破棄前に切り離す。
-		SetGlobalMagVoiceBridge(nullptr);
-		voiceBridge_.reset();
-	}
+	namespace {
+		AudioSystem* gTeamGameAudioSystem = nullptr;
 
-	void TeamGameModule::Initialize(EngineServices& services) {
-		(void)services;
+		void ApplyMasterVolume(const float volume) {
+			if (gTeamGameAudioSystem) {
+				gTeamGameAudioSystem->SetMasterVolume(volume);
+			}
+		}
 
-		// NOTE: ゲーム開始時に MagVoiceBridge を初期化・起動
-		// これにより、すべてのシーンでマイクからの音声入力が有効になる
-		InitializeMagVoiceBridge();
+		void ApplyMusicVolume(const float volume) {
+			if (gTeamGameAudioSystem) {
+				gTeamGameAudioSystem->SetBusVolume(AudioBus::Bgm, volume);
+			}
+		}
 
-		RegisterTeamGameConVars();
-	}
-
-	void TeamGameModule::InitializeMagVoiceBridge() {
-		if (voiceBridge_) { return; }
-
-		// NOTE: VoiceShockWaveComponent の静的メンバを初期化
-		// VoiceShockWaveComponent が使用する _voiceBridgeInstance を作成
-		auto voiceBridge = std::make_unique<MagVoiceBridge>();
-
-		if (voiceBridge) {
-			bool initSuccess = voiceBridge->Initialize();
-			if (initSuccess) {
-				// NOTE: 音声感度を大幅に調整（敏感に反応するように）
-				voiceBridge->SetSmoothingFactor(0.2f); // より反応的（0.4 → 0.2）
-				voiceBridge->SetNoiseFloor(-80.0f); // ノイズフロアを下げる（-50dB → -80dB）
-				voiceBridge->SetVolumeRange(-80.0f, 0.0f); // 音量範囲を拡大
-
-				bool startSuccess = voiceBridge->Start();
-				if (startSuccess) {
-#ifdef _DEBUG
-					OutputDebugStringA(
-						"[TeamGameModule] ✓ MagVoiceBridge initialized and started successfully\n"
-					);
-					OutputDebugStringA(
-						"[TeamGameModule] Audio sensitivity: HIGH (SmoothingFactor=0.2, NoiseFloor=-80dB)\n"
-					);
-					OutputDebugStringA(
-						"[TeamGameModule] Audio capture is now active\n"
-					);
-#endif
-					// NOTE: VoiceShockWaveComponent に MagVoiceBridge を設定
-					SetGlobalMagVoiceBridge(voiceBridge.get());
-					voiceBridge_ = std::move(voiceBridge);
-				} else {
-#ifdef _DEBUG
-					OutputDebugStringA(
-						"[TeamGameModule] ✗ ERROR: Failed to start MagVoiceBridge\n"
-					);
-#endif
-				}
-			} else {
-#ifdef _DEBUG
-				OutputDebugStringA(
-					"[TeamGameModule] ✗ ERROR: Failed to initialize MagVoiceBridge\n"
-				);
-#endif
+		void ApplySfxVolume(const float volume) {
+			if (gTeamGameAudioSystem) {
+				gTeamGameAudioSystem->SetBusVolume(AudioBus::Sfx, volume);
 			}
 		}
 	}
 
-	void TeamGameModule::SetGlobalMagVoiceBridge(MagVoiceBridge* bridge) {
-		// NOTE: VoiceShockWaveComponent の静的メンバを設定
-		MyGame::VoiceShockWaveComponent::SetVoiceBridgeInstance(bridge);
-
-#ifdef _DEBUG
-		OutputDebugStringA(
-			"[TeamGameModule] MagVoiceBridge set to VoiceShockWaveComponent\n"
-		);
-#endif
+	TeamGameModule::~TeamGameModule() {
+		// 静的参照が破棄済みインスタンスを指さないよう、所有側の破棄前に切り離す。
+		SetGlobalMagVoiceBridge(nullptr);
+		gTeamGameAudioSystem = nullptr;
+		mVoiceBridge.reset();
 	}
 
-	void TeamGameModule::RegisterTeamGameConVars() {
-		// 操作
-		static ConVar invertY(
-			"invertY", false, FCVAR::ARCHIVE,
-			"invert Y-axis for camera control (0 or 1)"
-		);
+	void TeamGameModule::Initialize(EngineServices& services) {
+		// NOTE: ゲーム開始時に MagVoiceBridge を初期化・起動
+		// これにより、すべてのシーンでマイクからの音声入力が有効になる
+		InitializeMagVoiceBridge();
 
-		// サウンド
-		static ConVar volume(
-			"volume", 1.0f, FCVAR::ARCHIVE,
-			"master volume (0.0 - 1.0)",
-			true, 0.0f, true, 1.0f
-		);
-
-		static ConVar snd_music(
-			"snd_music", 1.0f, FCVAR::ARCHIVE,
-			"music volume (0.0 - 1.0)",
-			true, 0.0f, true, 1.0f
-		);
-
-		static ConVar snd_sfx(
-			"snd_sfx", 1.0f, FCVAR::ARCHIVE,
-			"sfx volume (0.0 - 1.0)",
-			true, 0.0f, true, 1.0f
-		);
+		RegisterTeamGameConVars(services.audioSystem);
 	}
 
 	std::unique_ptr<World> TeamGameModule::CreateRuntimeWorld(
@@ -154,6 +92,101 @@ namespace Unnamed {
 	}
 
 	std::string TeamGameModule::GetDefaultUiDocumentPath() const { return {}; }
+
+	void TeamGameModule::InitializeMagVoiceBridge() {
+		if (mVoiceBridge) { return; }
+
+		// NOTE: VoiceShockWaveComponent の静的メンバを初期化
+		// VoiceShockWaveComponent が使用する _voiceBridgeInstance を作成
+		auto voiceBridge = std::make_unique<MagVoiceBridge>();
+
+		if (voiceBridge) {
+			const bool initSuccess = voiceBridge->Initialize();
+			if (initSuccess) {
+				// NOTE: 音声感度を大幅に調整（敏感に反応するように）
+				voiceBridge->SetSmoothingFactor(0.2f); // より反応的（0.4 → 0.2）
+				voiceBridge->SetNoiseFloor(-80.0f); // ノイズフロアを下げる（-50dB → -80dB）
+				voiceBridge->SetVolumeRange(-80.0f, 0.0f); // 音量範囲を拡大
+
+				const bool startSuccess = voiceBridge->Start();
+				if (startSuccess) {
+#ifdef _DEBUG
+					OutputDebugStringA(
+						"[TeamGameModule] ✓ MagVoiceBridge initialized and started successfully\n"
+					);
+					OutputDebugStringA(
+						"[TeamGameModule] Audio sensitivity: HIGH (SmoothingFactor=0.2, NoiseFloor=-80dB)\n"
+					);
+					OutputDebugStringA(
+						"[TeamGameModule] Audio capture is now active\n"
+					);
+#endif
+					// NOTE: VoiceShockWaveComponent に MagVoiceBridge を設定
+					SetGlobalMagVoiceBridge(voiceBridge.get());
+					mVoiceBridge = std::move(voiceBridge);
+				} else {
+#ifdef _DEBUG
+					OutputDebugStringA(
+						"[TeamGameModule] ✗ ERROR: Failed to start MagVoiceBridge\n"
+					);
+#endif
+				}
+			} else {
+#ifdef _DEBUG
+				OutputDebugStringA(
+					"[TeamGameModule] ✗ ERROR: Failed to initialize MagVoiceBridge\n"
+				);
+#endif
+			}
+		}
+	}
+
+	void TeamGameModule::SetGlobalMagVoiceBridge(MagVoiceBridge* bridge) {
+		// NOTE: VoiceShockWaveComponent の静的メンバを設定
+		MyGame::VoiceShockWaveComponent::SetVoiceBridgeInstance(bridge);
+
+#ifdef _DEBUG
+		OutputDebugStringA(
+			"[TeamGameModule] MagVoiceBridge set to VoiceShockWaveComponent\n"
+		);
+#endif
+	}
+
+	void TeamGameModule::RegisterTeamGameConVars(AudioSystem* audioSystem) {
+		gTeamGameAudioSystem = audioSystem;
+
+		// 操作
+		static ConVar invertY(
+			"invertY", false, FCVAR::ARCHIVE,
+			"invert Y-axis for camera control (0 or 1)"
+		);
+
+		// サウンド
+		static ConVar<float> snd_master(
+			"snd_master", 0.75f, FCVAR::ARCHIVE,
+			"master volume (0.0 - 1.0)",
+			true, 0.0f, true, 1.0f,
+			[](const float& value) { ApplyMasterVolume(value); }
+		);
+
+		static ConVar<float> snd_music(
+			"snd_music", 0.75f, FCVAR::ARCHIVE,
+			"music volume (0.0 - 1.0)",
+			true, 0.0f, true, 1.0f,
+			[](const float& value) { ApplyMusicVolume(value); }
+		);
+
+		static ConVar<float> snd_sfx(
+			"snd_sfx", 0.75f, FCVAR::ARCHIVE,
+			"sfx volume (0.0 - 1.0)",
+			true, 0.0f, true, 1.0f,
+			[](const float& value) { ApplySfxVolume(value); }
+		);
+
+		ApplyMasterVolume(snd_master.GetValue());
+		ApplyMusicVolume(snd_music.GetValue());
+		ApplySfxVolume(snd_sfx.GetValue());
+	}
 
 	std::unique_ptr<IGameModule> CreateTeamGameModule() {
 		return std::make_unique<TeamGameModule>();

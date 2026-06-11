@@ -246,7 +246,7 @@
                         "moveLimitCenterZ": 0.0,
                         "moveLimitRadius": 20.0,
                         "moveSpeed": 5.0,
-                        "useMoveLimit": false
+                        "useMoveLimit": true
                     },
                     "guid": 15253389314605096656,
                     "type": "mygame.PlayerMoveComponent"
@@ -1485,7 +1485,7 @@
             "isEditorOnly": false,
             "name": "Countdown_UI",
             "tags": [],
-            "visible": true
+            "visible": false
         },
         {
             "active": true,

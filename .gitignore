@@ -17,6 +17,7 @@
 # --- Build results / intermediates ---
 [Bb]in/
 [Ii]ntermediate/
+[Dd]ist/
 
 # Common build artifacts
 *.obj

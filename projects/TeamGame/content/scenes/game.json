@@ -1415,7 +1415,7 @@
                         "receiveInput": false,
                         "sortKey": 20,
                         "spaceMode": "Screen",
-                        "uiAssetPath": "projects/TeamGame/content/ui/stageIntro.ui.json",
+                        "uiAssetPath": "projects/TeamGame/content/ui/gameshow.ui.json",
                         "worldSize": [
                             2.0,
                             1.125
@@ -1548,7 +1548,7 @@
                         "notHoleInOneUiAssetPath": "projects/TeamGame/content/ui/notHoleInone.ui.json",
                         "seaOutHeight": -10.0,
                         "stageIntroSeconds": 5.0,
-                        "stageIntroUiAssetPath": "projects/TeamGame/content/ui/stageIntro.ui.json",
+                        "stageIntroUiAssetPath": "projects/TeamGame/content/ui/gameshow.ui.json",
                         "stageIntroUiEntityName": "StageIntro_UI",
                         "useStageIntro": true
                     },

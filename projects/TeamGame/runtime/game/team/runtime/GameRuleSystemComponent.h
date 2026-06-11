@@ -172,7 +172,7 @@ namespace MyGame {
 		// ステージ紹介中に表示する目標UIエンティティ名
 		std::string _stageIntroUiEntityName = "StageIntro_UI";
 		// ステージ紹介中に表示する目標UI
-		std::string _stageIntroUiAssetPath = "projects/TeamGame/content/ui/stageIntro.ui.json";
+		std::string _stageIntroUiAssetPath = "projects/TeamGame/content/ui/gameshow.ui.json";
 		// ステージ紹介中だけ隠す通常UIの復元用キャッシュ
 		std::unordered_map<uint64_t, bool> _stageIntroUiVisibility;
 		// ゴルフボール発射カウントダウンコンポーネントのキャッシュ
